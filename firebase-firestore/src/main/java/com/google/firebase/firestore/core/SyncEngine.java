@@ -655,9 +655,8 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
           remoteEvent == null ? null : remoteEvent.getTargetChanges().get(queryView.getTargetId());
 
       boolean waitForRequeryResult =
-          remoteEvent == null
-              ? false
-              : (remoteEvent.getTargetMismatches().get(queryView.getTargetId()) != null);
+          remoteEvent != null
+              && remoteEvent.getTargetMismatches().get(queryView.getTargetId()) != null;
 
       ViewChange viewChange =
           queryView.getView().applyChanges(viewDocChanges, targetChange, waitForRequeryResult);

@@ -308,9 +308,7 @@ public class View {
           return query.comparator().compare(o1.getDocument(), o2.getDocument());
         });
     applyTargetChange(targetChange);
-
-    List<LimboDocumentChange> limboDocumentChanges =
-        waitForRequeryResult ? Collections.emptyList() : updateLimboDocuments();
+    List<LimboDocumentChange> limboDocumentChanges = updateLimboDocuments(waitForRequeryResult);
 
     // We are at synced state if there is no limbo docs are waiting to be resolved, view is current
     // with the backend, and the query is not pending for full re-query result due to existence
@@ -377,9 +375,9 @@ public class View {
     }
   }
 
-  private List<LimboDocumentChange> updateLimboDocuments() {
+  private List<LimboDocumentChange> updateLimboDocuments(boolean waitForRequeryResult) {
     // We can only determine limbo documents when we're in-sync with the server.
-    if (!current) {
+    if (waitForRequeryResult || !current) {
       return Collections.emptyList();
     }
 
