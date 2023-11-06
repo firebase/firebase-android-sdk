@@ -13,37 +13,17 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import java.util.concurrent.atomic.AtomicReference
-
-abstract class BaseRef<VariablesType, ResultType>(
+abstract class BaseRef<VariablesType, ResultType>
+internal constructor(
   val dataConnect: FirebaseDataConnect,
   internal val operationName: String,
   internal val operationSet: String,
-  internal val revision: String,
-  variables: VariablesType
+  internal val revision: String
 ) {
-  private val _variables = AtomicReference(variables)
-  val variables: VariablesType
-    get() = _variables.get()
+  abstract suspend fun execute(variables: VariablesType): ResultType
+  protected abstract fun encodeVariables(variables: VariablesType): Map<String, Any?>
+  protected abstract fun decodeResult(map: Map<String, Any?>): ResultType
 
-  abstract suspend fun execute(): ResultType
-
-  fun update(newVariables: VariablesType) {
-    _variables.set(newVariables)
-    onUpdate()
-  }
-
-  protected open fun onUpdate() {}
-
-  protected interface Codec<VariablesType, ResultType> {
-    fun encodeVariables(variables: VariablesType): Map<String, Any?>
-    fun decodeResult(map: Map<String, Any?>): ResultType
-  }
-
-  protected abstract val codec: Codec<VariablesType, ResultType>
-
-  internal val variablesAsMap: Map<String, Any?>
-    get() = codec.encodeVariables(variables)
-
-  internal fun resultFromMap(map: Map<String, Any?>) = codec.decodeResult(map)
+  internal fun mapFromVariables(variables: VariablesType) = encodeVariables(variables)
+  internal fun resultFromMap(map: Map<String, Any?>) = decodeResult(map)
 }

@@ -13,36 +13,21 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import kotlinx.coroutines.flow.Flow
-
 abstract class QueryRef<VariablesType, ResultType>(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   operationSet: String,
-  revision: String,
-  variables: VariablesType
+  revision: String
 ) :
   BaseRef<VariablesType, ResultType>(
     dataConnect = dataConnect,
     operationName = operationName,
     operationSet = operationSet,
-    revision = revision,
-    variables = variables
+    revision = revision
   ) {
-  private val subscription: QuerySubscription<VariablesType, ResultType> by lazy {
-    QuerySubscription(this)
-  }
+  override suspend fun execute(variables: VariablesType): ResultType =
+    dataConnect.executeQuery(this, variables)
 
-  val lastResult: Result<ResultType>?
-    get() = subscription.lastResult
-
-  override suspend fun execute(): ResultType = dataConnect.executeQuery(this)
-
-  fun subscribe(): Flow<Result<ResultType>> = subscription.subscribe()
-
-  fun reload(): Unit = subscription.reload()
-
-  override fun onUpdate() {
-    reload()
-  }
+  fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, ResultType> =
+    QuerySubscription(this, variables)
 }

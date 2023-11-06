@@ -1,17 +1,16 @@
 package com.google.firebase.dataconnect.testutil
 
+import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import org.junit.rules.ExternalResource
 
 /**
  * A JUnit test rule that creates instances of an object for use during testing, and cleans them
  * upon test completion.
  */
-abstract class FactoryTestRule<T, P>(startId: Long) : ExternalResource() {
+abstract class FactoryTestRule<T, P> : ExternalResource() {
 
-  private val nextId = AtomicLong(startId)
   private val active = AtomicBoolean(false)
   private val instances = CopyOnWriteArrayList<T>()
 
@@ -19,7 +18,7 @@ abstract class FactoryTestRule<T, P>(startId: Long) : ExternalResource() {
     if (!active.get()) {
       throw IllegalStateException("newInstance() may only be called during the test's execution")
     }
-    val instance = createInstance(nextId.getAndIncrement().toString(16), params)
+    val instance = createInstance(generateRandomUid(), params)
     instances.add(instance)
     return instance
   }
@@ -34,6 +33,11 @@ abstract class FactoryTestRule<T, P>(startId: Long) : ExternalResource() {
       destroyInstance(instances.removeLast())
     }
   }
+
+  private fun generateRandomUid(): String =
+    UUID.randomUUID().let {
+      it.leastSignificantBits.toString(30) + it.mostSignificantBits.toString(30)
+    }
 
   protected abstract fun createInstance(instanceId: String, params: P?): T
   protected abstract fun destroyInstance(instance: T)

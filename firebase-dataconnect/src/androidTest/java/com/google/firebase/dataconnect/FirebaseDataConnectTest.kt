@@ -21,6 +21,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.IdentityMutationRef
+import com.google.firebase.dataconnect.testutil.IdentityQueryRef
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
 import com.google.firebase.dataconnect.testutil.installEmulatorSchema
@@ -206,10 +208,10 @@ class FirebaseDataConnectTest {
           dataConnect = dc,
           operationName = "createPost",
           operationSet = "crud",
-          revision = "TestRevision",
-          variables = mapOf("data" to mapOf("id" to postId, "content" to postContent))
+          revision = "TestRevision"
         )
-      val mutationResponse = mutation.execute()
+      val mutationResponse =
+        mutation.execute(mapOf("data" to mapOf("id" to postId, "content" to postContent)))
       assertWithMessage("mutationResponse")
         .that(mutationResponse)
         .containsExactlyEntriesIn(mapOf("post_insert" to null))
@@ -221,10 +223,9 @@ class FirebaseDataConnectTest {
           dataConnect = dc,
           operationName = "getPost",
           operationSet = "crud",
-          revision = "TestRevision",
-          variables = mapOf("id" to postId)
+          revision = "TestRevision"
         )
-      val queryResult = query.execute()
+      val queryResult = query.execute(mapOf("id" to postId))
       assertWithMessage("queryResponse")
         .that(queryResult)
         .containsExactlyEntriesIn(
@@ -240,44 +241,42 @@ class FirebaseDataConnectTest {
           dataConnect = this,
           operationName = "createPerson",
           operationSet = "ops",
-          revision = "42",
-          variables =
-            mapOf(
-              "data" to
-                buildMap {
-                  put("id", id)
-                  put("name", name)
-                  age?.let { put("age", it) }
-                }
-            )
+          revision = "42"
         )
-        .execute()
+        .execute(
+          mapOf(
+            "data" to
+              buildMap {
+                put("id", id)
+                put("name", name)
+                age?.let { put("age", it) }
+              }
+          )
+        )
 
     suspend fun FirebaseDataConnect.getPerson(id: String) =
       IdentityQueryRef(
           dataConnect = this,
           operationName = "getPerson",
           operationSet = "ops",
-          revision = "42",
-          variables = mapOf("id" to id)
+          revision = "42"
         )
-        .execute()
+        .execute(mapOf("id" to id))
 
     suspend fun FirebaseDataConnect.getAllPeople() =
       IdentityQueryRef(
           dataConnect = this,
           operationName = "getAllPeople",
           operationSet = "ops",
-          revision = "42",
-          variables = emptyMap()
+          revision = "42"
         )
-        .execute()
+        .execute(emptyMap())
 
     fun Map<*, *>.assertEqualsGetPersonResponse(name: String, age: Double?) {
       assertThat(keys).containsExactly("person")
-      get("person").let {
-        assertThat(it).isInstanceOf(Map::class.java)
-        (it as Map<*, *>).let { assertThat(it).containsExactly("name", name, "age", age) }
+      get("person").let { personMap ->
+        assertThat(personMap).isInstanceOf(Map::class.java)
+        (personMap as Map<*, *>).let { assertThat(it).containsExactly("name", name, "age", age) }
       }
     }
 
@@ -285,16 +284,16 @@ class FirebaseDataConnectTest {
 
     fun Map<*, *>.assertEqualsGetPeopleResponse(vararg entries: IdNameAgeTuple) {
       assertThat(keys).containsExactly("people")
-      get("people").let {
-        assertThat(it).isInstanceOf(List::class.java)
+      get("people").let { peopleList ->
+        assertThat(peopleList).isInstanceOf(List::class.java)
         val actualPeople =
-          (it as Iterable<*>).mapIndexed { index, entry ->
+          (peopleList as Iterable<*>).mapIndexed { index, entry ->
             assertWithMessage("people[$index]").that(entry).isInstanceOf(Map::class.java)
-            (entry as Map<*, *>).let {
+            (entry as Map<*, *>).let { personMap ->
               assertWithMessage("people[$index].keys")
-                .that(it.keys)
+                .that(personMap.keys)
                 .containsExactly("id", "name", "age")
-              IdNameAgeTuple(id = it["id"], name = it["name"], age = it["age"])
+              IdNameAgeTuple(id = personMap["id"], name = personMap["name"], age = personMap["age"])
             }
           }
         assertThat(actualPeople).containsExactlyElementsIn(entries)
@@ -324,46 +323,4 @@ class FirebaseDataConnectTest {
         )
     }
   }
-}
-
-private class IdentityQueryRef(
-  dataConnect: FirebaseDataConnect,
-  operationName: String,
-  operationSet: String,
-  revision: String,
-  variables: Map<String, Any?>
-) :
-  QueryRef<Map<String, Any?>, Map<String, Any?>>(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    operationSet = operationSet,
-    revision = revision,
-    variables = variables
-  ) {
-  override val codec =
-    object : Codec<Map<String, Any?>, Map<String, Any?>> {
-      override fun encodeVariables(variables: Map<String, Any?>) = variables
-      override fun decodeResult(map: Map<String, Any?>) = map
-    }
-}
-
-private class IdentityMutationRef(
-  dataConnect: FirebaseDataConnect,
-  operationName: String,
-  operationSet: String,
-  revision: String,
-  variables: Map<String, Any?>
-) :
-  MutationRef<Map<String, Any?>, Map<String, Any?>>(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    operationSet = operationSet,
-    revision = revision,
-    variables = variables
-  ) {
-  override val codec =
-    object : Codec<Map<String, Any?>, Map<String, Any?>> {
-      override fun encodeVariables(variables: Map<String, Any?>) = variables
-      override fun decodeResult(map: Map<String, Any?>) = map
-    }
 }

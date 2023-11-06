@@ -21,7 +21,7 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
  * closes them upon test completion.
  */
 class TestDataConnectFactory :
-  FactoryTestRule<FirebaseDataConnect, TestDataConnectFactory.Params>(startId = 0xccdd0000000L) {
+  FactoryTestRule<FirebaseDataConnect, TestDataConnectFactory.Params>() {
 
   fun newInstance(location: String? = null, service: String? = null): FirebaseDataConnect =
     newInstance(Params(location = location, service = service))

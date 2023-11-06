@@ -9,7 +9,7 @@ import com.google.firebase.initialize
  * A JUnit test rule that creates instances of [FirebaseApp] for use during testing, and closes them
  * upon test completion.
  */
-class TestFirebaseAppFactory : FactoryTestRule<FirebaseApp, Nothing>(startId = 0xaabb0000000L) {
+class TestFirebaseAppFactory : FactoryTestRule<FirebaseApp, Nothing>() {
 
   override fun createInstance(instanceId: String, params: Nothing?) =
     Firebase.initialize(

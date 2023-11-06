@@ -17,15 +17,14 @@ abstract class MutationRef<VariablesType, ResultType>(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   operationSet: String,
-  revision: String,
-  variables: VariablesType
+  revision: String
 ) :
   BaseRef<VariablesType, ResultType>(
     dataConnect = dataConnect,
     operationName = operationName,
     operationSet = operationSet,
-    revision = revision,
-    variables = variables
+    revision = revision
   ) {
-  override suspend fun execute(): ResultType = dataConnect.executeMutation(this)
+  override suspend fun execute(variables: VariablesType): ResultType =
+    dataConnect.executeMutation(this, variables)
 }

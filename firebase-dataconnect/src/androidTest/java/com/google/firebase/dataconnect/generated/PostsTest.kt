@@ -48,9 +48,9 @@ class PostsTest {
     val postContent = Random.Default.nextLong().toString(30)
 
     runBlocking {
-      dc.mutations.createPost(id = postId, content = postContent).execute()
+      dc.mutations.createPost.execute(id = postId, content = postContent)
 
-      val queryResponse = dc.queries.getPost(id = postId).execute()
+      val queryResponse = dc.queries.getPost.execute(id = postId)
       assertWithMessage("queryResponse")
         .that(queryResponse.post)
         .isEqualTo(GetPostQuery.Result.Post(content = postContent, comments = emptyList()))
@@ -67,23 +67,23 @@ class PostsTest {
     val postContent2 = Random.Default.nextLong().absoluteValue.toString(30)
 
     runBlocking {
-      dc.mutations.createPost(id = postId1, content = postContent1).execute()
-      dc.mutations.createPost(id = postId2, content = postContent2).execute()
+      dc.mutations.createPost.execute(id = postId1, content = postContent1)
+      dc.mutations.createPost.execute(id = postId2, content = postContent2)
 
-      val query = dc.queries.getPost(id = postId1)
-      assertWithMessage("lastResult 0").that(query.lastResult).isNull()
+      val querySubscription = dc.queries.getPost.subscribe(id = postId1)
+      assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
-      val result1 = query.subscribe().timeout(5.seconds).first()
+      val result1 = querySubscription.flow.timeout(5.seconds).first()
       assertWithMessage("result1.isSuccess").that(result1.isSuccess).isTrue()
       assertWithMessage("result1.post.content")
         .that(result1.getOrThrow().post.content)
         .isEqualTo(postContent1)
 
-      assertWithMessage("lastResult 1").that(query.lastResult).isEqualTo(result1)
+      assertWithMessage("lastResult 1").that(querySubscription.lastResult).isEqualTo(result1)
 
-      val flow2Job = async { query.subscribe().timeout(5.seconds).take(2).toList() }
+      val flow2Job = async { querySubscription.flow.timeout(5.seconds).take(2).toList() }
 
-      query.update(id = postId2)
+      querySubscription.update { id = postId2 }
 
       val results2 = flow2Job.await()
       assertWithMessage("results2.size").that(results2.size).isEqualTo(2)
@@ -96,7 +96,7 @@ class PostsTest {
         .that(results2[1].getOrThrow().post.content)
         .isEqualTo(postContent2)
 
-      assertWithMessage("lastResult 2").that(query.lastResult).isEqualTo(results2[1])
+      assertWithMessage("lastResult 2").that(querySubscription.lastResult).isEqualTo(results2[1])
     }
   }
 }

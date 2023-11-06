@@ -17,7 +17,11 @@ mutation createPerson($data: Person_Data! @pick(fields: ["id", "name", "age"])) 
 }
 
 mutation deletePerson($id: String!) @auth(is: PUBLIC) {
-    person_delete(id: $id)
+  person_delete(id: $id)
+}
+
+mutation updatePerson($id: String!, $data: Person_Data! @pick(fields: ["name", "age"])) @auth(is: PUBLIC) {
+  person_update(id: $id, data: $data)
 }
 
 query getPerson($id: String!) @auth(is: PUBLIC) {

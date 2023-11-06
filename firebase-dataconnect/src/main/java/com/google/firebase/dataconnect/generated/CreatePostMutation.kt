@@ -16,36 +16,29 @@ package com.google.firebase.dataconnect.generated
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 
-class CreatePostMutation(dataConnect: FirebaseDataConnect, variables: Variables) :
+class CreatePostMutation(dataConnect: FirebaseDataConnect) :
   MutationRef<CreatePostMutation.Variables, Unit>(
     dataConnect = dataConnect,
     operationName = "createPost",
     operationSet = "crud",
     revision = "1234567890abcdef",
-    variables = variables,
   ) {
 
   data class Variables(val data: PostData) {
     data class PostData(val id: String, val content: String)
   }
 
-  override val codec =
-    object : Codec<Variables, Unit> {
-      override fun encodeVariables(variables: Variables) =
-        mapOf("data" to variables.data.run { mapOf("id" to id, "content" to content) })
+  override fun encodeVariables(variables: Variables) =
+    mapOf("data" to variables.data.run { mapOf("id" to id, "content" to content) })
 
-      override fun decodeResult(map: Map<String, Any?>) {}
-    }
+  override fun decodeResult(map: Map<String, Any?>) {}
 }
 
-fun FirebaseDataConnect.mutation(variables: CreatePostMutation.Variables): CreatePostMutation =
-  CreatePostMutation(dataConnect = this, variables = variables)
+val FirebaseDataConnect.Mutations.createPost
+  get() = CreatePostMutation(dataConnect)
 
-fun FirebaseDataConnect.Mutations.createPost(id: String, content: String): CreatePostMutation =
-  dataConnect.mutation(variablesFor(id = id, content = content))
-
-fun CreatePostMutation.update(id: String, content: String): Unit =
-  update(variablesFor(id = id, content = content))
+suspend fun CreatePostMutation.execute(id: String, content: String) =
+  execute(variablesFor(id = id, content = content))
 
 private fun variablesFor(id: String, content: String) =
   CreatePostMutation.Variables(

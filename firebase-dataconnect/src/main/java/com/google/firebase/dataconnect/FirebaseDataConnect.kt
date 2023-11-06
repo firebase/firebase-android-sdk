@@ -34,7 +34,7 @@ internal constructor(
   private val projectId: String,
   val location: String,
   val service: String,
-  backgroundDispatcher: CoroutineDispatcher,
+  internal val backgroundDispatcher: CoroutineDispatcher,
   private val creator: FirebaseDataConnectFactory
 ) : Closeable {
 
@@ -106,32 +106,38 @@ internal constructor(
     }
   }
 
-  internal suspend fun <V, R> executeQuery(ref: QueryRef<V, R>): R =
+  internal suspend fun <V, R> executeQuery(ref: QueryRef<V, R>, variables: V): R =
     grpcClint
       .executeQuery(
         operationName = ref.operationName,
         operationSet = ref.operationSet,
         revision = ref.revision,
-        variables = ref.variablesAsMap,
+        variables = ref.mapFromVariables(variables)
       )
       .let { response ->
         if (response.errors.isNotEmpty()) {
-          throw RuntimeException("query \"$ref.operationName\" failed: ${response.errors}")
+          throw QueryExecutionException(
+            "query \"$ref.operationName\" failed: ${response.errors}",
+            ref
+          )
         }
         ref.resultFromMap(response.data)
       }
 
-  internal suspend fun <V, R> executeMutation(ref: MutationRef<V, R>): R =
+  internal suspend fun <V, R> executeMutation(ref: MutationRef<V, R>, variables: V): R =
     grpcClint
       .executeMutation(
         operationName = ref.operationName,
         operationSet = ref.operationSet,
         revision = ref.revision,
-        variables = ref.variablesAsMap
+        variables = ref.mapFromVariables(variables)
       )
       .let { response ->
         if (response.errors.isNotEmpty()) {
-          throw RuntimeException("mutation \"${ref.operationName}\" failed: ${response.errors}")
+          throw MutationExecutionException(
+            "mutation \"${ref.operationName}\" failed: ${response.errors}",
+            ref
+          )
         }
         ref.resultFromMap(response.data)
       }
@@ -163,6 +169,13 @@ internal constructor(
   }
 }
 
-open class DataConnectException(message: String) : Exception(message)
+open class DataConnectException internal constructor(message: String) : Exception(message)
 
-open class ResultDecodeError(message: String) : DataConnectException(message)
+open class QueryExecutionException internal constructor(message: String, val ref: QueryRef<*, *>) :
+  DataConnectException(message)
+
+open class QueryResultDecodeException internal constructor(message: String, ref: QueryRef<*, *>) :
+  QueryExecutionException(message, ref)
+
+open class MutationExecutionException
+internal constructor(message: String, val ref: MutationRef<*, *>) : DataConnectException(message)

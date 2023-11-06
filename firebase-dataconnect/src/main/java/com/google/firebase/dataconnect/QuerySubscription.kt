@@ -13,173 +13,74 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import java.util.concurrent.atomic.AtomicBoolean
+import com.google.firebase.concurrent.FirebaseExecutors
 import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.job
+import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
 
-internal class QuerySubscription<VariablesType, ResultType>
-internal constructor(internal val query: QueryRef<VariablesType, ResultType>) {
-  // TODO: Call `coroutineScope.cancel()` when this object is no longer needed.
-  internal val coroutineScope =
-    CoroutineScope(
-      query.dataConnect.coroutineScope.coroutineContext.let {
-        it + SupervisorJob(it.job) + CoroutineName("QuerySubscriptionImpl")
-      }
-    )
-
-  private val eventLoop = QuerySubscriptionEventLoop(this)
-
-  val lastResult: Result<ResultType>?
-    get() = eventLoop.lastResult.get()
-
-  fun reload() = eventLoop.reload()
-
-  fun subscribe() =
-    channelFlow {
-        eventLoop.registerSendChannel(channel)
-        awaitClose { eventLoop.unregisterSendChannel(channel) }
-      }
-      .buffer(Channel.UNLIMITED)
-
-  init {
-    coroutineScope.launch { eventLoop.run() }
-  }
-}
-
-private class QuerySubscriptionEventLoop<VariablesType, ResultType>(
-  private val subscription: QuerySubscription<VariablesType, ResultType>
+class QuerySubscription<VariablesType, ResultType>
+internal constructor(
+  internal val query: QueryRef<VariablesType, ResultType>,
+  variables: VariablesType
 ) {
+  private val _variables = AtomicReference(variables)
+  val variables: VariablesType
+    get() = _variables.get()
 
-  val lastResult = AtomicReference<Result<ResultType>>()
+  private val sharedFlow =
+    MutableSharedFlow<Result<ResultType>>(replay = 1, extraBufferCapacity = Integer.MAX_VALUE)
+  private val sequentialDispatcher =
+    FirebaseExecutors.newSequentialExecutor(query.dataConnect.backgroundDispatcher.asExecutor())
+      .asCoroutineDispatcher()
 
-  private val running = AtomicBoolean(false)
-  private val eventChannel = Channel<Event>(Channel.UNLIMITED)
-  private val registeredSendChannels = mutableListOf<SendChannel<Result<ResultType>>>()
-  private var reloadJob: Job? = null
+  // NOTE: The variables below must ONLY be accessed from coroutines that use `sequentialDispatcher`
+  // for their `CoroutineDispatcher`. Having this requirement removes the need for explicitly
+  // synchronizing access to these variables.
+  private var reloadInProgress = false
   private var pendingReload = false
 
-  suspend fun run() {
-    if (!running.compareAndSet(false, true)) {
-      throw IllegalStateException("run() has already been invoked")
-    }
-
-    try {
-      for (event in eventChannel) {
-        processEvent(event)
-      }
-    } finally {
-      registeredSendChannels.clear()
-      reloadJob = null
-    }
-  }
-
-  fun registerSendChannel(channel: SendChannel<Result<ResultType>>) {
-    eventChannel.trySend(RegisterSendChannelEvent(channel))
-  }
-
-  fun unregisterSendChannel(channel: SendChannel<Result<ResultType>>) {
-    eventChannel.trySend(UnregisterSendChannelEvent(channel))
-  }
+  val lastResult
+    get() = sharedFlow.replayCache.firstOrNull()
 
   fun reload() {
-    eventChannel.trySend(ReloadEvent)
-  }
-
-  private fun processEvent(event: Event): Unit =
-    when (event) {
-      is RegisterSendChannelEvent -> processRegisterSendChannelEvent(event)
-      is UnregisterSendChannelEvent -> processUnregisterSendChannelEvent(event)
-      is ReloadEvent -> processReloadEvent()
-      is ResultEvent -> processResultEvent(event)
-    }
-
-  private fun processRegisterSendChannelEvent(event: RegisterSendChannelEvent) {
-    registeredSendChannels.add(event.typedChannel())
-
-    lastResult.get().also {
-      if (it != null) {
-        event.typedChannel<Result<ResultType>>().trySend(it)
-      } else if (reloadJob == null) {
-        processReloadEvent()
-      }
-    }
-  }
-
-  private fun processUnregisterSendChannelEvent(event: UnregisterSendChannelEvent) {
-    registeredSendChannels.listIterator().let {
-      while (it.hasNext()) {
-        if (it.next() === event.channel) {
-          it.remove()
-          break
-        }
-      }
-    }
-  }
-
-  private fun processReloadEvent() {
-    if (reloadJob?.isActive == true) {
+    query.dataConnect.coroutineScope.launch(sequentialDispatcher) {
       pendingReload = true
-      return
-    }
-
-    reloadJob =
-      subscription.coroutineScope.launch {
-        val result =
-          try {
-            Result.success(subscription.query.execute())
-          } catch (e: Throwable) {
-            Result.failure(e)
-          }
-
-        eventChannel.trySend(ResultEvent(result))
-      }
-  }
-
-  private fun processResultEvent(event: ResultEvent) {
-    if (pendingReload) {
-      pendingReload = false
-      reload()
-    }
-
-    lastResult.set(event.typedResult())
-
-    registeredSendChannels.iterator().let {
-      while (it.hasNext()) {
-        val sendResult = it.next().trySend(event.typedResult())
-        if (sendResult.isClosed) {
-          it.remove()
+      if (!reloadInProgress) {
+        reloadInProgress = true
+        try {
+          doReload()
+        } finally {
+          reloadInProgress = false
         }
       }
     }
   }
 
-  private sealed interface Event
-  private object ReloadEvent : Event
-
-  private sealed class SendChannelEvent(val channel: SendChannel<*>) : Event {
-    @Suppress("UNCHECKED_CAST")
-    fun <T> typedChannel(): SendChannel<T> {
-      return channel as SendChannel<T>
-    }
+  fun update(variables: VariablesType) {
+    _variables.set(variables)
+    reload()
   }
 
-  private class RegisterSendChannelEvent(channel: SendChannel<*>) : SendChannelEvent(channel)
-  private class UnregisterSendChannelEvent(channel: SendChannel<*>) : SendChannelEvent(channel)
+  val flow: Flow<Result<ResultType>>
+    get() = sharedFlow.asSharedFlow().onSubscription { reload() }.buffer(Channel.CONFLATED)
 
-  private class ResultEvent(val result: Result<*>) : Event {
-    @Suppress("UNCHECKED_CAST")
-    fun <T> typedResult(): Result<T> {
-      return result as Result<T>
+  private suspend fun doReload() {
+    while (pendingReload) {
+      pendingReload = false
+      val result =
+        try {
+          Result.success(query.execute(variables))
+        } catch (e: Throwable) {
+          Result.failure(e)
+        }
+      sharedFlow.emit(result)
     }
   }
 }
