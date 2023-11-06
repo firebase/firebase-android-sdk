@@ -1,5 +1,6 @@
 # Unreleased
 * [changed] Include more details about app processes in reports.
+* [feature] Updated `firebase-sessions` dependency for more accurate sessions on multi-process apps.
 
 # 18.5.1
 * [fixed] Internal improvement to fix compatibility with Flutter and Unity SDKs. Github
@@ -528,4 +529,3 @@ The following release notes describe changes in the new SDK.
  from your `AndroidManifest.xml` file.
  * [removed] The `fabric.properties` and `crashlytics.properties` files are no
  longer supported. Remove them from your app.
-

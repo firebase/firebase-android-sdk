@@ -50,7 +50,7 @@ internal interface SessionDatastore {
 
   companion object {
     val instance: SessionDatastore
-      get() = Firebase.app.get(SessionDatastore::class.java)
+      get() = Firebase.app[SessionDatastore::class.java]
   }
 }
 
@@ -96,7 +96,7 @@ internal class SessionDatastoreImpl(
     )
 
   private companion object {
-    private val TAG = "FirebaseSessionsRepo"
+    private const val TAG = "FirebaseSessionsRepo"
     private val Context.dataStore: DataStore<Preferences> by
       preferencesDataStore(name = "firebase_session_data")
   }

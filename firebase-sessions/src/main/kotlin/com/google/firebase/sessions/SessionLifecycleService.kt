@@ -181,13 +181,13 @@ internal class SessionLifecycleService : Service() {
   override fun onCreate() {
     super.onCreate()
     handlerThread.start()
-    messageHandler = MessageHandler(handlerThread.getLooper())
+    messageHandler = MessageHandler(handlerThread.looper)
     messenger = Messenger(messageHandler)
   }
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
   override fun onBind(intent: Intent): IBinder? {
-    Log.d(TAG, "Service bound to new client on process ${intent.getAction()}")
+    Log.d(TAG, "Service bound to new client on process ${intent.action}")
     val callbackMessenger = getClientCallback(intent)
     if (callbackMessenger != null) {
       val clientBoundMsg = Message.obtain(null, CLIENT_BOUND, 0, 0)
