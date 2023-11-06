@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.testing
 
-/** Interface for listening to the initiation of a new session. */
-internal interface SessionInitiateListener {
-  /** To be called whenever a new session is initiated. */
-  suspend fun onInitiateSession(sessionDetails: SessionDetails)
+import com.google.firebase.sessions.SessionDetails
+import com.google.firebase.sessions.SessionFirelogPublisher
+
+/**
+ * Fake implementation of [SessionFirelogPublisher] that allows for inspecting the session details
+ * that were sent to it.
+ */
+internal class FakeFirelogPublisher : SessionFirelogPublisher {
+
+  /** All the sessions that were uploaded via this fake [SessionFirelogPublisher] */
+  val loggedSessions = ArrayList<SessionDetails>()
+
+  override fun logSession(sessionDetails: SessionDetails) {
+    loggedSessions.add(sessionDetails)
+  }
 }

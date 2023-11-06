@@ -42,13 +42,15 @@ class EventGDTLoggerTest {
   fun event_logsToGoogleDataTransport() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
-      SessionEvents.startSession(
+      SessionEvents.buildSession(
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(
           localOverrideSettings = FakeSettingsProvider(),
           remoteSettings = FakeSettingsProvider(),
         ),
+        TestSessionEventData.TEST_PROCESS_DETAILS,
+        TestSessionEventData.TEST_APP_PROCESS_DETAILS,
       )
     val fakeTransportFactory = FakeTransportFactory()
     val fakeTransportFactoryProvider = FakeProvider(fakeTransportFactory as TransportFactory)

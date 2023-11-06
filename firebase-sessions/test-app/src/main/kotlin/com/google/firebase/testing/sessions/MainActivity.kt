@@ -17,14 +17,16 @@
 package com.google.firebase.testing.sessions
 
 import android.os.Bundle
-import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.testing.sessions.databinding.ActivityMainBinding
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
+
+  private lateinit var binding: ActivityMainBinding
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    setContentView(R.layout.activity_main)
 
-    findViewById<TextView>(R.id.greeting_text).text = getText(R.string.firebase_greetings)
+    binding = ActivityMainBinding.inflate(layoutInflater)
+    setContentView(binding.root)
   }
 }
