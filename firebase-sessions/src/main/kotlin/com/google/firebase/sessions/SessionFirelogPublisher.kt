@@ -67,6 +67,8 @@ internal class SessionFirelogPublisherImpl(
             firebaseApp,
             sessionDetails,
             sessionSettings,
+            ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext),
+            ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
             FirebaseSessionsDependencies.getRegisteredSubscribers(),
             getFirebaseInstallationId(),
           )
