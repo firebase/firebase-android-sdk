@@ -105,9 +105,9 @@ class FirebaseSessionsIntegrationTest {
 
     launchApp()
     // TODO: Uncomment after the integration with the sessions sdk is re-enabled
-    //Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    //val newSession = getCurrentSessionId()
-    //assertThat(newSession).isNotEqualTo(origSession)
+    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    // val newSession = getCurrentSessionId()
+    // assertThat(newSession).isNotEqualTo(origSession)
   }
 
   @Test
@@ -135,9 +135,9 @@ class FirebaseSessionsIntegrationTest {
 
     launchApp()
     // TODO: Uncomment after the integration with the sessions sdk is re-enabled
-    //Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    //val newSession = getCurrentSessionId()
-    //assertThat(origSession).isNotEqualTo(newSession)
+    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    // val newSession = getCurrentSessionId()
+    // assertThat(origSession).isNotEqualTo(newSession)
   }
 
   @Test
@@ -152,9 +152,9 @@ class FirebaseSessionsIntegrationTest {
 
     launchApp()
     // TODO: Uncomment after the integration with the sessions sdk is re-enabled
-    //Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    //val newSession = getCurrentSessionId()
-    //assertThat(newSession).isNotEqualTo(origSession)
+    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    // val newSession = getCurrentSessionId()
+    // assertThat(newSession).isNotEqualTo(origSession)
   }
 
   private fun launchApp() {
