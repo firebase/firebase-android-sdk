@@ -31,6 +31,7 @@ import java.util.regex.Pattern
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -76,6 +77,7 @@ class FirebaseSessionsIntegrationTest {
     assertThat(sessionId1).isEqualTo(sessionId2)
   }
 
+  @Ignore("Disabling test until the integration with the sessions sdk is re-enabled")
   @Test
   fun newSessionIdAfterLongBackground() {
     launchApp()
@@ -94,16 +96,18 @@ class FirebaseSessionsIntegrationTest {
 
   @Test
   fun newSessionFollowingCrash() {
+    if (!BuildConfig.SHOULD_CRASH_APP) return
+
     launchApp()
     val origSession = getCurrentSessionId()
-
     getButton("CRASH!").click()
     dismissPossibleErrorDialog()
 
     launchApp()
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val newSession = getCurrentSessionId()
-    assertThat(newSession).isNotEqualTo(origSession)
+    // TODO: Uncomment after the integration with the sessions sdk is re-enabled
+    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    // val newSession = getCurrentSessionId()
+    // assertThat(newSession).isNotEqualTo(origSession)
   }
 
   @Test
@@ -121,6 +125,7 @@ class FirebaseSessionsIntegrationTest {
 
   @Test
   fun anrMainActivity() {
+    if (!BuildConfig.SHOULD_CRASH_APP) return
     launchApp()
     val origSession = getCurrentSessionId()
 
@@ -129,13 +134,15 @@ class FirebaseSessionsIntegrationTest {
     dismissPossibleAnrDialog()
 
     launchApp()
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val newSession = getCurrentSessionId()
-    assertThat(origSession).isNotEqualTo(newSession)
+    // TODO: Uncomment after the integration with the sessions sdk is re-enabled
+    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    // val newSession = getCurrentSessionId()
+    // assertThat(origSession).isNotEqualTo(newSession)
   }
 
   @Test
   fun crashSecondaryProcess() {
+    if (!BuildConfig.SHOULD_CRASH_APP) return
     launchApp()
     navigateToSecondActivity()
     val origSession = getCurrentSessionId()
@@ -144,9 +151,10 @@ class FirebaseSessionsIntegrationTest {
     dismissPossibleErrorDialog()
 
     launchApp()
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val newSession = getCurrentSessionId()
-    assertThat(newSession).isNotEqualTo(origSession)
+    // TODO: Uncomment after the integration with the sessions sdk is re-enabled
+    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    // val newSession = getCurrentSessionId()
+    // assertThat(newSession).isNotEqualTo(origSession)
   }
 
   private fun launchApp() {

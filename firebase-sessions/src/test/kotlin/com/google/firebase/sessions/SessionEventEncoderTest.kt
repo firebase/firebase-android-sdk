@@ -53,6 +53,8 @@ class SessionEventEncoderTest {
           localOverrideSettings = FakeSettingsProvider(),
           remoteSettings = FakeSettingsProvider(),
         ),
+        TestSessionEventData.TEST_PROCESS_DETAILS,
+        TestSessionEventData.TEST_APP_PROCESS_DETAILS,
         subscribers =
           mapOf(
             SessionSubscriber.Name.CRASHLYTICS to FakeSessionSubscriber(),
@@ -95,7 +97,14 @@ class SessionEventEncoderTest {
                 "appBuildVersion":"0",
                 "deviceManufacturer":"${Build.MANUFACTURER}"
               }
-            }
+            },
+            "currentProcessDetails":{
+              "processName":"default",
+              "pid":1,
+              "importance":100,
+              "default":true
+            },
+            "appProcessDetails":[]
           }
         """
           .lines()
@@ -128,7 +137,9 @@ class SessionEventEncoderTest {
               appBuildVersion = "",
               deviceManufacturer = "",
             ),
-          )
+          ),
+        currentProcessDetails = ProcessDetails("", 0, 0, false),
+        appProcessDetails = listOf(),
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
@@ -162,7 +173,14 @@ class SessionEventEncoderTest {
                 "appBuildVersion":"",
                 "deviceManufacturer":""
               }
-            }
+            },
+            "currentProcessDetails":{
+              "processName":"",
+              "pid":0,
+              "importance":0,
+              "default":false
+              },
+            "appProcessDetails":[]
           }
         """
           .lines()

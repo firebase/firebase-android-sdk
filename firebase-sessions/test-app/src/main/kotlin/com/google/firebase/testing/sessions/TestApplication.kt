@@ -18,56 +18,13 @@ package com.google.firebase.testing.sessions
 
 import android.app.Application
 import android.content.IntentFilter
-import android.os.Handler
-import android.os.Looper
-import android.widget.TextView
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies
-import com.google.firebase.sessions.api.SessionSubscriber
 
 class TestApplication : Application() {
-
-  val broadcastReceiver = CrashBroadcastReceiver()
+  private val broadcastReceiver = CrashBroadcastReceiver()
 
   override fun onCreate() {
     super.onCreate()
     registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.CRASH_ACTION))
     registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.TOAST_ACTION))
-  }
-
-  class FakeSessionSubscriber : SessionSubscriber {
-    override val isDataCollectionEnabled = true
-    override val sessionSubscriberName = SessionSubscriber.Name.MATT_SAYS_HI
-    val viewsToUpdate = mutableListOf<TextView>()
-    val uiHandler = Handler(Looper.getMainLooper())
-
-    var sessionDetails: SessionSubscriber.SessionDetails? = null
-      private set
-
-    override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
-      this.sessionDetails = sessionDetails
-      viewsToUpdate.forEach { updateView(it, sessionDetails?.sessionId) }
-    }
-
-    fun registerView(textView: TextView) {
-      viewsToUpdate.add(textView)
-      updateView(textView, sessionDetails?.sessionId)
-    }
-
-    fun unregisterView(textView: TextView) {
-      viewsToUpdate.remove(textView)
-    }
-
-    private fun updateView(textView: TextView, sessionId: String?) {
-      uiHandler.post { textView.setText(sessionId ?: "No Session Id") }
-    }
-  }
-
-  companion object {
-    val sessionSubscriber = FakeSessionSubscriber()
-
-    init {
-      FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.MATT_SAYS_HI)
-      FirebaseSessionsDependencies.register(sessionSubscriber)
-    }
   }
 }

@@ -47,9 +47,9 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
           FirebaseSessions(
-            container.get(firebaseApp),
-            container.get(sessionsSettings),
-            container.get(backgroundDispatcher),
+            container[firebaseApp],
+            container[sessionsSettings],
+            container[backgroundDispatcher],
           )
         }
         .build(),
@@ -66,11 +66,11 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
           SessionFirelogPublisherImpl(
-            container.get(firebaseApp),
-            container.get(firebaseInstallationsApi),
-            container.get(sessionsSettings),
+            container[firebaseApp],
+            container[firebaseInstallationsApi],
+            container[sessionsSettings],
             EventGDTLogger(container.getProvider(transportFactory)),
-            container.get(backgroundDispatcher),
+            container[backgroundDispatcher],
           )
         }
         .build(),
@@ -82,10 +82,10 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(firebaseInstallationsApi))
         .factory { container ->
           SessionsSettings(
-            container.get(firebaseApp),
-            container.get(blockingDispatcher),
-            container.get(backgroundDispatcher),
-            container.get(firebaseInstallationsApi),
+            container[firebaseApp],
+            container[blockingDispatcher],
+            container[backgroundDispatcher],
+            container[firebaseInstallationsApi],
           )
         }
         .build(),
@@ -95,15 +95,15 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
           SessionDatastoreImpl(
-            container.get(firebaseApp).getApplicationContext(),
-            container.get(backgroundDispatcher)
+            container[firebaseApp].applicationContext,
+            container[backgroundDispatcher]
           )
         }
         .build(),
       Component.builder(SessionLifecycleServiceBinder::class.java)
         .name("sessions-service-binder")
         .add(Dependency.required(firebaseApp))
-        .factory { container -> SessionLifecycleServiceBinderImpl(container.get(firebaseApp)) }
+        .factory { container -> SessionLifecycleServiceBinderImpl(container[firebaseApp]) }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )

@@ -13,15 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package com.google.firebase.crashlytics.internal
+package com.google.firebase.sessions
 
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails
 
 /**
  * Provider of ProcessDetails.
@@ -37,19 +35,19 @@ internal object ProcessDetailsProvider {
     val runningAppProcesses = activityManager?.runningAppProcesses ?: listOf()
 
     return runningAppProcesses
-      .filterNotNull()
-      .filter {
-        // Only collect process info for this app's processes.
-        it.uid == appUid
-      }
-      .map { runningAppProcessInfo ->
-        ProcessDetails.builder()
-          .setProcessName(runningAppProcessInfo.processName)
-          .setPid(runningAppProcessInfo.pid)
-          .setImportance(runningAppProcessInfo.importance)
-          .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
-          .build()
-      }
+        .filterNotNull()
+        .filter {
+          // Only collect process info for this app's processes.
+          it.uid == appUid
+        }
+        .map { runningAppProcessInfo ->
+          ProcessDetails(
+              processName = runningAppProcessInfo.processName,
+              pid = runningAppProcessInfo.pid,
+              importance = runningAppProcessInfo.importance,
+              isDefault = runningAppProcessInfo.processName == defaultProcessName,
+          )
+        }
   }
 
   /**
@@ -61,31 +59,26 @@ internal object ProcessDetailsProvider {
   fun getCurrentProcessDetails(context: Context): ProcessDetails {
     val pid = Process.myPid()
     return getAppProcessDetails(context).find { it.pid == pid }
-      ?: buildProcessDetails(getProcessName(), pid)
+        ?: buildProcessDetails(getProcessName(), pid)
   }
 
   /** Builds a ProcessDetails object. */
-  @JvmOverloads
   fun buildProcessDetails(
-    processName: String,
-    pid: Int = 0,
-    importance: Int = 0,
-    isDefaultProcess: Boolean = false
-  ) =
-    ProcessDetails.builder()
-      .setProcessName(processName)
-      .setPid(pid)
-      .setImportance(importance)
-      .setDefaultProcess(isDefaultProcess)
-      .build()
+      processName: String,
+      pid: Int = 0,
+      importance: Int = 0,
+      isDefaultProcess: Boolean = false
+  ) = ProcessDetails(processName, pid, importance, isDefaultProcess)
 
   /** Gets the app's current process name. If the API is not available, returns an empty string. */
-  private fun getProcessName(): String =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+  private fun getProcessName(): String {
+    @Suppress("DEPRECATION")
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       Process.myProcessName()
     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       Application.getProcessName() ?: ""
     } else {
       ""
     }
+  }
 }
