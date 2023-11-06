@@ -37,6 +37,8 @@ internal object SessionEvents {
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
+    currentProcessDetails: ProcessDetails,
+    appProcessDetails: List<ProcessDetails>,
     subscribers: Map<SessionSubscriber.Name, SessionSubscriber> = emptyMap(),
     firebaseInstallationId: String = "",
   ) =
@@ -55,7 +57,9 @@ internal object SessionEvents {
           ),
           firebaseInstallationId,
         ),
-      applicationInfo = getApplicationInfo(firebaseApp)
+      applicationInfo = getApplicationInfo(firebaseApp),
+      currentProcessDetails = currentProcessDetails,
+      appProcessDetails = appProcessDetails,
     )
 
   fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {
