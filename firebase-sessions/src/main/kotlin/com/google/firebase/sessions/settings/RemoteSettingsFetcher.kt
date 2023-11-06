@@ -26,7 +26,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-internal interface CrashlyticsSettingsFetcher {
+internal fun interface CrashlyticsSettingsFetcher {
   suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,

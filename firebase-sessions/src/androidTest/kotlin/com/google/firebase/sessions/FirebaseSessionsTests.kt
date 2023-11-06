@@ -23,6 +23,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.initialize
+import com.google.firebase.sessions.settings.SessionsSettings
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -55,6 +56,13 @@ class FirebaseSessionsTests {
   @Test
   fun firebaseSessionsDoesInitialize() {
     assertThat(FirebaseSessions.instance).isNotNull()
+  }
+
+  @Test
+  fun firebaseSessionsDependenciesDoInitialize() {
+    assertThat(SessionFirelogPublisher.instance).isNotNull()
+    assertThat(SessionGenerator.instance).isNotNull()
+    assertThat(SessionsSettings.instance).isNotNull()
   }
 
   companion object {

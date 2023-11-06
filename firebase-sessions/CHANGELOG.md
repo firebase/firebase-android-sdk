@@ -1,5 +1,7 @@
 # Unreleased
 
+* [feature] Added support for accurate sessions on multi-process apps.
+
 # 1.0.2
 
 * [fixed] Made Sessions more resilient to the FirebaseApp instance being deleted.
