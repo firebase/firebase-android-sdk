@@ -25,6 +25,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import com.google.firebase.sessions.SessionDataStoreConfigs
 import com.google.firebase.sessions.SessionEvents
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
@@ -135,12 +136,10 @@ internal class SessionsSettings(
   }
 
   internal companion object {
-    private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
-
     val instance: SessionsSettings
       get() = Firebase.app[SessionsSettings::class.java]
 
     private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(name = SESSION_CONFIGS_NAME)
+      preferencesDataStore(name = SessionDataStoreConfigs.SETTINGS_CONFIG_NAME)
   }
 }

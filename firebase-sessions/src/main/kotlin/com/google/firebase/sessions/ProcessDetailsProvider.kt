@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.google.firebase.sessions
 
 import android.app.ActivityManager
@@ -20,6 +21,7 @@ import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
+import com.google.android.gms.common.util.ProcessUtils
 
 /**
  * Provider of ProcessDetails.
@@ -35,19 +37,19 @@ internal object ProcessDetailsProvider {
     val runningAppProcesses = activityManager?.runningAppProcesses ?: listOf()
 
     return runningAppProcesses
-        .filterNotNull()
-        .filter {
-          // Only collect process info for this app's processes.
-          it.uid == appUid
-        }
-        .map { runningAppProcessInfo ->
-          ProcessDetails(
-              processName = runningAppProcessInfo.processName,
-              pid = runningAppProcessInfo.pid,
-              importance = runningAppProcessInfo.importance,
-              isDefault = runningAppProcessInfo.processName == defaultProcessName,
-          )
-        }
+      .filterNotNull()
+      .filter {
+        // Only collect process info for this app's processes.
+        it.uid == appUid
+      }
+      .map { runningAppProcessInfo ->
+        ProcessDetails(
+          processName = runningAppProcessInfo.processName,
+          pid = runningAppProcessInfo.pid,
+          importance = runningAppProcessInfo.importance,
+          isDefault = runningAppProcessInfo.processName == defaultProcessName,
+        )
+      }
   }
 
   /**
@@ -59,26 +61,35 @@ internal object ProcessDetailsProvider {
   fun getCurrentProcessDetails(context: Context): ProcessDetails {
     val pid = Process.myPid()
     return getAppProcessDetails(context).find { it.pid == pid }
-        ?: buildProcessDetails(getProcessName(), pid)
+      ?: buildProcessDetails(getProcessName(), pid)
   }
 
   /** Builds a ProcessDetails object. */
-  fun buildProcessDetails(
-      processName: String,
-      pid: Int = 0,
-      importance: Int = 0,
-      isDefaultProcess: Boolean = false
+  private fun buildProcessDetails(
+    processName: String,
+    pid: Int = 0,
+    importance: Int = 0,
+    isDefaultProcess: Boolean = false
   ) = ProcessDetails(processName, pid, importance, isDefaultProcess)
 
-  /** Gets the app's current process name. If the API is not available, returns an empty string. */
-  private fun getProcessName(): String {
-    @Suppress("DEPRECATION")
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      Process.myProcessName()
-    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      Application.getProcessName() ?: ""
-    } else {
-      ""
+  /** Gets the app's current process name. If it could not be found, returns an empty string. */
+  internal fun getProcessName(): String {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      return Process.myProcessName()
     }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      Application.getProcessName()?.let {
+        return it
+      }
+    }
+
+    // GMS core has different ways to get the process name on old api levels.
+    ProcessUtils.getMyProcessName()?.let {
+      return it
+    }
+
+    // Default to an empty string if nothing works.
+    return ""
   }
 }
