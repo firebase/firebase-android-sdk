@@ -1,8 +1,3 @@
-@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
-
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
-
 /*
  * Copyright 2023 Google LLC
  *
@@ -19,6 +14,11 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
  * limitations under the License.
  */
 
+@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
@@ -32,7 +32,7 @@ android {
   compileSdk = 33
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
-    minSdk = 16
+    minSdk = 18
     targetSdk = 33
     versionCode = 1
     versionName = "1.0"
@@ -44,29 +44,54 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   kotlinOptions { jvmTarget = "1.8" }
+  buildFeatures { viewBinding = true }
+  buildTypes {
+    release {
+      // We only want to actually crash the app for the scheduled runs, not the integration tests
+      buildConfigField(
+        "boolean",
+        "SHOULD_CRASH_APP",
+        project.hasProperty("useReleasedVersions").toString()
+      )
+    }
+    debug {
+      // We only want to actually crash the app for the scheduled runs, not the integration tests
+      buildConfigField(
+        "boolean",
+        "SHOULD_CRASH_APP",
+        project.hasProperty("useReleasedVersions").toString()
+      )
+    }
+  }
 }
 
 dependencies {
   if (project.hasProperty("useReleasedVersions")) {
-    val latestReleasedVersion: String by project
-    println("Using sessions released version: $latestReleasedVersion")
-    // TODO(mrober): How to find the released versions of crashlytics and perf?
-    implementation("com.google.firebase:firebase-crashlytics:18.4.3")
-    implementation("com.google.firebase:firebase-perf:20.4.1")
-    implementation("com.google.firebase:firebase-sessions:$latestReleasedVersion")
+    implementation(platform("com.google.firebase:firebase-bom:latest.release"))
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-perf")
+    implementation("com.google.firebase:firebase-sessions")
   } else {
-    implementation(project(":firebase-crashlytics"))
-    implementation(project(":firebase-perf"))
+    implementation(project(":firebase-crashlytics")) {
+      exclude(group = "com.google.firebase", module = "firebase-sessions")
+    }
+    implementation(project(":firebase-perf")) {
+      exclude(group = "com.google.firebase", module = "firebase-sessions")
+    }
     implementation(project(":firebase-sessions"))
   }
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+  implementation("androidx.core:core-ktx:1.7.0")
   implementation("androidx.multidex:multidex:2.0.1")
+  implementation("androidx.navigation:navigation-fragment-ktx:2.4.1")
+  implementation("androidx.navigation:navigation-ui-ktx:2.4.1")
   implementation("com.google.android.material:material:1.9.0")
   implementation(libs.androidx.core)
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.3")
+  androidTestImplementation("com.google.firebase:firebase-common:20.4.2")
+  androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)

@@ -23,6 +23,7 @@ import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeSettingsProvider
+import com.google.firebase.sessions.testing.TestSessionEventData
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_DATA_COLLECTION_STATUS
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DATA
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DETAILS
@@ -41,13 +42,15 @@ class SessionEventTest {
   fun sessionStart_populatesSessionDetailsCorrectly() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
-      SessionEvents.startSession(
+      SessionEvents.buildSession(
         fakeFirebaseApp.firebaseApp,
         TEST_SESSION_DETAILS,
         SessionsSettings(
           localOverrideSettings = FakeSettingsProvider(),
           remoteSettings = FakeSettingsProvider(),
         ),
+        TestSessionEventData.TEST_PROCESS_DETAILS,
+        TestSessionEventData.TEST_APP_PROCESS_DETAILS,
       )
 
     assertThat(sessionEvent).isEqualTo(TEST_SESSION_EVENT)
@@ -61,13 +64,15 @@ class SessionEventTest {
     val context = firebaseApp.applicationContext
 
     val sessionEvent =
-      SessionEvents.startSession(
+      SessionEvents.buildSession(
         firebaseApp,
         TEST_SESSION_DETAILS,
         SessionsSettings(
           localOverrideSettings = LocalOverrideSettings(context),
           remoteSettings = FakeSettingsProvider(),
         ),
+        TestSessionEventData.TEST_PROCESS_DETAILS,
+        TestSessionEventData.TEST_APP_PROCESS_DETAILS,
       )
 
     assertThat(sessionEvent)

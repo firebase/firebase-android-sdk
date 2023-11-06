@@ -28,7 +28,7 @@ import com.google.firebase.inject.Provider
  *
  * @hide
  */
-internal interface EventGDTLoggerInterface {
+internal fun interface EventGDTLoggerInterface {
   fun log(sessionEvent: SessionEvent)
 }
 
