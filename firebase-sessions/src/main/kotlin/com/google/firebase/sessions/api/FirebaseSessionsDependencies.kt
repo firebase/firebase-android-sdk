@@ -39,6 +39,19 @@ object FirebaseSessionsDependencies {
    * the Sessions SDK will never generate a session.
    */
   fun addDependency(subscriberName: SessionSubscriber.Name) {
+    if (subscriberName == SessionSubscriber.Name.PERFORMANCE) {
+      throw IllegalArgumentException(
+        """
+          Incompatible versions of Firebase Perf and Firebase Sessions.
+          A safe combination would be:
+            firebase-sessions:1.1.0
+            firebase-crashlytics:18.5.0
+            firebase-perf:20.5.0
+          For more information contact Firebase Support.
+        """
+          .trimIndent()
+      )
+    }
     if (dependencies.containsKey(subscriberName)) {
       Log.d(TAG, "Dependency $subscriberName already added.")
       return
@@ -46,13 +59,15 @@ object FirebaseSessionsDependencies {
 
     // The dependency is locked until the subscriber registers itself.
     dependencies[subscriberName] = Dependency(Mutex(locked = true))
+    Log.d(TAG, "Dependency to $subscriberName added.")
   }
 
   /**
    * Register and unlock the subscriber. This must be called before [getRegisteredSubscribers] can
    * return.
    */
-  internal fun register(subscriber: SessionSubscriber) {
+  @JvmStatic
+  fun register(subscriber: SessionSubscriber) {
     val subscriberName = subscriber.sessionSubscriberName
     val dependency = getDependency(subscriberName)
 
@@ -61,6 +76,7 @@ object FirebaseSessionsDependencies {
       return
     }
     dependency.subscriber = subscriber
+    Log.d(TAG, "Subscriber $subscriberName registered.")
 
     // Unlock to show the subscriber has been registered, it is possible to get it now.
     dependency.mutex.unlock()
