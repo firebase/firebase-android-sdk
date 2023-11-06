@@ -66,6 +66,6 @@ internal class FirebaseSessions(
     private const val TAG = "FirebaseSessions"
 
     val instance: FirebaseSessions
-      get() = Firebase.app.get(FirebaseSessions::class.java)
+      get() = Firebase.app[FirebaseSessions::class.java]
   }
 }

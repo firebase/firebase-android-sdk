@@ -138,7 +138,7 @@ internal class SessionsSettings(
     private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
 
     val instance: SessionsSettings
-      get() = Firebase.app.get(SessionsSettings::class.java)
+      get() = Firebase.app[SessionsSettings::class.java]
 
     private val Context.dataStore: DataStore<Preferences> by
       preferencesDataStore(name = SESSION_CONFIGS_NAME)

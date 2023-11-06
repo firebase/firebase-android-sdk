@@ -66,6 +66,6 @@ internal class SessionGenerator(
 
   internal companion object {
     val instance: SessionGenerator
-      get() = Firebase.app.get(SessionGenerator::class.java)
+      get() = Firebase.app[SessionGenerator::class.java]
   }
 }

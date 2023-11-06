@@ -100,22 +100,22 @@ internal class RemoteSettings(
           var sessionTimeoutSeconds: Int? = null
           var cacheDuration: Int? = null
           if (it.has("app_quality")) {
-            val aqsSettings = it.get("app_quality") as JSONObject
+            val aqsSettings = it["app_quality"] as JSONObject
             try {
               if (aqsSettings.has("sessions_enabled")) {
-                sessionsEnabled = aqsSettings.get("sessions_enabled") as Boolean?
+                sessionsEnabled = aqsSettings["sessions_enabled"] as Boolean?
               }
 
               if (aqsSettings.has("sampling_rate")) {
-                sessionSamplingRate = aqsSettings.get("sampling_rate") as Double?
+                sessionSamplingRate = aqsSettings["sampling_rate"] as Double?
               }
 
               if (aqsSettings.has("session_timeout_seconds")) {
-                sessionTimeoutSeconds = aqsSettings.get("session_timeout_seconds") as Int?
+                sessionTimeoutSeconds = aqsSettings["session_timeout_seconds"] as Int?
               }
 
               if (aqsSettings.has("cache_duration")) {
-                cacheDuration = aqsSettings.get("cache_duration") as Int?
+                cacheDuration = aqsSettings["cache_duration"] as Int?
               }
             } catch (exception: JSONException) {
               Log.e(TAG, "Error parsing the configs remotely fetched: ", exception)
