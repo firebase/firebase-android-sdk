@@ -228,7 +228,7 @@ class SessionsSettingsTest {
 
   @Test
   fun sessionSettings_dataStorePreferencesNameIsFilenameSafe() {
-    assertThat(SessionDataStoreConfigs.SESSIONS_CONFIGS_NAME).matches("^[a-zA-Z0-9_=]+\$")
+    assertThat(SessionDataStoreConfigs.SESSIONS_CONFIG_NAME).matches("^[a-zA-Z0-9_=]+\$")
   }
 
   @After

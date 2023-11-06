@@ -98,6 +98,6 @@ internal class SessionDatastoreImpl(
   private companion object {
     private const val TAG = "FirebaseSessionsRepo"
     private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(name = SessionDataStoreConfigs.SESSIONS_CONFIGS_NAME)
+      preferencesDataStore(name = SessionDataStoreConfigs.SESSIONS_CONFIG_NAME)
   }
 }

@@ -140,6 +140,6 @@ internal class SessionsSettings(
       get() = Firebase.app[SessionsSettings::class.java]
 
     private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(name = SessionDataStoreConfigs.SETTINGS_CONFIGS_NAME)
+      preferencesDataStore(name = SessionDataStoreConfigs.SETTINGS_CONFIG_NAME)
   }
 }

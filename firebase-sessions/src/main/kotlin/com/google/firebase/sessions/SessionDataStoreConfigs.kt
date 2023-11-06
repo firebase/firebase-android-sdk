@@ -33,8 +33,8 @@ object SessionDataStoreConfigs {
     )
 
   /** Config name for [SessionDatastore] */
-  val SESSIONS_CONFIGS_NAME = "firebase_session_${PROCESS_NAME}_data"
+  val SESSIONS_CONFIG_NAME = "firebase_session_${PROCESS_NAME}_data"
 
   /** Config name for [SessionsSettings] */
-  val SETTINGS_CONFIGS_NAME = "firebase_session_${PROCESS_NAME}_settings"
+  val SETTINGS_CONFIG_NAME = "firebase_session_${PROCESS_NAME}_settings"
 }
