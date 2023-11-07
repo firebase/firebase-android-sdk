@@ -18,15 +18,15 @@ import android.content.Context
 import androidx.annotation.Keep
 import androidx.annotation.RestrictTo
 import com.google.firebase.FirebaseApp
-import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
+import com.google.firebase.annotations.concurrent.Lightweight
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.platforminfo.LibraryVersionComponent
-import kotlinx.coroutines.CoroutineDispatcher
+import java.util.concurrent.Executor
 
 /**
  * [ComponentRegistrar] for setting up [FirebaseDataConnect].
@@ -44,14 +44,14 @@ internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(context))
-        .add(Dependency.required(backgroundDispatcher))
-        .add(Dependency.required(blockingDispatcher))
+        .add(Dependency.required(blockingExecutor))
+        .add(Dependency.required(nonBlockingExecutor))
         .factory { container ->
           FirebaseDataConnectFactory(
-            container.get(context),
-            container.get(firebaseApp),
-            container.get(backgroundDispatcher),
-            container.get(blockingDispatcher),
+            context = container.get(context),
+            firebaseApp = container.get(firebaseApp),
+            blockingExecutor = container.get(blockingExecutor),
+            nonBlockingExecutor = container.get(nonBlockingExecutor),
           )
         }
         .build(),
@@ -63,9 +63,7 @@ internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
 
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val context = unqualified(Context::class.java)
-    private val backgroundDispatcher =
-      qualified(Background::class.java, CoroutineDispatcher::class.java)
-    private val blockingDispatcher =
-      qualified(Blocking::class.java, CoroutineDispatcher::class.java)
+    private val blockingExecutor = qualified(Blocking::class.java, Executor::class.java)
+    private val nonBlockingExecutor = qualified(Lightweight::class.java, Executor::class.java)
   }
 }

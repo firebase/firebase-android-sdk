@@ -18,13 +18,14 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import java.io.Closeable
+import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 
 class FirebaseDataConnect
@@ -34,7 +35,8 @@ internal constructor(
   private val projectId: String,
   val location: String,
   val service: String,
-  internal val backgroundDispatcher: CoroutineDispatcher,
+  internal val blockingExecutor: Executor,
+  internal val nonBlockingExecutor: Executor,
   private val creator: FirebaseDataConnectFactory
 ) : Closeable {
 
@@ -54,7 +56,9 @@ internal constructor(
 
   internal val coroutineScope =
     CoroutineScope(
-      SupervisorJob() + backgroundDispatcher + CoroutineName("FirebaseDataConnectImpl")
+      SupervisorJob() +
+        nonBlockingExecutor.asCoroutineDispatcher() +
+        CoroutineName("FirebaseDataConnect")
     )
 
   private val lock = ReentrantReadWriteLock()
@@ -84,7 +88,7 @@ internal constructor(
     settings = settings.builder.build(block)
   }
 
-  private val grpcClint: DataConnectGrpcClient by lazy {
+  private val grpcClient: DataConnectGrpcClient by lazy {
     logger.debug { "DataConnectGrpcClient initialization started" }
     lock.write {
       if (closed) {
@@ -100,6 +104,7 @@ internal constructor(
           hostName = settings.hostName,
           port = settings.port,
           sslEnabled = settings.sslEnabled,
+          executor = blockingExecutor,
           creatorLoggerId = logger.id,
         )
         .also { logger.debug { "DataConnectGrpcClient initialization complete: $it" } }
@@ -107,7 +112,7 @@ internal constructor(
   }
 
   internal suspend fun <V, R> executeQuery(ref: QueryRef<V, R>, variables: V): R =
-    grpcClint
+    grpcClient
       .executeQuery(
         operationName = ref.operationName,
         operationSet = ref.operationSet,
@@ -125,7 +130,7 @@ internal constructor(
       }
 
   internal suspend fun <V, R> executeMutation(ref: MutationRef<V, R>, variables: V): R =
-    grpcClint
+    grpcClient
       .executeMutation(
         operationName = ref.operationName,
         operationSet = ref.operationSet,
@@ -147,7 +152,7 @@ internal constructor(
     lock.write {
       coroutineScope.cancel()
       try {
-        grpcClint.close()
+        grpcClient.close()
       } finally {
         closed = true
         creator.remove(this)

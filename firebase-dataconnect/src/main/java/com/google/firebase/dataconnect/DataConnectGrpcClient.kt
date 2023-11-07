@@ -28,9 +28,8 @@ import google.internal.firebase.firemat.v0.executeQueryRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asExecutor
 
 internal class DataConnectGrpcClient(
   val context: Context,
@@ -40,6 +39,7 @@ internal class DataConnectGrpcClient(
   val hostName: String,
   val port: Int,
   val sslEnabled: Boolean,
+  executor: Executor,
   creatorLoggerId: String,
 ) {
   private val logger = Logger("DataConnectGrpcClient")
@@ -73,9 +73,7 @@ internal class DataConnectGrpcClient(
       // failsafe.
       it.keepAliveTime(30, TimeUnit.SECONDS)
 
-      // TODO: Create a dedicated executor rather than using a global one.
-      //  See go/kotlin/coroutines/coroutine-contexts-scopes.md for details.
-      it.executor(Dispatchers.IO.asExecutor())
+      it.executor(executor)
 
       // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel to
       // respond more gracefully to network change events, such as switching from cellular to wifi.

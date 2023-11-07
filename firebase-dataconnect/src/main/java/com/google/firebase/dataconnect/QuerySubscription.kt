@@ -16,7 +16,6 @@ package com.google.firebase.dataconnect
 import com.google.firebase.concurrent.FirebaseExecutors
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -37,7 +36,7 @@ internal constructor(
   private val sharedFlow =
     MutableSharedFlow<Result<ResultType>>(replay = 1, extraBufferCapacity = Integer.MAX_VALUE)
   private val sequentialDispatcher =
-    FirebaseExecutors.newSequentialExecutor(query.dataConnect.backgroundDispatcher.asExecutor())
+    FirebaseExecutors.newSequentialExecutor(query.dataConnect.nonBlockingExecutor)
       .asCoroutineDispatcher()
 
   // NOTE: The variables below must ONLY be accessed from coroutines that use `sequentialDispatcher`

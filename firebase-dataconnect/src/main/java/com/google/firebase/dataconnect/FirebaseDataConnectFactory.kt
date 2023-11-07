@@ -16,15 +16,15 @@ package com.google.firebase.dataconnect
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseAppLifecycleListener
+import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import kotlinx.coroutines.CoroutineDispatcher
 
 internal class FirebaseDataConnectFactory(
   private val context: Context,
   private val firebaseApp: FirebaseApp,
-  private val backgroundDispatcher: CoroutineDispatcher,
-  private val blockingDispatcher: CoroutineDispatcher,
+  private val blockingExecutor: Executor,
+  private val nonBlockingExecutor: Executor,
 ) {
 
   private val firebaseAppLifecycleListener = FirebaseAppLifecycleListener { _, _ -> close() }
@@ -60,7 +60,8 @@ internal class FirebaseDataConnectFactory(
           projectId = projectId,
           location = location,
           service = service,
-          backgroundDispatcher = backgroundDispatcher,
+          blockingExecutor = blockingExecutor,
+          nonBlockingExecutor = nonBlockingExecutor,
           creator = this
         )
       instancesByCacheKey[key] = newInstance
