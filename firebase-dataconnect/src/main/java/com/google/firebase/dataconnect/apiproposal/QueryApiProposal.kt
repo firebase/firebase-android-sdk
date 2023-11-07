@@ -18,16 +18,16 @@ class FirebaseDataConnect {
   val queries: Queries = TODO()
 }
 
-open class DataConnectException internal constructor(message: String, cause: Throwable? = null) :
-  Exception(message, cause)
+open class DataConnectException internal constructor() : Exception()
 
-open class NetworkTransportException internal constructor(message: String, cause: Throwable) :
-  DataConnectException(message, cause)
+open class NetworkTransportException internal constructor() : DataConnectException()
 
-open class ExecutionException internal constructor(message: String) : DataConnectException(message)
+open class GraphQLException internal constructor() : DataConnectException() {
+  val errors: List<String>
+    get() = TODO()
+}
 
-open class ResultDecodeException internal constructor(message: String) :
-  DataConnectException(message)
+open class ResultDecodeException internal constructor() : DataConnectException()
 
 abstract class BaseRef<VariablesType, ResultType> internal constructor() {
   val dataConnect: FirebaseDataConnect
