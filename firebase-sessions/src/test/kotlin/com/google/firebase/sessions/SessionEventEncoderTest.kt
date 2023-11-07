@@ -97,14 +97,7 @@ class SessionEventEncoderTest {
                 "appBuildVersion":"0",
                 "deviceManufacturer":"${Build.MANUFACTURER}"
               }
-            },
-            "currentProcessDetails":{
-              "processName":"default",
-              "pid":1,
-              "importance":100,
-              "default":true
-            },
-            "appProcessDetails":[]
+            }
           }
         """
           .lines()
@@ -138,8 +131,6 @@ class SessionEventEncoderTest {
               deviceManufacturer = "",
             ),
           ),
-        currentProcessDetails = ProcessDetails("", 0, 0, false),
-        appProcessDetails = listOf(),
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
@@ -173,14 +164,7 @@ class SessionEventEncoderTest {
                 "appBuildVersion":"",
                 "deviceManufacturer":""
               }
-            },
-            "currentProcessDetails":{
-              "processName":"",
-              "pid":0,
-              "importance":0,
-              "default":false
-              },
-            "appProcessDetails":[]
+            }
           }
         """
           .lines()
