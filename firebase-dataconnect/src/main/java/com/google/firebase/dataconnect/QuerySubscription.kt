@@ -29,7 +29,10 @@ internal constructor(
     get() = _variables.get()
 
   private val sharedFlow =
-    MutableSharedFlow<Result<ResultType>>(replay = 1, extraBufferCapacity = Integer.MAX_VALUE)
+    MutableSharedFlow<Message<VariablesType, ResultType>>(
+      replay = 1,
+      extraBufferCapacity = Integer.MAX_VALUE
+    )
   private val sequentialDispatcher =
     FirebaseExecutors.newSequentialExecutor(query.dataConnect.nonBlockingExecutor)
       .asCoroutineDispatcher()
@@ -40,7 +43,7 @@ internal constructor(
   private var reloadInProgress = false
   private var pendingReload = false
 
-  val lastResult
+  val lastResult: Message<VariablesType, ResultType>?
     get() = sharedFlow.replayCache.firstOrNull()
 
   fun reload() {
@@ -49,7 +52,7 @@ internal constructor(
       if (!reloadInProgress) {
         reloadInProgress = true
         try {
-          doReload()
+          doReloadLoop()
         } finally {
           reloadInProgress = false
         }
@@ -62,19 +65,32 @@ internal constructor(
     reload()
   }
 
-  val flow: Flow<Result<ResultType>>
+  val flow: Flow<Message<VariablesType, ResultType>>
     get() = sharedFlow.asSharedFlow().onSubscription { reload() }.buffer(Channel.CONFLATED)
 
-  private suspend fun doReload() {
+  private suspend fun doReloadLoop() {
     while (pendingReload) {
       pendingReload = false
-      val result =
-        try {
-          Result.success(query.execute(variables))
-        } catch (e: Throwable) {
-          Result.failure(e)
-        }
-      sharedFlow.emit(result)
+      sharedFlow.emit(reload(variables, query))
     }
   }
+
+  class Message<VariablesType, ResultType>(
+    val variables: VariablesType,
+    val result: Result<ResultType>
+  )
 }
+
+private suspend fun <VariablesType, ResultType> reload(
+  variables: VariablesType,
+  query: QueryRef<VariablesType, ResultType>
+) =
+  QuerySubscription.Message(
+    variables = variables,
+    result =
+      try {
+        Result.success(query.execute(variables))
+      } catch (e: Throwable) {
+        Result.failure(e)
+      }
+  )

@@ -62,7 +62,7 @@ class QuerySubscription<VariablesType, ResultType> internal constructor() {
   // Alternative considered: add `lastResult`. The problem is, what do we do with this value if the
   // variables are changed via a call to update()? Do we clear it? Or do we leave it there even
   // though it came from a request with potentially-different variables?
-  val lastResult: Result<ResultType>?
+  val lastResult: Message<VariablesType, ResultType>?
     get() = TODO()
 
   // Alternative considered: Return `Deferred<Result<T>>` so that customer knows when the reload
@@ -73,7 +73,12 @@ class QuerySubscription<VariablesType, ResultType> internal constructor() {
   // some previous call to reload() by some other unrelated operation.
   fun reload(): Unit = TODO()
 
-  val flow: Flow<Result<ResultType>> = TODO()
+  val flow: Flow<Message<VariablesType, ResultType>> = TODO()
+
+  class Message<VariablesType, ResultType>(
+    val variables: VariablesType,
+    val result: Result<ResultType>
+  )
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,10 +133,10 @@ private class MainActivity : Activity() {
           querySubscriptionFlow =
             activityCoroutineScope.launch {
               it.flow.collect {
-                if (it.isFailure) {
-                  showError(it.exceptionOrNull().toString())
+                if (it.result.isSuccess) {
+                  showPostContent(it.variables.id, it.result.getOrThrow())
                 } else {
-                  showPostContent(it.getOrThrow().post.content)
+                  showError(it.variables.id, it.result.exceptionOrNull()!!)
                 }
               }
             }
@@ -145,8 +150,12 @@ private class MainActivity : Activity() {
 
   fun onLoadButtonClick() {
     activityCoroutineScope.launch {
-      val result = dataConnect.queries.getPost.execute(id = getIdFromTextView())
-      showPostContent(result.post.content)
+      val id = getIdFromTextView()
+      try {
+        showPostContent(id, dataConnect.queries.getPost.execute(id = id))
+      } catch (e: Exception) {
+        showError(id, e)
+      }
     }
   }
 
@@ -156,6 +165,6 @@ private class MainActivity : Activity() {
   }
 
   fun getIdFromTextView(): String = TODO()
-  fun showError(errorMessage: String): Unit = TODO()
-  fun showPostContent(content: String): Unit = TODO()
+  fun showError(postId: String, exception: Throwable): Unit = TODO()
+  fun showPostContent(postId: String, post: GetPostQuery.Result?): Unit = TODO()
 }
