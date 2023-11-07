@@ -100,14 +100,14 @@ class SessionEventEncoderTest {
                   "processName":"com.google.firebase.sessions.test",
                   "pid":0,
                   "importance":100,
-                  "default":false
+                  "defaultProcess":false
                 },
                 "appProcessDetails":[
                   {
                     "processName":"com.google.firebase.sessions.test",
                     "pid":0,
                     "importance":100,
-                    "default":false
+                    "defaultProcess":false
                   }
                 ]
               }
@@ -183,7 +183,7 @@ class SessionEventEncoderTest {
                   "processName":"",
                   "pid":0,
                   "importance":0,
-                  "default":false
+                  "defaultProcess":false
                 },
                 "appProcessDetails":[]
               }
