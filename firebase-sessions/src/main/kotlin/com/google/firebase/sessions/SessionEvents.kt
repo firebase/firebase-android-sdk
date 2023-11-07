@@ -58,8 +58,6 @@ internal object SessionEvents {
           firebaseInstallationId,
         ),
       applicationInfo = getApplicationInfo(firebaseApp),
-      currentProcessDetails = currentProcessDetails,
-      appProcessDetails = appProcessDetails,
     )
 
   fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {
@@ -86,6 +84,8 @@ internal object SessionEvents {
           versionName = packageInfo.versionName ?: buildVersion,
           appBuildVersion = buildVersion,
           deviceManufacturer = Build.MANUFACTURER,
+          ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext),
+          ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
         )
     )
   }

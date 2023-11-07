@@ -95,16 +95,23 @@ class SessionEventEncoderTest {
                 "packageName":"com.google.firebase.sessions.test",
                 "versionName":"1.0.0",
                 "appBuildVersion":"0",
-                "deviceManufacturer":"${Build.MANUFACTURER}"
+                "deviceManufacturer":"${Build.MANUFACTURER}",
+                "currentProcessDetails":{
+                  "processName":"com.google.firebase.sessions.test",
+                  "pid":0,
+                  "importance":100,
+                  "default":false
+                },
+                "appProcessDetails":[
+                  {
+                    "processName":"com.google.firebase.sessions.test",
+                    "pid":0,
+                    "importance":100,
+                    "default":false
+                  }
+                ]
               }
-            },
-            "currentProcessDetails":{
-              "processName":"default",
-              "pid":1,
-              "importance":100,
-              "default":true
-            },
-            "appProcessDetails":[]
+            }
           }
         """
           .lines()
@@ -136,10 +143,10 @@ class SessionEventEncoderTest {
               versionName = "",
               appBuildVersion = "",
               deviceManufacturer = "",
+              currentProcessDetails = ProcessDetails("", 0, 0, false),
+              appProcessDetails = listOf(),
             ),
           ),
-        currentProcessDetails = ProcessDetails("", 0, 0, false),
-        appProcessDetails = listOf(),
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
@@ -171,16 +178,16 @@ class SessionEventEncoderTest {
                 "packageName":"",
                 "versionName":"",
                 "appBuildVersion":"",
-                "deviceManufacturer":""
+                "deviceManufacturer":"",
+                "currentProcessDetails":{
+                  "processName":"",
+                  "pid":0,
+                  "importance":0,
+                  "default":false
+                },
+                "appProcessDetails":[]
               }
-            },
-            "currentProcessDetails":{
-              "processName":"",
-              "pid":0,
-              "importance":0,
-              "default":false
-              },
-            "appProcessDetails":[]
+            }
           }
         """
           .lines()
