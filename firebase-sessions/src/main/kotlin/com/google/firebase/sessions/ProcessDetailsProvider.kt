@@ -47,7 +47,7 @@ internal object ProcessDetailsProvider {
           processName = runningAppProcessInfo.processName,
           pid = runningAppProcessInfo.pid,
           importance = runningAppProcessInfo.importance,
-          isDefault = runningAppProcessInfo.processName == defaultProcessName,
+          isDefaultProcess = runningAppProcessInfo.processName == defaultProcessName,
         )
       }
   }
