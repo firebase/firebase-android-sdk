@@ -18,13 +18,16 @@ class FirebaseDataConnect {
   val queries: Queries = TODO()
 }
 
-open class DataConnectException internal constructor(message: String) : Exception(message)
+open class DataConnectException internal constructor(message: String, cause: Throwable? = null) :
+  Exception(message, cause)
 
-open class QueryExecutionException internal constructor(message: String, val ref: QueryRef<*, *>) :
+open class NetworkTransportException internal constructor(message: String, cause: Throwable) :
+  DataConnectException(message, cause)
+
+open class ExecutionException internal constructor(message: String) : DataConnectException(message)
+
+open class ResultDecodeException internal constructor(message: String) :
   DataConnectException(message)
-
-open class QueryResultDecodeException internal constructor(message: String, ref: QueryRef<*, *>) :
-  QueryExecutionException(message, ref)
 
 abstract class BaseRef<VariablesType, ResultType> internal constructor() {
   val dataConnect: FirebaseDataConnect
@@ -66,7 +69,7 @@ class QuerySubscription<VariablesType, ResultType> internal constructor() {
   // some previous call to reload() by some other unrelated operation.
   fun reload(): Unit = TODO()
 
-  fun flow(): Flow<Result<ResultType>> = TODO()
+  val flow: Flow<Result<ResultType>> = TODO()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,7 +129,7 @@ private class MainActivity : Activity() {
         dataConnect.queries.getPost.subscribe(id = getIdFromTextView()).also {
           querySubscriptionFlow =
             activityCoroutineScope.launch {
-              it.flow().collect {
+              it.flow.collect {
                 if (it.isFailure) {
                   showError(it.exceptionOrNull().toString())
                 } else {
