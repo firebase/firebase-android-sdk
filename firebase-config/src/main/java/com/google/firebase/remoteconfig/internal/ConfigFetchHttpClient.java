@@ -32,6 +32,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.PERSONALIZATION_METADATA;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ROLLOUT_METADATA;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.TEMPLATE_VERSION_NUMBER;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -444,6 +445,16 @@ public class ConfigFetchHttpClient {
 
       if (templateVersionNumber != null) {
         containerBuilder.withTemplateVersionNumber(Long.parseLong(templateVersionNumber));
+      }
+
+      JSONArray rolloutMetadata = null;
+      try {
+        rolloutMetadata = fetchResponse.getJSONArray(ROLLOUT_METADATA);
+      } catch (JSONException e) {
+        // Do nothing if rolloutMetadata does not exist.
+      }
+      if (rolloutMetadata != null) {
+        containerBuilder = containerBuilder.withRolloutMetadata(rolloutMetadata);
       }
 
       return containerBuilder.build();
