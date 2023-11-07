@@ -18,7 +18,8 @@
   xmlns:tools="http://schemas.android.com/tools">
 
   <uses-feature android:name="android.software.leanback" android:required="false" />
-  <uses-feature android:name="android.hardware.type.watch" android:required="false" />
+  <uses-feature android:name="android.hardware.type.watch" />
+  <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
   <application
     android:icon="@mipmap/ic_launcher"
@@ -26,6 +27,7 @@
     android:name=".TestApplication"
     android:supportsRtl="true"
     android:theme="@style/Theme.Widget_test_app"
+    android:banner="@mipmap/ic_launcher"
     tools:targetApi="31">
     <uses-library
       android:name="com.google.android.wearable"
