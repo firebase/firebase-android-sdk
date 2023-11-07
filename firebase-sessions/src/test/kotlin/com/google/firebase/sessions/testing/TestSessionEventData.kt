@@ -89,5 +89,7 @@ internal object TestSessionEventData {
       eventType = EventType.SESSION_START,
       sessionData = TEST_SESSION_DATA,
       applicationInfo = TEST_APPLICATION_INFO,
+      currentProcessDetails = TEST_PROCESS_DETAILS,
+      appProcessDetails = TEST_APP_PROCESS_DETAILS,
     )
 }
