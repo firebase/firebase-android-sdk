@@ -62,7 +62,7 @@ internal class SessionsSettings(
     firebaseApp: FirebaseApp,
     blockingDispatcher: CoroutineContext,
     backgroundDispatcher: CoroutineContext,
-    firebaseInstallationsApi: FirebaseInstallationsApi
+    firebaseInstallationsApi: FirebaseInstallationsApi,
   ) : this(
     firebaseApp.applicationContext,
     blockingDispatcher,

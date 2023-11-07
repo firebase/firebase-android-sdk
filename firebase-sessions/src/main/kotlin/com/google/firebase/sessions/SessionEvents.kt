@@ -84,6 +84,8 @@ internal object SessionEvents {
           versionName = packageInfo.versionName ?: buildVersion,
           appBuildVersion = buildVersion,
           deviceManufacturer = Build.MANUFACTURER,
+          ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext),
+          ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
         )
     )
   }
