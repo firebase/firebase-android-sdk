@@ -81,7 +81,7 @@ dependencies {
     implementation("com.google.firebase:firebase-common-ktx:20.4.2")
     implementation("com.google.firebase:firebase-components:17.1.5")
 
-    implementation(project(":firebase-installations-interop")) {
+    implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
