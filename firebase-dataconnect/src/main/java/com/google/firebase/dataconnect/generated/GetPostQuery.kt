@@ -13,18 +13,13 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.dataconnect.BaseRef
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.ResultDecodeException
 
-class GetPostQuery(dataConnect: FirebaseDataConnect) :
-  QueryRef<GetPostQuery.Variables, GetPostQuery.Result>(
-    dataConnect,
-    operationName = "getPost",
-    operationSet = "crud",
-    revision = "1234567890abcdef"
-  ) {
+class GetPostQuery private constructor() {
 
   data class Variables(val id: String) {
     val builder = Builder(id = id)
@@ -40,75 +35,92 @@ class GetPostQuery(dataConnect: FirebaseDataConnect) :
     }
   }
 
-  override fun encodeVariables(variables: Variables) = mapOf("id" to variables.id)
+  companion object {
 
-  override fun decodeResult(map: Map<String, Any?>) =
-    Result(
-      map["post"].let {
-        _decodePost(
-          data = it as? Map<*, *> ?: decodeError("post", it, "Map", "result", map),
-          path = "post"
-        )
-      }
-    )
-
-  private fun _decodePost(data: Map<*, *>, path: String) =
-    Result.Post(
-      content =
-        data["content"].let {
-          it as? String ?: decodeError("$path.content", it, "String", path, data)
-        },
-      comments =
-        data["comments"].let {
-          _decodeComments(
-            it as? List<*> ?: decodeError("$path.comments", it, "List", path, data),
-            "$path.comments"
-          )
-        }
-    )
-
-  private fun _decodeComments(data: List<*>, path: String) =
-    data.mapIndexed { index, it ->
-      _decodeComment(
-        it as? Map<*, *> ?: decodeError("$path[$index]", it, "Map", path, data),
-        "$path[$index]"
+    fun query(dataConnect: FirebaseDataConnect) =
+      QueryRef(
+        dataConnect,
+        operationName = "getPost",
+        operationSet = "crud",
+        revision = "1234567890abcdef",
+        codec = codec
       )
-    }
 
-  private fun _decodeComment(data: Map<*, *>, path: String) =
-    Result.Post.Comment(
-      id = data["id"].let { it as? String ?: decodeError("$path.id", it, "String", path, data) },
-      content =
-        data["content"].let {
-          it as? String ?: decodeError("$path.content", it, "String", path, data)
-        }
-    )
+    private val codec =
+      object : BaseRef.Codec<Variables, Result> {
+        override fun encodeVariables(variables: Variables) = mapOf("id" to variables.id)
 
-  private fun decodeError(
-    path: String,
-    actual: Any?,
-    expected: String,
-    contextName: String,
-    context: Any?
-  ): Nothing =
-    throw ResultDecodeException(
-      "parsing GetPostQuery.Result failed: \"$path\" was expected to be $expected, " +
-        "but got $actual ($contextName=$context)"
-    )
+        override fun decodeResult(map: Map<String, Any?>) =
+          Result(
+            map["post"].let {
+              _decodePost(
+                data = it as? Map<*, *> ?: decodeError("post", it, "Map", "result", map),
+                path = "post"
+              )
+            }
+          )
+
+        private fun _decodePost(data: Map<*, *>, path: String) =
+          Result.Post(
+            content =
+              data["content"].let {
+                it as? String ?: decodeError("$path.content", it, "String", path, data)
+              },
+            comments =
+              data["comments"].let {
+                _decodeComments(
+                  it as? List<*> ?: decodeError("$path.comments", it, "List", path, data),
+                  "$path.comments"
+                )
+              }
+          )
+
+        private fun _decodeComments(data: List<*>, path: String) =
+          data.mapIndexed { index, it ->
+            _decodeComment(
+              it as? Map<*, *> ?: decodeError("$path[$index]", it, "Map", path, data),
+              "$path[$index]"
+            )
+          }
+
+        private fun _decodeComment(data: Map<*, *>, path: String) =
+          Result.Post.Comment(
+            id =
+              data["id"].let { it as? String ?: decodeError("$path.id", it, "String", path, data) },
+            content =
+              data["content"].let {
+                it as? String ?: decodeError("$path.content", it, "String", path, data)
+              }
+          )
+
+        private fun decodeError(
+          path: String,
+          actual: Any?,
+          expected: String,
+          contextName: String,
+          context: Any?
+        ): Nothing =
+          throw ResultDecodeException(
+            "parsing GetPostQuery.Result failed: \"$path\" was expected to be $expected, " +
+              "but got $actual ($contextName=$context)"
+          )
+      }
+  }
 }
 
 typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
 
-val FirebaseDataConnect.Queries.getPost: GetPostQuery
-  get() = GetPostQuery(dataConnect)
+val FirebaseDataConnect.Queries.getPost
+  get() = GetPostQuery.query(dataConnect)
 
-suspend fun GetPostQuery.execute(id: String): GetPostQuery.Result = execute(variablesFor(id = id))
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.execute(id: String) =
+  execute(variablesFor(id = id))
 
-fun GetPostQuery.subscribe(
-  id: String
-): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result> = subscribe(variablesFor(id = id))
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.subscribe(id: String) =
+  subscribe(variablesFor(id = id))
 
-fun GetPostQuerySubscription.update(block: GetPostQuery.Variables.Builder.() -> Unit) =
-  update(variables.build(block))
+fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>.update(
+  block: GetPostQuery.Variables.Builder.() -> Unit
+) = update(variables.build(block))
 
 private fun variablesFor(id: String) = GetPostQuery.Variables(id = id)

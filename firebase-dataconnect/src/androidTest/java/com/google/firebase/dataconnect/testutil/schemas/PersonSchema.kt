@@ -14,6 +14,7 @@
 
 package com.google.firebase.dataconnect.testutil.schemas
 
+import com.google.firebase.dataconnect.BaseRef
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.QueryRef
@@ -25,110 +26,138 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.installEmulatorSchema("testing_graphql_schemas/person")
   }
 
-  class CreatePersonMutationRef(dataConnect: FirebaseDataConnect) :
-    MutationRef<CreatePersonMutationRef.Variables, Unit>(
+  val createPerson =
+    MutationRef(
       dataConnect = dataConnect,
       operationName = "createPerson",
       operationSet = "ops",
-      revision = "42"
-    ) {
+      revision = "42",
+      codec = CreatePersonMutation,
+    )
+
+  class CreatePersonMutation private constructor() {
 
     data class Variables(val id: String, val name: String, val age: Int? = null)
 
-    override fun encodeVariables(variables: Variables): Map<String, Any?> =
-      variables.run {
-        mapOf(
-          "data" to
-            buildMap {
-              put("id", id)
-              put("name", name)
-              age?.let { put("age", it) }
-            }
-        )
-      }
+    internal companion object Codec : BaseRef.Codec<Variables, Unit> {
+      override fun encodeVariables(variables: Variables): Map<String, Any?> =
+        variables.run {
+          mapOf(
+            "data" to
+              buildMap {
+                put("id", id)
+                put("name", name)
+                age?.let { put("age", it) }
+              }
+          )
+        }
 
-    override fun decodeResult(map: Map<String, Any?>) {}
+      override fun decodeResult(map: Map<String, Any?>) {}
+    }
   }
 
-  class UpdatePersonMutationRef(dataConnect: FirebaseDataConnect) :
-    MutationRef<UpdatePersonMutationRef.Variables, Unit>(
+  val updatePerson =
+    MutationRef(
       dataConnect = dataConnect,
       operationName = "updatePerson",
       operationSet = "ops",
-      revision = "42"
-    ) {
+      revision = "42",
+      codec = UpdatePersonMutation,
+    )
+
+  class UpdatePersonMutation private constructor() {
 
     data class Variables(val id: String, val name: String? = null, val age: Int? = null)
 
-    override fun encodeVariables(variables: Variables): Map<String, Any?> =
-      variables.run {
-        mapOf(
-          "id" to id,
-          "data" to
-            buildMap {
-              name?.let { put("name", it) }
-              age?.let { put("age", it) }
-            }
-        )
-      }
+    internal companion object Codec : BaseRef.Codec<Variables, Unit> {
 
-    override fun decodeResult(map: Map<String, Any?>) {}
+      override fun encodeVariables(variables: Variables): Map<String, Any?> =
+        variables.run {
+          mapOf(
+            "id" to id,
+            "data" to
+              buildMap {
+                name?.let { put("name", it) }
+                age?.let { put("age", it) }
+              }
+          )
+        }
+
+      override fun decodeResult(map: Map<String, Any?>) {}
+    }
   }
 
-  class GetPersonQueryRef(dataConnect: FirebaseDataConnect) :
-    QueryRef<GetPersonQueryRef.Variables, GetPersonQueryRef.Result?>(
+  val deletePerson =
+    MutationRef(
+      dataConnect = dataConnect,
+      operationName = "deletePerson",
+      operationSet = "ops",
+      revision = "42",
+      codec = DeletePersonMutation,
+    )
+
+  class DeletePersonMutation private constructor() {
+
+    data class Variables(val id: String)
+
+    internal companion object Codec : BaseRef.Codec<Variables, Unit> {
+
+      override fun encodeVariables(variables: Variables) = variables.run { mapOf("id" to id) }
+
+      override fun decodeResult(map: Map<String, Any?>) {}
+    }
+  }
+
+  val getPerson =
+    QueryRef(
       dataConnect = dataConnect,
       operationName = "getPerson",
       operationSet = "ops",
-      revision = "42"
-    ) {
+      revision = "42",
+      codec = GetPersonQuery,
+    )
+
+  class GetPersonQuery private constructor() {
 
     data class Variables(val id: String, val name: String? = null, val age: Int? = null)
     data class Result(val name: String, val age: Int? = null)
 
-    override fun encodeVariables(variables: Variables) = variables.run { mapOf("id" to id) }
+    internal companion object Codec : BaseRef.Codec<Variables, Result?> {
+      override fun encodeVariables(variables: Variables) = variables.run { mapOf("id" to id) }
 
-    override fun decodeResult(map: Map<String, Any?>) =
-      (map["person"] as Map<*, *>?)?.let {
-        Result(name = it["name"] as String, age = (it["age"] as Double?)?.toInt())
-      }
+      override fun decodeResult(map: Map<String, Any?>) =
+        (map["person"] as Map<*, *>?)?.let {
+          Result(name = it["name"] as String, age = (it["age"] as Double?)?.toInt())
+        }
+    }
   }
-
-  class DeletePersonMutationRef(dataConnect: FirebaseDataConnect) :
-    MutationRef<DeletePersonMutationRef.Variables, Unit>(
-      dataConnect = dataConnect,
-      operationName = "deletePerson",
-      operationSet = "ops",
-      revision = "42"
-    ) {
-
-    data class Variables(val id: String)
-
-    override fun encodeVariables(variables: Variables) = variables.run { mapOf("id" to id) }
-
-    override fun decodeResult(map: Map<String, Any?>) {}
-  }
-
-  val createPerson = CreatePersonMutationRef(dataConnect)
-  val updatePerson = UpdatePersonMutationRef(dataConnect)
-  val deletePerson = DeletePersonMutationRef(dataConnect)
-  val getPerson = GetPersonQueryRef(dataConnect)
 }
 
-suspend fun PersonSchema.CreatePersonMutationRef.execute(id: String, name: String, age: Int?) =
-  execute(PersonSchema.CreatePersonMutationRef.Variables(id = id, name = name, age = age))
+object CreatePersonMutationExt {
+  suspend fun MutationRef<PersonSchema.CreatePersonMutation.Variables, Unit>.execute(
+    id: String,
+    name: String,
+    age: Int?
+  ) = execute(PersonSchema.CreatePersonMutation.Variables(id = id, name = name, age = age))
+}
 
-suspend fun PersonSchema.UpdatePersonMutationRef.execute(
-  id: String,
-  name: String? = null,
-  age: Int? = null
-) = execute(PersonSchema.UpdatePersonMutationRef.Variables(id = id, name = name, age = age))
+object UpdatePersonMutationExt {
+  suspend fun MutationRef<PersonSchema.UpdatePersonMutation.Variables, Unit>.execute(
+    id: String,
+    name: String? = null,
+    age: Int? = null
+  ) = execute(PersonSchema.UpdatePersonMutation.Variables(id = id, name = name, age = age))
+}
 
-suspend fun PersonSchema.DeletePersonMutationRef.execute(id: String) =
-  execute(PersonSchema.DeletePersonMutationRef.Variables(id = id))
+object DeletePersonMutationExt {
+  suspend fun MutationRef<PersonSchema.DeletePersonMutation.Variables, Unit>.execute(id: String) =
+    execute(PersonSchema.DeletePersonMutation.Variables(id = id))
+}
 
-suspend fun PersonSchema.GetPersonQueryRef.execute(id: String) =
-  execute(PersonSchema.GetPersonQueryRef.Variables(id = id))
+object GetPersonQueryExt {
+  suspend fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result?>
+    .execute(id: String) = execute(PersonSchema.GetPersonQuery.Variables(id = id))
 
-fun PersonSchema.GetPersonQueryRef.subscribe(id: String) =
-  subscribe(PersonSchema.GetPersonQueryRef.Variables(id = id))
+  fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result?>
+    .subscribe(id: String) = subscribe(PersonSchema.GetPersonQuery.Variables(id = id))
+}

@@ -22,7 +22,6 @@ import com.google.protobuf.listValue
 import com.google.protobuf.struct
 import com.google.protobuf.value
 import google.internal.firebase.firemat.v0.DataServiceGrpcKt.DataServiceCoroutineStub
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.GraphqlError
 import google.internal.firebase.firemat.v0.executeMutationRequest
 import google.internal.firebase.firemat.v0.executeQueryRequest
 import io.grpc.ManagedChannel
@@ -83,16 +82,12 @@ internal class DataConnectGrpcClient(
 
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
-  data class ExecuteQueryResult(val data: Map<String, Any?>, val errors: List<GraphqlError>)
-
-  data class ExecuteMutationResult(val data: Map<String, Any?>, val errors: List<GraphqlError>)
-
   suspend fun executeQuery(
     operationSet: String,
     operationName: String,
     revision: String,
     variables: Map<String, Any?>,
-  ): ExecuteQueryResult {
+  ): Map<String, Any?> {
     val request = executeQueryRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -108,10 +103,13 @@ internal class DataConnectGrpcClient(
         throw NetworkTransportException("query network transport error: ${e.message}", e)
       }
     logger.debug { "executeQuery() got response: $response" }
-    return ExecuteQueryResult(
-      data = mapFromStruct(response.data),
-      errors = response.errorsList,
-    )
+    if (response.errorsList.isNotEmpty()) {
+      throw GraphQLException(
+        "query failed: ${response.errorsList}",
+        response.errorsList.map { it.toString() }
+      )
+    }
+    return mapFromStruct(response.data)
   }
 
   suspend fun executeMutation(
@@ -119,7 +117,7 @@ internal class DataConnectGrpcClient(
     operationName: String,
     revision: String,
     variables: Map<String, Any?>
-  ): ExecuteMutationResult {
+  ): Map<String, Any?> {
     val request = executeMutationRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -135,10 +133,13 @@ internal class DataConnectGrpcClient(
         throw NetworkTransportException("mutation network transport error: ${e.message}", e)
       }
     logger.debug { "executeMutation() got response: $response" }
-    return ExecuteMutationResult(
-      data = mapFromStruct(response.data),
-      errors = response.errorsList,
-    )
+    if (response.errorsList.isNotEmpty()) {
+      throw GraphQLException(
+        "mutation failed: ${response.errorsList}",
+        response.errorsList.map { it.toString() }
+      )
+    }
+    return mapFromStruct(response.data)
   }
 
   override fun toString(): String {

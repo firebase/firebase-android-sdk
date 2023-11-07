@@ -107,34 +107,24 @@ internal constructor(
   }
 
   internal suspend fun <V, R> executeQuery(ref: QueryRef<V, R>, variables: V): R =
-    grpcClient
-      .executeQuery(
+    ref.codec.decodeResult(
+      grpcClient.executeQuery(
         operationName = ref.operationName,
         operationSet = ref.operationSet,
         revision = ref.revision,
-        variables = ref.mapFromVariables(variables)
+        variables = ref.codec.encodeVariables(variables)
       )
-      .let { response ->
-        if (response.errors.isNotEmpty()) {
-          throw ExecutionException("query \"$ref.operationName\" failed: ${response.errors}")
-        }
-        ref.resultFromMap(response.data)
-      }
+    )
 
   internal suspend fun <V, R> executeMutation(ref: MutationRef<V, R>, variables: V): R =
-    grpcClient
-      .executeMutation(
+    ref.codec.decodeResult(
+      grpcClient.executeMutation(
         operationName = ref.operationName,
         operationSet = ref.operationSet,
         revision = ref.revision,
-        variables = ref.mapFromVariables(variables),
+        variables = ref.codec.encodeVariables(variables)
       )
-      .let { response ->
-        if (response.errors.isNotEmpty()) {
-          throw ExecutionException("mutation \"${ref.operationName}\" failed: ${response.errors}")
-        }
-        ref.resultFromMap(response.data)
-      }
+    )
 
   override fun close() {
     logger.debug { "close() called" }
@@ -169,7 +159,8 @@ open class DataConnectException internal constructor(message: String, cause: Thr
 open class NetworkTransportException internal constructor(message: String, cause: Throwable) :
   DataConnectException(message, cause)
 
-open class ExecutionException internal constructor(message: String) : DataConnectException(message)
+open class GraphQLException internal constructor(message: String, val errors: List<String>) :
+  DataConnectException(message)
 
 open class ResultDecodeException internal constructor(message: String) :
   DataConnectException(message)

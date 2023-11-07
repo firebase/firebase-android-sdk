@@ -35,17 +35,21 @@ abstract class BaseRef<VariablesType, ResultType> internal constructor() {
 
   abstract suspend fun execute(variables: VariablesType): ResultType
 
-  protected abstract fun encodeVariables(variables: VariablesType): Map<String, Any?>
-  protected abstract fun decodeResult(map: Map<String, Any?>): ResultType
+  interface Codec<VariablesType, ResultType> {
+    fun encodeVariables(variables: VariablesType): Map<String, Any?>
+    fun decodeResult(map: Map<String, Any?>): ResultType
+  }
 }
 
-abstract class QueryRef<VariablesType, ResultType>(
+class QueryRef<VariablesType, ResultType>(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   operationSet: String,
-  revision: String
+  revision: String,
+  codec: Codec<VariablesType, ResultType>,
 ) : BaseRef<VariablesType, ResultType>() {
   override suspend fun execute(variables: VariablesType): ResultType = TODO()
+
   fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, ResultType> = TODO()
 }
 
@@ -76,21 +80,9 @@ class QuerySubscription<VariablesType, ResultType> internal constructor() {
 // GENERATED SDK
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class GetPostQuery(dataConnect: FirebaseDataConnect) :
-  QueryRef<GetPostQuery.Variables, GetPostQuery.Result>(
-    dataConnect,
-    operationName = "getPost",
-    operationSet = "crud",
-    revision = "1234567890abcdef"
-  ) {
+class GetPostQuery private constructor() {
 
-  data class Variables(val id: String) {
-    val builder = Builder(id = id)
-    fun build(block: Builder.() -> Unit): Variables = builder.apply(block).build()
-    class Builder(var id: String) {
-      fun build() = Variables(id = id)
-    }
-  }
+  data class Variables(val id: String)
 
   data class Result(val post: Post) {
     data class Post(val content: String, val comments: List<Comment>) {
@@ -98,19 +90,25 @@ class GetPostQuery(dataConnect: FirebaseDataConnect) :
     }
   }
 
-  override fun encodeVariables(variables: Variables) = TODO()
-
-  override fun decodeResult(map: Map<String, Any?>) = TODO()
+  companion object {
+    fun query(dataConnect: FirebaseDataConnect): QueryRef<Variables, Result> = TODO()
+  }
 }
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
-
-val FirebaseDataConnect.Queries.getPost: GetPostQuery
+val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
   get() = TODO()
 
-suspend fun GetPostQuery.execute(id: String): GetPostQuery.Result = TODO()
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.execute(
+  id: String
+): GetPostQuery.Result = TODO()
 
-fun GetPostQuery.subscribe(id: String): GetPostQuerySubscription = TODO()
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.subscribe(
+  id: String
+): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result> = TODO()
+
+typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
+
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUSTOMER CODE
@@ -120,7 +118,8 @@ private class MainActivity : Activity() {
 
   private lateinit var dataConnect: FirebaseDataConnect
   private lateinit var activityCoroutineScope: CoroutineScope
-  private var querySubscription: GetPostQuerySubscription? = null
+  private var querySubscription: QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>? =
+    null
   private var querySubscriptionFlow: Job? = null
 
   fun onLiveUpdateButtonClick() {

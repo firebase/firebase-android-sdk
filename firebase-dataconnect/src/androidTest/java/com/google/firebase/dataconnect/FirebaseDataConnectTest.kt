@@ -21,8 +21,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.IdentityMutationRef
-import com.google.firebase.dataconnect.testutil.IdentityQueryRef
+import com.google.firebase.dataconnect.testutil.IdentityCodec
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
 import com.google.firebase.dataconnect.testutil.installEmulatorSchema
@@ -204,11 +203,12 @@ class FirebaseDataConnectTest {
 
     run {
       val mutation =
-        IdentityMutationRef(
+        MutationRef(
           dataConnect = dc,
           operationName = "createPost",
           operationSet = "crud",
-          revision = "TestRevision"
+          revision = "TestRevision",
+          codec = IdentityCodec,
         )
       val mutationResponse =
         mutation.execute(mapOf("data" to mapOf("id" to postId, "content" to postContent)))
@@ -219,11 +219,12 @@ class FirebaseDataConnectTest {
 
     run {
       val query =
-        IdentityQueryRef(
+        QueryRef(
           dataConnect = dc,
           operationName = "getPost",
           operationSet = "crud",
-          revision = "TestRevision"
+          revision = "TestRevision",
+          codec = IdentityCodec,
         )
       val queryResult = query.execute(mapOf("id" to postId))
       assertWithMessage("queryResponse")
@@ -237,11 +238,12 @@ class FirebaseDataConnectTest {
   @Test
   fun testInstallEmulatorSchema() {
     suspend fun FirebaseDataConnect.createPerson(id: String, name: String, age: Int? = null) =
-      IdentityMutationRef(
+      MutationRef(
           dataConnect = this,
           operationName = "createPerson",
           operationSet = "ops",
-          revision = "42"
+          revision = "42",
+          codec = IdentityCodec,
         )
         .execute(
           mapOf(
@@ -255,20 +257,22 @@ class FirebaseDataConnectTest {
         )
 
     suspend fun FirebaseDataConnect.getPerson(id: String) =
-      IdentityQueryRef(
+      QueryRef(
           dataConnect = this,
           operationName = "getPerson",
           operationSet = "ops",
-          revision = "42"
+          revision = "42",
+          codec = IdentityCodec,
         )
         .execute(mapOf("id" to id))
 
     suspend fun FirebaseDataConnect.getAllPeople() =
-      IdentityQueryRef(
+      QueryRef(
           dataConnect = this,
           operationName = "getAllPeople",
           operationSet = "ops",
-          revision = "42"
+          revision = "42",
+          codec = IdentityCodec,
         )
         .execute(emptyMap())
 

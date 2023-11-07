@@ -22,7 +22,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.*
+import com.google.firebase.dataconnect.testutil.schemas.CreatePersonMutationExt.execute
+import com.google.firebase.dataconnect.testutil.schemas.GetPersonQueryExt.subscribe
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
+import com.google.firebase.dataconnect.testutil.schemas.UpdatePersonMutationExt.execute
 import java.util.concurrent.Executors
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -69,7 +72,7 @@ class QuerySubscriptionTest {
 
     withTimeout(2.seconds) {
       val resultsChannel =
-        Channel<PersonSchema.GetPersonQueryRef.Result?>(capacity = Channel.UNLIMITED)
+        Channel<PersonSchema.GetPersonQuery.Result?>(capacity = Channel.UNLIMITED)
       val collectJob = launch {
         querySubscription.flow.collect { resultsChannel.send(it.getOrThrow()) }
       }
@@ -130,12 +133,12 @@ class QuerySubscriptionTest {
 
     withTimeout(2.seconds) {
       val resultsChannel1 =
-        Channel<PersonSchema.GetPersonQueryRef.Result?>(capacity = Channel.UNLIMITED)
+        Channel<PersonSchema.GetPersonQuery.Result?>(capacity = Channel.UNLIMITED)
       val flowJob1 = launch {
         querySubscription.flow.collect { resultsChannel1.send(it.getOrThrow()) }
       }
       val resultsChannel2 =
-        Channel<PersonSchema.GetPersonQueryRef.Result?>(capacity = Channel.UNLIMITED)
+        Channel<PersonSchema.GetPersonQuery.Result?>(capacity = Channel.UNLIMITED)
       val flowJob2 = launch {
         querySubscription.flow.collect { resultsChannel2.send(it.getOrThrow()) }
       }
@@ -166,7 +169,7 @@ class QuerySubscriptionTest {
 
     withTimeout(5.seconds) {
       val resultsChannel =
-        Channel<Result<PersonSchema.GetPersonQueryRef.Result?>>(capacity = Channel.UNLIMITED)
+        Channel<Result<PersonSchema.GetPersonQuery.Result?>>(capacity = Channel.UNLIMITED)
       val collectJob = launch { querySubscription.flow.collect(resultsChannel::send) }
 
       val maxHardwareConcurrency = Math.max(2, Runtime.getRuntime().availableProcessors())
@@ -191,7 +194,7 @@ class QuerySubscriptionTest {
 }
 
 private fun Subject.isEqualToGetPersonQueryResult(name: String, age: Int?) =
-  isEqualTo(PersonSchema.GetPersonQueryRef.Result(name = name, age = age))
+  isEqualTo(PersonSchema.GetPersonQuery.Result(name = name, age = age))
 
 private suspend fun <T> ReceiveChannel<T>.purge(timeout: Duration): List<T> = coroutineScope {
   mutableListOf<T>()

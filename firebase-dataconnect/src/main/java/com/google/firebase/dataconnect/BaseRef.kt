@@ -18,12 +18,13 @@ internal constructor(
   val dataConnect: FirebaseDataConnect,
   internal val operationName: String,
   internal val operationSet: String,
-  internal val revision: String
+  internal val revision: String,
+  internal val codec: Codec<VariablesType, ResultType>,
 ) {
   abstract suspend fun execute(variables: VariablesType): ResultType
-  protected abstract fun encodeVariables(variables: VariablesType): Map<String, Any?>
-  protected abstract fun decodeResult(map: Map<String, Any?>): ResultType
 
-  internal fun mapFromVariables(variables: VariablesType) = encodeVariables(variables)
-  internal fun resultFromMap(map: Map<String, Any?>) = decodeResult(map)
+  interface Codec<VariablesType, ResultType> {
+    fun encodeVariables(variables: VariablesType): Map<String, Any?>
+    fun decodeResult(map: Map<String, Any?>): ResultType
+  }
 }

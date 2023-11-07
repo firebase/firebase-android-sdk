@@ -13,17 +13,19 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-abstract class QueryRef<VariablesType, ResultType>(
+class QueryRef<VariablesType, ResultType>(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   operationSet: String,
-  revision: String
+  revision: String,
+  codec: Codec<VariablesType, ResultType>,
 ) :
   BaseRef<VariablesType, ResultType>(
     dataConnect = dataConnect,
     operationName = operationName,
     operationSet = operationSet,
-    revision = revision
+    revision = revision,
+    codec = codec,
   ) {
   override suspend fun execute(variables: VariablesType): ResultType =
     dataConnect.executeQuery(this, variables)
