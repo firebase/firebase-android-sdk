@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.dokka.gradle.DokkaTask
+
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -118,3 +120,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
 
 extra["packageName"] = "com.google.firebase.dataconnect"
 apply(from = "../gradle/googleServices.gradle")
+
+tasks.withType<DokkaTask>().configureEach {
+  moduleName.set("firebase-dataconnect")
+}
