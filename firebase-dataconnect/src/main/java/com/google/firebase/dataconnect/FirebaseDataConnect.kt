@@ -121,10 +121,7 @@ internal constructor(
       )
       .let { response ->
         if (response.errors.isNotEmpty()) {
-          throw QueryExecutionException(
-            "query \"$ref.operationName\" failed: ${response.errors}",
-            ref
-          )
+          throw ExecutionException("query \"$ref.operationName\" failed: ${response.errors}")
         }
         ref.resultFromMap(response.data)
       }
@@ -135,14 +132,11 @@ internal constructor(
         operationName = ref.operationName,
         operationSet = ref.operationSet,
         revision = ref.revision,
-        variables = ref.mapFromVariables(variables)
+        variables = ref.mapFromVariables(variables),
       )
       .let { response ->
         if (response.errors.isNotEmpty()) {
-          throw MutationExecutionException(
-            "mutation \"${ref.operationName}\" failed: ${response.errors}",
-            ref
-          )
+          throw ExecutionException("mutation \"${ref.operationName}\" failed: ${response.errors}")
         }
         ref.resultFromMap(response.data)
       }
@@ -174,13 +168,13 @@ internal constructor(
   }
 }
 
-open class DataConnectException internal constructor(message: String) : Exception(message)
+open class DataConnectException internal constructor(message: String, cause: Throwable? = null) :
+  Exception(message, cause)
 
-open class QueryExecutionException internal constructor(message: String, val ref: QueryRef<*, *>) :
+open class NetworkTransportException internal constructor(message: String, cause: Throwable) :
+  DataConnectException(message, cause)
+
+open class ExecutionException internal constructor(message: String) : DataConnectException(message)
+
+open class ResultDecodeException internal constructor(message: String) :
   DataConnectException(message)
-
-open class QueryResultDecodeException internal constructor(message: String, ref: QueryRef<*, *>) :
-  QueryExecutionException(message, ref)
-
-open class MutationExecutionException
-internal constructor(message: String, val ref: MutationRef<*, *>) : DataConnectException(message)

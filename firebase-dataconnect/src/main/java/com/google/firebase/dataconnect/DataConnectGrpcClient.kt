@@ -91,7 +91,7 @@ internal class DataConnectGrpcClient(
     operationSet: String,
     operationName: String,
     revision: String,
-    variables: Map<String, Any?>
+    variables: Map<String, Any?>,
   ): ExecuteQueryResult {
     val request = executeQueryRequest {
       this.name = name(operationSet = operationSet, revision = revision)
@@ -100,7 +100,13 @@ internal class DataConnectGrpcClient(
     }
 
     logger.debug { "executeQuery() sending request: $request" }
-    val response = grpcStub.executeQuery(request)
+    val response =
+      try {
+        grpcStub.executeQuery(request)
+      } catch (e: Throwable) {
+        logger.warn { "executeQuery() network transport error: $e" }
+        throw NetworkTransportException("query network transport error: ${e.message}", e)
+      }
     logger.debug { "executeQuery() got response: $response" }
     return ExecuteQueryResult(
       data = mapFromStruct(response.data),
@@ -121,7 +127,13 @@ internal class DataConnectGrpcClient(
     }
 
     logger.debug { "executeMutation() sending request: $request" }
-    val response = grpcStub.executeMutation(request)
+    val response =
+      try {
+        grpcStub.executeMutation(request)
+      } catch (e: Throwable) {
+        logger.warn { "executeMutation() network transport error: $e" }
+        throw NetworkTransportException("mutation network transport error: ${e.message}", e)
+      }
     logger.debug { "executeMutation() got response: $response" }
     return ExecuteMutationResult(
       data = mapFromStruct(response.data),
@@ -158,7 +170,7 @@ private fun objectFromStructValue(struct: Value): Any? =
       Value.KindCase.STRING_VALUE -> stringValue
       Value.KindCase.LIST_VALUE -> listValue.valuesList.map { objectFromStructValue(it) }
       Value.KindCase.STRUCT_VALUE -> mapFromStruct(structValue)
-      else -> throw IllegalArgumentException("unsupported Struct kind: $kindCase")
+      else -> throw ResultDecodeException("unsupported Struct kind: $kindCase")
     }
   }
 
@@ -185,6 +197,6 @@ private fun valueFromObject(obj: Any?): Value = value {
         }
     is Iterable<*> ->
       listValue = obj.let { listValue { it.forEach { values.add(valueFromObject(it)) } } }
-    else -> throw IllegalArgumentException("unsupported value type: ${obj::class}")
+    else -> throw ResultDecodeException("unsupported value type: ${obj::class} ($obj)")
   }
 }

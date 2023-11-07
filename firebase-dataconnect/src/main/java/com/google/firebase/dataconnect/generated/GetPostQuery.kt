@@ -15,8 +15,8 @@ package com.google.firebase.dataconnect.generated
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.QueryResultDecodeException
 import com.google.firebase.dataconnect.QuerySubscription
+import com.google.firebase.dataconnect.ResultDecodeException
 
 class GetPostQuery(dataConnect: FirebaseDataConnect) :
   QueryRef<GetPostQuery.Variables, GetPostQuery.Result>(
@@ -91,10 +91,9 @@ class GetPostQuery(dataConnect: FirebaseDataConnect) :
     contextName: String,
     context: Any?
   ): Nothing =
-    throw QueryResultDecodeException(
+    throw ResultDecodeException(
       "parsing GetPostQuery.Result failed: \"$path\" was expected to be $expected, " +
-        "but got $actual ($contextName=$context)",
-      this
+        "but got $actual ($contextName=$context)"
     )
 }
 
