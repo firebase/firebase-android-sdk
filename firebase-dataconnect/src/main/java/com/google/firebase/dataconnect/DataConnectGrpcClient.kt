@@ -190,13 +190,21 @@ private fun valueFromObject(obj: Any?): Value = value {
         obj.let {
           struct {
             it.forEach { entry ->
-              val key = entry.key as? String ?: error("unsupported map key: $entry.key")
+              val key =
+                entry.key.let { key ->
+                  key as? String
+                    ?: throw ResultDecodeException(
+                      "unsupported map key: " +
+                        if (key == null) "null" else "${key::class.qualifiedName} (${key})"
+                    )
+                }
               fields.put(key, valueFromObject(entry.value))
             }
           }
         }
     is Iterable<*> ->
       listValue = obj.let { listValue { it.forEach { values.add(valueFromObject(it)) } } }
-    else -> throw ResultDecodeException("unsupported value type: ${obj::class} ($obj)")
+    else ->
+      throw ResultDecodeException("unsupported value type: ${obj::class.qualifiedName} ($obj)")
   }
 }
