@@ -91,24 +91,24 @@ class GetPostQuery private constructor() {
   }
 
   companion object {
-    fun query(dataConnect: FirebaseDataConnect): QueryRef<Variables, Result> = TODO()
+    fun query(dataConnect: FirebaseDataConnect): QueryRef<Variables, Result?> = TODO()
   }
 }
 
-val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
+val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>
   get() = TODO()
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.execute(
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>.execute(
   id: String
-): GetPostQuery.Result = TODO()
+): GetPostQuery.Result? = TODO()
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.subscribe(
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>.subscribe(
   id: String
-): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result> = TODO()
+): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result?> = TODO()
 
-typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
+typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result?>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUSTOMER CODE
@@ -118,8 +118,7 @@ private class MainActivity : Activity() {
 
   private lateinit var dataConnect: FirebaseDataConnect
   private lateinit var activityCoroutineScope: CoroutineScope
-  private var querySubscription: QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>? =
-    null
+  private var querySubscription: GetPostQuerySubscription? = null
   private var querySubscriptionFlow: Job? = null
 
   fun onLiveUpdateButtonClick() {

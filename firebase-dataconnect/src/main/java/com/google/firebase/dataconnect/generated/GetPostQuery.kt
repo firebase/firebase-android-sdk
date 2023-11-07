@@ -47,18 +47,22 @@ class GetPostQuery private constructor() {
       )
 
     private val codec =
-      object : BaseRef.Codec<Variables, Result> {
+      object : BaseRef.Codec<Variables, Result?> {
         override fun encodeVariables(variables: Variables) = mapOf("id" to variables.id)
 
         override fun decodeResult(map: Map<String, Any?>) =
-          Result(
-            map["post"].let {
-              _decodePost(
-                data = it as? Map<*, *> ?: decodeError("post", it, "Map", "result", map),
-                path = "post"
+          map["post"].let {
+            if (it == null) {
+              null
+            } else {
+              Result(
+                _decodePost(
+                  data = it as? Map<*, *> ?: decodeError("post", it, "Map", "result", map),
+                  path = "post"
+                )
               )
             }
-          )
+          }
 
         private fun _decodePost(data: Map<*, *>, path: String) =
           Result.Post(
@@ -108,18 +112,18 @@ class GetPostQuery private constructor() {
   }
 }
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result?>
 
 val FirebaseDataConnect.Queries.getPost
   get() = GetPostQuery.query(dataConnect)
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.execute(id: String) =
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>.execute(id: String) =
   execute(variablesFor(id = id))
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.subscribe(id: String) =
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>.subscribe(id: String) =
   subscribe(variablesFor(id = id))
 
-fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>.update(
+fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result?>.update(
   block: GetPostQuery.Variables.Builder.() -> Unit
 ) = update(variables.build(block))
 

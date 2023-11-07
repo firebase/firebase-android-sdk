@@ -41,6 +41,15 @@ class PostsTest {
   @JvmField @Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
   @Test
+  fun getPostWithNonExistingId() {
+    val dc = dataConnectFactory.newInstance(service = "local")
+    runBlocking {
+      val queryResponse = dc.queries.getPost.execute(id = UUID.randomUUID().toString())
+      assertWithMessage("queryResponse").that(queryResponse).isNull()
+    }
+  }
+
+  @Test
   fun createPostThenGetPost() {
     val dc = dataConnectFactory.newInstance(service = "local")
 
@@ -52,7 +61,7 @@ class PostsTest {
 
       val queryResponse = dc.queries.getPost.execute(id = postId)
       assertWithMessage("queryResponse")
-        .that(queryResponse.post)
+        .that(queryResponse?.post)
         .isEqualTo(GetPostQuery.Result.Post(content = postContent, comments = emptyList()))
     }
   }
@@ -76,7 +85,7 @@ class PostsTest {
       val result1 = querySubscription.flow.timeout(5.seconds).first()
       assertWithMessage("result1.isSuccess").that(result1.isSuccess).isTrue()
       assertWithMessage("result1.post.content")
-        .that(result1.getOrThrow().post.content)
+        .that(result1.getOrThrow()?.post?.content)
         .isEqualTo(postContent1)
 
       assertWithMessage("lastResult 1").that(querySubscription.lastResult).isEqualTo(result1)
@@ -90,10 +99,10 @@ class PostsTest {
       assertWithMessage("results2[0].isSuccess").that(results2[0].isSuccess).isTrue()
       assertWithMessage("results2[1].isSuccess").that(results2[1].isSuccess).isTrue()
       assertWithMessage("results2[0].post.content")
-        .that(results2[0].getOrThrow().post.content)
+        .that(results2[0].getOrThrow()?.post?.content)
         .isEqualTo(postContent1)
       assertWithMessage("results2[1].post.content")
-        .that(results2[1].getOrThrow().post.content)
+        .that(results2[1].getOrThrow()?.post?.content)
         .isEqualTo(postContent2)
 
       assertWithMessage("lastResult 2").that(querySubscription.lastResult).isEqualTo(results2[1])
