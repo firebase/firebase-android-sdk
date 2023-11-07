@@ -15,14 +15,9 @@ package com.google.firebase.dataconnect
 
 import com.google.firebase.concurrent.FirebaseExecutors
 import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.buffer
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 
 class QuerySubscription<VariablesType, ResultType>
 internal constructor(
