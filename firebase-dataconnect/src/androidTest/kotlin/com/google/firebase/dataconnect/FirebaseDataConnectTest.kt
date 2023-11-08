@@ -126,20 +126,24 @@ class FirebaseDataConnectTest {
   @Test
   fun getInstance_should_return_the_cached_instance_if_settings_compare_equal() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val settings = FirebaseDataConnectSettings.defaults.build { hostName = "TestHostName" }
     val instance1 =
-      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", settings)
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService") {
+        hostName = "TestHostName"
+      }
     val instance2 =
-      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", settings)
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService") {
+        hostName = "TestHostName"
+      }
     assertThat(instance1).isSameInstanceAs(instance2)
   }
 
   @Test
   fun getInstance_should_return_the_cached_instance_if_settings_are_null() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val settings = FirebaseDataConnectSettings.defaults.build { hostName = "TestHostName" }
     val instance1 =
-      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", settings)
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService") {
+        hostName = "TestHostName"
+      }
     val instance2 =
       FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", null)
     assertThat(instance1).isSameInstanceAs(instance2)
@@ -148,30 +152,79 @@ class FirebaseDataConnectTest {
   @Test
   fun getInstance_should_throw_if_settings_compare_unequal_to_settings_of_cached_instance() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val settings1 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName1" }
-    val settings2 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName2" }
     val instance1 =
-      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1", settings1)
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1") {
+        hostName = "TestHostName1"
+      }
 
     assertThrows(IllegalArgumentException::class.java) {
-      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1", settings2)
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1") {
+        hostName = "TestHostName2"
+      }
     }
 
     val instance2 =
-      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1", settings1)
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1") {
+        hostName = "TestHostName1"
+      }
     assertThat(instance1).isSameInstanceAs(instance2)
+  }
+
+  @Test
+  fun getInstance_should_allow_different_settings_after_first_instance_is_closed() {
+    val nonDefaultApp = firebaseAppFactory.newInstance()
+    val instance1 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService") {
+        hostName = "TestHostName1"
+      }
+    instance1.close()
+    val instance2 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService") {
+        hostName = "TestHostName2"
+      }
+    assertThat(instance1).isNotSameInstanceAs(instance2)
   }
 
   @Test
   fun getInstance_should_return_new_instance_if_settings_and_app_are_both_different() {
     val nonDefaultApp1 = firebaseAppFactory.newInstance()
     val nonDefaultApp2 = firebaseAppFactory.newInstance()
-    val settings1 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName1" }
-    val settings2 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName2" }
     val instance1 =
-      FirebaseDataConnect.getInstance(nonDefaultApp1, "TestLocation", "TestService", settings1)
+      FirebaseDataConnect.getInstance(nonDefaultApp1, "TestLocation", "TestService") {
+        hostName = "TestHostName1"
+      }
     val instance2 =
-      FirebaseDataConnect.getInstance(nonDefaultApp2, "TestLocation", "TestService", settings2)
+      FirebaseDataConnect.getInstance(nonDefaultApp2, "TestLocation", "TestService") {
+        hostName = "TestHostName2"
+      }
+    assertThat(instance1).isNotSameInstanceAs(instance2)
+  }
+
+  @Test
+  fun getInstance_should_return_new_instance_if_settings_and_location_are_both_different() {
+    val nonDefaultApp = firebaseAppFactory.newInstance()
+    val instance1 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService") {
+        hostName = "TestHostName1"
+      }
+    val instance2 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation2", "TestService") {
+        hostName = "TestHostName2"
+      }
+    assertThat(instance1).isNotSameInstanceAs(instance2)
+  }
+
+  @Test
+  fun getInstance_should_return_new_instance_if_settings_and_service_are_both_different() {
+    val nonDefaultApp = firebaseAppFactory.newInstance()
+    val instance1 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService1") {
+        hostName = "TestHostName1"
+      }
+    val instance2 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService2") {
+        hostName = "TestHostName2"
+      }
     assertThat(instance1).isNotSameInstanceAs(instance2)
   }
 
