@@ -82,7 +82,7 @@ internal data class ProcessDetails(
   val processName: String,
   val pid: Int,
   val importance: Int,
-  val isDefault: Boolean,
+  val isDefaultProcess: Boolean,
 )
 
 /** Enum denoting different data collection states. */

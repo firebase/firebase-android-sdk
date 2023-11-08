@@ -59,6 +59,16 @@ internal object TestSessionEventData {
       firebaseInstallationId = "",
     )
 
+  val TEST_PROCESS_DETAILS =
+    ProcessDetails(
+      processName = "com.google.firebase.sessions.test",
+      0,
+      100,
+      false,
+    )
+
+  val TEST_APP_PROCESS_DETAILS = listOf(TEST_PROCESS_DETAILS)
+
   val TEST_APPLICATION_INFO =
     ApplicationInfo(
       appId = FakeFirebaseApp.MOCK_APP_ID,
@@ -71,18 +81,10 @@ internal object TestSessionEventData {
         versionName = FakeFirebaseApp.MOCK_APP_VERSION,
         appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
         deviceManufacturer = Build.MANUFACTURER,
+        currentProcessDetails = TEST_PROCESS_DETAILS,
+        appProcessDetails = TEST_APP_PROCESS_DETAILS,
       ),
     )
-
-  val TEST_PROCESS_DETAILS =
-    ProcessDetails(
-      processName = "default",
-      1,
-      100,
-      true,
-    )
-
-  val TEST_APP_PROCESS_DETAILS = listOf<ProcessDetails>()
 
   val TEST_SESSION_EVENT =
     SessionEvent(
