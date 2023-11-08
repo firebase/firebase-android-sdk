@@ -52,6 +52,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
             container[backgroundDispatcher],
           )
         }
+        .eagerInDefaultApp()
         .build(),
       Component.builder(SessionGenerator::class.java)
         .name("session-generator")
