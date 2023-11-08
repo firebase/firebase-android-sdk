@@ -1,5 +1,6 @@
 # Unreleased
 
+* [changed] Add support for other Firebase products to integrate with [remote_config].
 
 # 21.5.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-config-ktx`
