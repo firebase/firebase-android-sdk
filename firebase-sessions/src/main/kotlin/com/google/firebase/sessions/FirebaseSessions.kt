@@ -21,6 +21,7 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -40,17 +41,25 @@ internal class FirebaseSessions(
       appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
 
       CoroutineScope(backgroundDispatcher).launch {
-        settings.updateSettings()
-        if (!settings.sessionsEnabled) {
-          Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
+        val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
+        if (subscribers.values.none { it.isDataCollectionEnabled }) {
+          Log.d(TAG, "No Sessions subscribers. Not listening to lifecycle events.")
         } else {
-          val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
-          lifecycleClient.bindToService()
-          SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
+          settings.updateSettings()
+          if (!settings.sessionsEnabled) {
+            Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
+          } else {
+            val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
+            lifecycleClient.bindToService()
+            SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
 
-          firebaseApp.addLifecycleEventListener { _, _ ->
-            Log.w(TAG, "FirebaseApp instance deleted. Sessions library will stop collecting data.")
-            SessionsActivityLifecycleCallbacks.lifecycleClient = null
+            firebaseApp.addLifecycleEventListener { _, _ ->
+              Log.w(
+                TAG,
+                "FirebaseApp instance deleted. Sessions library will stop collecting data."
+              )
+              SessionsActivityLifecycleCallbacks.lifecycleClient = null
+            }
           }
         }
       }

@@ -186,15 +186,20 @@ internal class SessionLifecycleService : Service() {
   }
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
-  override fun onBind(intent: Intent): IBinder? {
-    Log.d(TAG, "Service bound to new client on process ${intent.action}")
-    val callbackMessenger = getClientCallback(intent)
-    if (callbackMessenger != null) {
-      val clientBoundMsg = Message.obtain(null, CLIENT_BOUND, 0, 0)
-      clientBoundMsg.replyTo = callbackMessenger
-      messageHandler?.sendMessage(clientBoundMsg)
+  override fun onBind(intent: Intent?): IBinder? {
+    if (intent == null) {
+      Log.d(TAG, "Service bound with null intent. Ignoring.")
+      return null
+    } else {
+      Log.d(TAG, "Service bound to new client on process ${intent.action}")
+      val callbackMessenger = getClientCallback(intent)
+      if (callbackMessenger != null) {
+        val clientBoundMsg = Message.obtain(null, CLIENT_BOUND, 0, 0)
+        clientBoundMsg.replyTo = callbackMessenger
+        messageHandler?.sendMessage(clientBoundMsg)
+      }
+      return messenger?.binder
     }
-    return messenger?.binder
   }
 
   override fun onDestroy() {
