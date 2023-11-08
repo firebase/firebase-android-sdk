@@ -17,10 +17,9 @@ import android.content.Context
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.concurrent.FirebaseExecutors
 import java.io.Closeable
 import java.util.concurrent.Executor
-import java.util.concurrent.locks.ReentrantReadWriteLock
-import kotlin.concurrent.*
 import kotlinx.coroutines.*
 
 class FirebaseDataConnect
@@ -32,7 +31,8 @@ internal constructor(
   val service: String,
   internal val blockingExecutor: Executor,
   internal val nonBlockingExecutor: Executor,
-  private val creator: FirebaseDataConnectFactory
+  private val creator: FirebaseDataConnectFactory,
+  val settings: FirebaseDataConnectSettings,
 ) : Closeable {
 
   private val logger =
@@ -56,75 +56,58 @@ internal constructor(
         CoroutineName("FirebaseDataConnect")
     )
 
-  private val lock = ReentrantReadWriteLock()
-  private var settingsFrozen = false
+  // Dispatcher used to access `this.closed` and `this.grpcClient` simple.
+  private val sequentialDispatcher =
+    FirebaseExecutors.newSequentialExecutor(nonBlockingExecutor).asCoroutineDispatcher()
+
+  // This boolean value MUST only be accessed from code running on `sequentialDispatcher`.
   private var closed = false
 
-  var settings: FirebaseDataConnectSettings = FirebaseDataConnectSettings.defaults
-    get() {
-      lock.read {
-        return field
-      }
-    }
-    set(value) {
-      lock.write {
-        if (closed) {
-          throw IllegalStateException("instance has been closed")
-        }
-        if (settingsFrozen) {
-          throw IllegalStateException("settings cannot be modified after they are used")
-        }
-        field = value
-      }
-      logger.debug { "Settings changed to $value" }
-    }
-
-  fun updateSettings(block: FirebaseDataConnectSettings.Builder.() -> Unit) {
-    settings = settings.builder.build(block)
-  }
-
+  // This reference MUST only be set or dereferenced from code running on `sequentialDispatcher`.
   private val grpcClient: DataConnectGrpcClient by lazy {
     logger.debug { "DataConnectGrpcClient initialization started" }
-    lock.write {
-      if (closed) {
-        throw IllegalStateException("instance has been closed")
-      }
-      settingsFrozen = true
-
-      DataConnectGrpcClient(
-          context = context,
-          projectId = projectId,
-          location = location,
-          service = service,
-          hostName = settings.hostName,
-          port = settings.port,
-          sslEnabled = settings.sslEnabled,
-          executor = blockingExecutor,
-          creatorLoggerId = logger.id,
-        )
-        .also { logger.debug { "DataConnectGrpcClient initialization complete: $it" } }
+    if (closed) {
+      throw IllegalStateException("instance has been closed")
     }
+    DataConnectGrpcClient(
+        context = context,
+        projectId = projectId,
+        location = location,
+        service = service,
+        hostName = settings.hostName,
+        port = settings.port,
+        sslEnabled = settings.sslEnabled,
+        executor = blockingExecutor,
+        creatorLoggerId = logger.id,
+      )
+      .also { logger.debug { "DataConnectGrpcClient initialization complete: $it" } }
   }
 
   internal suspend fun <V, R> executeQuery(ref: QueryRef<V, R>, variables: V): R =
-    ref.codec.decodeResult(
-      grpcClient.executeQuery(
-        operationName = ref.operationName,
-        operationSet = ref.operationSet,
-        revision = ref.revision,
-        variables = ref.codec.encodeVariables(variables)
-      )
-    )
+    withContext(sequentialDispatcher) { grpcClient }
+      .run {
+        ref.codec.decodeResult(
+          executeQuery(
+            operationName = ref.operationName,
+            operationSet = ref.operationSet,
+            revision = ref.revision,
+            variables = ref.codec.encodeVariables(variables)
+          )
+        )
+      }
 
   internal suspend fun <V, R> executeMutation(ref: MutationRef<V, R>, variables: V): R =
-    ref.codec.decodeResult(
-      grpcClient.executeMutation(
-        operationName = ref.operationName,
-        operationSet = ref.operationSet,
-        revision = ref.revision,
-        variables = ref.codec.encodeVariables(variables)
-      )
-    )
+    withContext(sequentialDispatcher) { grpcClient }
+      .run {
+        ref.codec.decodeResult(
+          executeMutation(
+            operationName = ref.operationName,
+            operationSet = ref.operationSet,
+            revision = ref.revision,
+            variables = ref.codec.encodeVariables(variables)
+          )
+        )
+      }
 
   fun <VariablesType, ResultType> query(
     operationName: String,
@@ -156,15 +139,18 @@ internal constructor(
 
   override fun close() {
     logger.debug { "close() called" }
-    lock.write {
-      coroutineScope.cancel()
-      try {
-        grpcClient.close()
-      } finally {
+    runBlocking(sequentialDispatcher) {
+      if (!closed) {
+        doClose()
         closed = true
-        creator.remove(this)
       }
     }
+  }
+
+  private fun doClose() {
+    grpcClient.close()
+    coroutineScope.cancel()
+    creator.remove(this@FirebaseDataConnect)
   }
 
   override fun toString(): String {
@@ -173,11 +159,46 @@ internal constructor(
   }
 
   companion object {
-    fun getInstance(location: String, service: String): FirebaseDataConnect =
-      getInstance(Firebase.app, location, service)
+    fun getInstance(
+      app: FirebaseApp,
+      location: String,
+      service: String,
+      settings: FirebaseDataConnectSettings? = null
+    ): FirebaseDataConnect =
+      app.get(FirebaseDataConnectFactory::class.java).run {
+        get(location = location, service = service, settings = settings)
+      }
 
-    fun getInstance(app: FirebaseApp, location: String, service: String): FirebaseDataConnect =
-      app.get(FirebaseDataConnectFactory::class.java).run { get(location, service) }
+    fun getInstance(
+      location: String,
+      service: String,
+      settings: FirebaseDataConnectSettings? = null
+    ): FirebaseDataConnect =
+      getInstance(app = Firebase.app, location = location, service = service, settings = settings)
+
+    fun getInstance(
+      app: FirebaseApp,
+      location: String,
+      service: String,
+      settingsBlock: FirebaseDataConnectSettings.Builder.() -> Unit
+    ): FirebaseDataConnect =
+      getInstance(
+        app = app,
+        location = location,
+        service = service,
+        settings = FirebaseDataConnectSettings.defaults.build(settingsBlock)
+      )
+
+    fun getInstance(
+      location: String,
+      service: String,
+      settingsBlock: FirebaseDataConnectSettings.Builder.() -> Unit
+    ): FirebaseDataConnect =
+      getInstance(
+        location = location,
+        service = service,
+        settings = FirebaseDataConnectSettings.defaults.build(settingsBlock)
+      )
   }
 }
 

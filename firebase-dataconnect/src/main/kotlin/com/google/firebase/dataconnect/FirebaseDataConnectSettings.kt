@@ -27,6 +27,8 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   val builder: Builder
     get() = Builder(this)
 
+  fun build(block: Builder.() -> Unit): FirebaseDataConnectSettings = builder.build(block)
+
   companion object {
     val defaults
       get() =

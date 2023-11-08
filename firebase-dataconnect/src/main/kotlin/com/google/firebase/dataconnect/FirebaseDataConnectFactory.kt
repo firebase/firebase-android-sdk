@@ -41,7 +41,11 @@ internal class FirebaseDataConnectFactory(
   private val instancesByCacheKey = mutableMapOf<InstanceCacheKey, FirebaseDataConnect>()
   private var closed = false
 
-  fun get(location: String, service: String): FirebaseDataConnect {
+  fun get(
+    location: String,
+    service: String,
+    settings: FirebaseDataConnectSettings?
+  ): FirebaseDataConnect {
     val key = InstanceCacheKey(location = location, service = service)
     lock.withLock {
       if (closed) {
@@ -49,6 +53,13 @@ internal class FirebaseDataConnectFactory(
       }
       val cachedInstance = instancesByCacheKey[key]
       if (cachedInstance !== null) {
+        if (settings !== null && settings != cachedInstance.settings) {
+          throw IllegalArgumentException(
+            "The cached FirebaseDataConnect instance ($cachedInstance)" +
+              " must have the same settings as the specified settings; however, they are different" +
+              " (cached settings: ${cachedInstance.settings}, specified settings: $settings)"
+          )
+        }
         return cachedInstance
       }
 
@@ -62,7 +73,8 @@ internal class FirebaseDataConnectFactory(
           service = service,
           blockingExecutor = blockingExecutor,
           nonBlockingExecutor = nonBlockingExecutor,
-          creator = this
+          creator = this,
+          settings = settings ?: FirebaseDataConnectSettings.defaults
         )
       instancesByCacheKey[key] = newInstance
       return newInstance

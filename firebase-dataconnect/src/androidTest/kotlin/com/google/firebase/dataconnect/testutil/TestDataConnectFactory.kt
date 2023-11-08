@@ -26,17 +26,13 @@ class TestDataConnectFactory :
   fun newInstance(location: String? = null, service: String? = null): FirebaseDataConnect =
     newInstance(Params(location = location, service = service))
 
-  override fun createInstance(instanceId: String, params: Params?): FirebaseDataConnect {
-    val instance =
-      FirebaseDataConnect.getInstance(
-        location = params?.location ?: "TestLocation$instanceId",
-        service = params?.service ?: "TestService$instanceId"
-      )
-
-    instance.updateSettings { connectToEmulator() }
-
-    return instance
-  }
+  override fun createInstance(instanceId: String, params: Params?) =
+    FirebaseDataConnect.getInstance(
+      location = params?.location ?: "TestLocation$instanceId",
+      service = params?.service ?: "TestService$instanceId"
+    ) {
+      connectToEmulator()
+    }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {
     instance.close()

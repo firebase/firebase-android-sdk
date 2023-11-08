@@ -32,6 +32,7 @@ import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -120,6 +121,58 @@ class FirebaseDataConnectTest {
     assertThat(instance2A).isNotSameInstanceAs(instance2B)
     assertThat(instance2A).isNotSameInstanceAs(instance1A)
     assertThat(instance2A).isNotSameInstanceAs(instance1B)
+  }
+
+  @Test
+  fun getInstance_should_return_the_cached_instance_if_settings_compare_equal() {
+    val nonDefaultApp = firebaseAppFactory.newInstance()
+    val settings = FirebaseDataConnectSettings.defaults.build { hostName = "TestHostName" }
+    val instance1 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", settings)
+    val instance2 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", settings)
+    assertThat(instance1).isSameInstanceAs(instance2)
+  }
+
+  @Test
+  fun getInstance_should_return_the_cached_instance_if_settings_are_null() {
+    val nonDefaultApp = firebaseAppFactory.newInstance()
+    val settings = FirebaseDataConnectSettings.defaults.build { hostName = "TestHostName" }
+    val instance1 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", settings)
+    val instance2 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService", null)
+    assertThat(instance1).isSameInstanceAs(instance2)
+  }
+
+  @Test
+  fun getInstance_should_throw_if_settings_compare_unequal_to_settings_of_cached_instance() {
+    val nonDefaultApp = firebaseAppFactory.newInstance()
+    val settings1 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName1" }
+    val settings2 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName2" }
+    val instance1 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1", settings1)
+
+    assertThrows(IllegalArgumentException::class.java) {
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1", settings2)
+    }
+
+    val instance2 =
+      FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1", settings1)
+    assertThat(instance1).isSameInstanceAs(instance2)
+  }
+
+  @Test
+  fun getInstance_should_return_new_instance_if_settings_and_app_are_both_different() {
+    val nonDefaultApp1 = firebaseAppFactory.newInstance()
+    val nonDefaultApp2 = firebaseAppFactory.newInstance()
+    val settings1 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName1" }
+    val settings2 = FirebaseDataConnectSettings.defaults.build { hostName = "HostName2" }
+    val instance1 =
+      FirebaseDataConnect.getInstance(nonDefaultApp1, "TestLocation", "TestService", settings1)
+    val instance2 =
+      FirebaseDataConnect.getInstance(nonDefaultApp2, "TestLocation", "TestService", settings2)
+    assertThat(instance1).isNotSameInstanceAs(instance2)
   }
 
   @Test
