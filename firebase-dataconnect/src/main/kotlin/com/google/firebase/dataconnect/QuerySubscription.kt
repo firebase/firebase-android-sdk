@@ -40,25 +40,26 @@ internal constructor(
   // NOTE: The variables below must ONLY be accessed from coroutines that use `sequentialDispatcher`
   // for their `CoroutineDispatcher`. Having this requirement removes the need for explicitly
   // synchronizing access to these variables.
-  private var reloadInProgress = false
-  private var pendingReload = false
+  private var inProgressReload: CompletableDeferred<Message<VariablesType, ResultType>>? = null
+  private var pendingReload: CompletableDeferred<Message<VariablesType, ResultType>>? = null
 
   val lastResult: Message<VariablesType, ResultType>?
     get() = sharedFlow.replayCache.firstOrNull()
 
-  fun reload() {
-    query.dataConnect.coroutineScope.launch(sequentialDispatcher) {
-      pendingReload = true
-      if (!reloadInProgress) {
-        reloadInProgress = true
-        try {
-          doReloadLoop()
-        } finally {
-          reloadInProgress = false
+  fun reload(): Deferred<Message<VariablesType, ResultType>> =
+    runBlocking(sequentialDispatcher) {
+      pendingReload
+        ?: run {
+          CompletableDeferred<Message<VariablesType, ResultType>>().also { deferred ->
+            if (inProgressReload == null) {
+              inProgressReload = deferred
+              query.dataConnect.coroutineScope.launch(sequentialDispatcher) { doReloadLoop() }
+            } else {
+              pendingReload = deferred
+            }
+          }
         }
-      }
     }
-  }
 
   fun update(variables: VariablesType) {
     _variables.set(variables)
@@ -69,9 +70,13 @@ internal constructor(
     get() = sharedFlow.asSharedFlow().onSubscription { reload() }.buffer(Channel.CONFLATED)
 
   private suspend fun doReloadLoop() {
-    while (pendingReload) {
-      pendingReload = false
-      sharedFlow.emit(reload(variables, query))
+    while (true) {
+      val deferred = inProgressReload ?: break
+      val message = reload(variables, query)
+      deferred.complete(message)
+      sharedFlow.emit(message)
+      inProgressReload = pendingReload
+      pendingReload = null
     }
   }
 
