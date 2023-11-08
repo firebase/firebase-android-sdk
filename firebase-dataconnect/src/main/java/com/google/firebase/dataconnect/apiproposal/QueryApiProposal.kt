@@ -11,6 +11,14 @@ import kotlinx.coroutines.launch
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class FirebaseDataConnect {
+
+  fun <VariablesType, ResultType> query(
+    operationName: String,
+    operationSet: String,
+    revision: String,
+    codec: BaseRef.Codec<VariablesType, ResultType>
+  ): QueryRef<VariablesType, ResultType> = TODO()
+
   class Queries internal constructor() {
     val dataConnect: FirebaseDataConnect
       get() = TODO()
@@ -41,13 +49,8 @@ abstract class BaseRef<VariablesType, ResultType> internal constructor() {
   }
 }
 
-class QueryRef<VariablesType, ResultType>(
-  dataConnect: FirebaseDataConnect,
-  operationName: String,
-  operationSet: String,
-  revision: String,
-  codec: Codec<VariablesType, ResultType>,
-) : BaseRef<VariablesType, ResultType>() {
+class QueryRef<VariablesType, ResultType> internal constructor() :
+  BaseRef<VariablesType, ResultType>() {
   override suspend fun execute(variables: VariablesType): ResultType = TODO()
 
   fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, ResultType> = TODO()

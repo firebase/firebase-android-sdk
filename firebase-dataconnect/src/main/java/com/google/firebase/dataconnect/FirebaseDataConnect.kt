@@ -126,6 +126,34 @@ internal constructor(
       )
     )
 
+  fun <VariablesType, ResultType> query(
+    operationName: String,
+    operationSet: String,
+    revision: String,
+    codec: BaseRef.Codec<VariablesType, ResultType>
+  ): QueryRef<VariablesType, ResultType> =
+    QueryRef(
+      dataConnect = this,
+      operationName = operationName,
+      operationSet = operationSet,
+      revision = revision,
+      codec = codec
+    )
+
+  fun <VariablesType, ResultType> mutation(
+    operationName: String,
+    operationSet: String,
+    revision: String,
+    codec: BaseRef.Codec<VariablesType, ResultType>
+  ): MutationRef<VariablesType, ResultType> =
+    MutationRef(
+      dataConnect = this,
+      operationName = operationName,
+      operationSet = operationSet,
+      revision = revision,
+      codec = codec
+    )
+
   override fun close() {
     logger.debug { "close() called" }
     lock.write {

@@ -203,8 +203,7 @@ class FirebaseDataConnectTest {
 
     run {
       val mutation =
-        MutationRef(
-          dataConnect = dc,
+        dc.mutation(
           operationName = "createPost",
           operationSet = "crud",
           revision = "TestRevision",
@@ -219,12 +218,11 @@ class FirebaseDataConnectTest {
 
     run {
       val query =
-        QueryRef(
-          dataConnect = dc,
+        dc.query(
           operationName = "getPost",
           operationSet = "crud",
           revision = "TestRevision",
-          codec = IdentityCodec,
+          codec = IdentityCodec
         )
       val queryResult = query.execute(mapOf("id" to postId))
       assertWithMessage("queryResponse")
@@ -238,12 +236,11 @@ class FirebaseDataConnectTest {
   @Test
   fun testInstallEmulatorSchema() {
     suspend fun FirebaseDataConnect.createPerson(id: String, name: String, age: Int? = null) =
-      MutationRef(
-          dataConnect = this,
+      mutation(
           operationName = "createPerson",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec,
+          codec = IdentityCodec
         )
         .execute(
           mapOf(
@@ -257,22 +254,20 @@ class FirebaseDataConnectTest {
         )
 
     suspend fun FirebaseDataConnect.getPerson(id: String) =
-      QueryRef(
-          dataConnect = this,
+      query(
           operationName = "getPerson",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec,
+          codec = IdentityCodec
         )
         .execute(mapOf("id" to id))
 
     suspend fun FirebaseDataConnect.getAllPeople() =
-      QueryRef(
-          dataConnect = this,
+      query(
           operationName = "getAllPeople",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec,
+          codec = IdentityCodec
         )
         .execute(emptyMap())
 

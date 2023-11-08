@@ -26,8 +26,7 @@ class CreatePostMutation private constructor() {
   companion object {
 
     fun mutation(dataConnect: FirebaseDataConnect) =
-      MutationRef(
-        dataConnect = dataConnect,
+      dataConnect.mutation(
         operationName = "createPost",
         operationSet = "crud",
         revision = "1234567890abcdef",

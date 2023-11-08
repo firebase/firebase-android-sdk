@@ -27,8 +27,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   }
 
   val createPerson =
-    MutationRef(
-      dataConnect = dataConnect,
+    dataConnect.mutation(
       operationName = "createPerson",
       operationSet = "ops",
       revision = "42",
@@ -57,8 +56,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   }
 
   val updatePerson =
-    MutationRef(
-      dataConnect = dataConnect,
+    dataConnect.mutation(
       operationName = "updatePerson",
       operationSet = "ops",
       revision = "42",
@@ -88,8 +86,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   }
 
   val deletePerson =
-    MutationRef(
-      dataConnect = dataConnect,
+    dataConnect.mutation(
       operationName = "deletePerson",
       operationSet = "ops",
       revision = "42",
@@ -109,8 +106,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   }
 
   val getPerson =
-    QueryRef(
-      dataConnect = dataConnect,
+    dataConnect.query(
       operationName = "getPerson",
       operationSet = "ops",
       revision = "42",

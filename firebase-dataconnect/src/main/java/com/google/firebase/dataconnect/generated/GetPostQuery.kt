@@ -38,8 +38,7 @@ class GetPostQuery private constructor() {
   companion object {
 
     fun query(dataConnect: FirebaseDataConnect) =
-      QueryRef(
-        dataConnect,
+      dataConnect.query(
         operationName = "getPost",
         operationSet = "crud",
         revision = "1234567890abcdef",

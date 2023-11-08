@@ -13,7 +13,8 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-class MutationRef<VariablesType, ResultType>(
+class MutationRef<VariablesType, ResultType>
+internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   operationSet: String,
