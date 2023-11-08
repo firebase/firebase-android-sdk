@@ -1,7 +1,364 @@
 // Signature format: 2.0
 package com.google.firebase.dataconnect {
 
-  public class FirebaseDataConnect {
+  public abstract class BaseRef<VariablesType, ResultType> {
+    method @Nullable public abstract suspend Object execute(@Nullable VariablesType variables, @NonNull kotlin.coroutines.Continuation<? super ResultType>);
+    method @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnect getDataConnect();
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnect dataConnect;
+  }
+
+  public static interface BaseRef.Codec<VariablesType, ResultType> {
+    method public ResultType decodeResult(@NonNull java.util.Map<java.lang.String,?> map);
+    method @NonNull public java.util.Map<java.lang.String,java.lang.Object> encodeVariables(@Nullable VariablesType variables);
+  }
+
+  public class DataConnectException extends java.lang.Exception {
+  }
+
+  public final class DataConnectGrpcClientKt {
+  }
+
+  public final class FirebaseDataConnect implements java.io.Closeable {
+    method public void close();
+    method @NonNull public com.google.firebase.FirebaseApp getApp();
+    method @NonNull public String getLocation();
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect.Mutations getMutations();
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect.Queries getQueries();
+    method @NonNull public String getService();
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnectSettings getSettings();
+    method @NonNull public <VariablesType, ResultType> com.google.firebase.dataconnect.MutationRef<VariablesType,ResultType> mutation(@NonNull String operationName, @NonNull String operationSet, @NonNull String revision, @NonNull com.google.firebase.dataconnect.BaseRef.Codec<VariablesType,ResultType> codec);
+    method @NonNull public <VariablesType, ResultType> com.google.firebase.dataconnect.QueryRef<VariablesType,ResultType> query(@NonNull String operationName, @NonNull String operationSet, @NonNull String revision, @NonNull com.google.firebase.dataconnect.BaseRef.Codec<VariablesType,ResultType> codec);
+    property @NonNull public final com.google.firebase.FirebaseApp app;
+    property @NonNull public final String location;
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnect.Mutations mutations;
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnect.Queries queries;
+    property @NonNull public final String service;
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnectSettings settings;
+    field @NonNull public static final com.google.firebase.dataconnect.FirebaseDataConnect.Companion Companion;
+  }
+
+  public static final class FirebaseDataConnect.Companion {
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.FirebaseApp app, @NonNull String location, @NonNull String service, @Nullable com.google.firebase.dataconnect.FirebaseDataConnectSettings settings = null);
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull String location, @NonNull String service, @Nullable com.google.firebase.dataconnect.FirebaseDataConnectSettings settings = null);
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.FirebaseApp app, @NonNull String location, @NonNull String service, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.FirebaseDataConnectSettings.Builder,kotlin.Unit> settingsBlock);
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull String location, @NonNull String service, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.FirebaseDataConnectSettings.Builder,kotlin.Unit> settingsBlock);
+  }
+
+  public static final class FirebaseDataConnect.Mutations {
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getDataConnect();
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnect dataConnect;
+  }
+
+  public static final class FirebaseDataConnect.Queries {
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getDataConnect();
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnect dataConnect;
+  }
+
+  public final class FirebaseDataConnectSettings {
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnectSettings build(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.FirebaseDataConnectSettings.Builder,kotlin.Unit> block);
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnectSettings.Builder getBuilder();
+    method @NonNull public String getHostName();
+    method public int getPort();
+    method public boolean getSslEnabled();
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnectSettings.Builder builder;
+    property @NonNull public final String hostName;
+    property public final int port;
+    property public final boolean sslEnabled;
+    field @NonNull public static final com.google.firebase.dataconnect.FirebaseDataConnectSettings.Companion Companion;
+  }
+
+  public static final class FirebaseDataConnectSettings.Builder {
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnectSettings build();
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnectSettings build(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.FirebaseDataConnectSettings.Builder,kotlin.Unit> block);
+    method public void connectToEmulator();
+    method @NonNull public String getHostName();
+    method public int getPort();
+    method public boolean getSslEnabled();
+    method public void setHostName(@NonNull String);
+    method public void setPort(int);
+    method public void setSslEnabled(boolean);
+    property @NonNull public final String hostName;
+    property public final int port;
+    property public final boolean sslEnabled;
+  }
+
+  public static final class FirebaseDataConnectSettings.Companion {
+    method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnectSettings getDefaults();
+    property @NonNull public final com.google.firebase.dataconnect.FirebaseDataConnectSettings defaults;
+  }
+
+  public class GraphQLException extends com.google.firebase.dataconnect.DataConnectException {
+    method @NonNull public final java.util.List<java.lang.String> getErrors();
+    property @NonNull public final java.util.List<java.lang.String> errors;
+  }
+
+  public enum LogLevel {
+    method @NonNull public static com.google.firebase.dataconnect.LogLevel valueOf(@NonNull String name) throws java.lang.IllegalArgumentException;
+    method @NonNull public static com.google.firebase.dataconnect.LogLevel[] values();
+    enum_constant public static final com.google.firebase.dataconnect.LogLevel DEBUG;
+    enum_constant public static final com.google.firebase.dataconnect.LogLevel INFO;
+    enum_constant public static final com.google.firebase.dataconnect.LogLevel WARNING;
+  }
+
+  public final class LoggerKt {
+    method @NonNull public static com.google.firebase.dataconnect.LogLevel getLogLevel();
+    method public static void setLogLevel(@NonNull com.google.firebase.dataconnect.LogLevel);
+    property @NonNull public static final com.google.firebase.dataconnect.LogLevel logLevel;
+  }
+
+  public final class MutationRef<VariablesType, ResultType> extends com.google.firebase.dataconnect.BaseRef<VariablesType,ResultType> {
+    method @Nullable public suspend Object execute(@Nullable VariablesType variables, @NonNull kotlin.coroutines.Continuation<? super ResultType>);
+  }
+
+  public class NetworkTransportException extends com.google.firebase.dataconnect.DataConnectException {
+  }
+
+  public final class QueryRef<VariablesType, ResultType> extends com.google.firebase.dataconnect.BaseRef<VariablesType,ResultType> {
+    method @Nullable public suspend Object execute(@Nullable VariablesType variables, @NonNull kotlin.coroutines.Continuation<? super ResultType>);
+    method @NonNull public com.google.firebase.dataconnect.QuerySubscription<VariablesType,ResultType> subscribe(@Nullable VariablesType variables);
+  }
+
+  public final class QuerySubscription<VariablesType, ResultType> {
+    method @NonNull public kotlinx.coroutines.flow.Flow<com.google.firebase.dataconnect.QuerySubscription.Message<VariablesType,ResultType>> getFlow();
+    method @Nullable public com.google.firebase.dataconnect.QuerySubscription.Message<VariablesType,ResultType> getLastResult();
+    method public VariablesType getVariables();
+    method public void reload();
+    method public void update(@Nullable VariablesType variables);
+    property @NonNull public final kotlinx.coroutines.flow.Flow<com.google.firebase.dataconnect.QuerySubscription.Message<VariablesType,ResultType>> flow;
+    property @Nullable public final com.google.firebase.dataconnect.QuerySubscription.Message<VariablesType,ResultType> lastResult;
+    property public final VariablesType variables;
+  }
+
+  public static final class QuerySubscription.Message<VariablesType, ResultType> {
+    ctor public QuerySubscription.Message(@Nullable VariablesType variables, @NonNull Object result);
+    method @NonNull public Object getResult();
+    method public VariablesType getVariables();
+    property @NonNull public final Object result;
+    property public final VariablesType variables;
+  }
+
+  public final class QuerySubscriptionKt {
+  }
+
+  public class ResultDecodeException extends com.google.firebase.dataconnect.DataConnectException {
+  }
+
+}
+
+package com.google.firebase.dataconnect.apiproposal {
+
+  public abstract class BaseRef<VariablesType, ResultType> {
+    method @Nullable public abstract suspend Object execute(@Nullable VariablesType variables, @NonNull kotlin.coroutines.Continuation<? super ResultType>);
+    method @NonNull public final com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect getDataConnect();
+    property @NonNull public final com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect dataConnect;
+  }
+
+  public static interface BaseRef.Codec<VariablesType, ResultType> {
+    method public ResultType decodeResult(@NonNull java.util.Map<java.lang.String,?> map);
+    method @NonNull public java.util.Map<java.lang.String,java.lang.Object> encodeVariables(@Nullable VariablesType variables);
+  }
+
+  public class DataConnectException extends java.lang.Exception {
+  }
+
+  public final class FirebaseDataConnect {
+    ctor public FirebaseDataConnect();
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect.Queries getQueries();
+    method @NonNull public <VariablesType, ResultType> com.google.firebase.dataconnect.apiproposal.QueryRef<VariablesType,ResultType> query(@NonNull String operationName, @NonNull String operationSet, @NonNull String revision, @NonNull com.google.firebase.dataconnect.apiproposal.BaseRef.Codec<VariablesType,ResultType> codec);
+    property @NonNull public final com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect.Queries queries;
+  }
+
+  public static final class FirebaseDataConnect.Queries {
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect getDataConnect();
+    property @NonNull public final com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect dataConnect;
+  }
+
+  public final class GetPostQuery {
+    field @NonNull public static final com.google.firebase.dataconnect.apiproposal.GetPostQuery.Companion Companion;
+  }
+
+  public static final class GetPostQuery.Companion {
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.QueryRef<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Variables,com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result> query(@NonNull com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect dataConnect);
+  }
+
+  public static final class GetPostQuery.Result {
+    ctor public GetPostQuery.Result(@NonNull com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post post);
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post component1();
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result copy(@NonNull com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post post);
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post getPost();
+    property @NonNull public final com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post post;
+  }
+
+  public static final class GetPostQuery.Result.Post {
+    ctor public GetPostQuery.Result.Post(@NonNull String content, @NonNull java.util.List<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post.Comment> comments);
+    method @NonNull public String component1();
+    method @NonNull public java.util.List<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post.Comment> component2();
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post copy(@NonNull String content, @NonNull java.util.List<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post.Comment> comments);
+    method @NonNull public java.util.List<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post.Comment> getComments();
+    method @NonNull public String getContent();
+    property @NonNull public final java.util.List<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post.Comment> comments;
+    property @NonNull public final String content;
+  }
+
+  public static final class GetPostQuery.Result.Post.Comment {
+    ctor public GetPostQuery.Result.Post.Comment(@NonNull String id, @NonNull String content);
+    method @NonNull public String component1();
+    method @NonNull public String component2();
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result.Post.Comment copy(@NonNull String id, @NonNull String content);
+    method @NonNull public String getContent();
+    method @NonNull public String getId();
+    property @NonNull public final String content;
+    property @NonNull public final String id;
+  }
+
+  public static final class GetPostQuery.Variables {
+    ctor public GetPostQuery.Variables(@NonNull String id);
+    method @NonNull public String component1();
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.GetPostQuery.Variables copy(@NonNull String id);
+    method @NonNull public String getId();
+    property @NonNull public final String id;
+  }
+
+  public class GraphQLException extends com.google.firebase.dataconnect.apiproposal.DataConnectException {
+    method @NonNull public final java.util.List<java.lang.String> getErrors();
+    property @NonNull public final java.util.List<java.lang.String> errors;
+  }
+
+  public class NetworkTransportException extends com.google.firebase.dataconnect.apiproposal.DataConnectException {
+  }
+
+  public final class QueryApiProposalKt {
+    method @Nullable public static suspend Object execute(@NonNull com.google.firebase.dataconnect.apiproposal.QueryRef<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Variables,com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result>, @NonNull String id, @NonNull kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result>);
+    method @NonNull public static com.google.firebase.dataconnect.apiproposal.QueryRef<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Variables,com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result> getGetPost(@NonNull com.google.firebase.dataconnect.apiproposal.FirebaseDataConnect.Queries);
+    method @NonNull public static com.google.firebase.dataconnect.apiproposal.QuerySubscription<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Variables,com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result> subscribe(@NonNull com.google.firebase.dataconnect.apiproposal.QueryRef<com.google.firebase.dataconnect.apiproposal.GetPostQuery.Variables,com.google.firebase.dataconnect.apiproposal.GetPostQuery.Result>, @NonNull String id);
+  }
+
+  public final class QueryRef<VariablesType, ResultType> extends com.google.firebase.dataconnect.apiproposal.BaseRef<VariablesType,ResultType> {
+    method @Nullable public suspend Object execute(@Nullable VariablesType variables, @NonNull kotlin.coroutines.Continuation<? super ResultType>);
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.QuerySubscription<VariablesType,ResultType> subscribe(@Nullable VariablesType variables);
+  }
+
+  public final class QuerySubscription<VariablesType, ResultType> {
+    method @NonNull public kotlinx.coroutines.flow.Flow<com.google.firebase.dataconnect.apiproposal.QuerySubscription.Message<VariablesType,ResultType>> getFlow();
+    method @Nullable public com.google.firebase.dataconnect.apiproposal.QuerySubscription.Message<VariablesType,ResultType> getLastResult();
+    method @NonNull public com.google.firebase.dataconnect.apiproposal.QueryRef<VariablesType,ResultType> getQuery();
+    method public VariablesType getVariables();
+    method public void reload();
+    property @NonNull public final kotlinx.coroutines.flow.Flow<com.google.firebase.dataconnect.apiproposal.QuerySubscription.Message<VariablesType,ResultType>> flow;
+    property @Nullable public final com.google.firebase.dataconnect.apiproposal.QuerySubscription.Message<VariablesType,ResultType> lastResult;
+    property @NonNull public final com.google.firebase.dataconnect.apiproposal.QueryRef<VariablesType,ResultType> query;
+    property public final VariablesType variables;
+  }
+
+  public static final class QuerySubscription.Message<VariablesType, ResultType> {
+    ctor public QuerySubscription.Message(@Nullable VariablesType variables, @NonNull Object result);
+    method @NonNull public Object getResult();
+    method public VariablesType getVariables();
+    property @NonNull public final Object result;
+    property public final VariablesType variables;
+  }
+
+  public class ResultDecodeException extends com.google.firebase.dataconnect.apiproposal.DataConnectException {
+  }
+
+}
+
+package com.google.firebase.dataconnect.generated {
+
+  public final class CreatePostMutation {
+    field @NonNull public static final com.google.firebase.dataconnect.generated.CreatePostMutation.Companion Companion;
+  }
+
+  public static final class CreatePostMutation.Companion {
+    method @NonNull public com.google.firebase.dataconnect.MutationRef<com.google.firebase.dataconnect.generated.CreatePostMutation.Variables,kotlin.Unit> mutation(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect dataConnect);
+  }
+
+  public static final class CreatePostMutation.Variables {
+    ctor public CreatePostMutation.Variables(@NonNull com.google.firebase.dataconnect.generated.CreatePostMutation.Variables.PostData data);
+    method @NonNull public com.google.firebase.dataconnect.generated.CreatePostMutation.Variables.PostData component1();
+    method @NonNull public com.google.firebase.dataconnect.generated.CreatePostMutation.Variables copy(@NonNull com.google.firebase.dataconnect.generated.CreatePostMutation.Variables.PostData data);
+    method @NonNull public com.google.firebase.dataconnect.generated.CreatePostMutation.Variables.PostData getData();
+    property @NonNull public final com.google.firebase.dataconnect.generated.CreatePostMutation.Variables.PostData data;
+  }
+
+  public static final class CreatePostMutation.Variables.PostData {
+    ctor public CreatePostMutation.Variables.PostData(@NonNull String id, @NonNull String content);
+    method @NonNull public String component1();
+    method @NonNull public String component2();
+    method @NonNull public com.google.firebase.dataconnect.generated.CreatePostMutation.Variables.PostData copy(@NonNull String id, @NonNull String content);
+    method @NonNull public String getContent();
+    method @NonNull public String getId();
+    property @NonNull public final String content;
+    property @NonNull public final String id;
+  }
+
+  public final class CreatePostMutationKt {
+    method @Nullable public static suspend Object execute(@NonNull com.google.firebase.dataconnect.MutationRef<com.google.firebase.dataconnect.generated.CreatePostMutation.Variables,kotlin.Unit>, @NonNull String id, @NonNull String content, @NonNull kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @NonNull public static com.google.firebase.dataconnect.MutationRef<com.google.firebase.dataconnect.generated.CreatePostMutation.Variables,kotlin.Unit> getCreatePost(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Mutations);
+  }
+
+  public final class GetPostQuery {
+    field @NonNull public static final com.google.firebase.dataconnect.generated.GetPostQuery.Companion Companion;
+  }
+
+  public static final class GetPostQuery.Companion {
+    method @NonNull public com.google.firebase.dataconnect.QueryRef<com.google.firebase.dataconnect.generated.GetPostQuery.Variables,com.google.firebase.dataconnect.generated.GetPostQuery.Result> query(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect dataConnect);
+  }
+
+  public static final class GetPostQuery.Result {
+    ctor public GetPostQuery.Result(@NonNull com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post post);
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post component1();
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Result copy(@NonNull com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post post);
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post getPost();
+    property @NonNull public final com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post post;
+  }
+
+  public static final class GetPostQuery.Result.Post {
+    ctor public GetPostQuery.Result.Post(@NonNull String content, @NonNull java.util.List<com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post.Comment> comments);
+    method @NonNull public String component1();
+    method @NonNull public java.util.List<com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post.Comment> component2();
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post copy(@NonNull String content, @NonNull java.util.List<com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post.Comment> comments);
+    method @NonNull public java.util.List<com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post.Comment> getComments();
+    method @NonNull public String getContent();
+    property @NonNull public final java.util.List<com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post.Comment> comments;
+    property @NonNull public final String content;
+  }
+
+  public static final class GetPostQuery.Result.Post.Comment {
+    ctor public GetPostQuery.Result.Post.Comment(@NonNull String id, @NonNull String content);
+    method @NonNull public String component1();
+    method @NonNull public String component2();
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Result.Post.Comment copy(@NonNull String id, @NonNull String content);
+    method @NonNull public String getContent();
+    method @NonNull public String getId();
+    property @NonNull public final String content;
+    property @NonNull public final String id;
+  }
+
+  public static final class GetPostQuery.Variables {
+    ctor public GetPostQuery.Variables(@NonNull String id);
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Variables build(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.generated.GetPostQuery.Variables.Builder,kotlin.Unit> block);
+    method @NonNull public String component1();
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Variables copy(@NonNull String id);
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Variables.Builder getBuilder();
+    method @NonNull public String getId();
+    property @NonNull public final com.google.firebase.dataconnect.generated.GetPostQuery.Variables.Builder builder;
+    property @NonNull public final String id;
+  }
+
+  public static final class GetPostQuery.Variables.Builder {
+    ctor public GetPostQuery.Variables.Builder(@NonNull String id);
+    method @NonNull public com.google.firebase.dataconnect.generated.GetPostQuery.Variables build();
+    method @NonNull public String getId();
+    method public void setId(@NonNull String);
+    property @NonNull public final String id;
+  }
+
+  public final class GetPostQueryKt {
+    method @Nullable public static suspend Object execute(@NonNull com.google.firebase.dataconnect.QueryRef<com.google.firebase.dataconnect.generated.GetPostQuery.Variables,com.google.firebase.dataconnect.generated.GetPostQuery.Result>, @NonNull String id, @NonNull kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.generated.GetPostQuery.Result>);
+    method @NonNull public static com.google.firebase.dataconnect.QueryRef<com.google.firebase.dataconnect.generated.GetPostQuery.Variables,com.google.firebase.dataconnect.generated.GetPostQuery.Result> getGetPost(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Queries);
+    method @NonNull public static com.google.firebase.dataconnect.QuerySubscription<com.google.firebase.dataconnect.generated.GetPostQuery.Variables,com.google.firebase.dataconnect.generated.GetPostQuery.Result> subscribe(@NonNull com.google.firebase.dataconnect.QueryRef<com.google.firebase.dataconnect.generated.GetPostQuery.Variables,com.google.firebase.dataconnect.generated.GetPostQuery.Result>, @NonNull String id);
+    method public static void update(@NonNull com.google.firebase.dataconnect.QuerySubscription<com.google.firebase.dataconnect.generated.GetPostQuery.Variables,com.google.firebase.dataconnect.generated.GetPostQuery.Result>, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.generated.GetPostQuery.Variables.Builder,kotlin.Unit> block);
   }
 
 }
