@@ -95,7 +95,21 @@ class SessionEventEncoderTest {
                 "packageName":"com.google.firebase.sessions.test",
                 "versionName":"1.0.0",
                 "appBuildVersion":"0",
-                "deviceManufacturer":"${Build.MANUFACTURER}"
+                "deviceManufacturer":"${Build.MANUFACTURER}",
+                "currentProcessDetails":{
+                  "processName":"com.google.firebase.sessions.test",
+                  "pid":0,
+                  "importance":100,
+                  "defaultProcess":false
+                },
+                "appProcessDetails":[
+                  {
+                    "processName":"com.google.firebase.sessions.test",
+                    "pid":0,
+                    "importance":100,
+                    "defaultProcess":false
+                  }
+                ]
               }
             }
           }
@@ -129,6 +143,8 @@ class SessionEventEncoderTest {
               versionName = "",
               appBuildVersion = "",
               deviceManufacturer = "",
+              currentProcessDetails = ProcessDetails("", 0, 0, false),
+              appProcessDetails = listOf(),
             ),
           ),
       )
@@ -162,7 +178,14 @@ class SessionEventEncoderTest {
                 "packageName":"",
                 "versionName":"",
                 "appBuildVersion":"",
-                "deviceManufacturer":""
+                "deviceManufacturer":"",
+                "currentProcessDetails":{
+                  "processName":"",
+                  "pid":0,
+                  "importance":0,
+                  "defaultProcess":false
+                },
+                "appProcessDetails":[]
               }
             }
           }

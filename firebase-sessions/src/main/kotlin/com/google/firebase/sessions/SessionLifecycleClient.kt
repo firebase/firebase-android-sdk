@@ -83,14 +83,14 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
   /** The connection object to the [SessionLifecycleService]. */
   private val serviceConnection =
     object : ServiceConnection {
-      override fun onServiceConnected(className: ComponentName, serviceBinder: IBinder) {
+      override fun onServiceConnected(className: ComponentName?, serviceBinder: IBinder?) {
         Log.d(TAG, "Connected to SessionLifecycleService. Queue size ${queuedMessages.size}")
         service = Messenger(serviceBinder)
         serviceBound = true
         sendLifecycleEvents(drainQueue())
       }
 
-      override fun onServiceDisconnected(className: ComponentName) {
+      override fun onServiceDisconnected(className: ComponentName?) {
         Log.d(TAG, "Disconnected from SessionLifecycleService")
         service = null
         serviceBound = false
