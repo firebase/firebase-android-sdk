@@ -1,6 +1,7 @@
 # Unreleased
 * [changed] Include more details about app processes in reports.
 * [feature] Updated `firebase-sessions` dependency for more accurate sessions on multi-process apps.
+* [changed] Added support for [crashlytics] to report information from [remote_config].
 
 # 18.5.1
 * [fixed] Internal improvement to fix compatibility with Flutter and Unity SDKs. Github
