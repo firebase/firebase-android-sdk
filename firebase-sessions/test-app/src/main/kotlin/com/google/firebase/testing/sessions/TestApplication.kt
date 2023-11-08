@@ -16,10 +16,10 @@
 
 package com.google.firebase.testing.sessions
 
-import android.app.Application
 import android.content.IntentFilter
+import androidx.multidex.MultiDexApplication
 
-class TestApplication : Application() {
+class TestApplication : MultiDexApplication() {
   private val broadcastReceiver = CrashBroadcastReceiver()
 
   override fun onCreate() {
