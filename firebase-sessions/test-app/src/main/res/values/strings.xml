@@ -15,7 +15,7 @@
   -->
 
 <resources>
-  <string name="app_name">1 WidgetTestApp</string>
+  <string name="app_name">Firebase Sessions Test App</string>
   <string name="action_settings">Settings</string>
   <string name="first_fragment_label">First Fragment</string>
   <string name="crash_test_widget_description">Test Widget for Crashing</string>
