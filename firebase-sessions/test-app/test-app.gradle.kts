@@ -32,11 +32,12 @@ android {
   compileSdk = 33
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
-    minSdk = 18
+    minSdk = 16
     targetSdk = 33
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true
+    multiDexKeepProguard = file("multidex-config.pro")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
