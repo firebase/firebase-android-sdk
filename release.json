@@ -1,0 +1,16 @@
+{
+    "name": "m140",
+    "libraries": [
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-sessions",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
