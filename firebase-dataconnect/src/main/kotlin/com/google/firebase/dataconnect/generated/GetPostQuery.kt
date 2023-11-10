@@ -22,8 +22,15 @@ import com.google.firebase.dataconnect.ResultDecodeException
 class GetPostQuery private constructor() {
 
   data class Variables(val id: String) {
-    val builder = Builder(id = id)
+
+    val builder
+      get() = Builder(id = id)
+
     fun build(block: Builder.() -> Unit): Variables = builder.apply(block).build()
+
+    @DslMarker annotation class VariablesDsl
+
+    @VariablesDsl
     class Builder(var id: String) {
       fun build() = Variables(id = id)
     }

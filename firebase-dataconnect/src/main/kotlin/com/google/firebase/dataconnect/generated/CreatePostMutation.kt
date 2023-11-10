@@ -20,7 +20,36 @@ import com.google.firebase.dataconnect.MutationRef
 class CreatePostMutation private constructor() {
 
   data class Variables(val data: PostData) {
-    data class PostData(val id: String, val content: String)
+
+    val builder
+      get() = Builder(data = data)
+
+    fun build(block: Builder.() -> Unit): Variables = builder.apply(block).build()
+
+    @DslMarker annotation class VariablesDsl
+
+    @VariablesDsl
+    class Builder(var data: PostData) {
+      fun build() = Variables(data = data)
+      fun data(id: String, content: String) {
+        data = PostData(id = id, content = content)
+      }
+      fun data(block: PostData.Builder.() -> Unit) {
+        data = data.build(block)
+      }
+    }
+
+    data class PostData(val id: String, val content: String) {
+      val builder
+        get() = Builder(id = id, content = content)
+
+      fun build(block: Builder.() -> Unit): PostData = builder.apply(block).build()
+
+      @VariablesDsl
+      class Builder(var id: String, var content: String) {
+        fun build() = PostData(id = id, content = content)
+      }
+    }
   }
 
   companion object {
