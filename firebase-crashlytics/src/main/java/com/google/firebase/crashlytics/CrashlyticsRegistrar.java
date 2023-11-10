@@ -36,7 +36,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
 
   static {
     // Add Crashlytics as a dependency of Sessions when this class is loaded into memory.
-    FirebaseSessionsDependencies.INSTANCE.addDependency(SessionSubscriber.Name.CRASHLYTICS);
+    FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.CRASHLYTICS);
   }
 
   @Override
