@@ -1,0 +1,177 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "04ed89afa9cbba39803718845bb020d243e513b5",
+                "prId": "5531",
+                "author": "Dana Silver",
+                "message": "Bump Crashlytics, Remote Config, Sessions for next version to minor release. (#5531)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/04ed89afa9cbba39803718845bb020d243e513b5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5531"
+            },
+            {
+                "commitId": "605d89f68d8a52f5670b94afe341b94f0405fa89",
+                "prId": "5530",
+                "author": "Dana Silver",
+                "message": "Add changelog entries for rollouts. (#5530)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/605d89f68d8a52f5670b94afe341b94f0405fa89",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5530"
+            },
+            {
+                "commitId": "f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prId": "5517",
+                "author": "themiswang",
+                "message": "Feature rollouts (#5517)\n\nFeature branch feature merge\r\nRelease notes will be added in a separate pr\r\n#no-changelog\r\n\r\n---------\r\n\r\nCo-authored-by: Sam Edson <samedson@google.com>\r\nCo-authored-by: qdpham <qdpham@google.com>\r\nCo-authored-by: Dana Silver <danasilver@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5517"
+            }
+        ],
+        "firebase-config/ktx": [
+            {
+                "commitId": "f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prId": "5517",
+                "author": "themiswang",
+                "message": "Feature rollouts (#5517)\n\nFeature branch feature merge\r\nRelease notes will be added in a separate pr\r\n#no-changelog\r\n\r\n---------\r\n\r\nCo-authored-by: Sam Edson <samedson@google.com>\r\nCo-authored-by: qdpham <qdpham@google.com>\r\nCo-authored-by: Dana Silver <danasilver@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5517"
+            }
+        ],
+        "firebase-config-interop": [
+            {
+                "commitId": "016e91f2fa99002ff5a755d23d440819cd330cfa",
+                "prId": "5541",
+                "author": "Rodrigo Lazo",
+                "message": "Fix release config for config-interop (#5539) (#5541)\n\nCherrypick",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/016e91f2fa99002ff5a755d23d440819cd330cfa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5541"
+            },
+            {
+                "commitId": "f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prId": "5517",
+                "author": "themiswang",
+                "message": "Feature rollouts (#5517)\n\nFeature branch feature merge\r\nRelease notes will be added in a separate pr\r\n#no-changelog\r\n\r\n---------\r\n\r\nCo-authored-by: Sam Edson <samedson@google.com>\r\nCo-authored-by: qdpham <qdpham@google.com>\r\nCo-authored-by: Dana Silver <danasilver@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5517"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "04ed89afa9cbba39803718845bb020d243e513b5",
+                "prId": "5531",
+                "author": "Dana Silver",
+                "message": "Bump Crashlytics, Remote Config, Sessions for next version to minor release. (#5531)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/04ed89afa9cbba39803718845bb020d243e513b5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5531"
+            },
+            {
+                "commitId": "605d89f68d8a52f5670b94afe341b94f0405fa89",
+                "prId": "5530",
+                "author": "Dana Silver",
+                "message": "Add changelog entries for rollouts. (#5530)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/605d89f68d8a52f5670b94afe341b94f0405fa89",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5530"
+            },
+            {
+                "commitId": "f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prId": "5517",
+                "author": "themiswang",
+                "message": "Feature rollouts (#5517)\n\nFeature branch feature merge\r\nRelease notes will be added in a separate pr\r\n#no-changelog\r\n\r\n---------\r\n\r\nCo-authored-by: Sam Edson <samedson@google.com>\r\nCo-authored-by: qdpham <qdpham@google.com>\r\nCo-authored-by: Dana Silver <danasilver@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f1c3d6ea93f778ad5a7ebb6b3b42d546794998a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5517"
+            },
+            {
+                "commitId": "ef5998e9383510a430a17bb6d01c88f02b17eca7",
+                "prId": "5441",
+                "author": "Jamie Rothfeder",
+                "message": "Implement sessions multi process (#5441)\n\nPR tracking merge in to master.\r\n\r\n---------\r\n\r\nCo-authored-by: Matthew Robertson <mrober@users.noreply.github.com>\r\nCo-authored-by: Bryan Atkinson <bryanatkinson@google.com>\r\nCo-authored-by: jrothfeder <rothbutter@google.com>\r\nCo-authored-by: Mila <107142260+milaGGL@users.noreply.github.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: Greg Sakakihara <gsaka@google.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@gmail.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Vinay Guthal <vguthal@google.com>\r\nCo-authored-by: cherylEnkidu <96084918+cherylEnkidu@users.noreply.github.com>\r\nCo-authored-by: Mark Duckworth <1124037+MarkDuckworth@users.noreply.github.com>\r\nCo-authored-by: Ehsan Nasiri <ehsann@google.com>\r\nCo-authored-by: Rosalyn Tan <rosalyntan@google.com>\r\nCo-authored-by: themiswang <themisw@google.com>\r\nCo-authored-by: Visu <visumickey@gmail.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ef5998e9383510a430a17bb6d01c88f02b17eca7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5441"
+            },
+            {
+                "commitId": "bd5f6de6206bdbc9f4886530c3f81fdaf7816973",
+                "prId": "5492",
+                "author": "Matthew Robertson",
+                "message": "Explicitly only get details for this app's running processes (#5492)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bd5f6de6206bdbc9f4886530c3f81fdaf7816973",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5492"
+            },
+            {
+                "commitId": "36b64038ee4cd83fb42bd4c64926736581c680a6",
+                "prId": "5484",
+                "author": "Jamie Rothfeder",
+                "message": "Remove our own ImmutableList and use similar built-in classes. (#5484)\n\nWe don't wish to include guava, however, this approach of implementing\r\nour own version of ImmutableList is going to surprise most developers\r\nwho expect ImmutableList to be something else.\r\n\r\n---------\r\n\r\nCo-authored-by: jrothfeder <rothbutter@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/36b64038ee4cd83fb42bd4c64926736581c680a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5484"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "ef5998e9383510a430a17bb6d01c88f02b17eca7",
+                "prId": "5441",
+                "author": "Jamie Rothfeder",
+                "message": "Implement sessions multi process (#5441)\n\nPR tracking merge in to master.\r\n\r\n---------\r\n\r\nCo-authored-by: Matthew Robertson <mrober@users.noreply.github.com>\r\nCo-authored-by: Bryan Atkinson <bryanatkinson@google.com>\r\nCo-authored-by: jrothfeder <rothbutter@google.com>\r\nCo-authored-by: Mila <107142260+milaGGL@users.noreply.github.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: Greg Sakakihara <gsaka@google.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@gmail.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Vinay Guthal <vguthal@google.com>\r\nCo-authored-by: cherylEnkidu <96084918+cherylEnkidu@users.noreply.github.com>\r\nCo-authored-by: Mark Duckworth <1124037+MarkDuckworth@users.noreply.github.com>\r\nCo-authored-by: Ehsan Nasiri <ehsann@google.com>\r\nCo-authored-by: Rosalyn Tan <rosalyntan@google.com>\r\nCo-authored-by: themiswang <themisw@google.com>\r\nCo-authored-by: Visu <visumickey@gmail.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ef5998e9383510a430a17bb6d01c88f02b17eca7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5441"
+            }
+        ],
+        "firebase-perf/ktx": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "04ed89afa9cbba39803718845bb020d243e513b5",
+                "prId": "5531",
+                "author": "Dana Silver",
+                "message": "Bump Crashlytics, Remote Config, Sessions for next version to minor release. (#5531)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/04ed89afa9cbba39803718845bb020d243e513b5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5531"
+            },
+            {
+                "commitId": "72ebb7bf5175bb4bda61f6192a252f158548091c",
+                "prId": "5527",
+                "author": "Bryan Atkinson",
+                "message": "Fixes broken fireperf unit test by preventing binding when no subscri… (#5527)\n\n…bers, and using nullable types in java interfaces where null values are\r\nprovided in a robolectric test.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/72ebb7bf5175bb4bda61f6192a252f158548091c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5527"
+            },
+            {
+                "commitId": "1019e7e2ccea24eda4cf8d969b389dba06f19c05",
+                "prId": "5526",
+                "author": "Matthew Robertson",
+                "message": "Set eagerInDefaultApp for Firebase Sessions (#5526)\n\nWe need this since we changed how Crashlytics and Perf will depend on\r\nSessions. Before they got an instance of FirebaseSessions but now they\r\ndon't.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1019e7e2ccea24eda4cf8d969b389dba06f19c05",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5526"
+            },
+            {
+                "commitId": "c2a53cb0056bf18806782db1ac423e11654b0a94",
+                "prId": "5520",
+                "author": "Jamie Rothfeder",
+                "message": "Reintroduce process info in the AndroidAppInfo message. This is compatible with the backend. (#5520)\n\nReverts firebase/firebase-android-sdk#5518\r\n\r\n---------\r\n\r\nCo-authored-by: jrothfeder <rothbutter@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c2a53cb0056bf18806782db1ac423e11654b0a94",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5520"
+            },
+            {
+                "commitId": "a27d4e2a33823781d9e0a4d7ce438eeb65e2420e",
+                "prId": "5518",
+                "author": "Jamie Rothfeder",
+                "message": "Remove process-details for now. (#5518)\n\nWe identified a bug where the backend protobuf is not in agreement with\r\nthe structure of the message being sent. This causes the entire message\r\nto be dropped. Making this work will require a bit of refactoring.\r\n\r\nRevert this for now to be safe and add it back in a subsequent PR.\r\n\r\nCo-authored-by: jrothfeder <rothbutter@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a27d4e2a33823781d9e0a4d7ce438eeb65e2420e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5518"
+            },
+            {
+                "commitId": "ef5998e9383510a430a17bb6d01c88f02b17eca7",
+                "prId": "5441",
+                "author": "Jamie Rothfeder",
+                "message": "Implement sessions multi process (#5441)\n\nPR tracking merge in to master.\r\n\r\n---------\r\n\r\nCo-authored-by: Matthew Robertson <mrober@users.noreply.github.com>\r\nCo-authored-by: Bryan Atkinson <bryanatkinson@google.com>\r\nCo-authored-by: jrothfeder <rothbutter@google.com>\r\nCo-authored-by: Mila <107142260+milaGGL@users.noreply.github.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: Greg Sakakihara <gsaka@google.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@gmail.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Vinay Guthal <vguthal@google.com>\r\nCo-authored-by: cherylEnkidu <96084918+cherylEnkidu@users.noreply.github.com>\r\nCo-authored-by: Mark Duckworth <1124037+MarkDuckworth@users.noreply.github.com>\r\nCo-authored-by: Ehsan Nasiri <ehsann@google.com>\r\nCo-authored-by: Rosalyn Tan <rosalyntan@google.com>\r\nCo-authored-by: themiswang <themisw@google.com>\r\nCo-authored-by: Visu <visumickey@gmail.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ef5998e9383510a430a17bb6d01c88f02b17eca7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5441"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-datatransport"
+    ]
+}
