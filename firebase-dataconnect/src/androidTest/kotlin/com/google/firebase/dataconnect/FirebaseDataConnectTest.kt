@@ -40,9 +40,9 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FirebaseDataConnectTest {
 
-  @JvmField @Rule val firebaseAppFactory = TestFirebaseAppFactory()
-  @JvmField @Rule val dataConnectFactory = TestDataConnectFactory()
-  @JvmField @Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+  @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
+  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
   @Test
   fun getInstance_without_specifying_an_app_should_use_the_default_app() {

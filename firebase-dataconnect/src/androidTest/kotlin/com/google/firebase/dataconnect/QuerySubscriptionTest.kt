@@ -40,8 +40,8 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class QuerySubscriptionTest {
 
-  @JvmField @Rule val dataConnectFactory = TestDataConnectFactory()
-  @JvmField @Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
   private lateinit var schema: PersonSchema
 
