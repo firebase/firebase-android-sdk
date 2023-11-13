@@ -284,12 +284,12 @@ public class View {
    *
    * @param docChanges The set of changes to make to the view's docs.
    * @param targetChange A target change to apply for computing limbo docs and sync state.
-   * @param waitForRequeryResult - Whether the target is pending to run a full re-query due to
-   *     existence filter mismatch.
+   * @param targetIsPendingReset - Whether the target is pending to reset due to existence filter
+   *     mismatch. If not explicitly specified, it is treated equivalently to `false`.
    * @return A new ViewChange with the given docs, changes, and sync state.
    */
   public ViewChange applyChanges(
-      DocumentChanges docChanges, TargetChange targetChange, boolean waitForRequeryResult) {
+      DocumentChanges docChanges, TargetChange targetChange, boolean targetIsPendingReset) {
     hardAssert(!docChanges.needsRefill, "Cannot apply changes that need a refill");
 
     DocumentSet oldDocumentSet = documentSet;
@@ -308,12 +308,12 @@ public class View {
           return query.comparator().compare(o1.getDocument(), o2.getDocument());
         });
     applyTargetChange(targetChange);
-    List<LimboDocumentChange> limboDocumentChanges = updateLimboDocuments(waitForRequeryResult);
+    List<LimboDocumentChange> limboDocumentChanges =
+        targetIsPendingReset ? Collections.emptyList() : updateLimboDocuments();
 
     // We are at synced state if there is no limbo docs are waiting to be resolved, view is current
-    // with the backend, and the query is not pending for full re-query result due to existence
-    // filter mismatch.
-    boolean synced = limboDocuments.size() == 0 && current && !waitForRequeryResult;
+    // with the backend, and the query is not pending to reset due to existence filter mismatch.
+    boolean synced = limboDocuments.size() == 0 && current && !targetIsPendingReset;
     SyncState newSyncState = synced ? SyncState.SYNCED : SyncState.LOCAL;
     boolean syncStatedChanged = newSyncState != syncState;
     syncState = newSyncState;
@@ -375,9 +375,9 @@ public class View {
     }
   }
 
-  private List<LimboDocumentChange> updateLimboDocuments(boolean waitForRequeryResult) {
+  private List<LimboDocumentChange> updateLimboDocuments() {
     // We can only determine limbo documents when we're in-sync with the server.
-    if (waitForRequeryResult || !current) {
+    if (!current) {
       return Collections.emptyList();
     }
 
