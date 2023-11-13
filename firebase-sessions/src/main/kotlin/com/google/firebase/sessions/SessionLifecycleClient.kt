@@ -25,6 +25,7 @@ import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
 import android.util.Log
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import java.util.concurrent.LinkedBlockingDeque
@@ -82,14 +83,14 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
   /** The connection object to the [SessionLifecycleService]. */
   private val serviceConnection =
     object : ServiceConnection {
-      override fun onServiceConnected(className: ComponentName, serviceBinder: IBinder) {
+      override fun onServiceConnected(className: ComponentName?, serviceBinder: IBinder?) {
         Log.d(TAG, "Connected to SessionLifecycleService. Queue size ${queuedMessages.size}")
         service = Messenger(serviceBinder)
         serviceBound = true
         sendLifecycleEvents(drainQueue())
       }
 
-      override fun onServiceDisconnected(className: ComponentName) {
+      override fun onServiceDisconnected(className: ComponentName?) {
         Log.d(TAG, "Disconnected from SessionLifecycleService")
         service = null
         serviceBound = false
@@ -144,6 +145,7 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
    *
    * Does not send events unless data collection is enabled for at least one subscriber.
    */
+  @CanIgnoreReturnValue
   private fun sendLifecycleEvents(messages: List<Message>) =
     CoroutineScope(backgroundDispatcher).launch {
       val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()

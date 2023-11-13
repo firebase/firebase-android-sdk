@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import java.util.UUID
@@ -50,6 +51,7 @@ internal class SessionGenerator(
     get() = ::currentSession.isInitialized
 
   /** Generates a new session. The first session's sessionId will match firstSessionId. */
+  @CanIgnoreReturnValue
   fun generateNewSession(): SessionDetails {
     sessionIndex++
     currentSession =
