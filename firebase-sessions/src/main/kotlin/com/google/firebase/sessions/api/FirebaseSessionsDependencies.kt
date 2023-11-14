@@ -38,6 +38,7 @@ object FirebaseSessionsDependencies {
    * Add a subscriber as a dependency to the Sessions SDK. Every dependency must register itself, or
    * the Sessions SDK will never generate a session.
    */
+  @JvmStatic
   fun addDependency(subscriberName: SessionSubscriber.Name) {
     if (subscriberName == SessionSubscriber.Name.PERFORMANCE) {
       throw IllegalArgumentException(

@@ -24,7 +24,7 @@ import com.google.firebase.sessions.settings.SessionsSettings
  *
  * This can be removed when datastore-preferences:1.1.0 becomes stable.
  */
-object SessionDataStoreConfigs {
+internal object SessionDataStoreConfigs {
   /** Sanitized process name to use in config filenames. */
   private val PROCESS_NAME =
     Base64.encodeToString(
