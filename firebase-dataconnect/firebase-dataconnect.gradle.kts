@@ -19,6 +19,7 @@ plugins {
   id("kotlin-android")
   id("com.google.protobuf")
   id("org.jetbrains.dokka") version "1.9.10"
+  id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
 }
 
 firebaseLibrary {
@@ -86,6 +87,7 @@ dependencies {
   api(project(":firebase-common:ktx"))
 
   api(libs.kotlinx.coroutines.core)
+  api(libs.kotlinx.serialization.core)
 
   implementation(project(":firebase-annotations"))
   implementation(project(":firebase-components"))
@@ -103,6 +105,7 @@ dependencies {
   testCompileOnly(libs.protobuf.java)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
+  testImplementation(libs.truth.liteproto.extension)
 
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
@@ -110,6 +113,7 @@ dependencies {
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.kotlin.coroutines.test)
   androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.truth.liteproto.extension)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
