@@ -39,6 +39,13 @@ android {
     multiDexEnabled = true
     multiDexKeepProguard = file("multidex-config.pro")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // We only want to actually crash the app on specific runs.
+    buildConfigField(
+      "boolean",
+      "SHOULD_CRASH_APP",
+      project.hasProperty("triggerCrashes").toString()
+    )
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -46,24 +53,6 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
   buildFeatures { viewBinding = true }
-  buildTypes {
-    release {
-      // We only want to actually crash the app for the scheduled runs, not the integration tests
-      buildConfigField(
-        "boolean",
-        "SHOULD_CRASH_APP",
-        project.hasProperty("useReleasedVersions").toString()
-      )
-    }
-    debug {
-      // We only want to actually crash the app for the scheduled runs, not the integration tests
-      buildConfigField(
-        "boolean",
-        "SHOULD_CRASH_APP",
-        project.hasProperty("useReleasedVersions").toString()
-      )
-    }
-  }
 }
 
 dependencies {
