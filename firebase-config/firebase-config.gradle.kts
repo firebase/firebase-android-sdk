@@ -93,6 +93,7 @@ dependencies {
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.mockito.core)
+    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation("org.skyscreamer:jsonassert:1.5.0")
     androidTestImplementation("com.linkedin.dexmaker:dexmaker-mockito:2.28.1")
     androidTestImplementation("com.linkedin.dexmaker:dexmaker:2.28.1")
