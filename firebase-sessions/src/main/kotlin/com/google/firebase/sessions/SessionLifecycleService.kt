@@ -88,7 +88,7 @@ internal class SessionLifecycleService : Service() {
     }
 
     /**
-     * Handles a foregrounding event by any activity owned by the aplication as specified by the
+     * Handles a foregrounding event by any activity owned by the application as specified by the
      * given [Message]. This will determine if the foregrounding should result in the creation of a
      * new session.
      */
@@ -186,10 +186,10 @@ internal class SessionLifecycleService : Service() {
   }
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
-  override fun onBind(intent: Intent?): IBinder? {
+  override fun onBind(intent: Intent?): IBinder? =
     if (intent == null) {
       Log.d(TAG, "Service bound with null intent. Ignoring.")
-      return null
+      null
     } else {
       Log.d(TAG, "Service bound to new client on process ${intent.action}")
       val callbackMessenger = getClientCallback(intent)
@@ -198,9 +198,8 @@ internal class SessionLifecycleService : Service() {
         clientBoundMsg.replyTo = callbackMessenger
         messageHandler?.sendMessage(clientBoundMsg)
       }
-      return messenger?.binder
+      messenger?.binder
     }
-  }
 
   override fun onDestroy() {
     super.onDestroy()

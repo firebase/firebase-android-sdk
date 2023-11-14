@@ -2,7 +2,7 @@
 package com.google.firebase.sessions.api {
 
   public final class FirebaseSessionsDependencies {
-    method public void addDependency(@NonNull com.google.firebase.sessions.api.SessionSubscriber.Name subscriberName);
+    method public static void addDependency(@NonNull com.google.firebase.sessions.api.SessionSubscriber.Name subscriberName);
     method public static void register(@NonNull com.google.firebase.sessions.api.SessionSubscriber subscriber);
     field @NonNull public static final com.google.firebase.sessions.api.FirebaseSessionsDependencies INSTANCE;
   }
