@@ -1,4 +1,4 @@
-// Signature format: 2.0
+s// Signature format: 2.0
 package com.google.firebase.remoteconfig.interop {
 
   public interface FirebaseRemoteConfigInterop {
