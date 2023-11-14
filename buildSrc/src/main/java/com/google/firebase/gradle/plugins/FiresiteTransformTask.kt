@@ -129,7 +129,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
    * Example output:
    * ```
    * - title: "firebase.database.ktx"
-   *   stauts: deprecated
+   *   status: deprecated
    *   path: "/docs/reference/android/com/google/firebase/database/ktx/package-summary.html"
    * ```
    */
