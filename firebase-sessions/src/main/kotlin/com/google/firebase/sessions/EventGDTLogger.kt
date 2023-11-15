@@ -46,7 +46,7 @@ internal class EventGDTLogger(private val transportFactoryProvider: Provider<Tra
     transportFactoryProvider
       .get()
       .getTransport(
-        EventGDTLogger.AQS_LOG_SOURCE,
+        AQS_LOG_SOURCE,
         SessionEvent::class.java,
         Encoding.of("json"),
         this::encode,

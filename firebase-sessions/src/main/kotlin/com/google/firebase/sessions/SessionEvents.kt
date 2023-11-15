@@ -37,8 +37,6 @@ internal object SessionEvents {
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
-    currentProcessDetails: ProcessDetails,
-    appProcessDetails: List<ProcessDetails>,
     subscribers: Map<SessionSubscriber.Name, SessionSubscriber> = emptyMap(),
     firebaseInstallationId: String = "",
   ) =

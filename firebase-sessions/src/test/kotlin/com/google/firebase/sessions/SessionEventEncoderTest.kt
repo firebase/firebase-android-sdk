@@ -53,8 +53,6 @@ class SessionEventEncoderTest {
           localOverrideSettings = FakeSettingsProvider(),
           remoteSettings = FakeSettingsProvider(),
         ),
-        TestSessionEventData.TEST_PROCESS_DETAILS,
-        TestSessionEventData.TEST_APP_PROCESS_DETAILS,
         subscribers =
           mapOf(
             SessionSubscriber.Name.CRASHLYTICS to FakeSessionSubscriber(),

@@ -119,8 +119,6 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     private val blockingDispatcher =
       qualified(Blocking::class.java, CoroutineDispatcher::class.java)
     private val transportFactory = unqualified(TransportFactory::class.java)
-    private val sessionFirelogPublisher = unqualified(SessionFirelogPublisher::class.java)
-    private val sessionGenerator = unqualified(SessionGenerator::class.java)
     private val sessionsSettings = unqualified(SessionsSettings::class.java)
   }
 }
