@@ -84,10 +84,10 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.androidx.test.truth)
     testImplementation(libs.robolectric)
     testImplementation(libs.mockito.core)
     testImplementation(libs.truth)
-    testImplementation("androidx.test.ext:truth:1.5.0")
     testImplementation("org.skyscreamer:jsonassert:1.5.0")
 
     androidTestImplementation(libs.truth)
