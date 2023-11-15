@@ -30,6 +30,8 @@ class FileBackedNativeSessionFile implements NativeSessionFile {
 
   @NonNull private final File file;
   @NonNull private final String dataTransportFilename;
+
+  // Legacy field for AWS
   @NonNull private final String reportsEndpointFilename;
 
   FileBackedNativeSessionFile(

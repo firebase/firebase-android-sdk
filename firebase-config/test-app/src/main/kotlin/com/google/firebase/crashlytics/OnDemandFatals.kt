@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.crashlytics
 
-/** Interface for listening to the initiation of a new session. */
-internal interface SessionInitiateListener {
-  /** To be called whenever a new session is initiated. */
-  suspend fun onInitiateSession(sessionDetails: SessionDetails)
-}
+import android.annotation.SuppressLint
+
+@SuppressLint("VisibleForTests")
+fun FirebaseCrashlytics.recordFatalException(ex: Throwable) = core.logFatalException(ex)
