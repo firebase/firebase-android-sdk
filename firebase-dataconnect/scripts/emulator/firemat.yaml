@@ -1,0 +1,7 @@
+specVersion: v1alpha
+schema:
+  main:
+    source: ./api/schema
+operationSet:
+  crud:
+    source: ./api/operations

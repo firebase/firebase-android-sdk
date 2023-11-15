@@ -1,0 +1,21 @@
+query getPost($id: String!) @auth(is: PUBLIC) {
+	post(id: $id) {
+		content
+		comments: comments_as_post {
+			id
+			content
+		}
+	}
+}
+query listPosts @auth(is: PUBLIC) {
+	posts {
+		id
+		content
+	}
+}
+
+query listPostsOnlyId @auth(is: PUBLIC) {
+	posts {
+		id
+	}
+}
