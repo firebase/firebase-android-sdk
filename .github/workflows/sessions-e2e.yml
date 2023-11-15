@@ -39,4 +39,4 @@ jobs:
         env:
           FTL_RESULTS_BUCKET: fireescape
         run: |
-          ./gradlew :firebase-sessions:test-app:deviceCheck withErrorProne -PtargetBackend="prod" -PuseReleasedVersions
+          ./gradlew :firebase-sessions:test-app:deviceCheck withErrorProne -PtargetBackend="prod" -PtriggerCrashes
