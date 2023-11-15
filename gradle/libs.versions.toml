@@ -16,6 +16,7 @@ kotest = "5.5.5"
 quickcheck = "0.6"
 androidx-test-core="1.5.0"
 androidx-test-junit="1.1.5"
+androidx-test-truth = "1.5.0"
 
 [libraries]
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint" }
@@ -46,6 +47,7 @@ playservices-tasks = { module = "com.google.android.gms:play-services-tasks", ve
 # Test libs
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
 androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-junit" }
+androidx-test-truth = { module = "androidx.test.ext:truth", version.ref = "androidx-test-truth" }
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-core" }
 androidx-test-runner = { module = "androidx.test:runner", version = "1.5.2" }
 junit = { module = "junit:junit", version = "4.13.2" }
