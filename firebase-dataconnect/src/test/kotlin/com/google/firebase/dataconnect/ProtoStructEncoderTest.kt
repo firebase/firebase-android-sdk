@@ -233,7 +233,7 @@ class ProtoStructEncoderTest {
  * An encoder that can be useful during testing to simply print the method invocations in order to
  * discover how an encoder should be implemented.
  */
-class LoggingEncoder(
+private class LoggingEncoder(
   private val idBySerialDescriptor: MutableMap<SerialDescriptor, Long> = mutableMapOf()
 ) : Encoder, CompositeEncoder {
   val id = nextEncoderId.incrementAndGet()
@@ -332,7 +332,7 @@ class LoggingEncoder(
 
   override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder {
     log("encodeInlineElement() index=$index elementName=${descriptor.getElementName(index)}")
-    return this
+    return LoggingEncoder(idBySerialDescriptor)
   }
 
   override fun encodeIntElement(descriptor: SerialDescriptor, index: Int, value: Int) {
