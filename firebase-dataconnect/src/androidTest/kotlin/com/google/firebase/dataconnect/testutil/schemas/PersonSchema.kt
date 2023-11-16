@@ -19,6 +19,8 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.testutil.installEmulatorSchema
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 
 class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
@@ -32,25 +34,15 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
       operationSet = "ops",
       revision = "42",
       codec = CreatePersonMutation,
+      variablesSerializer = serializer<CreatePersonMutation.Variables>(),
     )
 
   class CreatePersonMutation private constructor() {
 
-    data class Variables(val id: String, val name: String, val age: Int? = null)
+    @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
+    @Serializable data class Variables(val data: PersonData)
 
-    internal companion object Codec : BaseRef.Codec<Variables, Unit> {
-      override fun encodeVariables(variables: Variables): Map<String, Any?> =
-        variables.run {
-          mapOf(
-            "data" to
-              buildMap {
-                put("id", id)
-                put("name", name)
-                age?.let { put("age", it) }
-              }
-          )
-        }
-
+    internal companion object Codec : BaseRef.Codec<Unit> {
       override fun decodeResult(map: Map<String, Any?>) {}
     }
   }
@@ -61,26 +53,15 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
       operationSet = "ops",
       revision = "42",
       codec = UpdatePersonMutation,
+      variablesSerializer = serializer<UpdatePersonMutation.Variables>(),
     )
 
   class UpdatePersonMutation private constructor() {
 
-    data class Variables(val id: String, val name: String? = null, val age: Int? = null)
+    @Serializable data class PersonData(val name: String? = null, val age: Int? = null)
+    @Serializable data class Variables(val id: String, val data: PersonData)
 
-    internal companion object Codec : BaseRef.Codec<Variables, Unit> {
-
-      override fun encodeVariables(variables: Variables): Map<String, Any?> =
-        variables.run {
-          mapOf(
-            "id" to id,
-            "data" to
-              buildMap {
-                name?.let { put("name", it) }
-                age?.let { put("age", it) }
-              }
-          )
-        }
-
+    internal companion object Codec : BaseRef.Codec<Unit> {
       override fun decodeResult(map: Map<String, Any?>) {}
     }
   }
@@ -91,16 +72,14 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
       operationSet = "ops",
       revision = "42",
       codec = DeletePersonMutation,
+      variablesSerializer = serializer<DeletePersonMutation.Variables>(),
     )
 
   class DeletePersonMutation private constructor() {
 
-    data class Variables(val id: String)
+    @Serializable data class Variables(val id: String)
 
-    internal companion object Codec : BaseRef.Codec<Variables, Unit> {
-
-      override fun encodeVariables(variables: Variables) = variables.run { mapOf("id" to id) }
-
+    internal companion object Codec : BaseRef.Codec<Unit> {
       override fun decodeResult(map: Map<String, Any?>) {}
     }
   }
@@ -111,16 +90,16 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
       operationSet = "ops",
       revision = "42",
       codec = GetPersonQuery,
+      variablesSerializer = serializer<GetPersonQuery.Variables>(),
     )
 
   class GetPersonQuery private constructor() {
 
+    @Serializable
     data class Variables(val id: String, val name: String? = null, val age: Int? = null)
     data class Result(val name: String, val age: Int? = null)
 
-    internal companion object Codec : BaseRef.Codec<Variables, Result?> {
-      override fun encodeVariables(variables: Variables) = variables.run { mapOf("id" to id) }
-
+    internal companion object Codec : BaseRef.Codec<Result?> {
       override fun decodeResult(map: Map<String, Any?>) =
         (map["person"] as Map<*, *>?)?.let {
           Result(name = it["name"] as String, age = (it["age"] as Double?)?.toInt())
@@ -134,7 +113,12 @@ object CreatePersonMutationExt {
     id: String,
     name: String,
     age: Int?
-  ) = execute(PersonSchema.CreatePersonMutation.Variables(id = id, name = name, age = age))
+  ) =
+    execute(
+      PersonSchema.CreatePersonMutation.Variables(
+        PersonSchema.CreatePersonMutation.PersonData(id = id, name = name, age = age)
+      )
+    )
 }
 
 object UpdatePersonMutationExt {
@@ -142,7 +126,13 @@ object UpdatePersonMutationExt {
     id: String,
     name: String? = null,
     age: Int? = null
-  ) = execute(PersonSchema.UpdatePersonMutation.Variables(id = id, name = name, age = age))
+  ) =
+    execute(
+      PersonSchema.UpdatePersonMutation.Variables(
+        id = id,
+        data = PersonSchema.UpdatePersonMutation.PersonData(name = name, age = age)
+      )
+    )
 }
 
 object DeletePersonMutationExt {

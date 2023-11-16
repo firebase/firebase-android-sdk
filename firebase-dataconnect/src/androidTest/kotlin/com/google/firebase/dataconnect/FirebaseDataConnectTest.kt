@@ -32,6 +32,8 @@ import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -307,16 +309,21 @@ class FirebaseDataConnectTest {
     val postId = "${UUID.randomUUID()}"
     val postContent = "${System.currentTimeMillis()}"
 
+    @Serializable data class PostData(val id: String, val content: String)
+    @Serializable data class CreatePostVariables(val data: PostData)
+    @Serializable data class GetPostVariables(val id: String)
+
     run {
       val mutation =
-        dc.mutation(
+        dc.mutation<CreatePostVariables, Map<String, Any?>>(
           operationName = "createPost",
           operationSet = "crud",
           revision = "TestRevision",
           codec = IdentityCodec,
+          variablesSerializer = serializer(),
         )
       val mutationResponse =
-        mutation.execute(mapOf("data" to mapOf("id" to postId, "content" to postContent)))
+        mutation.execute(CreatePostVariables(PostData(id = postId, content = postContent)))
       assertWithMessage("mutationResponse")
         .that(mutationResponse)
         .containsExactlyEntriesIn(mapOf("post_insert" to null))
@@ -324,13 +331,14 @@ class FirebaseDataConnectTest {
 
     run {
       val query =
-        dc.query(
+        dc.query<GetPostVariables, Map<String, Any?>>(
           operationName = "getPost",
           operationSet = "crud",
           revision = "TestRevision",
-          codec = IdentityCodec
+          codec = IdentityCodec,
+          variablesSerializer = serializer(),
         )
-      val queryResult = query.execute(mapOf("id" to postId))
+      val queryResult = query.execute(GetPostVariables(id = postId))
       assertWithMessage("queryResponse")
         .that(queryResult)
         .containsExactlyEntriesIn(
@@ -341,41 +349,39 @@ class FirebaseDataConnectTest {
 
   @Test
   fun testInstallEmulatorSchema() {
+    @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
+    @Serializable data class CreatePersonVariables(val data: PersonData)
+    @Serializable data class GetPersonVariables(val id: String)
+
     suspend fun FirebaseDataConnect.createPerson(id: String, name: String, age: Int? = null) =
-      mutation(
+      mutation<CreatePersonVariables, Map<String, Any?>>(
           operationName = "createPerson",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec
+          codec = IdentityCodec,
+          variablesSerializer = serializer(),
         )
-        .execute(
-          mapOf(
-            "data" to
-              buildMap {
-                put("id", id)
-                put("name", name)
-                age?.let { put("age", it) }
-              }
-          )
-        )
+        .execute(CreatePersonVariables(PersonData(id = id, name = name, age = age)))
 
     suspend fun FirebaseDataConnect.getPerson(id: String) =
-      query(
+      query<GetPersonVariables, Map<String, Any?>>(
           operationName = "getPerson",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec
+          codec = IdentityCodec,
+          variablesSerializer = serializer(),
         )
-        .execute(mapOf("id" to id))
+        .execute(GetPersonVariables(id = id))
 
     suspend fun FirebaseDataConnect.getAllPeople() =
-      query(
+      query<Unit, Map<String, Any?>>(
           operationName = "getAllPeople",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec
+          codec = IdentityCodec,
+          variablesSerializer = serializer(),
         )
-        .execute(emptyMap())
+        .execute(Unit)
 
     fun Map<*, *>.assertEqualsGetPersonResponse(name: String, age: Double?) {
       assertThat(keys).containsExactly("person")

@@ -17,12 +17,15 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.serializer
 
-inline fun <reified T : Any> encodeToStruct(value: T): Struct = encodeToStruct(serializer(), value)
+inline fun <reified T> encodeToStruct(value: T): Struct = encodeToStruct(serializer(), value)
 
-fun <T : Any> encodeToStruct(serializer: SerializationStrategy<T>, value: T): Struct {
+fun <T> encodeToStruct(serializer: SerializationStrategy<T>, value: T): Struct {
   val values = ProtoValueEncoder().apply { encodeSerializableValue(serializer, value) }.values
+  if (values.isEmpty()) {
+    return Struct.getDefaultInstance()
+  }
   require(values.size == 1) {
-    "encoding produced ${values.size} Value objects, " + "but expected exactly 1"
+    "encoding produced ${values.size} Value objects, " + "but expected at most 1"
   }
   val value = values.first()
   require(value.hasStructValue()) {
@@ -42,6 +45,7 @@ private class ProtoValueEncoder : Encoder {
       is StructureKind.MAP,
       is StructureKind.CLASS -> ProtoStructValueEncoder(values)
       is StructureKind.LIST -> ProtoListValueEncoder(values)
+      is StructureKind.OBJECT -> ProtoObjectValueEncoder
       else -> throw IllegalArgumentException("unsupported SerialKind: ${kind::class.qualifiedName}")
     }
 
@@ -229,4 +233,60 @@ private class ProtoStructValueEncoder(dest: MutableList<Value>) :
       }
     )
   }
+}
+
+private object ProtoObjectValueEncoder : CompositeEncoder {
+  override val serializersModule = EmptySerializersModule()
+
+  override fun encodeBooleanElement(descriptor: SerialDescriptor, index: Int, value: Boolean) =
+    notSupported()
+
+  override fun encodeByteElement(descriptor: SerialDescriptor, index: Int, value: Byte) =
+    notSupported()
+
+  override fun encodeCharElement(descriptor: SerialDescriptor, index: Int, value: Char) =
+    notSupported()
+
+  override fun encodeDoubleElement(descriptor: SerialDescriptor, index: Int, value: Double) =
+    notSupported()
+
+  override fun encodeFloatElement(descriptor: SerialDescriptor, index: Int, value: Float) =
+    notSupported()
+
+  override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder =
+    notSupported()
+
+  override fun encodeIntElement(descriptor: SerialDescriptor, index: Int, value: Int) =
+    notSupported()
+
+  override fun encodeLongElement(descriptor: SerialDescriptor, index: Int, value: Long) =
+    notSupported()
+
+  @ExperimentalSerializationApi
+  override fun <T : Any> encodeNullableSerializableElement(
+    descriptor: SerialDescriptor,
+    index: Int,
+    serializer: SerializationStrategy<T>,
+    value: T?
+  ) = notSupported()
+
+  override fun <T> encodeSerializableElement(
+    descriptor: SerialDescriptor,
+    index: Int,
+    serializer: SerializationStrategy<T>,
+    value: T
+  ) = notSupported()
+
+  override fun encodeShortElement(descriptor: SerialDescriptor, index: Int, value: Short) =
+    notSupported()
+
+  override fun encodeStringElement(descriptor: SerialDescriptor, index: Int, value: String) =
+    notSupported()
+
+  private fun notSupported(): Nothing =
+    throw UnsupportedOperationException(
+      "The only valid method call on ProtoObjectValueEncoder is endStructure()"
+    )
+
+  override fun endStructure(descriptor: SerialDescriptor) {}
 }

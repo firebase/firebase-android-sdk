@@ -20,7 +20,14 @@ import com.google.firebase.app
 import com.google.firebase.concurrent.FirebaseExecutors
 import java.io.Closeable
 import java.util.concurrent.Executor
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationStrategy
 
 class FirebaseDataConnect
 internal constructor(
@@ -91,7 +98,8 @@ internal constructor(
             operationName = ref.operationName,
             operationSet = ref.operationSet,
             revision = ref.revision,
-            variables = ref.codec.encodeVariables(variables)
+            variables = variables,
+            variablesSerializer = ref.variablesSerializer,
           )
         )
       }
@@ -104,7 +112,8 @@ internal constructor(
             operationName = ref.operationName,
             operationSet = ref.operationSet,
             revision = ref.revision,
-            variables = ref.codec.encodeVariables(variables)
+            variables = variables,
+            variablesSerializer = ref.variablesSerializer,
           )
         )
       }
@@ -113,28 +122,32 @@ internal constructor(
     operationName: String,
     operationSet: String,
     revision: String,
-    codec: BaseRef.Codec<VariablesType, ResultType>
+    codec: BaseRef.Codec<ResultType>,
+    variablesSerializer: SerializationStrategy<VariablesType>,
   ): QueryRef<VariablesType, ResultType> =
     QueryRef(
       dataConnect = this,
       operationName = operationName,
       operationSet = operationSet,
       revision = revision,
-      codec = codec
+      codec = codec,
+      variablesSerializer = variablesSerializer,
     )
 
   fun <VariablesType, ResultType> mutation(
     operationName: String,
     operationSet: String,
     revision: String,
-    codec: BaseRef.Codec<VariablesType, ResultType>
+    codec: BaseRef.Codec<ResultType>,
+    variablesSerializer: SerializationStrategy<VariablesType>,
   ): MutationRef<VariablesType, ResultType> =
     MutationRef(
       dataConnect = this,
       operationName = operationName,
       operationSet = operationSet,
       revision = revision,
-      codec = codec
+      codec = codec,
+      variablesSerializer = variablesSerializer,
     )
 
   override fun close() {

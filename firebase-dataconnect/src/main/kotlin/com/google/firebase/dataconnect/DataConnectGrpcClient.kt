@@ -15,12 +15,8 @@ package com.google.firebase.dataconnect
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
-import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import com.google.protobuf.listValue
-import com.google.protobuf.struct
-import com.google.protobuf.value
 import google.internal.firebase.firemat.v0.DataServiceGrpcKt.DataServiceCoroutineStub
 import google.internal.firebase.firemat.v0.executeMutationRequest
 import google.internal.firebase.firemat.v0.executeQueryRequest
@@ -29,6 +25,7 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlinx.serialization.SerializationStrategy
 
 internal class DataConnectGrpcClient(
   val context: Context,
@@ -82,16 +79,17 @@ internal class DataConnectGrpcClient(
 
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
-  suspend fun executeQuery(
+  suspend fun <V> executeQuery(
     operationSet: String,
     operationName: String,
     revision: String,
-    variables: Map<String, Any?>,
+    variables: V,
+    variablesSerializer: SerializationStrategy<V>
   ): Map<String, Any?> {
     val request = executeQueryRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
-      this.variables = structFromMap(variables)
+      this.variables = encodeToStruct(variablesSerializer, variables)
     }
 
     logger.debug { "executeQuery() sending request: $request" }
@@ -112,16 +110,17 @@ internal class DataConnectGrpcClient(
     return mapFromStruct(response.data)
   }
 
-  suspend fun executeMutation(
+  suspend fun <V> executeMutation(
     operationSet: String,
     operationName: String,
     revision: String,
-    variables: Map<String, Any?>
+    variables: V,
+    variablesSerializer: SerializationStrategy<V>
   ): Map<String, Any?> {
     val request = executeMutationRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
-      this.variables = structFromMap(variables)
+      this.variables = encodeToStruct(variablesSerializer, variables)
     }
 
     logger.debug { "executeMutation() sending request: $request" }
@@ -174,38 +173,3 @@ private fun objectFromStructValue(struct: Value): Any? =
       else -> throw ResultDecodeException("unsupported Struct kind: $kindCase")
     }
   }
-
-private fun structFromMap(map: Map<String, Any?>) = struct {
-  map.keys.sorted().forEach { key -> fields.put(key, valueFromObject(map[key])) }
-}
-
-private fun valueFromObject(obj: Any?): Value = value {
-  when (obj) {
-    null -> nullValue = NullValue.NULL_VALUE
-    is String -> stringValue = obj
-    is Boolean -> boolValue = obj
-    is Int -> numberValue = obj.toDouble()
-    is Double -> numberValue = obj
-    is Map<*, *> ->
-      structValue =
-        obj.let {
-          struct {
-            it.forEach { entry ->
-              val key =
-                entry.key.let { key ->
-                  key as? String
-                    ?: throw ResultDecodeException(
-                      "unsupported map key: " +
-                        if (key == null) "null" else "${key::class.qualifiedName} (${key})"
-                    )
-                }
-              fields.put(key, valueFromObject(entry.value))
-            }
-          }
-        }
-    is Iterable<*> ->
-      listValue = obj.let { listValue { it.forEach { values.add(valueFromObject(it)) } } }
-    else ->
-      throw ResultDecodeException("unsupported value type: ${obj::class.qualifiedName} ($obj)")
-  }
-}

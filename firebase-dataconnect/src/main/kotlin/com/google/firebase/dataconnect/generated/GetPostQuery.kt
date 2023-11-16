@@ -18,9 +18,12 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.ResultDecodeException
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 
 class GetPostQuery private constructor() {
 
+  @Serializable
   data class Variables(val id: String) {
 
     val builder
@@ -49,13 +52,12 @@ class GetPostQuery private constructor() {
         operationName = "getPost",
         operationSet = "crud",
         revision = "1234567890abcdef",
-        codec = codec
+        codec = codec,
+        variablesSerializer = serializer<Variables>(),
       )
 
     private val codec =
-      object : BaseRef.Codec<Variables, Result?> {
-        override fun encodeVariables(variables: Variables) = mapOf("id" to variables.id)
-
+      object : BaseRef.Codec<Result?> {
         override fun decodeResult(map: Map<String, Any?>) =
           map["post"].let {
             if (it == null) {

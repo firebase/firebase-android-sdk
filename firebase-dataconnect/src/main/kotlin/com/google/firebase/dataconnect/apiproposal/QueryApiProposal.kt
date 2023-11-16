@@ -5,6 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CORE SDK
@@ -16,7 +18,8 @@ class FirebaseDataConnect {
     operationName: String,
     operationSet: String,
     revision: String,
-    codec: BaseRef.Codec<VariablesType, ResultType>
+    codec: BaseRef.Codec<ResultType>,
+    variablesSerializer: SerializationStrategy<VariablesType>,
   ): QueryRef<VariablesType, ResultType> = TODO()
 
   class Queries internal constructor() {
@@ -43,8 +46,7 @@ abstract class BaseRef<VariablesType, ResultType> internal constructor() {
 
   abstract suspend fun execute(variables: VariablesType): ResultType
 
-  interface Codec<VariablesType, ResultType> {
-    fun encodeVariables(variables: VariablesType): Map<String, Any?>
+  interface Codec<ResultType> {
     fun decodeResult(map: Map<String, Any?>): ResultType
   }
 }
@@ -90,7 +92,7 @@ class QuerySubscription<VariablesType, ResultType> internal constructor() {
 
 class GetPostQuery private constructor() {
 
-  data class Variables(val id: String)
+  @Serializable data class Variables(val id: String)
 
   data class Result(val post: Post) {
     data class Post(val content: String, val comments: List<Comment>) {

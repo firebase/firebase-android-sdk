@@ -16,9 +16,12 @@ package com.google.firebase.dataconnect.generated
 import com.google.firebase.dataconnect.BaseRef
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 
 class CreatePostMutation private constructor() {
 
+  @Serializable
   data class Variables(val data: PostData) {
 
     val builder
@@ -39,6 +42,7 @@ class CreatePostMutation private constructor() {
       }
     }
 
+    @Serializable
     data class PostData(val id: String, val content: String) {
       val builder
         get() = Builder(id = id, content = content)
@@ -59,14 +63,12 @@ class CreatePostMutation private constructor() {
         operationName = "createPost",
         operationSet = "crud",
         revision = "1234567890abcdef",
-        codec = codec
+        codec = codec,
+        variablesSerializer = serializer<Variables>()
       )
 
     private val codec =
-      object : BaseRef.Codec<Variables, Unit> {
-        override fun encodeVariables(variables: Variables) =
-          mapOf("data" to variables.data.run { mapOf("id" to id, "content" to content) })
-
+      object : BaseRef.Codec<Unit> {
         override fun decodeResult(map: Map<String, Any?>) {}
       }
   }

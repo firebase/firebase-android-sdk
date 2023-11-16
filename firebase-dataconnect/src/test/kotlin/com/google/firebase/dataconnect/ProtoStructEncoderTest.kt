@@ -73,6 +73,12 @@ class ProtoStructEncoderTest {
   }
 
   @Test
+  fun `encodeToStruct() should encode Unit as an empty struct`() {
+    val encodedStruct = encodeToStruct(Unit)
+    assertThat(encodedStruct).isEqualToDefaultInstance()
+  }
+
+  @Test
   fun `encodeToStruct() should encode an class with all primitive types`() {
     @Serializable
     data class TestData(
