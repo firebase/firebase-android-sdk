@@ -106,6 +106,39 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
         }
     }
   }
+
+  val getAllPeople =
+    dataConnect.query(
+      operationName = "getAllPeople",
+      operationSet = "ops",
+      revision = "42",
+      codec = GetAllPeopleQuery,
+      variablesSerializer = serializer<Unit>(),
+    )
+
+  class GetAllPeopleQuery private constructor() {
+
+    data class Person(val id: String, val name: String, val age: Int?)
+    data class Result(val people: List<Person>)
+
+    internal companion object Codec : BaseRef.Codec<Result> {
+      override fun decodeResult(map: Map<String, Any?>) =
+        (map["people"] as List<*>).let { people ->
+          Result(
+            people =
+              people
+                .map { it as Map<*, *> }
+                .map {
+                  Person(
+                    id = it["id"] as String,
+                    name = it["name"] as String,
+                    age = (it["age"] as Double?)?.toInt()
+                  )
+                }
+          )
+        }
+    }
+  }
 }
 
 object CreatePersonMutationExt {
@@ -146,4 +179,9 @@ object GetPersonQueryExt {
 
   fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result?>
     .subscribe(id: String) = subscribe(PersonSchema.GetPersonQuery.Variables(id = id))
+}
+
+object GetAllPeoplePersonQueryExt {
+  suspend fun QueryRef<Unit, PersonSchema.GetAllPeopleQuery.Result>.execute() = execute(Unit)
+  fun QueryRef<Unit, PersonSchema.GetAllPeopleQuery.Result>.subscribe() = subscribe(Unit)
 }
