@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
@@ -220,6 +221,7 @@ public class CrashlyticsCore {
   }
 
   /** Performs background initialization asynchronously on the background worker's thread. */
+  @CanIgnoreReturnValue
   public Task<Void> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
     return Utils.callTask(
         crashHandlerExecutor,
@@ -232,6 +234,7 @@ public class CrashlyticsCore {
   }
 
   /** Performs background initialization synchronously on the calling thread. */
+  @CanIgnoreReturnValue
   private Task<Void> doBackgroundInitialization(SettingsProvider settingsProvider) {
     // create the marker for this run
     markInitializationStarted();
