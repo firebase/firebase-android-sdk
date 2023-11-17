@@ -14,13 +14,13 @@
 
 package com.google.firebase.dataconnect.testutil.schemas
 
-import com.google.firebase.dataconnect.BaseRef
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.mutation
+import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.installEmulatorSchema
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 
 class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
@@ -29,114 +29,68 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   }
 
   val createPerson =
-    dataConnect.mutation(
+    dataConnect.mutation<CreatePersonMutation.Variables, Unit>(
       operationName = "createPerson",
       operationSet = "ops",
       revision = "42",
-      codec = CreatePersonMutation,
-      variablesSerializer = serializer<CreatePersonMutation.Variables>(),
     )
 
   class CreatePersonMutation private constructor() {
-
     @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
     @Serializable data class Variables(val data: PersonData)
-
-    internal companion object Codec : BaseRef.Codec<Unit> {
-      override fun decodeResult(map: Map<String, Any?>) {}
-    }
   }
 
   val updatePerson =
-    dataConnect.mutation(
+    dataConnect.mutation<UpdatePersonMutation.Variables, Unit>(
       operationName = "updatePerson",
       operationSet = "ops",
       revision = "42",
-      codec = UpdatePersonMutation,
-      variablesSerializer = serializer<UpdatePersonMutation.Variables>(),
     )
 
   class UpdatePersonMutation private constructor() {
-
     @Serializable data class PersonData(val name: String? = null, val age: Int? = null)
     @Serializable data class Variables(val id: String, val data: PersonData)
-
-    internal companion object Codec : BaseRef.Codec<Unit> {
-      override fun decodeResult(map: Map<String, Any?>) {}
-    }
   }
 
   val deletePerson =
-    dataConnect.mutation(
+    dataConnect.mutation<DeletePersonMutation.Variables, Unit>(
       operationName = "deletePerson",
       operationSet = "ops",
       revision = "42",
-      codec = DeletePersonMutation,
-      variablesSerializer = serializer<DeletePersonMutation.Variables>(),
     )
 
   class DeletePersonMutation private constructor() {
-
     @Serializable data class Variables(val id: String)
-
-    internal companion object Codec : BaseRef.Codec<Unit> {
-      override fun decodeResult(map: Map<String, Any?>) {}
-    }
   }
 
   val getPerson =
-    dataConnect.query(
+    dataConnect.query<GetPersonQuery.Variables, GetPersonQuery.Result>(
       operationName = "getPerson",
       operationSet = "ops",
       revision = "42",
-      codec = GetPersonQuery,
-      variablesSerializer = serializer<GetPersonQuery.Variables>(),
     )
 
   class GetPersonQuery private constructor() {
-
     @Serializable
     data class Variables(val id: String, val name: String? = null, val age: Int? = null)
-    data class Result(val name: String, val age: Int? = null)
 
-    internal companion object Codec : BaseRef.Codec<Result?> {
-      override fun decodeResult(map: Map<String, Any?>) =
-        (map["person"] as Map<*, *>?)?.let {
-          Result(name = it["name"] as String, age = (it["age"] as Double?)?.toInt())
-        }
+    @Serializable
+    data class Result(val person: Person?) {
+      @Serializable data class Person(val name: String, val age: Int? = null)
     }
   }
 
   val getAllPeople =
-    dataConnect.query(
+    dataConnect.query<Unit, GetAllPeopleQuery.Result>(
       operationName = "getAllPeople",
       operationSet = "ops",
       revision = "42",
-      codec = GetAllPeopleQuery,
-      variablesSerializer = serializer<Unit>(),
     )
 
   class GetAllPeopleQuery private constructor() {
-
-    data class Person(val id: String, val name: String, val age: Int?)
-    data class Result(val people: List<Person>)
-
-    internal companion object Codec : BaseRef.Codec<Result> {
-      override fun decodeResult(map: Map<String, Any?>) =
-        (map["people"] as List<*>).let { people ->
-          Result(
-            people =
-              people
-                .map { it as Map<*, *> }
-                .map {
-                  Person(
-                    id = it["id"] as String,
-                    name = it["name"] as String,
-                    age = (it["age"] as Double?)?.toInt()
-                  )
-                }
-          )
-        }
+    @Serializable
+    data class Result(val people: List<Person>) {
+      @Serializable data class Person(val id: String, val name: String, val age: Int?)
     }
   }
 }
@@ -174,11 +128,12 @@ object DeletePersonMutationExt {
 }
 
 object GetPersonQueryExt {
-  suspend fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result?>
+  suspend fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result>
     .execute(id: String) = execute(PersonSchema.GetPersonQuery.Variables(id = id))
 
-  fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result?>
-    .subscribe(id: String) = subscribe(PersonSchema.GetPersonQuery.Variables(id = id))
+  fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result>.subscribe(
+    id: String
+  ) = subscribe(PersonSchema.GetPersonQuery.Variables(id = id))
 }
 
 object GetAllPeoplePersonQueryExt {

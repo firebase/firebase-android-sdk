@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 
@@ -14,20 +15,26 @@ import kotlinx.serialization.SerializationStrategy
 
 class FirebaseDataConnect {
 
-  fun <VariablesType, ResultType> query(
-    operationName: String,
-    operationSet: String,
-    revision: String,
-    codec: BaseRef.Codec<ResultType>,
-    variablesSerializer: SerializationStrategy<VariablesType>,
-  ): QueryRef<VariablesType, ResultType> = TODO()
-
   class Queries internal constructor() {
     val dataConnect: FirebaseDataConnect
       get() = TODO()
   }
   val queries: Queries = TODO()
 }
+
+fun <VariablesType, ResultType> FirebaseDataConnect.query(
+  operationName: String,
+  operationSet: String,
+  revision: String,
+  variablesSerializer: SerializationStrategy<VariablesType>,
+  resultDeserializer: DeserializationStrategy<ResultType>
+): QueryRef<VariablesType, ResultType> = TODO()
+
+inline fun <reified VariablesType, reified ResultType> FirebaseDataConnect.query(
+  operationName: String,
+  operationSet: String,
+  revision: String
+): QueryRef<VariablesType, ResultType> = TODO()
 
 open class DataConnectException internal constructor() : Exception()
 
@@ -94,31 +101,31 @@ class GetPostQuery private constructor() {
 
   @Serializable data class Variables(val id: String)
 
-  data class Result(val post: Post) {
+  data class Result(val post: Post?) {
     data class Post(val content: String, val comments: List<Comment>) {
       data class Comment(val id: String, val content: String)
     }
   }
 
   companion object {
-    fun query(dataConnect: FirebaseDataConnect): QueryRef<Variables, Result?> = TODO()
+    fun query(dataConnect: FirebaseDataConnect): QueryRef<Variables, Result> = TODO()
   }
 }
 
-val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>
+val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
   get() = TODO()
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>.execute(
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.execute(
   id: String
-): GetPostQuery.Result? = TODO()
+): GetPostQuery.Result = TODO()
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>.subscribe(
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.subscribe(
   id: String
-): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result?> = TODO()
+): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result> = TODO()
 
-typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Result?>
+typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result?>
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUSTOMER CODE

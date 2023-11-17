@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
 abstract class BaseRef<VariablesType, ResultType>
@@ -21,12 +22,8 @@ internal constructor(
   internal val operationName: String,
   internal val operationSet: String,
   internal val revision: String,
-  internal val codec: Codec<ResultType>,
   internal val variablesSerializer: SerializationStrategy<VariablesType>,
+  internal val resultDeserializer: DeserializationStrategy<ResultType>,
 ) {
   abstract suspend fun execute(variables: VariablesType): ResultType
-
-  interface Codec<ResultType> {
-    fun decodeResult(map: Map<String, Any?>): ResultType
-  }
 }

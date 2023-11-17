@@ -45,7 +45,7 @@ class PostsTest {
     val dc = dataConnectFactory.newInstance(service = "local")
     runBlocking {
       val queryResponse = dc.queries.getPost.execute(id = UUID.randomUUID().toString())
-      assertWithMessage("queryResponse").that(queryResponse).isNull()
+      assertWithMessage("queryResponse").that(queryResponse.post).isNull()
     }
   }
 

@@ -13,11 +13,10 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
-import com.google.firebase.dataconnect.BaseRef
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.mutation
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 
 class CreatePostMutation private constructor() {
 
@@ -57,20 +56,12 @@ class CreatePostMutation private constructor() {
   }
 
   companion object {
-
     fun mutation(dataConnect: FirebaseDataConnect) =
-      dataConnect.mutation(
+      dataConnect.mutation<Variables, Unit>(
         operationName = "createPost",
         operationSet = "crud",
         revision = "1234567890abcdef",
-        codec = codec,
-        variablesSerializer = serializer<Variables>()
       )
-
-    private val codec =
-      object : BaseRef.Codec<Unit> {
-        override fun decodeResult(map: Map<String, Any?>) {}
-      }
   }
 }
 

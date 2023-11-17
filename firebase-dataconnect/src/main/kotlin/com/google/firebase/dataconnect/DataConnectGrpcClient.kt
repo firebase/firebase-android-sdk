@@ -15,8 +15,6 @@ package com.google.firebase.dataconnect
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
-import com.google.protobuf.Struct
-import com.google.protobuf.Value
 import google.internal.firebase.firemat.v0.DataServiceGrpcKt.DataServiceCoroutineStub
 import google.internal.firebase.firemat.v0.executeMutationRequest
 import google.internal.firebase.firemat.v0.executeQueryRequest
@@ -25,6 +23,7 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
 internal class DataConnectGrpcClient(
@@ -79,13 +78,14 @@ internal class DataConnectGrpcClient(
 
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
-  suspend fun <V> executeQuery(
+  suspend fun <VariablesType, ResultType> executeQuery(
     operationSet: String,
     operationName: String,
     revision: String,
-    variables: V,
-    variablesSerializer: SerializationStrategy<V>
-  ): Map<String, Any?> {
+    variables: VariablesType,
+    variablesSerializer: SerializationStrategy<VariablesType>,
+    resultDeserializer: DeserializationStrategy<ResultType>
+  ): ResultType {
     val request = executeQueryRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -107,16 +107,18 @@ internal class DataConnectGrpcClient(
         response.errorsList.map { it.toString() }
       )
     }
-    return mapFromStruct(response.data)
+
+    return decodeFromStruct(resultDeserializer, response.data)
   }
 
-  suspend fun <V> executeMutation(
+  suspend fun <VariablesType, ResultType> executeMutation(
     operationSet: String,
     operationName: String,
     revision: String,
-    variables: V,
-    variablesSerializer: SerializationStrategy<V>
-  ): Map<String, Any?> {
+    variables: VariablesType,
+    variablesSerializer: SerializationStrategy<VariablesType>,
+    resultDeserializer: DeserializationStrategy<ResultType>
+  ): ResultType {
     val request = executeMutationRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -138,7 +140,8 @@ internal class DataConnectGrpcClient(
         response.errorsList.map { it.toString() }
       )
     }
-    return mapFromStruct(response.data)
+
+    return decodeFromStruct(resultDeserializer, response.data)
   }
 
   override fun toString(): String {
@@ -157,19 +160,3 @@ internal class DataConnectGrpcClient(
     "projects/$projectId/locations/$location/services/$service/" +
       "operationSets/$operationSet/revisions/$revision"
 }
-
-private fun mapFromStruct(struct: Struct): Map<String, Any?> =
-  struct.fieldsMap.mapValues { objectFromStructValue(it.value) }
-
-private fun objectFromStructValue(struct: Value): Any? =
-  struct.run {
-    when (kindCase) {
-      Value.KindCase.NULL_VALUE -> null
-      Value.KindCase.BOOL_VALUE -> boolValue
-      Value.KindCase.NUMBER_VALUE -> numberValue
-      Value.KindCase.STRING_VALUE -> stringValue
-      Value.KindCase.LIST_VALUE -> listValue.valuesList.map { objectFromStructValue(it) }
-      Value.KindCase.STRUCT_VALUE -> mapFromStruct(structValue)
-      else -> throw ResultDecodeException("unsupported Struct kind: $kindCase")
-    }
-  }

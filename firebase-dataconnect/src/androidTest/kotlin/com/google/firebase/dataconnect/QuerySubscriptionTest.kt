@@ -58,7 +58,7 @@ class QuerySubscriptionTest {
   }
 
   @Test
-  fun lastResult_should_be_equal_to_the_last_collected_result() = runBlocking {
+  fun lastResult_should_be_equal_to_the_last_collected_result(): Unit = runBlocking {
     schema.createPerson.execute(id = "TestId", name = "TestPerson", age = 42)
     val querySubscription = schema.getPerson.subscribe(id = "42")
     val result = querySubscription.flow.timeout(2000.seconds).first()
@@ -66,7 +66,7 @@ class QuerySubscriptionTest {
   }
 
   @Test
-  fun reload_should_notify_collecting_flows() = runBlocking {
+  fun reload_should_notify_collecting_flows(): Unit = runBlocking {
     schema.createPerson.execute(id = "TestId12345", name = "Name0", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
@@ -91,7 +91,7 @@ class QuerySubscriptionTest {
   }
 
   @Test
-  fun flow_collect_should_get_immediately_invoked_with_last_result() = runBlocking {
+  fun flow_collect_should_get_immediately_invoked_with_last_result(): Unit = runBlocking {
     schema.createPerson.execute(id = "TestId12345", name = "TestName", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
@@ -107,7 +107,7 @@ class QuerySubscriptionTest {
   }
 
   @Test
-  fun slow_flows_do_not_block_fast_flows() = runBlocking {
+  fun slow_flows_do_not_block_fast_flows(): Unit = runBlocking {
     schema.createPerson.execute(id = "TestId12345", name = "TestName", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
@@ -127,7 +127,7 @@ class QuerySubscriptionTest {
   }
 
   @Test
-  fun reload_delivers_result_to_all_registered_flows() = runBlocking {
+  fun reload_delivers_result_to_all_registered_flows(): Unit = runBlocking {
     schema.createPerson.execute(id = "TestId12345", name = "TestName0", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
@@ -196,7 +196,11 @@ class QuerySubscriptionTest {
 }
 
 private fun Subject.isEqualToGetPersonQueryResult(name: String, age: Int?) =
-  isEqualTo(PersonSchema.GetPersonQuery.Result(name = name, age = age))
+  isEqualTo(
+    PersonSchema.GetPersonQuery.Result(
+      PersonSchema.GetPersonQuery.Result.Person(name = name, age = age)
+    )
+  )
 
 private suspend fun <T> ReceiveChannel<T>.purge(timeout: Duration): List<T> = coroutineScope {
   mutableListOf<T>()

@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
 class QueryRef<VariablesType, ResultType>
@@ -21,16 +22,16 @@ internal constructor(
   operationName: String,
   operationSet: String,
   revision: String,
-  codec: Codec<ResultType>,
   variablesSerializer: SerializationStrategy<VariablesType>,
+  resultDeserializer: DeserializationStrategy<ResultType>
 ) :
   BaseRef<VariablesType, ResultType>(
     dataConnect = dataConnect,
     operationName = operationName,
     operationSet = operationSet,
     revision = revision,
-    codec = codec,
     variablesSerializer = variablesSerializer,
+    resultDeserializer = resultDeserializer,
   ) {
   override suspend fun execute(variables: VariablesType): ResultType =
     dataConnect.executeQuery(this, variables)

@@ -253,8 +253,7 @@ private object ProtoObjectValueEncoder : CompositeEncoder {
   override fun encodeFloatElement(descriptor: SerialDescriptor, index: Int, value: Float) =
     notSupported()
 
-  override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder =
-    notSupported()
+  override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int) = notSupported()
 
   override fun encodeIntElement(descriptor: SerialDescriptor, index: Int, value: Int) =
     notSupported()

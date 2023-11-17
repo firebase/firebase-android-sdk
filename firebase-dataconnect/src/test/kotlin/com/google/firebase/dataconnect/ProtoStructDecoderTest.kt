@@ -17,264 +17,362 @@
 package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
-import java.util.concurrent.atomic.AtomicLong
-import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.modules.EmptySerializersModule
-import kotlinx.serialization.serializer
 import org.junit.Test
 
 class ProtoStructDecoderTest {
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with a single String value`() {
-    @Serializable data class TestData(val value: String)
-    val struct = encodeToStruct(TestData(value = "Test Value"))
+  fun `decodeFromStruct() can decode a Struct with String values`() {
+    @Serializable data class TestData(val value1: String, val value2: String)
+    val struct = encodeToStruct(TestData(value1 = "foo", value2 = "bar"))
 
     val decodedTestData = decodeFromStruct<TestData>(struct)
 
-    assertThat(decodedTestData).isEqualTo(TestData(value = "Test Value"))
-  }
-}
-
-/**
- * A decoder that can be useful during testing to simply print the method invocations in order to
- * discover how a decoder should be implemented.
- */
-private class LoggingDecoder(
-  value: Any?,
-  private val idBySerialDescriptor: MutableMap<SerialDescriptor, Long> = mutableMapOf()
-) : Decoder, CompositeDecoder {
-  val id = nextEncoderId.incrementAndGet()
-
-  override val serializersModule = EmptySerializersModule()
-
-  private var nextElementIndex = 0
-  private val elements =
-    when (value) {
-      null -> null
-      is Map<*, *> -> value.entries.toList()
-      is Collection<*> -> value.toList()
-      else -> null
-    }
-
-  private fun log(message: String) {
-    println("zzyzx LoggingDecoder[$id] $message")
+    assertThat(decodedTestData).isEqualTo(TestData(value1 = "foo", value2 = "bar"))
   }
 
-  private fun idFor(descriptor: SerialDescriptor) =
-    idBySerialDescriptor[descriptor]
-      ?: nextSerialDescriptorId.incrementAndGet().also { idBySerialDescriptor[descriptor] = it }
+  @Test
+  fun `decodeFromStruct() can decode a Struct with _nullable_ String values`() {
+    @Serializable data class TestData(val isNull: String?, val isNotNull: String?)
+    val struct = encodeToStruct(TestData(isNull = null, isNotNull = "NotNull"))
 
-  override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
-    log(
-      "beginStructure() descriptorId=${idFor(descriptor)} kind=${descriptor.kind} " +
-        "elementsCount=${descriptor.elementsCount}"
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = "NotNull"))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with Boolean values`() {
+    @Serializable data class TestData(val value1: Boolean, val value2: Boolean)
+    val struct = encodeToStruct(TestData(value1 = true, value2 = false))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(value1 = true, value2 = false))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Boolean values`() {
+    @Serializable data class TestData(val isNull: Boolean?, val isNotNull: Boolean?)
+    val struct = encodeToStruct(TestData(isNull = null, isNotNull = true))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = true))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with Int values`() {
+    @Serializable data class TestData(val value1: Int, val value2: Int)
+    val struct = encodeToStruct(TestData(value1 = 123, value2 = -456))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(value1 = 123, value2 = -456))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Int values`() {
+    @Serializable data class TestData(val isNull: Int?, val isNotNull: Int?)
+    val struct = encodeToStruct(TestData(isNull = null, isNotNull = 42))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = 42))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with extreme Int values`() {
+    @Serializable data class TestData(val max: Int, val min: Int)
+    val struct = encodeToStruct(TestData(max = Int.MAX_VALUE, min = Int.MIN_VALUE))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(max = Int.MAX_VALUE, min = Int.MIN_VALUE))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with Double values`() {
+    @Serializable data class TestData(val value1: Double, val value2: Double)
+    val struct = encodeToStruct(TestData(value1 = 123.45, value2 = -456.78))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(value1 = 123.45, value2 = -456.78))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Double values`() {
+    @Serializable data class TestData(val isNull: Double?, val isNotNull: Double?)
+    val struct = encodeToStruct(TestData(isNull = null, isNotNull = 987.654))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = 987.654))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with extreme Double values`() {
+    @Serializable
+    data class TestData(
+      val min: Double,
+      val max: Double,
+      val positiveInfinity: Double,
+      val negativeInfinity: Double,
+      val nan: Double
     )
-    return LoggingDecoder(idBySerialDescriptor)
+    val struct =
+      encodeToStruct(
+        TestData(
+          min = Double.MIN_VALUE,
+          max = Double.MAX_VALUE,
+          positiveInfinity = Double.POSITIVE_INFINITY,
+          negativeInfinity = Double.NEGATIVE_INFINITY,
+          nan = Double.NaN
+        )
+      )
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(
+        TestData(
+          min = Double.MIN_VALUE,
+          max = Double.MAX_VALUE,
+          positiveInfinity = Double.POSITIVE_INFINITY,
+          negativeInfinity = Double.NEGATIVE_INFINITY,
+          nan = Double.NaN
+        )
+      )
   }
 
-  override fun endStructure(descriptor: SerialDescriptor) {
-    log("endStructure() descriptorId=${idFor(descriptor)} kind=${descriptor.kind}")
+  @Test
+  fun `decodeFromStruct() can decode a Struct with nested Struct values`() {
+    @Serializable data class TestDataA(val base: String)
+    @Serializable data class TestDataB(val dataA: TestDataA)
+    @Serializable data class TestDataC(val dataB: TestDataB)
+    @Serializable data class TestDataD(val dataC: TestDataC)
+
+    val struct = encodeToStruct(TestDataD(TestDataC(TestDataB(TestDataA("hello")))))
+
+    val decodedTestData = decodeFromStruct<TestDataD>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestDataD(TestDataC(TestDataB(TestDataA("hello")))))
   }
 
-  override fun decodeBoolean(): Boolean {
-    log("decodeBoolean() returns true")
-    return true
+  @Test
+  fun `decodeFromStruct() can decode a Struct with nested _nullable_ Struct values`() {
+    @Serializable data class TestDataA(val base: String)
+    @Serializable data class TestDataB(val dataANull: TestDataA?, val dataANotNull: TestDataA?)
+    @Serializable data class TestDataC(val dataBNull: TestDataB?, val dataBNotNull: TestDataB?)
+    @Serializable data class TestDataD(val dataCNull: TestDataC?, val dataCNotNull: TestDataC?)
+
+    val struct =
+      encodeToStruct(TestDataD(null, TestDataC(null, TestDataB(null, TestDataA("hello")))))
+
+    val decodedTestData = decodeFromStruct<TestDataD>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(TestDataD(null, TestDataC(null, TestDataB(null, TestDataA("hello")))))
   }
 
-  override fun decodeByte(): Byte {
-    log("decodeByte() returns 111")
-    return 111
+  @Test
+  fun `decodeFromStruct() can decode a Struct with nullable ListValue values`() {
+    @Serializable data class TestData(val nullList: List<String>?, val nonNullList: List<String>?)
+    val struct = encodeToStruct(TestData(nullList = null, nonNullList = listOf("a", "b")))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(nullList = null, nonNullList = listOf("a", "b")))
   }
 
-  override fun decodeChar(): Char {
-    log("decodeChar() returns Z")
-    return 'Z'
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of String`() {
+    @Serializable data class TestData(val list: List<String>)
+    val struct = encodeToStruct(TestData(listOf("elem1", "elem2")))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(listOf("elem1", "elem2")))
   }
 
-  override fun decodeDouble(): Double {
-    log("decodeDouble() returns 123.45")
-    return 123.45
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ String`() {
+    @Serializable data class TestData(val list: List<String?>)
+    val struct = encodeToStruct(TestData(listOf(null, "aaa", null, "bbb")))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(listOf(null, "aaa", null, "bbb")))
   }
 
-  override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-    log("decodeEnum() returns 0")
-    return 0
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of Boolean`() {
+    @Serializable data class TestData(val list: List<Boolean>)
+    val struct = encodeToStruct(TestData(listOf(true, false, true, false)))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(listOf(true, false, true, false)))
   }
 
-  override fun decodeFloat(): Float {
-    log("decodeFloat() returns 678.90")
-    return 678.90f
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Boolean`() {
+    @Serializable data class TestData(val list: List<Boolean?>)
+    val struct = encodeToStruct(TestData(listOf(null, true, false, null, true, false)))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(listOf(null, true, false, null, true, false)))
   }
 
-  override fun decodeInline(descriptor: SerialDescriptor): Decoder {
-    log("decodeInline() kind=${descriptor.kind} serialName=${descriptor.serialName}")
-    return LoggingDecoder(idBySerialDescriptor)
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of Int`() {
+    @Serializable data class TestData(val list: List<Int>)
+    val struct = encodeToStruct(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE)))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE)))
   }
 
-  override fun decodeInt(): Int {
-    log("decodeInt() returns 4242")
-    return 4242
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Int`() {
+    @Serializable data class TestData(val list: List<Int?>)
+    val struct = encodeToStruct(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE, null)))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE, null)))
   }
 
-  override fun decodeLong(): Long {
-    log("decodeLong() returns 987654")
-    return 987654
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of Double`() {
+    @Serializable data class TestData(val list: List<Double>)
+    val struct =
+      encodeToStruct(
+        TestData(
+          listOf(
+            1.0,
+            0.0,
+            -0.0,
+            -1.0,
+            Double.MAX_VALUE,
+            Double.MIN_VALUE,
+            Double.NaN,
+            Double.POSITIVE_INFINITY,
+            Double.NEGATIVE_INFINITY
+          )
+        )
+      )
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(
+        TestData(
+          listOf(
+            1.0,
+            0.0,
+            -0.0,
+            -1.0,
+            Double.MAX_VALUE,
+            Double.MIN_VALUE,
+            Double.NaN,
+            Double.POSITIVE_INFINITY,
+            Double.NEGATIVE_INFINITY
+          )
+        )
+      )
   }
 
-  @ExperimentalSerializationApi
-  override fun decodeNotNullMark(): Boolean {
-    log("decodeNotNullMark() returns false")
-    return false
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Double`() {
+    @Serializable data class TestData(val list: List<Double?>)
+    val struct =
+      encodeToStruct(
+        TestData(
+          listOf(
+            1.0,
+            0.0,
+            -0.0,
+            -1.0,
+            Double.MAX_VALUE,
+            Double.MIN_VALUE,
+            Double.NaN,
+            Double.POSITIVE_INFINITY,
+            Double.NEGATIVE_INFINITY,
+            null
+          )
+        )
+      )
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(
+        TestData(
+          listOf(
+            1.0,
+            0.0,
+            -0.0,
+            -1.0,
+            Double.MAX_VALUE,
+            Double.MIN_VALUE,
+            Double.NaN,
+            Double.POSITIVE_INFINITY,
+            Double.NEGATIVE_INFINITY,
+            null
+          )
+        )
+      )
   }
 
-  @ExperimentalSerializationApi
-  override fun decodeNull(): Nothing? {
-    log("decodeNull() returns null")
-    return null
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of Struct`() {
+    @Serializable data class TestDataA(val s1: String, val s2: String?)
+    @Serializable data class TestData(val list: List<TestDataA>)
+    val struct = encodeToStruct(TestData(listOf(TestDataA("aa", null), TestDataA("bb", null))))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(TestData(listOf(TestDataA("aa", null), TestDataA("bb", null))))
   }
 
-  override fun decodeShort(): Short {
-    log("decodeShort() returns 554433")
-    return 554433.toShort()
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Struct`() {
+    @Serializable data class TestDataA(val s1: String, val s2: String?)
+    @Serializable data class TestData(val list: List<TestDataA?>)
+    val struct =
+      encodeToStruct(TestData(listOf(null, TestDataA("aa", null), TestDataA("bb", null), null)))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(TestData(listOf(null, TestDataA("aa", null), TestDataA("bb", null), null)))
   }
 
-  override fun decodeString(): String {
-    log("decodeString() returns \"Hello World\"")
-    return "Hello World"
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of ListValue`() {
+    @Serializable data class TestData(val list: List<List<Int>>)
+    val struct = encodeToStruct(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6))))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData).isEqualTo(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6))))
   }
 
-  override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int): Boolean {
-    log(
-      "decodeBooleanElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns false"
-    )
-    return false
-  }
+  @Test
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ ListValue`() {
+    @Serializable data class TestData(val list: List<List<Int>?>)
+    val struct = encodeToStruct(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6), null)))
 
-  override fun decodeByteElement(descriptor: SerialDescriptor, index: Int): Byte {
-    log(
-      "decodeByteElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns 66"
-    )
-    return 66
-  }
+    val decodedTestData = decodeFromStruct<TestData>(struct)
 
-  override fun decodeCharElement(descriptor: SerialDescriptor, index: Int): Char {
-    log(
-      "decodeCharElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns X"
-    )
-    return 'X'
-  }
-
-  override fun decodeDoubleElement(descriptor: SerialDescriptor, index: Int): Double {
-    log(
-      "decodeDoubleElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns 543.21"
-    )
-    return 543.21
-  }
-
-  override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-    log("zzyzx elements=$elements")
-    if (elements === null || nextElementIndex >= elements.size) {
-      log("decodeElementIndex() returns DECODE_DONE")
-      return CompositeDecoder.DECODE_DONE
-    }
-    val elementIndex = nextElementIndex++
-    log("decodeElementIndex() returns $elementIndex")
-    return elementIndex
-  }
-
-  override fun decodeFloatElement(descriptor: SerialDescriptor, index: Int): Float {
-    log(
-      "decodeFloatElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        "returns 987.65"
-    )
-    return 987.65f
-  }
-
-  override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int): Decoder {
-    log("decodeInlineElement() index=$index elementName=${descriptor.getElementName(index)}")
-    return LoggingDecoder(idBySerialDescriptor)
-  }
-
-  override fun decodeIntElement(descriptor: SerialDescriptor, index: Int): Int {
-    log(
-      "decodeIntElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns 5555"
-    )
-    return 5555
-  }
-
-  override fun decodeLongElement(descriptor: SerialDescriptor, index: Int): Long {
-    log(
-      "decodeLongElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns 848484848"
-    )
-    return 848484848
-  }
-
-  override fun decodeShortElement(descriptor: SerialDescriptor, index: Int): Short {
-    log(
-      "decodeShortElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns 443344"
-    )
-    return 443344.toShort()
-  }
-
-  override fun decodeStringElement(descriptor: SerialDescriptor, index: Int): String {
-    log(
-      "decodeStringElement() index=$index elementName=${descriptor.getElementName(index)}" +
-        " returns \"Goodbye Cruel World\""
-    )
-    return "Goodbye Cruel World"
-  }
-
-  @ExperimentalSerializationApi
-  override fun <T : Any> decodeNullableSerializableElement(
-    descriptor: SerialDescriptor,
-    index: Int,
-    deserializer: DeserializationStrategy<T?>,
-    previousValue: T?
-  ): T? {
-    log(
-      "decodeNullableSerializableElement()" +
-        "index=$index elementName=${descriptor.getElementName(index)}" +
-        " previousValue=$previousValue" +
-        " returns null"
-    )
-    return null
-  }
-
-  override fun <T : Any?> decodeSerializableElement(
-    descriptor: SerialDescriptor,
-    index: Int,
-    deserializer: DeserializationStrategy<T>,
-    previousValue: T?
-  ): T {
-    log(
-      "decodeSerializableElement()" +
-        "index=$index elementName=${descriptor.getElementName(index)}" +
-        " previousValue=$previousValue"
-    )
-    return decodeSerializableValue(deserializer)
-  }
-
-  companion object {
-
-    fun <T : Any> decode(serializer: DeserializationStrategy<T>, value: Map<*, *>): T =
-      LoggingDecoder(value).decodeSerializableValue(serializer)
-
-    inline fun <reified T : Any> decode(value: Map<*, *>): T = decode(serializer(), value)
-
-    private val nextEncoderId = AtomicLong(0)
-    private val nextSerialDescriptorId = AtomicLong(998800000L)
+    assertThat(decodedTestData).isEqualTo(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6), null)))
   }
 }

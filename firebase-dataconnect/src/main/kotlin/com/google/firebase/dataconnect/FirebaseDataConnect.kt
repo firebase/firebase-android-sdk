@@ -27,7 +27,9 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.serializer
 
 class FirebaseDataConnect
 internal constructor(
@@ -93,63 +95,28 @@ internal constructor(
   internal suspend fun <V, R> executeQuery(ref: QueryRef<V, R>, variables: V): R =
     withContext(sequentialDispatcher) { grpcClient }
       .run {
-        ref.codec.decodeResult(
-          executeQuery(
-            operationName = ref.operationName,
-            operationSet = ref.operationSet,
-            revision = ref.revision,
-            variables = variables,
-            variablesSerializer = ref.variablesSerializer,
-          )
+        executeQuery(
+          operationName = ref.operationName,
+          operationSet = ref.operationSet,
+          revision = ref.revision,
+          variables = variables,
+          variablesSerializer = ref.variablesSerializer,
+          resultDeserializer = ref.resultDeserializer
         )
       }
 
   internal suspend fun <V, R> executeMutation(ref: MutationRef<V, R>, variables: V): R =
     withContext(sequentialDispatcher) { grpcClient }
       .run {
-        ref.codec.decodeResult(
-          executeMutation(
-            operationName = ref.operationName,
-            operationSet = ref.operationSet,
-            revision = ref.revision,
-            variables = variables,
-            variablesSerializer = ref.variablesSerializer,
-          )
+        executeMutation(
+          operationName = ref.operationName,
+          operationSet = ref.operationSet,
+          revision = ref.revision,
+          variables = variables,
+          variablesSerializer = ref.variablesSerializer,
+          resultDeserializer = ref.resultDeserializer
         )
       }
-
-  fun <VariablesType, ResultType> query(
-    operationName: String,
-    operationSet: String,
-    revision: String,
-    codec: BaseRef.Codec<ResultType>,
-    variablesSerializer: SerializationStrategy<VariablesType>,
-  ): QueryRef<VariablesType, ResultType> =
-    QueryRef(
-      dataConnect = this,
-      operationName = operationName,
-      operationSet = operationSet,
-      revision = revision,
-      codec = codec,
-      variablesSerializer = variablesSerializer,
-    )
-
-  fun <VariablesType, ResultType> mutation(
-    operationName: String,
-    operationSet: String,
-    revision: String,
-    codec: BaseRef.Codec<ResultType>,
-    variablesSerializer: SerializationStrategy<VariablesType>,
-  ): MutationRef<VariablesType, ResultType> =
-    MutationRef(
-      dataConnect = this,
-      operationName = operationName,
-      operationSet = operationSet,
-      revision = revision,
-      codec = codec,
-      variablesSerializer = variablesSerializer,
-    )
-
   override fun close() {
     logger.debug { "close() called" }
     runBlocking(sequentialDispatcher) {
@@ -214,6 +181,64 @@ internal constructor(
       )
   }
 }
+
+inline fun <reified VariablesType, reified ResultType> FirebaseDataConnect.query(
+  operationName: String,
+  operationSet: String,
+  revision: String
+): QueryRef<VariablesType, ResultType> =
+  query(
+    operationName = operationName,
+    operationSet = operationSet,
+    revision = revision,
+    variablesSerializer = serializer(),
+    resultDeserializer = serializer(),
+  )
+
+fun <VariablesType, ResultType> FirebaseDataConnect.query(
+  operationName: String,
+  operationSet: String,
+  revision: String,
+  variablesSerializer: SerializationStrategy<VariablesType>,
+  resultDeserializer: DeserializationStrategy<ResultType>
+): QueryRef<VariablesType, ResultType> =
+  QueryRef(
+    dataConnect = this,
+    operationName = operationName,
+    operationSet = operationSet,
+    revision = revision,
+    variablesSerializer = variablesSerializer,
+    resultDeserializer = resultDeserializer
+  )
+
+inline fun <reified VariablesType, reified ResultType> FirebaseDataConnect.mutation(
+  operationName: String,
+  operationSet: String,
+  revision: String,
+): MutationRef<VariablesType, ResultType> =
+  mutation(
+    operationName = operationName,
+    operationSet = operationSet,
+    revision = revision,
+    variablesSerializer = serializer(),
+    resultDeserializer = serializer(),
+  )
+
+fun <VariablesType, ResultType> FirebaseDataConnect.mutation(
+  operationName: String,
+  operationSet: String,
+  revision: String,
+  variablesSerializer: SerializationStrategy<VariablesType>,
+  resultDeserializer: DeserializationStrategy<ResultType>
+): MutationRef<VariablesType, ResultType> =
+  MutationRef(
+    dataConnect = this,
+    operationName = operationName,
+    operationSet = operationSet,
+    revision = revision,
+    variablesSerializer = variablesSerializer,
+    resultDeserializer = resultDeserializer
+  )
 
 open class DataConnectException internal constructor(message: String, cause: Throwable? = null) :
   Exception(message, cause)

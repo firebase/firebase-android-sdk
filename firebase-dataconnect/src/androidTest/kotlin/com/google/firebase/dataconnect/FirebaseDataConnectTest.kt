@@ -21,7 +21,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.IdentityCodec
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
 import com.google.firebase.dataconnect.testutil.installEmulatorSchema
@@ -33,7 +32,6 @@ import kotlin.concurrent.withLock
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -313,37 +311,32 @@ class FirebaseDataConnectTest {
     @Serializable data class CreatePostVariables(val data: PostData)
     @Serializable data class GetPostVariables(val id: String)
 
+    @Serializable data class GetPostResultPost(val content: String, val comments: List<Unit>)
+    @Serializable data class GetPostResult(val post: GetPostResultPost)
+
     run {
       val mutation =
-        dc.mutation<CreatePostVariables, Map<String, Any?>>(
+        dc.mutation<CreatePostVariables, Unit>(
           operationName = "createPost",
           operationSet = "crud",
           revision = "TestRevision",
-          codec = IdentityCodec,
-          variablesSerializer = serializer(),
         )
       val mutationResponse =
         mutation.execute(CreatePostVariables(PostData(id = postId, content = postContent)))
-      assertWithMessage("mutationResponse")
-        .that(mutationResponse)
-        .containsExactlyEntriesIn(mapOf("post_insert" to null))
+      assertWithMessage("mutationResponse").that(mutationResponse).isSameInstanceAs(Unit)
     }
 
     run {
       val query =
-        dc.query<GetPostVariables, Map<String, Any?>>(
+        dc.query<GetPostVariables, GetPostResult>(
           operationName = "getPost",
           operationSet = "crud",
           revision = "TestRevision",
-          codec = IdentityCodec,
-          variablesSerializer = serializer(),
         )
       val queryResult = query.execute(GetPostVariables(id = postId))
       assertWithMessage("queryResponse")
         .that(queryResult)
-        .containsExactlyEntriesIn(
-          mapOf("post" to mapOf("content" to postContent, "comments" to emptyList<Unit>()))
-        )
+        .isEqualTo(GetPostResult(GetPostResultPost(content = postContent, comments = emptyList())))
     }
   }
 
@@ -352,64 +345,35 @@ class FirebaseDataConnectTest {
     @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
     @Serializable data class CreatePersonVariables(val data: PersonData)
     @Serializable data class GetPersonVariables(val id: String)
+    @Serializable data class GetPersonResultPerson(val name: String, val age: Int?)
+    @Serializable data class GetPersonResult(val person: GetPersonResultPerson)
+    @Serializable
+    data class GetAllPeopleResultPerson(val id: String, val name: String, val age: Int?)
+    @Serializable data class GetAllPeopleResult(val people: List<GetAllPeopleResultPerson>)
 
     suspend fun FirebaseDataConnect.createPerson(id: String, name: String, age: Int? = null) =
-      mutation<CreatePersonVariables, Map<String, Any?>>(
+      mutation<CreatePersonVariables, Unit>(
           operationName = "createPerson",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec,
-          variablesSerializer = serializer(),
         )
         .execute(CreatePersonVariables(PersonData(id = id, name = name, age = age)))
 
     suspend fun FirebaseDataConnect.getPerson(id: String) =
-      query<GetPersonVariables, Map<String, Any?>>(
+      query<GetPersonVariables, GetPersonResult>(
           operationName = "getPerson",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec,
-          variablesSerializer = serializer(),
         )
         .execute(GetPersonVariables(id = id))
 
     suspend fun FirebaseDataConnect.getAllPeople() =
-      query<Unit, Map<String, Any?>>(
+      query<Unit, GetAllPeopleResult>(
           operationName = "getAllPeople",
           operationSet = "ops",
           revision = "42",
-          codec = IdentityCodec,
-          variablesSerializer = serializer(),
         )
         .execute(Unit)
-
-    fun Map<*, *>.assertEqualsGetPersonResponse(name: String, age: Double?) {
-      assertThat(keys).containsExactly("person")
-      get("person").let { personMap ->
-        assertThat(personMap).isInstanceOf(Map::class.java)
-        (personMap as Map<*, *>).let { assertThat(it).containsExactly("name", name, "age", age) }
-      }
-    }
-
-    data class IdNameAgeTuple(val id: Any?, val name: Any?, val age: Any?)
-
-    fun Map<*, *>.assertEqualsGetPeopleResponse(vararg entries: IdNameAgeTuple) {
-      assertThat(keys).containsExactly("people")
-      get("people").let { peopleList ->
-        assertThat(peopleList).isInstanceOf(List::class.java)
-        val actualPeople =
-          (peopleList as Iterable<*>).mapIndexed { index, entry ->
-            assertWithMessage("people[$index]").that(entry).isInstanceOf(Map::class.java)
-            (entry as Map<*, *>).let { personMap ->
-              assertWithMessage("people[$index].keys")
-                .that(personMap.keys)
-                .containsExactly("id", "name", "age")
-              IdNameAgeTuple(id = personMap["id"], name = personMap["name"], age = personMap["age"])
-            }
-          }
-        assertThat(actualPeople).containsExactlyElementsIn(entries)
-      }
-    }
 
     val dataConnect = dataConnectFactory.newInstance()
 
@@ -419,18 +383,15 @@ class FirebaseDataConnectTest {
       dataConnect.createPerson(id = "TestId1", name = "TestName1")
       dataConnect.createPerson(id = "TestId2", name = "TestName2", age = 999)
 
-      dataConnect
-        .getPerson(id = "TestId1")
-        .assertEqualsGetPersonResponse(name = "TestName1", age = null)
-      dataConnect
-        .getPerson(id = "TestId2")
-        .assertEqualsGetPersonResponse(name = "TestName2", age = 999.0)
+      assertThat(dataConnect.getPerson(id = "TestId1"))
+        .isEqualTo(GetPersonResult(GetPersonResultPerson(name = "TestName1", age = null)))
+      assertThat(dataConnect.getPerson(id = "TestId2"))
+        .isEqualTo(GetPersonResult(GetPersonResultPerson(name = "TestName2", age = 999)))
 
-      dataConnect
-        .getAllPeople()
-        .assertEqualsGetPeopleResponse(
-          IdNameAgeTuple(id = "TestId1", name = "TestName1", age = null),
-          IdNameAgeTuple(id = "TestId2", name = "TestName2", age = 999.0),
+      assertThat(dataConnect.getAllPeople().people)
+        .containsExactly(
+          GetAllPeopleResultPerson(id = "TestId1", name = "TestName1", age = null),
+          GetAllPeopleResultPerson(id = "TestId2", name = "TestName2", age = 999),
         )
     }
   }
