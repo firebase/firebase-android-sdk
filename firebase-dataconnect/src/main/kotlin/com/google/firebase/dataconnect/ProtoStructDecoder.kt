@@ -25,11 +25,22 @@ fun <T> decodeFromStruct(deserializer: DeserializationStrategy<T>, struct: Struc
   return ProtoValueDecoder(protoValue, path = null).decodeSerializableValue(deserializer)
 }
 
+private fun Value.toAny(): Any? =
+  when (kindCase) {
+    KindCase.BOOL_VALUE -> boolValue
+    KindCase.NUMBER_VALUE -> numberValue
+    KindCase.STRING_VALUE -> stringValue
+    KindCase.LIST_VALUE -> listValue.valuesList
+    KindCase.STRUCT_VALUE -> structValue.fieldsMap
+    KindCase.NULL_VALUE -> null
+    else -> "ERROR: unsupported kindCase: $kindCase"
+  }
+
 private fun <T> Value.decode(path: String?, expectedKindCase: KindCase, block: (Value) -> T): T =
   if (kindCase != expectedKindCase) {
     throw SerializationException(
       (if (path === null) "" else "decoding \"$path\" failed: ") +
-        "expected $expectedKindCase, but got $kindCase"
+        "expected $expectedKindCase, but got $kindCase (${toAny()})"
     )
   } else {
     block(this)
@@ -211,14 +222,15 @@ private class ProtoStructValueDecoder(private val struct: Struct, private val pa
     }
 
     val elementName = descriptor.getElementName(index)
+    val elementPath = elementPathForName(elementName)
     val valueProto = struct.fieldsMap[elementName]
     if (valueProto === null) {
       throw SerializationException(
-        "element \"$elementName\" missing; expected ${descriptor.getElementDescriptor(index).kind}"
+        "element \"$elementPath\" missing; expected ${descriptor.getElementDescriptor(index).kind}"
       )
     }
 
-    return deserializer.deserialize(ProtoValueDecoder(valueProto, elementPathForName(elementName)))
+    return deserializer.deserialize(ProtoValueDecoder(valueProto, elementPath))
   }
 
   private fun elementPathForName(elementName: String) =

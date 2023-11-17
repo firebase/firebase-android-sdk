@@ -17,9 +17,12 @@
 package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
+import com.google.protobuf.struct
+import com.google.protobuf.value
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -470,7 +473,7 @@ class ProtoStructDecoderTest {
   fun `decodeFromStruct() should throw SerializationException if attempting to decode an Int`() {
     assertDecodeFromStructThrowsIncorrectKindCase<Int>(
       expectedKind = KindCase.NUMBER_VALUE,
-      actualKind = KindCase.STRUCT_VALUE
+      actualKind = KindCase.STRUCT_VALUE,
     )
   }
 
@@ -478,7 +481,7 @@ class ProtoStructDecoderTest {
   fun `decodeFromStruct() should throw SerializationException if attempting to decode a Double`() {
     assertDecodeFromStructThrowsIncorrectKindCase<Double>(
       expectedKind = KindCase.NUMBER_VALUE,
-      actualKind = KindCase.STRUCT_VALUE
+      actualKind = KindCase.STRUCT_VALUE,
     )
   }
 
@@ -552,6 +555,127 @@ class ProtoStructDecoderTest {
   fun `decodeFromStruct() should throw SerializationException if attempting to decode a Short`() {
     assertThrowsNotSupported<Short>()
   }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if decoding a Boolean value found a different type`() {
+    @Serializable data class TestEncodeSubData(val someValue: String)
+    @Serializable data class TestEncodeData(val aaa: TestEncodeSubData)
+    @Serializable data class TestDecodeSubData(val someValue: Boolean)
+    @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
+
+    assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
+      expectedKind = KindCase.BOOL_VALUE,
+      actualKind = KindCase.STRING_VALUE,
+      struct = encodeToStruct(TestEncodeData(TestEncodeSubData("foo"))),
+      actualValue = "foo",
+      path = "aaa.someValue"
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if decoding an Int value found a different type`() {
+    @Serializable data class TestEncodeSubData(val someValue: String)
+    @Serializable data class TestEncodeData(val aaa: TestEncodeSubData)
+    @Serializable data class TestDecodeSubData(val someValue: Int)
+    @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
+
+    assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
+      expectedKind = KindCase.NUMBER_VALUE,
+      actualKind = KindCase.STRING_VALUE,
+      struct = encodeToStruct(TestEncodeData(TestEncodeSubData("foo"))),
+      actualValue = "foo",
+      path = "aaa.someValue"
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if decoding a Double value found a different type`() {
+    @Serializable data class TestEncodeSubData(val someValue: String)
+    @Serializable data class TestEncodeData(val aaa: TestEncodeSubData)
+    @Serializable data class TestDecodeSubData(val someValue: Double)
+    @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
+
+    assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
+      expectedKind = KindCase.NUMBER_VALUE,
+      actualKind = KindCase.STRING_VALUE,
+      struct = encodeToStruct(TestEncodeData(TestEncodeSubData("foo"))),
+      actualValue = "foo",
+      path = "aaa.someValue"
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if decoding a String value found a different type`() {
+    @Serializable data class TestEncodeSubData(val someValue: Int)
+    @Serializable data class TestEncodeData(val aaa: TestEncodeSubData)
+    @Serializable data class TestDecodeSubData(val someValue: String)
+    @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
+
+    assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
+      expectedKind = KindCase.STRING_VALUE,
+      actualKind = KindCase.NUMBER_VALUE,
+      struct = encodeToStruct(TestEncodeData(TestEncodeSubData(42))),
+      actualValue = 42.0,
+      path = "aaa.someValue"
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if decoding a List value found a different type`() {
+    @Serializable data class TestEncodeSubData(val someValue: Boolean)
+    @Serializable data class TestEncodeData(val aaa: TestEncodeSubData)
+    @Serializable data class TestDecodeSubData(val someValue: List<Int>)
+    @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
+
+    assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
+      expectedKind = KindCase.LIST_VALUE,
+      actualKind = KindCase.BOOL_VALUE,
+      struct = encodeToStruct(TestEncodeData(TestEncodeSubData(true))),
+      actualValue = true,
+      path = "aaa.someValue"
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if decoding a Struct value found a different type`() {
+    @Serializable data class TestEncodeSubData(val someValue: Int)
+    @Serializable data class TestEncodeData(val aaa: TestEncodeSubData)
+    @Serializable data class TestDecodeSubData2(val someValue: Int)
+    @Serializable data class TestDecodeSubData(val someValue: TestDecodeSubData2)
+    @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
+
+    assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
+      expectedKind = KindCase.STRUCT_VALUE,
+      actualKind = KindCase.NUMBER_VALUE,
+      struct = encodeToStruct(TestEncodeData(TestEncodeSubData(42))),
+      actualValue = 42.0,
+      path = "aaa.someValue"
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if decoding a Struct value found null`() {
+    @Serializable data class TestDecodeSubData2(val someValue: String)
+    @Serializable data class TestDecodeSubData(val bbb: TestDecodeSubData2)
+    @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
+    val struct = struct {
+      fields["aaa"] = value {
+        structValue = struct { fields["bbb"] = value { nullValue = NullValue.NULL_VALUE } }
+      }
+    }
+
+    assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
+      expectedKind = KindCase.STRUCT_VALUE,
+      actualKind = KindCase.NULL_VALUE,
+      struct = struct,
+      actualValue = null,
+      path = "aaa.bbb"
+    )
+  }
+
+  // TODO: Add tests for decoding to objects with unsupported field types (e.g. Byte, Char) and
+  // list elements of unsupported field types (e.g. Byte, Char).
+
 }
 
 /**
@@ -566,15 +690,19 @@ class ProtoStructDecoderTest {
 private inline fun <reified T> assertDecodeFromStructThrowsIncorrectKindCase(
   expectedKind: KindCase,
   actualKind: KindCase,
+  actualValue: Any? = Struct.getDefaultInstance().fieldsMap,
+  struct: Struct = Struct.getDefaultInstance(),
+  path: String? = null
 ) {
-  val exception =
-    assertThrows(SerializationException::class.java) {
-      decodeFromStruct<T>(Struct.getDefaultInstance())
-    }
+  val exception = assertThrows(SerializationException::class.java) { decodeFromStruct<T>(struct) }
   // The error message is expected to look something like this:
   // "expected NUMBER_VALUE, but got STRUCT_VALUE"
   assertThat(exception).hasMessageThat().ignoringCase().contains("expected $expectedKind")
   assertThat(exception).hasMessageThat().ignoringCase().contains("got $actualKind")
+  assertThat(exception).hasMessageThat().ignoringCase().contains("($actualValue)")
+  if (path !== null) {
+    assertThat(exception).hasMessageThat().ignoringCase().contains("decoding \"$path\"")
+  }
 }
 
 /**
