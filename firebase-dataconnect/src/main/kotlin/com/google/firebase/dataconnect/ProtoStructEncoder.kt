@@ -73,9 +73,7 @@ private class ProtoValueEncoder : Encoder {
     TODO("Not yet implemented")
   }
 
-  override fun encodeInline(descriptor: SerialDescriptor): Encoder {
-    TODO("Not yet implemented")
-  }
+  override fun encodeInline(descriptor: SerialDescriptor) = this
 
   override fun encodeInt(value: Int) {
     encodeDouble(value.toDouble())

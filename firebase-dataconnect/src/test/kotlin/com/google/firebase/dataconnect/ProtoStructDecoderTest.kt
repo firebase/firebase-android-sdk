@@ -18,8 +18,10 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
 import java.util.regex.Pattern
+import kotlin.reflect.KClass
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -388,8 +390,85 @@ class ProtoStructDecoderTest {
   }
 
   @Test
+  fun `decodeFromStruct() can decode a Struct with Inline values`() {
+    @Serializable data class TestData(val s: TestStringValueClass, val i: TestIntValueClass)
+    val struct = encodeToStruct(TestData(TestStringValueClass("TestString"), TestIntValueClass(42)))
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(TestData(TestStringValueClass("TestString"), TestIntValueClass(42)))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Inline values`() {
+    @Serializable
+    data class TestData(
+      val s: TestStringValueClass?,
+      val snull: TestStringValueClass?,
+      val i: TestIntValueClass?,
+      val inull: TestIntValueClass?
+    )
+    val struct =
+      encodeToStruct(
+        TestData(TestStringValueClass("TestString"), null, TestIntValueClass(42), null)
+      )
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(TestData(TestStringValueClass("TestString"), null, TestIntValueClass(42), null))
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a ListValue with Inline values`() {
+    @Serializable
+    data class TestData(val s: List<TestStringValueClass>, val i: List<TestIntValueClass>)
+    val struct =
+      encodeToStruct(
+        TestData(
+          listOf(TestStringValueClass("TestString1"), TestStringValueClass("TestString2")),
+          listOf(TestIntValueClass(42), TestIntValueClass(43))
+        )
+      )
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(
+        TestData(
+          listOf(TestStringValueClass("TestString1"), TestStringValueClass("TestString2")),
+          listOf(TestIntValueClass(42), TestIntValueClass(43))
+        )
+      )
+  }
+
+  @Test
+  fun `decodeFromStruct() can decode a ListValue with _nullable_ Inline values`() {
+    @Serializable
+    data class TestData(val s: List<TestStringValueClass?>, val i: List<TestIntValueClass?>)
+    val struct =
+      encodeToStruct(
+        TestData(
+          listOf(TestStringValueClass("TestString1"), null, TestStringValueClass("TestString2")),
+          listOf(TestIntValueClass(42), null, TestIntValueClass(43))
+        )
+      )
+
+    val decodedTestData = decodeFromStruct<TestData>(struct)
+
+    assertThat(decodedTestData)
+      .isEqualTo(
+        TestData(
+          listOf(TestStringValueClass("TestString1"), null, TestStringValueClass("TestString2")),
+          listOf(TestIntValueClass(42), null, TestIntValueClass(43))
+        )
+      )
+  }
+
+  @Test
   fun `decodeFromStruct() should throw SerializationException if attempting to decode an Int`() {
-    assertThrowsExpectedDifferentKindCase<Int>(
+    assertDecodeFromStructThrowsIncorrectKindCase<Int>(
       expectedKind = KindCase.NUMBER_VALUE,
       actualKind = KindCase.STRUCT_VALUE
     )
@@ -397,7 +476,7 @@ class ProtoStructDecoderTest {
 
   @Test
   fun `decodeFromStruct() should throw SerializationException if attempting to decode a Double`() {
-    assertThrowsExpectedDifferentKindCase<Double>(
+    assertDecodeFromStructThrowsIncorrectKindCase<Double>(
       expectedKind = KindCase.NUMBER_VALUE,
       actualKind = KindCase.STRUCT_VALUE
     )
@@ -405,7 +484,7 @@ class ProtoStructDecoderTest {
 
   @Test
   fun `decodeFromStruct() should throw SerializationException if attempting to decode a Boolean`() {
-    assertThrowsExpectedDifferentKindCase<Boolean>(
+    assertDecodeFromStructThrowsIncorrectKindCase<Boolean>(
       expectedKind = KindCase.BOOL_VALUE,
       actualKind = KindCase.STRUCT_VALUE
     )
@@ -413,7 +492,7 @@ class ProtoStructDecoderTest {
 
   @Test
   fun `decodeFromStruct() should throw SerializationException if attempting to decode a String`() {
-    assertThrowsExpectedDifferentKindCase<String>(
+    assertDecodeFromStructThrowsIncorrectKindCase<String>(
       expectedKind = KindCase.STRING_VALUE,
       actualKind = KindCase.STRUCT_VALUE
     )
@@ -421,7 +500,7 @@ class ProtoStructDecoderTest {
 
   @Test
   fun `decodeFromStruct() should throw SerializationException if attempting to decode a List`() {
-    assertThrowsExpectedDifferentKindCase<List<String>>(
+    assertDecodeFromStructThrowsIncorrectKindCase<List<String>>(
       expectedKind = KindCase.LIST_VALUE,
       actualKind = KindCase.STRUCT_VALUE
     )
@@ -448,8 +527,20 @@ class ProtoStructDecoderTest {
   }
 
   @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Inline`() {
-    assertThrowsNotSupported<TestValueClass>()
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode an Inline of supported type`() {
+    assertDecodeFromStructThrowsIncorrectKindCase<TestStringValueClass>(
+      expectedKind = KindCase.STRING_VALUE,
+      actualKind = KindCase.STRUCT_VALUE
+    )
+    assertDecodeFromStructThrowsIncorrectKindCase<TestIntValueClass>(
+      expectedKind = KindCase.NUMBER_VALUE,
+      actualKind = KindCase.STRUCT_VALUE
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode an Inline of _unsupported_ type`() {
+    assertThrowsNotSupported<TestByteValueClass>(expectedTypeInMessage = Byte::class)
   }
 
   @Test
@@ -463,19 +554,40 @@ class ProtoStructDecoderTest {
   }
 }
 
-private inline fun <reified T> assertThrowsExpectedDifferentKindCase(
+/**
+ * Asserts that `decodeFromStruct<T>` throws [SerializationException], with a message that indicates
+ * that the "kind" of the [Value] being decoded differed from what was expected.
+ *
+ * @param expectedKind The expected "kind" of the [Value] being decoded that should be incorporated
+ * into the exception's message.
+ * @param actualKind The actual "kind" of the [Value] being decoded that should be incorporated into
+ * the exception's message.
+ */
+private inline fun <reified T> assertDecodeFromStructThrowsIncorrectKindCase(
   expectedKind: KindCase,
-  actualKind: KindCase
+  actualKind: KindCase,
 ) {
   val exception =
     assertThrows(SerializationException::class.java) {
       decodeFromStruct<T>(Struct.getDefaultInstance())
     }
+  // The error message is expected to look something like this:
+  // "expected NUMBER_VALUE, but got STRUCT_VALUE"
   assertThat(exception).hasMessageThat().ignoringCase().contains("expected $expectedKind")
   assertThat(exception).hasMessageThat().ignoringCase().contains("got $actualKind")
 }
 
-private inline fun <reified T> assertThrowsNotSupported() {
+/**
+ * Asserts that `decodeFromStruct<T>` throws [SerializationException], with a message that indicates
+ * that the type `T` being decoded is not supported.
+ *
+ * @param expectedTypeInMessage The type that the exception's message should indicate is not
+ * supported; if not specified, use `T`. Note that the only case where this argument's value should
+ * be anything _other_ than `T` is for _value classes_ that are mapped to a primitive type.
+ */
+private inline fun <reified T : Any> assertThrowsNotSupported(
+  expectedTypeInMessage: KClass<*> = T::class
+) {
   val exception =
     assertThrows(SerializationException::class.java) {
       decodeFromStruct<T>(Struct.getDefaultInstance())
@@ -484,7 +596,7 @@ private inline fun <reified T> assertThrowsNotSupported() {
     .hasMessageThat()
     .containsMatch(
       Pattern.compile(
-        "decoding.*${Pattern.quote(T::class.qualifiedName!!)}.*not supported",
+        "decoding.*${Pattern.quote(expectedTypeInMessage.qualifiedName!!)}.*not supported",
         Pattern.CASE_INSENSITIVE
       )
     )
@@ -497,4 +609,8 @@ private enum class TestEnum {
   D
 }
 
-@Serializable @JvmInline value class TestValueClass(val a: Int)
+@Serializable @JvmInline value class TestStringValueClass(val a: String)
+
+@Serializable @JvmInline value class TestIntValueClass(val a: Int)
+
+@Serializable @JvmInline value class TestByteValueClass(val a: Byte)

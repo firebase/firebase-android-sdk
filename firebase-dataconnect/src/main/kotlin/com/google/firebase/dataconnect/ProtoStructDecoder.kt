@@ -81,8 +81,7 @@ private class ProtoValueDecoder(private val valueProto: Value, private val path:
 
   override fun decodeFloat() = notSupported<Float>()
 
-  override fun decodeInline(descriptor: SerialDescriptor) =
-    notSupported("Inline (${descriptor.serialName})")
+  override fun decodeInline(descriptor: SerialDescriptor) = ProtoValueDecoder(valueProto, path)
 
   override fun decodeInt(): Int = valueProto.decodeInt(path)
 
@@ -150,9 +149,8 @@ private class ProtoStructValueDecoder(private val struct: Struct, private val pa
     TODO("Not yet implemented")
   }
 
-  override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int): Decoder {
-    TODO("Not yet implemented")
-  }
+  override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(descriptor, index, ::ProtoValueDecoder)
 
   override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(descriptor, index, Value::decodeInt)
@@ -174,12 +172,13 @@ private class ProtoStructValueDecoder(private val struct: Struct, private val pa
     block: Value.(String?) -> T
   ): T {
     val elementName = descriptor.getElementName(index)
+    val elementPath = elementPathForName(elementName)
     val value =
       struct.fieldsMap[elementName]
         ?: throw SerializationException(
-          "element \"$elementName\" missing (expected ${descriptor.getElementDescriptor(index).kind})"
+          "element \"$elementPath\" missing (expected ${descriptor.getElementDescriptor(index).kind})"
         )
-    return block(value, elementPathForName(elementName))
+    return block(value, elementPath)
   }
 
   @ExperimentalSerializationApi
@@ -250,16 +249,15 @@ private class ProtoListValueDecoder(private val list: ListValue, private val pat
     TODO("Not yet implemented")
   }
 
-  override fun decodeDoubleElement(descriptor: SerialDescriptor, index: Int): Double =
+  override fun decodeDoubleElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(index, Value::decodeDouble)
 
   override fun decodeFloatElement(descriptor: SerialDescriptor, index: Int): Float {
     TODO("Not yet implemented")
   }
 
-  override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int): Decoder {
-    TODO("Not yet implemented")
-  }
+  override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, ::ProtoValueDecoder)
 
   override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(index, Value::decodeInt)
@@ -272,7 +270,7 @@ private class ProtoListValueDecoder(private val list: ListValue, private val pat
     TODO("Not yet implemented")
   }
 
-  override fun decodeStringElement(descriptor: SerialDescriptor, index: Int): String =
+  override fun decodeStringElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(index, Value::decodeString)
 
   private inline fun <T> decodeValueElement(index: Int, block: Value.(String?) -> T): T =
