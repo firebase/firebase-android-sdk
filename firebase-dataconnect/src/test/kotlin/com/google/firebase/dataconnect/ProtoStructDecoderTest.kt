@@ -17,11 +17,22 @@
 package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
+import com.google.protobuf.Struct
+import com.google.protobuf.Value.KindCase
+import java.util.regex.Pattern
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class ProtoStructDecoderTest {
+
+  @Test
+  fun `decodeFromStruct() can decode a Struct to Unit`() {
+    val decodedTestData = decodeFromStruct<Unit>(Struct.getDefaultInstance())
+    assertThat(decodedTestData).isSameInstanceAs(Unit)
+  }
 
   @Test
   fun `decodeFromStruct() can decode a Struct with String values`() {
@@ -375,4 +386,115 @@ class ProtoStructDecoderTest {
 
     assertThat(decodedTestData).isEqualTo(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6), null)))
   }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode an Int`() {
+    assertThrowsExpectedDifferentKindCase<Int>(
+      expectedKind = KindCase.NUMBER_VALUE,
+      actualKind = KindCase.STRUCT_VALUE
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Double`() {
+    assertThrowsExpectedDifferentKindCase<Double>(
+      expectedKind = KindCase.NUMBER_VALUE,
+      actualKind = KindCase.STRUCT_VALUE
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Boolean`() {
+    assertThrowsExpectedDifferentKindCase<Boolean>(
+      expectedKind = KindCase.BOOL_VALUE,
+      actualKind = KindCase.STRUCT_VALUE
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a String`() {
+    assertThrowsExpectedDifferentKindCase<String>(
+      expectedKind = KindCase.STRING_VALUE,
+      actualKind = KindCase.STRUCT_VALUE
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a List`() {
+    assertThrowsExpectedDifferentKindCase<List<String>>(
+      expectedKind = KindCase.LIST_VALUE,
+      actualKind = KindCase.STRUCT_VALUE
+    )
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Byte`() {
+    assertThrowsNotSupported<Byte>()
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Char`() {
+    assertThrowsNotSupported<Char>()
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Enum`() {
+    assertThrowsNotSupported<TestEnum>()
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Float`() {
+    assertThrowsNotSupported<Float>()
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Inline`() {
+    assertThrowsNotSupported<TestValueClass>()
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Long`() {
+    assertThrowsNotSupported<Long>()
+  }
+
+  @Test
+  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Short`() {
+    assertThrowsNotSupported<Short>()
+  }
 }
+
+private inline fun <reified T> assertThrowsExpectedDifferentKindCase(
+  expectedKind: KindCase,
+  actualKind: KindCase
+) {
+  val exception =
+    assertThrows(SerializationException::class.java) {
+      decodeFromStruct<T>(Struct.getDefaultInstance())
+    }
+  assertThat(exception).hasMessageThat().ignoringCase().contains("expected $expectedKind")
+  assertThat(exception).hasMessageThat().ignoringCase().contains("got $actualKind")
+}
+
+private inline fun <reified T> assertThrowsNotSupported() {
+  val exception =
+    assertThrows(SerializationException::class.java) {
+      decodeFromStruct<T>(Struct.getDefaultInstance())
+    }
+  assertThat(exception)
+    .hasMessageThat()
+    .containsMatch(
+      Pattern.compile(
+        "decoding.*${Pattern.quote(T::class.qualifiedName!!)}.*not supported",
+        Pattern.CASE_INSENSITIVE
+      )
+    )
+}
+
+private enum class TestEnum {
+  A,
+  B,
+  C,
+  D
+}
+
+@Serializable @JvmInline value class TestValueClass(val a: Int)

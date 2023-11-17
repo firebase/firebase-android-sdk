@@ -70,33 +70,27 @@ private class ProtoValueDecoder(private val valueProto: Value, private val path:
 
   override fun decodeBoolean() = valueProto.decodeBoolean(path)
 
-  override fun decodeByte(): Byte {
-    TODO("Not yet implemented")
-  }
+  override fun decodeByte() = notSupported<Byte>()
 
-  override fun decodeChar(): Char {
-    TODO("Not yet implemented")
-  }
+  override fun decodeChar() = notSupported<Char>()
 
   override fun decodeDouble() = valueProto.decodeDouble(path)
 
-  override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-    TODO("Not yet implemented")
-  }
+  override fun decodeEnum(enumDescriptor: SerialDescriptor) =
+    notSupported("Enum (${enumDescriptor.serialName})")
 
-  override fun decodeFloat(): Float {
-    TODO("Not yet implemented")
-  }
+  override fun decodeFloat() = notSupported<Float>()
 
-  override fun decodeInline(descriptor: SerialDescriptor): Decoder {
-    TODO("Not yet implemented")
-  }
+  override fun decodeInline(descriptor: SerialDescriptor) =
+    notSupported("Inline (${descriptor.serialName})")
 
   override fun decodeInt(): Int = valueProto.decodeInt(path)
 
-  override fun decodeLong(): Long {
-    TODO("Not yet implemented")
-  }
+  override fun decodeLong() = notSupported<Long>()
+
+  override fun decodeShort() = notSupported<Short>()
+
+  override fun decodeString() = valueProto.decodeString(path)
 
   @ExperimentalSerializationApi
   override fun decodeNotNullMark(): Boolean {
@@ -109,11 +103,11 @@ private class ProtoValueDecoder(private val valueProto: Value, private val path:
     return null
   }
 
-  override fun decodeShort(): Short {
-    TODO("Not yet implemented")
+  private companion object {
+    inline fun <reified T> notSupported(): Nothing = notSupported(T::class.qualifiedName!!)
+    fun notSupported(unsupportedTypeName: String): Nothing =
+      throw SerializationException("decoding $unsupportedTypeName is not supported")
   }
-
-  override fun decodeString() = valueProto.decodeString(path)
 }
 
 private class ProtoStructValueDecoder(private val struct: Struct, private val path: String?) :
