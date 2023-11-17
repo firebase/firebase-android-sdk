@@ -16,6 +16,8 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -180,6 +182,7 @@ public class UserMetadata {
    * Update RolloutsState in memory and persistence. Return True if update successfully, false
    * otherwise
    */
+  @CanIgnoreReturnValue
   public boolean updateRolloutsState(List<RolloutAssignment> rolloutAssignments) {
     synchronized (rolloutsState) {
       if (!rolloutsState.updateRolloutAssignmentList(rolloutAssignments)) {

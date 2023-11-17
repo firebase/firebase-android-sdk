@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.metadata;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class RolloutAssignmentList {
     return Collections.unmodifiableList(new ArrayList<RolloutAssignment>(rolloutsState));
   }
 
+  @CanIgnoreReturnValue
   public synchronized boolean updateRolloutAssignmentList(List<RolloutAssignment> newMapList) {
     rolloutsState.clear();
     int nOverLimit = 0;
