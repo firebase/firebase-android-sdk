@@ -45,6 +45,38 @@ open class GraphQLException internal constructor() : DataConnectException() {
     get() = TODO()
 }
 
+class DataConnectResult<VariablesType, DataType> private constructor() {
+  val variables: VariablesType
+    get() = TODO()
+  val data: DataType?
+    get() = TODO()
+  val errors: List<DataConnectError>
+    get() = TODO()
+
+  override fun hashCode() = TODO()
+  override fun equals(other: Any?) = TODO()
+  override fun toString() = TODO()
+}
+
+// See https://spec.graphql.org/October2021/#sec-Errors
+class DataConnectError private constructor() {
+  val message: String
+    get() = TODO()
+  val path: List<PathSegment>
+    get() = TODO()
+  val extensions: Map<String, Any?>
+    get() = TODO()
+
+  override fun hashCode() = TODO()
+  override fun equals(other: Any?) = TODO()
+  override fun toString(): String = TODO()
+
+  sealed interface PathSegment {
+    @JvmInline value class Field(val field: String) : PathSegment
+    @JvmInline value class ListIndex(val index: Int) : PathSegment
+  }
+}
+
 abstract class BaseRef<VariablesType, DataType> internal constructor() {
   val dataConnect: FirebaseDataConnect
     get() = TODO()
