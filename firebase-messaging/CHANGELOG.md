@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Added an internal identifier to Firelog logging for compliance.
 
 # 23.3.1
 * [changed] Added metadata to FirebaseInstanceIdReceiver to signal that it

@@ -1119,7 +1119,7 @@ public abstract class CrashlyticsReport {
         public abstract static class Builder {
           @NonNull
           public abstract RolloutsState.Builder setRolloutAssignments(
-              @Nullable List<RolloutAssignment> rolloutAssignments);
+              @NonNull List<RolloutAssignment> rolloutAssignments);
 
           @NonNull
           public abstract RolloutsState build();
@@ -1215,7 +1215,7 @@ public abstract class CrashlyticsReport {
         @NonNull
         public abstract Builder setLog(@NonNull Log value);
 
-        @Nullable
+        @NonNull
         public abstract Builder setRollouts(@NonNull RolloutsState rolloutsState);
 
         @NonNull

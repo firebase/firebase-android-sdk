@@ -97,11 +97,11 @@ dependencies {
     implementation "com.google.firebase:firebase-iid-interop:17.1.0"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation 'androidx.annotation:annotation:1.2.0'
-    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    implementation 'com.google.android.datatransport:transport-api:3.1.0'
     implementation 'com.google.android.datatransport:transport-backend-cct:3.1.8'
     implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.1'
+    implementation 'com.google.android.gms:play-services-cloud-messaging:17.1.0'
     implementation 'com.google.android.gms:play-services-stats:17.0.2'
     implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
     implementation 'com.google.firebase:firebase-encoders:17.0.0'
