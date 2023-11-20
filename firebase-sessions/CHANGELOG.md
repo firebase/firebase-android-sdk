@@ -1,5 +1,7 @@
 # Unreleased
 
+# 1.2.0
+
 * [feature] Added support for accurate sessions on multi-process apps.
 
 # 1.0.2

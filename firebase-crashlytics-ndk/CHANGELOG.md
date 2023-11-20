@@ -1,8 +1,10 @@
 # Unreleased
 
+# 18.6.0
+* [changed] Updated `firebase-crashlytics` dependency to v18.6.0
 
 # 18.5.0
-* [changed] Updated `firebase-crashlytics` dependency to v18.4.3
+* [changed] Updated `firebase-crashlytics` dependency to v18.5.0
 
 # 18.4.3
 * [changed] Updated `firebase-crashlytics` dependency to v18.4.3
@@ -214,4 +216,3 @@ change. The following release notes describe changes in the new SDK.
  uploading symbol files to [crashlytics] servers. See the
  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
-
