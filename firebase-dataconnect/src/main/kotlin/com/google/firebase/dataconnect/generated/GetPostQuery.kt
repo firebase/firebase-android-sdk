@@ -38,7 +38,7 @@ class GetPostQuery private constructor() {
   }
 
   @Serializable
-  data class Result(val post: Post?) {
+  data class Data(val post: Post?) {
     @Serializable
     data class Post(val content: String, val comments: List<Comment>) {
       @Serializable data class Comment(val id: String, val content: String)
@@ -48,7 +48,7 @@ class GetPostQuery private constructor() {
   companion object {
 
     fun query(dataConnect: FirebaseDataConnect) =
-      dataConnect.query<Variables, Result>(
+      dataConnect.query<Variables, Data>(
         operationName = "getPost",
         operationSet = "crud",
         revision = "1234567890abcdef",
@@ -56,18 +56,18 @@ class GetPostQuery private constructor() {
   }
 }
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>
 
 val FirebaseDataConnect.Queries.getPost
   get() = GetPostQuery.query(dataConnect)
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.execute(id: String) =
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(id: String) =
   execute(variablesFor(id = id))
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.subscribe(id: String) =
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(id: String) =
   subscribe(variablesFor(id = id))
 
-fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>.update(
+fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>.update(
   block: GetPostQuery.Variables.Builder.() -> Unit
 ) = update(variables.build(block))
 

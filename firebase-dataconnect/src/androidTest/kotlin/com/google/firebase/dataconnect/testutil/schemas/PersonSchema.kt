@@ -64,7 +64,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   }
 
   val getPerson =
-    dataConnect.query<GetPersonQuery.Variables, GetPersonQuery.Result>(
+    dataConnect.query<GetPersonQuery.Variables, GetPersonQuery.Data>(
       operationName = "getPerson",
       operationSet = "ops",
       revision = "42",
@@ -75,13 +75,13 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     data class Variables(val id: String, val name: String? = null, val age: Int? = null)
 
     @Serializable
-    data class Result(val person: Person?) {
+    data class Data(val person: Person?) {
       @Serializable data class Person(val name: String, val age: Int? = null)
     }
   }
 
   val getAllPeople =
-    dataConnect.query<Unit, GetAllPeopleQuery.Result>(
+    dataConnect.query<Unit, GetAllPeopleQuery.Data>(
       operationName = "getAllPeople",
       operationSet = "ops",
       revision = "42",
@@ -89,7 +89,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   class GetAllPeopleQuery private constructor() {
     @Serializable
-    data class Result(val people: List<Person>) {
+    data class Data(val people: List<Person>) {
       @Serializable data class Person(val id: String, val name: String, val age: Int?)
     }
   }
@@ -128,15 +128,15 @@ object DeletePersonMutationExt {
 }
 
 object GetPersonQueryExt {
-  suspend fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result>
+  suspend fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Data>
     .execute(id: String) = execute(PersonSchema.GetPersonQuery.Variables(id = id))
 
-  fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Result>.subscribe(
+  fun QueryRef<PersonSchema.GetPersonQuery.Variables, PersonSchema.GetPersonQuery.Data>.subscribe(
     id: String
   ) = subscribe(PersonSchema.GetPersonQuery.Variables(id = id))
 }
 
 object GetAllPeoplePersonQueryExt {
-  suspend fun QueryRef<Unit, PersonSchema.GetAllPeopleQuery.Result>.execute() = execute(Unit)
-  fun QueryRef<Unit, PersonSchema.GetAllPeopleQuery.Result>.subscribe() = subscribe(Unit)
+  suspend fun QueryRef<Unit, PersonSchema.GetAllPeopleQuery.Data>.execute() = execute(Unit)
+  fun QueryRef<Unit, PersonSchema.GetAllPeopleQuery.Data>.subscribe() = subscribe(Unit)
 }

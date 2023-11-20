@@ -22,19 +22,19 @@ class FirebaseDataConnect {
   val queries: Queries = TODO()
 }
 
-fun <VariablesType, ResultType> FirebaseDataConnect.query(
+fun <VariablesType, DataType> FirebaseDataConnect.query(
   operationName: String,
   operationSet: String,
   revision: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
-  resultDeserializer: DeserializationStrategy<ResultType>
-): QueryRef<VariablesType, ResultType> = TODO()
+  dataDeserializer: DeserializationStrategy<DataType>
+): QueryRef<VariablesType, DataType> = TODO()
 
-inline fun <reified VariablesType, reified ResultType> FirebaseDataConnect.query(
+inline fun <reified VariablesType, reified DataType> FirebaseDataConnect.query(
   operationName: String,
   operationSet: String,
   revision: String
-): QueryRef<VariablesType, ResultType> = TODO()
+): QueryRef<VariablesType, DataType> = TODO()
 
 open class DataConnectException internal constructor() : Exception()
 
@@ -45,28 +45,22 @@ open class GraphQLException internal constructor() : DataConnectException() {
     get() = TODO()
 }
 
-open class ResultDecodeException internal constructor() : DataConnectException()
-
-abstract class BaseRef<VariablesType, ResultType> internal constructor() {
+abstract class BaseRef<VariablesType, DataType> internal constructor() {
   val dataConnect: FirebaseDataConnect
     get() = TODO()
 
-  abstract suspend fun execute(variables: VariablesType): ResultType
-
-  interface Codec<ResultType> {
-    fun decodeResult(map: Map<String, Any?>): ResultType
-  }
+  abstract suspend fun execute(variables: VariablesType): DataType
 }
 
-class QueryRef<VariablesType, ResultType> internal constructor() :
-  BaseRef<VariablesType, ResultType>() {
-  override suspend fun execute(variables: VariablesType): ResultType = TODO()
+class QueryRef<VariablesType, DataType> internal constructor() :
+  BaseRef<VariablesType, DataType>() {
+  override suspend fun execute(variables: VariablesType): DataType = TODO()
 
-  fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, ResultType> = TODO()
+  fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> = TODO()
 }
 
-class QuerySubscription<VariablesType, ResultType> internal constructor() {
-  val query: QueryRef<VariablesType, ResultType>
+class QuerySubscription<VariablesType, DataType> internal constructor() {
+  val query: QueryRef<VariablesType, DataType>
     get() = TODO()
   val variables: VariablesType
     get() = TODO()
@@ -74,7 +68,7 @@ class QuerySubscription<VariablesType, ResultType> internal constructor() {
   // Alternative considered: add `lastResult`. The problem is, what do we do with this value if the
   // variables are changed via a call to update()? Do we clear it? Or do we leave it there even
   // though it came from a request with potentially-different variables?
-  val lastResult: Message<VariablesType, ResultType>?
+  val lastResult: Message<VariablesType, DataType>?
     get() = TODO()
 
   // Alternative considered: Return `Deferred<Result<T>>` so that customer knows when the reload
@@ -85,12 +79,9 @@ class QuerySubscription<VariablesType, ResultType> internal constructor() {
   // some previous call to reload() by some other unrelated operation.
   fun reload(): Unit = TODO()
 
-  val flow: Flow<Message<VariablesType, ResultType>> = TODO()
+  val flow: Flow<Message<VariablesType, DataType>> = TODO()
 
-  class Message<VariablesType, ResultType>(
-    val variables: VariablesType,
-    val result: Result<ResultType>
-  )
+  class Message<VariablesType, DataType>(val variables: VariablesType, val data: Result<DataType>)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,31 +92,31 @@ class GetPostQuery private constructor() {
 
   @Serializable data class Variables(val id: String)
 
-  data class Result(val post: Post?) {
+  data class Data(val post: Post?) {
     data class Post(val content: String, val comments: List<Comment>) {
       data class Comment(val id: String, val content: String)
     }
   }
 
   companion object {
-    fun query(dataConnect: FirebaseDataConnect): QueryRef<Variables, Result> = TODO()
+    fun query(dataConnect: FirebaseDataConnect): QueryRef<Variables, Data> = TODO()
   }
 }
 
-val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
+val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Data>
   get() = TODO()
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.execute(
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(
   id: String
-): GetPostQuery.Result = TODO()
+): GetPostQuery.Data = TODO()
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Result>.subscribe(
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(
   id: String
-): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result> = TODO()
+): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data> = TODO()
 
-typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Result>
+typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Data>
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Result>
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUSTOMER CODE
@@ -145,10 +136,10 @@ private class MainActivity : Activity() {
           querySubscriptionFlow =
             activityCoroutineScope.launch {
               it.flow.collect {
-                if (it.result.isSuccess) {
-                  showPostContent(it.variables.id, it.result.getOrThrow())
+                if (it.data.isSuccess) {
+                  showPostContent(it.variables.id, it.data.getOrThrow())
                 } else {
-                  showError(it.variables.id, it.result.exceptionOrNull()!!)
+                  showError(it.variables.id, it.data.exceptionOrNull()!!)
                 }
               }
             }
@@ -178,5 +169,5 @@ private class MainActivity : Activity() {
 
   fun getIdFromTextView(): String = TODO()
   fun showError(postId: String, exception: Throwable): Unit = TODO()
-  fun showPostContent(postId: String, post: GetPostQuery.Result?): Unit = TODO()
+  fun showPostContent(postId: String, post: GetPostQuery.Data?): Unit = TODO()
 }

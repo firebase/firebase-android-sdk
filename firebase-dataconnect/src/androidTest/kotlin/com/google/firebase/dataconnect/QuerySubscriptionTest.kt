@@ -71,10 +71,9 @@ class QuerySubscriptionTest {
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
     withTimeout(2.seconds) {
-      val resultsChannel =
-        Channel<PersonSchema.GetPersonQuery.Result?>(capacity = Channel.UNLIMITED)
+      val resultsChannel = Channel<PersonSchema.GetPersonQuery.Data?>(capacity = Channel.UNLIMITED)
       val collectJob = launch {
-        querySubscription.flow.collect { resultsChannel.send(it.result.getOrThrow()) }
+        querySubscription.flow.collect { resultsChannel.send(it.data.getOrThrow()) }
       }
 
       val result1 = resultsChannel.receive()
@@ -96,12 +95,12 @@ class QuerySubscriptionTest {
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
     withTimeout(2.seconds) {
-      val result1 = querySubscription.flow.first().result.getOrThrow()
+      val result1 = querySubscription.flow.first().data.getOrThrow()
       assertThat(result1).isEqualToGetPersonQueryResult(name = "TestName", age = 10000)
 
       schema.updatePerson.execute(id = "TestId12345", name = "TestName2", age = 10002)
 
-      val result2 = querySubscription.flow.first().result.getOrThrow()
+      val result2 = querySubscription.flow.first().data.getOrThrow()
       assertThat(result2).isEqualToGetPersonQueryResult(name = "TestName", age = 10000)
     }
   }
@@ -118,7 +117,7 @@ class QuerySubscriptionTest {
 
       repeat(5) {
         assertWithMessage("fast flow retrieval iteration $it")
-          .that(querySubscription.flow.first().result.getOrThrow())
+          .that(querySubscription.flow.first().data.getOrThrow())
           .isEqualToGetPersonQueryResult(name = "TestName", age = 10000)
       }
 
@@ -132,15 +131,13 @@ class QuerySubscriptionTest {
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
     withTimeout(2.seconds) {
-      val resultsChannel1 =
-        Channel<PersonSchema.GetPersonQuery.Result?>(capacity = Channel.UNLIMITED)
+      val resultsChannel1 = Channel<PersonSchema.GetPersonQuery.Data>(capacity = Channel.UNLIMITED)
       val flowJob1 = launch {
-        querySubscription.flow.collect { resultsChannel1.send(it.result.getOrThrow()) }
+        querySubscription.flow.collect { resultsChannel1.send(it.data.getOrThrow()) }
       }
-      val resultsChannel2 =
-        Channel<PersonSchema.GetPersonQuery.Result?>(capacity = Channel.UNLIMITED)
+      val resultsChannel2 = Channel<PersonSchema.GetPersonQuery.Data>(capacity = Channel.UNLIMITED)
       val flowJob2 = launch {
-        querySubscription.flow.collect { resultsChannel2.send(it.result.getOrThrow()) }
+        querySubscription.flow.collect { resultsChannel2.send(it.data.getOrThrow()) }
       }
       resultsChannel1.purge(0.25.seconds).forEach {
         assertThat(it).isEqualToGetPersonQueryResult(name = "TestName0", age = 10000)
@@ -169,9 +166,9 @@ class QuerySubscriptionTest {
 
     withTimeout(5.seconds) {
       val resultsChannel =
-        Channel<Result<PersonSchema.GetPersonQuery.Result?>>(capacity = Channel.UNLIMITED)
+        Channel<Result<PersonSchema.GetPersonQuery.Data>>(capacity = Channel.UNLIMITED)
       val collectJob = launch {
-        querySubscription.flow.map { it.result }.collect(resultsChannel::send)
+        querySubscription.flow.map { it.data }.collect(resultsChannel::send)
       }
 
       val maxHardwareConcurrency = Math.max(2, Runtime.getRuntime().availableProcessors())
@@ -197,8 +194,8 @@ class QuerySubscriptionTest {
 
 private fun Subject.isEqualToGetPersonQueryResult(name: String, age: Int?) =
   isEqualTo(
-    PersonSchema.GetPersonQuery.Result(
-      PersonSchema.GetPersonQuery.Result.Person(name = name, age = age)
+    PersonSchema.GetPersonQuery.Data(
+      PersonSchema.GetPersonQuery.Data.Person(name = name, age = age)
     )
   )
 

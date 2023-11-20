@@ -78,14 +78,14 @@ internal class DataConnectGrpcClient(
 
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
-  suspend fun <VariablesType, ResultType> executeQuery(
+  suspend fun <VariablesType, DataType> executeQuery(
     operationSet: String,
     operationName: String,
     revision: String,
     variables: VariablesType,
     variablesSerializer: SerializationStrategy<VariablesType>,
-    resultDeserializer: DeserializationStrategy<ResultType>
-  ): ResultType {
+    dataDeserializer: DeserializationStrategy<DataType>
+  ): DataType {
     val request = executeQueryRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -108,17 +108,17 @@ internal class DataConnectGrpcClient(
       )
     }
 
-    return decodeFromStruct(resultDeserializer, response.data)
+    return decodeFromStruct(dataDeserializer, response.data)
   }
 
-  suspend fun <VariablesType, ResultType> executeMutation(
+  suspend fun <VariablesType, DataType> executeMutation(
     operationSet: String,
     operationName: String,
     revision: String,
     variables: VariablesType,
     variablesSerializer: SerializationStrategy<VariablesType>,
-    resultDeserializer: DeserializationStrategy<ResultType>
-  ): ResultType {
+    dataDeserializer: DeserializationStrategy<DataType>
+  ): DataType {
     val request = executeMutationRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -141,7 +141,7 @@ internal class DataConnectGrpcClient(
       )
     }
 
-    return decodeFromStruct(resultDeserializer, response.data)
+    return decodeFromStruct(dataDeserializer, response.data)
   }
 
   override fun toString(): String {

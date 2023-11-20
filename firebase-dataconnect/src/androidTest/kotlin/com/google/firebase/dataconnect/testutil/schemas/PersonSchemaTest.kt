@@ -102,9 +102,9 @@ class PersonSchemaTest {
 
     assertThat(result.people)
       .containsExactly(
-        PersonSchema.GetAllPeopleQuery.Result.Person(id = "111", name = "Name111", age = 111),
-        PersonSchema.GetAllPeopleQuery.Result.Person(id = "222", name = "Name222", age = 222),
-        PersonSchema.GetAllPeopleQuery.Result.Person(id = "333", name = "Name333", age = null),
+        PersonSchema.GetAllPeopleQuery.Data.Person(id = "111", name = "Name111", age = 111),
+        PersonSchema.GetAllPeopleQuery.Data.Person(id = "222", name = "Name222", age = 222),
+        PersonSchema.GetAllPeopleQuery.Data.Person(id = "333", name = "Name333", age = null),
       )
   }
 }

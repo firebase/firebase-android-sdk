@@ -16,14 +16,14 @@ package com.google.firebase.dataconnect
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-abstract class BaseRef<VariablesType, ResultType>
+abstract class BaseRef<VariablesType, DataType>
 internal constructor(
   val dataConnect: FirebaseDataConnect,
   internal val operationName: String,
   internal val operationSet: String,
   internal val revision: String,
   internal val variablesSerializer: SerializationStrategy<VariablesType>,
-  internal val resultDeserializer: DeserializationStrategy<ResultType>,
+  internal val dataDeserializer: DeserializationStrategy<DataType>,
 ) {
-  abstract suspend fun execute(variables: VariablesType): ResultType
+  abstract suspend fun execute(variables: VariablesType): DataType
 }

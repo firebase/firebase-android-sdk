@@ -16,23 +16,23 @@ package com.google.firebase.dataconnect
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-class MutationRef<VariablesType, ResultType>
+class MutationRef<VariablesType, DataType>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   operationSet: String,
   revision: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
-  resultDeserializer: DeserializationStrategy<ResultType>
+  dataDeserializer: DeserializationStrategy<DataType>
 ) :
-  BaseRef<VariablesType, ResultType>(
+  BaseRef<VariablesType, DataType>(
     dataConnect = dataConnect,
     operationName = operationName,
     operationSet = operationSet,
     revision = revision,
     variablesSerializer = variablesSerializer,
-    resultDeserializer = resultDeserializer,
+    dataDeserializer = dataDeserializer,
   ) {
-  override suspend fun execute(variables: VariablesType): ResultType =
+  override suspend fun execute(variables: VariablesType): DataType =
     dataConnect.executeMutation(this, variables)
 }

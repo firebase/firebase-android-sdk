@@ -61,8 +61,8 @@ class PostsTest {
 
       val queryResponse = dc.queries.getPost.execute(id = postId)
       assertWithMessage("queryResponse")
-        .that(queryResponse?.post)
-        .isEqualTo(GetPostQuery.Result.Post(content = postContent, comments = emptyList()))
+        .that(queryResponse.post)
+        .isEqualTo(GetPostQuery.Data.Post(content = postContent, comments = emptyList()))
     }
   }
 
@@ -83,9 +83,9 @@ class PostsTest {
       assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
       val result1 = querySubscription.flow.timeout(5.seconds).first()
-      assertWithMessage("result1.isSuccess").that(result1.result.isSuccess).isTrue()
+      assertWithMessage("result1.isSuccess").that(result1.data.isSuccess).isTrue()
       assertWithMessage("result1.post.content")
-        .that(result1.result.getOrThrow()?.post?.content)
+        .that(result1.data.getOrThrow().post?.content)
         .isEqualTo(postContent1)
 
       assertWithMessage("lastResult 1").that(querySubscription.lastResult).isEqualTo(result1)
@@ -96,13 +96,13 @@ class PostsTest {
 
       val results2 = flow2Job.await()
       assertWithMessage("results2.size").that(results2.size).isEqualTo(2)
-      assertWithMessage("results2[0].isSuccess").that(results2[0].result.isSuccess).isTrue()
-      assertWithMessage("results2[1].isSuccess").that(results2[1].result.isSuccess).isTrue()
+      assertWithMessage("results2[0].isSuccess").that(results2[0].data.isSuccess).isTrue()
+      assertWithMessage("results2[1].isSuccess").that(results2[1].data.isSuccess).isTrue()
       assertWithMessage("results2[0].post.content")
-        .that(results2[0].result.getOrThrow()?.post?.content)
+        .that(results2[0].data.getOrThrow().post?.content)
         .isEqualTo(postContent1)
       assertWithMessage("results2[1].post.content")
-        .that(results2[1].result.getOrThrow()?.post?.content)
+        .that(results2[1].data.getOrThrow().post?.content)
         .isEqualTo(postContent2)
 
       assertWithMessage("lastResult 2").that(querySubscription.lastResult).isEqualTo(results2[1])

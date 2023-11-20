@@ -101,7 +101,7 @@ internal constructor(
           revision = ref.revision,
           variables = variables,
           variablesSerializer = ref.variablesSerializer,
-          resultDeserializer = ref.resultDeserializer
+          dataDeserializer = ref.dataDeserializer
         )
       }
 
@@ -114,7 +114,7 @@ internal constructor(
           revision = ref.revision,
           variables = variables,
           variablesSerializer = ref.variablesSerializer,
-          resultDeserializer = ref.resultDeserializer
+          dataDeserializer = ref.dataDeserializer
         )
       }
   override fun close() {
@@ -182,62 +182,62 @@ internal constructor(
   }
 }
 
-inline fun <reified VariablesType, reified ResultType> FirebaseDataConnect.query(
+inline fun <reified VariablesType, reified DataType> FirebaseDataConnect.query(
   operationName: String,
   operationSet: String,
   revision: String
-): QueryRef<VariablesType, ResultType> =
+): QueryRef<VariablesType, DataType> =
   query(
     operationName = operationName,
     operationSet = operationSet,
     revision = revision,
     variablesSerializer = serializer(),
-    resultDeserializer = serializer(),
+    dataDeserializer = serializer(),
   )
 
-fun <VariablesType, ResultType> FirebaseDataConnect.query(
+fun <VariablesType, DataType> FirebaseDataConnect.query(
   operationName: String,
   operationSet: String,
   revision: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
-  resultDeserializer: DeserializationStrategy<ResultType>
-): QueryRef<VariablesType, ResultType> =
+  dataDeserializer: DeserializationStrategy<DataType>
+): QueryRef<VariablesType, DataType> =
   QueryRef(
     dataConnect = this,
     operationName = operationName,
     operationSet = operationSet,
     revision = revision,
     variablesSerializer = variablesSerializer,
-    resultDeserializer = resultDeserializer
+    dataDeserializer = dataDeserializer
   )
 
-inline fun <reified VariablesType, reified ResultType> FirebaseDataConnect.mutation(
+inline fun <reified VariablesType, reified DataType> FirebaseDataConnect.mutation(
   operationName: String,
   operationSet: String,
   revision: String,
-): MutationRef<VariablesType, ResultType> =
+): MutationRef<VariablesType, DataType> =
   mutation(
     operationName = operationName,
     operationSet = operationSet,
     revision = revision,
     variablesSerializer = serializer(),
-    resultDeserializer = serializer(),
+    dataDeserializer = serializer(),
   )
 
-fun <VariablesType, ResultType> FirebaseDataConnect.mutation(
+fun <VariablesType, DataType> FirebaseDataConnect.mutation(
   operationName: String,
   operationSet: String,
   revision: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
-  resultDeserializer: DeserializationStrategy<ResultType>
-): MutationRef<VariablesType, ResultType> =
+  dataDeserializer: DeserializationStrategy<DataType>
+): MutationRef<VariablesType, DataType> =
   MutationRef(
     dataConnect = this,
     operationName = operationName,
     operationSet = operationSet,
     revision = revision,
     variablesSerializer = variablesSerializer,
-    resultDeserializer = resultDeserializer
+    dataDeserializer = dataDeserializer
   )
 
 open class DataConnectException internal constructor(message: String, cause: Throwable? = null) :
@@ -247,7 +247,4 @@ open class NetworkTransportException internal constructor(message: String, cause
   DataConnectException(message, cause)
 
 open class GraphQLException internal constructor(message: String, val errors: List<String>) :
-  DataConnectException(message)
-
-open class ResultDecodeException internal constructor(message: String) :
   DataConnectException(message)

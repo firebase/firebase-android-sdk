@@ -23,15 +23,10 @@ import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
-import com.google.firebase.dataconnect.testutil.installEmulatorSchema
-import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.Serializable
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -298,101 +293,5 @@ class FirebaseDataConnectTest {
     assertThat(toStringResult).containsMatch("projectId=${app.options.projectId}\\W")
     assertThat(toStringResult).containsMatch("location=TestLocation\\W")
     assertThat(toStringResult).containsMatch("service=TestService\\W")
-  }
-
-  @Test
-  fun helloWorld() = runTest {
-    val dc = dataConnectFactory.newInstance(service = "local")
-
-    val postId = "${UUID.randomUUID()}"
-    val postContent = "${System.currentTimeMillis()}"
-
-    @Serializable data class PostData(val id: String, val content: String)
-    @Serializable data class CreatePostVariables(val data: PostData)
-    @Serializable data class GetPostVariables(val id: String)
-
-    @Serializable data class GetPostResultPost(val content: String, val comments: List<Unit>)
-    @Serializable data class GetPostResult(val post: GetPostResultPost)
-
-    run {
-      val mutation =
-        dc.mutation<CreatePostVariables, Unit>(
-          operationName = "createPost",
-          operationSet = "crud",
-          revision = "TestRevision",
-        )
-      val mutationResponse =
-        mutation.execute(CreatePostVariables(PostData(id = postId, content = postContent)))
-      assertWithMessage("mutationResponse").that(mutationResponse).isSameInstanceAs(Unit)
-    }
-
-    run {
-      val query =
-        dc.query<GetPostVariables, GetPostResult>(
-          operationName = "getPost",
-          operationSet = "crud",
-          revision = "TestRevision",
-        )
-      val queryResult = query.execute(GetPostVariables(id = postId))
-      assertWithMessage("queryResponse")
-        .that(queryResult)
-        .isEqualTo(GetPostResult(GetPostResultPost(content = postContent, comments = emptyList())))
-    }
-  }
-
-  @Test
-  fun testInstallEmulatorSchema() {
-    @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
-    @Serializable data class CreatePersonVariables(val data: PersonData)
-    @Serializable data class GetPersonVariables(val id: String)
-    @Serializable data class GetPersonResultPerson(val name: String, val age: Int?)
-    @Serializable data class GetPersonResult(val person: GetPersonResultPerson)
-    @Serializable
-    data class GetAllPeopleResultPerson(val id: String, val name: String, val age: Int?)
-    @Serializable data class GetAllPeopleResult(val people: List<GetAllPeopleResultPerson>)
-
-    suspend fun FirebaseDataConnect.createPerson(id: String, name: String, age: Int? = null) =
-      mutation<CreatePersonVariables, Unit>(
-          operationName = "createPerson",
-          operationSet = "ops",
-          revision = "42",
-        )
-        .execute(CreatePersonVariables(PersonData(id = id, name = name, age = age)))
-
-    suspend fun FirebaseDataConnect.getPerson(id: String) =
-      query<GetPersonVariables, GetPersonResult>(
-          operationName = "getPerson",
-          operationSet = "ops",
-          revision = "42",
-        )
-        .execute(GetPersonVariables(id = id))
-
-    suspend fun FirebaseDataConnect.getAllPeople() =
-      query<Unit, GetAllPeopleResult>(
-          operationName = "getAllPeople",
-          operationSet = "ops",
-          revision = "42",
-        )
-        .execute(Unit)
-
-    val dataConnect = dataConnectFactory.newInstance()
-
-    runBlocking {
-      dataConnect.installEmulatorSchema("testing_graphql_schemas/person")
-
-      dataConnect.createPerson(id = "TestId1", name = "TestName1")
-      dataConnect.createPerson(id = "TestId2", name = "TestName2", age = 999)
-
-      assertThat(dataConnect.getPerson(id = "TestId1"))
-        .isEqualTo(GetPersonResult(GetPersonResultPerson(name = "TestName1", age = null)))
-      assertThat(dataConnect.getPerson(id = "TestId2"))
-        .isEqualTo(GetPersonResult(GetPersonResultPerson(name = "TestName2", age = 999)))
-
-      assertThat(dataConnect.getAllPeople().people)
-        .containsExactly(
-          GetAllPeopleResultPerson(id = "TestId1", name = "TestName1", age = null),
-          GetAllPeopleResultPerson(id = "TestId2", name = "TestName2", age = 999),
-        )
-    }
   }
 }

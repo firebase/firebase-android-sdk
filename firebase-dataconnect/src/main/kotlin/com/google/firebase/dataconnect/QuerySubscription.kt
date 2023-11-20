@@ -19,9 +19,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 
-class QuerySubscription<VariablesType, ResultType>
+class QuerySubscription<VariablesType, DataType>
 internal constructor(
-  internal val query: QueryRef<VariablesType, ResultType>,
+  internal val query: QueryRef<VariablesType, DataType>,
   variables: VariablesType
 ) {
   private val _variables = AtomicReference(variables)
@@ -29,7 +29,7 @@ internal constructor(
     get() = _variables.get()
 
   private val sharedFlow =
-    MutableSharedFlow<Message<VariablesType, ResultType>>(
+    MutableSharedFlow<Message<VariablesType, DataType>>(
       replay = 1,
       extraBufferCapacity = Integer.MAX_VALUE
     )
@@ -40,17 +40,17 @@ internal constructor(
   // NOTE: The variables below must ONLY be accessed from coroutines that use `sequentialDispatcher`
   // for their `CoroutineDispatcher`. Having this requirement removes the need for explicitly
   // synchronizing access to these variables.
-  private var inProgressReload: CompletableDeferred<Message<VariablesType, ResultType>>? = null
-  private var pendingReload: CompletableDeferred<Message<VariablesType, ResultType>>? = null
+  private var inProgressReload: CompletableDeferred<Message<VariablesType, DataType>>? = null
+  private var pendingReload: CompletableDeferred<Message<VariablesType, DataType>>? = null
 
-  val lastResult: Message<VariablesType, ResultType>?
+  val lastResult: Message<VariablesType, DataType>?
     get() = sharedFlow.replayCache.firstOrNull()
 
-  fun reload(): Deferred<Message<VariablesType, ResultType>> =
+  fun reload(): Deferred<Message<VariablesType, DataType>> =
     runBlocking(sequentialDispatcher) {
       pendingReload
         ?: run {
-          CompletableDeferred<Message<VariablesType, ResultType>>().also { deferred ->
+          CompletableDeferred<Message<VariablesType, DataType>>().also { deferred ->
             if (inProgressReload == null) {
               inProgressReload = deferred
               query.dataConnect.coroutineScope.launch(sequentialDispatcher) { doReloadLoop() }
@@ -66,7 +66,7 @@ internal constructor(
     reload()
   }
 
-  val flow: Flow<Message<VariablesType, ResultType>>
+  val flow: Flow<Message<VariablesType, DataType>>
     get() = sharedFlow.asSharedFlow().onSubscription { reload() }.buffer(Channel.CONFLATED)
 
   private suspend fun doReloadLoop() {
@@ -80,19 +80,16 @@ internal constructor(
     }
   }
 
-  class Message<VariablesType, ResultType>(
-    val variables: VariablesType,
-    val result: Result<ResultType>
-  )
+  class Message<VariablesType, DataType>(val variables: VariablesType, val data: Result<DataType>)
 }
 
-private suspend fun <VariablesType, ResultType> reload(
+private suspend fun <VariablesType, DataType> reload(
   variables: VariablesType,
-  query: QueryRef<VariablesType, ResultType>
+  query: QueryRef<VariablesType, DataType>
 ) =
   QuerySubscription.Message(
     variables = variables,
-    result =
+    data =
       try {
         Result.success(query.execute(variables))
       } catch (e: Throwable) {
