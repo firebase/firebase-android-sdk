@@ -23,17 +23,6 @@ class DataConnectResultTest {
   }
 
   @Test
-  fun `data should be null if null was given to the constructor`() {
-    val dataConnectResult =
-      DataConnectResult<TestVariables, TestData>(
-        variables = SAMPLE_VARIABLES,
-        data = null,
-        errors = SAMPLE_ERRORS
-      )
-    assertThat(dataConnectResult.data).isNull()
-  }
-
-  @Test
   fun `errors should be the same object given to the constructor`() {
     val errors = listOf(SAMPLE_ERROR1)
     val dataConnectResult =
@@ -46,7 +35,7 @@ class DataConnectResultTest {
     val dataConnectResult =
       DataConnectResult<TestVariables, TestData>(
         variables = SAMPLE_VARIABLES,
-        data = null,
+        data = SAMPLE_DATA,
         errors = emptyList()
       )
     assertThat(dataConnectResult.errors).isEmpty()
@@ -72,17 +61,6 @@ class DataConnectResultTest {
     val dataConnectResult =
       DataConnectResult(variables = SAMPLE_VARIABLES, data = data, errors = SAMPLE_ERRORS)
     assertThat(dataConnectResult.toString()).containsWithNonAdjacentText("TestDataToString")
-  }
-
-  @Test
-  fun `toString() should incorporate the data, if null`() {
-    val dataConnectResult =
-      DataConnectResult<TestVariables, TestData>(
-        variables = SAMPLE_VARIABLES,
-        data = null,
-        errors = emptyList()
-      )
-    assertThat(dataConnectResult.toString()).containsWithNonAdjacentText("null")
   }
 
   @Test
