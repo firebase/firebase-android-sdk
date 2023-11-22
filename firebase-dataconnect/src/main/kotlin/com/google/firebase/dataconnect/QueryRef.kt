@@ -33,8 +33,9 @@ internal constructor(
     variablesSerializer = variablesSerializer,
     dataDeserializer = dataDeserializer,
   ) {
-  override suspend fun execute(variables: VariablesType): DataType =
-    dataConnect.executeQuery(this, variables)
+  override suspend fun execute(
+    variables: VariablesType
+  ): DataConnectResult<VariablesType, DataType> = dataConnect.executeQuery(this, variables)
 
   fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> =
     QuerySubscription(this, variables)

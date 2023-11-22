@@ -92,7 +92,10 @@ internal constructor(
       .also { logger.debug { "DataConnectGrpcClient initialization complete: $it" } }
   }
 
-  internal suspend fun <V, R> executeQuery(ref: QueryRef<V, R>, variables: V): R =
+  internal suspend fun <V, D> executeQuery(
+    ref: QueryRef<V, D>,
+    variables: V
+  ): DataConnectResult<V, D> =
     withContext(sequentialDispatcher) { grpcClient }
       .run {
         executeQuery(
@@ -105,7 +108,10 @@ internal constructor(
         )
       }
 
-  internal suspend fun <V, R> executeMutation(ref: MutationRef<V, R>, variables: V): R =
+  internal suspend fun <V, D> executeMutation(
+    ref: MutationRef<V, D>,
+    variables: V
+  ): DataConnectResult<V, D> =
     withContext(sequentialDispatcher) { grpcClient }
       .run {
         executeMutation(
@@ -117,6 +123,7 @@ internal constructor(
           dataDeserializer = ref.dataDeserializer
         )
       }
+
   override fun close() {
     logger.debug { "close() called" }
     runBlocking(sequentialDispatcher) {

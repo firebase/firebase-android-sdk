@@ -29,7 +29,7 @@ internal constructor(
     get() = _variables.get()
 
   private val sharedFlow =
-    MutableSharedFlow<Message<VariablesType, DataType>>(
+    MutableSharedFlow<DataConnectResult<VariablesType, DataType>>(
       replay = 1,
       extraBufferCapacity = Integer.MAX_VALUE
     )
@@ -40,17 +40,18 @@ internal constructor(
   // NOTE: The variables below must ONLY be accessed from coroutines that use `sequentialDispatcher`
   // for their `CoroutineDispatcher`. Having this requirement removes the need for explicitly
   // synchronizing access to these variables.
-  private var inProgressReload: CompletableDeferred<Message<VariablesType, DataType>>? = null
-  private var pendingReload: CompletableDeferred<Message<VariablesType, DataType>>? = null
+  private var inProgressReload: CompletableDeferred<DataConnectResult<VariablesType, DataType>>? =
+    null
+  private var pendingReload: CompletableDeferred<DataConnectResult<VariablesType, DataType>>? = null
 
-  val lastResult: Message<VariablesType, DataType>?
+  val lastResult: DataConnectResult<VariablesType, DataType>?
     get() = sharedFlow.replayCache.firstOrNull()
 
-  fun reload(): Deferred<Message<VariablesType, DataType>> =
+  fun reload(): Deferred<DataConnectResult<VariablesType, DataType>> =
     runBlocking(sequentialDispatcher) {
       pendingReload
         ?: run {
-          CompletableDeferred<Message<VariablesType, DataType>>().also { deferred ->
+          CompletableDeferred<DataConnectResult<VariablesType, DataType>>().also { deferred ->
             if (inProgressReload == null) {
               inProgressReload = deferred
               query.dataConnect.coroutineScope.launch(sequentialDispatcher) { doReloadLoop() }
@@ -66,33 +67,17 @@ internal constructor(
     reload()
   }
 
-  val flow: Flow<Message<VariablesType, DataType>>
+  val flow: Flow<DataConnectResult<VariablesType, DataType>>
     get() = sharedFlow.asSharedFlow().onSubscription { reload() }.buffer(Channel.CONFLATED)
 
   private suspend fun doReloadLoop() {
     while (true) {
       val deferred = inProgressReload ?: break
-      val message = reload(variables, query)
-      deferred.complete(message)
-      sharedFlow.emit(message)
+      val result = query.execute(variables)
+      deferred.complete(result)
+      sharedFlow.emit(result)
       inProgressReload = pendingReload
       pendingReload = null
     }
   }
-
-  class Message<VariablesType, DataType>(val variables: VariablesType, val data: Result<DataType>)
 }
-
-private suspend fun <VariablesType, DataType> reload(
-  variables: VariablesType,
-  query: QueryRef<VariablesType, DataType>
-) =
-  QuerySubscription.Message(
-    variables = variables,
-    data =
-      try {
-        Result.success(query.execute(variables))
-      } catch (e: Throwable) {
-        Result.failure(e)
-      }
-  )

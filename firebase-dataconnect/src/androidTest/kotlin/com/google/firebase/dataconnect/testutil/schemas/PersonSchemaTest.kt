@@ -35,18 +35,18 @@ class PersonSchemaTest {
 
     val result = schema.getPerson.execute(id = "1234")
 
-    assertThat(result.person?.name).isEqualTo("TestName")
-    assertThat(result.person?.age).isEqualTo(42)
+    assertThat(result.data.person?.name).isEqualTo("TestName")
+    assertThat(result.data.person?.age).isEqualTo(42)
   }
 
   @Test
   fun deletePersonShouldDeleteTheSpecifiedPerson(): Unit = runBlocking {
     schema.createPerson.execute(id = "1234", name = "TestName", age = 42)
-    assertThat(schema.getPerson.execute(id = "1234").person).isNotNull()
+    assertThat(schema.getPerson.execute(id = "1234").data.person).isNotNull()
 
     schema.deletePerson.execute(id = "1234")
 
-    assertThat(schema.getPerson.execute(id = "1234").person).isNull()
+    assertThat(schema.getPerson.execute(id = "1234").data.person).isNull()
   }
 
   @Test
@@ -56,8 +56,8 @@ class PersonSchemaTest {
     schema.updatePerson.execute(id = "1234", name = "TestName99", age = 999)
 
     val result = schema.getPerson.execute(id = "1234")
-    assertThat(result.person?.name).isEqualTo("TestName99")
-    assertThat(result.person?.age).isEqualTo(999)
+    assertThat(result.data.person?.name).isEqualTo("TestName99")
+    assertThat(result.data.person?.age).isEqualTo(999)
   }
 
   @Test
@@ -70,12 +70,12 @@ class PersonSchemaTest {
     val result2 = schema.getPerson.execute(id = "222")
     val result3 = schema.getPerson.execute(id = "333")
 
-    assertThat(result1.person?.name).isEqualTo("Name111")
-    assertThat(result1.person?.age).isEqualTo(111)
-    assertThat(result2.person?.name).isEqualTo("Name222")
-    assertThat(result2.person?.age).isEqualTo(222)
-    assertThat(result3.person?.name).isEqualTo("Name333")
-    assertThat(result3.person?.age).isNull()
+    assertThat(result1.data.person?.name).isEqualTo("Name111")
+    assertThat(result1.data.person?.age).isEqualTo(111)
+    assertThat(result2.data.person?.name).isEqualTo("Name222")
+    assertThat(result2.data.person?.age).isEqualTo(222)
+    assertThat(result3.data.person?.name).isEqualTo("Name333")
+    assertThat(result3.data.person?.age).isNull()
   }
 
   @Test
@@ -84,12 +84,12 @@ class PersonSchemaTest {
 
     val result = schema.getPerson.execute(id = "IdOfPersonThatDoesNotExit")
 
-    assertThat(result.person).isNull()
+    assertThat(result.data.person).isNull()
   }
 
   @Test
   fun getAllPeopleShouldReturnEmptyListIfTheDatabaseIsEmpty(): Unit = runBlocking {
-    assertThat(schema.getAllPeople.execute().people).isEmpty()
+    assertThat(schema.getAllPeople.execute().data.people).isEmpty()
   }
 
   @Test
@@ -100,7 +100,7 @@ class PersonSchemaTest {
 
     val result = schema.getAllPeople.execute()
 
-    assertThat(result.people)
+    assertThat(result.data.people)
       .containsExactly(
         PersonSchema.GetAllPeopleQuery.Data.Person(id = "111", name = "Name111", age = 111),
         PersonSchema.GetAllPeopleQuery.Data.Person(id = "222", name = "Name222", age = 222),

@@ -33,6 +33,7 @@ internal constructor(
     variablesSerializer = variablesSerializer,
     dataDeserializer = dataDeserializer,
   ) {
-  override suspend fun execute(variables: VariablesType): DataType =
-    dataConnect.executeMutation(this, variables)
+  override suspend fun execute(
+    variables: VariablesType
+  ): DataConnectResult<VariablesType, DataType> = dataConnect.executeMutation(this, variables)
 }

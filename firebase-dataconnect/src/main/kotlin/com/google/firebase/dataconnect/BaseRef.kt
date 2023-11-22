@@ -25,5 +25,5 @@ internal constructor(
   internal val variablesSerializer: SerializationStrategy<VariablesType>,
   internal val dataDeserializer: DeserializationStrategy<DataType>,
 ) {
-  abstract suspend fun execute(variables: VariablesType): DataType
+  abstract suspend fun execute(variables: VariablesType): DataConnectResult<VariablesType, DataType>
 }

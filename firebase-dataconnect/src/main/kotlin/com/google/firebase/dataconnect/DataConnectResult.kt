@@ -18,13 +18,13 @@ private constructor(private val impl: Impl<VariablesType, DataType>) {
 
   internal constructor(
     variables: VariablesType,
-    data: DataType?,
+    data: DataType,
     errors: List<DataConnectError>
   ) : this(Impl(variables = variables, data = data, errors = errors))
 
   val variables: VariablesType
     get() = impl.variables
-  val data: DataType?
+  val data: DataType
     get() = impl.data
   val errors: List<DataConnectError>
     get() = impl.errors
@@ -36,7 +36,7 @@ private constructor(private val impl: Impl<VariablesType, DataType>) {
 
   private data class Impl<VariablesType, DataType>(
     val variables: VariablesType,
-    val data: DataType?,
+    val data: DataType,
     val errors: List<DataConnectError>,
   )
 }

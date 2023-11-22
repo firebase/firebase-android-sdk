@@ -15,7 +15,11 @@ package com.google.firebase.dataconnect
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.protobuf.ListValue
+import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import google.internal.firebase.firemat.v0.DataServiceGrpcKt.DataServiceCoroutineStub
+import google.internal.firebase.firemat.v0.DataServiceOuterClass.GraphqlError
 import google.internal.firebase.firemat.v0.executeMutationRequest
 import google.internal.firebase.firemat.v0.executeQueryRequest
 import io.grpc.ManagedChannel
@@ -85,7 +89,7 @@ internal class DataConnectGrpcClient(
     variables: VariablesType,
     variablesSerializer: SerializationStrategy<VariablesType>,
     dataDeserializer: DeserializationStrategy<DataType>
-  ): DataType {
+  ): DataConnectResult<VariablesType, DataType> {
     val request = executeQueryRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -93,22 +97,14 @@ internal class DataConnectGrpcClient(
     }
 
     logger.debug { "executeQuery() sending request: $request" }
-    val response =
-      try {
-        grpcStub.executeQuery(request)
-      } catch (e: Throwable) {
-        logger.warn { "executeQuery() network transport error: $e" }
-        throw NetworkTransportException("query network transport error: ${e.message}", e)
-      }
+    val response = grpcStub.executeQuery(request)
     logger.debug { "executeQuery() got response: $response" }
-    if (response.errorsList.isNotEmpty()) {
-      throw GraphQLException(
-        "query failed: ${response.errorsList}",
-        response.errorsList.map { it.toString() }
-      )
-    }
 
-    return decodeFromStruct(dataDeserializer, response.data)
+    return DataConnectResult(
+      variables = variables,
+      data = response.data.decode(dataDeserializer),
+      errors = response.errorsList.map { it.decode() }
+    )
   }
 
   suspend fun <VariablesType, DataType> executeMutation(
@@ -118,7 +114,7 @@ internal class DataConnectGrpcClient(
     variables: VariablesType,
     variablesSerializer: SerializationStrategy<VariablesType>,
     dataDeserializer: DeserializationStrategy<DataType>
-  ): DataType {
+  ): DataConnectResult<VariablesType, DataType> {
     val request = executeMutationRequest {
       this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
@@ -126,22 +122,14 @@ internal class DataConnectGrpcClient(
     }
 
     logger.debug { "executeMutation() sending request: $request" }
-    val response =
-      try {
-        grpcStub.executeMutation(request)
-      } catch (e: Throwable) {
-        logger.warn { "executeMutation() network transport error: $e" }
-        throw NetworkTransportException("mutation network transport error: ${e.message}", e)
-      }
+    val response = grpcStub.executeMutation(request)
     logger.debug { "executeMutation() got response: $response" }
-    if (response.errorsList.isNotEmpty()) {
-      throw GraphQLException(
-        "mutation failed: ${response.errorsList}",
-        response.errorsList.map { it.toString() }
-      )
-    }
 
-    return decodeFromStruct(dataDeserializer, response.data)
+    return DataConnectResult(
+      variables = variables,
+      data = response.data.decode(dataDeserializer),
+      errors = response.errorsList.map { it.decode() }
+    )
   }
 
   override fun toString(): String {
@@ -160,3 +148,18 @@ internal class DataConnectGrpcClient(
     "projects/$projectId/locations/$location/services/$service/" +
       "operationSets/$operationSet/revisions/$revision"
 }
+
+fun <T> Struct.decode(deserializer: DeserializationStrategy<T>) =
+  decodeFromStruct(deserializer, this)
+
+fun ListValue.decodePath() =
+  valuesList.map {
+    when (val kind = it.kindCase) {
+      Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
+      Value.KindCase.NUMBER_VALUE -> DataConnectError.PathSegment.ListIndex(it.numberValue.toInt())
+      else -> throw IllegalStateException("invalid PathSegement kind: $kind")
+    }
+  }
+
+fun GraphqlError.decode() =
+  DataConnectError(message = message, path = path.decodePath(), extensions = emptyMap())
