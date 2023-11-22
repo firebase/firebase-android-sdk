@@ -162,30 +162,6 @@ internal constructor(
       settings: FirebaseDataConnectSettings? = null
     ): FirebaseDataConnect =
       getInstance(app = Firebase.app, location = location, service = service, settings = settings)
-
-    fun getInstance(
-      app: FirebaseApp,
-      location: String,
-      service: String,
-      settingsBlock: FirebaseDataConnectSettings.Builder.() -> Unit
-    ): FirebaseDataConnect =
-      getInstance(
-        app = app,
-        location = location,
-        service = service,
-        settings = FirebaseDataConnectSettings.defaults.build(settingsBlock)
-      )
-
-    fun getInstance(
-      location: String,
-      service: String,
-      settingsBlock: FirebaseDataConnectSettings.Builder.() -> Unit
-    ): FirebaseDataConnect =
-      getInstance(
-        location = location,
-        service = service,
-        settings = FirebaseDataConnectSettings.defaults.build(settingsBlock)
-      )
   }
 }
 

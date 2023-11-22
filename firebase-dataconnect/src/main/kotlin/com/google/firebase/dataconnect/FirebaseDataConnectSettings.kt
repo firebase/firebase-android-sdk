@@ -24,54 +24,28 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   val sslEnabled: Boolean
     get() = values.sslEnabled
 
-  val builder: Builder
-    get() = Builder(this)
-
-  fun build(block: Builder.() -> Unit): FirebaseDataConnectSettings = builder.build(block)
+  fun copy(
+    hostName: String = this.hostName,
+    port: Int = this.port,
+    sslEnabled: Boolean = this.sslEnabled
+  ): FirebaseDataConnectSettings =
+    FirebaseDataConnectSettings(
+      SettingsValues(hostName = hostName, port = port, sslEnabled = sslEnabled)
+    )
 
   companion object {
-    val defaults
+    val defaults: FirebaseDataConnectSettings
       get() =
         FirebaseDataConnectSettings(
-          SettingsValues(
-            hostName = "firestore.googleapis.com",
-            port = 443,
-            sslEnabled = true,
-          )
+          SettingsValues(hostName = "firestore.googleapis.com", port = 443, sslEnabled = true)
         )
+
+    val emulator: FirebaseDataConnectSettings
+      get() = defaults.copy(hostName = "10.0.2.2", port = 9510, sslEnabled = false)
   }
 
-  class Builder internal constructor(initialValues: FirebaseDataConnectSettings) {
-    var hostName = initialValues.hostName
-    var port = initialValues.port
-    var sslEnabled = initialValues.sslEnabled
-
-    fun connectToEmulator() {
-      hostName = "10.0.2.2"
-      port = 9510
-      sslEnabled = false
-    }
-
-    fun build(): FirebaseDataConnectSettings =
-      FirebaseDataConnectSettings(
-        SettingsValues(
-          hostName = hostName,
-          port = port,
-          sslEnabled = sslEnabled,
-        )
-      )
-
-    fun build(block: Builder.() -> Unit): FirebaseDataConnectSettings = apply(block).build()
-  }
-
-  override fun equals(other: Any?) =
-    if (other === this) {
-      true
-    } else if (other !is FirebaseDataConnectSettings) {
-      false
-    } else {
-      values == other.values
-    }
+  override fun equals(other: Any?): Boolean =
+    (other as? FirebaseDataConnectSettings)?.let { it.values == values } ?: false
 
   override fun hashCode() = values.hashCode()
 

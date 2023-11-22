@@ -103,10 +103,12 @@ dependencies {
   implementation(libs.protobuf.kotlin.lite)
 
   testCompileOnly(libs.protobuf.java)
+  testImplementation(project(":firebase-dataconnect:testutil"))
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
   testImplementation(libs.truth.liteproto.extension)
 
+  androidTestImplementation(project(":firebase-dataconnect:testutil"))
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)

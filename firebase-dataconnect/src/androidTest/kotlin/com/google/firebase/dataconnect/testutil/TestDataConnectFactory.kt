@@ -15,6 +15,7 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 
 /**
  * A JUnit test rule that creates instances of [FirebaseDataConnect] for use during testing, and
@@ -29,10 +30,9 @@ class TestDataConnectFactory :
   override fun createInstance(instanceId: String, params: Params?) =
     FirebaseDataConnect.getInstance(
       location = params?.location ?: "TestLocation$instanceId",
-      service = params?.service ?: "TestService$instanceId"
-    ) {
-      connectToEmulator()
-    }
+      service = params?.service ?: "TestService$instanceId",
+      settings = FirebaseDataConnectSettings.emulator
+    )
 
   override fun destroyInstance(instance: FirebaseDataConnect) {
     instance.close()

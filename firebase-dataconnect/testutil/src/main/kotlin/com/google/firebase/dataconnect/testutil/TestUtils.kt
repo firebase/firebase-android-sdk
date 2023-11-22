@@ -1,4 +1,4 @@
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.testutil
 
 import com.google.common.truth.StringSubject
 import java.util.regex.Pattern

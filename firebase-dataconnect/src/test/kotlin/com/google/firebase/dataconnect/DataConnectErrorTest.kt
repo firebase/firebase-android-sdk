@@ -2,6 +2,7 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.DataConnectError.PathSegment
+import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import org.junit.Test
 
 class DataConnectErrorTest {
