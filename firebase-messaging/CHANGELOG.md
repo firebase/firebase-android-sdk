@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Called messageHandled() after a message has been handled to indicate
+  that the message has been handled successfully.
 * [changed] Added an internal identifier to Firelog logging for compliance.
 
 # 23.3.1
