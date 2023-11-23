@@ -340,7 +340,7 @@ class LocalDocumentsView {
         count - docs.size() > 0
             ? documentOverlayCache.getOverlays(
                 collectionGroup, offset.getLargestBatchId(), count - docs.size())
-            : Collections.emptyMap();
+            : new HashMap<>();
 
     int largestBatchId = FieldIndex.INITIAL_LARGEST_BATCH_ID;
     for (Overlay overlay : overlays.values()) {
