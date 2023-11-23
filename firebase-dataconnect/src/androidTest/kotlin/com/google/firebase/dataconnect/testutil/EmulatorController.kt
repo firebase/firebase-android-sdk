@@ -35,7 +35,7 @@ suspend fun FirebaseDataConnect.installEmulatorSchema(
   try {
     setupSchema(
       EmulatorServiceCoroutineStub(grpcChannel),
-      serviceId = service,
+      serviceId = serviceConfig.serviceId,
       schema = schema,
       operationSets = operationSets
     )

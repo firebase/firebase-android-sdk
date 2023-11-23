@@ -4,11 +4,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.CreatePersonMutationExt.execute
-import com.google.firebase.dataconnect.testutil.schemas.DeletePersonMutationExt.execute
-import com.google.firebase.dataconnect.testutil.schemas.GetAllPeoplePersonQueryExt.execute
-import com.google.firebase.dataconnect.testutil.schemas.GetPersonQueryExt.execute
-import com.google.firebase.dataconnect.testutil.schemas.UpdatePersonMutationExt.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.newPersonSchema
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.DeletePersonMutation.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -25,7 +26,7 @@ class PersonSchemaTest {
 
   @Before
   fun initializePersonSchema() {
-    schema = PersonSchema(dataConnectFactory.newInstance())
+    schema = dataConnectFactory.newPersonSchema()
     runBlocking { schema.installEmulatorSchema() }
   }
 

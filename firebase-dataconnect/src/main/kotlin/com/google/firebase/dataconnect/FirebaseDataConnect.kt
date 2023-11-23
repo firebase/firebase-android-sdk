@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -29,15 +30,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.serializer
 
 class FirebaseDataConnect
 internal constructor(
   private val context: Context,
   val app: FirebaseApp,
   private val projectId: String,
-  val location: String,
-  val service: String,
+  val serviceConfig: ServiceConfig,
   internal val blockingExecutor: Executor,
   internal val nonBlockingExecutor: Executor,
   private val creator: FirebaseDataConnectFactory,
@@ -48,15 +47,10 @@ internal constructor(
     Logger("FirebaseDataConnect").apply {
       debug {
         "New instance created with " +
-          "app=${app.name}, projectId=$projectId, location=$location, service=$service"
+          "app=${app.name}, projectId=$projectId, " +
+          "serviceConfig=$serviceConfig, settings=$settings"
       }
     }
-
-  class Queries internal constructor(val dataConnect: FirebaseDataConnect)
-  val queries = Queries(this)
-
-  class Mutations internal constructor(val dataConnect: FirebaseDataConnect)
-  val mutations = Mutations(this)
 
   internal val coroutineScope =
     CoroutineScope(
@@ -65,7 +59,7 @@ internal constructor(
         CoroutineName("FirebaseDataConnect")
     )
 
-  // Dispatcher used to access `this.closed` and `this.grpcClient` simple.
+  // Dispatcher used to access `this.closed` and `this.grpcClient`.
   private val sequentialDispatcher =
     FirebaseExecutors.newSequentialExecutor(nonBlockingExecutor).asCoroutineDispatcher()
 
@@ -81,8 +75,10 @@ internal constructor(
     DataConnectGrpcClient(
         context = context,
         projectId = projectId,
-        location = location,
-        service = service,
+        serviceId = serviceConfig.serviceId,
+        location = serviceConfig.location,
+        revision = serviceConfig.revision,
+        operationSet = serviceConfig.operationSet,
         hostName = settings.hostName,
         port = settings.port,
         sslEnabled = settings.sslEnabled,
@@ -100,8 +96,6 @@ internal constructor(
       .run {
         executeQuery(
           operationName = ref.operationName,
-          operationSet = ref.operationSet,
-          revision = ref.revision,
           variables = variables,
           variablesSerializer = ref.variablesSerializer,
           dataDeserializer = ref.dataDeserializer
@@ -116,8 +110,6 @@ internal constructor(
       .run {
         executeMutation(
           operationName = ref.operationName,
-          operationSet = ref.operationSet,
-          revision = ref.revision,
           variables = variables,
           variablesSerializer = ref.variablesSerializer,
           dataDeserializer = ref.dataDeserializer
@@ -140,85 +132,86 @@ internal constructor(
     creator.remove(this@FirebaseDataConnect)
   }
 
-  override fun toString(): String {
-    return "FirebaseDataConnect" +
-      "{app=${app.name}, projectId=$projectId, location=$location, service=$service}"
+  override fun toString() =
+    "FirebaseDataConnect{" +
+      "app=${app.name}, projectId=$projectId, " +
+      "location=${serviceConfig.location}, serviceId=${serviceConfig.serviceId} " +
+      "operationSet=${serviceConfig.operationSet}, revision=${serviceConfig.revision}" +
+      "}"
+
+  class ServiceConfig(serviceId: String, location: String, operationSet: String, revision: String) {
+    private val impl =
+      Impl(
+        serviceId = serviceId,
+        location = location,
+        operationSet = operationSet,
+        revision = revision
+      )
+
+    val serviceId: String
+      get() = impl.serviceId
+    val location: String
+      get() = impl.location
+    val operationSet: String
+      get() = impl.operationSet
+    val revision: String
+      get() = impl.revision
+
+    private data class Impl(
+      val serviceId: String,
+      val location: String,
+      val operationSet: String,
+      val revision: String
+    )
+
+    override fun equals(other: Any?) =
+      (other as? ServiceConfig)?.let { other.impl == impl } ?: false
+
+    override fun hashCode() = impl.hashCode()
+
+    override fun toString() =
+      "ServiceConfig(serviceId=$serviceId, location=$location,operationSet=$operationSet, revision=$revision)"
   }
 
   companion object {
+    @SuppressLint("FirebaseUseExplicitDependencies")
     fun getInstance(
       app: FirebaseApp,
-      location: String,
-      service: String,
-      settings: FirebaseDataConnectSettings? = null
+      serviceConfig: ServiceConfig,
+      settings: FirebaseDataConnectSettings? = null,
     ): FirebaseDataConnect =
       app.get(FirebaseDataConnectFactory::class.java).run {
-        get(location = location, service = service, settings = settings)
+        get(serviceConfig = serviceConfig, settings = settings)
       }
 
     fun getInstance(
-      location: String,
-      service: String,
+      serviceConfig: ServiceConfig,
       settings: FirebaseDataConnectSettings? = null
     ): FirebaseDataConnect =
-      getInstance(app = Firebase.app, location = location, service = service, settings = settings)
+      getInstance(app = Firebase.app, serviceConfig = serviceConfig, settings = settings)
   }
 }
 
-inline fun <reified VariablesType, reified DataType> FirebaseDataConnect.query(
-  operationName: String,
-  operationSet: String,
-  revision: String
-): QueryRef<VariablesType, DataType> =
-  query(
-    operationName = operationName,
-    operationSet = operationSet,
-    revision = revision,
-    variablesSerializer = serializer(),
-    dataDeserializer = serializer(),
-  )
-
 fun <VariablesType, DataType> FirebaseDataConnect.query(
   operationName: String,
-  operationSet: String,
-  revision: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
   dataDeserializer: DeserializationStrategy<DataType>
 ): QueryRef<VariablesType, DataType> =
   QueryRef(
     dataConnect = this,
     operationName = operationName,
-    operationSet = operationSet,
-    revision = revision,
     variablesSerializer = variablesSerializer,
     dataDeserializer = dataDeserializer
   )
 
-inline fun <reified VariablesType, reified DataType> FirebaseDataConnect.mutation(
-  operationName: String,
-  operationSet: String,
-  revision: String,
-): MutationRef<VariablesType, DataType> =
-  mutation(
-    operationName = operationName,
-    operationSet = operationSet,
-    revision = revision,
-    variablesSerializer = serializer(),
-    dataDeserializer = serializer(),
-  )
-
 fun <VariablesType, DataType> FirebaseDataConnect.mutation(
   operationName: String,
-  operationSet: String,
-  revision: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
   dataDeserializer: DeserializationStrategy<DataType>
 ): MutationRef<VariablesType, DataType> =
   MutationRef(
     dataConnect = this,
     operationName = operationName,
-    operationSet = operationSet,
-    revision = revision,
     variablesSerializer = variablesSerializer,
     dataDeserializer = dataDeserializer
   )

@@ -20,8 +20,6 @@ abstract class BaseRef<VariablesType, DataType>
 internal constructor(
   val dataConnect: FirebaseDataConnect,
   internal val operationName: String,
-  internal val operationSet: String,
-  internal val revision: String,
   internal val variablesSerializer: SerializationStrategy<VariablesType>,
   internal val dataDeserializer: DeserializationStrategy<DataType>,
 ) {

@@ -20,16 +20,12 @@ class QueryRef<VariablesType, DataType>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
-  operationSet: String,
-  revision: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
   dataDeserializer: DeserializationStrategy<DataType>
 ) :
   BaseRef<VariablesType, DataType>(
     dataConnect = dataConnect,
     operationName = operationName,
-    operationSet = operationSet,
-    revision = revision,
     variablesSerializer = variablesSerializer,
     dataDeserializer = dataDeserializer,
   ) {

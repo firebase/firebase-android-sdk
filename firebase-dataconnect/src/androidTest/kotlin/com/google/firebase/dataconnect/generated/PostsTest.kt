@@ -16,9 +16,12 @@ package com.google.firebase.dataconnect.generated
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.firebase.Firebase
+import com.google.firebase.app
+import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import java.util.UUID
+import com.google.firebase.dataconnect.testutil.nextAlphanumericString
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -29,6 +32,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,26 +44,37 @@ class PostsTest {
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
+  private lateinit var posts: PostsOperationSet
+
+  @Before
+  fun setUpPostsOperationSet() {
+    posts =
+      PostsOperationSet(
+        app = Firebase.app,
+        serviceId = "local",
+        location = Random.nextAlphanumericString(),
+        settings = FirebaseDataConnectSettings.emulator
+      )
+    dataConnectFactory.adoptInstance(posts.dataConnect)
+  }
+
   @Test
   fun getPostWithNonExistingId() {
-    val dc = dataConnectFactory.newInstance(service = "local")
     runBlocking {
-      val queryResponse = dc.queries.getPost.execute(id = UUID.randomUUID().toString())
+      val queryResponse = posts.getPost.execute(id = Random.nextAlphanumericString())
       assertWithMessage("queryResponse").that(queryResponse.data.post).isNull()
     }
   }
 
   @Test
   fun createPostThenGetPost() {
-    val dc = dataConnectFactory.newInstance(service = "local")
-
-    val postId = UUID.randomUUID().toString()
+    val postId = Random.nextAlphanumericString()
     val postContent = Random.Default.nextLong().toString(30)
 
     runBlocking {
-      dc.mutations.createPost.execute(id = postId, content = postContent)
+      posts.createPost.execute(id = postId, content = postContent)
 
-      val queryResponse = dc.queries.getPost.execute(id = postId)
+      val queryResponse = posts.getPost.execute(id = postId)
       assertWithMessage("queryResponse")
         .that(queryResponse.data.post)
         .isEqualTo(GetPostQuery.Data.Post(content = postContent, comments = emptyList()))
@@ -68,18 +83,16 @@ class PostsTest {
 
   @Test
   fun subscribe() {
-    val dc = dataConnectFactory.newInstance(service = "local")
-
-    val postId1 = UUID.randomUUID().toString()
+    val postId1 = Random.nextAlphanumericString()
     val postContent1 = Random.Default.nextLong().absoluteValue.toString(30)
-    val postId2 = UUID.randomUUID().toString()
+    val postId2 = Random.nextAlphanumericString()
     val postContent2 = Random.Default.nextLong().absoluteValue.toString(30)
 
     runBlocking {
-      dc.mutations.createPost.execute(id = postId1, content = postContent1)
-      dc.mutations.createPost.execute(id = postId2, content = postContent2)
+      posts.createPost.execute(id = postId1, content = postContent1)
+      posts.createPost.execute(id = postId2, content = postContent2)
 
-      val querySubscription = dc.queries.getPost.subscribe(id = postId1)
+      val querySubscription = posts.getPost.subscribe(id = postId1)
       assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
       val result1 = querySubscription.flow.timeout(5.seconds).first()

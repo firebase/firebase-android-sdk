@@ -22,10 +22,11 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.CreatePersonMutationExt.execute
-import com.google.firebase.dataconnect.testutil.schemas.GetPersonQueryExt.subscribe
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.UpdatePersonMutationExt.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.newPersonSchema
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.subscribe
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import java.util.concurrent.Executors
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -47,7 +48,7 @@ class QuerySubscriptionTest {
 
   @Before
   fun initializePersonSchema() {
-    schema = PersonSchema(dataConnectFactory.newInstance())
+    schema = dataConnectFactory.newPersonSchema()
     runBlocking { schema.installEmulatorSchema() }
   }
 

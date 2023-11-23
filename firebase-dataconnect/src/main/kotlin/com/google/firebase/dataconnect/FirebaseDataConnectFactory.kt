@@ -33,8 +33,9 @@ internal class FirebaseDataConnectFactory(
   }
 
   private data class InstanceCacheKey(
+    val serviceId: String,
     val location: String,
-    val service: String,
+    val operationSet: String,
   )
 
   private val lock = ReentrantLock()
@@ -42,11 +43,13 @@ internal class FirebaseDataConnectFactory(
   private var closed = false
 
   fun get(
-    location: String,
-    service: String,
+    serviceConfig: FirebaseDataConnect.ServiceConfig,
     settings: FirebaseDataConnectSettings?
   ): FirebaseDataConnect {
-    val key = InstanceCacheKey(location = location, service = service)
+    val key =
+      serviceConfig.run {
+        InstanceCacheKey(serviceId = serviceId, location = location, operationSet = operationSet)
+      }
     lock.withLock {
       if (closed) {
         throw IllegalStateException("FirebaseApp has been deleted")
@@ -60,6 +63,14 @@ internal class FirebaseDataConnectFactory(
               " (cached settings: ${cachedInstance.settings}, specified settings: $settings)"
           )
         }
+        if (serviceConfig.revision != cachedInstance.serviceConfig.revision) {
+          throw IllegalArgumentException(
+            "The cached FirebaseDataConnect instance ($cachedInstance)" +
+              " must have the same 'revision' as the specified ServiceConfig; however, they are" +
+              " different (cached revision: ${cachedInstance.serviceConfig.revision}," +
+              " specified revision: ${serviceConfig.revision})"
+          )
+        }
         return cachedInstance
       }
 
@@ -69,8 +80,7 @@ internal class FirebaseDataConnectFactory(
           context = context,
           app = firebaseApp,
           projectId = projectId,
-          location = location,
-          service = service,
+          serviceConfig = serviceConfig,
           blockingExecutor = blockingExecutor,
           nonBlockingExecutor = nonBlockingExecutor,
           creator = this,

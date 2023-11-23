@@ -16,6 +16,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
+import kotlin.random.Random
 
 /**
  * A JUnit test rule that creates instances of [FirebaseDataConnect] for use during testing, and
@@ -24,19 +25,41 @@ import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 class TestDataConnectFactory :
   FactoryTestRule<FirebaseDataConnect, TestDataConnectFactory.Params>() {
 
-  fun newInstance(location: String? = null, service: String? = null): FirebaseDataConnect =
-    newInstance(Params(location = location, service = service))
-
-  override fun createInstance(instanceId: String, params: Params?) =
-    FirebaseDataConnect.getInstance(
-      location = params?.location ?: "TestLocation$instanceId",
-      service = params?.service ?: "TestService$instanceId",
-      settings = FirebaseDataConnectSettings.emulator
+  fun newInstance(
+    serviceId: String? = null,
+    location: String? = null,
+    operationSet: String? = null,
+    revision: String? = null
+  ): FirebaseDataConnect =
+    newInstance(
+      Params(
+        serviceId = serviceId,
+        location = location,
+        operationSet = operationSet,
+        revision = revision
+      )
     )
+
+  override fun createInstance(params: Params?): FirebaseDataConnect {
+    val instanceId = Random.nextAlphanumericString()
+    val serviceConfig =
+      FirebaseDataConnect.ServiceConfig(
+        serviceId = params?.serviceId ?: "TestService$instanceId",
+        location = params?.location ?: "TestLocation$instanceId",
+        operationSet = params?.operationSet ?: "TestOperationSet$instanceId",
+        revision = params?.revision ?: "TestRevision$instanceId"
+      )
+    return FirebaseDataConnect.getInstance(serviceConfig, FirebaseDataConnectSettings.emulator)
+  }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {
     instance.close()
   }
 
-  data class Params(val location: String? = null, val service: String? = null)
+  data class Params(
+    val location: String? = null,
+    val serviceId: String? = null,
+    val operationSet: String? = null,
+    val revision: String? = null
+  )
 }

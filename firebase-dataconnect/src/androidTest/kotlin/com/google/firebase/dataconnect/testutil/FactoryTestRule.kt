@@ -1,6 +1,5 @@
 package com.google.firebase.dataconnect.testutil
 
-import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.rules.ExternalResource
@@ -18,9 +17,16 @@ abstract class FactoryTestRule<T, P> : ExternalResource() {
     if (!active.get()) {
       throw IllegalStateException("newInstance() may only be called during the test's execution")
     }
-    val instance = createInstance(generateRandomUid(), params)
+    val instance = createInstance(params)
     instances.add(instance)
     return instance
+  }
+
+  fun adoptInstance(instance: T) {
+    if (!active.get()) {
+      throw IllegalStateException("adoptInstance() may only be called during the test's execution")
+    }
+    instances.add(instance)
   }
 
   override fun before() {
@@ -34,11 +40,6 @@ abstract class FactoryTestRule<T, P> : ExternalResource() {
     }
   }
 
-  private fun generateRandomUid(): String =
-    UUID.randomUUID().let {
-      it.leastSignificantBits.toString(30) + it.mostSignificantBits.toString(30)
-    }
-
-  protected abstract fun createInstance(instanceId: String, params: P?): T
+  protected abstract fun createInstance(params: P?): T
   protected abstract fun destroyInstance(instance: T)
 }

@@ -26,12 +26,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
@@ -53,6 +55,8 @@ import android.os.Looper;
 import android.os.Process;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.cloudmessaging.CloudMessage;
+import com.google.android.gms.cloudmessaging.Rpc;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.firebase.FirebaseApp;
@@ -74,6 +78,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
@@ -212,6 +217,43 @@ public class FirebaseMessagingServiceRoboTest {
   }
 
   @Test
+  public void messageHandled() throws Exception {
+    RemoteMessageBuilder builder =
+        new RemoteMessageBuilder()
+            .setFrom(DEFAULT_FROM)
+            .setTo(DEFAULT_TO)
+            .addData("key1", "value1")
+            .setMessageId("message_id_456")
+            .setSentTime(123456789);
+    Intent intent = builder.buildIntent();
+    Rpc mockRpc = mock(Rpc.class);
+    service.setRpcForTesting(mockRpc);
+    CountDownLatch latch = new CountDownLatch(1);
+    doAnswer(
+            invocation -> {
+              latch.await();
+              return null;
+            })
+        .when(service)
+        .onMessageReceived(any(RemoteMessage.class));
+
+    shadowOf(context).clearStartedServices();
+    sendBroadcastToReceiver(intent);
+    processInternalStartService(context);
+
+    // Shouldn't call messageHandled while onMessageReceived is still running.
+    verifyNoMoreInteractions(mockRpc);
+    // Finish onMessageReceived, messageHandled should now be called.
+    latch.countDown();
+    flushTasks();
+    ArgumentCaptor<CloudMessage> messageCaptor = ArgumentCaptor.forClass(CloudMessage.class);
+    verify(mockRpc).messageHandled(messageCaptor.capture());
+    CloudMessage message = messageCaptor.getValue();
+    assertThat(message).isNotNull();
+    assertThat(message.getIntent()).isEqualTo(intent);
+  }
+
+  @Test
   public void testDuplicateMessageDropped() throws Exception {
     String messageId = "a.message.id";
 
@@ -308,6 +350,7 @@ public class FirebaseMessagingServiceRoboTest {
 
     ServiceStarter.getInstance().startMessagingService(context, intent);
     processInternalStartService(context);
+    flushTasks();
 
     verify(service).onNewToken("token123");
   }
@@ -685,6 +728,7 @@ public class FirebaseMessagingServiceRoboTest {
     shadowOf(context).clearStartedServices();
     sendBroadcastToReceiver(intent);
     processInternalStartService(context);
+    flushTasks();
   }
 
   /**
@@ -700,7 +744,6 @@ public class FirebaseMessagingServiceRoboTest {
     assertEquals(application.getPackageName(), serviceIntent.getPackage());
 
     service.onStartCommand(serviceIntent, 0 /* flags */, 1 /* startId */);
-    flushTasks();
   }
 
   // Flush the Service background tasks

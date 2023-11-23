@@ -31,17 +31,23 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
 internal class DataConnectGrpcClient(
-  val context: Context,
-  val projectId: String,
-  val location: String,
-  val service: String,
-  val hostName: String,
-  val port: Int,
-  val sslEnabled: Boolean,
+  context: Context,
+  projectId: String,
+  serviceId: String,
+  location: String,
+  operationSet: String,
+  revision: String,
+  hostName: String,
+  port: Int,
+  sslEnabled: Boolean,
   executor: Executor,
   creatorLoggerId: String,
 ) {
   private val logger = Logger("DataConnectGrpcClient")
+
+  private val requestName =
+    "projects/$projectId/locations/$location/services/$serviceId/" +
+      "operationSets/$operationSet/revisions/$revision"
 
   init {
     logger.debug { "Created from $creatorLoggerId" }
@@ -83,15 +89,13 @@ internal class DataConnectGrpcClient(
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
   suspend fun <VariablesType, DataType> executeQuery(
-    operationSet: String,
     operationName: String,
-    revision: String,
     variables: VariablesType,
     variablesSerializer: SerializationStrategy<VariablesType>,
     dataDeserializer: DeserializationStrategy<DataType>
   ): DataConnectResult<VariablesType, DataType> {
     val request = executeQueryRequest {
-      this.name = name(operationSet = operationSet, revision = revision)
+      this.name = requestName
       this.operationName = operationName
       this.variables = encodeToStruct(variablesSerializer, variables)
     }
@@ -108,15 +112,13 @@ internal class DataConnectGrpcClient(
   }
 
   suspend fun <VariablesType, DataType> executeMutation(
-    operationSet: String,
     operationName: String,
-    revision: String,
     variables: VariablesType,
     variablesSerializer: SerializationStrategy<VariablesType>,
     dataDeserializer: DeserializationStrategy<DataType>
   ): DataConnectResult<VariablesType, DataType> {
     val request = executeMutationRequest {
-      this.name = name(operationSet = operationSet, revision = revision)
+      this.name = requestName
       this.operationName = operationName
       this.variables = encodeToStruct(variablesSerializer, variables)
     }
@@ -132,21 +134,11 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  override fun toString(): String {
-    return "FirebaseDataConnectClient{" +
-      "projectId=$projectId, location=$location, service=$service, " +
-      "hostName=$hostName, port=$port, sslEnabled=$sslEnabled}"
-  }
-
   fun close() {
     logger.debug { "close() starting" }
     grpcChannel.shutdownNow()
     logger.debug { "close() done" }
   }
-
-  private fun name(operationSet: String, revision: String): String =
-    "projects/$projectId/locations/$location/services/$service/" +
-      "operationSets/$operationSet/revisions/$revision"
 }
 
 fun <T> Struct.decode(deserializer: DeserializationStrategy<T>) =
