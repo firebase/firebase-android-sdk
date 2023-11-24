@@ -88,19 +88,19 @@ internal constructor(
       .also { logger.debug { "DataConnectGrpcClient initialization complete: $it" } }
   }
 
+  // This reference MUST only be set or dereferenced from code running on `sequentialDispatcher`.
+  private val queryManager: QueryManager by lazy {
+    if (closed) {
+      throw IllegalStateException("instance has been closed")
+    }
+    QueryManager(grpcClient)
+  }
+
   internal suspend fun <V, D> executeQuery(
     ref: QueryRef<V, D>,
     variables: V
   ): DataConnectResult<V, D> =
-    withContext(sequentialDispatcher) { grpcClient }
-      .run {
-        executeQuery(
-          operationName = ref.operationName,
-          variables = variables,
-          variablesSerializer = ref.variablesSerializer,
-          dataDeserializer = ref.dataDeserializer
-        )
-      }
+    withContext(sequentialDispatcher) { queryManager }.execute(ref, variables)
 
   internal suspend fun <V, D> executeMutation(
     ref: MutationRef<V, D>,

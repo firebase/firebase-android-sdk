@@ -88,26 +88,22 @@ internal class DataConnectGrpcClient(
 
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
-  suspend fun <VariablesType, DataType> executeQuery(
-    operationName: String,
-    variables: VariablesType,
-    variablesSerializer: SerializationStrategy<VariablesType>,
-    dataDeserializer: DeserializationStrategy<DataType>
-  ): DataConnectResult<VariablesType, DataType> {
+  data class OperationResult(val data: Struct?, val errors: List<DataConnectError>)
+
+  suspend fun executeQuery(operationName: String, variables: Struct): OperationResult {
     val request = executeQueryRequest {
       this.name = requestName
       this.operationName = operationName
-      this.variables = encodeToStruct(variablesSerializer, variables)
+      this.variables = variables
     }
 
     logger.debug { "executeQuery() sending request: $request" }
     val response = grpcStub.executeQuery(request)
     logger.debug { "executeQuery() got response: $response" }
 
-    return DataConnectResult(
-      variables = variables,
-      data = response.data.decode(dataDeserializer),
-      errors = response.errorsList.map { it.decode() }
+    return OperationResult(
+      data = if (response.hasData()) response.data else null,
+      errors = response.errorsList.map { it.toDataConnectError() }
     )
   }
 
@@ -130,7 +126,7 @@ internal class DataConnectGrpcClient(
     return DataConnectResult(
       variables = variables,
       data = response.data.decode(dataDeserializer),
-      errors = response.errorsList.map { it.decode() }
+      errors = response.errorsList.map { it.toDataConnectError() }
     )
   }
 
@@ -153,5 +149,5 @@ fun ListValue.decodePath() =
     }
   }
 
-fun GraphqlError.decode() =
+fun GraphqlError.toDataConnectError() =
   DataConnectError(message = message, path = path.decodePath(), extensions = emptyMap())
