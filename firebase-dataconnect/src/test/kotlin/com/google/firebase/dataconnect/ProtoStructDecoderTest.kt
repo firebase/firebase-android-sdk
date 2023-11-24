@@ -34,6 +34,49 @@ import org.junit.Test
 class ProtoStructDecoderTest {
 
   @Test
+  fun `decodeFromStruct() can encode and decode a complex object A`() {
+    val obj =
+      SerializationTestData.AllTheTypes.newInstance(seed = "TheQuickBrown").withEmptyUnitLists()
+    val struct = encodeToStruct(obj)
+    val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
+    assertThat(decodedObj).isEqualTo(obj)
+  }
+
+  @Test
+  fun `decodeFromStruct() can encode and decode a complex object B`() {
+    val obj =
+      SerializationTestData.AllTheTypes.newInstance(seed = "FoxJumpsOver").withEmptyUnitLists()
+    val struct = encodeToStruct(obj)
+    val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
+    assertThat(decodedObj).isEqualTo(obj)
+  }
+
+  @Test
+  fun `decodeFromStruct() can encode and decode a complex object C`() {
+    val obj =
+      SerializationTestData.AllTheTypes.newInstance(seed = "TheLazyDog").withEmptyUnitLists()
+    val struct = encodeToStruct(obj)
+    val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
+    assertThat(decodedObj).isEqualTo(obj)
+  }
+
+  @Test
+  fun `decodeFromStruct() can encode and decode a list of nullable Unit ending in null`() {
+    @Serializable data class TestData(val list: List<Unit?>)
+    val struct = encodeToStruct(TestData(listOf(null, Unit, null)))
+    val decodedObj = decodeFromStruct<TestData>(struct)
+    assertThat(decodedObj).isEqualTo(TestData(listOf(null, Unit, null)))
+  }
+
+  @Test
+  fun `decodeFromStruct() can encode and decode a list of nullable Unit ending in Unit`() {
+    @Serializable data class TestData(val list: List<Unit?>)
+    val struct = encodeToStruct(TestData(listOf(null, Unit, null, Unit)))
+    val decodedObj = decodeFromStruct<TestData>(struct)
+    assertThat(decodedObj).isEqualTo(TestData(listOf(null, Unit, null, Unit)))
+  }
+
+  @Test
   fun `decodeFromStruct() can decode a Struct to Unit`() {
     val decodedTestData = decodeFromStruct<Unit>(Struct.getDefaultInstance())
     assertThat(decodedTestData).isSameInstanceAs(Unit)
@@ -510,53 +553,6 @@ class ProtoStructDecoderTest {
   }
 
   @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Byte`() {
-    assertThrowsNotSupported<Byte>()
-  }
-
-  @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Char`() {
-    assertThrowsNotSupported<Char>()
-  }
-
-  @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Enum`() {
-    assertThrowsNotSupported<TestEnum>()
-  }
-
-  @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Float`() {
-    assertThrowsNotSupported<Float>()
-  }
-
-  @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode an Inline of supported type`() {
-    assertDecodeFromStructThrowsIncorrectKindCase<TestStringValueClass>(
-      expectedKind = KindCase.STRING_VALUE,
-      actualKind = KindCase.STRUCT_VALUE
-    )
-    assertDecodeFromStructThrowsIncorrectKindCase<TestIntValueClass>(
-      expectedKind = KindCase.NUMBER_VALUE,
-      actualKind = KindCase.STRUCT_VALUE
-    )
-  }
-
-  @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode an Inline of _unsupported_ type`() {
-    assertThrowsNotSupported<TestByteValueClass>(expectedTypeInMessage = Byte::class)
-  }
-
-  @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Long`() {
-    assertThrowsNotSupported<Long>()
-  }
-
-  @Test
-  fun `decodeFromStruct() should throw SerializationException if attempting to decode a Short`() {
-    assertThrowsNotSupported<Short>()
-  }
-
-  @Test
   fun `decodeFromStruct() should throw SerializationException if decoding a Boolean value found a different type`() {
     @Serializable data class TestEncodeSubData(val someValue: String)
     @Serializable data class TestEncodeData(val aaa: TestEncodeSubData)
@@ -673,6 +669,19 @@ class ProtoStructDecoderTest {
     )
   }
 
+  private enum class TestEnum {
+    A,
+    B,
+    C,
+    D
+  }
+
+  @Serializable @JvmInline private value class TestStringValueClass(val a: String)
+
+  @Serializable @JvmInline private value class TestIntValueClass(val a: Int)
+
+  @Serializable @JvmInline private value class TestByteValueClass(val a: Byte)
+
   // TODO: Add tests for decoding to objects with unsupported field types (e.g. Byte, Char) and
   // list elements of unsupported field types (e.g. Byte, Char).
 
@@ -729,16 +738,3 @@ private inline fun <reified T : Any> assertThrowsNotSupported(
       )
     )
 }
-
-private enum class TestEnum {
-  A,
-  B,
-  C,
-  D
-}
-
-@Serializable @JvmInline value class TestStringValueClass(val a: String)
-
-@Serializable @JvmInline value class TestIntValueClass(val a: Int)
-
-@Serializable @JvmInline value class TestByteValueClass(val a: Byte)

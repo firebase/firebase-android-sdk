@@ -16,7 +16,8 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
-import com.google.firebase.dataconnect.testutil.generateRandomAlphanumericString
+import com.google.firebase.dataconnect.testutil.nextAlphanumericString
+import kotlin.random.Random
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -53,7 +54,7 @@ class FirebaseDataConnectSettingsTest {
   @Test
   fun `copy() can change the hostName`() {
     val originalSettings = FirebaseDataConnectSettings.defaults
-    val newHostName = generateRandomAlphanumericString()
+    val newHostName = Random.nextAlphanumericString()
 
     val modifiedSettings = originalSettings.copy(hostName = newHostName)
 

@@ -20,130 +20,165 @@ import kotlinx.serialization.serializer
 inline fun <reified T> encodeToStruct(value: T): Struct = encodeToStruct(serializer(), value)
 
 fun <T> encodeToStruct(serializer: SerializationStrategy<T>, value: T): Struct {
-  val values = ProtoValueEncoder().apply { encodeSerializableValue(serializer, value) }.values
+  val values = mutableListOf<Value>()
+  ProtoValueEncoder(path = null, onValue = values::add).encodeSerializableValue(serializer, value)
   if (values.isEmpty()) {
     return Struct.getDefaultInstance()
   }
   require(values.size == 1) {
-    "encoding produced ${values.size} Value objects, " + "but expected at most 1"
+    "encoding produced ${values.size} Value objects, but expected either 0 or 1"
   }
-  val value = values.first()
-  require(value.hasStructValue()) {
-    "encoding produced ${value.kindCase}, but expected ${KindCase.STRUCT_VALUE}"
+  val valueProto = values.single()
+  require(valueProto.hasStructValue()) {
+    "encoding produced ${valueProto.kindCase}, but expected ${KindCase.STRUCT_VALUE}"
   }
-  return value.structValue
+  return valueProto.structValue
 }
 
-private class ProtoValueEncoder : Encoder {
+private fun Boolean.toProtoValue(): Value = Value.newBuilder().setBoolValue(this).build()
 
-  val values = mutableListOf<Value>()
+private fun Byte.toProtoValue(): Value = toInt().toProtoValue()
+
+private fun Char.toProtoValue(): Value = code.toProtoValue()
+
+private fun Double.toProtoValue(): Value = Value.newBuilder().setNumberValue(this).build()
+
+private fun Float.toProtoValue(): Value = toDouble().toProtoValue()
+
+private fun Int.toProtoValue(): Value = toDouble().toProtoValue()
+
+private fun Long.toProtoValue(): Value = toString().toProtoValue()
+
+private fun Short.toProtoValue(): Value = toInt().toProtoValue()
+
+private fun String.toProtoValue(): Value = Value.newBuilder().setStringValue(this).build()
+
+private val nullProtoValue: Value
+  get() {
+    return Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+  }
+
+private class ProtoValueEncoder(private val path: String?, private val onValue: (Value) -> Unit) :
+  Encoder {
 
   override val serializersModule = EmptySerializersModule()
 
   override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder =
     when (val kind = descriptor.kind) {
       is StructureKind.MAP,
-      is StructureKind.CLASS -> ProtoStructValueEncoder(values)
-      is StructureKind.LIST -> ProtoListValueEncoder(values)
+      is StructureKind.CLASS -> ProtoStructValueEncoder(path, onValue)
+      is StructureKind.LIST -> ProtoListValueEncoder(path, onValue)
       is StructureKind.OBJECT -> ProtoObjectValueEncoder
       else -> throw IllegalArgumentException("unsupported SerialKind: ${kind::class.qualifiedName}")
     }
 
   override fun encodeBoolean(value: Boolean) {
-    values.add(Value.newBuilder().setBoolValue(value).build())
+    onValue(value.toProtoValue())
   }
 
   override fun encodeByte(value: Byte) {
-    TODO("Not yet implemented")
+    onValue(value.toProtoValue())
   }
 
   override fun encodeChar(value: Char) {
-    TODO("Not yet implemented")
+    onValue(value.toProtoValue())
   }
 
   override fun encodeDouble(value: Double) {
-    values.add(Value.newBuilder().setNumberValue(value).build())
+    onValue(value.toProtoValue())
   }
 
   override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
-    TODO("Not yet implemented")
+    onValue(index.toProtoValue())
   }
 
   override fun encodeFloat(value: Float) {
-    TODO("Not yet implemented")
+    onValue(value.toProtoValue())
   }
 
   override fun encodeInline(descriptor: SerialDescriptor) = this
 
   override fun encodeInt(value: Int) {
-    encodeDouble(value.toDouble())
+    onValue(value.toProtoValue())
   }
 
   override fun encodeLong(value: Long) {
-    TODO("Not yet implemented")
+    onValue(value.toProtoValue())
   }
 
   @ExperimentalSerializationApi
   override fun encodeNull() {
-    values.add(Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
+    onValue(nullProtoValue)
+  }
+
+  @ExperimentalSerializationApi
+  override fun encodeNotNullMark() {
+    encodeBoolean(true)
   }
 
   override fun encodeShort(value: Short) {
-    TODO("Not yet implemented")
+    onValue(value.toProtoValue())
   }
 
   override fun encodeString(value: String) {
-    values.add(Value.newBuilder().setStringValue(value).build())
+    onValue(value.toProtoValue())
   }
 }
 
-private abstract class ProtoCompositeValueEncoder<K>(private val dest: MutableList<Value>) :
-  CompositeEncoder {
+private abstract class ProtoCompositeValueEncoder<K>(
+  private val path: String?,
+  private val onValue: (Value) -> Unit
+) : CompositeEncoder {
   override val serializersModule = EmptySerializersModule()
 
-  private val valueEncoder = ProtoValueEncoder()
-  private val keys = mutableListOf<K>()
+  private val valueByKey = mutableMapOf<K, Value>()
+
+  private fun putValue(descriptor: SerialDescriptor, index: Int, value: Value) {
+    val key = keyOf(descriptor, index)
+    valueByKey[key] = value
+  }
 
   protected abstract fun keyOf(descriptor: SerialDescriptor, index: Int): K
+  protected abstract fun formattedKeyForElementPath(key: K): String
 
   override fun encodeBooleanElement(descriptor: SerialDescriptor, index: Int, value: Boolean) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeBoolean(value)
+    putValue(descriptor, index, value.toProtoValue())
   }
 
   override fun encodeByteElement(descriptor: SerialDescriptor, index: Int, value: Byte) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeByte(value)
+    putValue(descriptor, index, value.toProtoValue())
   }
 
   override fun encodeCharElement(descriptor: SerialDescriptor, index: Int, value: Char) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeChar(value)
+    putValue(descriptor, index, value.toProtoValue())
   }
 
   override fun encodeDoubleElement(descriptor: SerialDescriptor, index: Int, value: Double) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeDouble(value)
+    putValue(descriptor, index, value.toProtoValue())
   }
 
   override fun encodeFloatElement(descriptor: SerialDescriptor, index: Int, value: Float) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeFloat(value)
+    putValue(descriptor, index, value.toProtoValue())
   }
 
   override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder {
-    keys.add(keyOf(descriptor, index))
-    return valueEncoder.encodeInline(descriptor)
+    throw UnsupportedOperationException("inline is not implemented yet")
   }
 
   override fun encodeIntElement(descriptor: SerialDescriptor, index: Int, value: Int) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeInt(value)
+    putValue(descriptor, index, value.toProtoValue())
   }
 
   override fun encodeLongElement(descriptor: SerialDescriptor, index: Int, value: Long) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeLong(value)
+    putValue(descriptor, index, value.toProtoValue())
+  }
+
+  override fun encodeShortElement(descriptor: SerialDescriptor, index: Int, value: Short) {
+    putValue(descriptor, index, value.toProtoValue())
+  }
+
+  override fun encodeStringElement(descriptor: SerialDescriptor, index: Int, value: String) {
+    putValue(descriptor, index, value.toProtoValue())
   }
 
   @ExperimentalSerializationApi
@@ -153,8 +188,9 @@ private abstract class ProtoCompositeValueEncoder<K>(private val dest: MutableLi
     serializer: SerializationStrategy<T>,
     value: T?
   ) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeNullableSerializableValue(serializer, value)
+    val key = keyOf(descriptor, index)
+    val encoder = ProtoValueEncoder(elementPathForKey(key)) { valueByKey[key] = it }
+    encoder.encodeNullableSerializableValue(serializer, value)
   }
 
   override fun <T> encodeSerializableElement(
@@ -163,50 +199,47 @@ private abstract class ProtoCompositeValueEncoder<K>(private val dest: MutableLi
     serializer: SerializationStrategy<T>,
     value: T
   ) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeSerializableValue(serializer, value)
-  }
-
-  override fun encodeShortElement(descriptor: SerialDescriptor, index: Int, value: Short) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeShort(value)
-  }
-
-  override fun encodeStringElement(descriptor: SerialDescriptor, index: Int, value: String) {
-    keys.add(keyOf(descriptor, index))
-    valueEncoder.encodeString(value)
+    val key = keyOf(descriptor, index)
+    val encoder = ProtoValueEncoder(elementPathForKey(key)) { valueByKey[key] = it }
+    encoder.encodeSerializableValue(serializer, value)
   }
 
   override fun endStructure(descriptor: SerialDescriptor) {
-    require(valueEncoder.values.size == keys.size) {
-      "internal error: " +
-        "valueEncoder.values.size != keys.size " +
-        "(${valueEncoder.values.size} != ${keys.size})"
-    }
-
-    val valueByKey =
-      buildMap<K, Value> {
-        this@ProtoCompositeValueEncoder.keys.forEachIndexed { valueEncoderIndex, destKey ->
-          put(destKey, valueEncoder.values[valueEncoderIndex])
-        }
-      }
-
-    dest.add(Value.newBuilder().also { populate(it, valueByKey) }.build())
+    onValue(Value.newBuilder().also { populate(descriptor, it, valueByKey) }.build())
   }
 
-  protected abstract fun populate(valueBuilder: Value.Builder, valueByKey: Map<K, Value>)
+  private fun elementPathForKey(key: K): String =
+    formattedKeyForElementPath(key).let { if (path === null) it else "$path$it" }
+
+  protected abstract fun populate(
+    descriptor: SerialDescriptor,
+    valueBuilder: Value.Builder,
+    valueByKey: Map<K, Value>
+  )
 }
 
-private class ProtoListValueEncoder(dest: MutableList<Value>) :
-  ProtoCompositeValueEncoder<Int>(dest) {
+private class ProtoListValueEncoder(private val path: String?, onValue: (Value) -> Unit) :
+  ProtoCompositeValueEncoder<Int>(path, onValue) {
+
   override fun keyOf(descriptor: SerialDescriptor, index: Int) = index
 
-  override fun populate(valueBuilder: Value.Builder, valueByKey: Map<Int, Value>) {
+  override fun formattedKeyForElementPath(key: Int) = "[$key]"
+
+  override fun populate(
+    descriptor: SerialDescriptor,
+    valueBuilder: Value.Builder,
+    valueByKey: Map<Int, Value>
+  ) {
     valueBuilder.setListValue(
       ListValue.newBuilder().also { listValueBuilder ->
         for (i in 0 until valueByKey.size) {
           listValueBuilder.addValues(
-            valueByKey[i] ?: throw SerializationException("list value missing at index $i")
+            valueByKey[i]
+              ?: throw SerializationException(
+                "$path: list value missing at index $i" +
+                  " (have ${valueByKey.size} indexes:" +
+                  " ${valueByKey.keys.sorted().joinToString()})"
+              )
           )
         }
       }
@@ -214,11 +247,18 @@ private class ProtoListValueEncoder(dest: MutableList<Value>) :
   }
 }
 
-private class ProtoStructValueEncoder(dest: MutableList<Value>) :
-  ProtoCompositeValueEncoder<String>(dest) {
+private class ProtoStructValueEncoder(path: String?, onValue: (Value) -> Unit) :
+  ProtoCompositeValueEncoder<String>(path, onValue) {
+
   override fun keyOf(descriptor: SerialDescriptor, index: Int) = descriptor.getElementName(index)
 
-  override fun populate(valueBuilder: Value.Builder, valueByKey: Map<String, Value>) {
+  override fun formattedKeyForElementPath(key: String) = ".$key"
+
+  override fun populate(
+    descriptor: SerialDescriptor,
+    valueBuilder: Value.Builder,
+    valueByKey: Map<String, Value>
+  ) {
     valueBuilder.setStructValue(
       Struct.newBuilder().also { structBuilder ->
         valueByKey.forEach { (key, value) ->
