@@ -93,7 +93,7 @@ internal constructor(
     if (closed) {
       throw IllegalStateException("instance has been closed")
     }
-    QueryManager(grpcClient)
+    QueryManager(grpcClient, coroutineScope)
   }
 
   internal suspend fun <V, D> executeQuery(
