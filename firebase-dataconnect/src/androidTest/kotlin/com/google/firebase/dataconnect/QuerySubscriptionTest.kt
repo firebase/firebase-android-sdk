@@ -28,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePerso
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.subscribe
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import java.util.concurrent.Executors
+import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
@@ -174,7 +175,7 @@ class QuerySubscriptionTest {
         querySubscription.flow.map { it.data }.collect(resultsChannel::send)
       }
 
-      val maxHardwareConcurrency = Math.max(2, Runtime.getRuntime().availableProcessors())
+      val maxHardwareConcurrency = max(2, Runtime.getRuntime().availableProcessors())
       val multiThreadExecutor = Executors.newFixedThreadPool(maxHardwareConcurrency)
       try {
         repeat(100000) { multiThreadExecutor.execute(querySubscription::reload) }
@@ -199,15 +200,13 @@ private fun Subject.isEqualToGetPersonQueryResult(name: String, age: Int?) =
   isEqualTo(PersonSchema.GetPersonQuery.Data.Person(name = name, age = age))
 
 private suspend fun <T> ReceiveChannel<T>.purge(timeout: Duration): List<T> = coroutineScope {
-  mutableListOf<T>()
-    .also {
-      while (true) {
-        try {
-          withTimeout(timeout) { it.add(receive()) }
-        } catch (e: TimeoutCancellationException) {
-          break
-        }
+  buildList {
+    while (true) {
+      try {
+        withTimeout(timeout) { add(receive()) }
+      } catch (e: TimeoutCancellationException) {
+        break
       }
     }
-    .toList()
+  }
 }
