@@ -25,20 +25,9 @@ import kotlinx.coroutines.withContext
 internal class QueryManager(grpcClient: DataConnectGrpcClient, coroutineScope: CoroutineScope) {
   private val queryStates = QueryStates(grpcClient, coroutineScope)
 
-  suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> {
-    val operationResult = queryStates.letQueryState(ref, variables) { it.execute() }
+  suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
+    queryStates.letQueryState(ref, variables) { it.execute() }.toDataConnectResult(ref, variables)
 
-    if (operationResult.data === null) {
-      // TODO: include the variables and error list in the thrown exception
-      throw DataConnectException("no data included in result: errors=${operationResult.errors}")
-    }
-
-    return DataConnectResult(
-      variables = variables,
-      data = decodeFromStruct(ref.dataDeserializer, operationResult.data),
-      errors = operationResult.errors,
-    )
-  }
 }
 
 private data class QueryStateKey(val operationName: String, val variablesSha512: String)
@@ -149,4 +138,20 @@ private class QueryStates(
       queryStateByKey.remove(queryState.key)
     }
   }
+}
+
+private fun <V, D> DataConnectGrpcClient.OperationResult.toDataConnectResult(
+  ref: QueryRef<V, D>,
+  variables: V
+): DataConnectResult<V, D> {
+  if (data === null) {
+    // TODO: include the variables and error list in the thrown exception
+    throw DataConnectException("no data included in result: errors=${errors}")
+  }
+
+  return DataConnectResult(
+    variables = variables,
+    data = decodeFromStruct(ref.dataDeserializer, data),
+    errors = errors,
+  )
 }
