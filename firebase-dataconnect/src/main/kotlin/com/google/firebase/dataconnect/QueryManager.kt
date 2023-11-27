@@ -15,7 +15,6 @@ package com.google.firebase.dataconnect
 
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.NonCancellable
@@ -74,19 +73,19 @@ private class QueryState(
   private val coroutineScope: CoroutineScope,
 ) {
   private val mutex = Mutex()
-  private var job: Deferred<Numbered<DataConnectGrpcClient.OperationResult>>? = null
+  private var job: Deferred<DataConnectGrpcClient.OperationResult>? = null
 
   private val dataDeserializers = CopyOnWriteArrayList<DeserialzerInfo<*>>()
 
   private val operationResultFlow =
-    MutableSharedFlow<Numbered<DataConnectGrpcClient.OperationResult>>(
+    MutableSharedFlow<DataConnectGrpcClient.OperationResult>(
       replay = 1,
       extraBufferCapacity = Int.MAX_VALUE,
       onBufferOverflow = BufferOverflow.SUSPEND
     )
 
   private val exceptionFlow =
-    MutableSharedFlow<Numbered<Throwable?>>(
+    MutableSharedFlow<Throwable?>(
       replay = 1,
       extraBufferCapacity = Int.MAX_VALUE,
       onBufferOverflow = BufferOverflow.SUSPEND
@@ -118,29 +117,25 @@ private class QueryState(
 
     // TODO: As an optimization, avoid calling deserialize() if the data was already deserialized
     // by someone else.
-    return newJob.await().obj.deserialize(dataDeserializer)
+    return newJob.await().deserialize(dataDeserializer)
   }
 
-  private suspend fun doExecute(): Numbered<DataConnectGrpcClient.OperationResult> {
-    val sequenceNumber = nextSequenceNumber.incrementAndGet()
-
+  private suspend fun doExecute(): DataConnectGrpcClient.OperationResult {
     val executeQueryResult =
       kotlin.runCatching {
         grpcClient.executeQuery(operationName = operationName, variables = variables)
       }
 
-    val resultForDataSerializers = Numbered(executeQueryResult, sequenceNumber)
-    mutex.withLock { dataDeserializers.iterator() }.forEach { it.update(resultForDataSerializers) }
+    mutex.withLock { dataDeserializers.iterator() }.forEach { it.update(executeQueryResult) }
 
     return executeQueryResult.fold(
       onSuccess = {
-        val numberedResult = Numbered(it, sequenceNumber)
-        operationResultFlow.emit(numberedResult)
-        exceptionFlow.emit(Numbered(null, sequenceNumber))
-        numberedResult
+        operationResultFlow.emit(it)
+        exceptionFlow.emit(null)
+        it
       },
       onFailure = {
-        exceptionFlow.emit(Numbered<Throwable?>(it, sequenceNumber))
+        exceptionFlow.emit(it)
         throw it
       }
     )
@@ -154,7 +149,7 @@ private class QueryState(
     mutex
       .withLock { registerDataDeserializer(dataDeserializer) }
       .resultFlow
-      .map { mapResult(it.obj) }
+      .map { mapResult(it) }
       .collect(collector)
 
   suspend fun collectExceptions(
@@ -164,7 +159,7 @@ private class QueryState(
     mutex
       .withLock { registerDataDeserializer(dataDeserializer) }
       .exceptionFlow
-      .map { it.obj }
+      .map { it }
       .collect(collector)
 
   // NOTE: This function MUST be called by a coroutine that has `mutex` locked; otherwise, a data
@@ -177,8 +172,6 @@ private class QueryState(
       ?: DeserialzerInfo(dataDeserializer).also { dataDeserializers.add(it) }
 
   private companion object {
-    val nextSequenceNumber = AtomicLong(0)
-
     fun <T> DataConnectGrpcClient.OperationResult.deserialize(
       dataDeserializer: DeserializationStrategy<T>
     ): ExecuteResult<T> {
@@ -190,11 +183,9 @@ private class QueryState(
     }
   }
 
-  private data class Numbered<T>(val obj: T, val sequenceNumber: Long)
-
   private class DeserialzerInfo<T>(val deserializer: DeserializationStrategy<T>) {
     private val _resultFlow =
-      MutableSharedFlow<Numbered<ExecuteResult<T>>>(
+      MutableSharedFlow<ExecuteResult<T>>(
         replay = 1,
         extraBufferCapacity = Int.MAX_VALUE,
         onBufferOverflow = BufferOverflow.SUSPEND,
@@ -203,7 +194,7 @@ private class QueryState(
     val resultFlow = _resultFlow.asSharedFlow()
 
     val _exceptionFlow =
-      MutableSharedFlow<Numbered<Throwable?>>(
+      MutableSharedFlow<Throwable?>(
         replay = 1,
         extraBufferCapacity = Int.MAX_VALUE,
         onBufferOverflow = BufferOverflow.SUSPEND,
@@ -211,19 +202,19 @@ private class QueryState(
 
     val exceptionFlow = _exceptionFlow.asSharedFlow()
 
-    suspend fun update(result: Numbered<Result<DataConnectGrpcClient.OperationResult>>) {
-      result.obj.fold(
+    suspend fun update(result: Result<DataConnectGrpcClient.OperationResult>) {
+      result.fold(
         onSuccess = {
           val deserializeResult = kotlin.runCatching { it.deserialize(deserializer) }
           deserializeResult.fold(
             onSuccess = {
-              _resultFlow.emit(Numbered(it, result.sequenceNumber))
-              _exceptionFlow.emit(Numbered(null, result.sequenceNumber))
+              _resultFlow.emit(it)
+              _exceptionFlow.emit(null)
             },
-            onFailure = { _exceptionFlow.emit(Numbered(it, result.sequenceNumber)) }
+            onFailure = { _exceptionFlow.emit(it) }
           )
         },
-        onFailure = { _exceptionFlow.emit(Numbered(it, result.sequenceNumber)) },
+        onFailure = { _exceptionFlow.emit(it) },
       )
     }
   }
