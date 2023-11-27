@@ -23,3 +23,5 @@ object NullOutputStream : OutputStream() {
   override fun write(b: ByteArray?) {}
   override fun write(b: ByteArray?, off: Int, len: Int) {}
 }
+
+class ReferenceCounted<T>(val obj: T, var refCount: Int)
