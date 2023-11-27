@@ -26,7 +26,7 @@ internal class QueryManager(grpcClient: DataConnectGrpcClient, coroutineScope: C
   private val queryStates = QueryStates(grpcClient, coroutineScope)
 
   suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
-    queryStates.letQueryState(ref, variables) { it.execute() }.toDataConnectResult(ref, variables)
+    queryStates.withQueryState(ref, variables) { it.execute() }.toDataConnectResult(ref, variables)
 
 }
 
@@ -81,7 +81,7 @@ private class QueryStates(
   // data races and yield undefined behavior.
   private val queryStateByKey = mutableMapOf<QueryStateKey, ReferenceCounted<QueryState>>()
 
-  suspend fun <V, D, R> letQueryState(
+  suspend fun <V, D, R> withQueryState(
     ref: QueryRef<V, D>,
     variables: V,
     block: suspend (QueryState) -> R
