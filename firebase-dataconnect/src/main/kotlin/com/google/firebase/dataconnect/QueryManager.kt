@@ -14,20 +14,54 @@
 package com.google.firebase.dataconnect
 
 import com.google.protobuf.Struct
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.FlowCollector
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.DeserializationStrategy
 
 internal class QueryManager(grpcClient: DataConnectGrpcClient, coroutineScope: CoroutineScope) {
   private val queryStates = QueryStates(grpcClient, coroutineScope)
 
   suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
-    queryStates.withQueryState(ref, variables) { it.execute() }.toDataConnectResult(ref, variables)
+    queryStates
+      .withQueryState(ref, variables) { it.execute(ref.dataDeserializer) }
+      .toDataConnectResult(variables)
 
+  suspend fun <V, D> collectResults(
+    ref: QueryRef<V, D>,
+    variables: V,
+    collector: FlowCollector<DataConnectResult<V, D>>
+  ) {
+    queryStates.withQueryState(ref, variables) {
+      it.collectResults(ref.dataDeserializer, collector) { toDataConnectResult(variables) }
+    }
+  }
+
+  suspend fun <V, D> collectExceptions(
+    ref: QueryRef<V, D>,
+    variables: V,
+    collector: FlowCollector<Throwable?>
+  ) {
+    queryStates.withQueryState(ref, variables) {
+      it.collectExceptions(ref.dataDeserializer, collector)
+    }
+  }
+
+  private companion object {
+    fun <V, D> QueryState.ExecuteResult<D>.toDataConnectResult(variables: V) =
+      DataConnectResult(variables = variables, data = data, errors = errors)
+  }
 }
 
 private data class QueryStateKey(val operationName: String, val variablesSha512: String)
@@ -40,9 +74,27 @@ private class QueryState(
   private val coroutineScope: CoroutineScope,
 ) {
   private val mutex = Mutex()
-  private var job: Deferred<DataConnectGrpcClient.OperationResult>? = null
+  private var job: Deferred<Numbered<DataConnectGrpcClient.OperationResult>>? = null
 
-  suspend fun execute(): DataConnectGrpcClient.OperationResult {
+  private val dataDeserializers = CopyOnWriteArrayList<DeserialzerInfo<*>>()
+
+  private val operationResultFlow =
+    MutableSharedFlow<Numbered<DataConnectGrpcClient.OperationResult>>(
+      replay = 1,
+      extraBufferCapacity = Int.MAX_VALUE,
+      onBufferOverflow = BufferOverflow.SUSPEND
+    )
+
+  private val exceptionFlow =
+    MutableSharedFlow<Numbered<Throwable?>>(
+      replay = 1,
+      extraBufferCapacity = Int.MAX_VALUE,
+      onBufferOverflow = BufferOverflow.SUSPEND
+    )
+
+  data class ExecuteResult<T>(val data: T, val errors: List<DataConnectError>)
+
+  suspend fun <T> execute(dataDeserializer: DeserializationStrategy<T>): ExecuteResult<T> {
     // Wait for the current job to complete (if any), and ignore its result. Waiting avoids running
     // multiple queries in parallel, which would not scale.
     val originalJob = mutex.withLock { job }?.also { it.join() }
@@ -53,20 +105,127 @@ private class QueryState(
     // completion of the new job that was started by the winner.
     val newJob =
       mutex.withLock {
+        registerDataDeserializer(dataDeserializer)
+
         job.let { currentJob ->
           if (currentJob !== null && currentJob !== originalJob) {
             currentJob
           } else {
-            coroutineScope
-              .async {
-                grpcClient.executeQuery(operationName = operationName, variables = variables)
-              }
-              .also { newJob -> job = newJob }
+            coroutineScope.async { doExecute() }.also { newJob -> job = newJob }
           }
         }
       }
 
-    return newJob.await()
+    // TODO: As an optimization, avoid calling deserialize() if the data was already deserialized
+    // by someone else.
+    return newJob.await().obj.deserialize(dataDeserializer)
+  }
+
+  private suspend fun doExecute(): Numbered<DataConnectGrpcClient.OperationResult> {
+    val sequenceNumber = nextSequenceNumber.incrementAndGet()
+
+    val executeQueryResult =
+      kotlin.runCatching {
+        grpcClient.executeQuery(operationName = operationName, variables = variables)
+      }
+
+    val resultForDataSerializers = Numbered(executeQueryResult, sequenceNumber)
+    mutex.withLock { dataDeserializers.iterator() }.forEach { it.update(resultForDataSerializers) }
+
+    return executeQueryResult.fold(
+      onSuccess = {
+        val numberedResult = Numbered(it, sequenceNumber)
+        operationResultFlow.emit(numberedResult)
+        exceptionFlow.emit(Numbered(null, sequenceNumber))
+        numberedResult
+      },
+      onFailure = {
+        exceptionFlow.emit(Numbered<Throwable?>(it, sequenceNumber))
+        throw it
+      }
+    )
+  }
+
+  suspend fun <T, R> collectResults(
+    dataDeserializer: DeserializationStrategy<T>,
+    collector: FlowCollector<R>,
+    mapResult: ExecuteResult<T>.() -> R
+  ) =
+    mutex
+      .withLock { registerDataDeserializer(dataDeserializer) }
+      .resultFlow
+      .map { mapResult(it.obj) }
+      .collect(collector)
+
+  suspend fun collectExceptions(
+    dataDeserializer: DeserializationStrategy<*>,
+    collector: FlowCollector<Throwable?>
+  ) =
+    mutex
+      .withLock { registerDataDeserializer(dataDeserializer) }
+      .exceptionFlow
+      .map { it.obj }
+      .collect(collector)
+
+  // NOTE: This function MUST be called by a coroutine that has `mutex` locked; otherwise, a data
+  // race will occur, resulting in undefined behavior.
+  @Suppress("UNCHECKED_CAST")
+  private fun <T> registerDataDeserializer(
+    dataDeserializer: DeserializationStrategy<T>
+  ): DeserialzerInfo<T> =
+    dataDeserializers.firstOrNull { it.deserializer === dataDeserializer } as? DeserialzerInfo<T>
+      ?: DeserialzerInfo(dataDeserializer).also { dataDeserializers.add(it) }
+
+  private companion object {
+    val nextSequenceNumber = AtomicLong(0)
+
+    fun <T> DataConnectGrpcClient.OperationResult.deserialize(
+      dataDeserializer: DeserializationStrategy<T>
+    ): ExecuteResult<T> {
+      if (data === null) {
+        // TODO: include the variables and error list in the thrown exception
+        throw DataConnectException("no data included in result: errors=${errors}")
+      }
+      return ExecuteResult(data = decodeFromStruct(dataDeserializer, data), errors = errors)
+    }
+  }
+
+  private data class Numbered<T>(val obj: T, val sequenceNumber: Long)
+
+  private class DeserialzerInfo<T>(val deserializer: DeserializationStrategy<T>) {
+    private val _resultFlow =
+      MutableSharedFlow<Numbered<ExecuteResult<T>>>(
+        replay = 1,
+        extraBufferCapacity = Int.MAX_VALUE,
+        onBufferOverflow = BufferOverflow.SUSPEND,
+      )
+
+    val resultFlow = _resultFlow.asSharedFlow()
+
+    val _exceptionFlow =
+      MutableSharedFlow<Numbered<Throwable?>>(
+        replay = 1,
+        extraBufferCapacity = Int.MAX_VALUE,
+        onBufferOverflow = BufferOverflow.SUSPEND,
+      )
+
+    val exceptionFlow = _exceptionFlow.asSharedFlow()
+
+    suspend fun update(result: Numbered<Result<DataConnectGrpcClient.OperationResult>>) {
+      result.obj.fold(
+        onSuccess = {
+          val deserializeResult = kotlin.runCatching { it.deserialize(deserializer) }
+          deserializeResult.fold(
+            onSuccess = {
+              _resultFlow.emit(Numbered(it, result.sequenceNumber))
+              _exceptionFlow.emit(Numbered(null, result.sequenceNumber))
+            },
+            onFailure = { _exceptionFlow.emit(Numbered(it, result.sequenceNumber)) }
+          )
+        },
+        onFailure = { _exceptionFlow.emit(Numbered(it, result.sequenceNumber)) },
+      )
+    }
   }
 }
 
@@ -138,20 +297,4 @@ private class QueryStates(
       queryStateByKey.remove(queryState.key)
     }
   }
-}
-
-private fun <V, D> DataConnectGrpcClient.OperationResult.toDataConnectResult(
-  ref: QueryRef<V, D>,
-  variables: V
-): DataConnectResult<V, D> {
-  if (data === null) {
-    // TODO: include the variables and error list in the thrown exception
-    throw DataConnectException("no data included in result: errors=${errors}")
-  }
-
-  return DataConnectResult(
-    variables = variables,
-    data = decodeFromStruct(ref.dataDeserializer, data),
-    errors = errors,
-  )
 }
