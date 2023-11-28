@@ -41,7 +41,7 @@ private constructor(private val impl: Impl<VariablesType, DataType>) {
   )
 }
 
-// See https://spec.graphql.org/October2021/#sec-Errors
+// See https://spec.graphql.org/draft/#sec-Errors
 class DataConnectError private constructor(private val impl: Impl) {
 
   internal constructor(
