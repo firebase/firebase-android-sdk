@@ -24,3 +24,16 @@ type Primitive @table {
   stringField: String!
   stringFieldNullable: String
 }
+
+type PrimitiveList @table {
+  id: ID!
+  idListNullable: [ID]
+  intList: [Int!]
+  intListNullable: [Int]
+  floatList: [Float!]
+  floatListNullable: [Float]
+  booleanList: [Boolean!]
+  booleanListNullable: [Boolean]
+  stringList: [String!]
+  stringListNullable: [String]
+}

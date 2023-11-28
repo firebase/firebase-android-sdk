@@ -16,42 +16,6 @@ mutation createPrimitive($data: Primitive_Data! @pick(fields: ["id", "idFieldNul
   primitive_insert(data: $data)
 }
 
-mutation deletePrimitive($id: ID!) @auth(is: PUBLIC) {
-  primitive_delete(id: $id)
-}
-
-mutation updateIntField($id: ID!, $data: Primitive_Data! @pick(fields: ["intField"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
-mutation updateIntFieldNullable($id: ID!, $data: Primitive_Data! @pick(fields: ["intFieldNullable"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
-mutation updateFloatField($id: ID!, $data: Primitive_Data! @pick(fields: ["floatField"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
-mutation updateFloatFieldNullable($id: ID!, $data: Primitive_Data! @pick(fields: ["floatFieldNullable"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
-mutation updateBooleanField($id: ID!, $data: Primitive_Data! @pick(fields: ["booleanField"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
-mutation updateBooleanFieldNullable($id: ID!, $data: Primitive_Data! @pick(fields: ["booleanFieldNullable"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
-mutation updateStringField($id: ID!, $data: Primitive_Data! @pick(fields: ["stringField"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
-mutation updateStringFieldNullable($id: ID!, $data: Primitive_Data! @pick(fields: ["stringFieldNullable"])) @auth(is: PUBLIC) {
-  primitive_update(id: $id, data: $data)
-}
-
 query getPrimitive($id: ID!) @auth(is: PUBLIC) {
   primitive(id: $id) {
     id
@@ -67,17 +31,36 @@ query getPrimitive($id: ID!) @auth(is: PUBLIC) {
   }
 }
 
-query getAllPrimitives @auth(is: PUBLIC) {
-  primitives {
+mutation createPrimitiveList($data: PrimitiveList_Data! @pick(fields: ["id", "idListNullable", "intList", "intListNullable", "floatList", "floatListNullable", "booleanList", "booleanListNullable", "stringList", "stringListNullable"])) @auth(is: PUBLIC) {
+  primitiveList_insert(data: $data)
+}
+
+query getPrimitiveList($id: ID!) @auth(is: PUBLIC) {
+  primitiveList(id: $id) {
     id
-    idFieldNullable
-    intField
-    intFieldNullable
-    floatField
-    floatFieldNullable
-    booleanField
-    booleanFieldNullable
-    stringField
-    stringFieldNullable
+    idListNullable
+    intList
+    intListNullable
+    floatList
+    floatListNullable
+    booleanList
+    booleanListNullable
+    stringList
+    stringListNullable
+  }
+}
+
+query getAllPrimitiveLists @auth(is: PUBLIC) {
+  primitiveLists {
+    id
+    idListNullable
+    intList
+    intListNullable
+    floatList
+    floatListNullable
+    booleanList
+    booleanListNullable
+    stringList
+    stringListNullable
   }
 }

@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-@file:OptIn(FlowPreview::class)
-
 package com.google.firebase.dataconnect
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.CreatePrimitiveMutation.execute
+import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
+import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetAllPrimitiveListsQuery.execute
+import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveListQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Data.Person
@@ -100,21 +100,25 @@ class QueryRefIntegrationTest {
   @Test
   fun executeWithAllPrimitiveGraphQLTypesInDataNoneNull() = runTest {
     allTypesSchema.createPrimitive.execute(
-      id = "TestId",
-      idFieldNullable = "TestNullableId",
-      intField = 42,
-      intFieldNullable = 43,
-      floatField = 123.45f,
-      floatFieldNullable = 678.91f,
-      booleanField = true,
-      booleanFieldNullable = false,
-      stringField = "TestString",
-      stringFieldNullable = "TestNullableString",
+      AllTypesSchema.CreatePrimitiveMutation.Variables(
+        AllTypesSchema.PrimitiveData(
+          id = "TestId",
+          idFieldNullable = "TestNullableId",
+          intField = 42,
+          intFieldNullable = 43,
+          floatField = 123.45f,
+          floatFieldNullable = 678.91f,
+          booleanField = true,
+          booleanFieldNullable = false,
+          stringField = "TestString",
+          stringFieldNullable = "TestNullableString"
+        )
+      )
     )
 
     val result = allTypesSchema.getPrimitive.execute(id = "TestId")
 
-    val primitive = result.data.primitive ?: error("result.data was null, but expected non")
+    val primitive = result.data.primitive ?: error("result.data.primitive is null")
     assertThat(primitive.id).isEqualTo("TestId")
     assertThat(primitive.idFieldNullable).isEqualTo("TestNullableId")
     assertThat(primitive.intField).isEqualTo(42)
@@ -125,30 +129,74 @@ class QueryRefIntegrationTest {
     assertThat(primitive.booleanFieldNullable).isEqualTo(false)
     assertThat(primitive.stringField).isEqualTo("TestString")
     assertThat(primitive.stringFieldNullable).isEqualTo("TestNullableString")
+    assertThat(result.errors).isEmpty()
   }
 
   @Test
   fun executeWithAllPrimitiveGraphQLTypesInDataNullablesAreNull() = runTest {
     allTypesSchema.createPrimitive.execute(
-      id = "TestId",
-      idFieldNullable = null,
-      intField = 42,
-      intFieldNullable = null,
-      floatField = 123.45f,
-      floatFieldNullable = null,
-      booleanField = true,
-      booleanFieldNullable = null,
-      stringField = "TestString",
-      stringFieldNullable = null,
+      AllTypesSchema.CreatePrimitiveMutation.Variables(
+        AllTypesSchema.PrimitiveData(
+          id = "TestId",
+          idFieldNullable = null,
+          intField = 42,
+          intFieldNullable = null,
+          floatField = 123.45f,
+          floatFieldNullable = null,
+          booleanField = true,
+          booleanFieldNullable = null,
+          stringField = "TestString",
+          stringFieldNullable = null
+        )
+      )
     )
 
     val result = allTypesSchema.getPrimitive.execute(id = "TestId")
 
-    val primitive = result.data.primitive ?: error("result.data was null, but expected non")
+    val primitive = result.data.primitive ?: error("result.data.primitive is null")
     assertThat(primitive.idFieldNullable).isNull()
     assertThat(primitive.intFieldNullable).isNull()
     assertThat(primitive.floatFieldNullable).isNull()
     assertThat(primitive.booleanFieldNullable).isNull()
     assertThat(primitive.stringFieldNullable).isNull()
+    assertThat(result.errors).isEmpty()
+  }
+
+  @Test
+  fun executeWithAllListOfPrimitiveGraphQLTypesInData() = runTest {
+    // NOTE: `null` list elements (a.k.a. "sparse arrays") are not supported: b/300331607
+    allTypesSchema.createPrimitiveList.execute(
+      AllTypesSchema.CreatePrimitiveListMutation.Variables(
+        AllTypesSchema.PrimitiveListData(
+          id = "TestId",
+          idListNullable = listOf("ddd", "eee"),
+          intList = listOf(42, 43, 44),
+          intListNullable = listOf(45, 46),
+          floatList = listOf(12.3f, 45.6f, 78.9f),
+          floatListNullable = listOf(98.7f, 65.4f),
+          booleanList = listOf(true, false, true, false),
+          booleanListNullable = listOf(false, true, false, true),
+          stringList = listOf("xxx", "yyy", "zzz"),
+          stringListNullable = listOf("qqq", "rrr"),
+        )
+      )
+    )
+
+    allTypesSchema.getAllPrimitiveLists.execute()
+
+    val result = allTypesSchema.getPrimitiveList.execute(id = "TestId")
+
+    val primitive = result.data.primitiveList ?: error("result.data.primitiveList is null")
+    assertThat(primitive.id).isEqualTo("TestId")
+    assertThat(primitive.idListNullable).containsExactly("ddd", "eee").inOrder()
+    assertThat(primitive.intList).containsExactly(42, 43, 44).inOrder()
+    assertThat(primitive.intListNullable).containsExactly(45, 46).inOrder()
+    assertThat(primitive.floatList).containsExactly(12.3f, 45.6f, 78.9f).inOrder()
+    assertThat(primitive.floatListNullable).containsExactly(98.7f, 65.4f).inOrder()
+    assertThat(primitive.booleanList).containsExactly(true, false, true, false).inOrder()
+    assertThat(primitive.booleanListNullable).containsExactly(false, true, false, true).inOrder()
+    assertThat(primitive.stringList).containsExactly("xxx", "yyy", "zzz").inOrder()
+    assertThat(primitive.stringListNullable).containsExactly("qqq", null, "rrr", null).inOrder()
+    assertThat(result.errors).isEmpty()
   }
 }

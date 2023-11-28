@@ -15,7 +15,6 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
@@ -38,50 +37,22 @@ class AllTypesSchema(private val dataConnect: FirebaseDataConnect) {
     dataConnect.installEmulatorSchema("testing_graphql_schemas/alltypes")
   }
 
-  object CreatePrimitiveMutation {
-    @Serializable
-    data class PrimitiveData(
-      val id: String,
-      val idFieldNullable: String?,
-      val intField: Int,
-      val intFieldNullable: Int?,
-      val floatField: Float,
-      val floatFieldNullable: Float?,
-      val booleanField: Boolean,
-      val booleanFieldNullable: Boolean?,
-      val stringField: String,
-      val stringFieldNullable: String?,
-    )
-    @Serializable data class Variables(val data: PrimitiveData)
+  @Serializable
+  data class PrimitiveData(
+    val id: String,
+    val idFieldNullable: String?,
+    val intField: Int,
+    val intFieldNullable: Int?,
+    val floatField: Float,
+    val floatFieldNullable: Float?,
+    val booleanField: Boolean,
+    val booleanFieldNullable: Boolean?,
+    val stringField: String,
+    val stringFieldNullable: String?,
+  )
 
-    suspend fun MutationRef<Variables, Unit>.execute(
-      id: String,
-      idFieldNullable: String?,
-      intField: Int,
-      intFieldNullable: Int?,
-      floatField: Float,
-      floatFieldNullable: Float?,
-      booleanField: Boolean,
-      booleanFieldNullable: Boolean?,
-      stringField: String,
-      stringFieldNullable: String?,
-    ) =
-      execute(
-        Variables(
-          PrimitiveData(
-            id = id,
-            idFieldNullable = idFieldNullable,
-            intField = intField,
-            intFieldNullable = intFieldNullable,
-            floatField = floatField,
-            floatFieldNullable = floatFieldNullable,
-            booleanField = booleanField,
-            booleanFieldNullable = booleanFieldNullable,
-            stringField = stringField,
-            stringFieldNullable = stringFieldNullable,
-          )
-        )
-      )
+  object CreatePrimitiveMutation {
+    @Serializable data class Variables(val data: PrimitiveData)
   }
 
   val createPrimitive =
@@ -94,22 +65,7 @@ class AllTypesSchema(private val dataConnect: FirebaseDataConnect) {
   object GetPrimitiveQuery {
     @Serializable data class Variables(val id: String)
 
-    @Serializable
-    data class Data(val primitive: PrimitiveData?) {
-      @Serializable
-      data class PrimitiveData(
-        val id: String,
-        val idFieldNullable: String?,
-        val intField: Int,
-        val intFieldNullable: Int?,
-        val floatField: Float,
-        val floatFieldNullable: Float?,
-        val booleanField: Boolean,
-        val booleanFieldNullable: Boolean?,
-        val stringField: String,
-        val stringFieldNullable: String?,
-      )
-    }
+    @Serializable data class Data(val primitive: PrimitiveData?)
 
     suspend fun QueryRef<Variables, Data>.execute(id: String) = execute(Variables(id = id))
   }
@@ -119,6 +75,59 @@ class AllTypesSchema(private val dataConnect: FirebaseDataConnect) {
       operationName = "getPrimitive",
       variablesSerializer = serializer<GetPrimitiveQuery.Variables>(),
       dataDeserializer = serializer<GetPrimitiveQuery.Data>()
+    )
+
+  @Serializable
+  data class PrimitiveListData(
+    val id: String,
+    val idListNullable: List<String?>,
+    val intList: List<Int>,
+    val intListNullable: List<Int?>,
+    val floatList: List<Float>,
+    val floatListNullable: List<Float?>,
+    val booleanList: List<Boolean>,
+    val booleanListNullable: List<Boolean?>,
+    val stringList: List<String>,
+    val stringListNullable: List<String?>,
+  )
+
+  object CreatePrimitiveListMutation {
+    @Serializable data class Variables(val data: PrimitiveListData)
+  }
+
+  val createPrimitiveList =
+    dataConnect.mutation(
+      operationName = "createPrimitiveList",
+      variablesSerializer = serializer<CreatePrimitiveListMutation.Variables>(),
+      dataDeserializer = serializer<Unit>()
+    )
+
+  object GetPrimitiveListQuery {
+    @Serializable data class Variables(val id: String)
+
+    @Serializable data class Data(val primitiveList: PrimitiveListData?)
+
+    suspend fun QueryRef<Variables, Data>.execute(id: String) = execute(Variables(id = id))
+  }
+
+  val getPrimitiveList =
+    dataConnect.query(
+      operationName = "getPrimitiveList",
+      variablesSerializer = serializer<GetPrimitiveListQuery.Variables>(),
+      dataDeserializer = serializer<GetPrimitiveListQuery.Data>()
+    )
+
+  object GetAllPrimitiveListsQuery {
+    @Serializable data class Data(val primitiveLists: List<PrimitiveListData>)
+
+    suspend fun QueryRef<Unit, Data>.execute() = execute(Unit)
+  }
+
+  val getAllPrimitiveLists =
+    dataConnect.query(
+      operationName = "getAllPrimitiveLists",
+      variablesSerializer = serializer<Unit>(),
+      dataDeserializer = serializer<GetAllPrimitiveListsQuery.Data>()
     )
 
   companion object {
