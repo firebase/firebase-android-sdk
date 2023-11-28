@@ -125,7 +125,7 @@ class PersonSchema(private val dataConnect: FirebaseDataConnect) {
   companion object {
     const val OPERATION_SET = "ops"
 
-    fun TestDataConnectFactory.newPersonSchema() =
-      PersonSchema(newInstance(operationSet = OPERATION_SET))
+    suspend fun TestDataConnectFactory.installPersonSchema(): PersonSchema =
+      PersonSchema(newInstance(operationSet = OPERATION_SET)).apply { installEmulatorSchema() }
   }
 }

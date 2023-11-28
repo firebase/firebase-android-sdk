@@ -124,7 +124,7 @@ class AllTypesSchema(private val dataConnect: FirebaseDataConnect) {
   companion object {
     const val OPERATION_SET = "ops"
 
-    fun TestDataConnectFactory.newAllTypesSchema() =
-      AllTypesSchema(newInstance(operationSet = OPERATION_SET))
+    suspend fun TestDataConnectFactory.installAllTypesSchema(): AllTypesSchema =
+      AllTypesSchema(newInstance(operationSet = OPERATION_SET)).apply { installEmulatorSchema() }
   }
 }

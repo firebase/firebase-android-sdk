@@ -43,6 +43,14 @@ class DataConnectResultTest {
   }
 
   @Test
+  fun `toString() should begin with the class name and contain text in parentheses`() {
+    val dataConnectResult =
+      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+    assertThat(dataConnectResult.toString()).startsWith("DataConnectResult(")
+    assertThat(dataConnectResult.toString()).endsWith(")")
+  }
+
+  @Test
   fun `toString() should incorporate the variables`() {
     val variables =
       object {

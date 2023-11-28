@@ -50,11 +50,11 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   override fun hashCode() = values.hashCode()
 
   override fun toString() =
-    "FirebaseDataConnectSettings{" +
+    "FirebaseDataConnectSettings(" +
       "hostName=$hostName, " +
       "port=$port, " +
       "sslEnabled=$sslEnabled" +
-      "}"
+      ")"
 }
 
 // Use a data class internally to store the settings to get the convenience of the equals(),

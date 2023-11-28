@@ -20,19 +20,16 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.Companion.newAllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.CreatePrimitiveMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveQuery.execute
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.newPersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Data.Person
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.test.*
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,19 +37,16 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class QueryRefIntegrationTest {
 
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+  @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val personSchema: PersonSchema by lazy {
-    dataConnectFactory.newPersonSchema().also { runBlocking { it.installEmulatorSchema() } }
-  }
-
-  private val allTypesSchema: AllTypesSchema by lazy {
-    dataConnectFactory.newAllTypesSchema().also { runBlocking { it.installEmulatorSchema() } }
-  }
+  private val personSchema
+    get() = dataConnectFactory.personSchema
+  private val allTypesSchema
+    get() = dataConnectFactory.allTypesSchema
 
   @Test
-  fun executeWithASingleResultReturnsTheCorrectResult(): Unit = runBlocking {
+  fun executeWithASingleResultReturnsTheCorrectResult() = runTest {
     personSchema.createPerson.execute(id = "TestId1", name = "TestName1", age = 42)
     personSchema.createPerson.execute(id = "TestId2", name = "TestName2", age = 43)
     personSchema.createPerson.execute(id = "TestId3", name = "TestName3", age = 44)
@@ -65,7 +59,7 @@ class QueryRefIntegrationTest {
   }
 
   @Test
-  fun executeWithASingleResultReturnsTheUpdatedResult(): Unit = runBlocking {
+  fun executeWithASingleResultReturnsTheUpdatedResult() = runTest {
     personSchema.createPerson.execute(id = "TestId", name = "TestName", age = 42)
     personSchema.updatePerson.execute(id = "TestId", name = "NewTestName", age = 99)
 
@@ -77,7 +71,7 @@ class QueryRefIntegrationTest {
   }
 
   @Test
-  fun executeWithASingleResultReturnsNullIfNotFound(): Unit = runBlocking {
+  fun executeWithASingleResultReturnsNullIfNotFound() = runTest {
     personSchema.createPerson.execute(id = "TestId", name = "TestName", age = 42)
 
     val result = personSchema.getPerson.execute(id = "NotTheTestId")
@@ -87,7 +81,7 @@ class QueryRefIntegrationTest {
   }
 
   @Test
-  fun executeWithAListResultReturnsAllResults(): Unit = runBlocking {
+  fun executeWithAListResultReturnsAllResults() = runTest {
     personSchema.createPerson.execute(id = "TestId1", name = "TestName1", age = 42)
     personSchema.createPerson.execute(id = "TestId2", name = "TestName2", age = 43)
     personSchema.createPerson.execute(id = "TestId3", name = "TestName3", age = 44)
@@ -96,15 +90,15 @@ class QueryRefIntegrationTest {
 
     assertThat(result.data.people)
       .containsExactly(
-        PersonSchema.GetAllPeopleQuery.Data.Person(id = "TestId1", name = "TestName1", age = 42),
-        PersonSchema.GetAllPeopleQuery.Data.Person(id = "TestId2", name = "TestName2", age = 43),
-        PersonSchema.GetAllPeopleQuery.Data.Person(id = "TestId3", name = "TestName3", age = 44),
+        Person(id = "TestId1", name = "TestName1", age = 42),
+        Person(id = "TestId2", name = "TestName2", age = 43),
+        Person(id = "TestId3", name = "TestName3", age = 44),
       )
     assertThat(result.errors).isEmpty()
   }
 
   @Test
-  fun executeWithAllPrimitiveGraphQLTypesInDataNoneNull(): Unit = runBlocking {
+  fun executeWithAllPrimitiveGraphQLTypesInDataNoneNull() = runTest {
     allTypesSchema.createPrimitive.execute(
       id = "TestId",
       idFieldNullable = "TestNullableId",
@@ -134,7 +128,7 @@ class QueryRefIntegrationTest {
   }
 
   @Test
-  fun executeWithAllPrimitiveGraphQLTypesInDataNullablesAreNull(): Unit = runBlocking {
+  fun executeWithAllPrimitiveGraphQLTypesInDataNullablesAreNull() = runTest {
     allTypesSchema.createPrimitive.execute(
       id = "TestId",
       idFieldNullable = null,

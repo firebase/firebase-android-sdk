@@ -223,6 +223,13 @@ class FirebaseDataConnectSettingsTest {
   }
 
   @Test
+  fun `toString() should begin with the class name and contain text in parentheses`() {
+    val toStringResult = FirebaseDataConnectSettings.defaults.toString()
+    assertThat(toStringResult).startsWith("FirebaseDataConnectSettings(")
+    assertThat(toStringResult).endsWith(")")
+  }
+
+  @Test
   fun `toString() should return a string that contains the property values`() {
     val settings =
       FirebaseDataConnectSettings.defaults.copy(

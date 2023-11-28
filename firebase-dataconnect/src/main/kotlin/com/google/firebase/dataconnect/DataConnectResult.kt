@@ -32,7 +32,7 @@ private constructor(private val impl: Impl<VariablesType, DataType>) {
   override fun hashCode() = impl.hashCode()
   override fun equals(other: Any?) =
     (other as? DataConnectResult<*, *>)?.let { it.impl == impl } ?: false
-  override fun toString() = impl.toString()
+  override fun toString() = "DataConnectResult(variables=$variables, data=$data, errors=$errors)"
 
   private data class Impl<VariablesType, DataType>(
     val variables: VariablesType,
