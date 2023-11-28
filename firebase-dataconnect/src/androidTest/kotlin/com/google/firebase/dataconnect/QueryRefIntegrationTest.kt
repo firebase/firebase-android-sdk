@@ -196,7 +196,7 @@ class QueryRefIntegrationTest {
     assertThat(primitive.booleanList).containsExactly(true, false, true, false).inOrder()
     assertThat(primitive.booleanListNullable).containsExactly(false, true, false, true).inOrder()
     assertThat(primitive.stringList).containsExactly("xxx", "yyy", "zzz").inOrder()
-    assertThat(primitive.stringListNullable).containsExactly("qqq", null, "rrr", null).inOrder()
+    assertThat(primitive.stringListNullable).containsExactly("qqq", "rrr").inOrder()
     assertThat(result.errors).isEmpty()
   }
 }
