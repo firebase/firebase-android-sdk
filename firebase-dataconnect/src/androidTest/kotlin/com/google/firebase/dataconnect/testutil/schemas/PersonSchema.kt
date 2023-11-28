@@ -85,8 +85,7 @@ class PersonSchema(private val dataConnect: FirebaseDataConnect) {
     )
 
   object GetPersonQuery {
-    @Serializable
-    data class Variables(val id: String, val name: String? = null, val age: Int? = null)
+    @Serializable data class Variables(val id: String)
 
     @Serializable
     data class Data(val person: Person?) {
