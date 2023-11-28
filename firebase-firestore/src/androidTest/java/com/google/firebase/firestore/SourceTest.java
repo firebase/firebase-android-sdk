@@ -624,7 +624,7 @@ public final class SourceTest {
             .setSource(ListenSource.CACHE)
             .build();
     ListenerRegistration registration =
-            query.addSnapshotListener(
+        query.addSnapshotListener(
             options,
             new EventListener<QuerySnapshot>() {
               public void onEvent(QuerySnapshot snapshot, FirebaseFirestoreException e) {
@@ -640,13 +640,13 @@ public final class SourceTest {
     DocumentReference docRef = db.collection("cities").document("SF");
     SnapshotListenOptions options = new SnapshotListenOptions.Builder().build();
     ListenerRegistration registration =
-            docRef.addSnapshotListener(
-                    options, // or omit this `options` parameter
-                    new EventListener<DocumentSnapshot>() {
-                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
-                        assertFalse(snapshot.exists());
-                      }
-                    });
+        docRef.addSnapshotListener(
+            options, // or omit this `options` parameter
+            new EventListener<DocumentSnapshot>() {
+              public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                assertFalse(snapshot.exists());
+              }
+            });
   }
 
   @Test
@@ -655,15 +655,15 @@ public final class SourceTest {
 
     DocumentReference docRef = db.collection("cities").document("SF");
     SnapshotListenOptions options =
-            new SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).build();
+        new SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).build();
     ListenerRegistration registration =
-            docRef.addSnapshotListener(
-                    options,
-                    new EventListener<DocumentSnapshot>() {
-                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
-                        assertFalse(snapshot.exists());
-                      }
-                    });
+        docRef.addSnapshotListener(
+            options,
+            new EventListener<DocumentSnapshot>() {
+              public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                assertFalse(snapshot.exists());
+              }
+            });
   }
 
   @Test
@@ -672,15 +672,15 @@ public final class SourceTest {
 
     DocumentReference docRef = db.collection("cities").document("SF");
     SnapshotListenOptions options =
-            new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
     ListenerRegistration registration =
-            docRef.addSnapshotListener(
-                    options,
-                    new EventListener<DocumentSnapshot>() {
-                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
-                        assertFalse(snapshot.exists());
-                      }
-                    });
+        docRef.addSnapshotListener(
+            options,
+            new EventListener<DocumentSnapshot>() {
+              public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                assertFalse(snapshot.exists());
+              }
+            });
   }
 
   @Test
@@ -689,17 +689,17 @@ public final class SourceTest {
 
     DocumentReference docRef = db.collection("cities").document("SF");
     SnapshotListenOptions options =
-            new SnapshotListenOptions.Builder()
-                    .setMetadataChanges(MetadataChanges.INCLUDE)
-                    .setSource(ListenSource.CACHE)
-                    .build();
+        new SnapshotListenOptions.Builder()
+            .setMetadataChanges(MetadataChanges.INCLUDE)
+            .setSource(ListenSource.CACHE)
+            .build();
     ListenerRegistration registration =
-            docRef.addSnapshotListener(
-                    options,
-                    new EventListener<DocumentSnapshot>() {
-                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
-                        assertFalse(snapshot.exists());
-                      }
-                    });
+        docRef.addSnapshotListener(
+            options,
+            new EventListener<DocumentSnapshot>() {
+              public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                assertFalse(snapshot.exists());
+              }
+            });
   }
 }
