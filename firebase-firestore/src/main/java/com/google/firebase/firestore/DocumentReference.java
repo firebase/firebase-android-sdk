@@ -431,7 +431,8 @@ public class DocumentReference {
     checkNotNull(executor, "Provided executor must not be null.");
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
-    return addSnapshotListenerInternal(executor, internalOptions(metadataChanges), null, listener);
+    return addSnapshotListenerInternal(
+        executor, internalOptions(metadataChanges, ListenSource.DEFAULT), null, listener);
   }
 
   /**
@@ -455,7 +456,46 @@ public class DocumentReference {
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
     return addSnapshotListenerInternal(
-        Executors.DEFAULT_CALLBACK_EXECUTOR, internalOptions(metadataChanges), activity, listener);
+        Executors.DEFAULT_CALLBACK_EXECUTOR,
+        internalOptions(metadataChanges, ListenSource.DEFAULT),
+        activity,
+        listener);
+  }
+
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull SnapshotListenOptions options, @NonNull EventListener<DocumentSnapshot> listener) {
+    return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, options, listener);
+  }
+
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull Executor executor,
+      @NonNull SnapshotListenOptions options,
+      @NonNull EventListener<DocumentSnapshot> listener) {
+    checkNotNull(executor, "Provided executor must not be null.");
+    checkNotNull(options, "Provided options value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        executor,
+        internalOptions(options.getMetadataChanges(), options.getSource()),
+        null,
+        listener);
+  }
+
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull Activity activity,
+      @NonNull SnapshotListenOptions options,
+      @NonNull EventListener<DocumentSnapshot> listener) {
+    checkNotNull(activity, "Provided activity must not be null.");
+    checkNotNull(options, "Provided MetadataChanges value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        Executors.DEFAULT_CALLBACK_EXECUTOR,
+        internalOptions(options.getMetadataChanges(), options.getSource()),
+        activity,
+        listener);
   }
 
   /**
@@ -541,12 +581,17 @@ public class DocumentReference {
     return com.google.firebase.firestore.core.Query.atPath(key.getPath());
   }
 
-  /** Converts the public API MetadataChanges object to the internal options object. */
-  private static ListenOptions internalOptions(MetadataChanges metadataChanges) {
+  /**
+   * Converts the public API MetadataChanges and SnapshotListenSource object to the internal options
+   * object.
+   */
+  private static ListenOptions internalOptions(
+      MetadataChanges metadataChanges, ListenSource source) {
     ListenOptions internalOptions = new ListenOptions();
     internalOptions.includeDocumentMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.includeQueryMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.waitForSyncWhenOnline = false;
+    internalOptions.source = source;
     return internalOptions;
   }
 }

@@ -14,10 +14,12 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocumentWithData;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.toDataMap;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
@@ -559,5 +561,145 @@ public final class SourceTest {
     waitFor(colRef.getFirestore().disableNetwork());
     Task<QuerySnapshot> qrySnapTask = colRef.get(Source.SERVER);
     waitForException(qrySnapTask);
+  }
+
+  // Query onSnapshot listener from cache demo:
+  @Test
+  public void QueryDemo_addSnapshotListenerWithDefaultOptions() {
+    FirebaseFirestore db = testFirestore();
+    Query query = db.collection("cities").whereEqualTo("state", "CA");
+    SnapshotListenOptions options = new SnapshotListenOptions.Builder().build();
+    ListenerRegistration registration =
+        query.addSnapshotListener(
+            options, // or omit this `options` parameter
+            new EventListener<QuerySnapshot>() {
+              public void onEvent(QuerySnapshot snapshot, FirebaseFirestoreException e) {
+                assertThat(snapshot.size()).isEqualTo(0);
+              }
+            });
+  }
+
+  @Test
+  public void QueryDemo_addSnapshotListenerWithMetadataChanges() {
+    FirebaseFirestore db = testFirestore();
+
+    Query query = db.collection("cities").whereEqualTo("state", "CA");
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).build();
+    ListenerRegistration registration =
+        query.addSnapshotListener(
+            options,
+            new EventListener<QuerySnapshot>() {
+              public void onEvent(QuerySnapshot snapshot, FirebaseFirestoreException e) {
+                assertThat(snapshot.size()).isEqualTo(0);
+              }
+            });
+  }
+
+  @Test
+  public void QueryDemo_addSnapshotListenerFromCache() {
+    FirebaseFirestore db = testFirestore();
+
+    Query query = db.collection("cities").whereEqualTo("state", "CA");
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    ListenerRegistration registration =
+        query.addSnapshotListener(
+            options,
+            new EventListener<QuerySnapshot>() {
+              public void onEvent(QuerySnapshot snapshot, FirebaseFirestoreException e) {
+                assertThat(snapshot.size()).isEqualTo(0);
+              }
+            });
+  }
+
+  @Test
+  public void QueryDemo_addSnapshotListenerFromCacheAndIncludeMetadataChanges() {
+    FirebaseFirestore db = testFirestore();
+
+    Query query = db.collection("cities").whereEqualTo("state", "CA");
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder()
+            .setMetadataChanges(MetadataChanges.INCLUDE)
+            .setSource(ListenSource.CACHE)
+            .build();
+    ListenerRegistration registration =
+            query.addSnapshotListener(
+            options,
+            new EventListener<QuerySnapshot>() {
+              public void onEvent(QuerySnapshot snapshot, FirebaseFirestoreException e) {
+                assertThat(snapshot.size()).isEqualTo(0);
+              }
+            });
+  }
+
+  // DocumentReference onSnapshot listener from cache demo:
+  @Test
+  public void DocumentReferenceDemo_addSnapshotListenerWithDefaultOptions() {
+    FirebaseFirestore db = testFirestore();
+    DocumentReference docRef = db.collection("cities").document("SF");
+    SnapshotListenOptions options = new SnapshotListenOptions.Builder().build();
+    ListenerRegistration registration =
+            docRef.addSnapshotListener(
+                    options, // or omit this `options` parameter
+                    new EventListener<DocumentSnapshot>() {
+                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                        assertFalse(snapshot.exists());
+                      }
+                    });
+  }
+
+  @Test
+  public void DocumentReferenceDemo_addSnapshotListenerWithMetadataChanges() {
+    FirebaseFirestore db = testFirestore();
+
+    DocumentReference docRef = db.collection("cities").document("SF");
+    SnapshotListenOptions options =
+            new SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).build();
+    ListenerRegistration registration =
+            docRef.addSnapshotListener(
+                    options,
+                    new EventListener<DocumentSnapshot>() {
+                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                        assertFalse(snapshot.exists());
+                      }
+                    });
+  }
+
+  @Test
+  public void DocumentReferenceDemo_addSnapshotListenerFromCache() {
+    FirebaseFirestore db = testFirestore();
+
+    DocumentReference docRef = db.collection("cities").document("SF");
+    SnapshotListenOptions options =
+            new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    ListenerRegistration registration =
+            docRef.addSnapshotListener(
+                    options,
+                    new EventListener<DocumentSnapshot>() {
+                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                        assertFalse(snapshot.exists());
+                      }
+                    });
+  }
+
+  @Test
+  public void DocumentReferenceDemo_addSnapshotListenerFromCacheAndIncludeMetadataChanges() {
+    FirebaseFirestore db = testFirestore();
+
+    DocumentReference docRef = db.collection("cities").document("SF");
+    SnapshotListenOptions options =
+            new SnapshotListenOptions.Builder()
+                    .setMetadataChanges(MetadataChanges.INCLUDE)
+                    .setSource(ListenSource.CACHE)
+                    .build();
+    ListenerRegistration registration =
+            docRef.addSnapshotListener(
+                    options,
+                    new EventListener<DocumentSnapshot>() {
+                      public void onEvent(DocumentSnapshot snapshot, FirebaseFirestoreException e) {
+                        assertFalse(snapshot.exists());
+                      }
+                    });
   }
 }

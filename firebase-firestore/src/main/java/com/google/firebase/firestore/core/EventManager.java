@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.SyncEngine.SyncEngineCallback;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
@@ -53,6 +54,8 @@ public final class EventManager implements SyncEngineCallback {
 
     /** Wait for a sync with the server when online, but still raise events while offline. */
     public boolean waitForSyncWhenOnline;
+
+    public ListenSource source;
   }
 
   private final SyncEngine syncEngine;
