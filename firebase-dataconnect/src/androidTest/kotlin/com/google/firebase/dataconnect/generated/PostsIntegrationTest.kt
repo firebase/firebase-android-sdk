@@ -39,7 +39,7 @@ import org.junit.runner.RunWith
 
 @OptIn(FlowPreview::class)
 @RunWith(AndroidJUnit4::class)
-class PostsTest {
+class PostsIntegrationTest {
 
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()

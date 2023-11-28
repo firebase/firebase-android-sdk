@@ -40,7 +40,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class QuerySubscriptionTest {
+class QuerySubscriptionIntegrationTest {
 
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
