@@ -28,7 +28,6 @@ import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationStrategy
 
 internal class DataConnectGrpcClient(
   context: Context,
@@ -89,6 +88,7 @@ internal class DataConnectGrpcClient(
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
   data class OperationResult(val data: Struct?, val errors: List<DataConnectError>)
+  data class DeserialzedOperationResult<T>(val data: T, val errors: List<DataConnectError>)
 
   suspend fun executeQuery(operationName: String, variables: Struct): OperationResult {
     val request = executeQueryRequest {
@@ -107,25 +107,19 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  suspend fun <VariablesType, DataType> executeMutation(
-    operationName: String,
-    variables: VariablesType,
-    variablesSerializer: SerializationStrategy<VariablesType>,
-    dataDeserializer: DeserializationStrategy<DataType>
-  ): DataConnectResult<VariablesType, DataType> {
+  suspend fun executeMutation(operationName: String, variables: Struct): OperationResult {
     val request = executeMutationRequest {
       this.name = requestName
       this.operationName = operationName
-      this.variables = encodeToStruct(variablesSerializer, variables)
+      this.variables = variables
     }
 
     logger.debug { "executeMutation() sending request: $request" }
     val response = grpcStub.executeMutation(request)
     logger.debug { "executeMutation() got response: $response" }
 
-    return DataConnectResult(
-      variables = variables,
-      data = response.data.decode(dataDeserializer),
+    return OperationResult(
+      data = if (response.hasData()) response.data else null,
       errors = response.errorsList.map { it.toDataConnectError() }
     )
   }
@@ -137,10 +131,10 @@ internal class DataConnectGrpcClient(
   }
 }
 
-fun <T> Struct.decode(deserializer: DeserializationStrategy<T>) =
+internal fun <T> Struct.decode(deserializer: DeserializationStrategy<T>) =
   decodeFromStruct(deserializer, this)
 
-fun ListValue.decodePath() =
+internal fun ListValue.decodePath() =
   valuesList.map {
     when (val kind = it.kindCase) {
       Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
@@ -149,5 +143,22 @@ fun ListValue.decodePath() =
     }
   }
 
-fun GraphqlError.toDataConnectError() =
+internal fun GraphqlError.toDataConnectError() =
   DataConnectError(message = message, path = path.decodePath(), extensions = emptyMap())
+
+internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
+  dataDeserializer: DeserializationStrategy<T>
+): DataConnectGrpcClient.DeserialzedOperationResult<T> {
+  if (data === null) {
+    // TODO: include the variables and error list in the thrown exception
+    throw DataConnectException("no data included in result: errors=${errors}")
+  }
+  return DataConnectGrpcClient.DeserialzedOperationResult(
+    data = decodeFromStruct(dataDeserializer, data),
+    errors = errors
+  )
+}
+
+internal fun <V, D> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectResult(
+  variables: V
+) = DataConnectResult(variables = variables, data = data, errors = errors)

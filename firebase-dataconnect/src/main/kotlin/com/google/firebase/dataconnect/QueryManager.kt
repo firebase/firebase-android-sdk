@@ -13,6 +13,8 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.DataConnectGrpcClient.DeserialzedOperationResult
+import com.google.firebase.dataconnect.DataConnectGrpcClient.OperationResult
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CoroutineScope
@@ -56,11 +58,6 @@ internal class QueryManager(grpcClient: DataConnectGrpcClient, coroutineScope: C
       it.collectExceptions(ref.dataDeserializer, collector)
     }
   }
-
-  private companion object {
-    fun <V, D> QueryState.ExecuteResult<D>.toDataConnectResult(variables: V) =
-      DataConnectResult(variables = variables, data = data, errors = errors)
-  }
 }
 
 private data class QueryStateKey(val operationName: String, val variablesSha512: String)
@@ -73,12 +70,12 @@ private class QueryState(
   private val coroutineScope: CoroutineScope,
 ) {
   private val mutex = Mutex()
-  private var job: Deferred<DataConnectGrpcClient.OperationResult>? = null
+  private var job: Deferred<OperationResult>? = null
 
   private val dataDeserializers = CopyOnWriteArrayList<DeserialzerInfo<*>>()
 
   private val operationResultFlow =
-    MutableSharedFlow<DataConnectGrpcClient.OperationResult>(
+    MutableSharedFlow<OperationResult>(
       replay = 1,
       extraBufferCapacity = Int.MAX_VALUE,
       onBufferOverflow = BufferOverflow.SUSPEND
@@ -91,9 +88,9 @@ private class QueryState(
       onBufferOverflow = BufferOverflow.SUSPEND
     )
 
-  data class ExecuteResult<T>(val data: T, val errors: List<DataConnectError>)
-
-  suspend fun <T> execute(dataDeserializer: DeserializationStrategy<T>): ExecuteResult<T> {
+  suspend fun <T> execute(
+    dataDeserializer: DeserializationStrategy<T>
+  ): DeserialzedOperationResult<T> {
     // Wait for the current job to complete (if any), and ignore its result. Waiting avoids running
     // multiple queries in parallel, which would not scale.
     val originalJob = mutex.withLock { job }?.also { it.join() }
@@ -120,7 +117,7 @@ private class QueryState(
     return newJob.await().deserialize(dataDeserializer)
   }
 
-  private suspend fun doExecute(): DataConnectGrpcClient.OperationResult {
+  private suspend fun doExecute(): OperationResult {
     val executeQueryResult =
       kotlin.runCatching {
         grpcClient.executeQuery(operationName = operationName, variables = variables)
@@ -144,7 +141,7 @@ private class QueryState(
   suspend fun <T, R> collectResults(
     dataDeserializer: DeserializationStrategy<T>,
     collector: FlowCollector<R>,
-    mapResult: ExecuteResult<T>.() -> R
+    mapResult: DeserialzedOperationResult<T>.() -> R
   ) =
     mutex
       .withLock { registerDataDeserializer(dataDeserializer) }
@@ -171,21 +168,9 @@ private class QueryState(
     dataDeserializers.firstOrNull { it.deserializer === dataDeserializer } as? DeserialzerInfo<T>
       ?: DeserialzerInfo(dataDeserializer).also { dataDeserializers.add(it) }
 
-  private companion object {
-    fun <T> DataConnectGrpcClient.OperationResult.deserialize(
-      dataDeserializer: DeserializationStrategy<T>
-    ): ExecuteResult<T> {
-      if (data === null) {
-        // TODO: include the variables and error list in the thrown exception
-        throw DataConnectException("no data included in result: errors=${errors}")
-      }
-      return ExecuteResult(data = decodeFromStruct(dataDeserializer, data), errors = errors)
-    }
-  }
-
   private class DeserialzerInfo<T>(val deserializer: DeserializationStrategy<T>) {
     private val _resultFlow =
-      MutableSharedFlow<ExecuteResult<T>>(
+      MutableSharedFlow<DeserialzedOperationResult<T>>(
         replay = 1,
         extraBufferCapacity = Int.MAX_VALUE,
         onBufferOverflow = BufferOverflow.SUSPEND,
@@ -202,7 +187,7 @@ private class QueryState(
 
     val exceptionFlow = _exceptionFlow.asSharedFlow()
 
-    suspend fun update(result: Result<DataConnectGrpcClient.OperationResult>) {
+    suspend fun update(result: Result<OperationResult>) {
       result.fold(
         onSuccess = {
           val deserializeResult = kotlin.runCatching { it.deserialize(deserializer) }

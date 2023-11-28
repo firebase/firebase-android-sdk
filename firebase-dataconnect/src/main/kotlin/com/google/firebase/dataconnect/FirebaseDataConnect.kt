@@ -107,14 +107,12 @@ internal constructor(
     variables: V
   ): DataConnectResult<V, D> =
     withContext(sequentialDispatcher) { grpcClient }
-      .run {
-        executeMutation(
-          operationName = ref.operationName,
-          variables = variables,
-          variablesSerializer = ref.variablesSerializer,
-          dataDeserializer = ref.dataDeserializer
-        )
-      }
+      .executeMutation(
+        operationName = ref.operationName,
+        variables = encodeToStruct(ref.variablesSerializer, variables)
+      )
+      .deserialize(ref.dataDeserializer)
+      .toDataConnectResult(variables)
 
   override fun close() {
     logger.debug { "close() called" }
