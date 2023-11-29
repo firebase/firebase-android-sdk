@@ -21,6 +21,7 @@ import com.google.firebase.app
 import com.google.firebase.concurrent.FirebaseExecutors
 import java.io.Closeable
 import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -56,7 +57,10 @@ internal constructor(
     CoroutineScope(
       SupervisorJob() +
         nonBlockingExecutor.asCoroutineDispatcher() +
-        CoroutineName("FirebaseDataConnect")
+        CoroutineName("FirebaseDataConnect") +
+        CoroutineExceptionHandler { coroutineContext, throwable ->
+          logger.warn(throwable) { "uncaught exception from a coroutine" }
+        }
     )
 
   // Dispatcher used to access `this.closed` and `this.grpcClient`.
