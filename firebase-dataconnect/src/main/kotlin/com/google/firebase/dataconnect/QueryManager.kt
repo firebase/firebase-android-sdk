@@ -119,9 +119,7 @@ private class QueryState(
 
   private suspend fun doExecute(): OperationResult {
     val executeQueryResult =
-      kotlin.runCatching {
-        grpcClient.executeQuery(operationName = operationName, variables = variables)
-      }
+      grpcClient.runCatching { executeQuery(operationName = operationName, variables = variables) }
 
     mutex.withLock { dataDeserializers.iterator() }.forEach { it.update(executeQueryResult) }
 
