@@ -15,7 +15,6 @@ package com.google.firebase.dataconnect
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseAppLifecycleListener
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -27,19 +26,12 @@ internal class FirebaseDataConnectFactory(
   private val nonBlockingExecutor: Executor,
 ) {
 
-  private val firebaseAppLifecycleListener = FirebaseAppLifecycleListener { _, _ -> close() }
   init {
-    firebaseApp.addLifecycleEventListener(firebaseAppLifecycleListener)
+    firebaseApp.addLifecycleEventListener { _, _ -> close() }
   }
 
-  private data class InstanceCacheKey(
-    val serviceId: String,
-    val location: String,
-    val operationSet: String,
-  )
-
   private val lock = ReentrantLock()
-  private val instancesByCacheKey = mutableMapOf<InstanceCacheKey, FirebaseDataConnect>()
+  private val instances = mutableMapOf<FirebaseDataConnectInstanceKey, FirebaseDataConnect>()
   private var closed = false
 
   fun get(
@@ -48,82 +40,118 @@ internal class FirebaseDataConnectFactory(
   ): FirebaseDataConnect {
     val key =
       serviceConfig.run {
-        InstanceCacheKey(serviceId = serviceId, location = location, operationSet = operationSet)
+        FirebaseDataConnectInstanceKey(
+          serviceId = serviceId,
+          location = location,
+          operationSet = operationSet
+        )
       }
+
     lock.withLock {
       if (closed) {
         throw IllegalStateException("FirebaseApp has been deleted")
       }
-      val cachedInstance = instancesByCacheKey[key]
+
+      val cachedInstance = instances[key]
       if (cachedInstance !== null) {
-        if (settings !== null && settings != cachedInstance.settings) {
-          throw IllegalArgumentException(
-            "The cached FirebaseDataConnect instance ($cachedInstance)" +
-              " must have the same settings as the specified settings; however, they are different" +
-              " (cached settings: ${cachedInstance.settings}, specified settings: $settings)"
-          )
-        }
-        if (serviceConfig.revision != cachedInstance.serviceConfig.revision) {
-          throw IllegalArgumentException(
-            "The cached FirebaseDataConnect instance ($cachedInstance)" +
-              " must have the same 'revision' as the specified ServiceConfig; however, they are" +
-              " different (cached revision: ${cachedInstance.serviceConfig.revision}," +
-              " specified revision: ${serviceConfig.revision})"
-          )
-        }
+        throwIfIncompatible(key, cachedInstance, serviceConfig, settings)
         return cachedInstance
       }
 
-      val projectId = firebaseApp.options.projectId ?: "<unspecified project ID>"
-      val newInstance =
-        FirebaseDataConnect(
-          context = context,
-          app = firebaseApp,
-          projectId = projectId,
-          serviceConfig = serviceConfig,
-          blockingExecutor = blockingExecutor,
-          nonBlockingExecutor = nonBlockingExecutor,
-          creator = this,
-          settings = settings ?: FirebaseDataConnectSettings.defaults
-        )
-      instancesByCacheKey[key] = newInstance
+      val newInstance = FirebaseDataConnect.newInstance(serviceConfig, settings)
+      instances[key] = newInstance
       return newInstance
     }
   }
 
+  private fun FirebaseDataConnect.Companion.newInstance(
+    serviceConfig: FirebaseDataConnect.ServiceConfig,
+    settings: FirebaseDataConnectSettings?
+  ) =
+    FirebaseDataConnect(
+      context = context,
+      app = firebaseApp,
+      projectId = firebaseApp.options.projectId ?: "<unspecified project ID>",
+      serviceConfig = serviceConfig,
+      blockingExecutor = blockingExecutor,
+      nonBlockingExecutor = nonBlockingExecutor,
+      creator = this@FirebaseDataConnectFactory,
+      settings = settings ?: FirebaseDataConnectSettings.defaults,
+    )
+
   fun remove(instance: FirebaseDataConnect) {
     lock.withLock {
-      val entries = instancesByCacheKey.entries.filter { it.value === instance }
-      if (entries.isEmpty()) {
-        return
-      } else if (entries.size == 1) {
-        instancesByCacheKey.remove(entries[0].key)
-      } else {
-        throw IllegalStateException(
-          "internal error: FirebaseDataConnect instance $instance" +
-            "maps to more than one key: ${entries.map { it.key }.joinToString(", ")}"
-        )
+      val keysForInstance = instances.entries.filter { it.value === instance }.map { it.key }
+
+      when (keysForInstance.size) {
+        0 -> {}
+        1 -> instances.remove(keysForInstance[0])
+        else ->
+          throw IllegalStateException(
+            "internal error: FirebaseDataConnect instance $instance " +
+              "maps to ${keysForInstance.size} keys, but expected at most 1: " +
+              keysForInstance.joinToString(", ")
+          )
       }
     }
   }
 
   private fun close() {
-    val instances = mutableListOf<FirebaseDataConnect>()
-    lock.withLock {
-      closed = true
-      instances.addAll(instancesByCacheKey.values)
-    }
+    val instanceList =
+      lock.withLock {
+        closed = true
+        instances.values.toList()
+      }
 
-    instances.forEach { instance -> instance.close() }
+    instanceList.forEach(FirebaseDataConnect::close)
 
     lock.withLock {
-      if (instancesByCacheKey.isNotEmpty()) {
+      if (instances.isNotEmpty()) {
         throw IllegalStateException(
-          "instances contains ${instances.size} instances " +
-            "after calling terminate() on all FirebaseDataConnect instances, " +
+          "internal error: 'instances' contains ${instances.size} elements " +
+            "after calling close() on all FirebaseDataConnect instances, " +
             "but expected 0"
         )
       }
     }
+  }
+}
+
+private data class FirebaseDataConnectInstanceKey(
+  val serviceId: String,
+  val location: String,
+  val operationSet: String,
+) {
+  override fun toString() = "serviceId=$serviceId, location=$location, operationSet=$operationSet"
+}
+
+private fun throwIfIncompatible(
+  key: FirebaseDataConnectInstanceKey,
+  instance: FirebaseDataConnect,
+  serviceConfig: FirebaseDataConnect.ServiceConfig,
+  settings: FirebaseDataConnectSettings?
+) {
+  val keyStr = key.run { "serviceId=$serviceId, location=$location, operationSet=$operationSet" }
+
+  if (instance.serviceConfig.revision != serviceConfig.revision) {
+    throw IllegalArgumentException(
+      "The 'revision' of the FirebaseDataConnect instance with [$keyStr] is " +
+        "'${instance.serviceConfig.revision}', which is different from the " +
+        "'revision' of the given ServiceConfig: '${serviceConfig.revision}`; " +
+        "to get a FirebaseDataConnect with [$keyStr] but a different 'revision', first call " +
+        "close() on the existing FirebaseDataConnect instance, then call getInstance() again " +
+        "with the desired 'revision'."
+    )
+  }
+
+  if (settings !== null && instance.settings != settings) {
+    throw IllegalArgumentException(
+      "The settings of the FirebaseDataConnect instance with [$keyStr] is " +
+        "'${instance.settings}', which is different from the given settings: $settings; " +
+        "to get a FirebaseDataConnect with [$keyStr] but different settings, first call " +
+        "close() on the existing FirebaseDataConnect instance, then call getInstance() again " +
+        "with the desired settings. Alternately, call getInstance() with null settings to " +
+        "use whatever settings are configured in the existing FirebaseDataConnect instance."
+    )
   }
 }
