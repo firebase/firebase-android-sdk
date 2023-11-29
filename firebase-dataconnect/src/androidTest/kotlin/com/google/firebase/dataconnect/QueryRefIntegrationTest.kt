@@ -16,6 +16,7 @@ package com.google.firebase.dataconnect
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
@@ -27,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopl
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
@@ -199,4 +201,36 @@ class QueryRefIntegrationTest {
     assertThat(primitive.stringListNullable).containsExactly("qqq", "rrr").inOrder()
     assertThat(result.errors).isEmpty()
   }
+
+  @Test
+  fun executeShouldThrowIfDataConnectInstanceIsClosed() = runTest {
+    personSchema.dataConnect.close()
+
+    val result = personSchema.getPerson.runCatching { execute(id = "foo") }
+
+    assertWithMessage("result=${result.getOrNull()}").that(result.isFailure).isTrue()
+    assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+  }
+
+  @Test
+  fun executeShouldSupportMassiveConcurrency() =
+    runTest(timeout = 60.seconds) {
+      val queryRef = personSchema.getPerson
+
+      val deferreds = buildList {
+        repeat(25_000) {
+          // Use `Dispatchers.Default` as the dispatcher for the launched coroutines so that there
+          // will be at least 2 threads used to run the coroutines (as documented by
+          // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
+          // that this test is indeed testing "massive concurrency".
+          add(backgroundScope.async(Dispatchers.Default) { queryRef.execute(id = "foo") })
+        }
+      }
+
+      val results = deferreds.map { it.await() }
+      results.forEachIndexed { index, result ->
+        assertWithMessage("results[$index]").that(result.data.person).isNull()
+        assertWithMessage("results[$index]").that(result.errors).isEmpty()
+      }
+    }
 }

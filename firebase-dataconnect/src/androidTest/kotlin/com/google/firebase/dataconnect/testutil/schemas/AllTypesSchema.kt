@@ -23,7 +23,7 @@ import com.google.firebase.dataconnect.testutil.installEmulatorSchema
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
-class AllTypesSchema(private val dataConnect: FirebaseDataConnect) {
+class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
   init {
     dataConnect.serviceConfig.operationSet.let {
