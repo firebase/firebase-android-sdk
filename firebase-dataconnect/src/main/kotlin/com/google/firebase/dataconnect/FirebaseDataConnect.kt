@@ -18,7 +18,6 @@ import android.content.Context
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.concurrent.FirebaseExecutors
 import java.io.Closeable
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -28,7 +27,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
@@ -63,20 +63,17 @@ internal constructor(
         }
     )
 
-  // Dispatcher used to access `this.closed` and `this.grpcClient`.
-  private val sequentialDispatcher =
-    FirebaseExecutors.newSequentialExecutor(nonBlockingExecutor).asCoroutineDispatcher()
+  // Protects `closed`, `grpcClient`, and `queryManager`.
+  private val mutex = Mutex()
 
-  // This boolean value MUST only be accessed from code running on `sequentialDispatcher`.
+  // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  // This reference MUST only be set or dereferenced from code running on `sequentialDispatcher`.
-  private val grpcClient: DataConnectGrpcClient by lazy {
-    logger.debug { "DataConnectGrpcClient initialization started" }
-    if (closed) {
-      throw IllegalStateException("instance has been closed")
-    }
-    DataConnectGrpcClient(
+  // All accesses to this variable _must_ have locked `mutex`.
+  private val grpcClient =
+    lazy(LazyThreadSafetyMode.NONE) {
+      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      DataConnectGrpcClient(
         context = context,
         projectId = projectId,
         serviceId = serviceConfig.serviceId,
@@ -89,28 +86,21 @@ internal constructor(
         executor = blockingExecutor,
         creatorLoggerId = logger.id,
       )
-      .also { logger.debug { "DataConnectGrpcClient initialization complete: $it" } }
-  }
-
-  // This reference MUST only be set or dereferenced from code running on `sequentialDispatcher`.
-  private val queryManager: QueryManager by lazy {
-    if (closed) {
-      throw IllegalStateException("instance has been closed")
     }
-    QueryManager(grpcClient, coroutineScope)
-  }
 
-  internal suspend fun <V, D> executeQuery(
-    ref: QueryRef<V, D>,
-    variables: V
-  ): DataConnectResult<V, D> =
-    withContext(sequentialDispatcher) { queryManager }.execute(ref, variables)
+  // All accesses to this variable _must_ have locked `mutex`.
+  private val queryManager =
+    lazy(LazyThreadSafetyMode.NONE) {
+      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      QueryManager(grpcClient.value, coroutineScope)
+    }
 
-  internal suspend fun <V, D> executeMutation(
-    ref: MutationRef<V, D>,
-    variables: V
-  ): DataConnectResult<V, D> =
-    withContext(sequentialDispatcher) { grpcClient }
+  internal suspend fun <V, D> executeQuery(ref: QueryRef<V, D>, variables: V) =
+    mutex.withLock { queryManager.value }.execute(ref, variables)
+
+  internal suspend fun <V, D> executeMutation(ref: MutationRef<V, D>, variables: V) =
+    mutex
+      .withLock { grpcClient.value }
       .executeMutation(
         operationName = ref.operationName,
         variables = encodeToStruct(ref.variablesSerializer, variables)
@@ -119,19 +109,31 @@ internal constructor(
       .toDataConnectResult(variables)
 
   override fun close() {
-    logger.debug { "close() called" }
-    runBlocking(sequentialDispatcher) {
-      if (!closed) {
-        doClose()
-        closed = true
-      }
-    }
+    // Set the `closed` flag to `true`, making sure to honor the requirement that `closed` is always
+    // accessed by a coroutine that has acquired `mutex`.
+    runBlocking { mutex.withLock { closed = true } }
+
+    // Perform the actual close operations. Use (abuse?) a `Lazy` since it provides the exact
+    // semantics that we want, namely that (1) all invocations of `close()` will block, waiting for
+    // the close to complete, (2) if an exception is thrown by the close operation then that
+    // exception will be thrown to the caller and the next call of close() will try again, and (3)
+    // after successfully performing the close operations all subsequent calls are no-ops.
+    closeLazy.value
   }
 
-  private fun doClose() {
-    grpcClient.close()
+  private val closeLazy = lazy {
+    logger.debug { "Closing FirebaseDataConnect started" }
+
+    creator.remove(this)
+
+    val grpcClient = runBlocking {
+      mutex.withLock { if (grpcClient.isInitialized()) grpcClient.value else null }
+    }
+    grpcClient?.close()
+
     coroutineScope.cancel()
-    creator.remove(this@FirebaseDataConnect)
+
+    logger.debug { "Closing FirebaseDataConnect completed" }
   }
 
   override fun toString() =
