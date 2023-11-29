@@ -75,7 +75,7 @@ private class LoggerImpl(private val name: String, private val idInt: Int) : Log
 
   override val id: String by
     lazy(LazyThreadSafetyMode.PUBLICATION) {
-      StringBuilder().run {
+      buildString {
         append(name)
         append('[')
         append("0x")
@@ -83,7 +83,6 @@ private class LoggerImpl(private val name: String, private val idInt: Int) : Log
         repeat(8 - idHexString.length) { append('0') }
         append(idHexString)
         append(']')
-        toString()
       }
     }
 
