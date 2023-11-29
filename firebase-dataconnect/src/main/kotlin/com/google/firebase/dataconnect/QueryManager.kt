@@ -17,6 +17,7 @@ import com.google.firebase.dataconnect.DataConnectGrpcClient.DeserialzedOperatio
 import com.google.firebase.dataconnect.DataConnectGrpcClient.OperationResult
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.NonCancellable
@@ -31,8 +32,14 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 
-internal class QueryManager(grpcClient: DataConnectGrpcClient, coroutineScope: CoroutineScope) {
-  private val queryStates = QueryStates(grpcClient, coroutineScope)
+internal class QueryManager(
+  grpcClient: DataConnectGrpcClient,
+  coroutineScope: CoroutineScope,
+  creatorLoggerId: String
+) {
+  private val logger = Logger("QueryManager").apply { debug { "Created from $creatorLoggerId" } }
+
+  private val queryStates = QueryStates(grpcClient, coroutineScope, logger)
 
   suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
     queryStates
@@ -68,6 +75,7 @@ private class QueryState(
   private val operationName: String,
   private val variables: Struct,
   private val coroutineScope: CoroutineScope,
+  private val logger: Logger,
 ) {
   private val mutex = Mutex()
   private var job: Deferred<OperationResult>? = null
@@ -118,10 +126,16 @@ private class QueryState(
   }
 
   private suspend fun doExecute(): OperationResult {
-    val executeQueryResult =
-      grpcClient.runCatching { executeQuery(operationName = operationName, variables = variables) }
+    val requestId = Random.nextAlphanumericString()
 
-    mutex.withLock { dataDeserializers.iterator() }.forEach { it.update(executeQueryResult) }
+    val executeQueryResult =
+      grpcClient.runCatching {
+        executeQuery(requestId = requestId, operationName = operationName, variables = variables)
+      }
+
+    mutex
+      .withLock { dataDeserializers.iterator() }
+      .forEach { it.update(requestId, executeQueryResult) }
 
     return executeQueryResult.fold(
       onSuccess = {
@@ -164,9 +178,12 @@ private class QueryState(
     dataDeserializer: DeserializationStrategy<T>
   ): DeserialzerInfo<T> =
     dataDeserializers.firstOrNull { it.deserializer === dataDeserializer } as? DeserialzerInfo<T>
-      ?: DeserialzerInfo(dataDeserializer).also { dataDeserializers.add(it) }
+      ?: DeserialzerInfo(dataDeserializer, logger).also { dataDeserializers.add(it) }
 
-  private class DeserialzerInfo<T>(val deserializer: DeserializationStrategy<T>) {
+  private class DeserialzerInfo<T>(
+    val deserializer: DeserializationStrategy<T>,
+    private val logger: Logger
+  ) {
     private val _resultFlow =
       MutableSharedFlow<DeserialzedOperationResult<T>>(
         replay = 1,
@@ -185,19 +202,25 @@ private class QueryState(
 
     val exceptionFlow = _exceptionFlow.asSharedFlow()
 
-    suspend fun update(result: Result<OperationResult>) {
+    suspend fun update(requestId: String, result: Result<OperationResult>) {
       result.fold(
-        onSuccess = {
-          val deserializeResult = kotlin.runCatching { it.deserialize(deserializer) }
-          deserializeResult.fold(
-            onSuccess = {
-              _resultFlow.emit(it)
-              _exceptionFlow.emit(null)
-            },
-            onFailure = { _exceptionFlow.emit(it) }
-          )
-        },
         onFailure = { _exceptionFlow.emit(it) },
+        onSuccess = { operationResult ->
+          operationResult
+            .runCatching { deserialize(deserializer) }
+            .fold(
+              onSuccess = { deserializedOperationResult ->
+                _resultFlow.emit(deserializedOperationResult)
+                _exceptionFlow.emit(null)
+              },
+              onFailure = { deserializeException ->
+                logger.warn(deserializeException) {
+                  "executeQuery() requestId=$requestId decoding response data failed"
+                }
+                _exceptionFlow.emit(deserializeException)
+              }
+            )
+        },
       )
     }
   }
@@ -205,7 +228,8 @@ private class QueryState(
 
 private class QueryStates(
   private val grpcClient: DataConnectGrpcClient,
-  private val coroutineScope: CoroutineScope
+  private val coroutineScope: CoroutineScope,
+  private val logger: Logger,
 ) {
   private val mutex = Mutex()
 
@@ -243,6 +267,7 @@ private class QueryStates(
             operationName = ref.operationName,
             variables = variablesStruct,
             coroutineScope = coroutineScope,
+            logger = logger,
           ),
           refCount = 0
         )

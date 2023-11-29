@@ -14,7 +14,7 @@
 package com.google.firebase.dataconnect
 
 import android.util.Log
-import java.util.concurrent.atomic.AtomicInteger
+import kotlin.random.Random
 
 enum class LogLevel {
   DEBUG,
@@ -33,15 +33,9 @@ internal interface Logger {
   fun warn(e: Throwable?, message: () -> Any?)
 }
 
-internal fun Logger(name: String): Logger =
-  LoggerImpl(name = name, idInt = nextLoggerId.getAndIncrement())
+internal fun Logger(name: String): Logger = LoggerImpl(name)
 
 private const val LOG_TAG = "FirebaseDataConnect"
-
-// TODO: Use kotlin.concurrent.AtomicInt once kotlin-stdlib is upgraded to 1.9
-// The initial value is just an arbitrary, non-zero value so that logger IDs are easily searchable
-// in logs due to the "uniqueness" of their first 4 digits.
-private val nextLoggerId = AtomicInteger(0x591F0000)
 
 private fun isLogEnabledFor(level: LogLevel) =
   when (logLevel) {
@@ -71,20 +65,10 @@ private fun runIfLogEnabled(level: LogLevel, block: () -> Unit) {
   }
 }
 
-private class LoggerImpl(private val name: String, private val idInt: Int) : Logger {
+private class LoggerImpl(private val name: String) : Logger {
 
   override val id: String by
-    lazy(LazyThreadSafetyMode.PUBLICATION) {
-      buildString {
-        append(name)
-        append('[')
-        append("0x")
-        val idHexString = idInt.toString(16)
-        repeat(8 - idHexString.length) { append('0') }
-        append(idHexString)
-        append(']')
-      }
-    }
+    lazy(LazyThreadSafetyMode.PUBLICATION) { "$name[id=${Random.nextAlphanumericString()}]" }
 
   override fun info(message: () -> Any?) =
     runIfLogEnabled(LogLevel.INFO) { Log.i(LOG_TAG, "$id ${message()}") }

@@ -16,6 +16,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
+import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.Companion.installAllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema

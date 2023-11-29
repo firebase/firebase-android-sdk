@@ -18,15 +18,20 @@ import android.content.Context
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import java.io.Closeable
 import java.util.concurrent.Executor
-import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.random.Random
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -43,7 +48,7 @@ internal constructor(
   internal val nonBlockingExecutor: Executor,
   private val creator: FirebaseDataConnectFactory,
   val settings: FirebaseDataConnectSettings,
-) : Closeable {
+) : AutoCloseable {
 
   private val logger =
     Logger("FirebaseDataConnect").apply {
@@ -70,7 +75,9 @@ internal constructor(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  // All accesses to this variable _must_ have locked `mutex`.
+  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
+  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
+  // be used.
   private val grpcClient =
     lazy(LazyThreadSafetyMode.NONE) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
@@ -89,59 +96,92 @@ internal constructor(
       )
     }
 
-  // All accesses to this variable _must_ have locked `mutex`.
+  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
+  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
+  // be used.
+  private val grpcClientOrNull
+    get() = if (grpcClient.isInitialized()) grpcClient.value else null
+
+  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
+  //  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance
+  // can
+  //  // be used.
   private val queryManager =
     lazy(LazyThreadSafetyMode.NONE) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      QueryManager(grpcClient.value, coroutineScope)
+      QueryManager(grpcClient.value, coroutineScope, logger.id)
     }
 
   internal suspend fun <V, D> executeQuery(ref: QueryRef<V, D>, variables: V) =
     mutex.withLock { queryManager.value }.execute(ref, variables)
 
   internal suspend fun <V, D> executeMutation(ref: MutationRef<V, D>, variables: V) =
+    executeMutation(ref, variables, requestId = Random.nextAlphanumericString())
+
+  private suspend fun <V, D> executeMutation(
+    ref: MutationRef<V, D>,
+    variables: V,
+    requestId: String
+  ) =
     mutex
       .withLock { grpcClient.value }
       .executeMutation(
+        requestId = requestId,
         operationName = ref.operationName,
         variables = encodeToStruct(ref.variablesSerializer, variables)
       )
-      .deserialize(ref.dataDeserializer)
+      .runCatching { deserialize(ref.dataDeserializer) }
+      .onFailure {
+        logger.warn(it) { "executeMutation() requestId=$requestId decoding response data failed" }
+      }
+      .getOrThrow()
       .toDataConnectResult(variables)
 
-  private val closeCompleted = AtomicBoolean(false)
+  private val closeResult = MutableStateFlow<Result<Unit>?>(null)
 
   override fun close() {
-    // Short circuit: just return if the "close" operation has already completed.
-    if (closeCompleted.get()) {
+    logger.debug { "close() called" }
+    // Remove the reference to this `FirebaseDataConnect` instance from the
+    // `FirebaseDataConnectFactory` that created it, so that the next time that `getInstance()` is
+    // called with the same arguments that a new instance of `FirebaseDataConnect` will be created.
+    creator.remove(this)
+
+    // Set the `closed` flag to `true`, making sure to honor the requirement that `closed` is always
+    // accessed by a coroutine that has acquired `mutex`
+    runBlocking { mutex.withLock { closed = true } }
+
+    // If a previous attempt was successful, then just return because there is nothing to do.
+    if (closeResult.isResultSuccess) {
       return
     }
 
-    // Set the `closed` flag to `true`, making sure to honor the requirement that `closed` is always
-    // accessed by a coroutine that has acquired `mutex`. Also, grab the `grpcClient` reference (if
-    // it was  initialized), since that reference _also_ may only be accessed by a coroutine that
-    // has acquired `mutex`.
-    val grpcClient = runBlocking {
-      mutex.withLock {
-        closed = true
-        if (grpcClient.isInitialized()) grpcClient.value else null
-      }
-    }
+    // Clear the result of the previous failed attempt, since we're about to try again.
+    closeResult.clearResultUnlessSuccess()
 
-    // Do the "close" operation. Make sure to check `closeCompleted` again, since another thread may
-    // have beat us here and done the "close" operation already.
-    synchronized(closeCompleted) {
-      if (closeCompleted.get()) {
+    // Launch an asynchronous coroutine to actually perform the remainder of the close operation,
+    // as it potentially suspends and this close() function is a "normal", non-suspending function.
+    @OptIn(DelicateCoroutinesApi::class) GlobalScope.launch { doClose() }
+  }
+
+  suspend fun awaitClose(): Unit = closeResult.filterNotNull().first().getOrThrow()
+
+  private val closingMutex = Mutex()
+
+  private suspend fun doClose() {
+    closingMutex.withLock {
+      if (closeResult.isResultSuccess) {
         return
       }
 
-      logger.debug { "Closing FirebaseDataConnect started" }
-      creator.remove(this)
-      grpcClient?.close()
-      coroutineScope.cancel()
-      logger.debug { "Closing FirebaseDataConnect completed" }
-
-      closeCompleted.set(true)
+      closeResult.value =
+        kotlin
+          .runCatching {
+            logger.debug { "Closing started" }
+            mutex.withLock { grpcClientOrNull }?.close()
+            coroutineScope.cancel()
+            logger.debug { "Closing completed" }
+          }
+          .onFailure { logger.warn(it) { "Closing failed" } }
     }
   }
 
@@ -202,6 +242,21 @@ internal constructor(
       settings: FirebaseDataConnectSettings? = null
     ): FirebaseDataConnect =
       getInstance(app = Firebase.app, serviceConfig = serviceConfig, settings = settings)
+
+    private fun MutableStateFlow<Result<Unit>?>.clearResultUnlessSuccess() {
+      while (true) {
+        val oldValue = value
+        if (oldValue != null && oldValue.isSuccess) {
+          return
+        }
+        if (compareAndSet(oldValue, null)) {
+          return
+        }
+      }
+    }
+
+    private val MutableStateFlow<Result<Unit>?>.isResultSuccess
+      get() = value?.isSuccess == true
   }
 }
 

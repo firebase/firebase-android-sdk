@@ -16,7 +16,6 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
-import com.google.firebase.dataconnect.testutil.nextAlphanumericString
 import kotlin.random.Random
 import org.junit.Test
 import org.junit.runner.RunWith

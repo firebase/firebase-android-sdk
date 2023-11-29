@@ -3,6 +3,7 @@ package com.google.firebase.dataconnect.testutil
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.initialize
 import kotlin.random.Random
 

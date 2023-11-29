@@ -19,9 +19,9 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
+import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.nextAlphanumericString
 import kotlin.random.Random
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*

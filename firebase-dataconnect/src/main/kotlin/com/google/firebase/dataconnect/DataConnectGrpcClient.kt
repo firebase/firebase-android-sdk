@@ -27,6 +27,11 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.completeWith
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
@@ -39,67 +44,101 @@ internal class DataConnectGrpcClient(
   hostName: String,
   port: Int,
   sslEnabled: Boolean,
-  executor: Executor,
+  private val executor: Executor,
   creatorLoggerId: String,
 ) {
-  private val logger = Logger("DataConnectGrpcClient")
+  private val logger =
+    Logger("DataConnectGrpcClient").apply { debug { "Created from $creatorLoggerId" } }
 
   private val requestName =
     "projects/$projectId/locations/$location/services/$serviceId/" +
       "operationSets/$operationSet/revisions/$revision"
 
-  init {
-    logger.debug { "Created from $creatorLoggerId" }
-  }
+  // Protects `closed`, `grpcChannel`, and `grpcStub`.
+  private val mutex = Mutex()
 
-  private val grpcChannel: ManagedChannel by lazy {
-    // Upgrade the Android security provider using Google Play Services.
-    //
-    // We need to upgrade the Security Provider before any network channels are initialized because
-    // okhttp maintains a list of supported providers that is initialized when the JVM first
-    // resolves the static dependencies of ManagedChannel.
-    //
-    // If initialization fails for any reason, then a warning is logged and the original,
-    // un-upgraded security provider is used.
-    try {
-      ProviderInstaller.installIfNeeded(context)
-    } catch (e: Exception) {
-      logger.warn(e) { "Failed to update ssl context" }
-    }
+  // All accesses to this variable _must_ have locked `mutex`.
+  private var closed = false
 
-    ManagedChannelBuilder.forAddress(hostName, port).let {
-      if (!sslEnabled) {
-        it.usePlaintext()
+  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
+  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
+  // be used.
+  private val grpcChannel =
+    lazy(LazyThreadSafetyMode.NONE) {
+      logger.debug { "${ManagedChannel::class.qualifiedName} initialization started" }
+
+      if (closed) throw IllegalStateException("DataConnectGrpcClient instance has been closed")
+
+      // Upgrade the Android security provider using Google Play Services.
+      //
+      // We need to upgrade the Security Provider before any network channels are initialized
+      // because
+      // okhttp maintains a list of supported providers that is initialized when the JVM first
+      // resolves the static dependencies of ManagedChannel.
+      //
+      // If initialization fails for any reason, then a warning is logged and the original,
+      // un-upgraded security provider is used.
+      try {
+        ProviderInstaller.installIfNeeded(context)
+      } catch (e: Exception) {
+        logger.warn(e) { "Failed to update ssl context" }
       }
 
-      // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-      // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
-      // failsafe.
-      it.keepAliveTime(30, TimeUnit.SECONDS)
+      ManagedChannelBuilder.forAddress(hostName, port).let {
+        if (!sslEnabled) {
+          it.usePlaintext()
+        }
 
-      it.executor(executor)
+        // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+        // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
+        // failsafe.
+        it.keepAliveTime(30, TimeUnit.SECONDS)
 
-      // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel to
-      // respond more gracefully to network change events, such as switching from cellular to wifi.
-      AndroidChannelBuilder.usingBuilder(it).context(context).build()
+        it.executor(executor)
+
+        // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
+        // to
+        // respond more gracefully to network change events, such as switching from cellular to
+        // wifi.
+        val channel = AndroidChannelBuilder.usingBuilder(it).context(context).build()
+
+        logger.debug { "${ManagedChannel::class.qualifiedName} initialization completed" }
+
+        channel
+      }
     }
-  }
 
-  private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
+  private val grpcChannelOrNull
+    get() = if (grpcChannel.isInitialized()) grpcChannel.value else null
+
+  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
+  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
+  // be used.
+  private val grpcStub: DataServiceCoroutineStub by
+    lazy(LazyThreadSafetyMode.NONE) { DataServiceCoroutineStub(grpcChannel.value) }
 
   data class OperationResult(val data: Struct?, val errors: List<DataConnectError>)
   data class DeserialzedOperationResult<T>(val data: T, val errors: List<DataConnectError>)
 
-  suspend fun executeQuery(operationName: String, variables: Struct): OperationResult {
+  suspend fun executeQuery(
+    requestId: String,
+    operationName: String,
+    variables: Struct
+  ): OperationResult {
     val request = executeQueryRequest {
       this.name = requestName
       this.operationName = operationName
       this.variables = variables
     }
 
-    logger.debug { "executeQuery() sending request: $request" }
-    val response = grpcStub.executeQuery(request)
-    logger.debug { "executeQuery() got response: $response" }
+    logger.debug { "executeQuery() requestId=$requestId sending: $request" }
+    val response =
+      mutex
+        .withLock { grpcStub }
+        .runCatching { executeQuery(request) }
+        .onFailure { logger.warn(it) { "executeQuery() requestId=$requestId grpc call FAILED" } }
+        .getOrThrow()
+    logger.debug { "executeQuery() requestId=$requestId got response: $response" }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -107,16 +146,25 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  suspend fun executeMutation(operationName: String, variables: Struct): OperationResult {
+  suspend fun executeMutation(
+    requestId: String,
+    operationName: String,
+    variables: Struct
+  ): OperationResult {
     val request = executeMutationRequest {
       this.name = requestName
       this.operationName = operationName
       this.variables = variables
     }
 
-    logger.debug { "executeMutation() sending request: $request" }
-    val response = grpcStub.executeMutation(request)
-    logger.debug { "executeMutation() got response: $response" }
+    logger.debug { "executeMutation() requestId=$requestId sending: $request" }
+    val response =
+      mutex
+        .withLock { grpcStub }
+        .runCatching { executeMutation(request) }
+        .onFailure { logger.warn(it) { "executeMutation() requestId=$requestId grpc call FAILED" } }
+        .getOrThrow()
+    logger.debug { "executeMutation() requestId=$requestId got response: $response" }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -124,27 +172,49 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  fun close() {
-    logger.debug { "close() starting" }
-    grpcChannel.shutdownNow()
-    logger.debug { "close() done" }
+  private val closingMutex = Mutex()
+  private var closeCompleted = false
+
+  suspend fun close() {
+    val grpcChannel =
+      mutex.withLock {
+        closed = true
+        grpcChannelOrNull
+      }
+
+    closingMutex.withLock {
+      if (!closeCompleted) {
+        grpcChannel?.terminate()
+      }
+      closeCompleted = true
+    }
+  }
+
+  private suspend fun ManagedChannel.terminate() {
+    shutdown()
+
+    val deferred = CompletableDeferred<Unit>()
+    thread(isDaemon = true, name = "ManagedChannel.terminate() from ${logger.id}") {
+      deferred.completeWith(
+        runCatching<Unit> { awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS) }
+      )
+    }
+
+    deferred.await()
   }
 }
 
-internal fun <T> Struct.decode(deserializer: DeserializationStrategy<T>) =
-  decodeFromStruct(deserializer, this)
-
-internal fun ListValue.decodePath() =
+internal fun ListValue.toPathSegment() =
   valuesList.map {
     when (val kind = it.kindCase) {
       Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
       Value.KindCase.NUMBER_VALUE -> DataConnectError.PathSegment.ListIndex(it.numberValue.toInt())
-      else -> throw IllegalStateException("invalid PathSegement kind: $kind")
+      else -> DataConnectError.PathSegment.Field("invalid PathSegment kind: $kind")
     }
   }
 
 internal fun GraphqlError.toDataConnectError() =
-  DataConnectError(message = message, path = path.decodePath(), extensions = emptyMap())
+  DataConnectError(message = message, path = path.toPathSegment(), extensions = emptyMap())
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
   dataDeserializer: DeserializationStrategy<T>
