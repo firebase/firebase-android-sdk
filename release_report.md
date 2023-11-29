@@ -1,23 +1,4 @@
 # Release Report
-## firebase-config
-      
-* Correct tense in firebase-config changelog. (#5555)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5555) [commit](https://github.com/firebase/firebase-android-sdk/commit/ea0f077b9612011454fbdad2572de049c29d66cd)  [Dana Silver]
-
-* Migrate firebase-config build config from Groovy to Kotlin. (#5548)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5548) [commit](https://github.com/firebase/firebase-android-sdk/commit/0c5e8a776f394f518c3018fdee0a0fdfdee20902)  [Dana Silver]
-
-* Create package-info.java for rollouts package. (#5543)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5543) [commit](https://github.com/firebase/firebase-android-sdk/commit/4a1eceb160a721598f2b62611a193e25b8e1249f)  [Dana Silver]
-
-## firebase-config/ktx
-      
-
-## firebase-config-interop
-      
-* Fix release config for config-interop (#5539)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5539) [commit](https://github.com/firebase/firebase-android-sdk/commit/ab05c993a8ef544b2b3887b64eb1b7e259bdaf4d)  [Rodrigo Lazo]
-
 ## firebase-firestore
       
 * Fix docs unnecessarily undergo limbo resolution while resuming query bug (#5506)   
