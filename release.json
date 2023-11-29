@@ -1,0 +1,10 @@
+{
+    "name": "m141",
+    "libraries": [
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx"
+    ]
+}
