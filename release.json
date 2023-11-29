@@ -1,0 +1,13 @@
+{
+    "name": "m141",
+    "libraries": [
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-config-interop",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx"
+    ]
+}

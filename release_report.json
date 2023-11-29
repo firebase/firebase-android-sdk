@@ -1,0 +1,82 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "ea0f077b9612011454fbdad2572de049c29d66cd",
+                "prId": "5555",
+                "author": "Dana Silver",
+                "message": "Correct tense in firebase-config changelog. (#5555)\n\nShould be past tense. Already fixed internally (cl/582309851).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ea0f077b9612011454fbdad2572de049c29d66cd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5555"
+            },
+            {
+                "commitId": "0c5e8a776f394f518c3018fdee0a0fdfdee20902",
+                "prId": "5548",
+                "author": "Dana Silver",
+                "message": "Migrate firebase-config build config from Groovy to Kotlin. (#5548)\n\nIntended to be a no-op migration from Groovy to Kotlin with the\r\nexception of a few test dependencies updated to use their library\r\nversions.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0c5e8a776f394f518c3018fdee0a0fdfdee20902",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5548"
+            },
+            {
+                "commitId": "4a1eceb160a721598f2b62611a193e25b8e1249f",
+                "prId": "5543",
+                "author": "Dana Silver",
+                "message": "Create package-info.java for rollouts package. (#5543)\n\nHides internal sub-package from doc generation.\r\n\r\nFollow up from internal cl/581411075",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4a1eceb160a721598f2b62611a193e25b8e1249f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5543"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-config-interop": [
+            {
+                "commitId": "ab05c993a8ef544b2b3887b64eb1b7e259bdaf4d",
+                "prId": "5539",
+                "author": "Rodrigo Lazo",
+                "message": "Fix release config for config-interop (#5539)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ab05c993a8ef544b2b3887b64eb1b7e259bdaf4d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5539"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "a014114bd979587b08d936616b551aa549e8e2f0",
+                "prId": "5506",
+                "author": "Mila",
+                "message": "Fix docs unnecessarily undergo limbo resolution while resuming query bug (#5506)\n\nPorted from : https://github.com/firebase/firebase-js-sdk/pull/7740",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a014114bd979587b08d936616b551aa549e8e2f0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5506"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "879c84bb4ae02b9b6923d3ae0620c97c63bae10d",
+                "prId": "5570",
+                "author": "Greg Sakakihara",
+                "message": "Call messageHandled after a message has been handled. (#5570)\n\n* Called messageHandled() after a message has been handled to indicate\r\nthat the message has been handled successfully.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/879c84bb4ae02b9b6923d3ae0620c97c63bae10d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5570"
+            },
+            {
+                "commitId": "eae510c1ea5faeab1f8bb81c0ee053597198fe47",
+                "prId": "5551",
+                "author": "Greg Sakakihara",
+                "message": "Add an internal identifier to Firelog logging for compliance. (#5551)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eae510c1ea5faeab1f8bb81c0ee053597198fe47",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5551"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-sessions"
+    ]
+}
