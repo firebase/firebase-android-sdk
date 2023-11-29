@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import java.io.Closeable
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -108,32 +109,40 @@ internal constructor(
       .deserialize(ref.dataDeserializer)
       .toDataConnectResult(variables)
 
+  private val closeCompleted = AtomicBoolean(false)
+
   override fun close() {
-    // Set the `closed` flag to `true`, making sure to honor the requirement that `closed` is always
-    // accessed by a coroutine that has acquired `mutex`.
-    runBlocking { mutex.withLock { closed = true } }
-
-    // Perform the actual close operations. Use (abuse?) a `Lazy` since it provides the exact
-    // semantics that we want, namely that (1) all invocations of `close()` will block, waiting for
-    // the close to complete, (2) if an exception is thrown by the close operation then that
-    // exception will be thrown to the caller and the next call of close() will try again, and (3)
-    // after successfully performing the close operations all subsequent calls are no-ops.
-    closeLazy.value
-  }
-
-  private val closeLazy = lazy {
-    logger.debug { "Closing FirebaseDataConnect started" }
-
-    creator.remove(this)
-
-    val grpcClient = runBlocking {
-      mutex.withLock { if (grpcClient.isInitialized()) grpcClient.value else null }
+    // Short circuit: just return if the "close" operation has already completed.
+    if (closeCompleted.get()) {
+      return
     }
-    grpcClient?.close()
 
-    coroutineScope.cancel()
+    // Set the `closed` flag to `true`, making sure to honor the requirement that `closed` is always
+    // accessed by a coroutine that has acquired `mutex`. Also, grab the `grpcClient` reference (if
+    // it was  initialized), since that reference _also_ may only be accessed by a coroutine that
+    // has acquired `mutex`.
+    val grpcClient = runBlocking {
+      mutex.withLock {
+        closed = true
+        if (grpcClient.isInitialized()) grpcClient.value else null
+      }
+    }
 
-    logger.debug { "Closing FirebaseDataConnect completed" }
+    // Do the "close" operation. Make sure to check `closeCompleted` again, since another thread may
+    // have beat us here and done the "close" operation already.
+    synchronized(closeCompleted) {
+      if (closeCompleted.get()) {
+        return
+      }
+
+      logger.debug { "Closing FirebaseDataConnect started" }
+      creator.remove(this)
+      grpcClient?.close()
+      coroutineScope.cancel()
+      logger.debug { "Closing FirebaseDataConnect completed" }
+
+      closeCompleted.set(true)
+    }
   }
 
   override fun toString() =
