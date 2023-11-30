@@ -67,7 +67,7 @@ internal class QueryManager(
   }
 }
 
-private data class QueryStateKey(val operationName: String, val variablesSha512: String)
+private data class QueryStateKey(val operationName: String, val variablesHash: String)
 
 private class QueryState(
   val key: QueryStateKey,
@@ -255,8 +255,8 @@ private class QueryStates(
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
   private fun <V, D> acquireQueryState(ref: QueryRef<V, D>, variables: V): QueryState {
     val variablesStruct = encodeToStruct(ref.variablesSerializer, variables)
-    val variablesSha512 = calculateSha512(variablesStruct).toHexString()
-    val key = QueryStateKey(operationName = ref.operationName, variablesSha512 = variablesSha512)
+    val variablesHash = variablesStruct.calculateSha512().toAlphaNumericString()
+    val key = QueryStateKey(operationName = ref.operationName, variablesHash = variablesHash)
 
     val queryState =
       queryStateByKey.getOrPut(key) {

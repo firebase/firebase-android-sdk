@@ -13,12 +13,15 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import com.google.protobuf.Struct
+import com.google.protobuf.Value
+import com.google.protobuf.Value.KindCase
+import java.io.DataOutputStream
 import java.io.OutputStream
+import java.security.DigestOutputStream
+import java.security.MessageDigest
 import kotlin.math.abs
 import kotlin.random.Random
-
-internal fun ByteArray.toHexString(): String =
-  joinToString(separator = "") { it.toUByte().toInt().toString(16).padStart(2, '0') }
 
 internal object NullOutputStream : OutputStream() {
   override fun write(b: Int) {}
@@ -56,3 +59,54 @@ internal fun Random.nextAlphanumericString(length: Int? = null): String = buildS
  * the 10 numeric digits.
  */
 internal fun Long.toAlphaNumericString(): String = toString(36)
+
+/**
+ * Converts this byte array to a base-36 string, which uses the 26 letters from the English alphabet
+ * and the 10 numeric digits.
+ */
+internal fun ByteArray.toAlphaNumericString(): String =
+  joinToString(separator = "") { it.toUByte().toInt().toString(36).padStart(2, '0') }
+
+/** Calculates a SHA-512 digest of a [Struct]. */
+internal fun Struct.calculateSha512(): ByteArray =
+  Value.newBuilder().setStructValue(this).build().calculateSha512()
+
+/** Calculates a SHA-512 digest of a [Value]. */
+internal fun Value.calculateSha512(): ByteArray {
+  val digest = MessageDigest.getInstance("SHA-512")
+  val out = DataOutputStream(DigestOutputStream(NullOutputStream, digest))
+
+  val calculateDigest =
+    DeepRecursiveFunction<Value, Unit> {
+      val kind = it.kindCase
+      out.writeInt(kind.ordinal)
+
+      when (kind) {
+        KindCase.NULL_VALUE -> {
+          /* nothing to write for null */
+        }
+        KindCase.BOOL_VALUE -> out.writeBoolean(it.boolValue)
+        KindCase.NUMBER_VALUE -> out.writeDouble(it.numberValue)
+        KindCase.STRING_VALUE -> out.writeUTF(it.stringValue)
+        KindCase.LIST_VALUE ->
+          it.listValue.valuesList.forEachIndexed { index, elementValue ->
+            out.writeInt(index)
+            callRecursive(elementValue)
+          }
+        KindCase.STRUCT_VALUE ->
+          it.structValue.fieldsMap.entries
+            .sortedBy { (key, _) -> key }
+            .forEach { (key, elementValue) ->
+              out.writeUTF(key)
+              callRecursive(elementValue)
+            }
+        else -> throw IllegalArgumentException("unsupported kind: $kind")
+      }
+
+      out.writeInt(kind.ordinal)
+    }
+
+  calculateDigest(this)
+
+  return digest.digest()
+}
