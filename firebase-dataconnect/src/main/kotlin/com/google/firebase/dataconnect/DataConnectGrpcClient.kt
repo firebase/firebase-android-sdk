@@ -18,10 +18,10 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.internal.firebase.firemat.v0.DataServiceGrpcKt.DataServiceCoroutineStub
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.GraphqlError
-import google.internal.firebase.firemat.v0.executeMutationRequest
-import google.internal.firebase.firemat.v0.executeQueryRequest
+import google.firebase.dataconnect.v1main.DataServiceGrpcKt.DataServiceCoroutineStub
+import google.firebase.dataconnect.v1main.DataServiceOuterClass.GraphqlError
+import google.firebase.dataconnect.v1main.executeMutationRequest
+import google.firebase.dataconnect.v1main.executeQueryRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder

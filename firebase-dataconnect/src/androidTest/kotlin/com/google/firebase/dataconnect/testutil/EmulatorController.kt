@@ -4,10 +4,10 @@ import android.content.res.AssetManager
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import firemat.emulator.server.api.EmulatorServiceGrpcKt.EmulatorServiceCoroutineStub
-import firemat.emulator.server.api.file
-import firemat.emulator.server.api.setupSchemaRequest
-import firemat.emulator.server.api.source
+import google.firebase.dataconnect.emulator.v1main.EmulatorServiceGrpcKt.EmulatorServiceCoroutineStub
+import google.firebase.dataconnect.emulator.v1main.file
+import google.firebase.dataconnect.emulator.v1main.setupSchemaRequest
+import google.firebase.dataconnect.emulator.v1main.source
 import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.io.InputStreamReader
