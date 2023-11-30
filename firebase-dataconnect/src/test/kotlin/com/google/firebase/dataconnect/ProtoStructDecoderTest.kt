@@ -17,12 +17,9 @@
 package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
-import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
-import com.google.protobuf.struct
-import com.google.protobuf.value
 import java.util.regex.Pattern
 import kotlin.reflect.KClass
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -654,11 +651,7 @@ class ProtoStructDecoderTest {
     @Serializable data class TestDecodeSubData2(val someValue: String)
     @Serializable data class TestDecodeSubData(val bbb: TestDecodeSubData2)
     @Serializable data class TestDecodeData(val aaa: TestDecodeSubData)
-    val struct = struct {
-      fields["aaa"] = value {
-        structValue = struct { fields["bbb"] = value { nullValue = NullValue.NULL_VALUE } }
-      }
-    }
+    val struct = buildStructProto { putStruct("aaa") { putNull("bbb") } }
 
     assertDecodeFromStructThrowsIncorrectKindCase<TestDecodeData>(
       expectedKind = KindCase.STRUCT_VALUE,

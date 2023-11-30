@@ -18,10 +18,6 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.extensions.proto.LiteProtoTruth.assertThat
-import com.google.protobuf.NullValue
-import com.google.protobuf.listValue
-import com.google.protobuf.struct
-import com.google.protobuf.value
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -105,13 +101,13 @@ class ProtoStructEncoderTest {
 
     assertThat(encodedStruct)
       .isEqualTo(
-        struct {
-          fields.put("iv", value { numberValue = 42.0 })
-          fields.put("dv", value { numberValue = 1234.5 })
-          fields.put("bvt", value { boolValue = true })
-          fields.put("bvf", value { boolValue = false })
-          fields.put("sv", value { stringValue = "blah blah" })
-          fields.put("nsvnn", value { stringValue = "I'm not null" })
+        buildStructProto {
+          put("iv", 42.0)
+          put("dv", 1234.5)
+          put("bvt", true)
+          put("bvf", false)
+          put("sv", "blah blah")
+          put("nsvnn", "I'm not null")
         }
       )
   }
@@ -139,66 +135,31 @@ class ProtoStructEncoderTest {
 
     assertThat(encodedStruct)
       .isEqualTo(
-        struct {
-          fields.put(
-            "iv",
-            value {
-              listValue = listValue {
-                values.apply {
-                  add(value { numberValue = 42.0 })
-                  add(value { numberValue = 43.0 })
-                }
-              }
-            }
-          )
-          fields.put(
-            "dv",
-            value {
-              listValue = listValue {
-                values.apply {
-                  add(value { numberValue = 1234.5 })
-                  add(value { numberValue = 5678.9 })
-                }
-              }
-            }
-          )
-          fields.put(
-            "bv",
-            value {
-              listValue = listValue {
-                values.apply {
-                  add(value { boolValue = true })
-                  add(value { boolValue = false })
-                  add(value { boolValue = false })
-                  add(value { boolValue = true })
-                }
-              }
-            }
-          )
-          fields.put(
-            "sv",
-            value {
-              listValue = listValue {
-                values.apply {
-                  add(value { stringValue = "abcde" })
-                  add(value { stringValue = "fghij" })
-                }
-              }
-            }
-          )
-          fields.put(
-            "nsv",
-            value {
-              listValue = listValue {
-                values.apply {
-                  add(value { stringValue = "klmno" })
-                  add(value { nullValue = NullValue.NULL_VALUE })
-                  add(value { stringValue = "pqrst" })
-                  add(value { nullValue = NullValue.NULL_VALUE })
-                }
-              }
-            }
-          )
+        buildStructProto {
+          putList("iv") {
+            add(42.0)
+            add(43.0)
+          }
+          putList("dv") {
+            add(1234.5)
+            add(5678.9)
+          }
+          putList("bv") {
+            add(true)
+            add(false)
+            add(false)
+            add(true)
+          }
+          putList("sv") {
+            add("abcde")
+            add("fghij")
+          }
+          putList("nsv") {
+            add("klmno")
+            addNull()
+            add("pqrst")
+            addNull()
+          }
         }
       )
   }
@@ -212,19 +173,7 @@ class ProtoStructEncoderTest {
 
     assertThat(encodedStruct)
       .isEqualTo(
-        struct {
-          fields.put(
-            "data2",
-            value {
-              structValue = struct {
-                fields.put(
-                  "data3",
-                  value { structValue = struct { fields.put("s", value { stringValue = "zzzz" }) } }
-                )
-              }
-            }
-          )
-        }
+        buildStructProto { putStruct("data2") { putStruct("data3") { put("s", "zzzz") } } }
       )
   }
 }

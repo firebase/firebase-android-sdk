@@ -13,22 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import com.google.protobuf.Struct
-import com.google.protobuf.Value
-import com.google.protobuf.Value.KindCase
-import com.google.protobuf.listValue
-import com.google.protobuf.struct
-import com.google.protobuf.value
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationRequest
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationResponse
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryRequest
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryResponse
-import java.io.BufferedWriter
-import java.io.CharArrayWriter
-import java.io.DataOutputStream
 import java.io.OutputStream
-import java.security.DigestOutputStream
-import java.security.MessageDigest
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -63,6 +48,11 @@ internal fun Random.nextAlphanumericString(length: Int? = null): String = buildS
   }
 }
 
+// NOTE: `ALPHANUMERIC_ALPHABET` MUST have a length of 32 (since 2^5=32). This allows encoding 5
+// bits as a single digit from this alphabet. Note that some numbers and letters were removed,
+// especially those that can look similar in different fonts, like '1', 'l', and 'i'.
+private const val ALPHANUMERIC_ALPHABET = "23456789abcdefghjkmnopqrstuvwxyz"
+
 /**
  * Converts this number to a base-36 string, which uses the 26 letters from the English alphabet and
  * the 10 numeric digits.
@@ -73,157 +63,39 @@ internal fun Long.toAlphaNumericString(): String = toString(36)
  * Converts this byte array to a base-36 string, which uses the 26 letters from the English alphabet
  * and the 10 numeric digits.
  */
-internal fun ByteArray.toAlphaNumericString(): String =
-  joinToString(separator = "") { it.toUByte().toInt().toString(36).padStart(2, '0') }
+internal fun ByteArray.toAlphaNumericString(): String = buildString {
+  val numBits = size * 8
+  for (bitIndex in 0 until numBits step 5) {
+    val byteIndex = bitIndex.div(8)
+    val bitOffset = bitIndex.rem(8)
+    val b = this@toAlphaNumericString[byteIndex].toUByte().toInt()
 
-/** Calculates a SHA-512 digest of a [Struct]. */
-internal fun Struct.calculateSha512(): ByteArray =
-  Value.newBuilder().setStructValue(this).build().calculateSha512()
-
-/** Calculates a SHA-512 digest of a [Value]. */
-internal fun Value.calculateSha512(): ByteArray {
-  val digest = MessageDigest.getInstance("SHA-512")
-  val out = DataOutputStream(DigestOutputStream(NullOutputStream, digest))
-
-  val calculateDigest =
-    DeepRecursiveFunction<Value, Unit> {
-      val kind = it.kindCase
-      out.writeInt(kind.ordinal)
-
-      when (kind) {
-        KindCase.NULL_VALUE -> {
-          /* nothing to write for null */
-        }
-        KindCase.BOOL_VALUE -> out.writeBoolean(it.boolValue)
-        KindCase.NUMBER_VALUE -> out.writeDouble(it.numberValue)
-        KindCase.STRING_VALUE -> out.writeUTF(it.stringValue)
-        KindCase.LIST_VALUE ->
-          it.listValue.valuesList.forEachIndexed { index, elementValue ->
-            out.writeInt(index)
-            callRecursive(elementValue)
+    val intValue =
+      if (bitOffset <= 3) {
+        b shr (3 - bitOffset)
+      } else {
+        val upperBits =
+          when (bitOffset) {
+            4 -> b and 0x0f
+            5 -> b and 0x07
+            6 -> b and 0x03
+            7 -> b and 0x01
+            else -> error("internal error: invalid bitOffset: $bitOffset")
           }
-        KindCase.STRUCT_VALUE ->
-          it.structValue.fieldsMap.entries
-            .sortedBy { (key, _) -> key }
-            .forEach { (key, elementValue) ->
-              out.writeUTF(key)
-              callRecursive(elementValue)
-            }
-        else -> throw IllegalArgumentException("unsupported kind: $kind")
+        if (byteIndex + 1 == size) {
+          upperBits
+        } else {
+          val b2 = this@toAlphaNumericString[byteIndex + 1].toUByte().toInt()
+          when (bitOffset) {
+            4 -> ((b2 shr 7) and 0x01) or (upperBits shl 1)
+            5 -> ((b2 shr 6) and 0x03) or (upperBits shl 2)
+            6 -> ((b2 shr 5) and 0x07) or (upperBits shl 3)
+            7 -> ((b2 shr 4) and 0x0f) or (upperBits shl 4)
+            else -> error("internal error: invalid bitOffset: $bitOffset")
+          }
+        }
       }
 
-      out.writeInt(kind.ordinal)
-    }
-
-  calculateDigest(this)
-
-  return digest.digest()
-}
-
-/** Generates and returns a string similar to [Struct.toString] but more compact. */
-internal fun Struct.toCompactString(): String =
-  Value.newBuilder().setStructValue(this).build().toCompactString()
-
-/** Generates and returns a string similar to [Value.toString] but more compact. */
-internal fun Value.toCompactString(): String {
-  val charArrayWriter = CharArrayWriter()
-  val out = BufferedWriter(charArrayWriter)
-  var indent = 0
-
-  fun BufferedWriter.writeIndent() {
-    repeat(indent * 2) { write(" ") }
+    append(ALPHANUMERIC_ALPHABET[intValue and 0x1f])
   }
-
-  val calculateCompactString =
-    DeepRecursiveFunction<Value, Unit> {
-      when (val kind = it.kindCase) {
-        KindCase.NULL_VALUE -> out.write("null")
-        KindCase.BOOL_VALUE -> out.write(if (it.boolValue) "true" else "false")
-        KindCase.NUMBER_VALUE -> out.write(it.numberValue.toString())
-        KindCase.STRING_VALUE -> out.write("\"${it.stringValue}\"")
-        KindCase.LIST_VALUE -> {
-          out.write("[")
-          indent++
-          it.listValue.valuesList.forEach { listElementValue ->
-            out.newLine()
-            out.writeIndent()
-            callRecursive(listElementValue)
-          }
-          indent--
-          out.newLine()
-          out.writeIndent()
-          out.write("]")
-        }
-        KindCase.STRUCT_VALUE -> {
-          out.write("{")
-          indent++
-          it.structValue.fieldsMap.entries
-            .sortedBy { (key, _) -> key }
-            .forEach { (structElementKey, structElementValue) ->
-              out.newLine()
-              out.writeIndent()
-              out.write("$structElementKey: ")
-              callRecursive(structElementValue)
-            }
-          indent--
-          out.newLine()
-          out.writeIndent()
-          out.write("}")
-        }
-        else -> throw IllegalArgumentException("unsupported kind: $kind")
-      }
-    }
-
-  calculateCompactString(this)
-
-  out.close()
-  return charArrayWriter.toString()
 }
-
-internal fun ExecuteQueryRequest.toCompactString(): String =
-  struct {
-      fields.put("name", value { stringValue = name })
-      fields.put("operationName", value { stringValue = operationName })
-      if (hasVariables()) fields.put("variables", value { structValue = variables })
-    }
-    .toCompactString()
-
-internal fun ExecuteQueryResponse.toCompactString(): String =
-  struct {
-      if (hasData()) fields.put("data", value { structValue = data })
-      fields.put(
-        "errors",
-        value {
-          listValue = listValue {
-            errorsList.forEach {
-              values.add(value { stringValue = it.toDataConnectError().toString() })
-            }
-          }
-        }
-      )
-    }
-    .toCompactString()
-
-internal fun ExecuteMutationRequest.toCompactString(): String =
-  struct {
-      fields.put("name", value { stringValue = name })
-      fields.put("operationName", value { stringValue = operationName })
-      if (hasVariables()) fields.put("variables", value { structValue = variables })
-    }
-    .toCompactString()
-
-internal fun ExecuteMutationResponse.toCompactString(): String =
-  struct {
-      if (hasData()) fields.put("data", value { structValue = data })
-      fields.put(
-        "errors",
-        value {
-          listValue = listValue {
-            errorsList.forEach {
-              values.add(value { stringValue = it.toDataConnectError().toString() })
-            }
-          }
-        }
-      )
-    }
-    .toCompactString()
