@@ -19,12 +19,10 @@ import com.google.protobuf.Value.KindCase
 import com.google.protobuf.listValue
 import com.google.protobuf.struct
 import com.google.protobuf.value
-import google.firebase.dataconnect.v1main.DataServiceOuterClass
 import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationRequest
 import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationResponse
 import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryRequest
 import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryResponse
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.GraphqlError
 import java.io.BufferedWriter
 import java.io.CharArrayWriter
 import java.io.DataOutputStream
@@ -182,32 +180,50 @@ internal fun Value.toCompactString(): String {
   return charArrayWriter.toString()
 }
 
-internal fun ExecuteQueryRequest.toCompactString(): String = struct {
-  fields.put("name", value { stringValue = name })
-  fields.put("operationName", value { stringValue = operationName })
-  fields.put("variables", value { structValue = variables })
-}.toCompactString()
+internal fun ExecuteQueryRequest.toCompactString(): String =
+  struct {
+      fields.put("name", value { stringValue = name })
+      fields.put("operationName", value { stringValue = operationName })
+      if (hasVariables()) fields.put("variables", value { structValue = variables })
+    }
+    .toCompactString()
 
-internal fun ExecuteQueryResponse.toCompactString(): String = struct {
-  fields.put("data", value { structValue = data })
-  fields.put("errors", value { listValue = listValue {
-    errorsList.forEach { values.add(value {
-      stringValue = it.toDataConnectError().toString()
-    }) }
-  } })
-}.toCompactString()
+internal fun ExecuteQueryResponse.toCompactString(): String =
+  struct {
+      if (hasData()) fields.put("data", value { structValue = data })
+      fields.put(
+        "errors",
+        value {
+          listValue = listValue {
+            errorsList.forEach {
+              values.add(value { stringValue = it.toDataConnectError().toString() })
+            }
+          }
+        }
+      )
+    }
+    .toCompactString()
 
-internal fun ExecuteMutationRequest.toCompactString(): String = struct {
-  fields.put("name", value { stringValue = name })
-  fields.put("operationName", value { stringValue = operationName })
-  fields.put("variables", value { structValue = variables })
-}.toCompactString()
+internal fun ExecuteMutationRequest.toCompactString(): String =
+  struct {
+      fields.put("name", value { stringValue = name })
+      fields.put("operationName", value { stringValue = operationName })
+      if (hasVariables()) fields.put("variables", value { structValue = variables })
+    }
+    .toCompactString()
 
-internal fun ExecuteMutationResponse.toCompactString(): String = struct {
-  fields.put("data", value { structValue = data })
-  fields.put("errors", value { listValue = listValue {
-    errorsList.forEach { values.add(value {
-      stringValue = it.toDataConnectError().toString()
-    }) }
-  } })
-}.toCompactString()
+internal fun ExecuteMutationResponse.toCompactString(): String =
+  struct {
+      if (hasData()) fields.put("data", value { structValue = data })
+      fields.put(
+        "errors",
+        value {
+          listValue = listValue {
+            errorsList.forEach {
+              values.add(value { stringValue = it.toDataConnectError().toString() })
+            }
+          }
+        }
+      )
+    }
+    .toCompactString()

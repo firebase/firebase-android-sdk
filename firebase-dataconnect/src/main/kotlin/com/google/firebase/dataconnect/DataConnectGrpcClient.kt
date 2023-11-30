@@ -131,14 +131,24 @@ internal class DataConnectGrpcClient(
       this.variables = variables
     }
 
-    logger.debug { "executeQuery() [rid=$requestId] sending " + "ExecuteQueryRequest: ${request.toCompactString()}" }
+    logger.debug {
+      "executeQuery() [rid=$requestId] sending " +
+        "ExecuteQueryRequest: ${request.toCompactString()}"
+    }
     val response =
       mutex
         .withLock { grpcStub }
         .runCatching { executeQuery(request) }
-        .onFailure { logger.warn(it) { "executeQuery() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}" } }
+        .onFailure {
+          logger.warn(it) {
+            "executeQuery() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
+          }
+        }
         .getOrThrow()
-    logger.debug { "executeQuery() [rid=$requestId] received: " + "${response::class.simpleName} ${response.toCompactString()}" }
+    logger.debug {
+      "executeQuery() [rid=$requestId] received: " +
+        "ExecuteQueryResponse ${response.toCompactString()}"
+    }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -157,14 +167,24 @@ internal class DataConnectGrpcClient(
       this.variables = variables
     }
 
-    logger.debug { "executeMutation() [rid=$requestId] sending " + "${request::class.simpleName}: ${request.toCompactString()}" }
+    logger.debug {
+      "executeMutation() [rid=$requestId] sending " +
+        "ExecuteMutationRequest: ${request.toCompactString()}"
+    }
     val response =
       mutex
         .withLock { grpcStub }
         .runCatching { executeMutation(request) }
-        .onFailure { logger.warn(it) { "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}" } }
+        .onFailure {
+          logger.warn(it) {
+            "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
+          }
+        }
         .getOrThrow()
-    logger.debug { "executeMutation() [rid=$requestId] received: " + "${response::class.simpleName} ${response.toCompactString()}" }
+    logger.debug {
+      "executeMutation() [rid=$requestId] received: " +
+        "ExecuteMutationResponse ${response.toCompactString()}"
+    }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
