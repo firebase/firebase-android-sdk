@@ -132,7 +132,7 @@ internal constructor(
       )
       .runCatching { deserialize(ref.dataDeserializer) }
       .onFailure {
-        logger.warn(it) { "executeMutation() requestId=$requestId decoding response data failed" }
+        logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
       }
       .getOrThrow()
       .toDataConnectResult(variables)

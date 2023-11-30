@@ -16,6 +16,17 @@ package com.google.firebase.dataconnect
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
+import com.google.protobuf.listValue
+import com.google.protobuf.struct
+import com.google.protobuf.value
+import google.firebase.dataconnect.v1main.DataServiceOuterClass
+import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationRequest
+import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationResponse
+import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryRequest
+import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryResponse
+import google.firebase.dataconnect.v1main.DataServiceOuterClass.GraphqlError
+import java.io.BufferedWriter
+import java.io.CharArrayWriter
 import java.io.DataOutputStream
 import java.io.OutputStream
 import java.security.DigestOutputStream
@@ -110,3 +121,93 @@ internal fun Value.calculateSha512(): ByteArray {
 
   return digest.digest()
 }
+
+/** Generates and returns a string similar to [Struct.toString] but more compact. */
+internal fun Struct.toCompactString(): String =
+  Value.newBuilder().setStructValue(this).build().toCompactString()
+
+/** Generates and returns a string similar to [Value.toString] but more compact. */
+internal fun Value.toCompactString(): String {
+  val charArrayWriter = CharArrayWriter()
+  val out = BufferedWriter(charArrayWriter)
+  var indent = 0
+
+  fun BufferedWriter.writeIndent() {
+    repeat(indent * 2) { write(" ") }
+  }
+
+  val calculateCompactString =
+    DeepRecursiveFunction<Value, Unit> {
+      when (val kind = it.kindCase) {
+        KindCase.NULL_VALUE -> out.write("null")
+        KindCase.BOOL_VALUE -> out.write(if (it.boolValue) "true" else "false")
+        KindCase.NUMBER_VALUE -> out.write(it.numberValue.toString())
+        KindCase.STRING_VALUE -> out.write("\"${it.stringValue}\"")
+        KindCase.LIST_VALUE -> {
+          out.write("[")
+          indent++
+          it.listValue.valuesList.forEach { listElementValue ->
+            out.newLine()
+            out.writeIndent()
+            callRecursive(listElementValue)
+          }
+          indent--
+          out.newLine()
+          out.writeIndent()
+          out.write("]")
+        }
+        KindCase.STRUCT_VALUE -> {
+          out.write("{")
+          indent++
+          it.structValue.fieldsMap.entries
+            .sortedBy { (key, _) -> key }
+            .forEach { (structElementKey, structElementValue) ->
+              out.newLine()
+              out.writeIndent()
+              out.write("$structElementKey: ")
+              callRecursive(structElementValue)
+            }
+          indent--
+          out.newLine()
+          out.writeIndent()
+          out.write("}")
+        }
+        else -> throw IllegalArgumentException("unsupported kind: $kind")
+      }
+    }
+
+  calculateCompactString(this)
+
+  out.close()
+  return charArrayWriter.toString()
+}
+
+internal fun ExecuteQueryRequest.toCompactString(): String = struct {
+  fields.put("name", value { stringValue = name })
+  fields.put("operationName", value { stringValue = operationName })
+  fields.put("variables", value { structValue = variables })
+}.toCompactString()
+
+internal fun ExecuteQueryResponse.toCompactString(): String = struct {
+  fields.put("data", value { structValue = data })
+  fields.put("errors", value { listValue = listValue {
+    errorsList.forEach { values.add(value {
+      stringValue = it.toDataConnectError().toString()
+    }) }
+  } })
+}.toCompactString()
+
+internal fun ExecuteMutationRequest.toCompactString(): String = struct {
+  fields.put("name", value { stringValue = name })
+  fields.put("operationName", value { stringValue = operationName })
+  fields.put("variables", value { structValue = variables })
+}.toCompactString()
+
+internal fun ExecuteMutationResponse.toCompactString(): String = struct {
+  fields.put("data", value { structValue = data })
+  fields.put("errors", value { listValue = listValue {
+    errorsList.forEach { values.add(value {
+      stringValue = it.toDataConnectError().toString()
+    }) }
+  } })
+}.toCompactString()

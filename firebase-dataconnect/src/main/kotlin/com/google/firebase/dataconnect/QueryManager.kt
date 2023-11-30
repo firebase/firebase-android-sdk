@@ -215,7 +215,7 @@ private class QueryState(
               },
               onFailure = { deserializeException ->
                 logger.warn(deserializeException) {
-                  "executeQuery() requestId=$requestId decoding response data failed"
+                  "executeQuery() [rid=$requestId] " + "decoding response data failed: $deserializeException"
                 }
                 _exceptionFlow.emit(deserializeException)
               }

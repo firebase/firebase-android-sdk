@@ -131,14 +131,14 @@ internal class DataConnectGrpcClient(
       this.variables = variables
     }
 
-    logger.debug { "executeQuery() requestId=$requestId sending: $request" }
+    logger.debug { "executeQuery() [rid=$requestId] sending " + "ExecuteQueryRequest: ${request.toCompactString()}" }
     val response =
       mutex
         .withLock { grpcStub }
         .runCatching { executeQuery(request) }
-        .onFailure { logger.warn(it) { "executeQuery() requestId=$requestId grpc call FAILED" } }
+        .onFailure { logger.warn(it) { "executeQuery() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}" } }
         .getOrThrow()
-    logger.debug { "executeQuery() requestId=$requestId got response: $response" }
+    logger.debug { "executeQuery() [rid=$requestId] received: " + "${response::class.simpleName} ${response.toCompactString()}" }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -157,14 +157,14 @@ internal class DataConnectGrpcClient(
       this.variables = variables
     }
 
-    logger.debug { "executeMutation() requestId=$requestId sending: $request" }
+    logger.debug { "executeMutation() [rid=$requestId] sending " + "${request::class.simpleName}: ${request.toCompactString()}" }
     val response =
       mutex
         .withLock { grpcStub }
         .runCatching { executeMutation(request) }
-        .onFailure { logger.warn(it) { "executeMutation() requestId=$requestId grpc call FAILED" } }
+        .onFailure { logger.warn(it) { "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}" } }
         .getOrThrow()
-    logger.debug { "executeMutation() requestId=$requestId got response: $response" }
+    logger.debug { "executeMutation() [rid=$requestId] received: " + "${response::class.simpleName} ${response.toCompactString()}" }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
