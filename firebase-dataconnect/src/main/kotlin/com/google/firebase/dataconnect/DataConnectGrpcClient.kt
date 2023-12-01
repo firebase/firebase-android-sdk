@@ -84,28 +84,28 @@ internal class DataConnectGrpcClient(
         logger.warn(e) { "Failed to update ssl context" }
       }
 
-      ManagedChannelBuilder.forAddress(hostName, port).let {
-        if (!sslEnabled) {
-          it.usePlaintext()
+      val channel =
+        ManagedChannelBuilder.forAddress(hostName, port).let {
+          if (!sslEnabled) {
+            it.usePlaintext()
+          }
+
+          // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+          // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
+          // failsafe.
+          it.keepAliveTime(30, TimeUnit.SECONDS)
+
+          it.executor(executor)
+
+          // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
+          // to respond more gracefully to network change events, such as switching from cellular to
+          // wifi.
+          AndroidChannelBuilder.usingBuilder(it).context(context).build()
         }
 
-        // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-        // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
-        // failsafe.
-        it.keepAliveTime(30, TimeUnit.SECONDS)
+      logger.debug { "${ManagedChannel::class.qualifiedName} initialization completed" }
 
-        it.executor(executor)
-
-        // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
-        // to
-        // respond more gracefully to network change events, such as switching from cellular to
-        // wifi.
-        val channel = AndroidChannelBuilder.usingBuilder(it).context(context).build()
-
-        logger.debug { "${ManagedChannel::class.qualifiedName} initialization completed" }
-
-        channel
-      }
+      channel
     }
 
   private val grpcChannelOrNull
@@ -117,13 +117,22 @@ internal class DataConnectGrpcClient(
   private val grpcStub: DataServiceCoroutineStub by
     lazy(LazyThreadSafetyMode.NONE) { DataServiceCoroutineStub(grpcChannel.value) }
 
-  data class OperationResult(val data: Struct?, val errors: List<DataConnectError>)
-  data class DeserialzedOperationResult<T>(val data: T, val errors: List<DataConnectError>)
+  data class OperationResult(
+    val data: Struct?,
+    val errors: List<DataConnectError>,
+    val sequenceNumber: Long
+  )
+  data class DeserialzedOperationResult<T>(
+    val data: T,
+    val errors: List<DataConnectError>,
+    val sequenceNumber: Long
+  )
 
   suspend fun executeQuery(
     requestId: String,
+    sequenceNumber: Long,
     operationName: String,
-    variables: Struct
+    variables: Struct,
   ): OperationResult {
     val request = executeQueryRequest {
       this.name = requestName
@@ -152,14 +161,16 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() }
+      errors = response.errorsList.map { it.toDataConnectError() },
+      sequenceNumber = sequenceNumber,
     )
   }
 
   suspend fun executeMutation(
     requestId: String,
+    sequenceNumber: Long,
     operationName: String,
-    variables: Struct
+    variables: Struct,
   ): OperationResult {
     val request = executeMutationRequest {
       this.name = requestName
@@ -188,7 +199,8 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() }
+      errors = response.errorsList.map { it.toDataConnectError() },
+      sequenceNumber = sequenceNumber,
     )
   }
 
@@ -238,17 +250,23 @@ internal fun GraphqlError.toDataConnectError() =
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
   dataDeserializer: DeserializationStrategy<T>
-): DataConnectGrpcClient.DeserialzedOperationResult<T> {
-  if (data === null) {
-    // TODO: include the variables and error list in the thrown exception
-    throw DataConnectException("no data included in result: errors=${errors}")
-  }
-  return DataConnectGrpcClient.DeserialzedOperationResult(
-    data = decodeFromStruct(dataDeserializer, data),
-    errors = errors
-  )
-}
+): DataConnectGrpcClient.DeserialzedOperationResult<T> =
+  if (data === null)
+  // TODO: include the variables and error list in the thrown exception
+  throw DataConnectException("no data included in result: errors=${errors}")
+  else
+    DataConnectGrpcClient.DeserialzedOperationResult(
+      data = decodeFromStruct(dataDeserializer, data),
+      errors = errors,
+      sequenceNumber = sequenceNumber,
+    )
 
 internal fun <V, D> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectResult(
   variables: V
-) = DataConnectResult(variables = variables, data = data, errors = errors)
+) =
+  DataConnectResult(
+    variables = variables,
+    data = data,
+    errors = errors,
+    sequenceNumber = sequenceNumber
+  )

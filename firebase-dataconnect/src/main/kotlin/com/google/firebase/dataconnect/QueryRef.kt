@@ -31,7 +31,8 @@ internal constructor(
   ) {
   override suspend fun execute(
     variables: VariablesType
-  ): DataConnectResult<VariablesType, DataType> = dataConnect.executeQuery(this, variables)
+  ): DataConnectResult<VariablesType, DataType> =
+    dataConnect.getQueryManager().execute(this, variables)
 
   fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> =
     QuerySubscription(this, variables)

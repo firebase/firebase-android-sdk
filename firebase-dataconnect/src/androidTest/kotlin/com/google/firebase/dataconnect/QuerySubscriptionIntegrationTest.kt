@@ -30,8 +30,6 @@ import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQu
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.subscribe
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
-import kotlin.math.max
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -60,7 +58,7 @@ class QuerySubscriptionIntegrationTest {
   fun lastResult_should_be_equal_to_the_last_collected_result() = runTest {
     schema.createPerson.execute(id = "TestId", name = "TestPerson", age = 42)
     val querySubscription = schema.getPerson.subscribe(id = "42")
-    val result = querySubscription.flow.first()
+    val result = querySubscription.resultFlow.first()
     assertThat(querySubscription.lastResult).isEqualTo(result)
   }
 
@@ -73,7 +71,7 @@ class QuerySubscriptionIntegrationTest {
       Channel<DataConnectResult<GetPersonQueryVariables, GetPersonQueryData>>(
         capacity = Channel.UNLIMITED
       )
-    backgroundScope.launch { querySubscription.flow.collect(resultsChannel::send) }
+    backgroundScope.launch { querySubscription.resultFlow.collect(resultsChannel::send) }
 
     val result1 = resultsChannel.receive()
     assertThat(result1.data.person).isEqualToGetPersonQueryResult(name = "Name0", age = 10000)
@@ -87,16 +85,16 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun flow_collect_should_get_immediately_invoked_with_last_result() = runTest {
-    schema.createPerson.execute(id = "TestId12345", name = "TestName", age = 10000)
+    schema.createPerson.execute(id = "TestId12345", name = "OriginalName", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
-    val result1 = querySubscription.flow.first().data.person
-    assertThat(result1).isEqualToGetPersonQueryResult(name = "TestName", age = 10000)
+    val result1 = querySubscription.resultFlow.first().data.person
+    assertWithMessage("result1.name").that(result1!!.name).isEqualTo("OriginalName")
 
-    schema.updatePerson.execute(id = "TestId12345", name = "TestName2", age = 10002)
+    schema.updatePerson.execute(id = "TestId12345", name = "UpdatedName")
 
-    val result2 = querySubscription.flow.first().data.person
-    assertThat(result2).isEqualToGetPersonQueryResult(name = "TestName", age = 10000)
+    val result2 = querySubscription.resultFlow.first().data.person
+    assertWithMessage("result2.name").that(result2!!.name).isEqualTo("OriginalName")
   }
 
   @Test
@@ -104,11 +102,13 @@ class QuerySubscriptionIntegrationTest {
     schema.createPerson.execute(id = "TestId12345", name = "TestName", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
-    backgroundScope.launch { querySubscription.flow.collect { delay(Integer.MAX_VALUE.seconds) } }
+    backgroundScope.launch {
+      querySubscription.resultFlow.collect { delay(Integer.MAX_VALUE.seconds) }
+    }
 
     repeat(5) {
       assertWithMessage("fast flow retrieval iteration $it")
-        .that(querySubscription.flow.first().data.person)
+        .that(querySubscription.resultFlow.first().data.person)
         .isEqualToGetPersonQueryResult(name = "TestName", age = 10000)
     }
   }
@@ -120,9 +120,9 @@ class QuerySubscriptionIntegrationTest {
     val querySubscription = schema.getPerson.subscribe(queryVariables)
     val results1 = CopyOnWriteArrayList<DataConnectResult<*, *>>()
     val results2 = CopyOnWriteArrayList<DataConnectResult<*, *>>()
-    backgroundScope.launch { querySubscription.flow.toList(results1) }
+    backgroundScope.launch { querySubscription.resultFlow.toList(results1) }
     delayUntil("results1.isNotEmpty()") { results1.isNotEmpty() }
-    backgroundScope.launch { querySubscription.flow.toList(results2) }
+    backgroundScope.launch { querySubscription.resultFlow.toList(results2) }
     delayUntil("results2.isNotEmpty()") { results2.isNotEmpty() }
 
     schema.updatePerson.execute(id = "TestId12345", name = "TestName9", age = 99999)
@@ -134,13 +134,15 @@ class QuerySubscriptionIntegrationTest {
       DataConnectResult(
         variables = queryVariables,
         data = GetPersonQueryData(GetPersonQueryData.Person(name = "TestName0", age = 10000)),
-        errors = emptyList()
+        errors = emptyList(),
+        sequenceNumber = -1, // sequenceNumber is not considered by equals()
       )
     val expectedResult2 =
       DataConnectResult(
         variables = queryVariables,
         data = GetPersonQueryData(GetPersonQueryData.Person(name = "TestName9", age = 99999)),
-        errors = emptyList()
+        errors = emptyList(),
+        sequenceNumber = -1, // sequenceNumber is not considered by equals()
       )
     assertWithMessage("results1")
       .that(results1)
@@ -157,24 +159,34 @@ class QuerySubscriptionIntegrationTest {
     schema.createPerson.execute(id = "TestId12345", name = "Name", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
-    val resultsChannel = Channel<GetPersonQueryData>(capacity = Channel.UNLIMITED)
-    backgroundScope.launch { querySubscription.flow.map { it.data }.collect(resultsChannel::send) }
+    val collectedResults =
+      CopyOnWriteArrayList<DataConnectResult<GetPersonQueryVariables, GetPersonQueryData>>()
+    backgroundScope.launch { querySubscription.resultFlow.toList(collectedResults) }
 
-    val maxHardwareConcurrency = max(2, Runtime.getRuntime().availableProcessors())
-    val multiThreadExecutor = Executors.newFixedThreadPool(maxHardwareConcurrency)
-    try {
-      repeat(100000) { multiThreadExecutor.execute(querySubscription::reload) }
-    } finally {
-      multiThreadExecutor.shutdown()
+    val deferreds = buildList {
+      repeat(25_000) {
+        // Use `Dispatchers.Default` as the dispatcher for the launched coroutines so that there
+        // will be at least 2 threads used to run the coroutines (as documented by
+        // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
+        // that this test is indeed testing "massive concurrency".
+        add(backgroundScope.async(Dispatchers.Default) { querySubscription.reload() })
+      }
     }
 
-    var resultCount = 0
-    while (true) {
-      resultCount++
-      val result = withTimeoutOrNull(1.seconds) { resultsChannel.receive() } ?: break
-      assertThat(result.person).isEqualToGetPersonQueryResult(name = "Name", age = 10000)
+    // Wait for at least one result to come in.
+    while (collectedResults.isEmpty()) {
+      yield()
     }
-    assertThat(resultCount).isGreaterThan(0)
+
+    // Wait for all calls to reload() to complete.
+    deferreds.forEach { it.await() }
+
+    // Verify that we got the expected results.
+    collectedResults.forEachIndexed { index, result ->
+      assertWithMessage("collectedResults[$index]")
+        .that(result.data.person)
+        .isEqualToGetPersonQueryResult(name = "Name", age = 10000)
+    }
   }
 }
 

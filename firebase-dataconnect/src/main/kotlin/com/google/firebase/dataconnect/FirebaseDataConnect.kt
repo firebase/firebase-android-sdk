@@ -20,19 +20,10 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import java.util.concurrent.Executor
 import kotlin.random.Random
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
@@ -69,6 +60,8 @@ internal constructor(
         }
     )
 
+  private val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
+
   // Protects `closed`, `grpcClient`, and `queryManager`.
   private val mutex = Mutex()
 
@@ -103,17 +96,15 @@ internal constructor(
     get() = if (grpcClient.isInitialized()) grpcClient.value else null
 
   // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
-  //  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance
-  // can
-  //  // be used.
-  private val queryManager =
+  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
+  // be used.
+  private val queryManager by
     lazy(LazyThreadSafetyMode.NONE) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      QueryManager(grpcClient.value, coroutineScope, logger.id)
+      QueryManager(grpcClient.value, coroutineScope, blockingDispatcher, logger.id)
     }
 
-  internal suspend fun <V, D> executeQuery(ref: QueryRef<V, D>, variables: V) =
-    mutex.withLock { queryManager.value }.execute(ref, variables)
+  internal suspend fun getQueryManager(): QueryManager = mutex.withLock { queryManager }
 
   internal suspend fun <V, D> executeMutation(ref: MutationRef<V, D>, variables: V) =
     executeMutation(ref, variables, requestId = Random.nextAlphanumericString())
@@ -127,10 +118,11 @@ internal constructor(
       .withLock { grpcClient.value }
       .executeMutation(
         requestId = requestId,
+        sequenceNumber = nextSequenceNumber(),
         operationName = ref.operationName,
         variables = encodeToStruct(ref.variablesSerializer, variables)
       )
-      .runCatching { deserialize(ref.dataDeserializer) }
+      .runCatching { withContext(blockingDispatcher) { deserialize(ref.dataDeserializer) } }
       .onFailure {
         logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
       }

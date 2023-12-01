@@ -11,7 +11,12 @@ class DataConnectResultTest {
   fun `variables should be the same object given to the constructor`() {
     val variables = TestVariables("boo")
     val dataConnectResult =
-      DataConnectResult(variables = variables, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = variables,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.variables).isSameInstanceAs(variables)
   }
 
@@ -19,7 +24,12 @@ class DataConnectResultTest {
   fun `data should be the same object given to the constructor`() {
     val data = TestData("blah")
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = data, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = data,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.data).isSameInstanceAs(data)
   }
 
@@ -27,25 +37,48 @@ class DataConnectResultTest {
   fun `errors should be the same object given to the constructor`() {
     val errors = listOf(SAMPLE_ERROR1)
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = errors)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = errors,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.errors).isSameInstanceAs(errors)
   }
 
   @Test
   fun `errors should be empty if empty was given to the constructor`() {
     val dataConnectResult =
-      DataConnectResult<TestVariables, TestData>(
+      DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = SAMPLE_DATA,
-        errors = emptyList()
+        errors = emptyList(),
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult.errors).isEmpty()
   }
 
   @Test
+  fun `sequenceNumber should be the same object given to the constructor`() {
+    val dataConnectResult =
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = 12345
+      )
+    assertThat(dataConnectResult.sequenceNumber).isEqualTo(12345)
+  }
+
+  @Test
   fun `toString() should begin with the class name and contain text in parentheses`() {
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.toString()).startsWith("DataConnectResult(")
     assertThat(dataConnectResult.toString()).endsWith(")")
   }
@@ -57,7 +90,12 @@ class DataConnectResultTest {
         override fun toString() = "TestVariablesToString"
       }
     val dataConnectResult =
-      DataConnectResult(variables = variables, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = variables,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.toString()).containsWithNonAdjacentText("TestVariablesToString")
   }
 
@@ -68,7 +106,12 @@ class DataConnectResultTest {
         override fun toString() = "TestDataToString"
       }
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = data, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = data,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.toString()).containsWithNonAdjacentText("TestDataToString")
   }
 
@@ -76,54 +119,130 @@ class DataConnectResultTest {
   fun `toString() should incorporate the errors`() {
     val errors = listOf(SAMPLE_ERROR1, SAMPLE_ERROR2)
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = errors)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = errors,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.toString()).containsWithNonAdjacentText(errors.toString())
   }
 
   @Test
   fun `toString() should incorporate the errors, if empty`() {
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = emptyList())
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = emptyList(),
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.toString())
       .containsWithNonAdjacentText(emptyList<DataConnectError>().toString())
   }
 
   @Test
+  fun `toString() should NOT incorporate the sequenceNumber`() {
+    val dataConnectResult =
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = 123456789123456789
+      )
+    assertThat(dataConnectResult.toString()).doesNotContain("123456789123456789")
+  }
+
+  @Test
   fun `equals() should return true for the exact same instance`() {
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.equals(dataConnectResult)).isTrue()
   }
 
   @Test
   fun `equals() should return true for an equal instance`() {
     val dataConnectResult1 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     val dataConnectResult2 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult1.equals(dataConnectResult2)).isTrue()
   }
 
   @Test
   fun `equals() should return true if all properties are equal, and data is null`() {
     val dataConnectResult1 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = null, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = null,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     val dataConnectResult2 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = null, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = null,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
+    assertThat(dataConnectResult1.equals(dataConnectResult2)).isTrue()
+  }
+
+  @Test
+  fun `equals() should return true for equal instances with different sequenceNumber`() {
+    val dataConnectResult1 =
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = 1
+      )
+    val dataConnectResult2 =
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = 2
+      )
     assertThat(dataConnectResult1.equals(dataConnectResult2)).isTrue()
   }
 
   @Test
   fun `equals() should return false for null`() {
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.equals(null)).isFalse()
   }
 
   @Test
   fun `equals() should return false for a different type`() {
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult.equals(listOf("foo"))).isFalse()
   }
 
@@ -133,13 +252,15 @@ class DataConnectResultTest {
       DataConnectResult(
         variables = TestVariables("foo"),
         data = SAMPLE_DATA,
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     val dataConnectResult2 =
       DataConnectResult(
         variables = TestVariables("bar"),
         data = SAMPLE_DATA,
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult1.equals(dataConnectResult2)).isFalse()
   }
@@ -150,13 +271,15 @@ class DataConnectResultTest {
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = TestData("foo"),
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     val dataConnectResult2 =
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = TestData("bar"),
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult1.equals(dataConnectResult2)).isFalse()
   }
@@ -164,12 +287,18 @@ class DataConnectResultTest {
   @Test
   fun `equals() should return false when data of first object is null`() {
     val dataConnectResult1 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = null, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = null,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     val dataConnectResult2 =
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = TestData("bar"),
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult1.equals(dataConnectResult2)).isFalse()
   }
@@ -180,10 +309,16 @@ class DataConnectResultTest {
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = TestData("foo"),
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     val dataConnectResult2 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = null, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = null,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     assertThat(dataConnectResult1.equals(dataConnectResult2)).isFalse()
   }
 
@@ -193,13 +328,15 @@ class DataConnectResultTest {
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = SAMPLE_DATA,
-        errors = listOf(SAMPLE_ERROR1)
+        errors = listOf(SAMPLE_ERROR1),
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     val dataConnectResult2 =
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = SAMPLE_DATA,
-        errors = listOf(SAMPLE_ERROR2)
+        errors = listOf(SAMPLE_ERROR2),
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult1.equals(dataConnectResult2)).isFalse()
   }
@@ -207,7 +344,12 @@ class DataConnectResultTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() {
     val dataConnectResult =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     val hashCode = dataConnectResult.hashCode()
     assertThat(dataConnectResult.hashCode()).isEqualTo(hashCode)
     assertThat(dataConnectResult.hashCode()).isEqualTo(hashCode)
@@ -217,9 +359,38 @@ class DataConnectResultTest {
   @Test
   fun `hashCode() should return the same value on equal objects`() {
     val dataConnectResult1 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
     val dataConnectResult2 =
-      DataConnectResult(variables = SAMPLE_VARIABLES, data = SAMPLE_DATA, errors = SAMPLE_ERRORS)
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
+      )
+    assertThat(dataConnectResult1.hashCode()).isEqualTo(dataConnectResult2.hashCode())
+  }
+
+  @Test
+  fun `hashCode() should return the same value on equal objects, even if sequenceNumber differs`() {
+    val dataConnectResult1 =
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = 1
+      )
+    val dataConnectResult2 =
+      DataConnectResult(
+        variables = SAMPLE_VARIABLES,
+        data = SAMPLE_DATA,
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = 2
+      )
     assertThat(dataConnectResult1.hashCode()).isEqualTo(dataConnectResult2.hashCode())
   }
 
@@ -229,13 +400,15 @@ class DataConnectResultTest {
       DataConnectResult(
         variables = TestVariables("foo"),
         data = SAMPLE_DATA,
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     val dataConnectResult2 =
       DataConnectResult(
         variables = TestVariables("bar"),
         data = SAMPLE_DATA,
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult1.hashCode()).isNotEqualTo(dataConnectResult2.hashCode())
   }
@@ -246,13 +419,15 @@ class DataConnectResultTest {
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = TestData("foo"),
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     val dataConnectResult2 =
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = TestData("bar"),
-        errors = SAMPLE_ERRORS
+        errors = SAMPLE_ERRORS,
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult1.hashCode()).isNotEqualTo(dataConnectResult2.hashCode())
   }
@@ -263,13 +438,15 @@ class DataConnectResultTest {
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = SAMPLE_DATA,
-        errors = listOf(SAMPLE_ERROR1)
+        errors = listOf(SAMPLE_ERROR1),
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     val dataConnectResult2 =
       DataConnectResult(
         variables = SAMPLE_VARIABLES,
         data = SAMPLE_DATA,
-        errors = listOf(SAMPLE_ERROR2)
+        errors = listOf(SAMPLE_ERROR2),
+        sequenceNumber = SAMPLE_SEQUENCE_NUMBER
       )
     assertThat(dataConnectResult1.hashCode()).isNotEqualTo(dataConnectResult2.hashCode())
   }
@@ -302,3 +479,4 @@ private val SAMPLE_ERROR2 =
     extensions = SAMPLE_ERROR_EXTENSIONS2
   )
 private val SAMPLE_ERRORS = listOf(SAMPLE_ERROR1, SAMPLE_ERROR2)
+private val SAMPLE_SEQUENCE_NUMBER: Long = -1

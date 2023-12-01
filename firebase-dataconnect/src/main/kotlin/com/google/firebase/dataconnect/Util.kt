@@ -14,6 +14,7 @@
 package com.google.firebase.dataconnect
 
 import java.io.OutputStream
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -24,6 +25,19 @@ internal object NullOutputStream : OutputStream() {
 }
 
 internal class ReferenceCounted<T>(val obj: T, var refCount: Int)
+
+private val nextSequenceId = AtomicLong(0)
+
+/**
+ * Returns a positive number on each invocation, with each returned value being strictly greater
+ * than any value previously returned in this process.
+ *
+ * This function is thread-safe and may be called concurrently by multiple threads and/or
+ * coroutines.
+ */
+internal fun nextSequenceNumber(): Long {
+  return nextSequenceId.incrementAndGet()
+}
 
 /**
  * Generates and returns a string containing random alphanumeric characters.

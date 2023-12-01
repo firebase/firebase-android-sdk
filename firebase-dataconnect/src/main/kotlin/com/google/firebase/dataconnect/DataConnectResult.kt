@@ -14,13 +14,17 @@
 package com.google.firebase.dataconnect
 
 class DataConnectResult<VariablesType, DataType>
-private constructor(private val impl: Impl<VariablesType, DataType>) {
+private constructor(
+  private val impl: Impl<VariablesType, DataType>,
+  internal val sequenceNumber: Long
+) {
 
   internal constructor(
     variables: VariablesType,
     data: DataType,
-    errors: List<DataConnectError>
-  ) : this(Impl(variables = variables, data = data, errors = errors))
+    errors: List<DataConnectError>,
+    sequenceNumber: Long,
+  ) : this(Impl(variables = variables, data = data, errors = errors), sequenceNumber)
 
   val variables: VariablesType
     get() = impl.variables

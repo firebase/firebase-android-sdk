@@ -13,10 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import com.google.firebase.concurrent.FirebaseExecutors
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 
 class QuerySubscription<VariablesType, DataType>
@@ -24,60 +21,64 @@ internal constructor(
   internal val query: QueryRef<VariablesType, DataType>,
   variables: VariablesType
 ) {
-  private val _variables = AtomicReference(variables)
-  val variables: VariablesType
-    get() = _variables.get()
+  private val _variables = MutableStateFlow(variables)
+  val variables: VariablesType by _variables.asStateFlow()::value
 
-  private val sharedFlow =
-    MutableSharedFlow<DataConnectResult<VariablesType, DataType>>(
-      replay = 1,
-      extraBufferCapacity = Integer.MAX_VALUE
-    )
-  private val sequentialDispatcher =
-    FirebaseExecutors.newSequentialExecutor(query.dataConnect.nonBlockingExecutor)
-      .asCoroutineDispatcher()
+  private val _lastResult = MutableStateFlow<DataConnectResult<VariablesType, DataType>?>(null)
+  val lastResult: DataConnectResult<VariablesType, DataType>? by _lastResult.asStateFlow()::value
 
-  // NOTE: The variables below must ONLY be accessed from coroutines that use `sequentialDispatcher`
-  // for their `CoroutineDispatcher`. Having this requirement removes the need for explicitly
-  // synchronizing access to these variables.
-  private var inProgressReload: CompletableDeferred<DataConnectResult<VariablesType, DataType>>? =
-    null
-  private var pendingReload: CompletableDeferred<DataConnectResult<VariablesType, DataType>>? = null
+  // Each collection of this flow triggers an implicit `reload()`.
+  val resultFlow: Flow<DataConnectResult<VariablesType, DataType>> = channelFlow {
+    val cachedResult = lastResult?.also { send(it) }
 
-  val lastResult: DataConnectResult<VariablesType, DataType>?
-    get() = sharedFlow.replayCache.firstOrNull()
-
-  fun reload(): Deferred<DataConnectResult<VariablesType, DataType>> =
-    runBlocking(sequentialDispatcher) {
-      pendingReload
-        ?: run {
-          CompletableDeferred<DataConnectResult<VariablesType, DataType>>().also { deferred ->
-            if (inProgressReload == null) {
-              inProgressReload = deferred
-              query.dataConnect.coroutineScope.launch(sequentialDispatcher) { doReloadLoop() }
-            } else {
-              pendingReload = deferred
-            }
+    var collectJob: Job? = null
+    _variables.collect { variables ->
+      // We only need to execute the query upon initially collecting the flow. Subsequent changes to
+      // the variables automatically get a call to reload() by update().
+      val shouldExecuteQuery =
+        collectJob.let {
+          if (it === null) {
+            true
+          } else {
+            it.cancelAndJoin()
+            false
           }
         }
-    }
 
-  fun update(variables: VariablesType) {
-    _variables.set(variables)
+      collectJob = launch {
+        query.dataConnect.getQueryManager().onResult(
+          query,
+          variables,
+          sinceSequenceNumber = cachedResult?.sequenceNumber,
+          executeQuery = shouldExecuteQuery
+        ) {
+          updateLastResult(it)
+          send(it)
+        }
+      }
+    }
+  }
+
+  suspend fun reload() {
+    query.dataConnect.getQueryManager().execute(query, variables)
+  }
+
+  suspend fun update(variables: VariablesType) {
+    _variables.value = variables
     reload()
   }
 
-  val flow: Flow<DataConnectResult<VariablesType, DataType>>
-    get() = sharedFlow.asSharedFlow().onSubscription { reload() }.buffer(Channel.CONFLATED)
-
-  private suspend fun doReloadLoop() {
+  private fun updateLastResult(newLastResult: DataConnectResult<VariablesType, DataType>) {
+    // Update the last result in a compare-and-swap loop so that there is no possibility of
+    // clobbering a newer result with an older result, compared using their sequence numbers.
     while (true) {
-      val deferred = inProgressReload ?: break
-      val result = query.execute(variables)
-      deferred.complete(result)
-      sharedFlow.emit(result)
-      inProgressReload = pendingReload
-      pendingReload = null
+      val oldLastResult = _lastResult.value
+      if (oldLastResult !== null && oldLastResult.sequenceNumber > newLastResult.sequenceNumber) {
+        return
+      }
+      if (_lastResult.compareAndSet(oldLastResult, newLastResult)) {
+        return
+      }
     }
   }
 }

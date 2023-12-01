@@ -54,7 +54,7 @@ suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(id: Stri
 fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(id: String) =
   subscribe(variablesFor(id = id))
 
-fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>.update(
+suspend fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>.update(
   block: GetPostQuery.Variables.Builder.() -> Unit
 ) = update(variables.build(block))
 

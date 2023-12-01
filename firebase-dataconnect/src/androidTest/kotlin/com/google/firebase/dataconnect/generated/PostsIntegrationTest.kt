@@ -78,7 +78,7 @@ class PostsIntegrationTest {
     val querySubscription = posts.getPost.subscribe(id = postId1)
     assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
-    val result1 = querySubscription.flow.first()
+    val result1 = querySubscription.resultFlow.first()
     assertWithMessage("result1.isSuccess").that(result1.errors).isEmpty()
     assertWithMessage("result1.post.content")
       .that(result1.data.post?.content)
@@ -86,7 +86,7 @@ class PostsIntegrationTest {
 
     assertWithMessage("lastResult 1").that(querySubscription.lastResult).isEqualTo(result1)
 
-    val flow2Job = backgroundScope.async { querySubscription.flow.take(2).toList() }
+    val flow2Job = backgroundScope.async { querySubscription.resultFlow.take(2).toList() }
 
     querySubscription.update { id = postId2 }
 
