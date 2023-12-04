@@ -27,15 +27,20 @@ type Primitive @table {
 
 type PrimitiveList @table {
   id: ID!
-  idListNullable: [ID]
-  intList: [Int!]
-  intListNullable: [Int]
-  floatList: [Float!]
-  floatListNullable: [Float]
-  booleanList: [Boolean!]
-  booleanListNullable: [Boolean]
-  stringList: [String!]
-  stringListNullable: [String]
+  idListNullable: [ID!]
+  idListOfNullable: [ID]!
+  intList: [Int!]!
+  intListNullable: [Int!]
+  intListOfNullable: [Int]!
+  floatList: [Float!]!
+  floatListNullable: [Float!]
+  floatListOfNullable: [Float]!
+  booleanList: [Boolean!]!
+  booleanListNullable: [Boolean!]
+  booleanListOfNullable: [Boolean]!
+  stringList: [String!]!
+  stringListNullable: [String!]
+  stringListOfNullable: [String]!
 }
 
 type Farm @table {

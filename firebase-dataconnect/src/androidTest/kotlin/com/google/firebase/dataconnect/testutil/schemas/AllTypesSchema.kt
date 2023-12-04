@@ -82,17 +82,22 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   @Serializable
   data class PrimitiveListData(
     val id: String,
-    val idListNullable: List<String?>,
+    val idListNullable: List<String>?,
+    val idListOfNullable: List<String?>,
     val intList: List<Int>,
-    val intListNullable: List<Int?>,
+    val intListNullable: List<Int>?,
+    val intListOfNullable: List<Int?>,
     // NOTE: GraphQL "Float" type is a "signed double-precision floating-point value", which is
     // equivalent to Java and Kotlin's `Double` type.
     val floatList: List<Double>,
-    val floatListNullable: List<Double?>,
+    val floatListNullable: List<Double>?,
+    val floatListOfNullable: List<Double?>,
     val booleanList: List<Boolean>,
-    val booleanListNullable: List<Boolean?>,
+    val booleanListNullable: List<Boolean>?,
+    val booleanListOfNullable: List<Boolean?>,
     val stringList: List<String>,
-    val stringListNullable: List<String?>,
+    val stringListNullable: List<String>?,
+    val stringListOfNullable: List<String?>,
   )
 
   object CreatePrimitiveListMutation {

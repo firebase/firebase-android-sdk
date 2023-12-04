@@ -171,15 +171,20 @@ class QueryRefIntegrationTest {
       AllTypesSchema.CreatePrimitiveListMutation.Variables(
         AllTypesSchema.PrimitiveListData(
           id = "TestId",
-          idListNullable = listOf("ddd", "eee"),
+          idListNullable = listOf("aaa", "bbb"),
+          idListOfNullable = listOf("ccc", "ddd"),
           intList = listOf(42, 43, 44),
           intListNullable = listOf(45, 46),
+          intListOfNullable = listOf(47, 48),
           floatList = listOf(12.3, 45.6, 78.9),
           floatListNullable = listOf(98.7, 65.4),
+          floatListOfNullable = listOf(100.1, 100.2),
           booleanList = listOf(true, false, true, false),
           booleanListNullable = listOf(false, true, false, true),
+          booleanListOfNullable = listOf(false, false, true, true),
           stringList = listOf("xxx", "yyy", "zzz"),
           stringListNullable = listOf("qqq", "rrr"),
+          stringListOfNullable = listOf("sss", "ttt"),
         )
       )
     )
@@ -190,15 +195,20 @@ class QueryRefIntegrationTest {
 
     val primitive = result.data.primitiveList ?: error("result.data.primitiveList is null")
     assertThat(primitive.id).isEqualTo("TestId")
-    assertThat(primitive.idListNullable).containsExactly("ddd", "eee").inOrder()
+    assertThat(primitive.idListNullable).containsExactly("aaa", "bbb").inOrder()
+    assertThat(primitive.idListOfNullable).containsExactly("ccc", "ddd").inOrder()
     assertThat(primitive.intList).containsExactly(42, 43, 44).inOrder()
     assertThat(primitive.intListNullable).containsExactly(45, 46).inOrder()
+    assertThat(primitive.intListOfNullable).containsExactly(47, 48).inOrder()
     assertThat(primitive.floatList).containsExactly(12.3, 45.6, 78.9).inOrder()
     assertThat(primitive.floatListNullable).containsExactly(98.7, 65.4).inOrder()
+    assertThat(primitive.floatListOfNullable).containsExactly(100.1, 100.2).inOrder()
     assertThat(primitive.booleanList).containsExactly(true, false, true, false).inOrder()
     assertThat(primitive.booleanListNullable).containsExactly(false, true, false, true).inOrder()
+    assertThat(primitive.booleanListOfNullable).containsExactly(false, false, true, true).inOrder()
     assertThat(primitive.stringList).containsExactly("xxx", "yyy", "zzz").inOrder()
     assertThat(primitive.stringListNullable).containsExactly("qqq", "rrr").inOrder()
+    assertThat(primitive.stringListOfNullable).containsExactly("sss", "ttt").inOrder()
     assertThat(result.errors).isEmpty()
   }
 

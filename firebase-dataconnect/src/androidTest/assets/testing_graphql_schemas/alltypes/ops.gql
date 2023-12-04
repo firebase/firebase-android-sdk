@@ -31,7 +31,7 @@ query getPrimitive($id: ID!) @auth(is: PUBLIC) {
   }
 }
 
-mutation createPrimitiveList($data: PrimitiveList_Data! @pick(fields: ["id", "idListNullable", "intList", "intListNullable", "floatList", "floatListNullable", "booleanList", "booleanListNullable", "stringList", "stringListNullable"])) @auth(is: PUBLIC) {
+mutation createPrimitiveList($data: PrimitiveList_Data! @pick(fields: ["id", "idListNullable", "idListOfNullable", "intList", "intListNullable", "intListOfNullable", "floatList", "floatListNullable", "floatListOfNullable", "booleanList", "booleanListNullable", "booleanListOfNullable", "stringList", "stringListNullable", "stringListOfNullable"])) @auth(is: PUBLIC) {
   primitiveList_insert(data: $data)
 }
 
@@ -39,14 +39,19 @@ query getPrimitiveList($id: ID!) @auth(is: PUBLIC) {
   primitiveList(id: $id) {
     id
     idListNullable
+    idListOfNullable
     intList
     intListNullable
+    intListOfNullable
     floatList
     floatListNullable
+    floatListOfNullable
     booleanList
     booleanListNullable
+    booleanListOfNullable
     stringList
     stringListNullable
+    stringListOfNullable
   }
 }
 
@@ -54,14 +59,19 @@ query getAllPrimitiveLists @auth(is: PUBLIC) {
   primitiveLists {
     id
     idListNullable
+    idListOfNullable
     intList
     intListNullable
+    intListOfNullable
     floatList
     floatListNullable
+    floatListOfNullable
     booleanList
     booleanListNullable
+    booleanListOfNullable
     stringList
     stringListNullable
+    stringListOfNullable
   }
 }
 
