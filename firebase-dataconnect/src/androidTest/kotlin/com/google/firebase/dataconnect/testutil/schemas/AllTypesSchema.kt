@@ -130,6 +130,116 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
       dataDeserializer = serializer<GetAllPrimitiveListsQuery.Data>()
     )
 
+  object CreateFarmerMutation {
+    @Serializable data class Variables(val data: Farmer)
+
+    @Serializable
+    data class Farmer(
+      val id: String,
+      val name: String,
+      val parentId: String?,
+    )
+  }
+
+  val createFarmer =
+    dataConnect.mutation(
+      operationName = "createFarmer",
+      variablesSerializer = serializer<CreateFarmerMutation.Variables>(),
+      dataDeserializer = serializer<Unit>()
+    )
+
+  suspend fun createFarmer(id: String, name: String, parentId: String?) =
+    createFarmer.execute(
+      CreateFarmerMutation.Variables(
+        CreateFarmerMutation.Farmer(id = id, name = name, parentId = parentId)
+      )
+    )
+
+  object CreateFarmMutation {
+    @Serializable data class Variables(val data: Farm)
+
+    @Serializable data class Farm(val id: String, val name: String, val farmerId: String?)
+  }
+
+  val createFarm =
+    dataConnect.mutation(
+      operationName = "createFarm",
+      variablesSerializer = serializer<CreateFarmMutation.Variables>(),
+      dataDeserializer = serializer<Unit>()
+    )
+
+  suspend fun createFarm(id: String, name: String, farmerId: String?) =
+    createFarm.execute(
+      CreateFarmMutation.Variables(
+        CreateFarmMutation.Farm(id = id, name = name, farmerId = farmerId)
+      )
+    )
+
+  object CreateAnimalMutation {
+    @Serializable data class Variables(val data: Animal)
+
+    @Serializable
+    data class Animal(
+      val id: String,
+      val farmId: String,
+      val name: String,
+      val species: String,
+      val age: Int?
+    )
+  }
+
+  val createAnimal =
+    dataConnect.mutation(
+      operationName = "createAnimal",
+      variablesSerializer = serializer<CreateAnimalMutation.Variables>(),
+      dataDeserializer = serializer<Unit>()
+    )
+
+  suspend fun createAnimal(id: String, farmId: String, name: String, species: String, age: Int?) =
+    createAnimal.execute(
+      CreateAnimalMutation.Variables(
+        CreateAnimalMutation.Animal(
+          id = id,
+          farmId = farmId,
+          name = name,
+          species = species,
+          age = age
+        )
+      )
+    )
+
+  object GetFarmQuery {
+    @Serializable data class Variables(val id: String)
+
+    @Serializable data class Data(val farm: Farm?)
+
+    @Serializable
+    data class Farm(
+      val id: String,
+      val name: String,
+      val farmer: Farmer,
+      val animals: List<Animal>
+    )
+
+    @Serializable data class Farmer(val id: String, val name: String, val parent: Parent?)
+
+    @Serializable data class Parent(val id: String, val name: String, val parentId: String?)
+
+    @Serializable
+    data class Animal(val id: String, val name: String, val species: String, val age: Int?)
+
+    suspend fun QueryRef<Variables, Data>.execute(id: String) = execute(Variables(id = id))
+  }
+
+  val getFarm =
+    dataConnect.query(
+      operationName = "getFarm",
+      variablesSerializer = serializer<GetFarmQuery.Variables>(),
+      dataDeserializer = serializer<GetFarmQuery.Data>()
+    )
+
+  suspend fun getFarm(id: String) = getFarm.execute(GetFarmQuery.Variables(id = id))
+
   companion object {
     const val OPERATION_SET = "ops"
 

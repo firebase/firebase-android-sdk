@@ -203,6 +203,107 @@ class QueryRefIntegrationTest {
   }
 
   @Test
+  fun executeWithNestedTypesInData() = runTest {
+    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null)
+    allTypesSchema.createFarmer(id = "Farmer2Id", name = "Farmer2Name", parentId = "Farmer1Id")
+    allTypesSchema.createFarmer(id = "Farmer3Id", name = "Farmer3Name", parentId = "Farmer2Id")
+    allTypesSchema.createFarmer(id = "Farmer4Id", name = "Farmer4Name", parentId = "Farmer3Id")
+    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer4Id")
+    allTypesSchema.createAnimal(
+      id = "Animal1Id",
+      farmId = "FarmId",
+      name = "Animal1Name",
+      species = "Animal1Species",
+      age = 1
+    )
+    allTypesSchema.createAnimal(
+      id = "Animal2Id",
+      farmId = "FarmId",
+      name = "Animal2Name",
+      species = "Animal2Species",
+      age = 2
+    )
+    allTypesSchema.createAnimal(
+      id = "Animal3Id",
+      farmId = "FarmId",
+      name = "Animal3Name",
+      species = "Animal3Species",
+      age = 3
+    )
+    allTypesSchema.createAnimal(
+      id = "Animal4Id",
+      farmId = "FarmId",
+      name = "Animal4Name",
+      species = "Animal4Species",
+      age = null
+    )
+
+    val result = allTypesSchema.getFarm("FarmId")
+
+    assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
+    val farm = result.data.farm!!
+    assertThat(farm.id).isEqualTo("FarmId")
+    assertThat(farm.name).isEqualTo("TestFarm")
+    assertWithMessage("farm.farmer")
+      .that(farm.farmer)
+      .isEqualTo(
+        AllTypesSchema.GetFarmQuery.Farmer(
+          id = "Farmer4Id",
+          name = "Farmer4Name",
+          parent =
+            AllTypesSchema.GetFarmQuery.Parent(
+              id = "Farmer3Id",
+              name = "Farmer3Name",
+              parentId = "Farmer2Id",
+            )
+        )
+      )
+    assertWithMessage("farm.animals")
+      .that(farm.animals)
+      .containsExactly(
+        AllTypesSchema.GetFarmQuery.Animal(
+          id = "Animal1Id",
+          name = "Animal1Name",
+          species = "Animal1Species",
+          age = 1
+        ),
+        AllTypesSchema.GetFarmQuery.Animal(
+          id = "Animal2Id",
+          name = "Animal2Name",
+          species = "Animal2Species",
+          age = 2
+        ),
+        AllTypesSchema.GetFarmQuery.Animal(
+          id = "Animal3Id",
+          name = "Animal3Name",
+          species = "Animal3Species",
+          age = 3
+        ),
+        AllTypesSchema.GetFarmQuery.Animal(
+          id = "Animal4Id",
+          name = "Animal4Name",
+          species = "Animal4Species",
+          age = null
+        ),
+      )
+  }
+
+  @Test
+  fun executeWithNestedNullTypesInData() = runTest {
+    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null)
+    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer1Id")
+
+    val result = allTypesSchema.getFarm("FarmId")
+
+    assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
+    result.data.farm!!.apply {
+      assertThat(id).isEqualTo("FarmId")
+      assertThat(name).isEqualTo("TestFarm")
+      assertWithMessage("farm.farmer.parent").that(farmer.parent).isNull()
+    }
+  }
+
+  @Test
   fun executeShouldThrowIfDataConnectInstanceIsClosed() = runTest {
     personSchema.dataConnect.close()
 

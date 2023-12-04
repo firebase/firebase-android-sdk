@@ -64,3 +64,37 @@ query getAllPrimitiveLists @auth(is: PUBLIC) {
     stringListNullable
   }
 }
+
+mutation createFarmer($data: Farmer_Data! @pick(fields: ["id", "name", "parentId"])) @auth(is: PUBLIC) {
+  farmer_insert(data: $data)
+}
+
+mutation createAnimal($data: Animal_Data! @pick(fields: ["id", "farmId", "name", "species", "age"])) @auth(is: PUBLIC) {
+  animal_insert(data: $data)
+}
+
+mutation createFarm($data: Farm_Data! @pick(fields: ["id", "name", "farmerId"])) @auth(is: PUBLIC) {
+  farm_insert(data: $data)
+}
+
+query getFarm($id: ID!) @auth(is: PUBLIC) {
+  farm(id: $id) {
+    id
+    name
+    farmer {
+      id
+      name
+      parent {
+        id
+        name
+        parentId
+      }
+    }
+    animals: animals_as_farm {
+      id
+      name
+      species
+      age
+    }
+  }
+}

@@ -37,3 +37,24 @@ type PrimitiveList @table {
   stringList: [String!]
   stringListNullable: [String]
 }
+
+type Farm @table {
+  id: ID!
+  name: String!
+  farmer: Farmer!
+}
+
+type Animal @table {
+  id: ID!
+  farm: Farm!
+  name: String!
+  species: String!
+  age: Int
+}
+
+type Farmer @table {
+  id: ID!
+  name: String!
+  parent: Farmer
+}
+
