@@ -15,13 +15,14 @@ import java.lang.Exception
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withContext
 
+data class EmulatorSchemaInfo(val filePath: String, val contents: String)
+
 suspend fun FirebaseDataConnect.installEmulatorSchema(
-  schema: String,
-  operationSets: Map<String, String>
+  schema: EmulatorSchemaInfo,
+  operationSets: Map<String, EmulatorSchemaInfo>
 ) {
   val (hostName, port) = settings.run { Pair(hostName, port) }
 
@@ -46,24 +47,32 @@ suspend fun FirebaseDataConnect.installEmulatorSchema(
 
 suspend fun FirebaseDataConnect.installEmulatorSchema(assetDir: String) {
   val assets = app.applicationContext.assets
-  val schemaFileName = "schema.gql"
 
-  val schema =
+  val schemaFileName = "schema.gql"
+  val schemaPath = "$assetDir/$schemaFileName"
+  val schemaContents =
     withContext(Dispatchers.IO) {
-      assets.open("$assetDir/$schemaFileName").use { inputStream ->
+      assets.open(schemaPath).use { inputStream ->
         InputStreamReader(inputStream, Charsets.UTF_8).readText()
       }
     }
+  val schema = EmulatorSchemaInfo(filePath = schemaPath, contents = schemaContents)
 
   val loadedAssets =
-    loadAssets(assets, assetDir) { it.endsWith(".gql") && it != schemaFileName }
-      .flowOn(Dispatchers.IO)
-      .toList()
+    loadAssets(assets, assetDir) { it.endsWith(".gql") && it != schemaFileName }.toList()
 
-  val operationSets = mutableMapOf<String, String>()
-  loadedAssets.forEach {
-    val operationSet = it.fileName.run { substring(0, length - 4) }
-    operationSets[operationSet] = it.contents
+  val operationSets = buildMap {
+    loadedAssets.forEach {
+      val operationSetName =
+        it.filePath.run {
+          val startIndex =
+            it.filePath.lastIndexOf('/').let { lastSlashIndex ->
+              if (lastSlashIndex < 0) 0 else (lastSlashIndex + 1)
+            }
+          substring(startIndex, length - 4)
+        }
+      put(operationSetName, EmulatorSchemaInfo(filePath = it.filePath, contents = it.contents))
+    }
   }
 
   installEmulatorSchema(schema = schema, operationSets = operationSets)
@@ -71,25 +80,31 @@ suspend fun FirebaseDataConnect.installEmulatorSchema(assetDir: String) {
 
 private fun loadAssets(assets: AssetManager, dirPath: String, filter: (String) -> Boolean) = flow {
   val fileNames =
-    assets.list(dirPath) ?: throw NoSuchAssetError("AssetManager.list($dirPath) returned null")
+    withContext(Dispatchers.IO) {
+      assets.list(dirPath) ?: throw NoSuchAssetError("AssetManager.list($dirPath) returned null")
+    }
+
   fileNames.filter(filter).forEach { fileName ->
+    val assetPath = "$dirPath/$fileName"
     val contents =
-      assets.open("$dirPath/$fileName").use { inputStream ->
-        InputStreamReader(inputStream, Charsets.UTF_8).readText()
+      withContext(Dispatchers.IO) {
+        assets.open(assetPath).use { inputStream ->
+          InputStreamReader(inputStream, Charsets.UTF_8).readText()
+        }
       }
-    emit(LoadedAsset(fileName = fileName, contents = contents))
+    emit(LoadedAsset(filePath = assetPath, contents = contents))
   }
 }
 
-private data class LoadedAsset(val fileName: String, val contents: String)
+private data class LoadedAsset(val filePath: String, val contents: String)
 
 private class NoSuchAssetError(message: String) : Exception(message)
 
 private suspend fun setupSchema(
   grpcStub: EmulatorServiceCoroutineStub,
   serviceId: String,
-  schema: String,
-  operationSets: Map<String, String>
+  schema: EmulatorSchemaInfo,
+  operationSets: Map<String, EmulatorSchemaInfo>
 ) {
   grpcStub.setupSchema(
     setupSchemaRequest {
@@ -97,19 +112,19 @@ private suspend fun setupSchema(
       this.schema = source {
         this.files.add(
           file {
-            this.path = "schema/schema.gql"
-            this.content = schema
+            this.path = schema.filePath
+            this.content = schema.contents
           }
         )
       }
-      operationSets.forEach { (operationSetName, queriesAndMutations) ->
+      operationSets.forEach { (operationSetName, emulatorSchemaInfo) ->
         this.operationSets.put(
           operationSetName,
           source {
             this.files.add(
               file {
-                this.path = "schema/queriesAndMutations.gql"
-                this.content = queriesAndMutations
+                this.path = emulatorSchemaInfo.filePath
+                this.content = emulatorSchemaInfo.contents
               }
             )
           }
