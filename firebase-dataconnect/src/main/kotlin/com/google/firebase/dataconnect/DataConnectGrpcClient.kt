@@ -122,11 +122,8 @@ internal class DataConnectGrpcClient(
     val errors: List<DataConnectError>,
     val sequenceNumber: Long
   )
-  data class DeserialzedOperationResult<T>(
-    val data: T,
-    val errors: List<DataConnectError>,
-    val sequenceNumber: Long
-  )
+
+  data class DeserialzedOperationResult<T>(val data: T, val sequenceNumber: Long)
 
   suspend fun executeQuery(
     requestId: String,
@@ -250,23 +247,23 @@ internal fun GraphqlError.toDataConnectError() =
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
   dataDeserializer: DeserializationStrategy<T>
-): DataConnectGrpcClient.DeserialzedOperationResult<T> =
-  if (data === null)
-  // TODO: include the variables and error list in the thrown exception
-  throw DataConnectException("no data included in result: errors=${errors}")
-  else
-    DataConnectGrpcClient.DeserialzedOperationResult(
-      data = decodeFromStruct(dataDeserializer, data),
-      errors = errors,
-      sequenceNumber = sequenceNumber,
-    )
+): DataConnectGrpcClient.DeserialzedOperationResult<T> {
+  val deserializedData: T =
+    if (data === null) {
+      // TODO: include the variables and error list in the thrown exception
+      throw DataConnectException("no data included in result: errors=$errors")
+    } else if (errors.isNotEmpty()) {
+      throw DataConnectException("operation failed: errors=$errors")
+    } else {
+      decodeFromStruct(dataDeserializer, data)
+    }
+
+  return DataConnectGrpcClient.DeserialzedOperationResult(
+    data = deserializedData,
+    sequenceNumber = sequenceNumber,
+  )
+}
 
 internal fun <V, D> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectResult(
   variables: V
-) =
-  DataConnectResult(
-    variables = variables,
-    data = data,
-    errors = errors,
-    sequenceNumber = sequenceNumber
-  )
+) = DataConnectResult(variables = variables, data = data, sequenceNumber = sequenceNumber)

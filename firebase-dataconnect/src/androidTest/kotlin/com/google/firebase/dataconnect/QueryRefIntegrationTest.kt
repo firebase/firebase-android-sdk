@@ -57,7 +57,6 @@ class QueryRefIntegrationTest {
 
     assertThat(result.data.person?.name).isEqualTo("TestName2")
     assertThat(result.data.person?.age).isEqualTo(43)
-    assertThat(result.errors).isEmpty()
   }
 
   @Test
@@ -69,7 +68,6 @@ class QueryRefIntegrationTest {
 
     assertThat(result.data.person?.name).isEqualTo("NewTestName")
     assertThat(result.data.person?.age).isEqualTo(99)
-    assertThat(result.errors).isEmpty()
   }
 
   @Test
@@ -79,7 +77,6 @@ class QueryRefIntegrationTest {
     val result = personSchema.getPerson.execute(id = "NotTheTestId")
 
     assertThat(result.data.person).isNull()
-    assertThat(result.errors).isEmpty()
   }
 
   @Test
@@ -96,7 +93,6 @@ class QueryRefIntegrationTest {
         Person(id = "TestId2", name = "TestName2", age = 43),
         Person(id = "TestId3", name = "TestName3", age = 44),
       )
-    assertThat(result.errors).isEmpty()
   }
 
   @Test
@@ -131,7 +127,6 @@ class QueryRefIntegrationTest {
     assertThat(primitive.booleanFieldNullable).isEqualTo(false)
     assertThat(primitive.stringField).isEqualTo("TestString")
     assertThat(primitive.stringFieldNullable).isEqualTo("TestNullableString")
-    assertThat(result.errors).isEmpty()
   }
 
   @Test
@@ -161,7 +156,6 @@ class QueryRefIntegrationTest {
     assertThat(primitive.floatFieldNullable).isNull()
     assertThat(primitive.booleanFieldNullable).isNull()
     assertThat(primitive.stringFieldNullable).isNull()
-    assertThat(result.errors).isEmpty()
   }
 
   @Test
@@ -209,7 +203,6 @@ class QueryRefIntegrationTest {
     assertThat(primitive.stringList).containsExactly("xxx", "yyy", "zzz").inOrder()
     assertThat(primitive.stringListNullable).containsExactly("qqq", "rrr").inOrder()
     assertThat(primitive.stringListOfNullable).containsExactly("sss", "ttt").inOrder()
-    assertThat(result.errors).isEmpty()
   }
 
   @Test
@@ -341,7 +334,6 @@ class QueryRefIntegrationTest {
       val results = deferreds.map { it.await() }
       results.forEachIndexed { index, result ->
         assertWithMessage("results[$index]").that(result.data.person).isNull()
-        assertWithMessage("results[$index]").that(result.errors).isEmpty()
       }
     }
 }

@@ -134,14 +134,12 @@ class QuerySubscriptionIntegrationTest {
       DataConnectResult(
         variables = queryVariables,
         data = GetPersonQueryData(GetPersonQueryData.Person(name = "TestName0", age = 10000)),
-        errors = emptyList(),
         sequenceNumber = -1, // sequenceNumber is not considered by equals()
       )
     val expectedResult2 =
       DataConnectResult(
         variables = queryVariables,
         data = GetPersonQueryData(GetPersonQueryData.Person(name = "TestName9", age = 99999)),
-        errors = emptyList(),
         sequenceNumber = -1, // sequenceNumber is not considered by equals()
       )
     assertWithMessage("results1")

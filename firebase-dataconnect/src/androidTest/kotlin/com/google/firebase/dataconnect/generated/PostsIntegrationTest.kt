@@ -79,7 +79,6 @@ class PostsIntegrationTest {
     assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
     val result1 = querySubscription.resultFlow.first()
-    assertWithMessage("result1.isSuccess").that(result1.errors).isEmpty()
     assertWithMessage("result1.post.content")
       .that(result1.data.post?.content)
       .isEqualTo(postContent1)
@@ -92,8 +91,6 @@ class PostsIntegrationTest {
 
     val results2 = flow2Job.await()
     assertWithMessage("results2.size").that(results2.size).isEqualTo(2)
-    assertWithMessage("results2[0].isSuccess").that(results2[0].errors).isEmpty()
-    assertWithMessage("results2[1].isSuccess").that(results2[1].errors).isEmpty()
     assertWithMessage("results2[0].post.content")
       .that(results2[0].data.post?.content)
       .isEqualTo(postContent1)

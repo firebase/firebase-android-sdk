@@ -22,26 +22,22 @@ private constructor(
   internal constructor(
     variables: VariablesType,
     data: DataType,
-    errors: List<DataConnectError>,
     sequenceNumber: Long,
-  ) : this(Impl(variables = variables, data = data, errors = errors), sequenceNumber)
+  ) : this(Impl(variables = variables, data = data), sequenceNumber)
 
   val variables: VariablesType
     get() = impl.variables
   val data: DataType
     get() = impl.data
-  val errors: List<DataConnectError>
-    get() = impl.errors
 
   override fun hashCode() = impl.hashCode()
   override fun equals(other: Any?) =
     (other as? DataConnectResult<*, *>)?.let { it.impl == impl } ?: false
-  override fun toString() = "DataConnectResult(variables=$variables, data=$data, errors=$errors)"
+  override fun toString() = "DataConnectResult(variables=$variables, data=$data)"
 
   private data class Impl<VariablesType, DataType>(
     val variables: VariablesType,
     val data: DataType,
-    val errors: List<DataConnectError>,
   )
 }
 
