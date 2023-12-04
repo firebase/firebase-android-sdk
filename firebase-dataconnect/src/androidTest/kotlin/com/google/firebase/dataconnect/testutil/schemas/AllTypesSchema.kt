@@ -43,8 +43,10 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     val idFieldNullable: String?,
     val intField: Int,
     val intFieldNullable: Int?,
-    val floatField: Float,
-    val floatFieldNullable: Float?,
+    // NOTE: GraphQL "Float" type is a "signed double-precision floating-point value", which is
+    // equivalent to Java and Kotlin's `Double` type.
+    val floatField: Double,
+    val floatFieldNullable: Double?,
     val booleanField: Boolean,
     val booleanFieldNullable: Boolean?,
     val stringField: String,
@@ -83,8 +85,10 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     val idListNullable: List<String?>,
     val intList: List<Int>,
     val intListNullable: List<Int?>,
-    val floatList: List<Float>,
-    val floatListNullable: List<Float?>,
+    // NOTE: GraphQL "Float" type is a "signed double-precision floating-point value", which is
+    // equivalent to Java and Kotlin's `Double` type.
+    val floatList: List<Double>,
+    val floatListNullable: List<Double?>,
     val booleanList: List<Boolean>,
     val booleanListNullable: List<Boolean?>,
     val stringList: List<String>,

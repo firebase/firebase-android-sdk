@@ -108,8 +108,8 @@ class QueryRefIntegrationTest {
           idFieldNullable = "TestNullableId",
           intField = 42,
           intFieldNullable = 43,
-          floatField = 123.45f,
-          floatFieldNullable = 678.91f,
+          floatField = 123.45,
+          floatFieldNullable = 678.91,
           booleanField = true,
           booleanFieldNullable = false,
           stringField = "TestString",
@@ -125,8 +125,8 @@ class QueryRefIntegrationTest {
     assertThat(primitive.idFieldNullable).isEqualTo("TestNullableId")
     assertThat(primitive.intField).isEqualTo(42)
     assertThat(primitive.intFieldNullable).isEqualTo(43)
-    assertThat(primitive.floatField).isEqualTo(123.45f)
-    assertThat(primitive.floatFieldNullable).isEqualTo(678.91f)
+    assertThat(primitive.floatField).isEqualTo(123.45)
+    assertThat(primitive.floatFieldNullable).isEqualTo(678.91)
     assertThat(primitive.booleanField).isEqualTo(true)
     assertThat(primitive.booleanFieldNullable).isEqualTo(false)
     assertThat(primitive.stringField).isEqualTo("TestString")
@@ -143,7 +143,7 @@ class QueryRefIntegrationTest {
           idFieldNullable = null,
           intField = 42,
           intFieldNullable = null,
-          floatField = 123.45f,
+          floatField = 123.45,
           floatFieldNullable = null,
           booleanField = true,
           booleanFieldNullable = null,
@@ -174,8 +174,8 @@ class QueryRefIntegrationTest {
           idListNullable = listOf("ddd", "eee"),
           intList = listOf(42, 43, 44),
           intListNullable = listOf(45, 46),
-          floatList = listOf(12.3f, 45.6f, 78.9f),
-          floatListNullable = listOf(98.7f, 65.4f),
+          floatList = listOf(12.3, 45.6, 78.9),
+          floatListNullable = listOf(98.7, 65.4),
           booleanList = listOf(true, false, true, false),
           booleanListNullable = listOf(false, true, false, true),
           stringList = listOf("xxx", "yyy", "zzz"),
@@ -193,8 +193,8 @@ class QueryRefIntegrationTest {
     assertThat(primitive.idListNullable).containsExactly("ddd", "eee").inOrder()
     assertThat(primitive.intList).containsExactly(42, 43, 44).inOrder()
     assertThat(primitive.intListNullable).containsExactly(45, 46).inOrder()
-    assertThat(primitive.floatList).containsExactly(12.3f, 45.6f, 78.9f).inOrder()
-    assertThat(primitive.floatListNullable).containsExactly(98.7f, 65.4f).inOrder()
+    assertThat(primitive.floatList).containsExactly(12.3, 45.6, 78.9).inOrder()
+    assertThat(primitive.floatListNullable).containsExactly(98.7, 65.4).inOrder()
     assertThat(primitive.booleanList).containsExactly(true, false, true, false).inOrder()
     assertThat(primitive.booleanListNullable).containsExactly(false, true, false, true).inOrder()
     assertThat(primitive.stringList).containsExactly("xxx", "yyy", "zzz").inOrder()
