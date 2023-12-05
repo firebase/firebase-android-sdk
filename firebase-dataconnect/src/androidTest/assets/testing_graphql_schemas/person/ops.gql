@@ -16,6 +16,10 @@ mutation createPerson($data: Person_Data! @pick(fields: ["id", "name", "age"])) 
   person_insert(data: $data)
 }
 
+mutation createDefaultPerson @auth(is: PUBLIC) {
+  person_insert(data: {id: "DefaultId", name: "DefaultName", age: 42})
+}
+
 mutation deletePerson($id: String!) @auth(is: PUBLIC) {
   person_delete(id: $id)
 }

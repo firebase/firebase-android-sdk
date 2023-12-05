@@ -32,4 +32,24 @@ internal constructor(
   override suspend fun execute(
     variables: VariablesType
   ): DataConnectResult<VariablesType, DataType> = dataConnect.executeMutation(this, variables)
+
+  fun <NewDataType> withDataDeserializer(
+    newDataDeserializer: DeserializationStrategy<NewDataType>
+  ): MutationRef<VariablesType, NewDataType> =
+    MutationRef(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variablesSerializer = variablesSerializer,
+      dataDeserializer = newDataDeserializer
+    )
+
+  fun <NewVariablesType> withVariablesSerializer(
+    newVariablesSerializer: SerializationStrategy<NewVariablesType>
+  ): MutationRef<NewVariablesType, DataType> =
+    MutationRef(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variablesSerializer = newVariablesSerializer,
+      dataDeserializer = dataDeserializer
+    )
 }

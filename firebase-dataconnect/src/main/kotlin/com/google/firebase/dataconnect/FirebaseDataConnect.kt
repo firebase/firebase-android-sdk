@@ -120,7 +120,12 @@ internal constructor(
         requestId = requestId,
         sequenceNumber = nextSequenceNumber(),
         operationName = ref.operationName,
-        variables = encodeToStruct(ref.variablesSerializer, variables)
+        variables =
+          if (ref.variablesSerializer === DataConnectUntypedVariables.Serializer)
+            (variables as DataConnectUntypedVariables).variables.toStructProto()
+          else {
+            encodeToStruct(ref.variablesSerializer, variables)
+          }
       )
       .runCatching { withContext(blockingDispatcher) { deserialize(ref.dataDeserializer) } }
       .onFailure {

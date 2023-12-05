@@ -316,7 +316,12 @@ private class QueryStates(
 
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
   private fun <V, D> acquireQueryState(ref: QueryRef<V, D>, variables: V): QueryState {
-    val variablesStruct = encodeToStruct(ref.variablesSerializer, variables)
+    val variablesStruct =
+      if (ref.variablesSerializer === DataConnectUntypedVariables.Serializer) {
+        (variables as DataConnectUntypedVariables).variables.toStructProto()
+      } else {
+        encodeToStruct(ref.variablesSerializer, variables)
+      }
     val variablesHash = variablesStruct.calculateSha512().toAlphaNumericString()
     val key = QueryStateKey(operationName = ref.operationName, variablesHash = variablesHash)
 

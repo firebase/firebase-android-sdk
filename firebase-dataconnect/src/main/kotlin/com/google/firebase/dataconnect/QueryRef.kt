@@ -36,4 +36,24 @@ internal constructor(
 
   fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> =
     QuerySubscription(this, variables)
+
+  fun <NewDataType> withDataDeserializer(
+    newDataDeserializer: DeserializationStrategy<NewDataType>
+  ): QueryRef<VariablesType, NewDataType> =
+    QueryRef(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variablesSerializer = variablesSerializer,
+      dataDeserializer = newDataDeserializer
+    )
+
+  fun <NewVariablesType> withVariablesSerializer(
+    newVariablesSerializer: SerializationStrategy<NewVariablesType>
+  ): QueryRef<NewVariablesType, DataType> =
+    QueryRef(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variablesSerializer = newVariablesSerializer,
+      dataDeserializer = dataDeserializer
+    )
 }

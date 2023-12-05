@@ -38,6 +38,17 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.installEmulatorSchema("testing_graphql_schemas/person")
   }
 
+  object CreateDefaultPersonMutation {
+    suspend fun MutationRef<Unit, Unit>.execute() = execute(Unit)
+  }
+
+  val createDefaultPerson =
+    dataConnect.mutation(
+      operationName = "createDefaultPerson",
+      variablesSerializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>()
+    )
+
   object CreatePersonMutation {
     @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
     @Serializable data class Variables(val data: PersonData)

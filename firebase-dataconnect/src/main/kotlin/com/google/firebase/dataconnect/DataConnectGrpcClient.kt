@@ -249,7 +249,10 @@ internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
   dataDeserializer: DeserializationStrategy<T>
 ): DataConnectGrpcClient.DeserialzedOperationResult<T> {
   val deserializedData: T =
-    if (data === null) {
+    if (dataDeserializer === DataConnectUntypedData) {
+      @Suppress("UNCHECKED_CAST")
+      DataConnectUntypedData(data?.toMap(), errors) as T
+    } else if (data === null) {
       // TODO: include the variables and error list in the thrown exception
       throw DataConnectException("no data included in result: errors=$errors")
     } else if (errors.isNotEmpty()) {

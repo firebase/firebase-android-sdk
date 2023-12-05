@@ -302,3 +302,105 @@ internal fun ExecuteMutationResponse.toCompactString(): String =
       putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
     }
     .toCompactString()
+
+internal fun Struct.toMap(): Map<String, Any?> {
+  val mutualRecursion =
+    object {
+      val listForListValue: DeepRecursiveFunction<ListValue, List<Any?>> = DeepRecursiveFunction {
+        buildList {
+          it.valuesList.forEach { value ->
+            add(
+              when (val kind = value.kindCase) {
+                KindCase.NULL_VALUE -> null
+                KindCase.BOOL_VALUE -> value.boolValue
+                KindCase.NUMBER_VALUE -> value.numberValue
+                KindCase.STRING_VALUE -> value.stringValue
+                KindCase.LIST_VALUE -> callRecursive(value.listValue)
+                KindCase.STRUCT_VALUE -> mapForStruct.callRecursive(value.structValue)
+                else -> throw IllegalArgumentException("unsupported kind: $kind")
+              }
+            )
+          }
+        }
+      }
+
+      val mapForStruct: DeepRecursiveFunction<Struct, Map<String, Any?>> = DeepRecursiveFunction {
+        buildMap {
+          it.fieldsMap.entries.forEach { (key, value) ->
+            put(
+              key,
+              when (val kind = value.kindCase) {
+                KindCase.NULL_VALUE -> null
+                KindCase.BOOL_VALUE -> value.boolValue
+                KindCase.NUMBER_VALUE -> value.numberValue
+                KindCase.STRING_VALUE -> value.stringValue
+                KindCase.LIST_VALUE -> listForListValue.callRecursive(value.listValue)
+                KindCase.STRUCT_VALUE -> callRecursive(value.structValue)
+                else -> throw IllegalArgumentException("unsupported kind: $kind")
+              }
+            )
+          }
+        }
+      }
+    }
+
+  return mutualRecursion.mapForStruct(this)
+}
+
+internal fun Map<String, Any?>.toStructProto(): Struct {
+  val mutualRecursion =
+    object {
+      val listValueForList: DeepRecursiveFunction<List<*>, ListValue> = DeepRecursiveFunction {
+        val listValueProtoBuilder = ListValue.newBuilder()
+        it.forEach { value ->
+          listValueProtoBuilder.addValues(
+            when (value) {
+              null -> nullProtoValue
+              is Boolean -> value.toValueProto()
+              is Double -> value.toValueProto()
+              is String -> value.toValueProto()
+              is List<*> -> callRecursive(value).toValueProto()
+              is Map<*, *> -> structForMap.callRecursive(value).toValueProto()
+              else ->
+                throw IllegalArgumentException(
+                  "unsupported type: ${value::class.qualifiedName}; " +
+                    "supported types are: Boolean, Double, String, List, and Map"
+                )
+            }
+          )
+        }
+        listValueProtoBuilder.build()
+      }
+
+      val structForMap: DeepRecursiveFunction<Map<*, *>, Struct> = DeepRecursiveFunction {
+        val structProtoBuilder = Struct.newBuilder()
+        it.entries.forEach { (untypedKey, value) ->
+          val key =
+            (untypedKey as? String)
+              ?: throw IllegalArgumentException(
+                "map keys must be string, but got: " +
+                  if (untypedKey === null) "null" else untypedKey::class.qualifiedName
+              )
+          structProtoBuilder.putFields(
+            key,
+            when (value) {
+              null -> nullProtoValue
+              is Double -> value.toValueProto()
+              is Boolean -> value.toValueProto()
+              is String -> value.toValueProto()
+              is List<*> -> listValueForList.callRecursive(value).toValueProto()
+              is Map<*, *> -> callRecursive(value).toValueProto()
+              else ->
+                throw IllegalArgumentException(
+                  "unsupported type: ${value::class.qualifiedName}; " +
+                    "supported types are: Boolean, Double, String, List, and Map"
+                )
+            }
+          )
+        }
+        structProtoBuilder.build()
+      }
+    }
+
+  return mutualRecursion.structForMap(this)
+}
