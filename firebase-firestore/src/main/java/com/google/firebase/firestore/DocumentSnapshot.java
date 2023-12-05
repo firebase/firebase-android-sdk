@@ -527,7 +527,9 @@ public class DocumentSnapshot {
     return firestore.equals(other.firestore)
         && key.equals(other.key)
         && metadata.equals(other.metadata)
-        && (doc == null ? other.doc == null : doc.getData().equals(other.doc.getData()));
+        && (doc == null
+            ? other.doc == null
+            : other.doc != null && doc.getData().equals(other.doc.getData()));
   }
 
   @Override
