@@ -1341,8 +1341,8 @@ public class QueryTest {
         isRunningAgainstEmulator());
 
     // Firestore does not do any Unicode normalization on the document IDs. Therefore, two document
-    // IDs that are canonically-equivalent (i.e. they visually appear identical) but are represented
-    // by a different sequence of Unicode code points are treated as distinct document IDs.
+    // IDs that are canonically-equivalent (they visually appear identical) but are represented by a
+    // different sequence of Unicode code points are treated as distinct document IDs.
     ArrayList<String> testDocIds = new ArrayList<>();
     testDocIds.add("DocumentToDelete");
     // The next two strings both end with "e" with an accent: the first uses the dedicated Unicode

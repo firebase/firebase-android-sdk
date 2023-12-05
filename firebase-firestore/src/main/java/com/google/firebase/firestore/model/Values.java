@@ -404,9 +404,9 @@ public class Values {
   }
 
   private static void canonifyObject(StringBuilder builder, MapValue mapValue) {
-    // Even though MapValue are likely sorted correctly based on their insertion order (e.g. when
-    // received from the backend), local modifications can bring elements out of order. We need to
-    // re-sort the elements to ensure that canonical IDs are independent of insertion order.
+    // Even though MapValue are likely sorted correctly based on their insertion order (for example,
+    // when received from the backend), local modifications can bring elements out of order. We need
+    // to re-sort the elements to ensure that canonical IDs are independent of insertion order.
     List<String> keys = new ArrayList<>(mapValue.getFieldsMap().keySet());
     Collections.sort(keys);
 

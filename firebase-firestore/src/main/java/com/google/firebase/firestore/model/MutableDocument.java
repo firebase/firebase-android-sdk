@@ -43,8 +43,8 @@ public final class MutableDocument implements Document {
     /** Represents that no documents exists for the key at the given version. */
     NO_DOCUMENT,
     /**
-     * Represents an existing document whose data is unknown (e.g. a document that was updated
-     * without a known base document).
+     * Represents an existing document whose data is unknown (for example, a document that was
+     * updated without a known base document).
      */
     UNKNOWN_DOCUMENT;
   }
@@ -113,7 +113,7 @@ public final class MutableDocument implements Document {
 
   /**
    * Creates a new document that is known to exist at the given version but whose data is not known
-   * (e.g. a document that was updated without a known base document).
+   * (for example, a document that was updated without a known base document).
    */
   public static MutableDocument newUnknownDocument(
       DocumentKey documentKey, SnapshotVersion version) {
@@ -142,7 +142,7 @@ public final class MutableDocument implements Document {
 
   /**
    * Changes the document type to indicate that it exists at a given version but that its data is
-   * not known (e.g. a document that was updated without a known base document).
+   * not known (for example, a document that was updated without a known base document).
    */
   public MutableDocument convertToUnknownDocument(SnapshotVersion version) {
     this.version = version;
