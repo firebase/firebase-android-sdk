@@ -168,7 +168,7 @@ class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
           persistence
               .query(
                   "select path from target_documents group by path having COUNT(*) = 1 "
-                      + "AND target_id = 0 AND sequence_number <= ? AND path >= ? LIMIT ?")
+                      + "AND target_id = 0 AND sequence_number <= ? AND path > ? LIMIT ?")
               .binding(
                   upperBound,
                   EncodedPath.encode(startPath[0]),
