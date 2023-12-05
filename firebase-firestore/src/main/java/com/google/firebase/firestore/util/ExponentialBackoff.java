@@ -97,16 +97,14 @@ public class ExponentialBackoff {
    * Resets the backoff delay.
    *
    * <p>The very next backoffAndRun() will have no delay. If it is called again (due to an error),
-   * initialDelayMs (plus jitter) will be used, and subsequent ones will increase according
-   * to the backoffFactor.
+   * initialDelayMs (plus jitter) will be used, and subsequent ones will increase according to the
+   * backoffFactor.
    */
   public void reset() {
     currentBaseMs = 0;
   }
 
-  /**
-   * Resets the backoff delay to the maximum delay (for use after a RESOURCE_EXHAUSTED error).
-   */
+  /** Resets the backoff delay to the maximum delay (for use after a RESOURCE_EXHAUSTED error). */
   public void resetToMax() {
     currentBaseMs = nextMaxDelayMs;
   }
