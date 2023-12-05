@@ -399,7 +399,8 @@ public class Query {
   public Query where(@NonNull Filter filter) {
     com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
     if (parsedFilter.getFilters().isEmpty()) {
-      // Return the existing query if not adding any more filters (e.g. an empty composite filter).
+      // Return the existing query if not adding any more filters (because composite filter is
+      // empty).
       return this;
     }
     validateNewFilter(parsedFilter);
@@ -1070,7 +1071,7 @@ public class Query {
   /**
    * Starts listening to this query with the given options.
    *
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -1085,7 +1086,7 @@ public class Query {
    * Starts listening to this query with the given options.
    *
    * @param executor The executor to use to call the listener.
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -1107,7 +1108,7 @@ public class Query {
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
    * @param activity The activity to scope the listener to.
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -1181,7 +1182,7 @@ public class Query {
    *
    * <p>Using the returned query to count the documents is efficient because only the final count,
    * not the documents' data, is downloaded. The returned query can even count the documents if the
-   * result set would be prohibitively large to download entirely (e.g. thousands of documents).
+   * result set would be prohibitively large to download entirely (like thousands of documents).
    *
    * @return The {@code AggregateQuery} that counts the documents in the result set of this query.
    */
@@ -1196,7 +1197,7 @@ public class Query {
    *
    * <p>Using this function to perform aggregations is efficient because only the final aggregation
    * values, not the documents' data, is downloaded. This function can even perform aggregations of
-   * the documents if the result set would be prohibitively large to download entirely (e.g.
+   * the documents if the result set would be prohibitively large to download entirely (like
    * thousands of documents).
    *
    * @return The {@code AggregateQuery} that performs aggregations on the documents in the result

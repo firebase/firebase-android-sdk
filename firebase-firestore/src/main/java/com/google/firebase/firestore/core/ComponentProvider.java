@@ -140,9 +140,9 @@ public abstract class ComponentProvider {
     /**
      * The order in which components are created is important.
      *
-     * <p>The implementation of abstract createX methods (e.g. createRemoteStore) will call the getX
-     * methods (e.g. getLocalStore). Consequently, creating components out of order will cause
-     * createX method to fail because a dependency is null.
+     * <p>The implementation of abstract createX methods (for example createRemoteStore) will call
+     * the getX methods (for example getLocalStore). Consequently, creating components out of order
+     * will cause createX method to fail because a dependency is null.
      *
      * <p>To catch incorrect order, all getX methods have runtime check for null.
      */

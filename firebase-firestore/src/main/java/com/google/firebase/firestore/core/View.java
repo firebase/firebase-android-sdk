@@ -78,7 +78,7 @@ public class View {
   /**
    * A flag whether the view is current with the backend. A view is considered current after it has
    * seen the current flag from the backend and did not lose consistency within the watch stream
-   * (e.g. because of an existence filter mismatch).
+   * (for example because of an existence filter mismatch).
    */
   private boolean current;
 
@@ -245,11 +245,11 @@ public class View {
 
   private boolean shouldWaitForSyncedDocument(Document oldDoc, Document newDoc) {
     // We suppress the initial change event for documents that were modified as part of a write
-    // acknowledgment (e.g. when the value of a server transform is applied) as Watch will send us
-    // the same document again. By suppressing the event, we only raise two user visible events (one
-    // with `hasPendingWrites` and the final state of the document) instead of three (one with
-    // `hasPendingWrites`, the modified document with `hasPendingWrites` and the final state of the
-    // document).
+    // acknowledgment (for example when the value of a server transform is applied) as Watch will
+    // send us the same document again. By suppressing the event, we only raise two user visible
+    // events (one with `hasPendingWrites` and the final state of the document) instead of three
+    // (one with `hasPendingWrites`, the modified document with `hasPendingWrites` and the final
+    // state of the document).
     return (oldDoc.hasLocalMutations()
         && newDoc.hasCommittedMutations()
         && !newDoc.hasLocalMutations());
