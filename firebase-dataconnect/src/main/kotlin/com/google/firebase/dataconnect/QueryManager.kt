@@ -32,12 +32,12 @@ internal class QueryManager(
 ) {
   private val logger = Logger("QueryManager").apply { debug { "Created from $creatorLoggerId" } }
 
-  private val queryStates =
-    QueryStates(grpcClient, coroutineScope, deserializationDispatcher, logger)
+  private val liveQueries =
+    LiveQueries(grpcClient, coroutineScope, deserializationDispatcher, logger)
 
   suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
-    queryStates
-      .withQueryState(ref, variables) { it.execute(ref.dataDeserializer) }
+    liveQueries
+      .withLiveQuery(ref, variables) { it.execute(ref.dataDeserializer) }
       .toDataConnectResult(variables)
 
   suspend fun <V, D> onResult(
@@ -47,8 +47,8 @@ internal class QueryManager(
     executeQuery: Boolean,
     callback: suspend (DataConnectResult<V, D>) -> Unit,
   ): Nothing =
-    queryStates.withQueryState(ref, variables) { queryState ->
-      queryState.onResult(
+    liveQueries.withLiveQuery(ref, variables) { liveQuery ->
+      liveQuery.onResult(
         ref.dataDeserializer,
         sinceSequenceNumber = sinceSequenceNumber,
         executeQuery = executeQuery
@@ -58,10 +58,8 @@ internal class QueryManager(
     }
 }
 
-private data class QueryStateKey(val operationName: String, val variablesHash: String)
-
-private class QueryState(
-  val key: QueryStateKey,
+private class LiveQuery(
+  val key: Key,
   private val grpcClient: DataConnectGrpcClient,
   private val operationName: String,
   private val variables: Struct,
@@ -189,6 +187,8 @@ private class QueryState(
             dataDeserializers.add(it)
           }
       }
+
+  data class Key(val operationName: String, val variablesHash: String)
 }
 
 private class RegisteredDataDeserialzer<T>(
@@ -286,7 +286,7 @@ private class RegisteredDataDeserialzer<T>(
   }
 }
 
-private class QueryStates(
+private class LiveQueries(
   private val grpcClient: DataConnectGrpcClient,
   private val coroutineScope: CoroutineScope,
   private val deserializationDispatcher: CoroutineDispatcher,
@@ -294,28 +294,28 @@ private class QueryStates(
 ) {
   private val mutex = Mutex()
 
-  // NOTE: All accesses to `referenceCountedQueryStateByKey` and the `refCount` field of each value
+  // NOTE: All accesses to `referenceCountedLiveQueryByKey` and the `refCount` field of each value
   // MUST be done from a coroutine that has locked `mutex`; otherwise, such accesses (both reads and
   // writes) are data races and yield undefined behavior.
-  private val referenceCountedQueryStateByKey =
-    mutableMapOf<QueryStateKey, ReferenceCounted<QueryState>>()
+  private val referenceCountedLiveQueryByKey =
+    mutableMapOf<LiveQuery.Key, ReferenceCounted<LiveQuery>>()
 
-  suspend fun <V, D, R> withQueryState(
+  suspend fun <V, D, R> withLiveQuery(
     ref: QueryRef<V, D>,
     variables: V,
-    block: suspend (QueryState) -> R
+    block: suspend (LiveQuery) -> R
   ): R {
-    val queryState = mutex.withLock { acquireQueryState(ref, variables) }
+    val liveQuery = mutex.withLock { acquireLiveQuery(ref, variables) }
 
     return try {
-      block(queryState)
+      block(liveQuery)
     } finally {
-      mutex.withLock { withContext(NonCancellable) { releaseQueryState(queryState) } }
+      mutex.withLock { withContext(NonCancellable) { releaseLiveQuery(liveQuery) } }
     }
   }
 
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
-  private fun <V, D> acquireQueryState(ref: QueryRef<V, D>, variables: V): QueryState {
+  private fun <V, D> acquireLiveQuery(ref: QueryRef<V, D>, variables: V): LiveQuery {
     val variablesStruct =
       if (ref.variablesSerializer === DataConnectUntypedVariables.Serializer) {
         (variables as DataConnectUntypedVariables).variables.toStructProto()
@@ -323,12 +323,12 @@ private class QueryStates(
         encodeToStruct(ref.variablesSerializer, variables)
       }
     val variablesHash = variablesStruct.calculateSha512().toAlphaNumericString()
-    val key = QueryStateKey(operationName = ref.operationName, variablesHash = variablesHash)
+    val key = LiveQuery.Key(operationName = ref.operationName, variablesHash = variablesHash)
 
-    val referenceCountedQueryState =
-      referenceCountedQueryStateByKey.getOrPut(key) {
+    val referenceCountedLiveQuery =
+      referenceCountedLiveQueryByKey.getOrPut(key) {
         ReferenceCounted(
-          QueryState(
+          LiveQuery(
             key = key,
             grpcClient = grpcClient,
             operationName = ref.operationName,
@@ -341,24 +341,24 @@ private class QueryStates(
         )
       }
 
-    referenceCountedQueryState.refCount++
+    referenceCountedLiveQuery.refCount++
 
-    return referenceCountedQueryState.obj
+    return referenceCountedLiveQuery.obj
   }
 
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
-  private fun releaseQueryState(queryState: QueryState) {
-    val referenceCountedQueryState = referenceCountedQueryStateByKey[queryState.key]
+  private fun releaseLiveQuery(liveQuery: LiveQuery) {
+    val referenceCountedLiveQuery = referenceCountedLiveQueryByKey[liveQuery.key]
 
-    if (referenceCountedQueryState === null) {
-      error("unexpected null QueryState for key: ${queryState.key}")
-    } else if (referenceCountedQueryState.obj !== queryState) {
-      error("unexpected QueryState for key: ${queryState.key}: ${referenceCountedQueryState.obj}")
+    if (referenceCountedLiveQuery === null) {
+      error("unexpected null LiveQuery for key: ${liveQuery.key}")
+    } else if (referenceCountedLiveQuery.obj !== liveQuery) {
+      error("unexpected LiveQuery for key: ${liveQuery.key}: ${referenceCountedLiveQuery.obj}")
     }
 
-    referenceCountedQueryState.refCount--
-    if (referenceCountedQueryState.refCount == 0) {
-      referenceCountedQueryStateByKey.remove(queryState.key)
+    referenceCountedLiveQuery.refCount--
+    if (referenceCountedLiveQuery.refCount == 0) {
+      referenceCountedLiveQueryByKey.remove(liveQuery.key)
     }
   }
 }
