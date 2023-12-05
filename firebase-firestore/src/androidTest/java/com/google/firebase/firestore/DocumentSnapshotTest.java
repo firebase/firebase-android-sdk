@@ -38,8 +38,6 @@ public class DocumentSnapshotTest {
     DocumentReference documentReference = testCollection("rooms").document("eros");
     Map<String, Object> initialValue =
         map("desc", "Description", "owner", map("name", "Jonny", "email", "abc@xyz.com"));
-    Map<String, Object> finalData =
-        map("desc", "NewDescription", "owner", map("name", "Jonny", "email", "new@xyz.com"));
     waitFor(documentReference.set(initialValue));
 
     DocumentSnapshot snapshot1 = waitFor(documentReference.get());
