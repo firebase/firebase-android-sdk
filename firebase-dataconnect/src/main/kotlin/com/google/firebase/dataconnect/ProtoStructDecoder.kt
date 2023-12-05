@@ -18,9 +18,10 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.serializer
 
-inline fun <reified T> decodeFromStruct(struct: Struct): T = decodeFromStruct(serializer(), struct)
+internal inline fun <reified T> decodeFromStruct(struct: Struct): T =
+  decodeFromStruct(serializer(), struct)
 
-fun <T> decodeFromStruct(deserializer: DeserializationStrategy<T>, struct: Struct): T {
+internal fun <T> decodeFromStruct(deserializer: DeserializationStrategy<T>, struct: Struct): T {
   val protoValue = Value.newBuilder().setStructValue(struct).build()
   return ProtoValueDecoder(protoValue, path = null).decodeSerializableValue(deserializer)
 }

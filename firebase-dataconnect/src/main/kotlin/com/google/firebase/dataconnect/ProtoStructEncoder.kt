@@ -16,9 +16,10 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.serializer
 
-inline fun <reified T> encodeToStruct(value: T): Struct = encodeToStruct(serializer(), value)
+internal inline fun <reified T> encodeToStruct(value: T): Struct =
+  encodeToStruct(serializer(), value)
 
-fun <T> encodeToStruct(serializer: SerializationStrategy<T>, value: T): Struct {
+internal fun <T> encodeToStruct(serializer: SerializationStrategy<T>, value: T): Struct {
   val values = mutableListOf<Value>()
   ProtoValueEncoder(path = null, onValue = values::add).encodeSerializableValue(serializer, value)
   if (values.isEmpty()) {
