@@ -196,8 +196,30 @@ private class RegisteredDataDeserialzer<T>(
   private val deserializationDispatcher: CoroutineDispatcher,
   private val logger: Logger
 ) {
-  private val latestUpdate = MutableStateFlow<Update<T>?>(null)
-  private val latestSuccessfulUpdate = MutableStateFlow<DeserialzedOperationResult<T>?>(null)
+  // A flow that emits a value every time that there is an update, either a successful or an
+  // unsuccessful update. There is no replay cache in this shared flow because there is no way to
+  // atomically emit a new event and ensure that it has a larger sequence number, and we don't want
+  // to "replay" an older result. Use `latestUpdate` instead of relying on the replay cache.
+  private val updates =
+    MutableSharedFlow<Update<T>>(
+      replay = 0,
+      extraBufferCapacity = Int.MAX_VALUE,
+      onBufferOverflow = BufferOverflow.SUSPEND,
+    )
+
+  // The latest update (i.e. the update with the highest sequence number) that has ever been emitted
+  // to `updates`. The `ref` of the value will be null if, and only if, no updates have ever
+  // occurred.
+  private val latestUpdate = MutableStateFlow<NullableReference<Update<T>>>(NullableReference(null))
+
+  // The same as `latestUpdate`, except that it only store the latest _successful_ update. That is,
+  // if there was a successful update followed by a failed update then the value of this flow would
+  // be that successful update, whereas `latestUpdate` would store the failed one.
+  //
+  // This flow is updated by initializing the lazy value from `latestUpdate`; therefore, make sure
+  // to initialize the lazy value from `latestUpdate` before getting this flow's value.
+  private val latestSuccessfulUpdate =
+    MutableStateFlow<NullableReference<DeserialzedOperationResult<T>>>(NullableReference(null))
 
   data class Update<T>(
     val sequenceNumber: Long,
@@ -205,27 +227,33 @@ private class RegisteredDataDeserialzer<T>(
   )
 
   fun update(requestId: String, sequenceNumber: Long, result: Result<OperationResult>) {
-    // Use a compare-and-swap ("CAS") loop to ensure that an old update never clobbers a newer one.
     val newUpdate =
       Update(sequenceNumber = sequenceNumber, result = lazyDeserialize(requestId, result))
+
+    // Use a compare-and-swap ("CAS") loop to ensure that an old update never clobbers a newer one.
     while (true) {
       val currentUpdate = latestUpdate.value
-      if (currentUpdate !== null && currentUpdate.sequenceNumber > sequenceNumber) {
-        return // don't clobber a newer update with an older one
+      if (currentUpdate.ref !== null && currentUpdate.ref.sequenceNumber > sequenceNumber) {
+        break // don't clobber a newer update with an older one
       }
-      if (latestUpdate.compareAndSet(currentUpdate, newUpdate)) {
-        return
+      if (latestUpdate.compareAndSet(currentUpdate, NullableReference(newUpdate))) {
+        break
       }
     }
+
+    // Emit to the `updates` shared flow _after_ setting `latestUpdate` to avoid others missing
+    // the latest update.
+    val emitSucceeded = updates.tryEmit(newUpdate)
+    check(emitSucceeded) { "updates.tryEmit(newUpdate) should have returned true" }
   }
 
   suspend fun getLatestUpdate(): Result<DeserialzedOperationResult<T>>? =
-    latestUpdate.value?.result?.getValue()
+    latestUpdate.value.ref?.result?.getValue()
 
   suspend fun getLatestSuccessfulUpdate(): DeserialzedOperationResult<T>? {
     // Call getLatestUpdate() to populate `latestSuccessfulUpdate` with the most recent update.
     getLatestUpdate()
-    return latestSuccessfulUpdate.value
+    return latestSuccessfulUpdate.value.ref
   }
 
   suspend fun onSuccessfulUpdate(
@@ -233,14 +261,16 @@ private class RegisteredDataDeserialzer<T>(
     callback: suspend (DeserialzedOperationResult<T>) -> Unit
   ): Nothing {
     var lastSequenceNumber = sinceSequenceNumber ?: Long.MIN_VALUE
-    latestUpdate.collect { update ->
-      if (update !== null && lastSequenceNumber < update.sequenceNumber) {
-        update.result.getValue().onSuccess { deserializedOperationResult ->
-          lastSequenceNumber = deserializedOperationResult.sequenceNumber
-          callback(deserializedOperationResult)
+    updates
+      .onSubscription { latestUpdate.value.ref?.let { emit(it) } }
+      .collect { update ->
+        if (update.sequenceNumber > lastSequenceNumber) {
+          update.result.getValue().onSuccess { deserializedOperationResult ->
+            lastSequenceNumber = deserializedOperationResult.sequenceNumber
+            callback(deserializedOperationResult)
+          }
         }
       }
-    }
   }
 
   private fun lazyDeserialize(
@@ -261,10 +291,13 @@ private class RegisteredDataDeserialzer<T>(
         // that an older result does not clobber a newer one.
         while (true) {
           val latestSuccessful = latestSuccessfulUpdate.value
-          if (latestSuccessful !== null && latestSuccessful.sequenceNumber >= it.sequenceNumber) {
+          if (
+            latestSuccessful.ref !== null &&
+              it.sequenceNumber <= latestSuccessful.ref.sequenceNumber
+          ) {
             break
           }
-          if (latestSuccessfulUpdate.compareAndSet(latestSuccessful, it)) {
+          if (latestSuccessfulUpdate.compareAndSet(latestSuccessful, NullableReference(it))) {
             break
           }
         }

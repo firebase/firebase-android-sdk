@@ -150,3 +150,10 @@ internal class SuspendingLazy<T : Any>(mutex: Mutex? = null, initializer: suspen
   override fun toString(): String =
     if (isInitialized) value.toString() else "SuspendingLazy value not initialized yet."
 }
+
+internal class NullableReference<T>(val ref: T?) {
+  override fun equals(other: Any?) =
+    (other as? NullableReference<*>)?.let { ref == it.ref } ?: false
+  override fun hashCode() = ref?.hashCode() ?: 0
+  override fun toString() = ref?.toString() ?: "null"
+}
