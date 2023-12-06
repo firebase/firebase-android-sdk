@@ -157,9 +157,12 @@ class QuerySubscriptionIntegrationTest {
     schema.createPerson.execute(id = "TestId12345", name = "Name", age = 10000)
     val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
+    val resultCollected = MutableStateFlow(false)
     val collectedResults =
       CopyOnWriteArrayList<DataConnectResult<GetPersonQueryVariables, GetPersonQueryData>>()
-    backgroundScope.launch { querySubscription.resultFlow.toList(collectedResults) }
+    backgroundScope.launch {
+      querySubscription.resultFlow.onEach { resultCollected.value = true }.toList(collectedResults)
+    }
 
     val deferreds = buildList {
       repeat(25_000) {
@@ -172,19 +175,24 @@ class QuerySubscriptionIntegrationTest {
     }
 
     // Wait for at least one result to come in.
-    while (collectedResults.isEmpty()) {
-      yield()
-    }
+    resultCollected.filter { it }.first()
 
     // Wait for all calls to reload() to complete.
     deferreds.forEach { it.await() }
 
     // Verify that we got the expected results.
-    collectedResults.forEachIndexed { index, result ->
-      assertWithMessage("collectedResults[$index]")
-        .that(result.data.person)
+    var collectedResultsIndex = 0
+    while (collectedResultsIndex < collectedResults.size) {
+      assertWithMessage("collectedResults[$collectedResultsIndex]")
+        .that(collectedResults[collectedResultsIndex].data.person)
         .isEqualToGetPersonQueryResult(name = "Name", age = 10000)
+      collectedResultsIndex++
+      yield()
     }
+
+    // Verify that the calls to reload() were conflated, by ensuring that we got WAY less than
+    // 25,000 results.
+    assertWithMessage("collectedResultsIndex").that(collectedResultsIndex).isLessThan(100)
   }
 }
 
