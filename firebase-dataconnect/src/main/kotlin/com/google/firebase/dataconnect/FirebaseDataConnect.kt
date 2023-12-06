@@ -68,15 +68,10 @@ internal constructor(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  // If `grpcClientInitialized` is true then `grpcClient` is guaranteed to be initialized.
-  // Otherwise, `initializeGrpcClient()` can be called to initialize it.
-  @Volatile private var grpcClientInitialized = false
-  private lateinit var grpcClient: DataConnectGrpcClient
-
-  // initializeGrpcClient() MUST be called by a coroutine that has locked `mutex`.
-  private fun initializeGrpcClient(): DataConnectGrpcClient {
-    if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-    return DataConnectGrpcClient(
+  private val lazyGrpcClient =
+    SuspendingLazy(mutex) {
+      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      DataConnectGrpcClient(
         context = context,
         projectId = projectId,
         serviceId = serviceConfig.serviceId,
@@ -89,31 +84,14 @@ internal constructor(
         executor = blockingExecutor,
         creatorLoggerId = logger.id,
       )
-      .also {
-        grpcClient = it
-        grpcClientInitialized = true
-      }
-  }
-
-  // If `queryManagerInitialized` is true then `queryManager` is guaranteed to be initialized.
-  // Otherwise, `initializeQueryManager()` can be called to initialize it.
-  @Volatile private var queryManagerInitialized = false
-  private lateinit var queryManager: QueryManager
-
-  // initializeQueryManager() MUST be called by a coroutine that has locked `mutex`.
-  private suspend fun initializeQueryManager(): QueryManager {
-    if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-
-    val grpcClient = if (grpcClientInitialized) grpcClient else initializeGrpcClient()
-
-    return QueryManager(grpcClient, coroutineScope, blockingDispatcher, logger.id).also {
-      queryManager = it
-      queryManagerInitialized = true
     }
-  }
 
-  internal suspend fun getQueryManager(): QueryManager =
-    if (queryManagerInitialized) queryManager else mutex.withLock { initializeQueryManager() }
+  internal val lazyQueryManager =
+    SuspendingLazy(mutex) {
+      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      val grpcClient = lazyGrpcClient.initializedValueOrNull ?: lazyGrpcClient.getValueLocked()
+      QueryManager(grpcClient, coroutineScope, blockingDispatcher, logger.id)
+    }
 
   internal suspend fun <V, D> executeMutation(ref: MutationRef<V, D>, variables: V) =
     executeMutation(ref, variables, requestId = Random.nextAlphanumericString())
@@ -122,11 +100,8 @@ internal constructor(
     ref: MutationRef<V, D>,
     variables: V,
     requestId: String
-  ): DataConnectResult<V, D> {
-    val grpcClient =
-      if (grpcClientInitialized) grpcClient else mutex.withLock { initializeGrpcClient() }
-
-    return grpcClient
+  ) =
+    (lazyGrpcClient.initializedValueOrNull ?: lazyGrpcClient.getValue())
       .executeMutation(
         requestId = requestId,
         sequenceNumber = nextSequenceNumber(),
@@ -144,7 +119,6 @@ internal constructor(
       }
       .getOrThrow()
       .toDataConnectResult(variables)
-  }
 
   private val closeResult = MutableStateFlow<Result<Unit>?>(null)
 
@@ -186,9 +160,7 @@ internal constructor(
         kotlin
           .runCatching {
             logger.debug { "Closing started" }
-            if (grpcClientInitialized) {
-              grpcClient.close()
-            }
+            lazyGrpcClient.initializedValueOrNull?.apply { close() }
             coroutineScope.cancel()
             logger.debug { "Closing completed" }
           }

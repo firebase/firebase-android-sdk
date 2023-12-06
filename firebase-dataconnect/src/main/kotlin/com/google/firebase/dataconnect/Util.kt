@@ -121,32 +121,31 @@ internal fun ByteArray.toAlphaNumericString(): String = buildString {
  * [LazyThreadSafetyMode.SYNCHRONIZED] with a suspending function and a [Mutex] rather than a
  * blocking synchronization call.
  *
+ * @param mutex the mutex to have locked when `initializer` is invoked; if null (the default) then a
+ * new lock will be used.
  * @param initializer the block to invoke at most once to initialize this object's value.
  */
-internal class SuspendingLazy<T : Any>(initializer: suspend () -> T) {
-  private val mutex = Mutex()
-  @Volatile private var initializer: (suspend () -> T)? = initializer
-  private lateinit var value: T
+internal class SuspendingLazy<T : Any>(mutex: Mutex? = null, initializer: suspend () -> T) {
+  private val mutex = mutex ?: Mutex()
+  private var initializer: (suspend () -> T)? = initializer
+  @Volatile private var value: T? = null
+
+  val initializedValueOrNull: T?
+    get() = value
 
   val isInitialized: Boolean
-    get() = initializer === null
+    get() = value !== null
 
-  suspend fun getValue(): T {
-    if (initializer === null) {
-      return value
-    }
+  suspend fun getValue(): T = value ?: mutex.withLock { getValueLocked() }
 
-    return mutex.withLock {
-      if (initializer === null) {
-        value
-      } else {
-        initializer!!().also {
-          value = it
-          initializer = null
-        }
+  // This function _must_ be called by a coroutine that has locked the mutex given to the
+  // constructor; otherwise, a data race will occur, resulting in undefined behavior.
+  suspend fun getValueLocked(): T =
+    value
+      ?: initializer!!().also {
+        value = it
+        initializer = null
       }
-    }
-  }
 
   override fun toString(): String =
     if (isInitialized) value.toString() else "SuspendingLazy value not initialized yet."

@@ -46,7 +46,12 @@ internal constructor(
         }
 
       collectJob = launch {
-        query.dataConnect.getQueryManager().onResult(
+        val queryManager =
+          query.dataConnect.lazyQueryManager.let { lazyQueryManager ->
+            lazyQueryManager.initializedValueOrNull ?: lazyQueryManager.getValue()
+          }
+
+        queryManager.onResult(
           query,
           variables,
           sinceSequenceNumber = cachedResult?.sequenceNumber,
@@ -60,7 +65,11 @@ internal constructor(
   }
 
   suspend fun reload() {
-    query.dataConnect.getQueryManager().execute(query, variables)
+    val queryManager =
+      query.dataConnect.lazyQueryManager.let { lazyQueryManager ->
+        lazyQueryManager.initializedValueOrNull ?: lazyQueryManager.getValue()
+      }
+    queryManager.execute(query, variables)
   }
 
   suspend fun update(variables: VariablesType) {
