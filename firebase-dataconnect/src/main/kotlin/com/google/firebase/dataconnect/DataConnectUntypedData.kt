@@ -22,7 +22,7 @@ internal constructor(val data: Map<String, Any?>?, val errors: List<DataConnectE
 
   override fun equals(other: Any?) =
     (other as? DataConnectUntypedData)?.let { it.data == data && it.errors == errors } ?: false
-  override fun hashCode() = (data?.hashCode() ?: 0) * 31 * errors.hashCode()
+  override fun hashCode() = (data?.hashCode() ?: 0) + (31 * errors.hashCode())
   override fun toString() = "DataConnectUntypedData(data=$data, errors=$errors)"
 
   companion object Deserializer : DeserializationStrategy<DataConnectUntypedData> {
