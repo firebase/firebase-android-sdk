@@ -123,33 +123,31 @@ internal fun ByteArray.toAlphaNumericString(): String = buildString {
  *
  * @param initializer the block to invoke at most once to initialize this object's value.
  */
-internal class SuspendingLazy<T>(initializer: suspend () -> T) {
+internal class SuspendingLazy<T : Any>(initializer: suspend () -> T) {
   private val mutex = Mutex()
-  private var initializer: (suspend () -> T)? = initializer
-  @Volatile private var value: Any? = UninitializedValue
+  @Volatile private var initializer: (suspend () -> T)? = initializer
+  private lateinit var value: T
 
-  val isInitialized: Boolean = value !== UninitializedValue
+  val isInitialized: Boolean
+    get() = initializer === null
 
-  suspend fun initialize() {
-    if (value === UninitializedValue) {
-      mutex.withLock {
-        if (value === UninitializedValue) {
-          value = initializer!!()
+  suspend fun getValue(): T {
+    if (initializer === null) {
+      return value
+    }
+
+    return mutex.withLock {
+      if (initializer === null) {
+        value
+      } else {
+        initializer!!().also {
+          value = it
           initializer = null
         }
       }
     }
   }
 
-  suspend fun getValue(): T {
-    initialize()
-
-    @Suppress("UNCHECKED_CAST") return value as T
-  }
-
   override fun toString(): String =
     if (isInitialized) value.toString() else "SuspendingLazy value not initialized yet."
-
-  // A sentinel value to use to indicate that the value is not yet initialized.
-  private companion object UninitializedValue
 }

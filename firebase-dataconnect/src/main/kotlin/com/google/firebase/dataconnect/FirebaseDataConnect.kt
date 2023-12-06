@@ -68,13 +68,15 @@ internal constructor(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
-  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
-  // be used.
-  private val grpcClient =
-    lazy(LazyThreadSafetyMode.NONE) {
-      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      DataConnectGrpcClient(
+  // If `grpcClientInitialized` is true then `grpcClient` is guaranteed to be initialized.
+  // Otherwise, `initializeGrpcClient()` can be called to initialize it.
+  @Volatile private var grpcClientInitialized = false
+  private lateinit var grpcClient: DataConnectGrpcClient
+
+  // initializeGrpcClient() MUST be called by a coroutine that has locked `mutex`.
+  private fun initializeGrpcClient(): DataConnectGrpcClient {
+    if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+    return DataConnectGrpcClient(
         context = context,
         projectId = projectId,
         serviceId = serviceConfig.serviceId,
@@ -87,24 +89,31 @@ internal constructor(
         executor = blockingExecutor,
         creatorLoggerId = logger.id,
       )
+      .also {
+        grpcClient = it
+        grpcClientInitialized = true
+      }
+  }
+
+  // If `queryManagerInitialized` is true then `queryManager` is guaranteed to be initialized.
+  // Otherwise, `initializeQueryManager()` can be called to initialize it.
+  @Volatile private var queryManagerInitialized = false
+  private lateinit var queryManager: QueryManager
+
+  // initializeQueryManager() MUST be called by a coroutine that has locked `mutex`.
+  private suspend fun initializeQueryManager(): QueryManager {
+    if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+
+    val grpcClient = if (grpcClientInitialized) grpcClient else initializeGrpcClient()
+
+    return QueryManager(grpcClient, coroutineScope, blockingDispatcher, logger.id).also {
+      queryManager = it
+      queryManagerInitialized = true
     }
+  }
 
-  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
-  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
-  // be used.
-  private val grpcClientOrNull
-    get() = if (grpcClient.isInitialized()) grpcClient.value else null
-
-  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
-  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
-  // be used.
-  private val queryManager by
-    lazy(LazyThreadSafetyMode.NONE) {
-      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      QueryManager(grpcClient.value, coroutineScope, blockingDispatcher, logger.id)
-    }
-
-  internal suspend fun getQueryManager(): QueryManager = mutex.withLock { queryManager }
+  internal suspend fun getQueryManager(): QueryManager =
+    if (queryManagerInitialized) queryManager else mutex.withLock { initializeQueryManager() }
 
   internal suspend fun <V, D> executeMutation(ref: MutationRef<V, D>, variables: V) =
     executeMutation(ref, variables, requestId = Random.nextAlphanumericString())
@@ -113,9 +122,11 @@ internal constructor(
     ref: MutationRef<V, D>,
     variables: V,
     requestId: String
-  ) =
-    mutex
-      .withLock { grpcClient.value }
+  ): DataConnectResult<V, D> {
+    val grpcClient =
+      if (grpcClientInitialized) grpcClient else mutex.withLock { initializeGrpcClient() }
+
+    return grpcClient
       .executeMutation(
         requestId = requestId,
         sequenceNumber = nextSequenceNumber(),
@@ -133,6 +144,7 @@ internal constructor(
       }
       .getOrThrow()
       .toDataConnectResult(variables)
+  }
 
   private val closeResult = MutableStateFlow<Result<Unit>?>(null)
 
@@ -174,7 +186,9 @@ internal constructor(
         kotlin
           .runCatching {
             logger.debug { "Closing started" }
-            mutex.withLock { grpcClientOrNull }?.close()
+            if (grpcClientInitialized) {
+              grpcClient.close()
+            }
             coroutineScope.cancel()
             logger.debug { "Closing completed" }
           }
