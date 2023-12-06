@@ -83,7 +83,7 @@ private class LiveQuery(
     // Register the data deserialzier _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
-    val registeredDataDeserialzer =
+    val registeredDataDeserializer =
       registerDataDeserializer(dataDeserializer, deserializationDispatcher)
 
     // Wait for the current job to complete (if any), and ignore its result. Waiting avoids running
@@ -107,7 +107,7 @@ private class LiveQuery(
 
     newJob.join()
 
-    return registeredDataDeserialzer.getLatestUpdate()!!.getOrThrow()
+    return registeredDataDeserializer.getLatestUpdate()!!.getOrThrow()
   }
 
   suspend fun <T> onResult(
@@ -201,7 +201,7 @@ private class RegisteredDataDeserialzer<T>(
 
   data class Update<T>(
     val sequenceNumber: Long,
-    val result: Lazy<Result<DeserialzedOperationResult<T>>>
+    val result: SuspendingLazy<Result<DeserialzedOperationResult<T>>>
   )
 
   fun update(requestId: String, sequenceNumber: Long, result: Result<OperationResult>) {
@@ -219,12 +219,8 @@ private class RegisteredDataDeserialzer<T>(
     }
   }
 
-  suspend fun getLatestUpdate(): Result<DeserialzedOperationResult<T>>? {
-    val lazyResult = latestUpdate.value?.result ?: return null
-    return if (lazyResult.isInitialized()) {
-      lazyResult.value
-    } else withContext(deserializationDispatcher) { lazyResult.value }
-  }
+  suspend fun getLatestUpdate(): Result<DeserialzedOperationResult<T>>? =
+    latestUpdate.value?.result?.getValue()
 
   suspend fun getLatestSuccessfulUpdate(): DeserialzedOperationResult<T>? {
     // Call getLatestUpdate() to populate `latestSuccessfulUpdate` with the most recent update.
@@ -237,15 +233,11 @@ private class RegisteredDataDeserialzer<T>(
     callback: suspend (DeserialzedOperationResult<T>) -> Unit
   ): Nothing {
     var lastSequenceNumber = sinceSequenceNumber ?: Long.MIN_VALUE
-    latestUpdate.collect {
-      if (it !== null && lastSequenceNumber < it.sequenceNumber) {
-        val update =
-          if (it.result.isInitialized()) {
-            it.result.value
-          } else withContext(deserializationDispatcher) { it.result.value }
-        update.onSuccess {
-          lastSequenceNumber = it.sequenceNumber
-          callback(it)
+    latestUpdate.collect { update ->
+      if (update !== null && lastSequenceNumber < update.sequenceNumber) {
+        update.result.getValue().onSuccess { deserializedOperationResult ->
+          lastSequenceNumber = deserializedOperationResult.sequenceNumber
+          callback(deserializedOperationResult)
         }
       }
     }
@@ -254,15 +246,9 @@ private class RegisteredDataDeserialzer<T>(
   private fun lazyDeserialize(
     requestId: String,
     result: Result<OperationResult>
-  ): Lazy<Result<DeserialzedOperationResult<T>>> = lazy {
+  ): SuspendingLazy<Result<DeserialzedOperationResult<T>>> = SuspendingLazy {
     result
-      .mapCatching {
-        // TODO: move the deserialization to a different dispatcher because it could take a decent
-        //  amount of time. As a general rule of thumb, suspend functions shouldn't perform blocking
-        //  I/O or long-running CPU-bound operations on the calling thread since the calling thread
-        //  could be the main thread.
-        it.deserialize(deserializer)
-      }
+      .mapCatching { withContext(deserializationDispatcher) { it.deserialize(deserializer) } }
       .onFailure {
         // If the overall result was successful then the failure _must_ have occurred during
         // deserialization. Log the deserialization failure so it doesn't go unnoticed.

@@ -17,6 +17,8 @@ import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
 import kotlin.random.Random
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 internal object NullOutputStream : OutputStream() {
   override fun write(b: Int) {}
@@ -112,4 +114,42 @@ internal fun ByteArray.toAlphaNumericString(): String = buildString {
 
     append(ALPHANUMERIC_ALPHABET[intValue and 0x1f])
   }
+}
+
+/**
+ * An adaptation of the standard library [lazy] builder that implements
+ * [LazyThreadSafetyMode.SYNCHRONIZED] with a suspending function and a [Mutex] rather than a
+ * blocking synchronization call.
+ *
+ * @param initializer the block to invoke at most once to initialize this object's value.
+ */
+internal class SuspendingLazy<T>(initializer: suspend () -> T) {
+  private val mutex = Mutex()
+  private var initializer: (suspend () -> T)? = initializer
+  @Volatile private var value: Any? = UninitializedValue
+
+  val isInitialized: Boolean = value !== UninitializedValue
+
+  suspend fun initialize() {
+    if (value === UninitializedValue) {
+      mutex.withLock {
+        if (value === UninitializedValue) {
+          value = initializer!!()
+          initializer = null
+        }
+      }
+    }
+  }
+
+  suspend fun getValue(): T {
+    initialize()
+
+    @Suppress("UNCHECKED_CAST") return value as T
+  }
+
+  override fun toString(): String =
+    if (isInitialized) value.toString() else "SuspendingLazy value not initialized yet."
+
+  // A sentinel value to use to indicate that the value is not yet initialized.
+  private companion object UninitializedValue
 }
