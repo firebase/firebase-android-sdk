@@ -18,7 +18,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 
 class DataConnectUntypedData
-constructor(val data: Map<String, Any?>?, val errors: List<DataConnectError>) {
+internal constructor(val data: Map<String, Any?>?, val errors: List<DataConnectError>) {
 
   override fun equals(other: Any?) =
     (other as? DataConnectUntypedData)?.let { it.data == data && it.errors == errors } ?: false
