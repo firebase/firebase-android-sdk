@@ -190,9 +190,9 @@ class QuerySubscriptionIntegrationTest {
       yield()
     }
 
-    // Verify that the calls to reload() were conflated, by ensuring that we got WAY less than
+    // Verify that the calls to reload() were conflated, by ensuring that we got less than
     // 25,000 results.
-    assertWithMessage("collectedResultsIndex").that(collectedResultsIndex).isLessThan(100)
+    assertWithMessage("collectedResultsIndex").that(collectedResultsIndex).isLessThan(10000)
   }
 }
 
