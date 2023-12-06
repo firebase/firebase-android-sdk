@@ -229,7 +229,7 @@ internal constructor(
     private fun MutableStateFlow<Result<Unit>?>.clearResultUnlessSuccess() {
       while (true) {
         val oldValue = value
-        if (oldValue != null && oldValue.isSuccess) {
+        if (oldValue?.isSuccess == true) {
           return
         }
         if (compareAndSet(oldValue, null)) {
