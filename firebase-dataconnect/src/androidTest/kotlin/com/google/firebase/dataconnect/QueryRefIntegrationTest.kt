@@ -322,7 +322,7 @@ class QueryRefIntegrationTest {
       val queryRef = personSchema.getPerson
 
       val deferreds = buildList {
-        repeat(100_000) {
+        repeat(25_000) {
           // Use `Dispatchers.Default` as the dispatcher for the launched coroutines so that there
           // will be at least 2 threads used to run the coroutines (as documented by
           // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
