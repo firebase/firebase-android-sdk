@@ -153,47 +153,50 @@ class QuerySubscriptionIntegrationTest {
   }
 
   @Test
-  fun reload_concurrent_invocations_get_conflated() = runTest {
-    schema.createPerson.execute(id = "TestId12345", name = "Name", age = 10000)
-    val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
+  fun reload_concurrent_invocations_get_conflated() =
+    runTest(timeout = 60.seconds) {
+      schema.createPerson.execute(id = "TestId12345", name = "Name", age = 10000)
+      val querySubscription = schema.getPerson.subscribe(id = "TestId12345")
 
-    val resultCollected = MutableStateFlow(false)
-    val collectedResults =
-      CopyOnWriteArrayList<DataConnectResult<GetPersonQueryVariables, GetPersonQueryData>>()
-    backgroundScope.launch {
-      querySubscription.resultFlow.onEach { resultCollected.value = true }.toList(collectedResults)
-    }
-
-    val deferreds = buildList {
-      repeat(25_000) {
-        // Use `Dispatchers.Default` as the dispatcher for the launched coroutines so that there
-        // will be at least 2 threads used to run the coroutines (as documented by
-        // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
-        // that this test is indeed testing "massive concurrency".
-        add(backgroundScope.async(Dispatchers.Default) { querySubscription.reload() })
+      val resultCollected = MutableStateFlow(false)
+      val collectedResults =
+        CopyOnWriteArrayList<DataConnectResult<GetPersonQueryVariables, GetPersonQueryData>>()
+      backgroundScope.launch {
+        querySubscription.resultFlow
+          .onEach { resultCollected.value = true }
+          .toList(collectedResults)
       }
+
+      val deferreds = buildList {
+        repeat(25_000) {
+          // Use `Dispatchers.Default` as the dispatcher for the launched coroutines so that there
+          // will be at least 2 threads used to run the coroutines (as documented by
+          // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
+          // that this test is indeed testing "massive concurrency".
+          add(backgroundScope.async(Dispatchers.Default) { querySubscription.reload() })
+        }
+      }
+
+      // Wait for at least one result to come in.
+      resultCollected.filter { it }.first()
+
+      // Wait for all calls to reload() to complete.
+      deferreds.forEach { it.await() }
+
+      // Verify that we got the expected results.
+      var collectedResultsIndex = 0
+      while (collectedResultsIndex < collectedResults.size) {
+        assertWithMessage("collectedResults[$collectedResultsIndex]")
+          .that(collectedResults[collectedResultsIndex].data.person)
+          .isEqualToGetPersonQueryResult(name = "Name", age = 10000)
+        collectedResultsIndex++
+        yield()
+      }
+
+      // Verify that the calls to reload() were conflated, by ensuring that we got less than
+      // 25,000 results.
+      assertWithMessage("collectedResultsIndex").that(collectedResultsIndex).isLessThan(10000)
     }
-
-    // Wait for at least one result to come in.
-    resultCollected.filter { it }.first()
-
-    // Wait for all calls to reload() to complete.
-    deferreds.forEach { it.await() }
-
-    // Verify that we got the expected results.
-    var collectedResultsIndex = 0
-    while (collectedResultsIndex < collectedResults.size) {
-      assertWithMessage("collectedResults[$collectedResultsIndex]")
-        .that(collectedResults[collectedResultsIndex].data.person)
-        .isEqualToGetPersonQueryResult(name = "Name", age = 10000)
-      collectedResultsIndex++
-      yield()
-    }
-
-    // Verify that the calls to reload() were conflated, by ensuring that we got less than
-    // 25,000 results.
-    assertWithMessage("collectedResultsIndex").that(collectedResultsIndex).isLessThan(10000)
-  }
 }
 
 private fun Subject.isEqualToGetPersonQueryResult(name: String, age: Int?) =

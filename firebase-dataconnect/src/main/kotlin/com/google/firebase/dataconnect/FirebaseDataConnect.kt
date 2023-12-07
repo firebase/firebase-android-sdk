@@ -50,17 +50,18 @@ internal constructor(
       }
     }
 
-  internal val coroutineScope =
+  private val coroutineScope =
     CoroutineScope(
       SupervisorJob() +
         nonBlockingExecutor.asCoroutineDispatcher() +
         CoroutineName("FirebaseDataConnect") +
-        CoroutineExceptionHandler { coroutineContext, throwable ->
+        CoroutineExceptionHandler { _, throwable ->
           logger.warn(throwable) { "uncaught exception from a coroutine" }
         }
     )
 
   private val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
+  private val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
 
   // Protects `closed`, `grpcClient`, and `queryManager`.
   private val mutex = Mutex()
@@ -90,7 +91,13 @@ internal constructor(
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
       val grpcClient = lazyGrpcClient.initializedValueOrNull ?: lazyGrpcClient.getValueLocked()
-      QueryManager(grpcClient, coroutineScope, blockingDispatcher, logger.id)
+      QueryManager(
+        grpcClient = grpcClient,
+        coroutineScope = coroutineScope,
+        blockingDispatcher = nonBlockingDispatcher,
+        nonBlockingDispatcher = nonBlockingDispatcher,
+        creatorLoggerId = logger.id
+      )
     }
 
   internal suspend fun <V, D> executeMutation(ref: MutationRef<V, D>, variables: V) =

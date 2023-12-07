@@ -27,13 +27,20 @@ import kotlinx.serialization.DeserializationStrategy
 internal class QueryManager(
   grpcClient: DataConnectGrpcClient,
   coroutineScope: CoroutineScope,
-  deserializationDispatcher: CoroutineDispatcher,
+  blockingDispatcher: CoroutineDispatcher,
+  nonBlockingDispatcher: CoroutineDispatcher,
   creatorLoggerId: String
 ) {
   private val logger = Logger("QueryManager").apply { debug { "Created from $creatorLoggerId" } }
 
   private val liveQueries =
-    LiveQueries(grpcClient, coroutineScope, deserializationDispatcher, logger)
+    LiveQueries(
+      grpcClient = grpcClient,
+      coroutineScope = coroutineScope,
+      blockingDispatcher = blockingDispatcher,
+      nonBlockingDispatcher = nonBlockingDispatcher,
+      logger = logger
+    )
 
   suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
     liveQueries
@@ -63,10 +70,18 @@ private class LiveQuery(
   private val grpcClient: DataConnectGrpcClient,
   private val operationName: String,
   private val variables: Struct,
-  private val coroutineScope: CoroutineScope,
-  private val deserializationDispatcher: CoroutineDispatcher,
+  coroutineScope: CoroutineScope,
+  private val blockingDispatcher: CoroutineDispatcher,
+  nonBlockingDispatcher: CoroutineDispatcher,
   private val logger: Logger,
-) {
+) : AutoCloseable {
+  private val coroutineScope =
+    CoroutineScope(
+      SupervisorJob(coroutineScope.coroutineContext[Job]) +
+        nonBlockingDispatcher +
+        CoroutineName("LiveQuery[$operationName ${variables.toCompactString()}]")
+    )
+
   // The `dataDeserializers` list may be safely read concurrently from multiple threads, as it uses
   // a `CopyOnWriteArrayList` that is completely thread-safe. Any mutating operations must be
   // performed while the `dataDeserializersWriteMutex` mutex is locked, so that
@@ -83,8 +98,7 @@ private class LiveQuery(
     // Register the data deserialzier _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
-    val registeredDataDeserializer =
-      registerDataDeserializer(dataDeserializer, deserializationDispatcher)
+    val registeredDataDeserializer = registerDataDeserializer(dataDeserializer)
 
     // Wait for the current job to complete (if any), and ignore its result. Waiting avoids running
     // multiple queries in parallel, which would not scale.
@@ -116,12 +130,11 @@ private class LiveQuery(
     executeQuery: Boolean,
     callback: suspend (DeserialzedOperationResult<T>) -> Unit,
   ): Nothing {
-    val registeredDataDeserialzer =
-      registerDataDeserializer(dataDeserializer, deserializationDispatcher)
+    val registeredDataDeserializer = registerDataDeserializer(dataDeserializer)
 
     // Immediately deliver the most recent update to the callback, so the collector has some data
     // to work with while waiting for the network requests to complete.
-    val cachedUpdate = registeredDataDeserialzer.getLatestSuccessfulUpdate()
+    val cachedUpdate = registeredDataDeserializer.getLatestSuccessfulUpdate()
     val effectiveSinceSequenceNumber =
       if (cachedUpdate === null) {
         sinceSequenceNumber
@@ -141,7 +154,7 @@ private class LiveQuery(
       coroutineScope.launch { runCatching { execute(dataDeserializer) } }
     }
 
-    registeredDataDeserialzer.onSuccessfulUpdate(
+    registeredDataDeserializer.onSuccessfulUpdate(
       sinceSequenceNumber = effectiveSinceSequenceNumber
     ) {
       callback(it)
@@ -169,8 +182,7 @@ private class LiveQuery(
 
   @Suppress("UNCHECKED_CAST")
   private suspend fun <T> registerDataDeserializer(
-    dataDeserializer: DeserializationStrategy<T>,
-    deserializationDispatcher: CoroutineDispatcher,
+    dataDeserializer: DeserializationStrategy<T>
   ): RegisteredDataDeserialzer<T> =
     // First, check if the deserializer is already registered and, if it is, just return it.
     // Otherwise, lock the "write" mutex and register it. We still have to check again if it is
@@ -183,12 +195,16 @@ private class LiveQuery(
         dataDeserializers
           .firstOrNull { it.deserializer === dataDeserializer }
           ?.let { it as RegisteredDataDeserialzer<T> }
-          ?: RegisteredDataDeserialzer(dataDeserializer, deserializationDispatcher, logger).also {
+          ?: RegisteredDataDeserialzer(dataDeserializer, blockingDispatcher, logger).also {
             dataDeserializers.add(it)
           }
       }
 
   data class Key(val operationName: String, val variablesHash: String)
+
+  override fun close() {
+    coroutineScope.cancel()
+  }
 }
 
 private class RegisteredDataDeserialzer<T>(
@@ -308,7 +324,8 @@ private class RegisteredDataDeserialzer<T>(
 private class LiveQueries(
   private val grpcClient: DataConnectGrpcClient,
   private val coroutineScope: CoroutineScope,
-  private val deserializationDispatcher: CoroutineDispatcher,
+  private val blockingDispatcher: CoroutineDispatcher,
+  private val nonBlockingDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) {
   private val mutex = Mutex()
@@ -353,7 +370,8 @@ private class LiveQueries(
             operationName = ref.operationName,
             variables = variablesStruct,
             coroutineScope = coroutineScope,
-            deserializationDispatcher = deserializationDispatcher,
+            blockingDispatcher = blockingDispatcher,
+            nonBlockingDispatcher = nonBlockingDispatcher,
             logger = logger,
           ),
           refCount = 0
@@ -378,6 +396,7 @@ private class LiveQueries(
     referenceCountedLiveQuery.refCount--
     if (referenceCountedLiveQuery.refCount == 0) {
       referenceCountedLiveQueryByKey.remove(liveQuery.key)
+      liveQuery.close()
     }
   }
 }
