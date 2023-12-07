@@ -152,7 +152,9 @@ internal class SuspendingLazy<T : Any>(
   suspend fun getValueLocked(): T =
     if (coroutineContext === null) {
       getValueLocked0()
-    } else withContext(coroutineContext) { getValueLocked0() }
+    } else {
+      withContext(coroutineContext) { getValueLocked0() }
+    }
 
   private suspend inline fun getValueLocked0(): T =
     value
