@@ -1,4 +1,6 @@
 # Unreleased
+
+# 18.6.0
 * [changed] Include more details about app processes in reports.
 * [feature] Updated `firebase-sessions` dependency for more accurate sessions on multi-process apps.
 * [changed] Added support for [crashlytics] to report information from [remote_config].
