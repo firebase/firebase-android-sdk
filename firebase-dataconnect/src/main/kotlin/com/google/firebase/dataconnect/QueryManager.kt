@@ -29,9 +29,10 @@ internal class QueryManager(
   coroutineScope: CoroutineScope,
   blockingDispatcher: CoroutineDispatcher,
   nonBlockingDispatcher: CoroutineDispatcher,
-  creatorLoggerId: String
+  parentLogger: Logger,
 ) {
-  private val logger = Logger("QueryManager").apply { debug { "Created from $creatorLoggerId" } }
+  private val logger =
+    Logger("QueryManager").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
   private val liveQueries =
     LiveQueries(
@@ -39,7 +40,7 @@ internal class QueryManager(
       coroutineScope = coroutineScope,
       blockingDispatcher = blockingDispatcher,
       nonBlockingDispatcher = nonBlockingDispatcher,
-      logger = logger
+      parentLogger = logger
     )
 
   suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
@@ -73,8 +74,13 @@ private class LiveQuery(
   coroutineScope: CoroutineScope,
   private val blockingDispatcher: CoroutineDispatcher,
   nonBlockingDispatcher: CoroutineDispatcher,
-  private val logger: Logger,
+  parentLogger: Logger,
 ) : AutoCloseable {
+  private val logger =
+    Logger("LiveQuery").apply {
+      debug { "Created by ${parentLogger.nameWithId} " + "with key: $key" }
+    }
+
   private val coroutineScope =
     CoroutineScope(
       SupervisorJob(coroutineScope.coroutineContext[Job]) +
@@ -167,6 +173,7 @@ private class LiveQuery(
 
     val executeQueryResult =
       grpcClient.runCatching {
+        logger.debug("Calling executeQuery() with requestId=$requestId")
         executeQuery(
           requestId = requestId,
           operationName = operationName,
@@ -189,29 +196,45 @@ private class LiveQuery(
     // already registered because another thread could have concurrently registered it since we last
     // checked above.
     dataDeserializers
-      .firstOrNull { it.deserializer === dataDeserializer }
+      .firstOrNull { it.dataDeserializer === dataDeserializer }
       ?.let { it as RegisteredDataDeserialzer<T> }
       ?: dataDeserializersWriteMutex.withLock {
         dataDeserializers
-          .firstOrNull { it.deserializer === dataDeserializer }
+          .firstOrNull { it.dataDeserializer === dataDeserializer }
           ?.let { it as RegisteredDataDeserialzer<T> }
-          ?: RegisteredDataDeserialzer(dataDeserializer, blockingDispatcher, logger).also {
-            dataDeserializers.add(it)
+          ?: Random.nextAlphanumericString().let { registrationId ->
+            logger.debug {
+              "Registering data deserializer $dataDeserializer with registrationId=$registrationId"
+            }
+            RegisteredDataDeserialzer(
+                registrationId = registrationId,
+                dataDeserializer = dataDeserializer,
+                blockingDispatcher = blockingDispatcher,
+                parentLogger = logger
+              )
+              .also { dataDeserializers.add(it) }
           }
       }
 
   data class Key(val operationName: String, val variablesHash: String)
 
   override fun close() {
+    logger.debug("close() called")
     coroutineScope.cancel()
   }
 }
 
 private class RegisteredDataDeserialzer<T>(
-  val deserializer: DeserializationStrategy<T>,
-  private val deserializationDispatcher: CoroutineDispatcher,
-  private val logger: Logger
+  registrationId: String,
+  val dataDeserializer: DeserializationStrategy<T>,
+  private val blockingDispatcher: CoroutineDispatcher,
+  parentLogger: Logger
 ) {
+  private val logger =
+    Logger("RegisteredDataDeserialzer").apply {
+      debug { "Created by ${parentLogger.nameWithId} " + "with registrationId=$registrationId" }
+    }
+
   // A flow that emits a value every time that there is an update, either a successful or an
   // unsuccessful update. There is no replay cache in this shared flow because there is no way to
   // atomically emit a new event and ensure that it has a larger sequence number, and we don't want
@@ -294,7 +317,7 @@ private class RegisteredDataDeserialzer<T>(
     result: Result<OperationResult>
   ): SuspendingLazy<Result<DeserialzedOperationResult<T>>> = SuspendingLazy {
     result
-      .mapCatching { withContext(deserializationDispatcher) { it.deserialize(deserializer) } }
+      .mapCatching { withContext(blockingDispatcher) { it.deserialize(dataDeserializer) } }
       .onFailure {
         // If the overall result was successful then the failure _must_ have occurred during
         // deserialization. Log the deserialization failure so it doesn't go unnoticed.
@@ -326,8 +349,11 @@ private class LiveQueries(
   private val coroutineScope: CoroutineScope,
   private val blockingDispatcher: CoroutineDispatcher,
   private val nonBlockingDispatcher: CoroutineDispatcher,
-  private val logger: Logger,
+  parentLogger: Logger,
 ) {
+  private val logger =
+    Logger("LiveQueries").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+
   private val mutex = Mutex()
 
   // NOTE: All accesses to `referenceCountedLiveQueryByKey` and the `refCount` field of each value
@@ -372,7 +398,7 @@ private class LiveQueries(
             coroutineScope = coroutineScope,
             blockingDispatcher = blockingDispatcher,
             nonBlockingDispatcher = nonBlockingDispatcher,
-            logger = logger,
+            parentLogger = logger,
           ),
           refCount = 0
         )
@@ -395,6 +421,7 @@ private class LiveQueries(
 
     referenceCountedLiveQuery.refCount--
     if (referenceCountedLiveQuery.refCount == 0) {
+      logger.debug { "refCount==0 for LiveQuery with key=${liveQuery.key}; removing the mapping" }
       referenceCountedLiveQueryByKey.remove(liveQuery.key)
       liveQuery.close()
     }

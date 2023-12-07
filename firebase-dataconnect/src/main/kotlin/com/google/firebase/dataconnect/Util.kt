@@ -15,8 +15,10 @@ package com.google.firebase.dataconnect
 
 import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.CoroutineContext
 import kotlin.math.abs
 import kotlin.random.Random
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -123,9 +125,16 @@ internal fun ByteArray.toAlphaNumericString(): String = buildString {
  *
  * @param mutex the mutex to have locked when `initializer` is invoked; if null (the default) then a
  * new lock will be used.
+ * @param coroutineContext the coroutine context with which to invoke `initializer`; if null (the
+ * default) then the context of the coroutine that calls [getValue] or [getValueLocked] will be
+ * used.
  * @param initializer the block to invoke at most once to initialize this object's value.
  */
-internal class SuspendingLazy<T : Any>(mutex: Mutex? = null, initializer: suspend () -> T) {
+internal class SuspendingLazy<T : Any>(
+  mutex: Mutex? = null,
+  private val coroutineContext: CoroutineContext? = null,
+  initializer: suspend () -> T
+) {
   private val mutex = mutex ?: Mutex()
   private var initializer: (suspend () -> T)? = initializer
   @Volatile private var value: T? = null
@@ -136,11 +145,16 @@ internal class SuspendingLazy<T : Any>(mutex: Mutex? = null, initializer: suspen
   val isInitialized: Boolean
     get() = value !== null
 
-  suspend fun getValue(): T = value ?: mutex.withLock { getValueLocked() }
+  suspend inline fun getValue(): T = value ?: mutex.withLock { getValueLocked() }
 
   // This function _must_ be called by a coroutine that has locked the mutex given to the
   // constructor; otherwise, a data race will occur, resulting in undefined behavior.
   suspend fun getValueLocked(): T =
+    if (coroutineContext === null) {
+      getValueLocked0()
+    } else withContext(coroutineContext) { getValueLocked0() }
+
+  private suspend inline fun getValueLocked0(): T =
     value
       ?: initializer!!().also {
         value = it

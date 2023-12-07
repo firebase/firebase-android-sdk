@@ -27,9 +27,7 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import kotlin.concurrent.thread
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.completeWith
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
@@ -44,37 +42,30 @@ internal class DataConnectGrpcClient(
   hostName: String,
   port: Int,
   sslEnabled: Boolean,
-  private val executor: Executor,
-  creatorLoggerId: String,
+  private val blockingExecutor: Executor,
+  parentLogger: Logger,
 ) {
   private val logger =
-    Logger("DataConnectGrpcClient").apply { debug { "Created from $creatorLoggerId" } }
+    Logger("DataConnectGrpcClient").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
   private val requestName =
     "projects/$projectId/locations/$location/services/$serviceId/" +
       "operationSets/$operationSet/revisions/$revision"
 
-  // Protects `closed`, `grpcChannel`, and `grpcStub`.
-  private val mutex = Mutex()
-
-  // All accesses to this variable _must_ have locked `mutex`.
+  private val closedMutex = Mutex()
   private var closed = false
 
-  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
-  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
-  // be used.
-  private val grpcChannel =
-    lazy(LazyThreadSafetyMode.NONE) {
-      logger.debug { "${ManagedChannel::class.qualifiedName} initialization started" }
-
+  private val lazyGrpcChannel =
+    SuspendingLazy(closedMutex, blockingExecutor.asCoroutineDispatcher()) {
       if (closed) throw IllegalStateException("DataConnectGrpcClient instance has been closed")
+
+      logger.debug { "${ManagedChannel::class.qualifiedName} initialization started" }
 
       // Upgrade the Android security provider using Google Play Services.
       //
       // We need to upgrade the Security Provider before any network channels are initialized
-      // because
-      // okhttp maintains a list of supported providers that is initialized when the JVM first
-      // resolves the static dependencies of ManagedChannel.
+      // because okhttp maintains a list of supported providers that is initialized when the JVM
+      // first resolves the static dependencies of ManagedChannel.
       //
       // If initialization fails for any reason, then a warning is logged and the original,
       // un-upgraded security provider is used.
@@ -95,7 +86,7 @@ internal class DataConnectGrpcClient(
           // failsafe.
           it.keepAliveTime(30, TimeUnit.SECONDS)
 
-          it.executor(executor)
+          it.executor(blockingExecutor)
 
           // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
           // to respond more gracefully to network change events, such as switching from cellular to
@@ -108,14 +99,7 @@ internal class DataConnectGrpcClient(
       channel
     }
 
-  private val grpcChannelOrNull
-    get() = if (grpcChannel.isInitialized()) grpcChannel.value else null
-
-  // All accesses to this variable _must_ have locked `mutex`. Note, however, that once a reference
-  // to the lazily-created object is obtained, then the mutex can be unlocked and the instance can
-  // be used.
-  private val grpcStub: DataServiceCoroutineStub by
-    lazy(LazyThreadSafetyMode.NONE) { DataServiceCoroutineStub(grpcChannel.value) }
+  private val lazyGrpcStub = SuspendingLazy { DataServiceCoroutineStub(lazyGrpcChannel.getValue()) }
 
   data class OperationResult(
     val data: Struct?,
@@ -142,8 +126,8 @@ internal class DataConnectGrpcClient(
         "ExecuteQueryRequest: ${request.toCompactString()}"
     }
     val response =
-      mutex
-        .withLock { grpcStub }
+      lazyGrpcStub
+        .getValue()
         .runCatching { executeQuery(request) }
         .onFailure {
           logger.warn(it) {
@@ -180,8 +164,8 @@ internal class DataConnectGrpcClient(
         "ExecuteMutationRequest: ${request.toCompactString()}"
     }
     val response =
-      mutex
-        .withLock { grpcStub }
+      lazyGrpcStub
+        .getValue()
         .runCatching { executeMutation(request) }
         .onFailure {
           logger.warn(it) {
@@ -202,34 +186,35 @@ internal class DataConnectGrpcClient(
   }
 
   private val closingMutex = Mutex()
+  private var awaitTerminationJob: Deferred<Unit>? = null
   private var closeCompleted = false
 
   suspend fun close() {
-    val grpcChannel =
-      mutex.withLock {
-        closed = true
-        grpcChannelOrNull
-      }
+    closedMutex.withLock { closed = true }
 
     closingMutex.withLock {
       if (!closeCompleted) {
-        grpcChannel?.terminate()
+        closeGrpcChannel()
       }
       closeCompleted = true
     }
   }
 
-  private suspend fun ManagedChannel.terminate() {
-    shutdown()
+  // This function _must_ be called by a coroutine that has acquired the lock on `closingMutex`.
+  @OptIn(DelicateCoroutinesApi::class)
+  private suspend fun closeGrpcChannel() {
+    val grpcChannel = lazyGrpcChannel.initializedValueOrNull ?: return
 
-    val deferred = CompletableDeferred<Unit>()
-    thread(isDaemon = true, name = "ManagedChannel.terminate() from ${logger.id}") {
-      deferred.completeWith(
-        runCatching<Unit> { awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS) }
-      )
-    }
+    val job =
+      awaitTerminationJob?.let { if (it.isCancelled && it.isCompleted) null else it }
+        ?: GlobalScope.async<Unit> {
+            withContext(blockingExecutor.asCoroutineDispatcher()) {
+              grpcChannel.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+            }
+          }
+          .also { awaitTerminationJob = it }
 
-    deferred.await()
+    job.await()
   }
 }
 

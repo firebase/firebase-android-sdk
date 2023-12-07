@@ -82,8 +82,8 @@ internal constructor(
         hostName = settings.hostName,
         port = settings.port,
         sslEnabled = settings.sslEnabled,
-        executor = blockingExecutor,
-        creatorLoggerId = logger.id,
+        blockingExecutor = blockingExecutor,
+        parentLogger = logger,
       )
     }
 
@@ -96,7 +96,7 @@ internal constructor(
         coroutineScope = coroutineScope,
         blockingDispatcher = nonBlockingDispatcher,
         nonBlockingDispatcher = nonBlockingDispatcher,
-        creatorLoggerId = logger.id
+        parentLogger = logger,
       )
     }
 
