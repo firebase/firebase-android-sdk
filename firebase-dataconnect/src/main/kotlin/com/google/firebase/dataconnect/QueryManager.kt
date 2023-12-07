@@ -346,7 +346,7 @@ private class LiveQueries(
     return try {
       block(liveQuery)
     } finally {
-      mutex.withLock { withContext(NonCancellable) { releaseLiveQuery(liveQuery) } }
+      withContext(NonCancellable) { mutex.withLock { releaseLiveQuery(liveQuery) } }
     }
   }
 
