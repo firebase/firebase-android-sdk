@@ -227,7 +227,7 @@ jobs:
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.NIGHTLY_INTEG_TESTS_GOOGLE_SERVICES }}
         run: |
-          echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
+          echo $INTEG_TESTS_GOOGLE_SERVICES > google-services.json
 
       - name: Firestore Nightly Integ Tests
         env:
