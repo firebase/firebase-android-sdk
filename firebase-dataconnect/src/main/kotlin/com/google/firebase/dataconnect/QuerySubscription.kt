@@ -22,10 +22,10 @@ internal constructor(
   variables: VariablesType
 ) {
   private val _variables = MutableStateFlow(variables)
-  val variables: VariablesType by _variables.asStateFlow()::value
+  val variables: VariablesType by _variables::value
 
   private val _lastResult = MutableStateFlow<DataConnectResult<VariablesType, DataType>?>(null)
-  val lastResult: DataConnectResult<VariablesType, DataType>? by _lastResult.asStateFlow()::value
+  val lastResult: DataConnectResult<VariablesType, DataType>? by _lastResult::value
 
   // Each collection of this flow triggers an implicit `reload()`.
   val resultFlow: Flow<DataConnectResult<VariablesType, DataType>> = channelFlow {
