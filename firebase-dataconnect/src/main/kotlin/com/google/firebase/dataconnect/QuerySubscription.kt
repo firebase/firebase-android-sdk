@@ -62,7 +62,8 @@ internal constructor(
 
   suspend fun reload() {
     val queryManager = query.dataConnect.lazyQueryManager.get()
-    queryManager.execute(query, variables)
+    val result = queryManager.execute(query, variables)
+    updateLastResult(result)
   }
 
   suspend fun update(variables: VariablesType) {

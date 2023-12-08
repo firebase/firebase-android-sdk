@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.testutil.schemas
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
@@ -53,7 +54,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
     @Serializable data class Variables(val data: PersonData)
 
-    suspend fun MutationRef<Variables, Unit>.execute(id: String, name: String, age: Int?) =
+    suspend fun MutationRef<Variables, Unit>.execute(id: String, name: String, age: Int? = null) =
       execute(Variables(PersonData(id = id, name = name, age = age)))
   }
 
@@ -106,6 +107,8 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     suspend fun QueryRef<Variables, Data>.execute(id: String) = execute(Variables(id = id))
 
     fun QueryRef<Variables, Data>.subscribe(id: String) = subscribe(Variables(id = id))
+
+    suspend fun QuerySubscription<Variables, Data>.update(id: String) = update(Variables(id = id))
   }
 
   val getPerson =

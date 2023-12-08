@@ -116,6 +116,7 @@ dependencies {
   androidTestImplementation(libs.kotlin.coroutines.test)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
+  androidTestImplementation(libs.turbine)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
