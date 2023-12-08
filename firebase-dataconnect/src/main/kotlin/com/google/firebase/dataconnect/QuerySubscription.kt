@@ -75,7 +75,7 @@ internal constructor(
     // clobbering a newer result with an older result, compared using their sequence numbers.
     while (true) {
       val oldLastResult = _lastResult.value
-      if (oldLastResult !== null && oldLastResult.sequenceNumber > newLastResult.sequenceNumber) {
+      if (oldLastResult !== null && oldLastResult.sequenceNumber >= newLastResult.sequenceNumber) {
         return
       }
       if (_lastResult.compareAndSet(oldLastResult, newLastResult)) {
