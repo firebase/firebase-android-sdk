@@ -94,6 +94,15 @@ private class LiveQuery(
   // read-write-modify operations can be done atomically.
   private val dataDeserializersWriteMutex = Mutex()
   private val dataDeserializers = CopyOnWriteArrayList<RegisteredDataDeserialzer<*>>()
+  private data class Update(
+    val requestId: String,
+    val sequenceNumber: Long,
+    val result: Result<OperationResult>
+  )
+  // Also, `initialDataDeserializerUpdate` must only be accessed while `dataDeserializersWriteMutex`
+  // is held.
+  private val initialDataDeserializerUpdate =
+    MutableStateFlow<NullableReference<Update>>(NullableReference(null))
 
   private val jobMutex = Mutex()
   private var job: Job? = null
@@ -182,6 +191,19 @@ private class LiveQuery(
         )
       }
 
+    // Normally, setting the value of `initialDataDeserializerUpdate` would be done in a compare-
+    // and-swap ("CAS") loop to avoid clobbering a newer update with an older one; however, since
+    // all writes _must_ be done by a coroutine with `dataDeserializersWriteMutex` locked, the CAS
+    // loop isn't necessary and its value can just be set directly.
+    dataDeserializersWriteMutex.withLock {
+      initialDataDeserializerUpdate.value.ref.let { oldUpdate ->
+        if (oldUpdate === null || oldUpdate.sequenceNumber < sequenceNumber) {
+          initialDataDeserializerUpdate.value =
+            NullableReference(Update(requestId, sequenceNumber, executeQueryResult))
+        }
+      }
+    }
+
     dataDeserializers.iterator().forEach {
       it.update(requestId, sequenceNumber, executeQueryResult)
     }
@@ -212,7 +234,12 @@ private class LiveQuery(
                 blockingDispatcher = blockingDispatcher,
                 parentLogger = logger
               )
-              .also { dataDeserializers.add(it) }
+              .also {
+                dataDeserializers.add(it)
+                initialDataDeserializerUpdate.value.ref?.run {
+                  it.update(requestId, sequenceNumber, result)
+                }
+              }
           }
       }
 

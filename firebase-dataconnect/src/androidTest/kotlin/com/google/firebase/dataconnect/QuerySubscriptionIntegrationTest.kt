@@ -29,12 +29,20 @@ import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQu
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.subscribe
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.update
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
+import com.google.firebase.dataconnect.testutil.skipItemsWhere
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.*
 import kotlinx.coroutines.test.*
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -312,5 +320,156 @@ class QuerySubscriptionIntegrationTest {
       assertThat(awaitItem().data.person?.name).isEqualTo("Name2")
       assertThat(awaitItem().data.person?.name).isEqualTo("NewName2")
     }
+  }
+
+  @Test
+  fun collect_does_not_get_an_update_on_errors() = runTest {
+    schema.createPerson.execute(id = "TestId", name = "Name1")
+    val testIdVariables = GetPersonQuery.Variables("TestId")
+
+    val noName2Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName2>())
+
+    turbineScope {
+      val querySubscription = noName2Query.subscribe(testIdVariables)
+      val flow = querySubscription.resultFlow.testIn(backgroundScope)
+      assertThat(flow.awaitItem().data.person?.name).isEqualTo("Name1")
+
+      schema.updatePerson.execute(id = "TestId", name = "Name2")
+      val result2 = querySubscription.runCatching { reload() }
+      assertWithMessage("result2.isSuccess").that(result2.isSuccess).isFalse()
+
+      schema.updatePerson.execute(id = "TestId", name = "Name3")
+      querySubscription.reload()
+      assertThat(flow.awaitItem().data.person?.name).isEqualTo("Name3")
+    }
+  }
+
+  @Test
+  fun collect_gets_notified_of_per_data_deserializer_successes() = runTest {
+    schema.createPerson.execute(id = "TestId", name = "Name0")
+    val testIdVariables = GetPersonQuery.Variables("TestId")
+
+    val noName1Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName1>())
+    val noName2Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName2>())
+
+    turbineScope {
+      val flow1 = noName1Query.subscribe(testIdVariables).resultFlow.testIn(backgroundScope)
+      assertThat(flow1.awaitItem().data.person?.name).isEqualTo("Name0")
+      val flow2 = noName2Query.subscribe(testIdVariables).resultFlow.testIn(backgroundScope)
+      assertThat(flow1.awaitItem().data.person?.name).isEqualTo("Name0")
+
+      schema.updatePerson.execute(id = "TestId", name = "Name1")
+      schema.getPerson.execute(testIdVariables)
+      flow2
+        .skipItemsWhere { it.data.person?.name == "Name0" }
+        .let { assertThat(it.data.person?.name).isEqualTo("Name1") }
+
+      schema.updatePerson.execute(id = "TestId", name = "Name2")
+      schema.getPerson.execute(testIdVariables)
+      flow1
+        .skipItemsWhere { it.data.person?.name == "Name0" }
+        .let { assertThat(it.data.person?.name).isEqualTo("Name2") }
+
+      schema.updatePerson.execute(id = "TestId", name = "Name3")
+      schema.getPerson.execute(testIdVariables)
+      assertThat(flow1.awaitItem().data.person?.name).isEqualTo("Name3")
+      assertThat(flow2.awaitItem().data.person?.name).isEqualTo("Name3")
+    }
+  }
+
+  @Test
+  fun collect_gets_notified_of_previous_cached_success_even_if_most_recent_fails() = runTest {
+    schema.createPerson.execute(id = "TestId", name = "OriginalName")
+    val testIdVariables = GetPersonQuery.Variables("TestId")
+    keepCacheAlive(schema.getPerson.withDataDeserializer(DataConnectUntypedData), testIdVariables)
+
+    val noName1Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName1>())
+    noName1Query.execute(testIdVariables)
+
+    schema.updatePerson.execute(id = "TestId", name = "Name1")
+
+    noName1Query.subscribe(testIdVariables).resultFlow.test {
+      assertWithMessage("result1").that(awaitItem().data.person?.name).isEqualTo("OriginalName")
+      schema.updatePerson.execute(id = "TestId", name = "UltimateName")
+      schema.getPerson.execute(testIdVariables)
+      assertWithMessage("result2").that(awaitItem().data.person?.name).isEqualTo("UltimateName")
+    }
+  }
+
+  @Test
+  fun collect_gets_cached_result_even_if_new_data_deserializer() = runTest {
+    schema.createPerson.execute(id = "TestId", name = "OriginalName")
+    val testIdVariables = GetPersonQuery.Variables("TestId")
+    keepCacheAlive(schema.getPerson.withDataDeserializer(DataConnectUntypedData), testIdVariables)
+
+    schema.updatePerson.execute(id = "TestId", name = "UltimateName")
+
+    schema.getPerson.subscribe(testIdVariables).resultFlow.test {
+      assertWithMessage("result1").that(awaitItem().data.person?.name).isEqualTo("OriginalName")
+      assertWithMessage("result2").that(awaitItem().data.person?.name).isEqualTo("UltimateName")
+    }
+  }
+
+  private sealed class RejectSpecificNameKSerializer(val nameToReject: String) :
+    KSerializer<String> {
+    override val descriptor = PrimitiveSerialDescriptor("name", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder) =
+      decoder.decodeString().also {
+        if (it == nameToReject) {
+          throw RejectedName("name rejected: $it")
+        }
+      }
+
+    override fun serialize(encoder: Encoder, value: String) {
+      throw UnsupportedOperationException("")
+    }
+
+    class RejectedName(message: String) : Exception(message)
+  }
+
+  /**
+   * A "data" type suitable for the [GetPersonQuery] whose deserialization fails if the name happens
+   * to be "Name1". This behavior is useful when testing the caching behavior when one deserializer
+   * successfully decodes a response but another one does not. See [GetPersonDataNoName2].
+   */
+  @Serializable
+  private data class GetPersonDataNoName1(val person: Person?) {
+    @Serializable
+    data class Person(
+      @Serializable(with = NameKSerializer::class) val name: String,
+      val age: Int?
+    ) {
+      private object NameKSerializer : RejectSpecificNameKSerializer("Name1")
+    }
+  }
+
+  /**
+   * A "data" type suitable for the [GetPersonQuery] whose deserialization fails if the name happens
+   * to be "Name2". This behavior is useful when testing the caching behavior when one deserializer
+   * successfully decodes a response but another one does not. See [GetPersonDataNoName1].
+   */
+  @Serializable
+  private data class GetPersonDataNoName2(val person: Person?) {
+    @Serializable
+    data class Person(
+      @Serializable(with = NameKSerializer::class) val name: String,
+      val age: Int?
+    ) {
+      private object NameKSerializer : RejectSpecificNameKSerializer("Name2")
+    }
+  }
+
+  /**
+   * Starts a background coroutine that subscribes to and collects the given query with the given
+   * variables. Suspends until the first result has been collected. This effectively ensures that
+   * the cache for the query with the given variables never gets garbage collected.
+   */
+  private suspend fun <V> TestScope.keepCacheAlive(query: QueryRef<V, *>, variables: V) {
+    val cachePrimed = MutableStateFlow(false)
+    backgroundScope.launch {
+      query.subscribe(variables).resultFlow.onEach { cachePrimed.value = true }.collect()
+    }
+    cachePrimed.filter { it }.first()
   }
 }
