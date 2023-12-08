@@ -90,11 +90,10 @@ internal constructor(
   internal val lazyQueryManager =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      val grpcClient = lazyGrpcClient.initializedValueOrNull ?: lazyGrpcClient.getValueLocked()
       QueryManager(
-        grpcClient = grpcClient,
+        grpcClient = lazyGrpcClient.getLocked(),
         coroutineScope = coroutineScope,
-        blockingDispatcher = nonBlockingDispatcher,
+        blockingDispatcher = blockingDispatcher,
         nonBlockingDispatcher = nonBlockingDispatcher,
         parentLogger = logger,
       )
@@ -108,7 +107,8 @@ internal constructor(
     variables: V,
     requestId: String
   ) =
-    (lazyGrpcClient.initializedValueOrNull ?: lazyGrpcClient.getValue())
+    lazyGrpcClient
+      .get()
       .executeMutation(
         requestId = requestId,
         sequenceNumber = nextSequenceNumber(),

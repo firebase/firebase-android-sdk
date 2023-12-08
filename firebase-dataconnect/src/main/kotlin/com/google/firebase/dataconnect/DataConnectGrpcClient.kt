@@ -99,7 +99,7 @@ internal class DataConnectGrpcClient(
       channel
     }
 
-  private val lazyGrpcStub = SuspendingLazy { DataServiceCoroutineStub(lazyGrpcChannel.getValue()) }
+  private val lazyGrpcStub = SuspendingLazy { DataServiceCoroutineStub(lazyGrpcChannel.get()) }
 
   data class OperationResult(
     val data: Struct?,
@@ -127,7 +127,7 @@ internal class DataConnectGrpcClient(
     }
     val response =
       lazyGrpcStub
-        .getValue()
+        .get()
         .runCatching { executeQuery(request) }
         .onFailure {
           logger.warn(it) {
@@ -165,7 +165,7 @@ internal class DataConnectGrpcClient(
     }
     val response =
       lazyGrpcStub
-        .getValue()
+        .get()
         .runCatching { executeMutation(request) }
         .onFailure {
           logger.warn(it) {

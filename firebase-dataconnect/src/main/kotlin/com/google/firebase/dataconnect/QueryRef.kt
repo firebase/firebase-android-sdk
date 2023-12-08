@@ -32,10 +32,7 @@ internal constructor(
   override suspend fun execute(
     variables: VariablesType
   ): DataConnectResult<VariablesType, DataType> =
-    dataConnect.lazyQueryManager.let { lazyQueryManager ->
-      val queryManager = lazyQueryManager.initializedValueOrNull ?: lazyQueryManager.getValue()
-      queryManager.execute(this, variables)
-    }
+    dataConnect.lazyQueryManager.get().execute(this, variables)
 
   fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> =
     QuerySubscription(this, variables)

@@ -287,7 +287,7 @@ private class RegisteredDataDeserialzer<T>(
   }
 
   suspend fun getLatestUpdate(): Result<DeserialzedOperationResult<T>>? =
-    latestUpdate.value.ref?.result?.getValue()
+    latestUpdate.value.ref?.result?.get()
 
   suspend fun getLatestSuccessfulUpdate(): DeserialzedOperationResult<T>? {
     // Call getLatestUpdate() to populate `latestSuccessfulUpdate` with the most recent update.
@@ -304,7 +304,7 @@ private class RegisteredDataDeserialzer<T>(
       .onSubscription { latestUpdate.value.ref?.let { emit(it) } }
       .collect { update ->
         if (update.sequenceNumber > lastSequenceNumber) {
-          update.result.getValue().onSuccess { deserializedOperationResult ->
+          update.result.get().onSuccess { deserializedOperationResult ->
             lastSequenceNumber = deserializedOperationResult.sequenceNumber
             callback(deserializedOperationResult)
           }

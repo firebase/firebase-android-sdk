@@ -126,8 +126,7 @@ internal fun ByteArray.toAlphaNumericString(): String = buildString {
  * @param mutex the mutex to have locked when `initializer` is invoked; if null (the default) then a
  * new lock will be used.
  * @param coroutineContext the coroutine context with which to invoke `initializer`; if null (the
- * default) then the context of the coroutine that calls [getValue] or [getValueLocked] will be
- * used.
+ * default) then the context of the coroutine that calls [get] or [getLocked] will be used.
  * @param initializer the block to invoke at most once to initialize this object's value.
  */
 internal class SuspendingLazy<T : Any>(
@@ -142,21 +141,18 @@ internal class SuspendingLazy<T : Any>(
   val initializedValueOrNull: T?
     get() = value
 
-  val isInitialized: Boolean
-    get() = value !== null
-
-  suspend inline fun getValue(): T = value ?: mutex.withLock { getValueLocked() }
+  suspend inline fun get(): T = value ?: mutex.withLock { getLocked() }
 
   // This function _must_ be called by a coroutine that has locked the mutex given to the
   // constructor; otherwise, a data race will occur, resulting in undefined behavior.
-  suspend fun getValueLocked(): T =
+  suspend fun getLocked(): T =
     if (coroutineContext === null) {
-      getValueLocked0()
+      getLockedInContext()
     } else {
-      withContext(coroutineContext) { getValueLocked0() }
+      withContext(coroutineContext) { getLockedInContext() }
     }
 
-  private suspend inline fun getValueLocked0(): T =
+  private suspend inline fun getLockedInContext(): T =
     value
       ?: initializer!!().also {
         value = it
@@ -164,7 +160,7 @@ internal class SuspendingLazy<T : Any>(
       }
 
   override fun toString(): String =
-    if (isInitialized) value.toString() else "SuspendingLazy value not initialized yet."
+    if (value !== null) value.toString() else "SuspendingLazy value not initialized yet."
 }
 
 internal class NullableReference<T>(val ref: T?) {
