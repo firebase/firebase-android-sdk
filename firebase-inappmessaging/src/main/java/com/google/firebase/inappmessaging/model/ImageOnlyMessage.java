@@ -15,6 +15,7 @@
 package com.google.firebase.inappmessaging.model;
 
 import androidx.annotation.NonNull;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -102,11 +103,13 @@ public class ImageOnlyMessage extends InAppMessage {
     @Nullable ImageData imageData;
     @Nullable Action action;
 
+    @CanIgnoreReturnValue
     public Builder setImageData(@Nullable ImageData imageData) {
       this.imageData = imageData;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setAction(@Nullable Action action) {
       this.action = action;
       return this;

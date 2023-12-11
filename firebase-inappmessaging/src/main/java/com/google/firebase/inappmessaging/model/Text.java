@@ -17,6 +17,7 @@ package com.google.firebase.inappmessaging.model;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.inappmessaging.MessagesProto;
 
 /** Encapsulates any text used in a Firebase In App Message. */
@@ -95,17 +96,20 @@ public class Text {
     @Nullable private String text;
     @Nullable private String hexColor;
 
+    @CanIgnoreReturnValue
     public Builder setText(@Nullable String text) {
       this.text = text;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setText(MessagesProto.Text text) {
       setText(text.getText());
       setHexColor(text.getHexColor());
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setHexColor(@Nullable String hexColor) {
       this.hexColor = hexColor;
       return this;
