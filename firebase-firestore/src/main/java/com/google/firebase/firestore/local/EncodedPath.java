@@ -62,9 +62,9 @@ import java.util.List;
  * <p>This encoding leaves some room between path separators and the NUL byte just in case we decide
  * to support integer document ids after all.
  *
- * <p>Note that characters treated specially by the backend (e.g. '.', '/', and '~') are not treated
- * specially here. This class assumes that any unescaping of path strings into actual Path objects
- * will handle these characters there.
+ * <p>Note that characters treated specially by the backend (for example '.', '/', and '~') are not
+ * treated specially here. This class assumes that any unescaping of path strings into actual Path
+ * objects will handle these characters there.
  */
 final class EncodedPath {
 
