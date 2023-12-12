@@ -218,7 +218,7 @@ public class ModelFileDownloadService {
       context.registerReceiver(
           broadcastReceiver,
           new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-          context.RECEIVER_NOT_EXPORTED);
+              Context.RECEIVER_EXPORTED);
     } else {
       context.registerReceiver(
           broadcastReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
