@@ -19,6 +19,8 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
@@ -194,6 +196,7 @@ class LocalDocumentsView {
     return result;
   }
 
+  @CanIgnoreReturnValue
   private Map<DocumentKey, FieldMask> recalculateAndSaveOverlays(
       Map<DocumentKey, MutableDocument> docs) {
     List<MutationBatch> batches =
