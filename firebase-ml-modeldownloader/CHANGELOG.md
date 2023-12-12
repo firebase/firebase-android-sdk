@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed `SecurityException` where the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag should be 
+  specified when registerReceiver is being used. [#5597](https://github.com/firebase/firebase-android-sdk/pull/5597)
 
 # 24.2.1
 * [changed] Internal infrastructure improvements.
