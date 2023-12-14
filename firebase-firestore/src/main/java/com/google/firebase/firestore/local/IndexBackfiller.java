@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.common.base.Supplier;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -101,6 +102,7 @@ public class IndexBackfiller {
   }
 
   /** Runs a single backfill operation and returns the number of documents processed. */
+  @CanIgnoreReturnValue
   public int backfill() {
     return persistence.runTransaction("Backfill Indexes", () -> this.writeIndexEntries());
   }
