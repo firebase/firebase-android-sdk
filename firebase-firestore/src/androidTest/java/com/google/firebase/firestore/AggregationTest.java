@@ -887,7 +887,7 @@ public class AggregationTest {
   }
 
   @Test
-  public void testAggregateFailWithGoodMessageIfMissingIndex() {
+  public void testAggregateErrorMessageShouldContainConsoleLinkIfMissingIndex() {
     assumeFalse(
         "Skip this test when running against the Firestore emulator because the "
             + "Firestore emulator does not use indexes and never fails with a 'missing index'"
