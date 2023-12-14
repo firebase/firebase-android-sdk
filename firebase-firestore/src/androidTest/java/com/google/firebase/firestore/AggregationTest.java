@@ -898,8 +898,7 @@ public class AggregationTest {
     Query compositeIndexQuery = collection.whereEqualTo("field1", 42).whereLessThan("field2", 99);
     AggregateQuery compositeIndexAggregateQuery =
         compositeIndexQuery.aggregate(AggregateField.count(), sum("pages"), average("pages"));
-    Task<AggregateQuerySnapshot> task =
-        compositeIndexAggregateCountQuery.get(AggregateSource.SERVER);
+    Task<AggregateQuerySnapshot> task = compositeIndexAggregateQuery.get(AggregateSource.SERVER);
 
     Throwable throwable = assertThrows(Throwable.class, () -> waitFor(task));
 
