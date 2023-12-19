@@ -29,7 +29,7 @@ android {
     namespace "com.google.firebase.firestore.ktx"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion 21
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
