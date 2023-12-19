@@ -61,7 +61,7 @@ android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
-        minSdkVersion 19
+        minSdkVersion 21
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
