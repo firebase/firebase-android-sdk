@@ -465,36 +465,12 @@ public class DocumentReference {
   @NonNull
   public ListenerRegistration addSnapshotListener(
       @NonNull SnapshotListenOptions options, @NonNull EventListener<DocumentSnapshot> listener) {
-    return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, options, listener);
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Executor executor,
-      @NonNull SnapshotListenOptions options,
-      @NonNull EventListener<DocumentSnapshot> listener) {
-    checkNotNull(executor, "Provided executor must not be null.");
     checkNotNull(options, "Provided options value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
     return addSnapshotListenerInternal(
-        executor,
+        options.getExecutor(),
         internalOptions(options.getMetadataChanges(), options.getSource()),
-        null,
-        listener);
-  }
-
-  @NonNull
-  public ListenerRegistration addSnapshotListener(
-      @NonNull Activity activity,
-      @NonNull SnapshotListenOptions options,
-      @NonNull EventListener<DocumentSnapshot> listener) {
-    checkNotNull(activity, "Provided activity must not be null.");
-    checkNotNull(options, "Provided MetadataChanges value must not be null.");
-    checkNotNull(listener, "Provided EventListener must not be null.");
-    return addSnapshotListenerInternal(
-        Executors.DEFAULT_CALLBACK_EXECUTOR,
-        internalOptions(options.getMetadataChanges(), options.getSource()),
-        activity,
+        options.getActivity(),
         listener);
   }
 

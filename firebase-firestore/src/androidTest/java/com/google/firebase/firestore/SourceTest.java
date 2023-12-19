@@ -603,6 +603,7 @@ public final class SourceTest {
     Query query = db.collection("cities").whereEqualTo("state", "CA");
     SnapshotListenOptions options =
         new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+
     ListenerRegistration registration =
         query.addSnapshotListener(
             options,
@@ -623,6 +624,7 @@ public final class SourceTest {
             .setMetadataChanges(MetadataChanges.INCLUDE)
             .setSource(ListenSource.CACHE)
             .build();
+
     ListenerRegistration registration =
         query.addSnapshotListener(
             options,
@@ -637,8 +639,10 @@ public final class SourceTest {
   @Test
   public void DocumentReferenceDemo_addSnapshotListenerWithDefaultOptions() {
     FirebaseFirestore db = testFirestore();
+
     DocumentReference docRef = db.collection("cities").document("SF");
     SnapshotListenOptions options = new SnapshotListenOptions.Builder().build();
+
     ListenerRegistration registration =
         docRef.addSnapshotListener(
             options, // or omit this `options` parameter
@@ -656,6 +660,7 @@ public final class SourceTest {
     DocumentReference docRef = db.collection("cities").document("SF");
     SnapshotListenOptions options =
         new SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).build();
+
     ListenerRegistration registration =
         docRef.addSnapshotListener(
             options,
@@ -673,6 +678,7 @@ public final class SourceTest {
     DocumentReference docRef = db.collection("cities").document("SF");
     SnapshotListenOptions options =
         new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+
     ListenerRegistration registration =
         docRef.addSnapshotListener(
             options,
@@ -693,6 +699,7 @@ public final class SourceTest {
             .setMetadataChanges(MetadataChanges.INCLUDE)
             .setSource(ListenSource.CACHE)
             .build();
+
     ListenerRegistration registration =
         docRef.addSnapshotListener(
             options,

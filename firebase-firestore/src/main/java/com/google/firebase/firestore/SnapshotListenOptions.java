@@ -14,16 +14,27 @@
 
 package com.google.firebase.firestore;
 
+import android.app.Activity;
 import androidx.annotation.NonNull;
-import java.util.Objects;
+import androidx.annotation.Nullable;
+import com.google.firebase.firestore.util.Executors;
+import java.util.concurrent.Executor;
 
 public class SnapshotListenOptions {
+  /** Indicates whether metadata-only changes should trigger snapshot events. */
   private final MetadataChanges metadataChanges;
+  /** Indicates the source that we listen to. */
   private final ListenSource source;
+  /** The executor to use to call the listener. */
+  private final Executor executor;
+  /** The activity to scope the listener to. */
+  private final Activity activity;
 
   private SnapshotListenOptions(Builder builder) {
     this.metadataChanges = builder.metadataChanges;
     this.source = builder.source;
+    this.executor = builder.executor;
+    this.activity = builder.activity;
   }
 
   @NonNull
@@ -36,9 +47,21 @@ public class SnapshotListenOptions {
     return source;
   }
 
+  @NonNull
+  public Executor getExecutor() {
+    return executor;
+  }
+
+  @Nullable
+  public Activity getActivity() {
+    return activity;
+  }
+
   public static class Builder {
     private MetadataChanges metadataChanges = MetadataChanges.EXCLUDE;
     private ListenSource source = ListenSource.DEFAULT;
+    private Executor executor = Executors.DEFAULT_CALLBACK_EXECUTOR;
+    private Activity activity = null;
 
     public Builder() {}
 
@@ -55,6 +78,18 @@ public class SnapshotListenOptions {
     }
 
     @NonNull
+    public Builder setExecutor(@NonNull Executor executor) {
+      this.executor = executor;
+      return this;
+    }
+
+    @NonNull
+    public Builder setActivity(@NonNull Activity activity) {
+      this.activity = activity;
+      return this;
+    }
+
+    @NonNull
     public SnapshotListenOptions build() {
       return new SnapshotListenOptions(this);
     }
@@ -65,12 +100,10 @@ public class SnapshotListenOptions {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     SnapshotListenOptions that = (SnapshotListenOptions) o;
-    return metadataChanges == that.metadataChanges && source == that.source;
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(metadataChanges, source);
+    return metadataChanges == that.metadataChanges
+        && source == that.source
+        && executor == that.executor
+        && activity == that.activity;
   }
 
   @Override
@@ -80,6 +113,10 @@ public class SnapshotListenOptions {
         + metadataChanges
         + ", source="
         + source
+        + ", executor="
+        + executor
+        + ", activity="
+        + activity
         + '}';
   }
 }
