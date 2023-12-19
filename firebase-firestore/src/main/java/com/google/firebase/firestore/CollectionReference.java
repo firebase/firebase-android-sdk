@@ -109,7 +109,7 @@ public class CollectionReference extends Query {
    * Adds a new document to this collection with the specified data, assigning it a document ID
    * automatically.
    *
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   * @param data The data to write to the document (like a Map or a POJO containing the desired
    *     document contents).
    * @return A Task that will be resolved with the {@code DocumentReference} of the newly created
    *     document.

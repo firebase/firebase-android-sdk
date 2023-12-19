@@ -1,4 +1,6 @@
 # Unreleased
+
+# 21.6.0
 * [changed] Added support for other Firebase products to integrate with [remote_config].
 
 # 21.5.0
