@@ -115,9 +115,9 @@
         "firebase-crashlytics-ndk": [
             {
                 "commitId": "18ed8f7887ea9116b27a39eef5ad52a2469a7ac3",
-                "prId": "",
+                "prId": "9999",
                 "author": "Rodrigo Lazo",
-                "message": "Bump crashlytics-ndk to 18.6.0",
+                "message": "Bump crashlytics-ndk to 18.6.0 (#9999)",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/18ed8f7887ea9116b27a39eef5ad52a2469a7ac3",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
             }
