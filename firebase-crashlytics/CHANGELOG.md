@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Added Deprecated annotation on unused `Firebase.crashlytics` from ktx api.
 
 # 18.6.0
 * [changed] Include more details about app processes in reports.
