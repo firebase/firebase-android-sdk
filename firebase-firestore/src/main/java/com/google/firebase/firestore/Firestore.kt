@@ -21,7 +21,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.*
 import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
@@ -229,11 +228,17 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  */
 fun DocumentReference.snapshots(
-  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
+    source: ListenSource = ListenSource.DEFAULT //Added
 ): Flow<DocumentSnapshot> {
   return callbackFlow {
+    val options = SnapshotListenOptions.Builder()
+            .setExecutor(BACKGROUND_EXECUTOR)
+            .setMetadataChanges(MetadataChanges.INCLUDE)
+            .setSource(ListenSource.CACHE)
+            .build()
     val registration =
-      addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
+      addSnapshotListener(options) { snapshot, exception ->
         if (exception != null) {
           cancel(message = "Error getting DocumentReference snapshot", cause = exception)
         } else if (snapshot != null) {
@@ -253,11 +258,17 @@ fun DocumentReference.snapshots(
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  */
 fun Query.snapshots(
-  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
+    source: ListenSource = ListenSource.DEFAULT //Added
 ): Flow<QuerySnapshot> {
   return callbackFlow {
+    val options = SnapshotListenOptions.Builder()
+            .setExecutor(BACKGROUND_EXECUTOR)
+            .setMetadataChanges(MetadataChanges.INCLUDE)
+            .setSource(ListenSource.CACHE)
+            .build()
     val registration =
-      addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
+      addSnapshotListener(options) { snapshot, exception ->
         if (exception != null) {
           cancel(message = "Error getting Query snapshot", cause = exception)
         } else if (snapshot != null) {
