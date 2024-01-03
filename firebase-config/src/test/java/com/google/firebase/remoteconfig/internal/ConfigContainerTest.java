@@ -138,6 +138,7 @@ public class ConfigContainerTest {
     assertThat(changedParams).isEmpty();
   }
 
+  @Test
   public void getChangedParams_sameExperimentsMetadata_returnsEmptySet() throws Exception {
     JSONArray activeExperiments = generateAbtExperiments(1);
     JSONArray fetchedExperiments = generateAbtExperiments(1);
