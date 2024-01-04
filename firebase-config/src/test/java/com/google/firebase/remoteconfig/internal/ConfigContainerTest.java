@@ -533,11 +533,10 @@ public class ConfigContainerTest {
     experimentKeys.put("abt_test_key_1");
     for (int experimentNum = 1; experimentNum <= numExperiments; experimentNum++) {
       experiments.put(
-          new JSONObject().put(EXPERIMENT_ID, "exp" + experimentNum).put(VARIANT_ID, "var1"));
-      new JSONObject()
-          .put(EXPERIMENT_ID, "exp" + experimentNum)
-          .put(VARIANT_ID, "var1")
-          .put(AFFECTED_PARAMETER_KEYS, experimentKeys);
+          new JSONObject()
+              .put(EXPERIMENT_ID, "exp_" + experimentNum)
+              .put(VARIANT_ID, "var1")
+              .put(AFFECTED_PARAMETER_KEYS, experimentKeys));
     }
     return experiments;
   }
