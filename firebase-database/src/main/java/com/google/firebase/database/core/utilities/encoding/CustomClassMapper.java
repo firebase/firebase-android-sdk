@@ -438,6 +438,7 @@ public class CustomClassMapper {
   }
 
   private static class BeanMapper<T> {
+    private static final String BRIDGE_METHOD_KEY_SUFFIX = "$$bridge";
     private final Class<T> clazz;
     private final Constructor<T> constructor;
     private final boolean throwOnUnknownProperties;
@@ -504,12 +505,17 @@ public class CustomClassMapper {
               if (!existingPropertyName.equals(propertyName)) {
                 throw new DatabaseException(
                     "Found setter with invalid " + "case-sensitive name: " + method.getName());
+              } else if (method.isBridge()) {
+                // We ignore bridge setters when creating a bean, but include them in the map
+                // for the purpose of the `isSetterOverride()` check
+                setters.put(propertyName + BRIDGE_METHOD_KEY_SUFFIX, method);
               } else {
                 Method existingSetter = setters.get(propertyName);
+                Method correspondingBridge = setters.get(propertyName + BRIDGE_METHOD_KEY_SUFFIX);
                 if (existingSetter == null) {
                   method.setAccessible(true);
                   setters.put(propertyName, method);
-                } else if (!isSetterOverride(method, existingSetter)) {
+                } else if (!isSetterOverride(method, existingSetter) && !(correspondingBridge != null && isSetterOverride(method, correspondingBridge))) {
                   // We require that setters with conflicting property names are
                   // overrides from a base class
                   throw new DatabaseException(
@@ -703,6 +709,10 @@ public class CustomClassMapper {
       if (method.getParameterTypes().length != 0) {
         return false;
       }
+      // Bridge methods
+      if (method.isBridge()) {
+        return false;
+      }
       // Excluded methods
       if (method.isAnnotationPresent(Exclude.class)) {
         return false;
@@ -730,6 +740,11 @@ public class CustomClassMapper {
       if (method.getParameterTypes().length != 1) {
         return false;
       }
+      // removed the following check (although it's present in `shouldIncludeGetter()`) because bridge methods
+      // are useful in distinguishing logic between conflicting and non-conflicting generic setters
+//      if (method.isBridge()) {
+//        return false;
+//      }
       // Excluded methods
       if (method.isAnnotationPresent(Exclude.class)) {
         return false;
