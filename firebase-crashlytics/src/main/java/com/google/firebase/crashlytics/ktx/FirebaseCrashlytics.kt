@@ -34,6 +34,10 @@ import com.google.firebase.ktx.Firebase
  * no longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
+@Deprecated(
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
+)
 val Firebase.crashlytics: FirebaseCrashlytics
   get() = FirebaseCrashlytics.getInstance()
 
