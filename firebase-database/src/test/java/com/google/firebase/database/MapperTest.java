@@ -2000,10 +2000,8 @@ public class MapperTest {
     serialize(bean);
   }
 
-  // This should work, but generics and subclassing are tricky to get right. For now we will just
-  // throw and we can add support for generics & subclassing if it becomes a high demand feature
-  @Test(expected = DatabaseException.class)
-  public void settersCanOverrideGenericSettersParsingNot() {
+  @Test
+  public void settersCanOverrideGenericSettersParsing() {
     NonConflictingGenericSetterSubBean bean =
         deserialize("{'value': 'value'}", NonConflictingGenericSetterSubBean.class);
     assertEquals("subsetter:value", bean.value);

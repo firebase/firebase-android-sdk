@@ -2218,18 +2218,11 @@ public class MapperTest {
         () -> serialize(bean));
   }
 
-  // This should work, but generics and subclassing are tricky to get right. For now we will just
-  // throw and we can add support for generics & subclassing if it becomes a high demand feature
   @Test
-  public void settersCanOverrideGenericSettersParsingNot() {
-    assertExceptionContains(
-        "Class com.google.firebase.firestore.util.MapperTest$NonConflictingGenericSetterSubBean "
-            + "has multiple setter overloads",
-        () -> {
-          NonConflictingGenericSetterSubBean bean =
-              deserialize("{'value': 'value'}", NonConflictingGenericSetterSubBean.class);
-          assertEquals("subsetter:value", bean.value);
-        });
+  public void settersCanOverrideGenericSettersParsing() {
+    NonConflictingGenericSetterSubBean bean =
+        deserialize("{'value': 'value'}", NonConflictingGenericSetterSubBean.class);
+    assertEquals("subsetter:value", bean.value);
   }
 
   @Test
