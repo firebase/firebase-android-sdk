@@ -20,6 +20,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import androidx.annotation.Keep;
+import androidx.annotation.Nullable;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
@@ -846,6 +848,22 @@ public class MapperTest {
     @Override
     public void setValue(String value) {
       this.value = "subsetter:" + value;
+    }
+  }
+
+  private static class GenericExcludedSetterBean implements GenericInterface<String> {
+    private String value = null;
+
+    @Nullable
+    @Override
+    public String getValue() {
+      return value;
+    }
+
+    @Exclude
+    @Override
+    public void setValue(@Nullable String value) {
+      this.value = "wrong setter";
     }
   }
 
