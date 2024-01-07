@@ -2024,4 +2024,20 @@ public class MapperTest {
         deserialize("{'value': 'value'}", NonConflictingGenericSetterSubBean.class);
     assertEquals("subsetter:value", bean.value);
   }
+
+  @Test
+  public void excludedOverridenGenericSetterSetsValueNot() {
+    GenericExcludedSetterBean bean =
+            deserialize("{'value': 'foo'}", GenericExcludedSetterBean.class);
+    assertEquals("foo", bean.value);
+  }
+
+  // Unlike Java, in Kotlin, annotations do not get propagated to bridge methods.
+  // That's why there are 2 separate tests for Java and Kotlin
+  @Test
+  public void excludedOverridenGenericSetterSetsValueNotKotlin() {
+    GenericExcludedSetterBeanKt bean =
+            deserialize("{'value': 'foo'}", GenericExcludedSetterBeanKt.class);
+    assertEquals("foo", bean.getValue());
+  }
 }
