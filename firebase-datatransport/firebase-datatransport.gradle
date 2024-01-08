@@ -46,8 +46,8 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.3.3'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-common:20.4.2'
+    implementation 'com.google.firebase:firebase-components:17.1.5'
     implementation 'com.google.android.datatransport:transport-api:3.1.0'
     implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
     implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
