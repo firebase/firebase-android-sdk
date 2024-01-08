@@ -33,7 +33,6 @@ import static org.junit.Assume.assumeFalse;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
 import org.junit.After;
@@ -277,14 +276,6 @@ public class CountTest {
 
     Throwable cause = throwable.getCause();
     assertThat(cause).hasMessageThat().ignoringCase().contains("index");
-    // TODO(b/316359394) Remove this check for the default databases once cl/582465034 is rolled
-    // out to production.
-    if (collection
-        .firestore
-        .getDatabaseId()
-        .getDatabaseId()
-        .equals(DatabaseId.DEFAULT_DATABASE_ID)) {
-      assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
-    }
+    assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
   }
 }
