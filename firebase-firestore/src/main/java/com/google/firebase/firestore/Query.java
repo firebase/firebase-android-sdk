@@ -1195,10 +1195,10 @@ public class Query {
    * Calculates the specified aggregations over the documents in the result set of the given query,
    * without actually downloading the documents.
    *
-   * <p>Using this function to perform aggregations is efficient because only the final aggregation
-   * values, not the documents' data, is downloaded. This function can perform aggregations of the
-   * documents if the result set would be prohibitively large to download entirely (thousands of
-   * documents).
+   * <p>Using the returned query to perform aggregations is efficient because only the final
+   * aggregation values, not the documents' data, is downloaded. The returned query can perform
+   * aggregations of the documents if the result set would be prohibitively large to download
+   * entirely (thousands of documents).
    *
    * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
    *     set of this query.
