@@ -113,8 +113,8 @@ class Serializer {
     throw IllegalArgumentException("Object cannot be encoded in JSON: $obj")
   }
 
-  // TODO: Maybe this should throw a FirebaseFunctionsException instead?
   fun decode(obj: Any): Any? {
+    // TODO: Maybe this should throw a FirebaseFunctionsException instead?
     if (obj is Number) {
       return obj
     }

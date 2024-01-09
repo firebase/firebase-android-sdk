@@ -22,7 +22,7 @@ private val data: Any?) {
    *
    * The data is in the form of native Java objects. For example, if your trigger returned an array,
    * this object would be a List<Object>. If your trigger returned a JavaScript object with keys and
-   * values, this object would be a Map<String></String>, Object>. </Object>
+   * values, this object would be a Map<String, Object>.
    */
   fun getData(): Any? {
     return data
