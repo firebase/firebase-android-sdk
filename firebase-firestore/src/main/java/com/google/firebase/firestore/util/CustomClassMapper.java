@@ -50,6 +50,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -649,6 +650,7 @@ public class CustomClassMapper {
       // getMethods/getFields only returns public methods/fields we need to traverse the
       // class hierarchy to find the appropriate setter or field.
       Class<? super T> currentClass = clazz;
+      Set<String> propNamesOfExcludedSetters = new HashSet<>();
       do {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
@@ -670,8 +672,11 @@ public class CustomClassMapper {
                 Method existingSetter = setters.get(propertyName);
                 Method correspondingBridge = setters.get(propertyName + BRIDGE_METHOD_KEY_SUFFIX);
                 if (existingSetter == null) {
-                  method.setAccessible(true);
                   setters.put(propertyName, method);
+                  if (!method.isAnnotationPresent(Exclude.class))
+                    method.setAccessible(true);
+                  else
+                    propNamesOfExcludedSetters.add(propertyName);
                   applySetterAnnotations(method);
                 } else if (!isSetterOverride(method, existingSetter) && !(correspondingBridge != null && isSetterOverride(method, correspondingBridge))) {
                   // We require that setters with conflicting property names are
@@ -717,6 +722,10 @@ public class CustomClassMapper {
         // of fields/getters we don't want to serialize
         currentClass = currentClass.getSuperclass();
       } while (currentClass != null && !currentClass.equals(Object.class));
+
+      for (String propertyName: propNamesOfExcludedSetters) {
+        setters.remove(propertyName);
+      }
 
       if (properties.isEmpty()) {
         throw new RuntimeException("No properties to serialize found on class " + clazz.getName());
@@ -1045,10 +1054,11 @@ public class CustomClassMapper {
 //      if (method.isBridge()) {
 //        return false;
 //      }
-      // Excluded methods
-      if (method.isAnnotationPresent(Exclude.class)) {
-        return false;
-      }
+      // removed the following check (although it's present in `shouldIncludeGetter()`) because
+      // @Exclude-annotated methods are useful for `isSetterOverride()`
+//      if (method.isAnnotationPresent(Exclude.class)) {
+//        return false;
+//      }
       return true;
     }
 
