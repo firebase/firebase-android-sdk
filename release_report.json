@@ -1,0 +1,126 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "eb3380eb18c601b7105b7c850dc1c2c5eb73d094",
+                "prId": "5628",
+                "author": "argzdev",
+                "message": "Revert \"Added @Deprecated annotation on unused crashlytics from ktx api.\" (#5628)\n\nReverts firebase/firebase-android-sdk#5619",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eb3380eb18c601b7105b7c850dc1c2c5eb73d094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5628"
+            },
+            {
+                "commitId": "e96465a0928a0ef28f6d6f8a39dea25f8a6440e0",
+                "prId": "5619",
+                "author": "argzdev",
+                "message": "Added @Deprecated annotation on unused crashlytics from ktx api. (#5619)\n\n#5603\r\n\r\nAdded Deprecation annotation.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e96465a0928a0ef28f6d6f8a39dea25f8a6440e0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5619"
+            },
+            {
+                "commitId": "ac19e5d561d6a7a24a6004746d95f4e08024fdc4",
+                "prId": "5596",
+                "author": "themiswang",
+                "message": "fix formatting (#5596)\n\nRerun `./gradlew googleJavaFormat`  and fix unit tests\r\n#no-changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ac19e5d561d6a7a24a6004746d95f4e08024fdc4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5596"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "16a90fa48dcdcc4fc91fb0d6bf469a56bab21f50",
+                "prId": "5602",
+                "author": "Denver Coneybeare",
+                "message": "Firestore: Improve test name of \"missing index\" error message tests (#5602)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/16a90fa48dcdcc4fc91fb0d6bf469a56bab21f50",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5602"
+            },
+            {
+                "commitId": "a8310edbeb03f322c117e4805b1272b0257eccf7",
+                "prId": "5601",
+                "author": "Denver Coneybeare",
+                "message": "Firestore: AggregationTest.java: fix variable name (no functionality changed) (#5601)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a8310edbeb03f322c117e4805b1272b0257eccf7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5601"
+            },
+            {
+                "commitId": "2f546b2a84d37b7a5edfea7f49e02d2c4cd7be68",
+                "prId": "5600",
+                "author": "Denver Coneybeare",
+                "message": "Firestore: add TODO comments about removing special 'missing index' test logic for multidb (#5600)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f546b2a84d37b7a5edfea7f49e02d2c4cd7be68",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5600"
+            },
+            {
+                "commitId": "3d88f620a93edc7f59946dfd27a5bff66ae1c6b9",
+                "prId": "5573",
+                "author": "Mila",
+                "message": "Replace Collection.emptyMap() with new HashMap() (#5573)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3d88f620a93edc7f59946dfd27a5bff66ae1c6b9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5573"
+            },
+            {
+                "commitId": "080e1fcd3a3632fd21b49d8cb4076bc0d34d2904",
+                "prId": "5588",
+                "author": "Ehsan",
+                "message": "Do not consider MutableDocument's state for DocumentSnapshot comparison. (#5588)\n\nPorting https://github.com/firebase/firebase-ios-sdk/pull/8647 to\r\nAndroid.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/080e1fcd3a3632fd21b49d8cb4076bc0d34d2904",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5588"
+            },
+            {
+                "commitId": "42a6951b04c25254659231667008c123a29b2dd2",
+                "prId": "5585",
+                "author": "wu-hui",
+                "message": "Fixed an issue where GC runs into a infinite loop in a certain case. (#5585)\n\nFixes: https://github.com/firebase/firebase-android-sdk/issues/5417",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/42a6951b04c25254659231667008c123a29b2dd2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5585"
+            },
+            {
+                "commitId": "dacdc3c5e474a1e2be73c5635625322ea7891a0c",
+                "prId": "5587",
+                "author": "Tom Andersen",
+                "message": "Rephrase comments to not use latin abbreviations ie and eg. (#5587)\n\nb/307734134",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dacdc3c5e474a1e2be73c5635625322ea7891a0c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5587"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "ff6cc57b31c42117515577822456def5b59398dd",
+                "prId": "5597",
+                "author": "argzdev",
+                "message": "Proposed fix for issue 5593 (#5597)\n\nPossible fix for #5593\r\n\r\nAndroid 14 requires `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag\r\nwhen using `registerReceiver` command:\r\n\r\nCurrently, `com.google.firebase:firebase-ml-modeldownloader:24.2.1` uses\r\nthe `registerReceiver` without this flag:\r\n\r\nhttps://github.com/firebase/firebase-android-sdk/blob/ac19e5d561d6a7a24a6004746d95f4e08024fdc4/firebase-ml-modeldownloader/src/main/java/com/google/firebase/ml/modeldownloader/internal/ModelFileDownloadService.java#L214-L215\r\n\r\nProposed fix:\r\n```java\r\ncontext.registerReceiver(\r\n          broadcastReceiver,\r\n          new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),\r\n          context.RECEIVER_NOT_EXPORTED);\r\n```\r\n\r\n\r\nAn alternative solution is using ContextCompat but requires version\r\n1.9.0 of `androidx.core:core`. I noticed in the [Android\r\ndocumentation](https://developer.android.com/guide/components/broadcasts#java)\r\nis using `ContextCompat` for calling `registerReceiver`, or for the flag\r\n`RECEIVER_EXPORTED` & `RECEIVER_NOT_EXPORTED`:\r\n```java\r\nContextCompat.registerReceiver(\r\n          context,\r\n          broadcastReceiver,\r\n          new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),\r\n          ContextCompat.RECEIVER_NOT_EXPORTED);\r\n```\r\n\r\nHowever, `ContextCompat.RECEIVER_NOT_EXPORTED` and the\r\n`RECEIVER_NOT_EXPORTED` from `context` have the same value, so I don't\r\nthink this is necessary to use ContextCompat.\r\n\r\nFYI, added `@SuppressLint(\"WrongConstant\")` annotation due to the method\r\nthrowing an error: https://stackoverflow.com/a/74433641",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ff6cc57b31c42117515577822456def5b59398dd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5597"
+            }
+        ],
+        "firebase-ml-modeldownloader/ktx": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "ba067b5fad40ba08fbfc30cb42dfc878bf447152",
+                "prId": "5633",
+                "author": "Matthew Robertson",
+                "message": "Handle corruption in DataStore Preferences gracefully (#5633)\n\nHandle corruption in DataStore Preferences more gracefully.\r\n\r\nTested manually by piping junk data into the datastore files.\r\n\r\nWhen the Settings data store preferences gets corrupt, it will be\r\nreplaced by an empty preferences with all null values. This will cause\r\nsettings to fall through to sdk defaults until the next settings fetch.\r\nIf the Sessions data store preferences gets corrupt, it will lose the\r\nsession id until the next session is generated on the next foreground. I\r\ncould not force a session to upload will a null session id, but I expect\r\nit to be rare but possible with a multi-process app.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ba067b5fad40ba08fbfc30cb42dfc878bf447152",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5633"
+            },
+            {
+                "commitId": "31bce698bf098870ce11d0a47cd71056be624dd2",
+                "prId": "5579",
+                "author": "Matthew Robertson",
+                "message": "Restore Sessions test cases (#5579)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/31bce698bf098870ce11d0a47cd71056be624dd2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5579"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+    ]
+}
