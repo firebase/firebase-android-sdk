@@ -75,7 +75,7 @@ dependencies {
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor project(":encoders:firebase-encoders-processor")
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
-    implementation project(':firebase-config-interop')
+    implementation 'com.google.firebase:firebase-config-interop:16.0.0'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation 'com.google.android.datatransport:transport-backend-cct:3.1.9'
