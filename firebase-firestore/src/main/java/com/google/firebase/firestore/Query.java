@@ -1192,7 +1192,7 @@ public class Query {
   }
 
   /**
-   * Calculates the specified aggregations over the documents in the result set of the given query,
+   * Calculates the specified aggregations over the documents in the result set of the given query
    * without actually downloading the documents.
    *
    * <p>Using the returned query to perform aggregations is efficient because only the final
