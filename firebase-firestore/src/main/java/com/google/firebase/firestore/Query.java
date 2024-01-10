@@ -1181,8 +1181,8 @@ public class Query {
    * <em>without actually downloading the documents</em>.
    *
    * <p>Using the returned query to count the documents is efficient because only the final count,
-   * not the documents' data, is downloaded. The returned query can count the documents if the
-   * result set would be prohibitively large to download entirely (thousands of documents).
+   * not the documents' data, is downloaded. The returned query can count the documents in cases
+   * where the result set is prohibitively large to download entirely (thousands of documents).
    *
    * @return The {@code AggregateQuery} that counts the documents in the result set of this query.
    */
@@ -1197,7 +1197,7 @@ public class Query {
    *
    * <p>Using the returned query to perform aggregations is efficient because only the final
    * aggregation values, not the documents' data, is downloaded. The returned query can perform
-   * aggregations of the documents if the result set would be prohibitively large to download
+   * aggregations of the documents in cases where the result set is prohibitively large to download
    * entirely (thousands of documents).
    *
    * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
