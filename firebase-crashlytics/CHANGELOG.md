@@ -1,5 +1,6 @@
 # Unreleased
 * [changed] Bump internal dependencies.
+* [feature] Updated `firebase-sessions` dependency for internal improvements
 
 # 18.6.0
 * [changed] Include more details about app processes in reports.
