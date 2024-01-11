@@ -173,7 +173,7 @@ internal constructor(
    * @param data Parameters to pass to the function. Can be anything encodable as JSON.
    * @return A Task that will be completed when the request is complete.
    */
-  fun call(name: String, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult?> {
+  fun call(name: String, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult> {
     return providerInstalled.task
       .continueWithTask(executor) { task: Task<Void>? ->
         contextProvider.getContext(options.limitedUseAppCheckTokens)
@@ -195,7 +195,7 @@ internal constructor(
    * @param data Parameters to pass to the function. Can be anything encodable as JSON.
    * @return A Task that will be completed when the request is complete.
    */
-  fun call(url: URL, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult?> {
+  fun call(url: URL, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult> {
     return providerInstalled.task
       .continueWithTask(executor) { task: Task<Void>? ->
         contextProvider.getContext(options.limitedUseAppCheckTokens)

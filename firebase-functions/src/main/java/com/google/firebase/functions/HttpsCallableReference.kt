@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.functions
 
+import androidx.annotation.VisibleForTesting
 import com.google.android.gms.tasks.Task
 import java.net.URL
 import java.util.concurrent.TimeUnit
@@ -31,7 +32,8 @@ class HttpsCallableReference {
   private val url: URL?
 
   // Options for how to do the HTTPS call.
-  private val options: HttpsCallOptions
+  @VisibleForTesting
+  val options: HttpsCallOptions
 
   /** Creates a new reference with the given options. */
   internal constructor(
@@ -94,7 +96,7 @@ class HttpsCallableReference {
    *
    * @see FirebaseFunctionsException
    */
-  fun call(data: Any?): Task<HttpsCallableResult?> {
+  fun call(data: Any?): Task<HttpsCallableResult> {
     return if (name != null) {
       functionsClient.call(name, data, options)
     } else {
@@ -116,7 +118,7 @@ class HttpsCallableReference {
    *
    * @return A Task that will be completed when the HTTPS request has completed.
    */
-  fun call(): Task<HttpsCallableResult?> {
+  fun call(): Task<HttpsCallableResult> {
     return if (name != null) {
       functionsClient.call(name, null, options)
     } else {
