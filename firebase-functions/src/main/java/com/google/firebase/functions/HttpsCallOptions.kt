@@ -21,8 +21,7 @@ class HttpsCallOptions {
   // The timeout to use for calls from references created by this Functions.
   private var timeout = DEFAULT_TIMEOUT
   private var timeoutUnits = DEFAULT_TIMEOUT_UNITS
-  @JvmField
-  val limitedUseAppCheckTokens: Boolean
+  @JvmField val limitedUseAppCheckTokens: Boolean
 
   /** Creates an (internal) HttpsCallOptions from the (external) [HttpsCallableOptions]. */
   constructor(publicCallableOptions: HttpsCallableOptions) {

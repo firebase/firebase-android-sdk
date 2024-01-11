@@ -32,8 +32,7 @@ class HttpsCallableReference {
   private val url: URL?
 
   // Options for how to do the HTTPS call.
-  @VisibleForTesting
-  val options: HttpsCallOptions
+  @VisibleForTesting val options: HttpsCallOptions
 
   /** Creates a new reference with the given options. */
   internal constructor(
