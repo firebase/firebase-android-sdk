@@ -11,29 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package com.google.firebase.functions;
-
-import androidx.annotation.Nullable;
+package com.google.firebase.functions
 
 /** The result of calling a HttpsCallableReference function. */
-public class HttpsCallableResult {
-  // The actual result data, as generic types decoded from JSON.
-  private final Object data;
-
-  HttpsCallableResult(Object data) {
-    this.data = data;
-  }
-
+class HttpsCallableResult
+internal constructor( // The actual result data, as generic types decoded from JSON.
+private val data: Any?) {
   /**
    * Returns the data that was returned from the Callable HTTPS trigger.
    *
-   * <p>The data is in the form of native Java objects. For example, if your trigger returned an
-   * array, this object would be a List<Object>. If your trigger returned a JavaScript object with
-   * keys and values, this object would be a Map<String, Object>.
+   * The data is in the form of native Java objects. For example, if your trigger returned an array,
+   * this object would be a List<Object>. If your trigger returned a JavaScript object with keys and
+   * values, this object would be a Map<String, Object>.
    */
-  @Nullable
-  public Object getData() {
-    return data;
+  fun getData(): Any? {
+    return data
   }
 }
