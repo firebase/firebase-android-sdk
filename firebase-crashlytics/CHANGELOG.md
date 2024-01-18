@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 18.6.1
 * [feature] Updated `firebase-sessions` dependency for internal improvements
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.6.0
 * [changed] Include more details about app processes in reports.
@@ -533,3 +542,4 @@ The following release notes describe changes in the new SDK.
  from your `AndroidManifest.xml` file.
  * [removed] The `fabric.properties` and `crashlytics.properties` files are no
  longer supported. Remove them from your app.
+
