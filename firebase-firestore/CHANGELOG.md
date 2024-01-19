@@ -1,8 +1,16 @@
 # Unreleased
-* [fixed] Fixed an issue caused by calling mutation on immutable map object. [#5573](//github.com/firebase/firebase-android-sdk/pull/5573)
 
+
+# 24.10.1
+* [fixed] Fixed an issue caused by calling mutation on immutable map object. [#5573](//github.com/firebase/firebase-android-sdk/pull/5573)
 * [fixed] Fixed an issue in the local cache synchronization logic where all locally-cached documents that matched a resumed query would be unnecessarily re-downloaded; with the fix it now only downloads the documents that are known to be out-of-sync. [#5506](//github.com/firebase/firebase-android-sdk/pull/5506)
 * [fixed] Fixed an issue where GC runs into a infinite loop in a certain case. [#5417](https://github.com/firebase/firebase-android-sdk/issues/5417)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.10.0
 * [fixed] Fixed the `DocumentSnapshot` equals method to not consider internal state when comparing snapshots.
