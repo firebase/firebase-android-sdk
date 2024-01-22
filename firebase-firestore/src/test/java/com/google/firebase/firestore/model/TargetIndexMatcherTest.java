@@ -23,7 +23,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.core.Query;
@@ -817,17 +816,12 @@ public class TargetIndexMatcherTest {
   @Test
   public void testBuildTargetIndexReturnsNullForMultipleInequality() {
     Query query = query("collId").filter(filter("a", ">=", 1)).filter(filter("b", "<=", 10));
-    Target target = query.toTarget();
-    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
-    assertTrue(targetIndexMatcher.hasMultipleInequality());
-    FieldIndex actualIndex = targetIndexMatcher.buildTargetIndex();
-    assertNull(actualIndex);
+    validateBuildTargetIndexCreateFullMatchIndex(query);
   }
 
   private void validateBuildTargetIndexCreateFullMatchIndex(Query query) {
     Target target = query.toTarget();
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
-    assertFalse(targetIndexMatcher.hasMultipleInequality());
     FieldIndex actualIndex = targetIndexMatcher.buildTargetIndex();
     assertNotNull(actualIndex);
     assertTrue(targetIndexMatcher.servedByIndex(actualIndex));

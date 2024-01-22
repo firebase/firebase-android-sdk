@@ -26,8 +26,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * A light query planner for Firestore.
@@ -89,9 +87,7 @@ public class TargetIndexMatcher {
   private final String collectionId;
 
   // The inequality filters of the target (if it exists).
-  // Note: The sort on FieldFilters is not required. Using SortedSet here just to utilize
-  // the custom comparator.
-  private final SortedSet<FieldFilter> inequalityFilters;
+  private final List<FieldFilter> inequalityFilters;
 
   private final List<FieldFilter> equalityFilters;
   private final List<OrderBy> orderBys;
@@ -102,7 +98,7 @@ public class TargetIndexMatcher {
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
     orderBys = target.getOrderBy();
-    inequalityFilters = new TreeSet<>((lhs, rhs) -> lhs.getField().compareTo(rhs.getField()));
+    inequalityFilters = new ArrayList<>();
     equalityFilters = new ArrayList<>();
 
     for (Filter filter : target.getFilters()) {
@@ -113,10 +109,6 @@ public class TargetIndexMatcher {
         equalityFilters.add(fieldFilter);
       }
     }
-  }
-
-  public boolean hasMultipleInequality() {
-    return inequalityFilters.size() > 1;
   }
 
   /**
@@ -142,12 +134,6 @@ public class TargetIndexMatcher {
    */
   public boolean servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
-
-    if (hasMultipleInequality()) {
-      // Only single inequality is supported for now.
-      // TODO(Add support for multiple inequality query): b/298441043
-      return false;
-    }
 
     // If there is an array element, find a matching filter.
     FieldIndex.Segment arraySegment = index.getArraySegment();
@@ -180,21 +166,19 @@ public class TargetIndexMatcher {
       return true;
     }
 
-    if (inequalityFilters.size() > 0) {
-      // Only a single inequality is currently supported. Get the only entry in the set.
-      FieldFilter inequalityFilter = this.inequalityFilters.first();
-
+    for (FieldFilter filter : inequalityFilters) {
       // If there is an inequality filter and the field was not in one of the equality filters
       // above, the next segment must match both the filter and the first orderBy clause.
-      if (!equalitySegments.contains(inequalityFilter.getField().canonicalString())) {
+      if (!equalitySegments.contains(filter.getField().canonicalString())) {
         FieldIndex.Segment segment = segments.get(segmentIndex);
-        if (!matchesFilter(inequalityFilter, segment)
-            || !matchesOrderBy(orderBys.next(), segment)) {
+        if (!matchesFilter(filter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
           return false;
         }
       }
-
       ++segmentIndex;
+      if (segmentIndex == segments.size()) {
+        return true;
+      }
     }
 
     // All remaining segments need to represent the prefix of the target's orderBy.
@@ -214,10 +198,6 @@ public class TargetIndexMatcher {
    */
   @Nullable
   public FieldIndex buildTargetIndex() {
-    if (hasMultipleInequality()) {
-      return null;
-    }
-
     // We want to make sure only one segment created for one field. For example, in case like
     // a == 3 and a > 2, Index: {a ASCENDING} will only be created once.
     Set<FieldPath> uniqueFields = new HashSet<>();

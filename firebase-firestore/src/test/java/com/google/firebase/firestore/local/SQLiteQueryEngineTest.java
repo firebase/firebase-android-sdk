@@ -538,4 +538,43 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
         expectOptimizedCollectionScan(() -> runQuery(query2, SnapshotVersion.NONE));
     assertEquals(docSet(query2.comparator(), doc6, doc3), result2);
   }
+
+  @Test
+  public void failedTestsMultipleInequality() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 0, "b", 1, "c", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("a", 2, "b", 2, "c", 0));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 2, "b", 3, "c", 4));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 3, "b", 1, "c", 6));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 3, "b", 3, "c", 10));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 5, "b", 6, "c", 23));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+    indexManager.addFieldIndex(
+        fieldIndex("coll", "a", Kind.ASCENDING, "b", Kind.ASCENDING, "c", Kind.ASCENDING));
+    indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4, doc5, doc6));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc6));
+    // one equality && multiple inequality
+    Query query =
+        query("coll")
+            .filter(andFilters(filter("a", ">=", 1), filter("b", ">=", 3), filter("c", ">=", 10)));
+    DocumentSet docs = expectOptimizedCollectionScan(() -> runQuery(query, SnapshotVersion.NONE));
+    assertEquals(docSet(query.comparator(), doc3, doc5, doc6), docs);
+  }
+
+  @Test
+  public void failedtest() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 2, "b", 1));
+    MutableDocument doc2 = doc("coll/2", 1, map("a", 2, "b", 2));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 2, "b", 3));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 3, "b", 1));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 3, "b", 3));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 5, "b", 6));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4, doc5, doc6));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc6));
+
+    Query query = query("coll").filter(andFilters(filter("a", "<=", 2), filter("b", ">=", 3)));
+    DocumentSet docs = expectOptimizedCollectionScan(() -> runQuery(query, SnapshotVersion.NONE));
+    assertEquals(docSet(query.comparator(), doc3, doc5, doc6), docs);
+  }
 }
