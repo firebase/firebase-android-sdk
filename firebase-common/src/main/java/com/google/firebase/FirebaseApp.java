@@ -87,7 +87,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>Any <code>FirebaseApp</code> initialization must occur only in the main process of the app.
  * Use of Firebase in processes other than the main process is not supported and will likely cause
  * problems related to resource contention.
- * Trigger Javadoc Change
  */
 public class FirebaseApp {
 
