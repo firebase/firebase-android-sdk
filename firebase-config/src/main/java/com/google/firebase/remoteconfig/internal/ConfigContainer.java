@@ -193,17 +193,13 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
-  /** Creates a map where the key is the config key and the value if the experiment description. */
-  private Map<String, JSONObject> createExperimentsMap(JSONArray allExperiments)
-      throws JSONException {
+  /** Creates a map where the key is the config key and the value is the experiment description. */
+  private Map<String, JSONObject> createExperimentsMap() throws JSONException {
     Map<String, JSONObject> experimentsMap = new HashMap<>();
-    if (allExperiments == null) {
-      return experimentsMap;
-    }
-
+    JSONArray abtExperiments = this.getAbtExperiments();
     // Iterate through all experiments to check if it has the `affectedParameterKeys` field.
-    for (int i = 0; i < allExperiments.length(); i++) {
-      JSONObject experiment = allExperiments.getJSONObject(i);
+    for (int i = 0; i < abtExperiments.length(); i++) {
+      JSONObject experiment = abtExperiments.getJSONObject(i);
       if (!experiment.has(AFFECTED_PARAMETER_KEYS)
           || experiment.getString(EXPERIMENT_ID).startsWith(ROLLOUT_ID_PREFIX)) {
         continue;
@@ -215,9 +211,6 @@ public class ConfigContainer {
       for (int j = 0; j < affectedKeys.length(); j++) {
         String key = affectedKeys.getString(j);
         JSONObject experimentsCopy = new JSONObject(experiment.toString());
-        // Removing `affectedParameterKeys` because its values never come in the same order which
-        // would affect the diffing.
-        experimentsCopy.remove(AFFECTED_PARAMETER_KEYS);
         experimentsMap.put(key, experimentsCopy);
       }
     }
@@ -268,8 +261,8 @@ public class ConfigContainer {
     Map<String, Map<String, String>> otherRolloutMetadataMap = other.createRolloutParameterKeyMap();
 
     // Config key to experiments map.
-    Map<String, JSONObject> experimentsMap = createExperimentsMap(this.getAbtExperiments());
-    Map<String, JSONObject> otherExperimentsMap = createExperimentsMap(other.getAbtExperiments());
+    Map<String, JSONObject> experimentsMap = this.createExperimentsMap();
+    Map<String, JSONObject> otherExperimentsMap = other.createExperimentsMap();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
