@@ -211,7 +211,10 @@ public class ConfigContainerTest {
     JSONArray activeExperiments = generateAbtExperiments(1);
     JSONArray fetchedExperiments = generateAbtExperiments(1);
 
-    fetchedExperiments.getJSONObject(0).getJSONArray(AFFECTED_PARAMETER_KEYS).put("abt_test_key_2");
+    fetchedExperiments
+        .getJSONObject(0)
+        .getJSONArray(AFFECTED_PARAMETER_KEYS)
+        .put(0, "abt_test_key_2");
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
@@ -229,7 +232,7 @@ public class ConfigContainerTest {
 
     Set<String> changedParams = config.getChangedParams(other);
 
-    assertThat(changedParams).containsExactly("abt_test_key_2");
+    assertThat(changedParams).containsExactly("abt_test_key_1", "abt_test_key_2");
   }
 
   @Test
