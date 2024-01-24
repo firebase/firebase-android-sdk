@@ -35,8 +35,7 @@ class PostsOperationSet(
       FirebaseDataConnect.ServiceConfig(
         serviceId = serviceId,
         location = location,
-        operationSet = "crud",
-        revision = "42"
+        connector = "crud"
       ),
       settings
     )

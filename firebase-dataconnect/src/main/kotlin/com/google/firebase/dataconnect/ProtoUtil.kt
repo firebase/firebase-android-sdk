@@ -20,10 +20,10 @@ import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
 import com.google.protobuf.listValueOrNull
 import com.google.protobuf.structValueOrNull
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationRequest
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteMutationResponse
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryRequest
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.ExecuteQueryResponse
+import google.firebase.dataconnect.v1main.ExecuteMutationRequest
+import google.firebase.dataconnect.v1main.ExecuteMutationResponse
+import google.firebase.dataconnect.v1main.ExecuteQueryRequest
+import google.firebase.dataconnect.v1main.ExecuteQueryResponse
 import java.io.BufferedWriter
 import java.io.CharArrayWriter
 import java.io.DataOutputStream

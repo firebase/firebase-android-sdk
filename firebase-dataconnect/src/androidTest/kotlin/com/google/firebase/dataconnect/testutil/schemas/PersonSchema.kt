@@ -28,9 +28,9 @@ import kotlinx.serialization.serializer
 class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   init {
-    dataConnect.serviceConfig.operationSet.let {
-      require(it == OPERATION_SET) {
-        "The given FirebaseDataConnect has operationSet=$it, but expected $OPERATION_SET"
+    dataConnect.serviceConfig.connector.let {
+      require(it == CONNECTOR) {
+        "The given FirebaseDataConnect has operationSet=$it, but expected $CONNECTOR"
       }
     }
   }
@@ -137,9 +137,9 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   companion object {
-    const val OPERATION_SET = "ops"
+    const val CONNECTOR = "ops"
 
     suspend fun TestDataConnectFactory.installPersonSchema(): PersonSchema =
-      PersonSchema(newInstance(operationSet = OPERATION_SET)).apply { installEmulatorSchema() }
+      PersonSchema(newInstance(connector = CONNECTOR)).apply { installEmulatorSchema() }
   }
 }

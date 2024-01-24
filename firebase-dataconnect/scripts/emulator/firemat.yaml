@@ -2,6 +2,6 @@ specVersion: v1alpha
 schema:
   main:
     source: ./api/schema
-operationSet:
+connector:
   crud:
     source: ./api/operations

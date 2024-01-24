@@ -43,7 +43,7 @@ internal class FirebaseDataConnectFactory(
         FirebaseDataConnectInstanceKey(
           serviceId = serviceId,
           location = location,
-          operationSet = operationSet
+          connector = connector
         )
       }
 
@@ -54,7 +54,7 @@ internal class FirebaseDataConnectFactory(
 
       val cachedInstance = instances[key]
       if (cachedInstance !== null) {
-        throwIfIncompatible(key, cachedInstance, serviceConfig, settings)
+        throwIfIncompatible(key, cachedInstance, settings)
         return cachedInstance
       }
 
@@ -120,30 +120,17 @@ internal class FirebaseDataConnectFactory(
 private data class FirebaseDataConnectInstanceKey(
   val serviceId: String,
   val location: String,
-  val operationSet: String,
+  val connector: String,
 ) {
-  override fun toString() = "serviceId=$serviceId, location=$location, operationSet=$operationSet"
+  override fun toString() = "serviceId=$serviceId, location=$location, connector=$connector"
 }
 
 private fun throwIfIncompatible(
   key: FirebaseDataConnectInstanceKey,
   instance: FirebaseDataConnect,
-  serviceConfig: FirebaseDataConnect.ServiceConfig,
   settings: FirebaseDataConnectSettings?
 ) {
-  val keyStr = key.run { "serviceId=$serviceId, location=$location, operationSet=$operationSet" }
-
-  if (instance.serviceConfig.revision != serviceConfig.revision) {
-    throw IllegalArgumentException(
-      "The 'revision' of the FirebaseDataConnect instance with [$keyStr] is " +
-        "'${instance.serviceConfig.revision}', which is different from the " +
-        "'revision' of the given ServiceConfig: '${serviceConfig.revision}`; " +
-        "to get a FirebaseDataConnect with [$keyStr] but a different 'revision', first call " +
-        "close() on the existing FirebaseDataConnect instance, then call getInstance() again " +
-        "with the desired 'revision'."
-    )
-  }
-
+  val keyStr = key.run { "serviceId=$serviceId, location=$location, connector=$connector" }
   if (settings !== null && instance.settings != settings) {
     throw IllegalArgumentException(
       "The settings of the FirebaseDataConnect instance with [$keyStr] is " +

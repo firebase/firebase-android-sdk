@@ -18,8 +18,8 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.firebase.dataconnect.v1main.DataServiceGrpcKt.DataServiceCoroutineStub
-import google.firebase.dataconnect.v1main.DataServiceOuterClass.GraphqlError
+import google.firebase.dataconnect.v1main.ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub
+import google.firebase.dataconnect.v1main.GraphqlError
 import google.firebase.dataconnect.v1main.executeMutationRequest
 import google.firebase.dataconnect.v1main.executeQueryRequest
 import io.grpc.ManagedChannel
@@ -37,8 +37,7 @@ internal class DataConnectGrpcClient(
   projectId: String,
   serviceId: String,
   location: String,
-  operationSet: String,
-  revision: String,
+  connector: String,
   hostName: String,
   port: Int,
   sslEnabled: Boolean,
@@ -49,8 +48,7 @@ internal class DataConnectGrpcClient(
     Logger("DataConnectGrpcClient").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
   private val requestName =
-    "projects/$projectId/locations/$location/services/$serviceId/" +
-      "operationSets/$operationSet/revisions/$revision"
+    "projects/$projectId/locations/$location/services/$serviceId/connectors/$connector"
 
   private val closedMutex = Mutex()
   private var closed = false
@@ -99,7 +97,7 @@ internal class DataConnectGrpcClient(
       channel
     }
 
-  private val lazyGrpcStub = SuspendingLazy { DataServiceCoroutineStub(lazyGrpcChannel.get()) }
+  private val lazyGrpcStub = SuspendingLazy { ConnectorServiceCoroutineStub(lazyGrpcChannel.get()) }
 
   data class OperationResult(
     val data: Struct?,

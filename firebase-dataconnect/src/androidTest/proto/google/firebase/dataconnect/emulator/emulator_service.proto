@@ -1,13 +1,16 @@
-// Adapted from http://google3/firebase/firemat/emulator/server/api/emulator_service.proto;rcl=578315096
+// Adapted from http://google3/third_party/firebase/dataconnect/emulator/server/api/emulator_service.proto;rcl=597032027
 
 // API protos for the FireMAT Emulator Service.
 
 syntax = "proto3";
 
-package google.firebase.dataconnect.emulator.v1main;
+package google.firebase.dataconnect.emulator;
 
-import "google/firebase/dataconnect/v1main/data_service.proto";
+import "google/firebase/dataconnect/v1main/connector_service.proto";
+import "google/firebase/dataconnect/v1main/graphql_error.proto";
 import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
 
 service EmulatorService {
   // Surfaces GQL parsing errors.
@@ -30,7 +33,7 @@ message GetCompileErrorsRequest {
 }
 
 message GetCompileErrorsResponse {
-  repeated google.firebase.dataconnect.v1main.GraphqlError errors = 1;
+  repeated GraphqlError errors = 1;
 }
 
 message SetupSchemaRequest {

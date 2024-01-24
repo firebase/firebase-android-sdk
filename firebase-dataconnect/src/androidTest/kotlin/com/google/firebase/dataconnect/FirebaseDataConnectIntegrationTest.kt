@@ -107,28 +107,13 @@ class FirebaseDataConnectIntegrationTest {
   }
 
   @Test
-  fun getInstance_should_return_distinct_instances_for_distinct_operationSets() {
+  fun getInstance_should_return_distinct_instances_for_distinct_connectors() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.withOperationSet("foo")
-    val serviceConfig2 = serviceConfig1.withOperationSet("bar")
+    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.withConnector("foo")
+    val serviceConfig2 = serviceConfig1.withConnector("bar")
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig1)
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig2)
     assertThat(instance1).isNotSameInstanceAs(instance2)
-  }
-
-  @Test
-  fun getInstance_should_throw_if_revision_differs_from_that_of_cached_instance() {
-    val nonDefaultApp = firebaseAppFactory.newInstance()
-    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.withRevision("foo")
-    val serviceConfig2 = serviceConfig1.withRevision("bar")
-    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig1)
-
-    assertThrows(IllegalArgumentException::class.java) {
-      FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig2)
-    }
-
-    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig1)
-    assertThat(instance1).isSameInstanceAs(instance2)
   }
 
   @Test
@@ -228,17 +213,6 @@ class FirebaseDataConnectIntegrationTest {
   }
 
   @Test
-  fun getInstance_should_allow_different_revision_after_first_instance_is_closed() {
-    val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_SERVICE_CONFIG1.withRevision("foo"))
-    instance1.close()
-    val instance2 =
-      FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_SERVICE_CONFIG1.withRevision("bar"))
-    assertThat(instance1).isNotSameInstanceAs(instance2)
-  }
-
-  @Test
   fun getInstance_should_return_new_instance_if_settings_and_app_are_both_different() {
     val nonDefaultApp1 = firebaseAppFactory.newInstance()
     val nonDefaultApp2 = firebaseAppFactory.newInstance()
@@ -254,17 +228,6 @@ class FirebaseDataConnectIntegrationTest {
         SAMPLE_SERVICE_CONFIG1,
         FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
       )
-    assertThat(instance1).isNotSameInstanceAs(instance2)
-  }
-
-  @Test
-  fun getInstance_should_return_new_instance_if_revision_and_app_are_both_different() {
-    val nonDefaultApp1 = firebaseAppFactory.newInstance()
-    val nonDefaultApp2 = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(nonDefaultApp1, SAMPLE_SERVICE_CONFIG1.withRevision("foo"))
-    val instance2 =
-      FirebaseDataConnect.getInstance(nonDefaultApp2, SAMPLE_SERVICE_CONFIG1.withRevision("bar"))
     assertThat(instance1).isNotSameInstanceAs(instance2)
   }
 
@@ -292,25 +255,6 @@ class FirebaseDataConnectIntegrationTest {
   }
 
   @Test
-  fun getInstance_should_return_new_instance_if_revision_and_serviceId_are_both_different() {
-    val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withServiceId("foo").withRevision("boo")
-      )
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withServiceId("bar").withRevision("zoo")
-      )
-
-    assertThat(instance1).isNotSameInstanceAs(instance2)
-    assertThat(instance1.serviceConfig.revision).isEqualTo("boo")
-    assertThat(instance2.serviceConfig.revision).isEqualTo("zoo")
-  }
-
-  @Test
   fun getInstance_should_return_new_instance_if_settings_and_location_are_both_different() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
     val instance1 =
@@ -331,25 +275,6 @@ class FirebaseDataConnectIntegrationTest {
       .isEqualTo(FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1"))
     assertThat(instance2.settings)
       .isEqualTo(FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2"))
-  }
-
-  @Test
-  fun getInstance_should_return_new_instance_if_revision_and_location_are_both_different() {
-    val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withLocation("foo").withRevision("boo")
-      )
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withLocation("bar").withRevision("zoo")
-      )
-
-    assertThat(instance1).isNotSameInstanceAs(instance2)
-    assertThat(instance1.serviceConfig.revision).isEqualTo("boo")
-    assertThat(instance2.serviceConfig.revision).isEqualTo("zoo")
   }
 
   @Test
@@ -415,8 +340,7 @@ class FirebaseDataConnectIntegrationTest {
         ServiceConfig(
           serviceId = "TestServiceId",
           location = "TestLocation",
-          operationSet = "TestOperationSet",
-          revision = "TestRevision"
+          connector = "TestConnector"
         )
       )
 
@@ -426,75 +350,45 @@ class FirebaseDataConnectIntegrationTest {
     assertThat(toStringResult).containsWithNonAdjacentText("projectId=${app.options.projectId}")
     assertThat(toStringResult).containsWithNonAdjacentText("serviceId=TestServiceId")
     assertThat(toStringResult).containsWithNonAdjacentText("location=TestLocation")
-    assertThat(toStringResult).containsWithNonAdjacentText("operationSet=TestOperationSet")
-    assertThat(toStringResult).containsWithNonAdjacentText("revision=TestRevision")
+    assertThat(toStringResult).containsWithNonAdjacentText("connector=TestConnector")
   }
 }
 
 private val SAMPLE_SERVICE_ID1 = "SampleServiceId1"
 private val SAMPLE_LOCATION1 = "SampleLocation1"
-private val SAMPLE_OPERATION_SET1 = "SampleOperationSet1"
-private val SAMPLE_REVISION1 = "SampleRevision1"
+private val SAMPLE_CONNECTOR1 = "SampleConnector1"
 private val SAMPLE_SERVICE_CONFIG1 =
   ServiceConfig(
     serviceId = SAMPLE_SERVICE_ID1,
     location = SAMPLE_LOCATION1,
-    operationSet = SAMPLE_OPERATION_SET1,
-    revision = SAMPLE_REVISION1
+    connector = SAMPLE_CONNECTOR1
   )
 
 private val SAMPLE_SERVICE_ID2 = "SampleServiceId2"
 private val SAMPLE_LOCATION2 = "SampleLocation2"
-private val SAMPLE_OPERATION_SET2 = "SampleOperationSet2"
-private val SAMPLE_REVISION2 = "SampleRevision2"
+private val SAMPLE_CONNECTOR2 = "SampleConnector2"
 private val SAMPLE_SERVICE_CONFIG2 =
   ServiceConfig(
     serviceId = SAMPLE_SERVICE_ID2,
     location = SAMPLE_LOCATION2,
-    operationSet = SAMPLE_OPERATION_SET2,
-    revision = SAMPLE_REVISION2
+    connector = SAMPLE_CONNECTOR2
   )
 
 private val SAMPLE_SERVICE_ID3 = "SampleServiceId3"
 private val SAMPLE_LOCATION3 = "SampleLocation3"
-private val SAMPLE_OPERATION_SET3 = "SampleOperationSet3"
-private val SAMPLE_REVISION3 = "SampleRevision3"
+private val SAMPLE_CONNECTOR3 = "SampleConnector3"
 private val SAMPLE_SERVICE_CONFIG3 =
   ServiceConfig(
     serviceId = SAMPLE_SERVICE_ID3,
     location = SAMPLE_LOCATION3,
-    operationSet = SAMPLE_OPERATION_SET3,
-    revision = SAMPLE_REVISION3
+    connector = SAMPLE_CONNECTOR3
   )
 
 private fun ServiceConfig.withServiceId(newServiceId: String) =
-  ServiceConfig(
-    serviceId = newServiceId,
-    location = location,
-    operationSet = operationSet,
-    revision = revision,
-  )
+  ServiceConfig(serviceId = newServiceId, location = location, connector = connector)
 
 private fun ServiceConfig.withLocation(newLocation: String) =
-  ServiceConfig(
-    serviceId = serviceId,
-    location = newLocation,
-    operationSet = operationSet,
-    revision = revision,
-  )
+  ServiceConfig(serviceId = serviceId, location = newLocation, connector = connector)
 
-private fun ServiceConfig.withOperationSet(newOperationSet: String) =
-  ServiceConfig(
-    serviceId = serviceId,
-    location = location,
-    operationSet = newOperationSet,
-    revision = revision,
-  )
-
-private fun ServiceConfig.withRevision(newRevision: String) =
-  ServiceConfig(
-    serviceId = serviceId,
-    location = location,
-    operationSet = operationSet,
-    revision = newRevision,
-  )
+private fun ServiceConfig.withConnector(newConnector: String) =
+  ServiceConfig(serviceId = serviceId, location = location, connector = newConnector)

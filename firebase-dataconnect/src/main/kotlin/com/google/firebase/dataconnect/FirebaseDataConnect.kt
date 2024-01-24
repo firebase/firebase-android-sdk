@@ -77,8 +77,7 @@ internal constructor(
         projectId = projectId,
         serviceId = serviceConfig.serviceId,
         location = serviceConfig.location,
-        revision = serviceConfig.revision,
-        operationSet = serviceConfig.operationSet,
+        connector = serviceConfig.connector,
         hostName = settings.hostName,
         port = settings.port,
         sslEnabled = settings.sslEnabled,
@@ -178,34 +177,22 @@ internal constructor(
   override fun toString() =
     "FirebaseDataConnect{" +
       "app=${app.name}, projectId=$projectId, " +
-      "location=${serviceConfig.location}, serviceId=${serviceConfig.serviceId} " +
-      "operationSet=${serviceConfig.operationSet}, revision=${serviceConfig.revision}" +
+      "location=${serviceConfig.location}, " +
+      "serviceId=${serviceConfig.serviceId}, " +
+      "connector=${serviceConfig.connector}" +
       "}"
 
-  class ServiceConfig(serviceId: String, location: String, operationSet: String, revision: String) {
-    private val impl =
-      Impl(
-        serviceId = serviceId,
-        location = location,
-        operationSet = operationSet,
-        revision = revision
-      )
+  class ServiceConfig(serviceId: String, location: String, connector: String) {
+    private val impl = Impl(serviceId = serviceId, location = location, connector = connector)
 
     val serviceId: String
       get() = impl.serviceId
     val location: String
       get() = impl.location
-    val operationSet: String
-      get() = impl.operationSet
-    val revision: String
-      get() = impl.revision
+    val connector: String
+      get() = impl.connector
 
-    private data class Impl(
-      val serviceId: String,
-      val location: String,
-      val operationSet: String,
-      val revision: String
-    )
+    private data class Impl(val serviceId: String, val location: String, val connector: String)
 
     override fun equals(other: Any?) =
       (other as? ServiceConfig)?.let { other.impl == impl } ?: false
@@ -213,7 +200,7 @@ internal constructor(
     override fun hashCode() = impl.hashCode()
 
     override fun toString() =
-      "ServiceConfig(serviceId=$serviceId, location=$location,operationSet=$operationSet, revision=$revision)"
+      "ServiceConfig(serviceId=$serviceId, location=$location, connector=$connector)"
   }
 
   companion object {

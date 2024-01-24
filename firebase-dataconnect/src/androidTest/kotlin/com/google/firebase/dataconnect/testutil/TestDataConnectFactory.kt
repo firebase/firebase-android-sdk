@@ -37,17 +37,9 @@ class TestDataConnectFactory :
   fun newInstance(
     serviceId: String? = null,
     location: String? = null,
-    operationSet: String? = null,
-    revision: String? = null
+    connector: String? = null
   ): FirebaseDataConnect =
-    newInstance(
-      Params(
-        serviceId = serviceId,
-        location = location,
-        operationSet = operationSet,
-        revision = revision
-      )
-    )
+    newInstance(Params(serviceId = serviceId, location = location, connector = connector))
 
   override fun createInstance(params: Params?): FirebaseDataConnect {
     val instanceId = Random.nextAlphanumericString()
@@ -55,8 +47,7 @@ class TestDataConnectFactory :
       FirebaseDataConnect.ServiceConfig(
         serviceId = params?.serviceId ?: "TestService$instanceId",
         location = params?.location ?: "TestLocation$instanceId",
-        operationSet = params?.operationSet ?: "TestOperationSet$instanceId",
-        revision = params?.revision ?: "TestRevision$instanceId"
+        connector = params?.connector ?: "TestConnector$instanceId"
       )
     return FirebaseDataConnect.getInstance(serviceConfig, FirebaseDataConnectSettings.emulator)
   }
@@ -68,7 +59,6 @@ class TestDataConnectFactory :
   data class Params(
     val location: String? = null,
     val serviceId: String? = null,
-    val operationSet: String? = null,
-    val revision: String? = null
+    val connector: String? = null
   )
 }

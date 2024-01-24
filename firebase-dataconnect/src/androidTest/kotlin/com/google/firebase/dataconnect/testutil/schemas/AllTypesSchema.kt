@@ -26,9 +26,9 @@ import kotlinx.serialization.serializer
 class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
   init {
-    dataConnect.serviceConfig.operationSet.let {
-      require(it == OPERATION_SET) {
-        "The given FirebaseDataConnect has operationSet=$it, but expected $OPERATION_SET"
+    dataConnect.serviceConfig.connector.let {
+      require(it == CONNECTOR) {
+        "The given FirebaseDataConnect has operationSet=$it, but expected $CONNECTOR"
       }
     }
   }
@@ -250,9 +250,9 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   suspend fun getFarm(id: String) = getFarm.execute(GetFarmQuery.Variables(id = id))
 
   companion object {
-    const val OPERATION_SET = "ops"
+    const val CONNECTOR = "ops"
 
     suspend fun TestDataConnectFactory.installAllTypesSchema(): AllTypesSchema =
-      AllTypesSchema(newInstance(operationSet = OPERATION_SET)).apply { installEmulatorSchema() }
+      AllTypesSchema(newInstance(connector = CONNECTOR)).apply { installEmulatorSchema() }
   }
 }
