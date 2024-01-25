@@ -21,6 +21,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.appcheck.safetynet"
     adbOptions {
         timeOutInMs 60 * 1000
     }
