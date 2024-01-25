@@ -19,7 +19,7 @@ plugins {
 
 android {
   namespace = "com.google.firebase.dataconnect.demo"
-  compileSdk = 33
+  compileSdk = 34
 
   defaultConfig {
     minSdk = 33
@@ -43,19 +43,27 @@ android {
     jvmTarget = "1.8"
   }
   buildFeatures {
+    compose = true
     viewBinding = true
+  }
+  composeOptions {
+    // Chosen based on the mapping to Kotlin 1.7.10 here:
+    // https://developer.android.com/jetpack/androidx/releases/compose-kotlin
+    kotlinCompilerExtensionVersion = "1.3.1"
   }
 }
 
 dependencies {
   implementation(project(":firebase-dataconnect"))
 
-  implementation("androidx.core:core-ktx:1.10.1")
-  implementation("androidx.appcompat:appcompat:1.6.1")
-  implementation("com.google.android.material:material:1.9.0")
-  implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-  implementation("androidx.navigation:navigation-fragment-ktx:2.6.0")
-  implementation("androidx.navigation:navigation-ui-ktx:2.6.0")
+  implementation("androidx.core:core-ktx:1.12.0")
+  implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+  implementation("androidx.activity:activity-compose:1.8.2")
+  implementation(platform("androidx.compose:compose-bom:2023.08.00"))
+  implementation("androidx.compose.ui:ui")
+  implementation("androidx.compose.ui:ui-graphics")
+  implementation("androidx.compose.ui:ui-tooling-preview")
+  implementation("androidx.compose.material3:material3")
 
   testImplementation(libs.junit)
   testImplementation(libs.robolectric)
