@@ -120,7 +120,7 @@ jobs:
       - uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - name: ${{ matrix.module }} Integ Tests
         env:
           FIREBASE_CI: 1
@@ -161,10 +161,10 @@ jobs:
       - uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
-            
+      - uses: google-github-actions/setup-gcloud@v2
+
       # create composite indexes with Terraform
-      - name: Setup Terraform 
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
       - name: Terraform Init
         run: |
@@ -231,7 +231,7 @@ jobs:
       - uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
 
       - name: Firestore Nightly Integ Tests
         env:
