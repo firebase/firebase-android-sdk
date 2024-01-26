@@ -50,7 +50,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -199,15 +201,16 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final Thread thread = Thread.currentThread();
     final Exception nonFatal = new RuntimeException("Non-fatal");
     final CrashlyticsController controller = createController();
+    final Map<String, String> extraInfo = new HashMap<>();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singleton(sessionId)));
 
-    controller.writeNonFatalException(thread, nonFatal);
+    controller.writeNonFatalException(thread, nonFatal, extraInfo);
     controller.doCloseSessions(testSettingsProvider);
 
     verify(mockSessionReportingCoordinator)
-        .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong());
+        .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong(), eq(extraInfo));
   }
 
   public void testFatalException_callsSessionReportingCoordinatorPersistFatal() throws Exception {
@@ -347,7 +350,17 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    controller.writeNonFatalException(Thread.currentThread(), new RuntimeException());
+    controller.writeNonFatalException(Thread.currentThread(), new RuntimeException(), null);
+
+    Map<String, String> extraInfo = new HashMap<>();
+    extraInfo.put("someKey", "someValue");
+    extraInfo.put("someOtherKey", "someOtherValue");
+
+    // This should also not throw.
+    controller.writeNonFatalException(
+            Thread.currentThread(),
+            new RuntimeException(),
+            extraInfo);
   }
 
   /**

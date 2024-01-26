@@ -123,7 +123,7 @@ public class SessionReportingCoordinatorTest {
     mockEventInteractions();
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp, null);
 
     final boolean expectedAllThreads = false;
     final boolean expectedHighPriority = false;
@@ -146,7 +146,7 @@ public class SessionReportingCoordinatorTest {
     when(logFileManager.getLogString()).thenReturn(testLog);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp, null);
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -165,7 +165,7 @@ public class SessionReportingCoordinatorTest {
     when(logFileManager.getLogString()).thenReturn(null);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp, null);
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -218,36 +218,126 @@ public class SessionReportingCoordinatorTest {
 
     final String sessionId = "testSessionId";
 
-    final String testKey1 = "testKey1";
-    final String testValue1 = "testValue1";
-    final String testKey2 = "testKey2";
-    final String testValue2 = "testValue2";
+    final String internalKey1 = "internalKey1";
+    final String internalValue1 = "internalValue1";
+    final String internalKey2 = "internalKey2";
+    final String internalValue2 = "internalValue2";
 
-    final Map<String, String> attributes = new HashMap<>();
-    attributes.put(testKey1, testValue1);
-    attributes.put(testKey2, testValue2);
+    final String customKey1 = "customKey1";
+    final String customValue1 = "customValue1";
+    final String customKey2 = "customKey2";
+    final String customValue2 = "customValue2";
+
+    final Map<String, String> internalKeys = new HashMap<>();
+    internalKeys.put(internalKey1, internalValue1);
+    internalKeys.put(internalKey2, internalValue2);
+
+    final Map<String, String> customAttributes = new HashMap<>();
+    customAttributes.put(customKey1, customValue1);
+    customAttributes.put(customKey2, customValue2);
+
+    final CustomAttribute internalAttribute1 =
+            CustomAttribute.builder().setKey(internalKey1).setValue(internalValue1).build();
+    final CustomAttribute internalAttribute2 =
+            CustomAttribute.builder().setKey(internalKey2).setValue(internalValue2).build();
 
     final CustomAttribute customAttribute1 =
-        CustomAttribute.builder().setKey(testKey1).setValue(testValue1).build();
+            CustomAttribute.builder().setKey(customKey1).setValue(customValue1).build();
     final CustomAttribute customAttribute2 =
-        CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
+            CustomAttribute.builder().setKey(customKey2).setValue(customValue2).build();
+
+    final List<CustomAttribute> expectedInternalKeys = new ArrayList<>();
+    expectedInternalKeys.add(internalAttribute1);
+    expectedInternalKeys.add(internalAttribute2);
 
     final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
     expectedCustomAttributes.add(customAttribute1);
     expectedCustomAttributes.add(customAttribute2);
 
-    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
-    when(reportMetadata.getInternalKeys()).thenReturn(attributes);
+    when(reportMetadata.getCustomKeys()).thenReturn(customAttributes);
+    when(reportMetadata.getInternalKeys()).thenReturn(internalKeys);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp, null);
 
-    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
-    verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
-    verify(mockEventAppBuilder).build();
-    verify(mockEventBuilder).setApp(mockEventApp);
-    verify(mockEventBuilder).build();
-    verify(logFileManager, never()).clearLog();
+    verifySortedKeysAddedToEvent(expectedCustomAttributes, expectedInternalKeys);
+  }
+
+  @Test
+  public void testNonFatalEvent_addsSortedKeysAndExtraInfoToEvent() {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
+
+    final String sessionId = "testSessionId";
+
+    final String internalKey1 = "internalKey1";
+    final String internalValue1 = "internalValue1";
+    final String internalKey2 = "internalKey2";
+    final String internalValue2 = "internalValue2";
+
+    final String customKey1 = "customKey1";
+    final String customValue1 = "customValue1";
+    final String customKey2 = "customKey2";
+    final String customValue2 = "customValue2";
+    final String customOverrideKey = "customOverrideKey";
+    final String customOverrideValueOriginal = "customOverrideValueOriginal";
+    final String customOverrideValueOverridden = "customOverrideValueOverridden";
+
+    final String extraInfoKey1 = "extraInfoKey1";
+    final String extraInfoValue1 = "extraInfoValue1";
+    final String extraInfoKey2 = "extraInfoKey2";
+    final String extraInfoValue2 = "extraInfoValue2";
+
+    final Map<String, String> internalKeys = new HashMap<>();
+    internalKeys.put(internalKey1, internalValue1);
+    internalKeys.put(internalKey2, internalValue2);
+
+    final Map<String, String> customAttributes = new HashMap<>();
+    customAttributes.put(customKey1, customValue1);
+    customAttributes.put(customKey2, customValue2);
+    customAttributes.put(customOverrideKey, customOverrideValueOriginal);
+
+    final Map<String, String> extraInfo = new HashMap<>();
+    extraInfo.put(extraInfoKey1, extraInfoValue1);
+    extraInfo.put(extraInfoKey2, extraInfoValue2);
+    extraInfo.put(customOverrideKey, customOverrideValueOverridden);
+
+    final CustomAttribute internalAttribute1 =
+            CustomAttribute.builder().setKey(internalKey1).setValue(internalValue1).build();
+    final CustomAttribute internalAttribute2 =
+            CustomAttribute.builder().setKey(internalKey2).setValue(internalValue2).build();
+
+    final CustomAttribute customAttribute1 =
+            CustomAttribute.builder().setKey(customKey1).setValue(customValue1).build();
+    final CustomAttribute customAttribute2 =
+            CustomAttribute.builder().setKey(customKey2).setValue(customValue2).build();
+    final CustomAttribute customAttributeOverride =
+            CustomAttribute.builder().setKey(customOverrideKey).setValue(customOverrideValueOverridden).build();
+
+    final CustomAttribute extraInfoAttribute1 =
+            CustomAttribute.builder().setKey(extraInfoKey1).setValue(extraInfoValue1).build();
+    final CustomAttribute extraInfoAttribute2 =
+            CustomAttribute.builder().setKey(extraInfoKey2).setValue(extraInfoValue2).build();
+
+    final List<CustomAttribute> expectedInternalKeys = new ArrayList<>();
+    expectedInternalKeys.add(internalAttribute1);
+    expectedInternalKeys.add(internalAttribute2);
+
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
+    expectedCustomAttributes.add(customAttributeOverride);
+    expectedCustomAttributes.add(extraInfoAttribute1);
+    expectedCustomAttributes.add(extraInfoAttribute2);
+
+    when(reportMetadata.getCustomKeys()).thenReturn(customAttributes);
+    when(reportMetadata.getInternalKeys()).thenReturn(internalKeys);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp, extraInfo);
+
+    verifySortedKeysAddedToEvent(expectedCustomAttributes, expectedInternalKeys);
   }
 
   @Test
@@ -263,7 +353,7 @@ public class SessionReportingCoordinatorTest {
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp, null);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
@@ -284,7 +374,7 @@ public class SessionReportingCoordinatorTest {
     when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp, null);
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(any());
     verify(mockEventAppBuilder, never()).build();
@@ -540,6 +630,17 @@ public class SessionReportingCoordinatorTest {
             anyInt(),
             anyBoolean()))
         .thenReturn(mockEvent);
+  }
+
+  private void verifySortedKeysAddedToEvent(
+          List<CustomAttribute> expectedCustomAttributes,
+          List<CustomAttribute> expectedInternalKeys) {
+    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
+    verify(mockEventAppBuilder).setInternalKeys(expectedInternalKeys);
+    verify(mockEventAppBuilder).build();
+    verify(mockEventBuilder).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
+    verify(logFileManager, never()).clearLog();
   }
 
   private static CrashlyticsReport mockReport(String sessionId) {

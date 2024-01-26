@@ -41,6 +41,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -128,13 +129,17 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   public void persistFatalEvent(
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
     Logger.getLogger().v("Persisting fatal event for session " + sessionId);
-    persistEvent(event, thread, sessionId, EVENT_TYPE_CRASH, timestamp, true);
+    persistEvent(event, thread, sessionId, EVENT_TYPE_CRASH, timestamp, true, null);
   }
 
   public void persistNonFatalEvent(
-      @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
+      @NonNull Throwable event,
+      @NonNull Thread thread,
+      @NonNull String sessionId,
+      long timestamp,
+      Map<String, String> extraInfo) {
     Logger.getLogger().v("Persisting non-fatal event for session " + sessionId);
-    persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
+    persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false, extraInfo);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
@@ -159,7 +164,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
     CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
         addLogsAndCustomKeysToEvent(
-            capturedEvent, logFileManagerForSession, userMetadataForSession);
+            capturedEvent, logFileManagerForSession, userMetadataForSession, null);
     CrashlyticsReport.Session.Event eventWithRolloutsState =
         addRolloutsStateToEvent(eventWithLogsAndCustomKeys, userMetadataForSession);
     reportPersistence.persistEvent(eventWithRolloutsState, sessionId, true);
@@ -253,23 +258,19 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   private CrashlyticsReport.Session.Event addMetaDataToEvent(
-      CrashlyticsReport.Session.Event capturedEvent) {
+      CrashlyticsReport.Session.Event capturedEvent, Map<String,String> extraInfo) {
     CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
-        addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
+        addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata, extraInfo);
     CrashlyticsReport.Session.Event eventWithRollouts =
         addRolloutsStateToEvent(eventWithLogsAndCustomKeys, reportMetadata);
     return eventWithRollouts;
   }
 
   private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
-      CrashlyticsReport.Session.Event capturedEvent) {
-    return addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
-  }
-
-  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
       CrashlyticsReport.Session.Event capturedEvent,
       LogFileManager logFileManager,
-      UserMetadata reportMetadata) {
+      UserMetadata reportMetadata,
+      Map<String, String> extraInfo) {
     final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
     final String content = logFileManager.getLogString();
 
@@ -283,8 +284,10 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     // TODO: Put this back once support for reports endpoint is removed.
     // logFileManager.clearLog(); // Clear log to prepare for next event.
 
+    final Map<String,String> customKeys =
+            mergeExtraInfoIntoCustomKeys(reportMetadata.getCustomKeys(), extraInfo);
     final List<CustomAttribute> sortedCustomAttributes =
-        getSortedCustomAttributes(reportMetadata.getCustomKeys());
+        getSortedCustomAttributes(customKeys);
     final List<CustomAttribute> sortedInternalKeys =
         getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
@@ -322,7 +325,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       @NonNull String sessionId,
       @NonNull String eventType,
       long timestamp,
-      boolean includeAllThreads) {
+      boolean includeAllThreads,
+      Map<String, String> extraInfo) {
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
@@ -336,7 +340,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             MAX_CHAINED_EXCEPTION_DEPTH,
             includeAllThreads);
 
-    reportPersistence.persistEvent(addMetaDataToEvent(capturedEvent), sessionId, isHighPriority);
+    reportPersistence.persistEvent(addMetaDataToEvent(capturedEvent, extraInfo), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
@@ -355,6 +359,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     Logger.getLogger()
         .w("Crashlytics report could not be enqueued to DataTransport", task.getException());
     return false;
+  }
+
+  private static Map<String, String> mergeExtraInfoIntoCustomKeys(
+          @NonNull Map<String, String> customKeys, Map<String, String> extraInfo) {
+    final Map<String, String> mergedCustomKeys = new HashMap<>(customKeys);
+    if (extraInfo != null && !extraInfo.isEmpty()) {
+      mergedCustomKeys.putAll(extraInfo);
+    }
+    return mergedCustomKeys;
   }
 
   @NonNull
