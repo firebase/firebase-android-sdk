@@ -57,6 +57,10 @@ task copyRootGoogleServices(type: Copy) {
     }
 }
 
+beforeEvaluate {
+    tasks.findByName('preBuild').dependsOn(copyRootGoogleServices)
+}
+
 // Before the google-services plugin tries to process the JSON file, attempt
 // to copy it from the root project.
 afterEvaluate {
