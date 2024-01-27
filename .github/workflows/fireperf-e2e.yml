@@ -39,7 +39,7 @@ jobs:
           python-version: '3.10'
       - name: Set up fireci
         run: pip3 install -e ci/fireci
-      - uses: google-github-actions/auth@v0
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
