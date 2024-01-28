@@ -14,7 +14,6 @@
 
 plugins {
     id("com.ncorti.ktfmt.gradle") version "0.11.0"
-    id("com.github.sherter.google-java-format") version "0.9"
     kotlin("plugin.serialization") version "1.7.10"
     `kotlin-dsl`
 }
@@ -31,11 +30,6 @@ repositories {
 // The System property allows us to integrate with an unreleased version from https://bityl.co/3oYt.
 // Refer go/fireperf-plugin-test-on-head for more details.
 val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
-
-googleJavaFormat {
-    toolVersion = "1.15.0"
-    exclude(".gradle/**")
-}
 
 ktfmt {
     googleStyle()
