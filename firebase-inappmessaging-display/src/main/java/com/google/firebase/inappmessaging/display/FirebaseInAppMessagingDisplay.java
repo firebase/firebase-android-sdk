@@ -40,6 +40,7 @@ import com.google.firebase.inappmessaging.display.internal.FiamAnimator;
 import com.google.firebase.inappmessaging.display.internal.FiamImageLoader;
 import com.google.firebase.inappmessaging.display.internal.FiamWindowManager;
 import com.google.firebase.inappmessaging.display.internal.FirebaseInAppMessagingDisplayImpl;
+import com.google.firebase.inappmessaging.display.internal.GlideErrorListener;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.Logging;
 import com.google.firebase.inappmessaging.display.internal.RenewableTimer;
@@ -97,6 +98,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
 
+  private GlideErrorListener glideErrorListener;
+
   @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
   @Inject
@@ -109,7 +112,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
       FiamWindowManager windowManager,
       Application application,
       BindingWrapperFactory bindingWrapperFactory,
-      FiamAnimator animator) {
+      FiamAnimator animator,
+      GlideErrorListener glideErrorListener) {
     super();
     this.headlessInAppMessaging = headlessInAppMessaging;
     this.layoutConfigs = layoutConfigs;
@@ -120,6 +124,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     this.application = application;
     this.bindingWrapperFactory = bindingWrapperFactory;
     this.animator = animator;
+    this.glideErrorListener = glideErrorListener;
   }
 
   /**
@@ -146,6 +151,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
       FirebaseInAppMessagingDisplayCallbacks callbacks) {
     this.inAppMessage = inAppMessage;
     this.callbacks = callbacks;
+    glideErrorListener.setInAppMessage(inAppMessage, callbacks);
     showActiveFiam(activity);
   }
 
@@ -206,6 +212,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
             }
             inAppMessage = iam;
             callbacks = cb;
+            glideErrorListener.setInAppMessage(inAppMessage, callbacks);
             showActiveFiam(activity);
           });
       // set the current activity to be the one passed in so that we know not to bind again to the
@@ -331,6 +338,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                 removeDisplayedFiam(activity);
                 inAppMessage = null;
                 callbacks = null;
+                glideErrorListener.setInAppMessage(inAppMessage, callbacks);
               }
             };
       } else {
@@ -434,6 +442,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
             cancelTimers(); // Not strictly necessary.
             inAppMessage = null;
             callbacks = null;
+            glideErrorListener.setInAppMessage(inAppMessage, callbacks);
           }
         });
   }
@@ -508,6 +517,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     removeDisplayedFiam(activity);
     inAppMessage = null;
     callbacks = null;
+    glideErrorListener.setInAppMessage(inAppMessage, callbacks);
   }
 
   private void removeDisplayedFiam(Activity activity) {
