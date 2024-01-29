@@ -108,9 +108,10 @@ internal class SessionFirelogPublisherImpl(
   /** Gets the Firebase Installation ID for the current app installation. */
   private suspend fun getFirebaseInstallationId() =
     try {
+      firebaseInstallations.getToken(false).await() // Validate or rotate the FID.
       firebaseInstallations.id.await()
     } catch (ex: Exception) {
-      Log.e(TAG, "Error getting Firebase Installation ID. Using an empty ID", ex)
+      Log.e(TAG, "Error getting or validating Firebase Installation ID. Using an empty ID", ex)
       // Use an empty fid if there is any failure.
       ""
     }

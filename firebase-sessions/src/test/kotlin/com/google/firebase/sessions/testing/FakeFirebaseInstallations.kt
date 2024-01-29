@@ -28,7 +28,7 @@ internal class FakeFirebaseInstallations(private val fid: String = "") : Firebas
   override fun getId(): Task<String> = Tasks.forResult(fid)
 
   override fun getToken(forceRefresh: Boolean): Task<InstallationTokenResult> =
-    throw NotImplementedError("getToken not faked.")
+    Tasks.forResult(null)
 
   override fun delete(): Task<Void> = throw NotImplementedError("delete not faked.")
 

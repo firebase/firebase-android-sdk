@@ -73,11 +73,14 @@ internal class RemoteSettings(
       }
 
       // Get the installations ID before making a remote config fetch.
-      val installationId = firebaseInstallationsApi.id.await()
-      if (installationId == null) {
-        Log.w(TAG, "Error getting Firebase Installation ID. Skipping this Session Event.")
-        return
-      }
+      val installationId =
+        try {
+          firebaseInstallationsApi.getToken(false).await() // Validate or rotate the FID.
+          firebaseInstallationsApi.id.await() as String
+        } catch (ex: Exception) {
+          Log.w(TAG, "Error getting Firebase Installation ID.", ex)
+          return@withLock
+        }
 
       // All the required fields are available, start making a network request.
       val options =

@@ -1,5 +1,9 @@
 # Unreleased
 
+* [fixed] Force validation or rotation of FIDs.
+
+# 1.2.1
+
 * [fixed] Handle corruption in DataStore Preferences more gracefully.
 
 # 1.2.0
