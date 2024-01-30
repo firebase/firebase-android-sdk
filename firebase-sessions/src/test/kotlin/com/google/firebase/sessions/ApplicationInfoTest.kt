@@ -20,10 +20,10 @@ import android.content.Context
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
+import com.google.firebase.initialize
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import org.junit.After
 import org.junit.Test
@@ -35,7 +35,12 @@ class ApplicationInfoTest {
 
   @Test
   fun applicationInfo_populatesInfoCorrectly() {
-    val applicationInfo = SessionEvents.getApplicationInfo(FakeFirebaseApp().firebaseApp)
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val actualCurrentProcessDetails =
+      ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext)
+    val actualAppProcessDetails =
+      ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
+    val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
     assertThat(applicationInfo)
       .isEqualTo(
         ApplicationInfo(
@@ -49,6 +54,8 @@ class ApplicationInfoTest {
             versionName = FakeFirebaseApp.MOCK_APP_VERSION,
             appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
             deviceManufacturer = Build.MANUFACTURER,
+            actualCurrentProcessDetails,
+            actualAppProcessDetails,
           )
         )
       )
@@ -67,6 +74,11 @@ class ApplicationInfoTest {
           .build()
       )
 
+    val actualCurrentProcessDetails =
+      ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext)
+    val actualAppProcessDetails =
+      ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext)
+
     val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
 
     assertThat(applicationInfo)
@@ -82,6 +94,8 @@ class ApplicationInfoTest {
             versionName = "0",
             appBuildVersion = "0",
             deviceManufacturer = Build.MANUFACTURER,
+            actualCurrentProcessDetails,
+            actualAppProcessDetails,
           )
         )
       )

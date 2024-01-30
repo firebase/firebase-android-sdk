@@ -45,6 +45,12 @@ internal data class AndroidApplicationInfo(
 
   /** The manufacturer of the device that runs the application. */
   val deviceManufacturer: String,
+
+  /** Information about this process */
+  val currentProcessDetails: ProcessDetails,
+
+  /** Information about all processes running for this app */
+  val appProcessDetails: List<ProcessDetails>,
 )
 
 internal data class ApplicationInfo(

@@ -28,7 +28,7 @@ import com.google.firebase.inject.Provider
  *
  * @hide
  */
-internal interface EventGDTLoggerInterface {
+internal fun interface EventGDTLoggerInterface {
   fun log(sessionEvent: SessionEvent)
 }
 
@@ -46,7 +46,7 @@ internal class EventGDTLogger(private val transportFactoryProvider: Provider<Tra
     transportFactoryProvider
       .get()
       .getTransport(
-        EventGDTLogger.AQS_LOG_SOURCE,
+        AQS_LOG_SOURCE,
         SessionEvent::class.java,
         Encoding.of("json"),
         this::encode,

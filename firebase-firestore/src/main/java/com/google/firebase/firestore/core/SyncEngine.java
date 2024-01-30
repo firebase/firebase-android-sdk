@@ -653,7 +653,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       }
       TargetChange targetChange =
           remoteEvent == null ? null : remoteEvent.getTargetChanges().get(queryView.getTargetId());
-      ViewChange viewChange = queryView.getView().applyChanges(viewDocChanges, targetChange);
+
+      boolean targetIsPendingReset =
+          remoteEvent != null
+              && remoteEvent.getTargetMismatches().get(queryView.getTargetId()) != null;
+
+      ViewChange viewChange =
+          queryView.getView().applyChanges(viewDocChanges, targetChange, targetIsPendingReset);
       updateTrackedLimboDocuments(viewChange.getLimboChanges(), queryView.getTargetId());
 
       if (viewChange.getSnapshot() != null) {

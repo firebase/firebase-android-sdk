@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.model.serialization;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.*;
 
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -24,9 +25,9 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.User;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -105,6 +106,14 @@ public class CrashlyticsReportJsonTransformTest {
     assertEquals(reifiedAppExitInfo, testAppExitInfo);
   }
 
+  @Test
+  public void testRolloutsEventToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.Session.Event testEvent = makeRolloutsEvent();
+    final String testEventJson = transform.eventToJson(testEvent);
+    final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
+    assertThat(reifiedEvent).isEqualTo(testEvent);
+  }
+
   private static CrashlyticsReport makeTestReport(boolean useDevelopmentPlatform) {
     return CrashlyticsReport.builder()
         .setSdkVersion("sdkVersion")
@@ -144,14 +153,6 @@ public class CrashlyticsReportJsonTransformTest {
     return builder.build();
   }
 
-  private static ImmutableList<Event> makeTestEvents(int numEvents) {
-    List<Event> events = new ArrayList<>();
-    for (int i = 0; i < numEvents; i++) {
-      events.add(makeTestEvent());
-    }
-    return ImmutableList.from(events);
-  }
-
   private static Event makeTestEvent() {
     return Event.builder()
         .setType("type")
@@ -162,7 +163,7 @@ public class CrashlyticsReportJsonTransformTest {
                 .setExecution(
                     Execution.builder()
                         .setBinaries(
-                            ImmutableList.from(
+                            Collections.singletonList(
                                 Execution.BinaryImage.builder()
                                     .setBaseAddress(0)
                                     .setName("name")
@@ -178,7 +179,7 @@ public class CrashlyticsReportJsonTransformTest {
                                 .build())
                         .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
                         .setThreads(
-                            ImmutableList.from(
+                            Collections.singletonList(
                                 Session.Event.Application.Execution.Thread.builder()
                                     .setName("name")
                                     .setImportance(4)
@@ -209,7 +210,7 @@ public class CrashlyticsReportJsonTransformTest {
                 .setExecution(
                     Execution.builder()
                         .setBinaries(
-                            ImmutableList.from(
+                            Collections.singletonList(
                                 Execution.BinaryImage.builder()
                                     .setBaseAddress(0)
                                     .setName("name")
@@ -233,29 +234,65 @@ public class CrashlyticsReportJsonTransformTest {
         .build();
   }
 
-  private static ImmutableList<Frame> makeTestFrames() {
-    return ImmutableList.from(
+  private static Event makeRolloutsEvent() {
+    Event baseEvent = makeTestEvent();
+    List<Event.RolloutAssignment> rolloutAssignmentList = new ArrayList<Event.RolloutAssignment>();
+    rolloutAssignmentList.add(
+        Event.RolloutAssignment.builder()
+            .setRolloutVariant(
+                Event.RolloutAssignment.RolloutVariant.builder()
+                    .setRolloutId("rollout_100")
+                    .setVariantId("enabled")
+                    .build())
+            .setParameterValue("true")
+            .setParameterKey("my_test_feature")
+            .setTemplateVersion(4)
+            .build());
+    rolloutAssignmentList.add(
+        Event.RolloutAssignment.builder()
+            .setRolloutVariant(
+                Event.RolloutAssignment.RolloutVariant.builder()
+                    .setRolloutId("rollout_200")
+                    .setVariantId("control")
+                    .build())
+            .setParameterValue("false")
+            .setParameterKey("my_color_feature")
+            .setTemplateVersion(2)
+            .build());
+
+    Event.RolloutsState rolloutsState =
+        Event.RolloutsState.builder().setRolloutAssignments(rolloutAssignmentList).build();
+    Event rolloutsEvent = baseEvent.toBuilder().setRollouts(rolloutsState).build();
+    return rolloutsEvent;
+  }
+
+  private static List<Frame> makeTestFrames() {
+    ArrayList<Frame> frames = new ArrayList<>();
+    frames.add(
         Frame.builder()
             .setPc(0)
             .setSymbol("func1")
             .setFile("Test.java")
             .setOffset(36)
             .setImportance(4)
-            .build(),
+            .build());
+    frames.add(
         Frame.builder()
             .setPc(0)
             .setSymbol("func2")
             .setFile("Test.java")
             .setOffset(5637)
             .setImportance(4)
-            .build(),
+            .build());
+    frames.add(
         Frame.builder()
             .setPc(0)
             .setSymbol("func3")
             .setFile("Test.java")
             .setOffset(22429)
             .setImportance(4)
-            .build(),
+            .build());
+    frames.add(
         Frame.builder()
             .setPc(0)
             .setSymbol("func4")
@@ -263,14 +300,15 @@ public class CrashlyticsReportJsonTransformTest {
             .setOffset(751)
             .setImportance(4)
             .build());
+    return Collections.unmodifiableList(frames);
   }
 
   private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo(boolean withBuildIds) {
-    ImmutableList<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
+    List<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
         buildIdMappingForArchImmutableList = null;
     if (withBuildIds) {
       buildIdMappingForArchImmutableList =
-          ImmutableList.from(
+          Collections.singletonList(
               CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch.builder()
                   .setLibraryName("lib.so")
                   .setArch("x86")

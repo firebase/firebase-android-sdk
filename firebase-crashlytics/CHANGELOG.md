@@ -1,15 +1,46 @@
 # Unreleased
+
+
+# 18.6.1
+* [feature] Updated `firebase-sessions` dependency for internal improvements
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.6.0
+* [changed] Include more details about app processes in reports.
+* [feature] Updated `firebase-sessions` dependency for more accurate sessions on multi-process apps.
+* [changed] Added support for [crashlytics] to report information from [remote_config].
+
+# 18.5.1
+* [fixed] Internal improvement to fix compatibility with Flutter and Unity SDKs. Github
+  [#10759](https://github.com/firebase/flutterfire/issues/10759)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.5.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-crashlytics-ktx`
   to `com.google.firebase:firebase-crashlytics` under the `com.google.firebase.crashlytics` package.
   For details, see the
-  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
-
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 * [deprecated] All the APIs from `com.google.firebase:firebase-crashlytics-ktx` have been added to
   `com.google.firebase:firebase-crashlytics` under the `com.google.firebase.crashlytics` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
-  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.4.3
 * [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]

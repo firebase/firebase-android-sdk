@@ -1,16 +1,18 @@
-// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -52,6 +54,10 @@ class PostReleasePlugin : Plugin<Project> {
    * is set to the current version of said module. After a release, this `version` should be bumped
    * up to differentiate between code at HEAD, and the latest released version.
    *
+   * Furthermore, this file may optionally contain a `latestReleasedVersion` variable (if the SDK
+   * has released). If this property is present, it should be updated to the related version that
+   * went out during the release.
+   *
    * @see VersionBumpTask
    *
    * @param project the [Project] to register this task to
@@ -72,7 +78,9 @@ class PostReleasePlugin : Plugin<Project> {
    * @param project the [Project] to register this task to
    */
   fun registerMoveUnreleasedChangesTask(project: Project) =
-    project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges")
+    project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges") {
+      onlyIf("CHANGELOG.md file must be present") { project.file("CHANGELOG.md").exists() }
+    }
 
   /**
    * Registers the `updatePinnedDependencies` for the provided [Project]

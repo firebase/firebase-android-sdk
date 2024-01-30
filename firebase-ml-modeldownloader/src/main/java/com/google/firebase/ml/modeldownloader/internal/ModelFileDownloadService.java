@@ -14,6 +14,7 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.annotation.SuppressLint;
 import android.app.DownloadManager;
 import android.app.DownloadManager.Query;
 import android.app.DownloadManager.Request;
@@ -23,6 +24,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.os.ParcelFileDescriptor;
@@ -207,12 +209,20 @@ public class ModelFileDownloadService {
     this.receiverMaps.remove(downloadId);
   }
 
+  @SuppressLint("WrongConstant")
   private Task<Void> registerReceiverForDownloadId(long downloadId, String modelName) {
     BroadcastReceiver broadcastReceiver = getReceiverInstance(downloadId, modelName);
     // It is okay to always register here. Since the broadcast receiver is the same via the lookup
     // for the same download id, the same broadcast receiver will be notified only once.
-    context.registerReceiver(
-        broadcastReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      context.registerReceiver(
+          broadcastReceiver,
+          new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+          Context.RECEIVER_EXPORTED);
+    } else {
+      context.registerReceiver(
+          broadcastReceiver, new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+    }
 
     return getTaskCompletionSourceInstance(downloadId).getTask();
   }

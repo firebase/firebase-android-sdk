@@ -56,15 +56,15 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
-    api(project(":firebase-installations-interop"))
+    api("com.google.firebase:firebase-installations-interop:17.1.1")
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.firebase:firebase-annotations:16.2.0'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
-    implementation("com.google.firebase:firebase-common:20.4.0")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.0")
-    implementation("com.google.firebase:firebase-components:17.1.3")
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"

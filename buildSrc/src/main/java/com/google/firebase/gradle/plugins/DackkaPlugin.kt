@@ -1,16 +1,18 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -19,7 +21,6 @@ import com.android.build.gradle.LibraryExtension
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
@@ -233,37 +234,19 @@ abstract class DackkaPlugin : Plugin<Project> {
 
     dackkaJarFile.set(dackkaFile)
     clientName.set(project.firebaseLibrary.artifactId)
-    generateJavadocs.set(!project.isKTXLibary)
   }
 
-  // TODO(b/270593375): Refactor when fixed
   private fun registerFiresiteTransformTask(
     project: Project,
     dackkaOutputDirectory: Provider<File>,
     targetDirectory: Provider<File>
-  ): TaskProvider<Task> {
-    val transformJavadoc =
-      project.tasks.register<FiresiteTransformTask>("firesiteTransformJavadoc") {
-        onlyIf { !project.isKTXLibary }
-        dependsOnAndMustRunAfter("generateDackkaDocumentation")
+  ) =
+    project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
+      dependsOnAndMustRunAfter("generateDackkaDocumentation")
 
-        removeGoogleGroupId.set(true)
-        dackkaFiles.set(dackkaOutputDirectory.childFile("docs/reference/android"))
-        outputDirectory.set(targetDirectory.childFile("android"))
-      }
-
-    val transformKotlindoc =
-      project.tasks.register<FiresiteTransformTask>("firesiteTransformKotlindoc") {
-        dependsOnAndMustRunAfter("generateDackkaDocumentation")
-
-        dackkaFiles.set(dackkaOutputDirectory.childFile("docs/reference/kotlin"))
-        outputDirectory.set(targetDirectory.childFile("kotlin"))
-      }
-
-    return project.tasks.register("firesiteTransform") {
-      dependsOn(transformJavadoc, transformKotlindoc)
+      dackkaFiles.set(dackkaOutputDirectory.childFile("docs/reference"))
+      outputDirectory.set(targetDirectory)
     }
-  }
 
   private fun registerCopyDocsToCommonDirectoryTask(
     project: Project,

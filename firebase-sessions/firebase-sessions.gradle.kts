@@ -48,11 +48,11 @@ android {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:20.4.0")
-  api("com.google.firebase:firebase-common-ktx:20.4.0")
+  api("com.google.firebase:firebase-common:20.4.2")
+  api("com.google.firebase:firebase-common-ktx:20.4.2")
 
   implementation("com.google.firebase:firebase-components:17.1.3")
-  implementation(project(":firebase-installations-interop")) {
+  implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
@@ -63,11 +63,11 @@ dependencies {
   implementation("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
 
-  runtimeOnly(project(":firebase-installations")) {
+  runtimeOnly("com.google.firebase:firebase-installations:17.2.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8"){
+  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
