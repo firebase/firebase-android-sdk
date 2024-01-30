@@ -1,7 +1,80 @@
 # Unreleased
+
+
+# 24.10.1
+* [fixed] Fixed an issue caused by calling mutation on immutable map object. [#5573](//github.com/firebase/firebase-android-sdk/pull/5573)
+* [fixed] Fixed an issue in the local cache synchronization logic where all locally-cached documents that matched a resumed query would be unnecessarily re-downloaded; with the fix it now only downloads the documents that are known to be out-of-sync. [#5506](//github.com/firebase/firebase-android-sdk/pull/5506)
+* [fixed] Fixed an issue where GC runs into a infinite loop in a certain case. [#5417](https://github.com/firebase/firebase-android-sdk/issues/5417)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.10.0
+* [fixed] Fixed the `DocumentSnapshot` equals method to not consider internal state when comparing snapshots.
+
+# 24.9.1
+* [feature] Expose Sum/Average aggregate query support in API. [#5217](//github.com/firebase/firebase-android-sdk/pull/5217)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.9.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-firestore-ktx`
+  to `com.google.firebase:firebase-firestore` under the `com.google.firebase.firestore` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-firestore-ktx` have been added to
+  `com.google.firebase:firebase-firestore` under the `com.google.firebase.firestore` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-firestore-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.8.1
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.8.0
+* [feature] Added the option to allow the SDK to create cache indexes automatically to
+  improve query execution locally. See
+  [`db.getPersistentCacheIndexManager().enableIndexAutoCreation()`](/docs/reference/android/com/google/firebase/firestore/PersistentCacheIndexManager#enableIndexAutoCreation())
+  ([GitHub [#4987](//github.com/firebase/firebase-android-sdk/pull/4987){: .external}).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.7.1
+* [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
+
+# 24.7.0
 * [feature] Expose MultiDb support in API. [#4015](//github.com/firebase/firebase-android-sdk/issues/4015)
 * [fixed] Fixed a thread interference issue that may lead to a ConcurrentModificationException.
-    (GitHub [#5091](//github.com/firebase/firebase-android-sdk/issues/5091){: .external})
+  (GitHub [#5091](//github.com/firebase/firebase-android-sdk/issues/5091){: .external})
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.6.1
 * [feature] Implemented an optimization in the local cache synchronization logic that reduces the number of billed document reads when documents were deleted on the server while the client was not actively listening to the query (e.g. while the client was offline). (GitHub [#4982](//github.com/firebase/firebase-android-sdk/pull/4982){: .external})
@@ -407,7 +480,7 @@ updates.
   and
   [`Query.whereNotEqualTo()`](/docs/reference/android/com/google/firebase/firestore/Query#whereNotEqualTo(java.lang.String,%20java.lang.Object))
   query operators.
-  
+
   * `Query.whereNotIn()` finds documents where a specified field's value is
     not in a specified array.
   * `Query.whereNotEqualTo()` finds documents where a specified field's value
@@ -759,7 +832,7 @@ updates.
   https://github.com/firebase/firebase-android-sdk/issues/134
 
 # 17.1.4
-* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked 
+* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked
   exceptions when Firestore closed a transaction that was never started. For
   more information, see the [issue report in GitHub](https://github.com/firebase/firebase-android-sdk/issues/115).
 * [fixed] Fixed a race condition that caused a `SQLiteDatabaseLockedException`

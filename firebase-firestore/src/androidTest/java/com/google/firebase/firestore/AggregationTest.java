@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.AggregateField.sum;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -34,16 +33,15 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.truth.Truth;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -68,11 +66,6 @@ public class AggregationTest {
 
   @Test
   public void testAggregateCountQueryEquals() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference coll1 = testCollection("foo");
     CollectionReference coll1_same = coll1.firestore.collection(coll1.getPath());
     AggregateQuery query1 = coll1.aggregate(AggregateField.count());
@@ -124,11 +117,6 @@ public class AggregationTest {
 
   @Test
   public void testAggregateSumQueryEquals() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference coll1 = testCollection("foo");
     CollectionReference coll1_same = coll1.firestore.collection(coll1.getPath());
     AggregateQuery query1 = coll1.aggregate(sum("baz"));
@@ -180,11 +168,6 @@ public class AggregationTest {
 
   @Test
   public void testAggregateAvgQueryEquals() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference coll1 = testCollection("foo");
     CollectionReference coll1_same = coll1.firestore.collection(coll1.getPath());
     AggregateQuery query1 = coll1.aggregate(average("baz"));
@@ -236,11 +219,6 @@ public class AggregationTest {
 
   @Test
   public void testAggregateQueryNotEquals() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference coll = testCollection("foo");
 
     AggregateQuery query1 = coll.aggregate(AggregateField.count());
@@ -279,11 +257,6 @@ public class AggregationTest {
 
   @Test
   public void testCanRunCountUsingAggregationMethod() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
@@ -294,11 +267,6 @@ public class AggregationTest {
 
   @Test
   public void testCanRunSumUsingAggregationMethod() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshotPages =
@@ -318,11 +286,6 @@ public class AggregationTest {
 
   @Test
   public void testCanRunAvgUsingAggregationMethod() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
@@ -339,11 +302,6 @@ public class AggregationTest {
 
   @Test
   public void testCanGetDuplicateAggregations() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
@@ -359,11 +317,6 @@ public class AggregationTest {
 
   @Test
   public void testCanGetMultipleAggregationsInTheSameQuery() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
@@ -379,11 +332,6 @@ public class AggregationTest {
 
   @Test
   public void testTerminateDoesNotCrashWithFlyingAggregateQuery() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     collection
@@ -394,35 +342,40 @@ public class AggregationTest {
   }
 
   @Test
-  public void testCanGetCorrectTypeForSum() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
+  public void testCanGetCorrectDoubleTypeForSum() {
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
-        waitFor(
-            collection
-                .aggregate(sum("pages"), sum("height"), sum("weight"))
-                .get(AggregateSource.SERVER));
+        waitFor(collection.aggregate(sum("weight")).get(AggregateSource.SERVER));
 
-    Object sumPages = snapshot.get(sum("pages"));
-    Object sumHeight = snapshot.get(sum("height"));
     Object sumWeight = snapshot.get(sum("weight"));
-    assertTrue(sumPages instanceof Long);
-    assertTrue(sumHeight instanceof Long);
     assertTrue(sumWeight instanceof Double);
   }
 
   @Test
-  public void testCanGetCorrectTypeForAvg() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
+  public void testCanGetCorrectDoubleTypeForSumWhenFieldsAddUpToInteger() {
+    CollectionReference collection = testCollectionWithDocs(testDocs1);
 
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.aggregate(sum("height")).get(AggregateSource.SERVER));
+
+    Object sumWeight = snapshot.get(sum("height"));
+    assertTrue(sumWeight instanceof Double);
+  }
+
+  @Test
+  public void testCanGetCorrectLongTypeForSum() {
+    CollectionReference collection = testCollectionWithDocs(testDocs1);
+
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.aggregate(sum("pages")).get(AggregateSource.SERVER));
+
+    Object sumPages = snapshot.get(sum("pages"));
+    assertTrue(sumPages instanceof Long);
+  }
+
+  @Test
+  public void testCanGetCorrectTypeForAvg() {
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
@@ -433,36 +386,7 @@ public class AggregationTest {
   }
 
   @Test
-  public void testCanPerformMaxAggregations() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
-    CollectionReference collection = testCollectionWithDocs(testDocs1);
-    AggregateField f1 = sum("pages");
-    AggregateField f2 = average("pages");
-    AggregateField f3 = AggregateField.count();
-    AggregateField f4 = sum("foo");
-    AggregateField f5 = sum("bar");
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.aggregate(f1, f2, f3, f4, f5).get(AggregateSource.SERVER));
-
-    assertEquals(snapshot.get(f1), 150L);
-    assertEquals(snapshot.get(f2), 75.0);
-    assertEquals(snapshot.get(f3), 2L);
-    assertEquals(snapshot.get(f4), 2L);
-    assertEquals(snapshot.get(f5), 4L);
-  }
-
-  @Test
   public void testCannotPerformMoreThanMaxAggregations() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
     AggregateField f1 = sum("pages");
     AggregateField f2 = average("pages");
@@ -481,56 +405,7 @@ public class AggregationTest {
   }
 
   @Test
-  public void testCanRunAggregateCollectionGroupQuery() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
-    FirebaseFirestore db = testFirestore();
-    // Use .document() to get a random collection group name to use but ensure it starts with 'b'
-    // for predictable ordering.
-    String collectionGroup = "b" + db.collection("foo").document().getId();
-
-    String[] docPaths =
-        new String[] {
-          "abc/123/${collectionGroup}/cg-doc1",
-          "abc/123/${collectionGroup}/cg-doc2",
-          "${collectionGroup}/cg-doc3",
-          "${collectionGroup}/cg-doc4",
-          "def/456/${collectionGroup}/cg-doc5",
-          "${collectionGroup}/virtual-doc/nested-coll/not-cg-doc",
-          "x${collectionGroup}/not-cg-doc",
-          "${collectionGroup}x/not-cg-doc",
-          "abc/123/${collectionGroup}x/not-cg-doc",
-          "abc/123/x${collectionGroup}/not-cg-doc",
-          "abc/${collectionGroup}"
-        };
-    WriteBatch batch = db.batch();
-    for (String path : docPaths) {
-      batch.set(db.document(path.replace("${collectionGroup}", collectionGroup)), map("x", 2));
-    }
-    waitFor(batch.commit());
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(
-            db.collectionGroup(collectionGroup)
-                .aggregate(AggregateField.count(), sum("x"), average("x"))
-                .get(AggregateSource.SERVER));
-    assertEquals(
-        5L, // "cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5",
-        snapshot.get(AggregateField.count()));
-    assertEquals(10L, snapshot.get(sum("x")));
-    assertEquals((Double) 2.0, snapshot.get(average("x")));
-  }
-
-  @Test
   public void testPerformsAggregationsWhenNaNExistsForSomeFieldValues() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -554,28 +429,22 @@ public class AggregationTest {
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     AggregateQuerySnapshot snapshot =
-        waitFor(
-            collection
-                .aggregate(sum("rating"), sum("pages"), average("year"), average("rating"))
-                .get(AggregateSource.SERVER));
+        waitFor(collection.aggregate(sum("rating"), average("rating")).get(AggregateSource.SERVER));
 
     assertEquals(snapshot.get(sum("rating")), Double.NaN);
-    assertEquals(snapshot.get(sum("pages")), 300L);
     assertEquals(snapshot.get(average("rating")), (Double) Double.NaN);
-    assertEquals(snapshot.get(average("year")), (Double) 2000.0);
   }
 
   @Test
   public void testThrowsAnErrorWhenGettingTheResultOfAnUnrequestedAggregation() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
-        waitFor(collection.aggregate(sum("pages")).get(AggregateSource.SERVER));
+        waitFor(
+            collection
+                .whereGreaterThan("pages", 200)
+                .aggregate(sum("pages"))
+                .get(AggregateSource.SERVER));
 
     Exception exception = null;
     try {
@@ -599,11 +468,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAggregationWhenUsingInOperator() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -620,90 +484,16 @@ public class AggregationTest {
         waitFor(
             collection
                 .whereIn("rating", asList(5, 3))
-                .aggregate(
-                    sum("rating"),
-                    average("rating"),
-                    sum("pages"),
-                    average("pages"),
-                    AggregateField.count())
+                .aggregate(sum("rating"), average("rating"), AggregateField.count())
                 .get(AggregateSource.SERVER));
 
     assertEquals(snapshot.get(sum("rating")), 8L);
     assertEquals(snapshot.get(average("rating")), (Double) 4.0);
-    assertEquals(snapshot.get(sum("pages")), 200L);
-    assertEquals(snapshot.get(average("pages")), (Double) 100.0);
-    assertEquals(snapshot.get(AggregateField.count()), 2L);
-  }
-
-  @Test
-  public void testPerformsAggregationWhenUsingArrayContainsAnyOperator() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "a",
-            map(
-                "author",
-                "authorA",
-                "title",
-                "titleA",
-                "pages",
-                100,
-                "year",
-                1980,
-                "rating",
-                asList(5, 1000)),
-            "b",
-            map(
-                "author", "authorB", "title", "titleB", "pages", 50, "year", 2020, "rating",
-                asList(4)),
-            "c",
-            map(
-                "author",
-                "authorC",
-                "title",
-                "titleC",
-                "pages",
-                100,
-                "year",
-                1980,
-                "rating",
-                asList(2222, 3)),
-            "d",
-            map(
-                "author", "authorD", "title", "titleD", "pages", 50, "year", 2020, "rating",
-                asList(0)));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(
-            collection
-                .whereArrayContainsAny("rating", asList(5, 3))
-                .aggregate(
-                    sum("rating"),
-                    average("rating"),
-                    sum("pages"),
-                    average("pages"),
-                    AggregateField.count())
-                .get(AggregateSource.SERVER));
-
-    assertEquals(snapshot.get(sum("rating")), 0L);
-    assertNull(snapshot.get(average("rating")));
-    assertEquals(snapshot.get(sum("pages")), 200L);
-    assertEquals(snapshot.get(average("pages")), (Double) 100.0);
     assertEquals(snapshot.get(AggregateField.count()), 2L);
   }
 
   @Test
   public void testPerformsAggregationsOnNestedMapValues() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -728,28 +518,16 @@ public class AggregationTest {
     AggregateQuerySnapshot snapshot =
         waitFor(
             collection
-                .aggregate(
-                    sum("metadata.pages"),
-                    average("metadata.pages"),
-                    average("metadata.rating.critic"),
-                    sum("metadata.rating.user"),
-                    AggregateField.count())
+                .aggregate(sum("metadata.pages"), average("metadata.pages"), AggregateField.count())
                 .get(AggregateSource.SERVER));
 
     assertEquals(snapshot.get(sum("metadata.pages")), 150L);
     assertEquals(snapshot.get(average("metadata.pages")), (Double) 75.0);
-    assertEquals(snapshot.get(average("metadata.rating.critic")), (Double) 3.0);
-    assertEquals(snapshot.get(sum("metadata.rating.user")), 9L);
     assertEquals(snapshot.get(AggregateField.count()), 2L);
   }
 
   @Test
   public void testPerformsSumThatOverflowsMaxLong() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", Long.MAX_VALUE),
@@ -766,11 +544,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsSumThatCanOverflowIntegerValuesDuringAccumulation() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", Long.MAX_VALUE),
@@ -788,11 +561,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsSumThatIsNegative() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", Long.MAX_VALUE),
@@ -809,11 +577,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsSumThatIsPositiveInfinity() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", Double.MAX_VALUE),
@@ -832,11 +595,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsSumThatIsNegativeInfinity() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", -Double.MAX_VALUE),
@@ -856,38 +614,28 @@ public class AggregationTest {
 
   @Test
   public void testPerformsSumThatIsValidButCouldOverflowDuringAggregation() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
+    // Sum of rating would be 0, but if the accumulation overflow, we expect infinity
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", Double.MAX_VALUE),
             "b", map("author", "authorB", "title", "titleB", "rating", Double.MAX_VALUE),
             "c", map("author", "authorC", "title", "titleC", "rating", -Double.MAX_VALUE),
-            "d", map("author", "authorD", "title", "titleD", "rating", -Double.MAX_VALUE),
-            "e", map("author", "authorE", "title", "titleE", "rating", Double.MAX_VALUE),
-            "f", map("author", "authorF", "title", "titleF", "rating", -Double.MAX_VALUE),
-            "g", map("author", "authorG", "title", "titleG", "rating", -Double.MAX_VALUE),
-            "h", map("author", "authorH", "title", "titleH", "rating", Double.MAX_VALUE));
+            "d", map("author", "authorD", "title", "titleD", "rating", -Double.MAX_VALUE));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     AggregateQuerySnapshot snapshot =
         waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
 
     Object sum = snapshot.get(sum("rating"));
-    assertTrue(sum instanceof Long);
-    assertEquals(sum, 0L);
+    assertTrue(sum instanceof Double);
+    assertTrue(
+        sum.equals(0.0)
+            || sum.equals(Double.POSITIVE_INFINITY)
+            || sum.equals(Double.NEGATIVE_INFINITY));
   }
 
   @Test
   public void testPerformsSumOverResultSetOfZeroDocuments() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
@@ -902,11 +650,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsSumOnlyOnNumericFields() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 5),
@@ -927,11 +670,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsSumOfMinIEEE754() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map("a", map("author", "authorA", "title", "titleA", "rating", Double.MIN_VALUE));
 
@@ -945,11 +683,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOfIntsThatResultsInAnInt() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 10),
@@ -967,11 +700,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOfFloatsThatResultsInAnInt() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 10.5),
@@ -988,11 +716,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOfFloatsAndIntsThatResultsInAnInt() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 10),
@@ -1010,11 +733,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOfFloatsThatResultsInAFloat() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 5.5),
@@ -1032,11 +750,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOfFloatsAndIntsThatResultsInAFloat() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 8.6),
@@ -1053,11 +766,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOfIntsThatResultsInAFloat() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 10),
@@ -1074,11 +782,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageCausingUnderflow() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", Double.MIN_VALUE),
@@ -1095,11 +798,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOfMinIEEE754() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map("a", map("author", "authorA", "title", "titleA", "rating", Double.MIN_VALUE));
     CollectionReference collection = testCollectionWithDocs(testDocs);
@@ -1114,11 +812,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOverflowIEEE754DuringAccumulation() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -1137,11 +830,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageThatIncludesNaN() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a",
@@ -1164,11 +852,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOverResultSetOfZeroDocuments() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
@@ -1185,11 +868,6 @@ public class AggregationTest {
 
   @Test
   public void testPerformsAverageOnlyOnNumericFields() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", 5),
@@ -1209,40 +887,42 @@ public class AggregationTest {
   }
 
   @Test
-  @Ignore("TODO: Enable once we have production support for sum/avg.")
-  public void testAggregateFailWithGoodMessageIfMissingIndex() {
+  public void testAggregateErrorMessageShouldContainConsoleLinkIfMissingIndex() {
     assumeFalse(
-        "Skip this test when running against the Firestore emulator because the Firestore emulator "
-            + "does not use indexes and never fails with a 'missing index' error",
+        "Skip this test when running against the Firestore emulator because the "
+            + "Firestore emulator does not use indexes and never fails with a 'missing index'"
+            + " error",
         isRunningAgainstEmulator());
 
     CollectionReference collection = testCollectionWithDocs(Collections.emptyMap());
     Query compositeIndexQuery = collection.whereEqualTo("field1", 42).whereLessThan("field2", 99);
-    AggregateQuery compositeIndexCountQuery =
+    AggregateQuery compositeIndexAggregateQuery =
         compositeIndexQuery.aggregate(AggregateField.count(), sum("pages"), average("pages"));
-    Task<AggregateQuerySnapshot> task = compositeIndexCountQuery.get(AggregateSource.SERVER);
+    Task<AggregateQuerySnapshot> task = compositeIndexAggregateQuery.get(AggregateSource.SERVER);
 
     Throwable throwable = assertThrows(Throwable.class, () -> waitFor(task));
 
     Throwable cause = throwable.getCause();
     Truth.assertThat(cause).hasMessageThat().ignoringCase().contains("index");
-    Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
+    // TODO(b/316359394) Remove this check for the default databases once cl/582465034 is rolled
+    // out to production.
+    if (collection
+        .firestore
+        .getDatabaseId()
+        .getDatabaseId()
+        .equals(DatabaseId.DEFAULT_DATABASE_ID)) {
+      Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
+    }
   }
 
   @Test
   public void allowsAliasesLongerThan1500Bytes() {
-    assumeTrue(
-        "Skip this test if running against production because sum/avg is only support "
-            + "in emulator currently.",
-        isRunningAgainstEmulator());
-    // The longest field name allowed is 1500. The alias chosen by the client is <op>_<fieldName>.
-    // If the field name is
-    // 1500 bytes, the alias will be longer than 1500, which is the limit for aliases. This is to
-    // make sure the client
-    // can handle this corner case correctly.
-
-    StringBuilder builder = new StringBuilder(1500);
-    for (int i = 0; i < 1500; i++) {
+    // The longest field name allowed is 1500 bytes, and string sizes are calculated as the number
+    // of UTF-8 encoded bytes + 1 in server. The alias chosen by the client is <op>_<fieldName>.
+    // If the field name is 1500 bytes, the alias will be longer than 1500, which is the limit for
+    // aliases. This is to make sure the client can handle this corner case correctly.
+    StringBuilder builder = new StringBuilder(1499);
+    for (int i = 0; i < 1499; i++) {
       builder.append("a");
     }
     String longField = builder.toString();

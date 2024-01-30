@@ -28,6 +28,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.ProductData;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -70,6 +71,8 @@ public class MessagingAnalytics {
   private static final String DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_PREF = "export_to_big_query";
   private static final String MANIFEST_DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_ENABLED =
       "delivery_metrics_exported_to_big_query_enabled";
+
+  private static final int DEFAULT_PRODUCT_ID = 111881503;
 
   /** Log that a notification was received by the client app. */
   public static void logNotificationReceived(Intent intent) {
@@ -337,6 +340,9 @@ public class MessagingAnalytics {
 
     try {
       // TODO(b/145299499): offload encoding to Firelog Thread
+      ProductData productData =
+          ProductData.withProductId(
+              intent.getIntExtra(MessagePayloadKeys.PRODUCT_ID, DEFAULT_PRODUCT_ID));
       transportFactory
           .getTransport(
               FirelogAnalytics.FCM_LOG_SOURCE,
@@ -347,7 +353,8 @@ public class MessagingAnalytics {
               Event.ofData(
                   MessagingClientEventExtension.newBuilder()
                       .setMessagingClientEvent(clientEvent)
-                      .build()));
+                      .build(),
+                  productData));
     } catch (RuntimeException e) {
       Log.w(TAG, "Failed to send big query analytics payload.", e);
     }

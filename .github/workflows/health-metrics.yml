@@ -24,7 +24,7 @@ jobs:
               && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -38,10 +38,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - uses: google-github-actions/auth@v0
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - name: Set up fireci
         run: pip3 install -e ci/fireci
       - name: Run coverage tests (presubmit)
@@ -59,7 +59,7 @@ jobs:
               && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -73,10 +73,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - uses: google-github-actions/auth@v0
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - name: Set up fireci
         run: pip3 install -e ci/fireci
       - name: Run size tests (presubmit)
@@ -95,7 +95,7 @@ jobs:
               && github.event.pull_request.base.ref == 'master')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -109,10 +109,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      - uses: google-github-actions/auth@v0
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - name: Set up fireci
         run: pip3 install -e ci/fireci
       - name: Add google-services.json

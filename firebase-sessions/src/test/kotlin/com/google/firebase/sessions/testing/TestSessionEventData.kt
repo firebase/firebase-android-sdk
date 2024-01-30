@@ -26,6 +26,7 @@ import com.google.firebase.sessions.DataCollectionState
 import com.google.firebase.sessions.DataCollectionStatus
 import com.google.firebase.sessions.EventType
 import com.google.firebase.sessions.LogEnvironment
+import com.google.firebase.sessions.ProcessDetails
 import com.google.firebase.sessions.SessionDetails
 import com.google.firebase.sessions.SessionEvent
 import com.google.firebase.sessions.SessionInfo
@@ -43,8 +44,8 @@ internal object TestSessionEventData {
 
   val TEST_DATA_COLLECTION_STATUS =
     DataCollectionStatus(
-      performance = DataCollectionState.COLLECTION_ENABLED,
-      crashlytics = DataCollectionState.COLLECTION_ENABLED,
+      performance = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
+      crashlytics = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
       sessionSamplingRate = 1.0
     )
 
@@ -58,6 +59,16 @@ internal object TestSessionEventData {
       firebaseInstallationId = "",
     )
 
+  val TEST_PROCESS_DETAILS =
+    ProcessDetails(
+      processName = "com.google.firebase.sessions.test",
+      0,
+      100,
+      false,
+    )
+
+  val TEST_APP_PROCESS_DETAILS = listOf(TEST_PROCESS_DETAILS)
+
   val TEST_APPLICATION_INFO =
     ApplicationInfo(
       appId = FakeFirebaseApp.MOCK_APP_ID,
@@ -70,6 +81,8 @@ internal object TestSessionEventData {
         versionName = FakeFirebaseApp.MOCK_APP_VERSION,
         appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
         deviceManufacturer = Build.MANUFACTURER,
+        currentProcessDetails = TEST_PROCESS_DETAILS,
+        appProcessDetails = TEST_APP_PROCESS_DETAILS,
       ),
     )
 
@@ -77,6 +90,6 @@ internal object TestSessionEventData {
     SessionEvent(
       eventType = EventType.SESSION_START,
       sessionData = TEST_SESSION_DATA,
-      applicationInfo = TEST_APPLICATION_INFO
+      applicationInfo = TEST_APPLICATION_INFO,
     )
 }

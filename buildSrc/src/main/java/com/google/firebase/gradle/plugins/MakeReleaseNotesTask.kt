@@ -1,24 +1,29 @@
-// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.firebase.gradle.plugins
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.StopActionException
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Creates the release notes for the given project.
@@ -32,6 +37,7 @@ import org.gradle.api.tasks.TaskAction
  * changes to release
  * @see make
  */
+@DisableCachingByDefault
 abstract class MakeReleaseNotesTask : DefaultTask() {
   @get:InputFile abstract val changelogFile: RegularFileProperty
 
@@ -79,8 +85,11 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     val unreleased = changelog.releases.first()
     val version = project.version.toString()
 
+    if (!project.firebaseLibrary.publishJavadoc)
+      throw StopActionException("No release notes required for ${project.name}")
+
     if (!unreleased.hasContent())
-      throw StopActionException("No changes to release for project: ${project.name}")
+      throw GradleException("Missing release notes for \"${project.name}\"")
 
     val versionClassifier = version.replace(".", "-")
 

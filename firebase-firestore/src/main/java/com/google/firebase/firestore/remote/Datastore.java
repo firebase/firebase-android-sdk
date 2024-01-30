@@ -225,7 +225,7 @@ public class Datastore {
   public Task<Map<String, Value>> runAggregateQuery(
       Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
-        serializer.encodeQueryTarget(query.toTarget());
+        serializer.encodeQueryTarget(query.toAggregateTarget());
     HashMap<String, String> aliasMap = new HashMap<>();
     StructuredAggregationQuery structuredAggregationQuery =
         serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields, aliasMap);
@@ -344,8 +344,8 @@ public class Datastore {
    * write stream should be retried too (even though ABORTED errors are not generally retryable).
    *
    * <p>Note that during the initial handshake on the write stream an ABORTED error signals that we
-   * should discard our stream token (i.e. it is permanent). This means a handshake error should be
-   * classified with isPermanentError, above.
+   * should discard our stream token (because it is permanent). This means a handshake error should
+   * be classified with isPermanentError, above.
    */
   public static boolean isPermanentWriteError(Status status) {
     return isPermanentError(status) && !status.getCode().equals(Status.Code.ABORTED);

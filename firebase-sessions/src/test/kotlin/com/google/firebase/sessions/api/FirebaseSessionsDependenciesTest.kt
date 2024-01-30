@@ -19,7 +19,7 @@ package com.google.firebase.sessions.api
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.api.SessionSubscriber.Name.CRASHLYTICS
-import com.google.firebase.sessions.api.SessionSubscriber.Name.PERFORMANCE
+import com.google.firebase.sessions.api.SessionSubscriber.Name.MATT_SAYS_HI
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -71,14 +71,14 @@ class FirebaseSessionsDependenciesTest {
 
   @Test
   fun getSubscriber_dependencyAdded_notRegistered_throws() {
-    FirebaseSessionsDependencies.addDependency(PERFORMANCE)
+    FirebaseSessionsDependencies.addDependency(MATT_SAYS_HI)
 
     val thrown =
       assertThrows(IllegalStateException::class.java) {
-        FirebaseSessionsDependencies.getSubscriber(PERFORMANCE)
+        FirebaseSessionsDependencies.getSubscriber(MATT_SAYS_HI)
       }
 
-    assertThat(thrown).hasMessageThat().contains("Subscriber PERFORMANCE has not been registered")
+    assertThat(thrown).hasMessageThat().contains("Subscriber MATT_SAYS_HI has not been registered")
   }
 
   @Test

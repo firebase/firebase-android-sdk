@@ -1,16 +1,18 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -186,6 +188,29 @@ fun <T : Any?> Iterable<T>.toPairOrFirst(): Pair<T, T?> = first() to last().take
  * @param index the index to split the list at; zero being the first element
  */
 fun <T> List<T>.separateAt(index: Int) = slice(0 until index) to slice(index..lastIndex)
+
+/**
+ * Maps any instances of the [regex] found in this list to the provided [transform].
+ *
+ * For example:
+ * ```kotlin
+ * listOf("mom", "mommy", "momma", "dad").replaceMatches(Regex(".*mom.*")) {
+ *   it.value.takeUnless { it.contains("y") }?.drop(1)
+ * } // ["om", "mommy", "omma", "dad"]
+ * ```
+ *
+ * @param regex the [Regex] to use to match against values in this list
+ * @param transform a callback to call with [MathResults][MatchResult] when matches are found. If
+ * the [transform] returns null, then the value remains unchanged.
+ */
+fun List<String>.replaceMatches(regex: Regex, transform: (MatchResult) -> String?) = map {
+  val newValue = regex.find(it)?.let(transform)
+  if (newValue != null) {
+    it.replace(regex, newValue)
+  } else {
+    it
+  }
+}
 
 /**
  * Returns the value of the first capture group.

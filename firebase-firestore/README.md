@@ -87,6 +87,28 @@ Run:
 ./gradlew :firebase-firestore:deviceCheck
 ```
 
+### Testing composite index query against production
+#### Setting Up the Environment:
+1. Create a `google-services.json` file in the root directory. This file should contain your target Firebase project's configuration.
+2. If not already logged in, authenticate with your Google Cloud Platform (GCP) account using
+`gcloud auth application-default login`. You can check your logged-in accounts by running
+`gcloud auth list`.
+3. Navigate to the `firebase-firestore` directory, create composite indexes by running:
+```
+terraform init
+terraform apply -var-file=../google-services.json -auto-approve
+```
+Note: If the index creation encounters issues, such as concurrent operations, consider running the
+index creation process again. Error messages indicating that indexes have already been created can
+be safely disregarded.
+
+#### Adding new composite index query tests
+1. To create a new composite index for local development, click on the provided link in the test
+error message, which will direct you to the Firebase Console.
+2. Add the newly created composite index to the `firestore_index_config.tf` file. The "__name__"
+field is not required to be explicitly added to the file, as the index creation will auto complete
+it on behalf.
+
 ## Code Formatting
 
 Run below to format Java code:
@@ -99,14 +121,9 @@ from within Android Studio.
 
 ## Build Local Jar of Firestore SDK
 
-Run:
 ```bash
-./gradlew publishAllToLocal
+./gradlew -PprojectsToPublish="firebase-firestore" publishReleasingLibrariesToMavenLocal
 ```
-
-This will publish firebase SDK at SNAPSHOT versions. All pom level dependencies
-within the published artifacts will also point to SNAPSHOT versions that are
-co-published. The results will be built into your local maven repo.
 
 Developers may then take a dependency on these locally published versions by adding
 the `mavenLocal()` repository to your [repositories

@@ -394,8 +394,8 @@ public final class LocalStore implements BundleCallback {
 
   /**
    * Updates the "ground-state" (remote) documents. We assume that the remote event reflects any
-   * write batches that have been acknowledged or rejected (i.e. we do not re-apply local mutations
-   * to updates from this event).
+   * write batches that have been acknowledged or rejected (specifically, we do not re-apply local
+   * mutations to updates from this event).
    *
    * <p>LocalDocuments are re-calculated if there are remaining mutations in the queue.
    */
@@ -800,6 +800,14 @@ public final class LocalStore implements BundleCallback {
               indexManager::addFieldIndex,
               indexManager::deleteFieldIndex);
         });
+  }
+
+  public void deleteAllFieldIndexes() {
+    persistence.runTransaction("Delete All Indexes", () -> indexManager.deleteAllFieldIndexes());
+  }
+
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
+    queryEngine.setIndexAutoCreationEnabled(isEnabled);
   }
 
   /** Mutable state for the transaction in allocateQuery. */

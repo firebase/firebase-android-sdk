@@ -15,6 +15,7 @@ package com.google.firebase.messaging;
 
 import static com.google.firebase.messaging.Constants.TAG;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -22,6 +23,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.android.gms.cloudmessaging.CloudMessage;
+import com.google.android.gms.cloudmessaging.Rpc;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.MessageTypes;
 import java.util.ArrayDeque;
@@ -81,6 +84,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    */
   private static final Queue<String> recentlyReceivedMessageIds =
       new ArrayDeque<>(RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE);
+
+  private Rpc rpc;
 
   /**
    * Called when a message is received.
@@ -173,6 +178,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     if (!alreadyReceivedMessage(messageId)) {
       passMessageIntentToSdk(intent);
     }
+    getRpc(this).messageHandled(new CloudMessage(intent));
   }
 
   private void passMessageIntentToSdk(Intent intent) {
@@ -263,8 +269,20 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     return messageId;
   }
 
+  private Rpc getRpc(Context context) {
+    if (rpc == null) {
+      rpc = new Rpc(context.getApplicationContext());
+    }
+    return rpc;
+  }
+
   @VisibleForTesting
   static void resetForTesting() {
     recentlyReceivedMessageIds.clear();
+  }
+
+  @VisibleForTesting
+  void setRpcForTesting(Rpc rpc) {
+    this.rpc = rpc;
   }
 }

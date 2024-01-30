@@ -40,6 +40,9 @@ public abstract class EventInternal {
 
   protected abstract Map<String, String> getAutoMetadata();
 
+  @Nullable
+  public abstract Integer getProductId();
+
   public final Map<String, String> getMetadata() {
     return Collections.unmodifiableMap(getAutoMetadata());
   }
@@ -68,6 +71,7 @@ public abstract class EventInternal {
     return new AutoValue_EventInternal.Builder()
         .setTransportName(getTransportName())
         .setCode(getCode())
+        .setProductId(getProductId())
         .setEncodedPayload(getEncodedPayload())
         .setEventMillis(getEventMillis())
         .setUptimeMillis(getUptimeMillis())
@@ -91,6 +95,8 @@ public abstract class EventInternal {
     public abstract Builder setUptimeMillis(long value);
 
     protected abstract Builder setAutoMetadata(Map<String, String> metadata);
+
+    public abstract Builder setProductId(Integer value);
 
     protected abstract Map<String, String> getAutoMetadata();
 

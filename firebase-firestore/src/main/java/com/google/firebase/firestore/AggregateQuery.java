@@ -48,8 +48,6 @@ public class AggregateQuery {
   }
 
   /** Returns the AggregateFields included inside this object. */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public List<AggregateField> getAggregateFields() {

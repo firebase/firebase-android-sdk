@@ -14,12 +14,12 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
     libraryGroup "inappmessaging"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
@@ -44,21 +44,16 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation project(':firebase-inappmessaging')
-    implementation project(':firebase-inappmessaging:ktx')
-    implementation project(':firebase-inappmessaging-display')
-    implementation 'androidx.annotation:annotation:1.1.0'
-
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    api(project(":firebase-inappmessaging"))
+    api(project(":firebase-inappmessaging-display"))
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
-        exclude group: "com.google.firebase", module: "firebase-common"
-    }
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+         exclude group: "com.google.firebase", module: "firebase-common"
+     }
 }

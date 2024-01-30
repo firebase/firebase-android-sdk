@@ -129,7 +129,7 @@ public class WatchChangeAggregator {
           targetState.recordTargetResponse();
           if (!targetState.isPending()) {
             // We have a freshly added target, so we need to reset any state that we had previously.
-            // This can happen e.g. when remove and add back a target for existence filter
+            // This can happen when, for example, remove and add back a target for existence filter
             // mismatches.
             targetState.clearChanges();
           }
@@ -416,9 +416,9 @@ public class WatchChangeAggregator {
 
   /**
    * Removes the provided document from the target mapping. If the document no longer matches the
-   * target, but the document's state is still known (e.g. we know that the document was deleted or
-   * we received the change that caused the filter mismatch), the new document can be provided to
-   * update the remote document cache.
+   * target, but the document's state is still known (for example. we know that the document was
+   * deleted or we received the change that caused the filter mismatch), the new document can be
+   * provided to update the remote document cache.
    */
   private void removeDocumentFromTarget(
       int targetId, DocumentKey key, @Nullable MutableDocument updatedDocument) {
@@ -499,8 +499,8 @@ public class WatchChangeAggregator {
   }
 
   /**
-   * Returns the TargetData for an active target (i.e. a target that the user is still interested in
-   * that has no outstanding target change requests).
+   * Returns the TargetData for an active target (specifically, a target that the user is still
+   * interested in that has no outstanding target change requests).
    */
   @Nullable
   private TargetData queryDataForActiveTarget(int targetId) {
@@ -511,8 +511,8 @@ public class WatchChangeAggregator {
   }
 
   /**
-   * Resets the state of a Watch target to its initial state (e.g. sets 'current' to false, clears
-   * the resume token and removes its target mapping from all documents).
+   * Resets the state of a Watch target to its initial state (sets 'current' to false, clears the
+   * resume token and removes its target mapping from all documents).
    */
   private void resetTarget(int targetId) {
     hardAssert(

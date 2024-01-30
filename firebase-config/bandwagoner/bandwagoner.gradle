@@ -22,6 +22,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 // apply plugin: 'com.google.gms.google-services'
 
 android {
+    namespace "com.googletest.firebase.remoteconfig.bandwagoner"
     compileSdkVersion project.targetSdkVersion
     lintOptions {
         abortOnError false
@@ -59,24 +60,36 @@ android {
 }
 
 firebaseTestLab {
-    device 'model=Pixel2,version=28,locale=en,orientation=portrait'
+    device 'model=panther,version=33,locale=en,orientation=portrait'
 }
 
 dependencies {
     // Depend on development artifacts for Remote Config.
-    implementation project(":firebase-config")
-    implementation project(":firebase-config:ktx")
+    implementation(project(":firebase-config")) {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+    implementation(project(":firebase-config:ktx")) {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
 
     // This is required since a `project` dependency on frc does not expose the APIs of its
     // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
     // Released artifacts don't need these dependencies since they don't use `project` to refer
     // to Remote Config.
-    implementation "com.google.firebase:firebase-common:20.3.2"
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.2'
-    implementation "com.google.firebase:firebase-components:17.1.0"
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
 
-    implementation project(":firebase-installations-interop")
-    runtimeOnly project(":firebase-installations")
+    implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+    implementation(project(":firebase-installations")) {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
 
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'

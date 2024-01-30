@@ -42,8 +42,8 @@ public interface Document {
   SnapshotVersion getReadTime();
 
   /**
-   * Returns whether this document is valid (i.e. it is an entry in the RemoteDocumentCache, was
-   * created by a mutation or read from the backend).
+   * Returns whether this document is valid (specifically, it is an entry in the
+   * RemoteDocumentCache, was created by a mutation or read from the backend).
    */
   boolean isValidDocument();
 

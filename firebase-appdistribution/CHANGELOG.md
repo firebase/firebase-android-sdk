@@ -1,6 +1,10 @@
 # Unreleased
-* [feature] Improved development mode to allow all API calls to be made without having to sign in.
+
+# 16.0.0-beta10
 * [fixed] Updated the third-party license file to include Dagger's license.
+
+# 16.0.0-beta09
+* [feature] Improved development mode to allow all API calls to be made without having to sign in.
 
 # 16.0.0-beta08
 * [fixed] Fixed an issue where a crash happened whenever a feedback

@@ -14,12 +14,12 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
     libraryGroup "messaging"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
@@ -42,16 +42,12 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation project(':firebase-messaging')
-    implementation "com.google.android.gms:play-services-basement:18.1.0"
-
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    api(project(":firebase-messaging"))
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

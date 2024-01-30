@@ -7,7 +7,7 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -17,10 +17,10 @@ jobs:
           java-version: 11
           distribution: temurin
           cache: gradle
-      - uses: google-github-actions/auth@v0
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
 
       # TODO(yifany): make it a fireci plugin and remove the separately distributed jar file
       - name: Download smoke tests runner

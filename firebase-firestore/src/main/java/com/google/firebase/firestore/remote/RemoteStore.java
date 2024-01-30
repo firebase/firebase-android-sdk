@@ -565,7 +565,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
         // Mark the query we send as being on behalf of an existence filter  mismatch, but don't
         // actually retain that in listenTargets. This ensures that we flag the first re-listen this
-        // way without impacting future listens of this target (that might happen e.g. on
+        // way without impacting future listens of this target (that might happen for example on
         // reconnect).
         TargetData requestTargetData =
             new TargetData(
@@ -624,7 +624,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   /**
-   * Returns true if we can add to the write pipeline (i.e. it is not full and the network is
+   * Returns true if we can add to the write pipeline (because it is not full and the network is
    * enabled).
    */
   private boolean canAddToWritePipeline() {
