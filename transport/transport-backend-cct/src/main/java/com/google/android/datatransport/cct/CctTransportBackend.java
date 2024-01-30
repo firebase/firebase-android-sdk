@@ -29,6 +29,9 @@ import com.google.android.datatransport.backend.cct.BuildConfig;
 import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.android.datatransport.cct.internal.ClientInfo;
+import com.google.android.datatransport.cct.internal.ComplianceData;
+import com.google.android.datatransport.cct.internal.ExternalPRequestContext;
+import com.google.android.datatransport.cct.internal.ExternalPrivacyContext;
 import com.google.android.datatransport.cct.internal.LogEvent;
 import com.google.android.datatransport.cct.internal.LogRequest;
 import com.google.android.datatransport.cct.internal.LogResponse;
@@ -133,6 +136,14 @@ final class CctTransportBackend implements TransportBackend {
     return (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
   }
 
+  private static String getMccMncOrEmpty(Context context) {
+    String value = getTelephonyManager(context).getSimOperator();
+    if (value != null) {
+      return value;
+    }
+    return "";
+  }
+
   private static int getPackageVersionCode(Context context) {
     try {
       int packageVersionCode =
@@ -165,7 +176,7 @@ final class CctTransportBackend implements TransportBackend {
         .addMetadata(KEY_MOBILE_SUBTYPE, getNetSubtypeValue(networkInfo))
         .addMetadata(KEY_COUNTRY, Locale.getDefault().getCountry())
         .addMetadata(KEY_LOCALE, Locale.getDefault().getLanguage())
-        .addMetadata(KEY_MCC_MNC, getTelephonyManager(applicationContext).getSimOperator())
+        .addMetadata(KEY_MCC_MNC, getMccMncOrEmpty(applicationContext))
         .addMetadata(
             KEY_APPLICATION_BUILD, Integer.toString(getPackageVersionCode(applicationContext)))
         .build();
@@ -271,6 +282,19 @@ final class CctTransportBackend implements TransportBackend {
 
         if (eventInternal.getCode() != null) {
           event.setEventCode(eventInternal.getCode());
+        }
+        if (eventInternal.getProductId() != null) {
+          event.setComplianceData(
+              ComplianceData.builder()
+                  .setPrivacyContext(
+                      ExternalPrivacyContext.builder()
+                          .setPrequest(
+                              ExternalPRequestContext.builder()
+                                  .setOriginAssociatedProductId(eventInternal.getProductId())
+                                  .build())
+                          .build())
+                  .setProductIdOrigin(ComplianceData.ProductIdOrigin.EVENT_OVERRIDE)
+                  .build());
         }
         logEvents.add(event.build());
       }

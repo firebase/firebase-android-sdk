@@ -1,16 +1,18 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -45,7 +47,6 @@ import org.json.JSONObject
  * @property sources a list of source roots
  * @property suppressedFiles a list of files to exclude from documentation
  * @property packageListFiles a list of files that define external package-lists for links
- * @property generateJavadocs should we generate the Javadoc variant, or just Kotlin?
  * @property clientName the name of the module
  * @property outputDirectory where to store the generated files
  */
@@ -68,8 +69,6 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
   @get:InputFiles
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val packageListFiles: ListProperty<File>
-
-  @get:Input abstract val generateJavadocs: Property<Boolean>
 
   @get:Input abstract val clientName: Property<String>
 
@@ -152,8 +151,9 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
                 JSONObject(
                     mapOf(
                       "docRootPath" to "/docs/reference/",
-                      "javaDocsPath" to "android".takeIf { generateJavadocs.get() },
+                      "javaDocsPath" to "android",
                       "kotlinDocsPath" to "kotlin",
+                      "packagePrefixToRemoveInToc" to "com.google",
                       "projectPath" to "client/${clientName.get()}",
                       "includedHeadTagsPathJava" to
                         "docs/reference/android/_reference-head-tags.html",

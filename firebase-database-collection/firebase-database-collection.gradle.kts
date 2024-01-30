@@ -25,6 +25,7 @@ android {
 
   compileSdk = targetSdkVersion
 
+  namespace = "com.google.firebase.database.collection"
   defaultConfig {
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
@@ -39,9 +40,9 @@ android {
 dependencies {
   implementation(libs.playservices.base)
 
-  testImplementation(libs.junit)
-  testImplementation(libs.quickcheck)
-
   testAnnotationProcessor("net.java:quickcheck-src-generator:0.6")
   testAnnotationProcessor("net.java.quickcheck:quickcheck-src-generator:0.6")
+
+  testImplementation(libs.junit)
+  testImplementation(libs.quickcheck)
 }

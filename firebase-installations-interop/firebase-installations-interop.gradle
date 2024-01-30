@@ -20,22 +20,23 @@ plugins {
 firebaseLibrary.publishJavadoc = false
 
 android {
-	compileSdkVersion project.targetSdkVersion
-	defaultConfig {
-		minSdkVersion project.minSdkVersion
-		targetSdkVersion project.targetSdkVersion
-		versionName version
-		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-	}
-	compileOptions {
-		sourceCompatibility JavaVersion.VERSION_1_8
-		targetCompatibility JavaVersion.VERSION_1_8
-	 }
-	 testOptions {
-	 	unitTests {
-			includeAndroidResources = true
-		}
-	}
+    namespace "com.google.firebase.installations.interop"
+    compileSdkVersion project.targetSdkVersion
+    defaultConfig {
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+        versionName version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+     }
+     testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
 }
 
 dependencies {

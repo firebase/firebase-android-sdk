@@ -25,7 +25,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
-import static org.robolectric.util.ReflectionHelpers.setStaticField;
 
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
@@ -33,12 +32,13 @@ import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.util.ReflectionHelpers;
 
 /** Unit tests for {@link ConfigResolver}. */
 @RunWith(RobolectricTestRunner.class)
@@ -176,7 +176,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.of(true));
 
     // Disable SDK version.
-    setStaticField(
+    setStaticFinalField(
         BuildConfig.class,
         /* fieldName= */ "FIREPERF_VERSION_NAME",
         /* fieldNewValue= */ "1.0.0.111111111");
@@ -204,7 +204,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.of(false));
 
     // Disable SDK version.
-    setStaticField(
+    setStaticFinalField(
         BuildConfig.class,
         /* fieldName= */ "FIREPERF_VERSION_NAME",
         /* fieldNewValue= */ "1.0.0.111111111");
@@ -303,7 +303,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.of(true));
 
     // Mock that current Fireperf SDK version is disabled.
-    setStaticField(
+    setStaticFinalField(
         BuildConfig.class,
         /* fieldName= */ "FIREPERF_VERSION_NAME",
         /* fieldNewValue= */ "1.0.0.111111111");
@@ -328,7 +328,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
     // Mock that Fireperf SDK version is disabled by FRC, but fetch status is failure.
     when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
-    setStaticField(
+    setStaticFinalField(
         BuildConfig.class,
         /* fieldName= */ "FIREPERF_VERSION_NAME",
         /* fieldNewValue= */ "1.0.0.111111111");
@@ -355,7 +355,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.absent());
 
     // Mock device caching value that includes current SDK version.
-    setStaticField(
+    setStaticFinalField(
         BuildConfig.class,
         /* fieldName= */ "FIREPERF_VERSION_NAME",
         /* fieldNewValue= */ "1.0.0.111111111");
@@ -400,7 +400,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.of(true));
     when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
 
-    setStaticField(
+    setStaticFinalField(
         BuildConfig.class,
         /* fieldName= */ "FIREPERF_VERSION_NAME",
         /* fieldNewValue= */ "1.0.0.111111111");
@@ -455,7 +455,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
     when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
         .thenReturn(Optional.absent());
-    setStaticField(
+    setStaticFinalField(
         BuildConfig.class,
         /* fieldName= */ "FIREPERF_VERSION_NAME",
         /* fieldNewValue= */ "1.0.0.111111111");
@@ -495,6 +495,83 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
         .thenReturn(Optional.of("; 1.2.0.222222222;   1.3.0.333333333"));
     assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_noDeviceCacheNoRemoteConfig_returnsFalse() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.absent());
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isFalse();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_noDeviceCacheHasRemoteConfigValueFalse_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(false));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_HasDeviceCacheNoRemoteConfigValue_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(false));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.absent());
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_HasDeviceCacheFalseHasRemoteConfigValueFalse_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(false));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(false));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_noDeviceCacheHasRemoteConfigValueTrue_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(false));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(true));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_hasDeviceCacheHasRemoteConfigValueFalse_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(true));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(false));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_hasDeviceCacheHasRemoteConfig_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(true));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(true));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
   }
 
   @Test
@@ -645,6 +722,18 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     assertThat(testConfigResolver.getSessionsCpuCaptureFrequencyForegroundMs()).isEqualTo(100L);
+  }
+
+  @Test
+  public void
+      getSessionsCpuCaptureFrequencyForegroundMs_remoteConfigFetchFailed_returnDefaultRCValue() {
+    when(mockRemoteConfigManager.getLong(SESSIONS_CPU_CAPTURE_FREQUENCY_FG_MS_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getLong(SESSIONS_CPU_CAPTURE_FREQUENCY_FG_MS_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getSessionsCpuCaptureFrequencyForegroundMs()).isEqualTo(300L);
   }
 
   @Test
@@ -1049,6 +1138,18 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     assertThat(testConfigResolver.getSessionsMemoryCaptureFrequencyForegroundMs()).isEqualTo(100L);
+  }
+
+  @Test
+  public void
+      getSessionsMemoryCaptureFrequencyForegroundMs_remoteConfigFetchFailed_returnDefaultRCValue() {
+    when(mockRemoteConfigManager.getLong(SESSIONS_MEMORY_CAPTURE_FREQUENCY_FG_MS_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getLong(SESSIONS_MEMORY_CAPTURE_FREQUENCY_FG_MS_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getSessionsMemoryCaptureFrequencyForegroundMs()).isEqualTo(300L);
   }
 
   @Test
@@ -1654,6 +1755,17 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  public void getTraceSamplingRate_remoteConfigFetchFailed_returnsRCFailureDefault() {
+    when(mockRemoteConfigManager.getDouble(TRACE_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getDouble(TRACE_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getTraceSamplingRate()).isEqualTo(1.00 / 1000);
+  }
+
+  @Test
   public void getTraceSamplingRate_noRemoteConfigHasCache_returnsCache() {
     when(mockRemoteConfigManager.getDouble(TRACE_SAMPLING_RATE_FRC_KEY))
         .thenReturn(Optional.absent());
@@ -1712,6 +1824,17 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.absent());
 
     assertThat(testConfigResolver.getNetworkRequestSamplingRate()).isEqualTo(1.00);
+  }
+
+  @Test
+  public void getNetworkRequestSamplingRate_remoteConfigFetchFailed_returnsRCFailureDefault() {
+    when(mockRemoteConfigManager.getDouble(NETWORK_REQUEST_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getDouble(NETWORK_REQUEST_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getNetworkRequestSamplingRate()).isEqualTo(1.00 / 1000);
   }
 
   @Test
@@ -1933,6 +2056,17 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
     assertThat(testConfigResolver.getSessionsSamplingRate()).isEqualTo(0.25);
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
+  }
+
+  @Test
+  public void getSessionsSamplingRate_remoteConfigFetchFailed_returnsRCFailureDefault() {
+    when(mockDeviceCacheManager.getDouble(SESSION_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.getDouble(SESSION_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getSessionsSamplingRate()).isEqualTo(0.01 / 1000);
   }
 
   @Test
@@ -2296,9 +2430,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_noRemoteConfigOrCacheValue_returnsDefaultButNotSaveCache() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
         .thenReturn(-1L);
@@ -2313,9 +2446,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_notNullCacheValue_returnsCache() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
         .thenReturn(-1L);
@@ -2329,9 +2461,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_nullCacheValue_returnsDefault() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
         .thenReturn(-1L);
@@ -2345,10 +2476,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_defaultValueIsNotFireperf_returnsNewDefault() {
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF_INTERNAL_HIGH");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF_INTERNAL_HIGH");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
         .thenReturn(-1L);
@@ -2382,9 +2511,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_getFromRemoteConfig_returnsCacheAtNextTime() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     // #1 call: valid remote config value is returned, therefore returns this value and store at
     // cache.
@@ -2411,9 +2539,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_cacheExistsAndGetNewFromRemoteConfig_cacheUpdated() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     // #1 call: valid remote config value is returned, therefore returns this value and store at
     // cache.
@@ -2440,9 +2567,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_invalidRemoteConfigData_returnsDefault() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
         .thenReturn(123L); // invalid log source.
@@ -2456,9 +2582,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void getAndCacheLogSourceName_invalidRemoteConfigData_returnsCache() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
         .thenReturn(123L); // invalid log source.
@@ -2473,9 +2598,8 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   @Test
   public void
       getAndCacheLogSourceName_bothRemoteConfigAndCacheExist_returnsAndCacheRemoteConfigData() {
-    ReflectionHelpers.setStaticField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    ReflectionHelpers.setStaticField(
-        BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
+    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
+    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
 
     when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
         .thenReturn(675L); // FIREPERF_INTERNAL_LOW.
@@ -2721,5 +2845,22 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.of(0.3));
 
     assertThat(testConfigResolver.getFragmentSamplingRate()).isEqualTo(0.3);
+  }
+
+  private static void setStaticFinalField(Class clazz, String fieldName, Object value) {
+    try {
+      Field field = clazz.getDeclaredField(fieldName);
+      if (field != null) {
+        field.setAccessible(true);
+
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+        field.set(null, value);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

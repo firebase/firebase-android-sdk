@@ -17,6 +17,7 @@ package com.google.firebase.firestore.local;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.model.FieldIndex.IndexState;
 import static com.google.firebase.firestore.model.FieldIndex.Segment.Kind;
+import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.bound;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -625,6 +626,47 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testFiltersOnTheSameField() {
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING, "b", Kind.ASCENDING));
+
+    addDoc("coll/val1", map("a", 1, "b", 1));
+    addDoc("coll/val2", map("a", 2, "b", 2));
+    addDoc("coll/val3", map("a", 3, "b", 3));
+    addDoc("coll/val4", map("a", 4, "b", 4));
+
+    Query query = query("coll").filter(filter("a", ">", 1)).filter(filter("a", "==", 2));
+    verifyResults(query, "coll/val2");
+
+    query = query("coll").filter(filter("a", "<=", 1)).filter(filter("a", "==", 2));
+    verifyResults(query);
+
+    query =
+        query("coll")
+            .filter(filter("a", ">", 1))
+            .filter(filter("a", "==", 2))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME));
+    verifyResults(query, "coll/val2");
+
+    query =
+        query("coll")
+            .filter(filter("a", ">", 1))
+            .filter(filter("a", "==", 2))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME, "desc"));
+    verifyResults(query, "coll/val2");
+
+    query =
+        query("coll")
+            .filter(filter("a", ">", 1))
+            .filter(filter("a", "==", 3))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"));
+    verifyResults(query, "coll/val3");
+  }
+
+  @Test
   public void testAdvancedQueries() {
     // This test compares local query results with those received from the Java Server SDK.
 
@@ -1146,6 +1188,49 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
     Query query11 =
         query("coll").filter(orFilters(filter("a", ">", 1), filter("b", "==", 1))).limitToLast(2);
     validateIndexType(query11, IndexManager.IndexType.PARTIAL);
+  }
+
+  @Test
+  public void TestCreateTargetIndexesCreatesFullIndexesForEachSubTarget() {
+    Query query =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 1), filter("b", "==", 2), filter("c", "==", 3)));
+
+    Query subQuery1 = query("coll").filter(filter("a", "==", 1));
+    Query subQuery2 = query("coll").filter(filter("b", "==", 2));
+    Query subQuery3 = query("coll").filter(filter("c", "==", 3));
+
+    validateIndexType(query, IndexManager.IndexType.NONE);
+    validateIndexType(subQuery1, IndexManager.IndexType.NONE);
+    validateIndexType(subQuery2, IndexManager.IndexType.NONE);
+    validateIndexType(subQuery3, IndexManager.IndexType.NONE);
+
+    indexManager.createTargetIndexes(query.toTarget());
+
+    validateIndexType(query, IndexManager.IndexType.FULL);
+    validateIndexType(subQuery1, IndexManager.IndexType.FULL);
+    validateIndexType(subQuery2, IndexManager.IndexType.FULL);
+    validateIndexType(subQuery3, IndexManager.IndexType.FULL);
+  }
+
+  @Test
+  public void TestCreateTargetIndexesUpgradesPartialIndexToFullIndex() {
+    Query query = query("coll").filter(andFilters(filter("a", "==", 1), filter("b", "==", 2)));
+
+    Query subQuery1 = query("coll").filter(filter("a", "==", 1));
+    Query subQuery2 = query("coll").filter(filter("b", "==", 2));
+
+    indexManager.createTargetIndexes(subQuery1.toTarget());
+
+    validateIndexType(query, IndexManager.IndexType.PARTIAL);
+    validateIndexType(subQuery1, IndexManager.IndexType.FULL);
+    validateIndexType(subQuery2, IndexManager.IndexType.NONE);
+
+    indexManager.createTargetIndexes(query.toTarget());
+
+    validateIndexType(query, IndexManager.IndexType.FULL);
+    validateIndexType(subQuery1, IndexManager.IndexType.FULL);
+    validateIndexType(subQuery2, IndexManager.IndexType.NONE);
   }
 
   private void validateIndexType(Query query, IndexManager.IndexType expected) {

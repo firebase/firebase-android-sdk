@@ -24,9 +24,10 @@ import androidx.annotation.Nullable;
  * <p>To use, create an instance using {@link MemoryCacheSettings#newBuilder().build()}, then set
  * the instance to {@link
  * FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)}, and use the built
- * `FirebaseFirestoreSettings` instance to configure Firestore SDK.
+ * {@code FirebaseFirestoreSettings} instance to configure the Firestore SDK.
  */
 public final class MemoryCacheSettings implements LocalCacheSettings {
+  private MemoryGarbageCollectorSettings gcSettings;
 
   /** Returns a new instance of {@link MemoryCacheSettings.Builder} with default configurations. */
   @NonNull
@@ -34,11 +35,13 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
     return new MemoryCacheSettings.Builder();
   }
 
-  private MemoryCacheSettings() {}
+  private MemoryCacheSettings(MemoryGarbageCollectorSettings settings) {
+    gcSettings = settings;
+  }
 
   @Override
   public int hashCode() {
-    return super.hashCode();
+    return gcSettings.hashCode();
   }
 
   @Override
@@ -46,23 +49,38 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
 
-    return true;
+    return getGarbageCollectorSettings()
+        .equals(((MemoryCacheSettings) obj).getGarbageCollectorSettings());
   }
 
   @Override
   public String toString() {
-    return "MemoryCacheSettings{}";
+    return "MemoryCacheSettings{gcSettings=" + getGarbageCollectorSettings() + "}";
+  }
+
+  /** Returns the {@link MemoryGarbageCollectorSettings} object used to configure the SDK cache. */
+  @NonNull
+  public MemoryGarbageCollectorSettings getGarbageCollectorSettings() {
+    return gcSettings;
   }
 
   /** A Builder for creating {@code MemoryCacheSettings} instance. */
   public static class Builder {
+    private MemoryGarbageCollectorSettings gcSettings = MemoryEagerGcSettings.newBuilder().build();
 
     private Builder() {}
 
     /** Creates a {@code MemoryCacheSettings} instance. */
     @NonNull
     public MemoryCacheSettings build() {
-      return new MemoryCacheSettings();
+      return new MemoryCacheSettings(gcSettings);
+    }
+
+    /** Uses the given garbage collector settings to configure memory cache. */
+    @NonNull
+    public Builder setGcSettings(@NonNull MemoryGarbageCollectorSettings gcSettings) {
+      this.gcSettings = gcSettings;
+      return this;
     }
   }
 }

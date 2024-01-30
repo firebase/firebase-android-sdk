@@ -26,6 +26,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.appcheck.playintegrity"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
@@ -43,19 +44,23 @@ android {
 
 dependencies {
     implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-common:20.4.2'
+    implementation 'com.google.firebase:firebase-common-ktx:20.4.2'
+    implementation 'com.google.firebase:firebase-components:17.1.5'
     implementation project(':appcheck:firebase-appcheck')
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.android.play:integrity:1.0.1'
+    implementation 'com.google.android.play:integrity:1.2.0'
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
-    testImplementation project(':integ-testing')
+    testImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.6'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'androidx.test:core:1.4.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

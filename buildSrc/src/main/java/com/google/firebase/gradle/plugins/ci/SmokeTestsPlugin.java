@@ -15,6 +15,7 @@
 package com.google.firebase.gradle.plugins.ci;
 
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
+import com.google.firebase.gradle.plugins.PublishingPlugin;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -60,7 +61,7 @@ public class SmokeTestsPlugin implements Plugin<Project> {
                     String groupId = firebaseLibrary.groupId.get();
                     String artifactId = firebaseLibrary.artifactId.get();
                     String artifact =
-                        String.format("%s:%s:%s-SNAPSHOT", groupId, artifactId, sub.getVersion());
+                        String.format("%s:%s:%s", groupId, artifactId, sub.getVersion());
                     allArtifacts.add(artifact);
 
                     if (changedProjects.contains(sub)) {
@@ -69,8 +70,7 @@ public class SmokeTestsPlugin implements Plugin<Project> {
                   });
 
               // Reuse the publish task for building the libraries.
-              Task publishAllTask = project.getTasks().getByPath("publishAllToBuildDir");
-              assembleAllTask.dependsOn(publishAllTask);
+              assembleAllTask.dependsOn(PublishingPlugin.PUBLISH_ALL_TO_BUILD_TASK);
 
               // Generate a JSON file listing the artifacts after everything is complete.
               assembleAllTask.doLast(

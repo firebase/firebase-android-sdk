@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
@@ -34,6 +34,8 @@ public class FirebaseContextProviderTest {
   private static final String AUTH_TOKEN = "authToken";
   private static final String IID_TOKEN = "iidToken";
   private static final String APP_CHECK_TOKEN = "appCheckToken";
+
+  private static final String APP_CHECK_LIMITED_USE_TOKEN = "appCheckLimitedUseToken";
   private static final String ERROR = "errorString";
 
   private static final InternalAuthProvider fixedAuthProvider =
@@ -45,10 +47,10 @@ public class FirebaseContextProviderTest {
           });
   private static final FirebaseInstanceIdInternal fixedIidProvider =
       new TestFirebaseInstanceIdInternal(IID_TOKEN);
-  private static final InternalAppCheckTokenProvider fixedAppCheckProvider =
-      new TestInternalAppCheckTokenProvider(APP_CHECK_TOKEN);
-  private static final InternalAppCheckTokenProvider errorAppCheckProvider =
-      new TestInternalAppCheckTokenProvider(APP_CHECK_TOKEN, ERROR);
+  private static final InteropAppCheckTokenProvider fixedAppCheckProvider =
+      new TestInteropAppCheckTokenProvider(APP_CHECK_TOKEN, APP_CHECK_LIMITED_USE_TOKEN);
+  private static final InteropAppCheckTokenProvider errorAppCheckProvider =
+      new TestInteropAppCheckTokenProvider(APP_CHECK_TOKEN, APP_CHECK_LIMITED_USE_TOKEN, ERROR);
 
   @Test
   public void getContext_whenAuthAndAppCheckAreNotAvailable_shouldContainOnlyIid()
@@ -60,7 +62,7 @@ public class FirebaseContextProviderTest {
             absentDeferred(),
             TestOnlyExecutors.lite());
 
-    HttpsCallableContext context = Tasks.await(contextProvider.getContext());
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(false));
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getAppCheckToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
@@ -76,7 +78,7 @@ public class FirebaseContextProviderTest {
             absentDeferred(),
             TestOnlyExecutors.lite());
 
-    HttpsCallableContext context = Tasks.await(contextProvider.getContext());
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(false));
     assertThat(context.getAuthToken()).isEqualTo(AUTH_TOKEN);
     assertThat(context.getAppCheckToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
@@ -92,7 +94,7 @@ public class FirebaseContextProviderTest {
             deferredOf(fixedAppCheckProvider),
             TestOnlyExecutors.lite());
 
-    HttpsCallableContext context = Tasks.await(contextProvider.getContext());
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(false));
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_TOKEN);
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
@@ -108,7 +110,7 @@ public class FirebaseContextProviderTest {
             absentDeferred(),
             TestOnlyExecutors.lite());
 
-    HttpsCallableContext context = Tasks.await(contextProvider.getContext());
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(false));
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getAppCheckToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
@@ -124,10 +126,42 @@ public class FirebaseContextProviderTest {
             deferredOf(errorAppCheckProvider),
             TestOnlyExecutors.lite());
 
-    HttpsCallableContext context = Tasks.await(contextProvider.getContext());
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(false));
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
     assertThat(context.getAppCheckToken()).isNull();
+  }
+
+  @Test
+  public void getContext_facLimitedUse_whenOnlyAppCheckIsAvailableAndHasError_shouldContainOnlyIid()
+      throws ExecutionException, InterruptedException {
+    FirebaseContextProvider contextProvider =
+        new FirebaseContextProvider(
+            absentProvider(),
+            providerOf(fixedIidProvider),
+            deferredOf(errorAppCheckProvider),
+            TestOnlyExecutors.lite());
+
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(true));
+    assertThat(context.getAuthToken()).isNull();
+    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getAppCheckToken()).isNull();
+  }
+
+  @Test
+  public void getContext_facLimitedUse_whenOnlyAppCheckIsAvailable_shouldContainToken()
+      throws ExecutionException, InterruptedException {
+    FirebaseContextProvider contextProvider =
+        new FirebaseContextProvider(
+            absentProvider(),
+            providerOf(fixedIidProvider),
+            deferredOf(fixedAppCheckProvider),
+            TestOnlyExecutors.lite());
+
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(true));
+    assertThat(context.getAuthToken()).isNull();
+    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_LIMITED_USE_TOKEN);
   }
 
   @Test
@@ -140,7 +174,7 @@ public class FirebaseContextProviderTest {
             deferredOf(fixedAppCheckProvider),
             TestOnlyExecutors.lite());
 
-    HttpsCallableContext context = Tasks.await(contextProvider.getContext());
+    HttpsCallableContext context = Tasks.await(contextProvider.getContext(false));
     assertThat(context.getAuthToken()).isEqualTo(AUTH_TOKEN);
     assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_TOKEN);
     assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);

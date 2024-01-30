@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
-import com.google.firebase.gradle.MultiProjectReleasePlugin
-
 buildscript {
     // TODO: remove once all sdks have migrated to version catalog
     ext.kotlinVersion = libs.versions.kotlin.get()
@@ -36,12 +33,13 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.14'
+        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.4'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.3.0'
         classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9'
         classpath 'com.google.gms:google-services:4.3.15'
         classpath "com.ncorti.ktfmt.gradle:plugin:0.11.0"
         classpath 'com.google.firebase:firebase-appdistribution-gradle:3.0.2'
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.5'
     }
 }
 
@@ -53,16 +51,17 @@ ext {
     googleTruthVersion = libs.versions.truth.get()
     grpcVersion = libs.versions.grpc.get()
     robolectricVersion = libs.versions.robolectric.get()
+    androidxTestCoreVersion = libs.versions.androidx.test.core.get()
+    androidxTestJUnitVersion = libs.versions.androidx.test.junit.get()
     protocVersion = libs.versions.protoc.get()
     javaliteVersion = libs.versions.javalite.get()
     protobufJavaUtilVersion = libs.versions.protobufjavautil.get()
 }
 
-apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
+apply plugin: com.google.firebase.gradle.plugins.PublishingPlugin
+
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
-
-apply plugin: MultiProjectReleasePlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [

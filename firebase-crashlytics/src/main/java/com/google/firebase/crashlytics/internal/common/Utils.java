@@ -19,6 +19,7 @@ import android.os.Looper;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
@@ -135,6 +136,7 @@ public final class Utils {
   }
 
   /** Invokes latch.await(timeout, unit) uninterruptibly. */
+  @CanIgnoreReturnValue
   public static boolean awaitUninterruptibly(CountDownLatch latch, long timeout, TimeUnit unit) {
     boolean interrupted = false;
     try {

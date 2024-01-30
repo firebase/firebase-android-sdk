@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
 
 import android.content.Context;
@@ -224,9 +225,10 @@ public class Datastore {
   public Task<Map<String, Value>> runAggregateQuery(
       Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
-        serializer.encodeQueryTarget(query.toTarget());
+        serializer.encodeQueryTarget(query.toAggregateTarget());
+    HashMap<String, String> aliasMap = new HashMap<>();
     StructuredAggregationQuery structuredAggregationQuery =
-        serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields);
+        serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields, aliasMap);
 
     RunAggregationQueryRequest.Builder request = RunAggregationQueryRequest.newBuilder();
     request.setParent(encodedQueryTarget.getParent());
@@ -246,8 +248,20 @@ public class Datastore {
                 throw task.getException();
               }
 
+              Map<String, Value> result = new HashMap<>();
               RunAggregationQueryResponse response = task.getResult();
-              return response.getResult().getAggregateFieldsMap();
+
+              // Remap the short-form aliases that were sent to the server to the client-side
+              // aliases. Users will access the results using the client-side alias.
+              for (Map.Entry<String, Value> entry :
+                  response.getResult().getAggregateFieldsMap().entrySet()) {
+                hardAssert(
+                    aliasMap.containsKey(entry.getKey()),
+                    "%s not present in aliasMap",
+                    entry.getKey());
+                result.put(aliasMap.get(entry.getKey()), entry.getValue());
+              }
+              return result;
             });
   }
 
@@ -330,8 +344,8 @@ public class Datastore {
    * write stream should be retried too (even though ABORTED errors are not generally retryable).
    *
    * <p>Note that during the initial handshake on the write stream an ABORTED error signals that we
-   * should discard our stream token (i.e. it is permanent). This means a handshake error should be
-   * classified with isPermanentError, above.
+   * should discard our stream token (because it is permanent). This means a handshake error should
+   * be classified with isPermanentError, above.
    */
   public static boolean isPermanentWriteError(Status status) {
     return isPermanentError(status) && !status.getCode().equals(Status.Code.ABORTED);

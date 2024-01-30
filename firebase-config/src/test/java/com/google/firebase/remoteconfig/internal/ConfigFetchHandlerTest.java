@@ -23,6 +23,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentD
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.VARIANT_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ENTRIES;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.ROLLOUT_METADATA;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.BACKOFF_TIME_DURATIONS_IN_MINUTES;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
@@ -482,6 +483,31 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
+  public void fetch_hasRolloutMetadata_storesMetadata() throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder(firstFetchedContainer)
+            .withRolloutMetadata(rolloutsMetadata)
+            .build();
+    ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
+
+    fetchCallToHttpClientUpdatesClockAndReturnsConfig(configContainer);
+    fetchHandler.fetch();
+
+    verify(mockFetchedCache).put(captor.capture());
+    JSONAssert.assertEquals(configContainer.toString(), captor.getValue().toString(), false);
+  }
+
+  @Test
   public void fetch_getsThrottledResponseFromServer_backsOffOnSecondCall() throws Exception {
     fetchCallToBackendThrowsException(HTTP_TOO_MANY_REQUESTS);
     long backoffDurationInMillis = loadAndGetNextBackoffDuration(/*numFailedFetches=*/ 1);
@@ -764,12 +790,14 @@ public class ConfigFetchHandlerTest {
     }
 
     JSONArray experiments = container.getAbtExperiments();
+    JSONArray rolloutMetadata = container.getRolloutMetadata();
 
     doReturn(
             toFetchResponse(
                 "UPDATE",
                 new JSONObject(configEntries),
                 experiments,
+                rolloutMetadata,
                 responseETag,
                 container.getFetchTime()))
         .when(mockBackendFetchApiClient)
@@ -1019,12 +1047,18 @@ public class ConfigFetchHandlerTest {
   }
 
   private static FetchResponse toFetchResponse(
-      String status, JSONObject entries, JSONArray experiments, String eTag, Date currentTime)
+      String status,
+      JSONObject entries,
+      JSONArray experiments,
+      JSONArray rolloutMetadata,
+      String eTag,
+      Date currentTime)
       throws Exception {
     JSONObject fetchResponse = new JSONObject();
     fetchResponse.put(STATE, status);
     fetchResponse.put(ENTRIES, entries);
     fetchResponse.put(EXPERIMENT_DESCRIPTIONS, experiments);
+    fetchResponse.put(ROLLOUT_METADATA, rolloutMetadata);
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, eTag);
   }
@@ -1039,6 +1073,9 @@ public class ConfigFetchHandlerTest {
 
     JSONArray experimentDescriptions = fetchResponse.getJSONArray(EXPERIMENT_DESCRIPTIONS);
     containerBuilder = containerBuilder.withAbtExperiments(experimentDescriptions);
+
+    JSONArray rolloutMetadata = fetchResponse.getJSONArray(ROLLOUT_METADATA);
+    containerBuilder = containerBuilder.withRolloutMetadata(rolloutMetadata);
 
     return containerBuilder.build();
   }

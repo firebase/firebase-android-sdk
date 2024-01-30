@@ -13,14 +13,13 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.ml.modeldownloader">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.INTERNET" />
   <application>
     <service
         android:name="com.google.firebase.components.ComponentDiscoveryService"
-        android:exported="false">
+        android:exported="false"> <meta-data android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/>
       <meta-data
           android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.FirebaseModelDownloaderRegistrar"
           android:value="com.google.firebase.components.ComponentRegistrar" />

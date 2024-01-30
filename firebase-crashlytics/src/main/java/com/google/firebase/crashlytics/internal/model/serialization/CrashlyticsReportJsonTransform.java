@@ -22,12 +22,12 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CrashlyticsReportJsonTransform {
@@ -102,6 +102,12 @@ public class CrashlyticsReportJsonTransform {
         case "installationUuid":
           builder.setInstallationUuid(jsonReader.nextString());
           break;
+        case "firebaseInstallationId":
+          builder.setFirebaseInstallationId(jsonReader.nextString());
+          break;
+        case "appQualitySessionId":
+          builder.setAppQualitySessionId(jsonReader.nextString());
+          break;
         case "buildVersion":
           builder.setBuildVersion(jsonReader.nextString());
           break;
@@ -141,6 +147,9 @@ public class CrashlyticsReportJsonTransform {
         case "identifier":
           builder.setIdentifierFromUtf8Bytes(
               Base64.decode(jsonReader.nextString(), Base64.NO_WRAP));
+          break;
+        case "appQualitySessionId":
+          builder.setAppQualitySessionId(jsonReader.nextString());
           break;
         case "startedAt":
           builder.setStartedAt(jsonReader.nextLong());
@@ -285,13 +294,10 @@ public class CrashlyticsReportJsonTransform {
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String name = jsonReader.nextName();
-      switch (name) {
-        case "identifier":
-          builder.setIdentifier(jsonReader.nextString());
-          break;
-        default:
-          jsonReader.skipValue();
-          break;
+      if (name.equals("identifier")) {
+        builder.setIdentifier(jsonReader.nextString());
+      } else {
+        jsonReader.skipValue();
       }
     }
     jsonReader.endObject();
@@ -439,6 +445,9 @@ public class CrashlyticsReportJsonTransform {
         case "log":
           builder.setLog(parseEventLog(jsonReader));
           break;
+        case "rollouts":
+          builder.setRollouts(parseEventRolloutsState(jsonReader));
+          break;
         default:
           jsonReader.skipValue();
           break;
@@ -474,12 +483,50 @@ public class CrashlyticsReportJsonTransform {
           builder.setInternalKeys(
               parseArray(jsonReader, CrashlyticsReportJsonTransform::parseCustomAttribute));
           break;
+        case "currentProcessDetails":
+          builder.setCurrentProcessDetails(parseProcessDetails(jsonReader));
+          break;
+        case "appProcessDetails":
+          builder.setAppProcessDetails(
+              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseProcessDetails));
+          break;
         default:
           jsonReader.skipValue();
           break;
       }
     }
     jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.Application.ProcessDetails parseProcessDetails(
+      @NonNull JsonReader jsonReader) throws IOException {
+    Event.Application.ProcessDetails.Builder builder = Event.Application.ProcessDetails.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "processName":
+          builder.setProcessName(jsonReader.nextString());
+          break;
+        case "pid":
+          builder.setPid(jsonReader.nextInt());
+          break;
+        case "importance":
+          builder.setImportance(jsonReader.nextInt());
+          break;
+        case "defaultProcess":
+          builder.setDefaultProcess(jsonReader.nextBoolean());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+
     return builder.build();
   }
 
@@ -717,9 +764,83 @@ public class CrashlyticsReportJsonTransform {
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String name = jsonReader.nextName();
+      if (name.equals("content")) {
+        builder.setContent(jsonReader.nextString());
+      } else {
+        jsonReader.skipValue();
+      }
+    }
+    jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.RolloutsState parseEventRolloutsState(@NonNull JsonReader jsonReader)
+      throws IOException {
+    Event.RolloutsState.Builder builder = Event.RolloutsState.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
       switch (name) {
-        case "content":
-          builder.setContent(jsonReader.nextString());
+        case "assignments":
+          builder.setRolloutAssignments(
+              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseEventRolloutsAssignment));
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.RolloutAssignment parseEventRolloutsAssignment(
+      @NonNull JsonReader jsonReader) throws IOException {
+    Event.RolloutAssignment.Builder builder = Event.RolloutAssignment.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "rolloutVariant":
+          builder.setRolloutVariant(parseRolloutAssignmentRolloutVariant(jsonReader));
+          break;
+        case "parameterKey":
+          builder.setParameterKey(jsonReader.nextString());
+          break;
+        case "parameterValue":
+          builder.setParameterValue(jsonReader.nextString());
+          break;
+        case "templateVersion":
+          builder.setTemplateVersion(jsonReader.nextLong());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.RolloutAssignment.RolloutVariant parseRolloutAssignmentRolloutVariant(
+      @NonNull JsonReader jsonReader) throws IOException {
+    Event.RolloutAssignment.RolloutVariant.Builder builder =
+        Event.RolloutAssignment.RolloutVariant.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "rolloutId":
+          builder.setRolloutId(jsonReader.nextString());
+          break;
+        case "variantId":
+          builder.setVariantId(jsonReader.nextString());
           break;
         default:
           jsonReader.skipValue();
@@ -782,7 +903,7 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
-  private static <T> ImmutableList<T> parseArray(
+  private static <T> List<T> parseArray(
       @NonNull JsonReader jsonReader, @NonNull ObjectParser<T> objectParser) throws IOException {
     final List<T> objects = new ArrayList<>();
 
@@ -792,7 +913,7 @@ public class CrashlyticsReportJsonTransform {
     }
     jsonReader.endArray();
 
-    return ImmutableList.from(objects);
+    return Collections.unmodifiableList(objects);
   }
 
   private interface ObjectParser<T> {

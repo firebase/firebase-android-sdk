@@ -14,17 +14,18 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
     libraryGroup "ml-modeldownloader"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
     testLab.enabled = false
 }
 
 android {
+    namespace "com.google.firebase.ml.modeldownloader.ktx"    
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -41,17 +42,14 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation project(':firebase-ml-modeldownloader')
-
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.13.2'
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    api(project(":firebase-ml-modeldownloader"))
+    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:3.6.0'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'androidx.test:runner:1.5.1'
-    testImplementation 'androidx.test.ext:junit:1.1.4'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:3.6.0'
 }

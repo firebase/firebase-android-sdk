@@ -12,15 +12,13 @@
 <!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.google.firebase.ml.modeldownloader.ktx">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <application>
         <service android:exported="false"
             android:name="com.google.firebase.components.ComponentDiscoveryService">
             <meta-data
-                android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.ktx.FirebaseMlModelDownloaderKtxRegistrar"
+                android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.ktx.FirebaseMlModeldownloaderLegacyRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>
 </manifest>
-

@@ -14,7 +14,13 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
+import static com.google.firebase.firestore.testutil.TestUtil.expectError;
+import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static org.junit.Assert.assertEquals;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -101,4 +107,91 @@ public class IndexingTest {
                     + "  \"fieldOverrides\": []\n"
                     + "}"));
   }
+
+  /**
+   * After Auto Index Creation is enabled, through public API there is no way to state of indexes
+   * sitting inside SDK. So this test only checks the API of auto index creation.
+   */
+  @Test
+  public void testAutoIndexCreationSetSuccessfully() {
+    // Use persistent disk cache (explicit)
+    FirebaseFirestore db = testFirestore();
+    FirebaseFirestoreSettings settings =
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db.setFirestoreSettings(settings);
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("match", true),
+                "b", map("match", false),
+                "c", map("match", false)));
+    QuerySnapshot results = waitFor(collection.whereEqualTo("match", true).get());
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
+  }
+
+  /**
+   * After Auto Index Creation is enabled, through public API there is no way to state of indexes
+   * sitting inside SDK. So this test only checks the API of auto index creation.
+   */
+  @Test
+  public void testAutoIndexCreationSetSuccessfullyUsingDefault() {
+    // Use persistent disk cache (default)
+    FirebaseFirestore db = testFirestore();
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("match", true),
+                "b", map("match", false),
+                "c", map("match", false)));
+    QuerySnapshot results = waitFor(collection.whereEqualTo("match", true).get());
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
+  }
+
+  @Test
+  public void testAutoIndexCreationAfterFailsTermination() {
+    FirebaseFirestore db = testFirestore();
+    waitFor(db.terminate());
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().enableIndexAutoCreation(),
+        "The client has already been terminated");
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().disableIndexAutoCreation(),
+        "The client has already been terminated");
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().deleteAllIndexes(),
+        "The client has already been terminated");
+  }
+
+  // TODO(b/296100693) Add testing hooks to verify indexes are created as expected.
 }

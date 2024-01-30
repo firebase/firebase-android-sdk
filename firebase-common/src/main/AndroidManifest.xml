@@ -14,8 +14,7 @@
 <!-- limitations under the License. -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.google.firebase">
+    xmlns:tools="http://schemas.android.com/tools">
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
     <!--<uses-sdk android:minSdkVersion="14"/>-->
     <application>
@@ -30,6 +29,6 @@
             android:name="com.google.firebase.components.ComponentDiscoveryService"
             android:directBootAware="true"
             android:exported="false"
-            tools:targetApi="n" />
+            tools:targetApi="n" > <meta-data android:name="com.google.firebase.components:com.google.firebase.FirebaseCommonKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/> </service>
     </application>
 </manifest>

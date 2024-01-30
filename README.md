@@ -1,37 +1,7 @@
 # Firebase Android Open Source Development
 
-This repository contains a subset of the Firebase Android SDK source. It
-currently includes the following Firebase libraries, and some of their
-dependencies:
-
-  * `firebase-abt`
-  * `firebase-appdistribution`
-  * `firebase-common`
-  * `firebase-common-ktx`
-  * `firebase-crashlytics`
-  * `firebase-crashlytics-ktx`
-  * `firebase-crashlytics-ndk`
-  * `firebase-database`
-  * `firebase-database-ktx`
-  * `firebase-database-collection`
-  * `firebase-datatransport`
-  * `firebase-firestore`
-  * `firebase-firestore-ktx`
-  * `firebase-functions`
-  * `firebase-functions-ktx`
-  * `firebase-inappmessaging`
-  * `firebase-inappmessaging-ktx`
-  * `firebase-inappmessaging-display`
-  * `firebase-inappmessaging-display-ktx`
-  * `firebase-messaging`
-  * `firebase-messaging-directboot`
-  * `firebase-perf`
-  * `firebase-perf-ktx`
-  * `firebase-remote-config`
-  * `firebase-remote-config-ktx`
-  * `firebase-storage`
-  * `firebase-storage-ktx`
-
+This repository contains the source code for all Android Firebase SDKs except
+Analytics and Auth.
 
 Firebase is an app development platform with tools to help you build, grow and
 monetize your app. More information about Firebase can be found at
@@ -65,7 +35,7 @@ https://firebase.google.com.
 * Import the firebase-android-sdk gradle project into Android Studio using the
   **Import project(Gradle, Eclipse ADT, etc.)** option.
 * `firebase-crashlytics-ndk` must be built with NDK 21. See
-  [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more 
+  [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more
   details.
 
 ## Testing
@@ -143,7 +113,7 @@ Integration tests can be executed on the command line by running
 ```
 
 This will execute tests on devices that are configured per project, if nothing is configured for the
-project, the tests will run on `model=Pixel2,version=27,locale=en,orientation=portrait`.
+project, the tests will run on `model=panther,version=33,locale=en,orientation=portrait`.
 
 Projects can be configured in the following way:
 
@@ -225,29 +195,20 @@ strategy](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.Resolutio
 
 ### Commands
 
-The simplest way to publish a project and all its associated dependencies is to
-just publish all projects. The following command builds SNAPSHOT dependencies of
-all projects. All pom level dependencies within the published artifacts will
-also point to SNAPSHOT versions that are co-published.
-
-```bash
-./gradlew publishAllToLocal
-```
-
-Developers may take a dependency on these locally published versions by adding
-the `mavenLocal()` repository to your [repositories
-block](https://docs.gradle.org/current/userguide/declaring_repositories.html) in
-your app module's build.gradle.
-
 For more advanced use cases where developers wish to make changes to a project,
 but have transitive dependencies point to publicly released versions, individual
 projects may be published as follows.
 
 ```bash
 # e.g. to publish Firestore and Functions
-./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
-    publishProjectsToMavenLocal
+./gradlew -PprojectsToPublish="firebase-firestore,firebase-functions" \
+    publishReleasingLibrariesToMavenLocal
 ```
+
+Developers may take a dependency on these locally published versions by adding
+the `mavenLocal()` repository to your [repositories
+block](https://docs.gradle.org/current/userguide/declaring_repositories.html) in
+your app module's build.gradle.
 
 ### Code Formatting
 
@@ -262,6 +223,11 @@ and links to additional plugins.
 To run formatting on your entire project you can run
 ```bash
 ./gradlew :<firebase-project>:googleJavaFormat
+```
+
+To auto-format, just run
+```bash
+./gradlew :<firebase-project>:gJf
 ```
 
 #### Kotlin

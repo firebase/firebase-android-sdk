@@ -121,3 +121,28 @@ public class SimpleProto {
   public byte[] toByteArray();
 }
 ```
+
+### Annotation Processing on Kotlin
+
+The default gradle `annotationProcessor` import doesn't run the processor over kotlin code, so we need to use `kapt`
+
+1. Add the plugin to your build
+
+```gradle
+plugins {
+    id 'java-library'
+    id 'com.google.protobuf'
+    id 'kotlin-kapt'
+}
+```
+
+2. Replace your `annotationProcessor` tag with `kapt`
+
+```gradle
+dependencies {
+    implementation project(":encoders:firebase-encoders")
+    implementation project(":encoders:firebase-encoders-proto")
+    // annotationProcessor project(":encoders:firebase-encoders-processor")
+    kapt project(":encoders:firebase-encoders-processor")
+}
+```

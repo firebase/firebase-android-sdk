@@ -135,6 +135,7 @@ public class SQLiteEventStore
               values.put("num_attempts", 0);
               values.put("inline", inline);
               values.put("payload", inline ? payloadBytes : new byte[0]);
+              values.put("product_id", event.getProductId());
               long newEventId = db.insert("events", null, values);
               if (!inline) {
                 int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
@@ -448,6 +449,7 @@ public class SQLiteEventStore
               "payload",
               "code",
               "inline",
+              "product_id",
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -473,6 +475,9 @@ public class SQLiteEventStore
             }
             if (!cursor.isNull(6)) {
               event.setCode(cursor.getInt(6));
+            }
+            if (!cursor.isNull(8)) {
+              event.setProductId(cursor.getInt(8));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }
@@ -680,13 +685,15 @@ public class SQLiteEventStore
                                 .build());
                   }
                   populateLogSourcesMetrics(clientMetricsBuilder, metricsMap);
-                  clientMetricsBuilder.setWindow(getTimeWindow());
-                  clientMetricsBuilder.setGlobalMetrics(getGlobalMetrics());
-                  clientMetricsBuilder.setAppNamespace(packageName.get());
-                  return clientMetricsBuilder.build();
+                  return clientMetricsBuilder
+                      .setWindow(getTimeWindow())
+                      .setGlobalMetrics(getGlobalMetrics())
+                      .setAppNamespace(packageName.get())
+                      .build();
                 }));
   }
 
+  @SuppressWarnings("CheckReturnValue")
   private void populateLogSourcesMetrics(
       ClientMetrics.Builder clientMetricsBuilder, Map<String, List<LogEventDropped>> metricsMap) {
     for (Map.Entry<String, List<LogEventDropped>> entry : metricsMap.entrySet()) {

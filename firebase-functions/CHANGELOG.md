@@ -1,9 +1,43 @@
 # Unreleased
 
 
+# 20.4.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-functions-ktx`
+  to `com.google.firebase:firebase-functions` under the `com.google.firebase.functions` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-functions-ktx` have been added to
+  `com.google.firebase:firebase-functions` under the `com.google.firebase.functions` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-functions-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.3.1
+* [changed] Added support for App Check limited-use tokens in HTTPS Callable Functions.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.3.0
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.2.2
 * [changed] Moved Task continuations off the main thread.
-
 * [changed] Internal infrastructure improvements.
 
 
@@ -51,7 +85,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.1.0
-- [feature] Added a new method
+* [feature] Added a new method
   [`getHttpsCallableFromUrl(java.net.URL)`](/docs/reference/android/com/google/firebase/functions/FirebaseFunctions#public-httpscallablereference-gethttpscallablefromurl-url-url)
   to create callables with URLs.
 
@@ -62,7 +96,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.2
-- [changed] Updated dependencies of `play-services-basement`,
+* [changed] Updated dependencies of `play-services-basement`,
   `play-services-base`, and `play-services-tasks` to their latest versions
   (v18.0.0, v18.0.1, and v18.0.1, respectively). For more information, see the
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
@@ -75,7 +109,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.1
-- [fixed] Fixed an issue that prevented functions from proceeding after
+* [fixed] Fixed an issue that prevented functions from proceeding after
   [app_check] failures.
 
 
@@ -85,8 +119,8 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.0
-- [feature] Added abuse reduction features.
-- [changed] Internal changes to support dynamic feature modules.
+* [feature] Added abuse reduction features.
+* [changed] Internal changes to support dynamic feature modules.
 
 
 ## Kotlin
@@ -107,7 +141,6 @@ updates.
 * [feature] Added support for connecting to the Firebase Emulator Suite via
   a new method,
   [`FirebaseFunctions#UseEmulator()`](/docs/reference/android/com/google/firebase/functions/FirebaseFunctions#useEmulator(java.lang.String,%20int)).
-
 * [deprecated] Deprecated the `useFunctionsEmulator(String)` method.
 
 
@@ -117,8 +150,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.0.2
-- [changed] Internal changes to ensure functionality alignment with other SDK releases.
-
+* [changed] Internal changes to ensure functionality alignment with other SDK releases.
 
 
 ## Kotlin
@@ -153,7 +185,6 @@ updates.
 # 16.3.0
 * [changed] Changed the default timeout for callable functions to 70 seconds
   ([#2329](//github.com/firebase/firebase-android-sdk/pull/224)).
-
 * [feature] Added
   [`setTimeout`](/docs/reference/android/com/google/firebase/functions/HttpsCallableReference)
   and
@@ -164,7 +195,6 @@ updates.
 # 16.1.0
 * [feature] `FirebaseFunctions.getInstance()` now allows passing in an
 optional region to override the default "us-central1".
-
 * [feature] New `useFunctionsEmulator` method allows testing against a local
 instance of the [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
 

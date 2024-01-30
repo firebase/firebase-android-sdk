@@ -33,10 +33,8 @@ import android.os.StatFs;
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -47,7 +45,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public class CommonUtils {
 
@@ -73,15 +70,6 @@ public class CommonUtils {
   static final String BUILD_IDS_BUILD_ID_RESOURCE_NAME =
       "com.google.firebase.crashlytics.build_ids_build_id";
 
-  private static final long UNCALCULATED_TOTAL_RAM = -1;
-  static final int BYTES_IN_A_GIGABYTE = 1073741824;
-  static final int BYTES_IN_A_MEGABYTE = 1048576;
-  static final int BYTES_IN_A_KILOBYTE = 1024;
-
-  // Caches the result of the total ram calculation, which is expensive, so we only want to
-  // perform it once. The value won't change over time, so it's safe to cache.
-  private static long totalRamInBytes = UNCALCULATED_TOTAL_RAM;
-
   // TODO: Maybe move this method into a more appropriate class.
   public static SharedPreferences getSharedPrefs(Context context) {
     return context.getSharedPreferences(SHARED_PREFS_NAME, Context.MODE_PRIVATE);
@@ -90,37 +78,6 @@ public class CommonUtils {
   /** Return the pre-Firebase shared prefs for Crashlytics. */
   public static SharedPreferences getLegacySharedPrefs(Context context) {
     return context.getSharedPreferences(LEGACY_SHARED_PREFS_NAME, Context.MODE_PRIVATE);
-  }
-
-  /**
-   * Utility method to open the given file and extract the field matching fieldname. Assumes each
-   * line of the file is formatted "fieldID:value" with an arbitrary amount of whitespace on both
-   * sides of the colon. Will return null if the file can't be opened or the field was not found.
-   */
-  public static String extractFieldFromSystemFile(File file, String fieldname) {
-    String toReturn = null;
-    if (file.exists()) {
-
-      BufferedReader br = null;
-      try {
-        br = new BufferedReader(new FileReader(file), 1024);
-        String line;
-        while ((line = br.readLine()) != null) {
-          final Pattern pattern = Pattern.compile("\\s*:\\s*");
-          final String[] pieces = pattern.split(line, 2);
-          if (pieces.length > 1 && pieces[0].equals(fieldname)) {
-            toReturn = pieces[1];
-
-            break;
-          }
-        }
-      } catch (Exception e) {
-        Logger.getLogger().e("Error parsing " + file, e);
-      } finally {
-        CommonUtils.closeOrLog(br, "Failed to close system file reader.");
-      }
-    }
-    return toReturn;
   }
 
   /**
@@ -173,71 +130,6 @@ public class CommonUtils {
       }
       return value;
     }
-  }
-
-  /**
-   * Returns the total ram of the device, in bytes, as read from the /proc/meminfo file. No API call
-   * exists to get this value in API level 7.
-   */
-  public static synchronized long getTotalRamInBytes() {
-    if (totalRamInBytes == UNCALCULATED_TOTAL_RAM) {
-      long bytes = 0;
-      String result = extractFieldFromSystemFile(new File("/proc/meminfo"), "MemTotal");
-
-      if (!TextUtils.isEmpty(result)) {
-        result = result.toUpperCase(Locale.US);
-
-        try {
-          if (result.endsWith("KB")) {
-            bytes = convertMemInfoToBytes(result, "KB", BYTES_IN_A_KILOBYTE);
-          } else if (result.endsWith("MB")) {
-            // It is uncertain that this notation would ever be returned, but we'll
-            // leave in this handling since we don't know for certain it isn't.
-            bytes = convertMemInfoToBytes(result, "MB", BYTES_IN_A_MEGABYTE);
-          } else if (result.endsWith("GB")) {
-            // It is uncertain that this notation would ever be returned, but we'll
-            // leave in this handling since we don't know for certain it isn't.
-            bytes = convertMemInfoToBytes(result, "GB", BYTES_IN_A_GIGABYTE);
-          } else {
-            Logger.getLogger().w("Unexpected meminfo format while computing RAM: " + result);
-          }
-        } catch (NumberFormatException e) {
-          Logger.getLogger().e("Unexpected meminfo format while computing RAM: " + result, e);
-        }
-      }
-      totalRamInBytes = bytes;
-    }
-    return totalRamInBytes;
-  }
-
-  /**
-   * Converts a meminfo value String with associated size notation into bytes by stripping the
-   * provided unit notation and applying the provided multiplier.
-   */
-  static long convertMemInfoToBytes(String memInfo, String notation, int notationMultiplier) {
-    return Long.parseLong(memInfo.split(notation)[0].trim()) * notationMultiplier;
-  }
-
-  /**
-   * Returns the RunningAppProcessInfo object for the given package, or null if it cannot be found.
-   */
-  public static ActivityManager.RunningAppProcessInfo getAppProcessInfo(
-      String packageName, Context context) {
-    final ActivityManager actman =
-        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-    final List<ActivityManager.RunningAppProcessInfo> processes = actman.getRunningAppProcesses();
-    ActivityManager.RunningAppProcessInfo procInfo = null;
-    // According to docs, the result of getRunningAppProcesses can be null instead of empty.
-    // Yay.
-    if (processes != null) {
-      for (ActivityManager.RunningAppProcessInfo info : processes) {
-        if (info.processName.equals(packageName)) {
-          procInfo = info;
-          break;
-        }
-      }
-    }
-    return procInfo;
   }
 
   public static String streamToString(InputStream is) {
@@ -309,6 +201,13 @@ public class CommonUtils {
     // SHA1 the sorted, concatenated String of slice IDs to get the instance ID, or if we have
     // no appended value, return null.
     return (concatValue.length() > 0) ? sha1(concatValue) : null;
+  }
+
+  /** Calculates the total ram of the device, in bytes. */
+  public static synchronized long calculateTotalRamInBytes(Context context) {
+    MemoryInfo mi = new MemoryInfo();
+    ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getMemoryInfo(mi);
+    return mi.totalMem;
   }
 
   /**
@@ -490,25 +389,6 @@ public class CommonUtils {
    */
   public static boolean isAppDebuggable(Context context) {
     return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-  }
-
-  /**
-   * Gets values for string properties in the strings.xml file by its name. If a key is not present,
-   * an empty String is returned.
-   *
-   * @param context {@link Context} to use when accessing resources
-   * @param key {@link String} name of the string value to look up
-   * @return {@link String} value of the specified property, or an empty string if it could not be
-   *     found.
-   */
-  public static String getStringsFileValue(Context context, String key) {
-    final int id = getResourcesIdentifier(context, key, "string");
-
-    if (id > 0) {
-      return context.getString(id);
-    }
-
-    return "";
   }
 
   /**

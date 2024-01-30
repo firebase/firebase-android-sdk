@@ -29,7 +29,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.internal.AdaptiveStreamBuffer;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
@@ -69,7 +69,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   // Active, current mutable state.
   private final AtomicLong mBytesUploaded = new AtomicLong(0);
   @Nullable private final InternalAuthProvider mAuthProvider;
-  @Nullable private final InternalAppCheckTokenProvider mAppCheckProvider;
+  @Nullable private final InteropAppCheckTokenProvider mAppCheckProvider;
   private int mCurrentChunkSize = PREFERRED_CHUNK_SIZE;
   private ExponentialBackoffSender mSender;
   private boolean mIsStreamOwned;
@@ -135,8 +135,9 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     try {
       ContentResolver resolver =
           mStorageRef.getStorage().getApp().getApplicationContext().getContentResolver();
+      ParcelFileDescriptor fd = null;
       try {
-        ParcelFileDescriptor fd = resolver.openFileDescriptor(mUri, "r");
+        fd = resolver.openFileDescriptor(mUri, "r");
         if (fd != null) {
           size = fd.getStatSize();
           fd.close();

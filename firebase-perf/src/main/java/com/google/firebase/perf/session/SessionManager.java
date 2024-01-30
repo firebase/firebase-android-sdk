@@ -28,6 +28,7 @@ import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -57,7 +58,11 @@ public class SessionManager extends AppStateUpdateHandler {
   }
 
   private SessionManager() {
-    this(GaugeManager.getInstance(), PerfSession.create(), AppStateMonitor.getInstance());
+    // Generate a new sessionID for every cold start.
+    this(
+        GaugeManager.getInstance(),
+        PerfSession.createWithId(UUID.randomUUID().toString()),
+        AppStateMonitor.getInstance());
   }
 
   @VisibleForTesting
@@ -70,10 +75,8 @@ public class SessionManager extends AppStateUpdateHandler {
   }
 
   /**
-   * Finalizes gauge initialization during app start. This must be called before app start finishes
-   * (currently that is before onResume finishes), because {@link #perfSession} can be changed by
-   * {@link #onUpdateAppState(ApplicationProcessState)} once {@link AppStateMonitor#isColdStart()}
-   * becomes false.
+   * Finalizes gauge initialization during cold start. This must be called before app start finishes
+   * (currently that is before onResume finishes) to ensure gauge collection starts on time.
    */
   public void setApplicationContext(final Context appContext) {
     // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
@@ -104,40 +107,51 @@ public class SessionManager extends AppStateUpdateHandler {
     }
 
     if (newAppState == ApplicationProcessState.FOREGROUND) {
-      updatePerfSession(newAppState);
-
-    } else if (!updatePerfSessionIfExpired()) {
-      startOrStopCollectingGauges(newAppState);
+      // A new foregrounding of app will force a new sessionID generation.
+      PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
+      updatePerfSession(session);
+    } else {
+      // If the session is running for too long, generate a new session and collect gauges as
+      // necessary.
+      if (perfSession.isSessionRunningTooLong()) {
+        PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
+        updatePerfSession(session);
+      } else {
+        // For any other state change of the application, modify gauge collection state as
+        // necessary.
+        startOrStopCollectingGauges(newAppState);
+      }
     }
   }
 
   /**
-   * Updates the current {@link PerfSession} if it has expired/timed out.
+   * Checks if the current {@link PerfSession} is expired/timed out. If so, stop collecting gauges.
    *
-   * @return {@code true} if {@link PerfSession} is updated, {@code false} otherwise.
-   * @see PerfSession#isExpired()
+   * @see PerfSession#isSessionRunningTooLong()
    */
-  public boolean updatePerfSessionIfExpired() {
-    if (perfSession.isExpired()) {
-      updatePerfSession(appStateMonitor.getAppState());
-      return true;
+  public void stopGaugeCollectionIfSessionRunningTooLong() {
+    if (perfSession.isSessionRunningTooLong()) {
+      gaugeManager.stopCollectingGauges();
     }
-
-    return false;
   }
 
   /**
-   * Updates the currently associated {@link #perfSession} and broadcast the event.
+   * Updates the currently associated {@link #perfSession} and broadcast the change.
    *
-   * <p>Creation of new {@link PerfSession} will log the {@link GaugeMetadata} and start/stop the
-   * collection of {@link GaugeMetric} depending upon Session verbosity.
+   * <p>Uses the provided PerfSession {@link PerfSession}, log the {@link GaugeMetadata} and
+   * start/stop the collection of {@link GaugeMetric} depending upon Session verbosity.
    *
    * @see PerfSession#isVerbose()
    */
-  public void updatePerfSession(ApplicationProcessState currentAppState) {
-    synchronized (clients) {
-      perfSession = PerfSession.create();
+  public void updatePerfSession(PerfSession perfSession) {
+    // Do not update the perf session if it is the exact same sessionId.
+    if (perfSession.sessionId() == this.perfSession.sessionId()) {
+      return;
+    }
 
+    this.perfSession = perfSession;
+
+    synchronized (clients) {
       for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
         SessionAwareObject callback = i.next().get();
         if (callback != null) {
@@ -150,8 +164,11 @@ public class SessionManager extends AppStateUpdateHandler {
       }
     }
 
-    logGaugeMetadataIfCollectionEnabled(currentAppState);
-    startOrStopCollectingGauges(currentAppState);
+    // Log the gauge metadata event if data collection is enabled.
+    logGaugeMetadataIfCollectionEnabled(appStateMonitor.getAppState());
+
+    // Start of stop the gauge data collection.
+    startOrStopCollectingGauges(appStateMonitor.getAppState());
   }
 
   /**

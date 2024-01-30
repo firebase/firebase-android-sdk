@@ -1,12 +1,27 @@
 # Unreleased
 
+
+# 17.1.1
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
+# 17.1.0
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
+# 17.0.0
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 16.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.
 
 # 16.1.1
-* [changed] Migrated [app_check] SDKs to use standard Firebase executors. (#4431, #4449)
-* [changed] Integrated the [app_check] Debug SDK with Firebase Components. (#4436)
-* [changed] Moved Task continuations off the main thread. (#4453)
+* [changed] Migrated [app_check] SDKs to use standard Firebase executors.
+  (GitHub [#4431](//github.com/firebase/firebase-android-sdk/issues/4431){: .external}
+  and
+  [#4449](//github.com/firebase/firebase-android-sdk/issues/4449){: .external})
+* [changed] Integrated the [app_check] Debug SDK with Firebase components.
+  (GitHub [#4436](//github.com/firebase/firebase-android-sdk/issues/4436){: .external})
+* [changed] Moved Task continuations off the main thread.
+  (GitHub [#4453](//github.com/firebase/firebase-android-sdk/issues/4453){: .external})
 
 # 16.1.0
 * [unchanged] Updated to accommodate the release of the updated
@@ -30,7 +45,6 @@
 # 16.0.0-beta04
 * [changed] Improved error handling logic by minimizing the amount of requests
   that are unlikely to succeed.
-
 * [fixed] Fixed heartbeat reporting.
 
 # 16.0.0-beta03

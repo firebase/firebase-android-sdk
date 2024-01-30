@@ -26,6 +26,7 @@ import com.google.firebase.encoders.annotations.Encodable.Ignore;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
+import java.util.List;
 
 /**
  * This class represents the data captured by and reported to Crashlytics.
@@ -91,6 +92,12 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract String getInstallationUuid();
 
+  @Nullable
+  public abstract String getFirebaseInstallationId();
+
+  @Nullable
+  public abstract String getAppQualitySessionId();
+
   @NonNull
   public abstract String getBuildVersion();
 
@@ -115,7 +122,7 @@ public abstract class CrashlyticsReport {
    * @return a new {@link CrashlyticsReport} with its events list set to the given list of events.
    */
   @NonNull
-  public CrashlyticsReport withEvents(@NonNull ImmutableList<Event> events) {
+  public CrashlyticsReport withEvents(@NonNull List<Event> events) {
     if (getSession() == null) {
       throw new IllegalStateException("Reports without sessions cannot have events added to them.");
     }
@@ -179,6 +186,25 @@ public abstract class CrashlyticsReport {
     return builder.build();
   }
 
+  /** Augment an existing {@link CrashlyticsReport} with the given app quality session id. */
+  @NonNull
+  public CrashlyticsReport withAppQualitySessionId(@Nullable String appQualitySessionId) {
+    // For native crashes and ANRs, the SDK does not construct the Session value holder for
+    // technical reasons. As such, the AQS session id needs to be set at the Report level. For
+    // non-native crashes and non-ANRs, we can set the AQS session id at the Session level.
+    Builder builder = toBuilder().setAppQualitySessionId(appQualitySessionId);
+    if (getSession() != null) {
+      builder.setSession(getSession().withAppQualitySessionId(appQualitySessionId));
+    }
+    return builder.build();
+  }
+
+  /** Update an existing {@link CrashlyticsReport} with the given firebaseInstallationId. */
+  @NonNull
+  public CrashlyticsReport withFirebaseInstallationId(@Nullable String firebaseInstallationId) {
+    return toBuilder().setFirebaseInstallationId(firebaseInstallationId).build();
+  }
+
   @AutoValue
   public abstract static class FilesPayload {
 
@@ -188,7 +214,7 @@ public abstract class CrashlyticsReport {
     }
 
     @NonNull
-    public abstract ImmutableList<File> getFiles();
+    public abstract List<File> getFiles();
 
     @Nullable
     public abstract String getOrgId();
@@ -225,7 +251,7 @@ public abstract class CrashlyticsReport {
     @AutoValue.Builder
     public abstract static class Builder {
 
-      public abstract Builder setFiles(ImmutableList<File> value);
+      public abstract Builder setFiles(List<File> value);
 
       public abstract Builder setOrgId(String value);
 
@@ -283,6 +309,10 @@ public abstract class CrashlyticsReport {
       return getIdentifier().getBytes(UTF_8);
     }
 
+    /** The last FirebaseSessions Session ID associated with the crash. */
+    @Nullable
+    public abstract String getAppQualitySessionId();
+
     public abstract long getStartedAt();
 
     @Nullable
@@ -303,7 +333,7 @@ public abstract class CrashlyticsReport {
     public abstract Device getDevice();
 
     @Nullable
-    public abstract ImmutableList<Event> getEvents();
+    public abstract List<Event> getEvents();
 
     public abstract int getGeneratorType();
 
@@ -311,7 +341,7 @@ public abstract class CrashlyticsReport {
     public abstract Builder toBuilder();
 
     @NonNull
-    Session withEvents(@NonNull ImmutableList<Event> events) {
+    Session withEvents(@NonNull List<Event> events) {
       return toBuilder().setEvents(events).build();
     }
 
@@ -332,6 +362,11 @@ public abstract class CrashlyticsReport {
       return builder.build();
     }
 
+    @NonNull
+    Session withAppQualitySessionId(@Nullable String appQualitySessionId) {
+      return toBuilder().setAppQualitySessionId(appQualitySessionId).build();
+    }
+
     /** Builder for {@link Session}. */
     @AutoValue.Builder
     public abstract static class Builder {
@@ -346,6 +381,9 @@ public abstract class CrashlyticsReport {
       public Builder setIdentifierFromUtf8Bytes(@NonNull byte[] utf8Bytes) {
         return setIdentifier(new String(utf8Bytes, UTF_8));
       }
+
+      @NonNull
+      public abstract Builder setAppQualitySessionId(@Nullable String appQualitySessionId);
 
       @NonNull
       public abstract Builder setStartedAt(long startedAt);
@@ -369,7 +407,7 @@ public abstract class CrashlyticsReport {
       public abstract Builder setDevice(@NonNull Device value);
 
       @NonNull
-      public abstract Builder setEvents(@NonNull ImmutableList<Event> value);
+      public abstract Builder setEvents(@NonNull List<Event> value);
 
       @NonNull
       public abstract Builder setGeneratorType(int generatorType);
@@ -626,6 +664,9 @@ public abstract class CrashlyticsReport {
       @Nullable
       public abstract Log getLog();
 
+      @Nullable
+      public abstract RolloutsState getRollouts();
+
       @NonNull
       public abstract Builder toBuilder();
 
@@ -641,13 +682,19 @@ public abstract class CrashlyticsReport {
         public abstract Execution getExecution();
 
         @Nullable
-        public abstract ImmutableList<CustomAttribute> getCustomAttributes();
+        public abstract List<CustomAttribute> getCustomAttributes();
 
         @Nullable
-        public abstract ImmutableList<CustomAttribute> getInternalKeys();
+        public abstract List<CustomAttribute> getInternalKeys();
 
         @Nullable
         public abstract Boolean getBackground();
+
+        @Nullable
+        public abstract ProcessDetails getCurrentProcessDetails();
+
+        @Nullable
+        public abstract List<ProcessDetails> getAppProcessDetails();
 
         public abstract int getUiOrientation();
 
@@ -663,7 +710,7 @@ public abstract class CrashlyticsReport {
           }
 
           @Nullable
-          public abstract ImmutableList<Thread> getThreads();
+          public abstract List<Thread> getThreads();
 
           @Nullable
           public abstract Exception getException();
@@ -675,7 +722,7 @@ public abstract class CrashlyticsReport {
           public abstract Signal getSignal();
 
           @NonNull
-          public abstract ImmutableList<BinaryImage> getBinaries();
+          public abstract List<BinaryImage> getBinaries();
 
           @AutoValue
           public abstract static class Thread {
@@ -692,7 +739,7 @@ public abstract class CrashlyticsReport {
             public abstract int getImportance();
 
             @NonNull
-            public abstract ImmutableList<Frame> getFrames();
+            public abstract List<Frame> getFrames();
 
             @AutoValue
             public abstract static class Frame {
@@ -750,7 +797,7 @@ public abstract class CrashlyticsReport {
               public abstract Builder setImportance(int value);
 
               @NonNull
-              public abstract Builder setFrames(@NonNull ImmutableList<Frame> value);
+              public abstract Builder setFrames(@NonNull List<Frame> value);
 
               @NonNull
               public abstract Thread build();
@@ -773,7 +820,7 @@ public abstract class CrashlyticsReport {
             public abstract String getReason();
 
             @NonNull
-            public abstract ImmutableList<Frame> getFrames();
+            public abstract List<Frame> getFrames();
 
             @Nullable
             public abstract Exception getCausedBy();
@@ -791,7 +838,7 @@ public abstract class CrashlyticsReport {
               public abstract Builder setReason(@NonNull String value);
 
               @NonNull
-              public abstract Builder setFrames(@NonNull ImmutableList<Frame> value);
+              public abstract Builder setFrames(@NonNull List<Frame> value);
 
               @NonNull
               public abstract Builder setCausedBy(@NonNull Exception value);
@@ -899,7 +946,7 @@ public abstract class CrashlyticsReport {
           public abstract static class Builder {
 
             @NonNull
-            public abstract Builder setThreads(@NonNull ImmutableList<Thread> value);
+            public abstract Builder setThreads(@NonNull List<Thread> value);
 
             @NonNull
             public abstract Builder setException(@NonNull Exception value);
@@ -911,10 +958,47 @@ public abstract class CrashlyticsReport {
             public abstract Builder setSignal(@NonNull Signal value);
 
             @NonNull
-            public abstract Builder setBinaries(@NonNull ImmutableList<BinaryImage> value);
+            public abstract Builder setBinaries(@NonNull List<BinaryImage> value);
 
             @NonNull
             public abstract Execution build();
+          }
+        }
+
+        @AutoValue
+        public abstract static class ProcessDetails {
+          @NonNull
+          public abstract String getProcessName();
+
+          public abstract int getPid();
+
+          public abstract int getImportance();
+
+          public abstract boolean isDefaultProcess();
+
+          @NonNull
+          public static Builder builder() {
+            return new AutoValue_CrashlyticsReport_Session_Event_Application_ProcessDetails
+                .Builder();
+          }
+
+          /** Builder for {@link ProcessDetails}. */
+          @AutoValue.Builder
+          public abstract static class Builder {
+            @NonNull
+            public abstract Builder setProcessName(@NonNull String processName);
+
+            @NonNull
+            public abstract Builder setPid(int pid);
+
+            @NonNull
+            public abstract Builder setImportance(int importance);
+
+            @NonNull
+            public abstract Builder setDefaultProcess(boolean isDefaultProcess);
+
+            @NonNull
+            public abstract ProcessDetails build();
           }
         }
 
@@ -926,14 +1010,20 @@ public abstract class CrashlyticsReport {
           public abstract Builder setExecution(@NonNull Execution value);
 
           @NonNull
-          public abstract Builder setCustomAttributes(
-              @NonNull ImmutableList<CustomAttribute> value);
+          public abstract Builder setCustomAttributes(@NonNull List<CustomAttribute> value);
 
           @NonNull
-          public abstract Builder setInternalKeys(@NonNull ImmutableList<CustomAttribute> value);
+          public abstract Builder setInternalKeys(@NonNull List<CustomAttribute> value);
 
           @NonNull
           public abstract Builder setBackground(@Nullable Boolean value);
+
+          @NonNull
+          public abstract Builder setCurrentProcessDetails(@Nullable ProcessDetails processDetails);
+
+          @NonNull
+          public abstract Builder setAppProcessDetails(
+              @Nullable List<ProcessDetails> appProcessDetails);
 
           @NonNull
           public abstract Builder setUiOrientation(int value);
@@ -1014,6 +1104,98 @@ public abstract class CrashlyticsReport {
         }
       }
 
+      @AutoValue
+      public abstract static class RolloutsState {
+        @NonNull
+        public static RolloutsState.Builder builder() {
+          return new AutoValue_CrashlyticsReport_Session_Event_RolloutsState.Builder();
+        }
+
+        @NonNull
+        @Field(name = "assignments")
+        public abstract List<RolloutAssignment> getRolloutAssignments();
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+          @NonNull
+          public abstract RolloutsState.Builder setRolloutAssignments(
+              @NonNull List<RolloutAssignment> rolloutAssignments);
+
+          @NonNull
+          public abstract RolloutsState build();
+        }
+      }
+
+      @AutoValue
+      public abstract static class RolloutAssignment {
+
+        @NonNull
+        public static RolloutAssignment.Builder builder() {
+          return new AutoValue_CrashlyticsReport_Session_Event_RolloutAssignment.Builder();
+        }
+
+        @NonNull
+        public abstract RolloutVariant getRolloutVariant();
+
+        @NonNull
+        public abstract String getParameterKey();
+
+        @NonNull
+        public abstract String getParameterValue();
+
+        @NonNull
+        public abstract long getTemplateVersion();
+
+        /** Builder for {@link RolloutAssignment}. */
+        @AutoValue.Builder
+        public abstract static class Builder {
+          @NonNull
+          public abstract RolloutAssignment.Builder setRolloutVariant(
+              @NonNull RolloutVariant rolloutVariant);
+
+          @NonNull
+          public abstract RolloutAssignment.Builder setParameterKey(@NonNull String parameterKey);
+
+          @NonNull
+          public abstract RolloutAssignment.Builder setParameterValue(
+              @NonNull String parameterValue);
+
+          @NonNull
+          public abstract RolloutAssignment.Builder setTemplateVersion(
+              @NonNull long templateVersion);
+
+          @NonNull
+          public abstract RolloutAssignment build();
+        }
+
+        @AutoValue
+        public abstract static class RolloutVariant {
+          public static RolloutVariant.Builder builder() {
+            return new AutoValue_CrashlyticsReport_Session_Event_RolloutAssignment_RolloutVariant
+                .Builder();
+          }
+
+          @NonNull
+          public abstract String getRolloutId();
+
+          @NonNull
+          public abstract String getVariantId();
+
+          /** Builder for {@link RolloutVariant}. */
+          @AutoValue.Builder
+          public abstract static class Builder {
+            @NonNull
+            public abstract RolloutVariant.Builder setRolloutId(@NonNull String rolloutId);
+
+            @NonNull
+            public abstract RolloutVariant.Builder setVariantId(@NonNull String variantId);
+
+            @NonNull
+            public abstract RolloutVariant build();
+          }
+        }
+      }
+
       /** Builder for {@link Event}. */
       @AutoValue.Builder
       public abstract static class Builder {
@@ -1032,6 +1214,9 @@ public abstract class CrashlyticsReport {
 
         @NonNull
         public abstract Builder setLog(@NonNull Log value);
+
+        @NonNull
+        public abstract Builder setRollouts(@NonNull RolloutsState rolloutsState);
 
         @NonNull
         public abstract Event build();
@@ -1074,7 +1259,7 @@ public abstract class CrashlyticsReport {
 
     @Nullable
     // Not all ApplicationExitInfos have build id info
-    public abstract ImmutableList<BuildIdMappingForArch> getBuildIdMappingForArch();
+    public abstract List<BuildIdMappingForArch> getBuildIdMappingForArch();
 
     /** Builder for {@link ApplicationExitInfo}. */
     @AutoValue.Builder
@@ -1105,7 +1290,7 @@ public abstract class CrashlyticsReport {
 
       @NonNull
       public abstract ApplicationExitInfo.Builder setBuildIdMappingForArch(
-          @Nullable ImmutableList<BuildIdMappingForArch> value);
+          @Nullable List<BuildIdMappingForArch> value);
 
       @NonNull
       public abstract ApplicationExitInfo build();
@@ -1160,6 +1345,12 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setInstallationUuid(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setAppQualitySessionId(@Nullable String appQualitySessionId);
+
+    @NonNull
+    public abstract Builder setFirebaseInstallationId(@Nullable String value);
 
     @NonNull
     public abstract Builder setBuildVersion(@NonNull String value);

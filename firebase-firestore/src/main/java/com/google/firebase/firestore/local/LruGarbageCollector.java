@@ -61,8 +61,10 @@ public class LruGarbageCollector {
       return new Params(cacheSizeBytes, 10, 1000);
     }
 
-    final long minBytesThreshold;
-    final int percentileToCollect;
+    // Not final for testing purposes.
+    long minBytesThreshold;
+    // Not final for testing purposes.
+    int percentileToCollect;
     final int maximumSequenceNumbersToCollect;
 
     Params(long minBytesThreshold, int percentileToCollect, int maximumSequenceNumbersToCollect) {
@@ -161,6 +163,13 @@ public class LruGarbageCollector {
   /** A helper method to create a new scheduler. */
   public GCScheduler newScheduler(AsyncQueue asyncQueue, LocalStore localStore) {
     return new GCScheduler(asyncQueue, localStore);
+  }
+
+  // Visible for testing purposes only.
+  public LruGarbageCollector withNewThreshold(long cacheThreshold) {
+    this.params.minBytesThreshold = cacheThreshold;
+    this.params.percentileToCollect = 100;
+    return this;
   }
 
   /** Given a percentile of target to collect, returns the number of targets to collect. */

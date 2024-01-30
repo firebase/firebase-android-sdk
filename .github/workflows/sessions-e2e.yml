@@ -18,9 +18,7 @@ jobs:
 
     steps:
       - name: Checkout firebase-sessions
-        uses: actions/checkout@v3
-        with:
-          ref: 'firebase-sessions'
+        uses: actions/checkout@v3.5.3
 
       - name: set up JDK 11
         uses: actions/setup-java@v3
@@ -33,12 +31,12 @@ jobs:
         run: |
           echo $SESSIONS_E2E_GOOGLE_SERVICES | base64 -d > google-services.json
 
-      - uses: google-github-actions/auth@v0
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - name: Run sessions end-to-end tests
         env:
           FTL_RESULTS_BUCKET: fireescape
         run: |
-          ./gradlew :firebase-sessions:test-app:deviceCheck withErrorProne -PtargetBackend="prod"
+          ./gradlew :firebase-sessions:test-app:deviceCheck withErrorProne -PtargetBackend="prod" -PtriggerCrashes

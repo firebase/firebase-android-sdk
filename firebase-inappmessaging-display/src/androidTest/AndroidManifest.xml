@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.inappmessaging.display.test">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <application>
     <uses-library android:name="android.test.runner"/>
-    <activity android:name=".TestActivity">
+    <activity android:name=".TestActivity" android:exported="true">
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>

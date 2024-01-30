@@ -94,6 +94,11 @@ public class MockDatastore extends Datastore {
       // Snapshot version is ignored on the wire
       TargetData sentTargetData =
           targetData.withResumeToken(targetData.getResumeToken(), SnapshotVersion.NONE);
+
+      if (targetData.getExpectedCount() != null) {
+        sentTargetData = sentTargetData.withExpectedCount(targetData.getExpectedCount());
+      }
+
       watchStreamRequestCount += 1;
       this.activeTargets.put(targetData.getTargetId(), sentTargetData);
     }

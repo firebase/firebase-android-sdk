@@ -205,12 +205,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
     TargetData targetData = localStore.allocateTarget(query.toTarget());
-    remoteStore.listen(targetData);
 
     ViewSnapshot viewSnapshot =
         initializeViewAndComputeSnapshot(
             query, targetData.getTargetId(), targetData.getResumeToken());
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
+
+    remoteStore.listen(targetData);
 
     return targetData.getTargetId();
   }
@@ -430,7 +431,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
           new RemoteEvent(
               SnapshotVersion.NONE,
               /* targetChanges= */ Collections.emptyMap(),
-              /* targetMismatches= */ Collections.emptySet(),
+              /* targetMismatches= */ Collections.emptyMap(),
               documentUpdates,
               limboDocuments);
       handleRemoteEvent(event);
@@ -652,7 +653,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       }
       TargetChange targetChange =
           remoteEvent == null ? null : remoteEvent.getTargetChanges().get(queryView.getTargetId());
-      ViewChange viewChange = queryView.getView().applyChanges(viewDocChanges, targetChange);
+
+      boolean targetIsPendingReset =
+          remoteEvent != null
+              && remoteEvent.getTargetMismatches().get(queryView.getTargetId()) != null;
+
+      ViewChange viewChange =
+          queryView.getView().applyChanges(viewDocChanges, targetChange, targetIsPendingReset);
       updateTrackedLimboDocuments(viewChange.getLimboChanges(), queryView.getTargetId());
 
       if (viewChange.getSnapshot() != null) {

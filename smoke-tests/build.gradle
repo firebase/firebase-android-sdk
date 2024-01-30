@@ -32,7 +32,7 @@ buildscript {
 apply plugin: "com.android.application"
 
 android {
-  compileSdkVersion 31
+  compileSdkVersion 33
 
   defaultConfig {
     minSdkVersion 19
@@ -64,6 +64,10 @@ android {
 apply from: "configure.gradle"
 
 dependencies {
+  implementation "androidx.test:core:1.5.0"
+  // Common utilities (application side)
+  implementation "androidx.test:rules:1.4.0"
+  implementation "androidx.test:runner:1.4.0"
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
   implementation "com.google.firebase:firebase-annotations"
@@ -77,22 +81,16 @@ dependencies {
   implementation "com.google.firebase:firebase-dynamic-links"
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
+  // TODO(yifany): remove after the issue is fixed
+  // https://github.com/firebase/firebase-android-sdk/issues/4206
+  implementation "com.google.firebase:firebase-iid:21.1.0"
   implementation "com.google.firebase:firebase-inappmessaging"
   implementation "com.google.firebase:firebase-messaging"
   implementation "com.google.firebase:firebase-ml-modeldownloader"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
-
-  // TODO(yifany): remove after the issue is fixed
-  // https://github.com/firebase/firebase-android-sdk/issues/4206
-  implementation "com.google.firebase:firebase-iid:21.1.0"
-
-  // Common utilities (application side)
-  implementation "androidx.test:rules:1.4.0"
-  implementation "androidx.test:runner:1.4.0"
   implementation "com.google.truth:truth:1.0.1"
   implementation "junit:junit:4.13.2"
-  implementation "androidx.test:core:1.4.0"
 
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"

@@ -18,7 +18,8 @@ import android.util.Log;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.concurrent.Lightweight;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.AppCheckTokenResult;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.inject.Deferred;
@@ -36,22 +37,21 @@ class FirebaseContextProvider implements ContextProvider {
 
   private final Provider<InternalAuthProvider> tokenProvider;
   private final Provider<FirebaseInstanceIdInternal> instanceId;
-  private final AtomicReference<InternalAppCheckTokenProvider> appCheckRef =
-      new AtomicReference<>();
+  private final AtomicReference<InteropAppCheckTokenProvider> appCheckRef = new AtomicReference<>();
   private final Executor executor;
 
   @Inject
   FirebaseContextProvider(
       Provider<InternalAuthProvider> tokenProvider,
       Provider<FirebaseInstanceIdInternal> instanceId,
-      Deferred<InternalAppCheckTokenProvider> appCheckDeferred,
+      Deferred<InteropAppCheckTokenProvider> appCheckDeferred,
       @Lightweight Executor executor) {
     this.tokenProvider = tokenProvider;
     this.instanceId = instanceId;
     this.executor = executor;
     appCheckDeferred.whenAvailable(
         p -> {
-          InternalAppCheckTokenProvider appCheck = p.get();
+          InteropAppCheckTokenProvider appCheck = p.get();
           appCheckRef.set(appCheck);
 
           appCheck.addAppCheckTokenListener(
@@ -63,9 +63,9 @@ class FirebaseContextProvider implements ContextProvider {
   }
 
   @Override
-  public Task<HttpsCallableContext> getContext() {
+  public Task<HttpsCallableContext> getContext(boolean limitedUseAppCheckToken) {
     Task<String> authToken = getAuthToken();
-    Task<String> appCheckToken = getAppCheckToken();
+    Task<String> appCheckToken = getAppCheckToken(limitedUseAppCheckToken);
     return Tasks.whenAll(authToken, appCheckToken)
         .onSuccessTask(
             executor,
@@ -101,23 +101,23 @@ class FirebaseContextProvider implements ContextProvider {
             });
   }
 
-  private Task<String> getAppCheckToken() {
-    InternalAppCheckTokenProvider appCheck = appCheckRef.get();
+  private Task<String> getAppCheckToken(boolean limitedUseAppCheckToken) {
+    InteropAppCheckTokenProvider appCheck = appCheckRef.get();
     if (appCheck == null) {
       return Tasks.forResult(null);
     }
-    return appCheck
-        .getToken(false)
-        .onSuccessTask(
-            executor,
-            result -> {
-              if (result.getError() != null) {
-                // If there was an error getting the App Check token, do NOT send the placeholder
-                // token. Only valid App Check tokens should be sent to the functions backend.
-                Log.w(TAG, "Error getting App Check token. Error: " + result.getError());
-                return Tasks.forResult(null);
-              }
-              return Tasks.forResult(result.getToken());
-            });
+    Task<AppCheckTokenResult> tokenTask =
+        limitedUseAppCheckToken ? appCheck.getLimitedUseToken() : appCheck.getToken(false);
+    return tokenTask.onSuccessTask(
+        executor,
+        result -> {
+          if (result.getError() != null) {
+            // If there was an error getting the App Check token, do NOT send the placeholder
+            // token. Only valid App Check tokens should be sent to the functions backend.
+            Log.w(TAG, "Error getting App Check token. Error: " + result.getError());
+            return Tasks.forResult(null);
+          }
+          return Tasks.forResult(result.getToken());
+        });
   }
 }

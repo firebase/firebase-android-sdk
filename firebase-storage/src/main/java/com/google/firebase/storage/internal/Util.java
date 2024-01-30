@@ -25,7 +25,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckTokenResult;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.GetTokenResult;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -161,7 +161,7 @@ public class Util {
 
   @Nullable
   public static String getCurrentAppCheckToken(
-      @Nullable InternalAppCheckTokenProvider appCheckProvider) {
+      @Nullable InteropAppCheckTokenProvider appCheckProvider) {
     if (appCheckProvider == null) {
       return null;
     }

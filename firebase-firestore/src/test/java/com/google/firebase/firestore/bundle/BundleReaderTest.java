@@ -24,12 +24,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firestore.v1.ArrayValue;
+import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -57,28 +58,34 @@ public class BundleReaderTest {
       new NamedQuery(
           "limitQuery",
           new BundledQuery(
-              new Target(
-                  ResourcePath.fromString("foo"),
-                  null,
-                  Collections.emptyList(),
-                  Collections.singletonList(orderBy("sort")),
-                  1,
-                  null,
-                  null),
+              new Query(
+                      ResourcePath.fromString("foo"),
+                      null,
+                      Collections.emptyList(),
+                      Collections.singletonList(orderBy("sort")),
+                      1,
+                      Query.LimitType.LIMIT_TO_FIRST,
+                      null,
+                      null)
+                  .toTarget(),
               Query.LimitType.LIMIT_TO_FIRST),
           version(1590011379000001L));
   public static final NamedQuery LIMIT_TO_LAST_QUERY =
       new NamedQuery(
           "limitToLastQuery",
           new BundledQuery(
-              new Target(
-                  ResourcePath.fromString("foo"),
-                  null,
-                  Collections.emptyList(),
-                  Collections.singletonList(orderBy("sort")),
-                  1,
-                  null,
-                  null),
+              new Query(
+                      ResourcePath.fromString("foo"),
+                      null,
+                      Collections.emptyList(),
+                      Collections.singletonList(orderBy("sort")),
+                      1,
+                      // Note this is LIMIT_TO_FIRST because it is the expected
+                      // limit type in bundle files.
+                      Query.LimitType.LIMIT_TO_FIRST,
+                      null,
+                      null)
+                  .toTarget(),
               Query.LimitType.LIMIT_TO_LAST),
           version(1590011379000002L));
   public static final BundledDocumentMetadata DELETED_DOC_METADATA =
@@ -111,7 +118,11 @@ public class BundleReaderTest {
                       "foo",
                       Value.newBuilder().setStringValue("value2").build(),
                       "bar",
-                      Value.newBuilder().setIntegerValue(42).build()))));
+                      Value.newBuilder().setIntegerValue(42).build(),
+                      "emptyArray",
+                      Value.newBuilder().setArrayValue(ArrayValue.getDefaultInstance()).build(),
+                      "emptyMap",
+                      Value.newBuilder().setMapValue(MapValue.getDefaultInstance()).build()))));
   public static final BundledDocumentMetadata DOC3_METADATA =
       new BundledDocumentMetadata(
           key("coll/doc3"), version(5600002L), /* exists= */ true, Collections.emptyList());
@@ -352,7 +363,8 @@ public class BundleReaderTest {
         "coll/doc2",
         /* createTimeMicros= */ 1200001L,
         /* updateTimeMicros= */ 30004001L,
-        "{ foo: { stringValue: 'value2' }, bar: { integerValue: 42 } }");
+        "{ foo: { stringValue: 'value2' }, bar: { integerValue: 42 }, "
+            + "emptyArray: { arrayValue: {} }, emptyMap: { mapValue: {} } }");
   }
 
   private String addDoc3Metadata(TestBundleBuilder bundleBuilder) {

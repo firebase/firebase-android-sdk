@@ -24,12 +24,20 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
+import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.Arrays;
 import java.util.List;
 
 /** @hide */
 public class CrashlyticsRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-cls";
+
+  static {
+    // Add Crashlytics as a dependency of Sessions when this class is loaded into memory.
+    FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.CRASHLYTICS);
+  }
 
   @Override
   public List<Component<?>> getComponents() {
@@ -40,6 +48,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.deferred(CrashlyticsNativeComponent.class))
             .add(Dependency.deferred(AnalyticsConnector.class))
+            .add(Dependency.deferred(FirebaseRemoteConfigInterop.class))
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
             .build(),
@@ -57,7 +66,10 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
 
     FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
 
+    Deferred<FirebaseRemoteConfigInterop> remoteConfigInterop =
+        container.getDeferred(FirebaseRemoteConfigInterop.class);
+
     return FirebaseCrashlytics.init(
-        app, firebaseInstallations, nativeComponent, analyticsConnector);
+        app, firebaseInstallations, nativeComponent, analyticsConnector, remoteConfigInterop);
   }
 }

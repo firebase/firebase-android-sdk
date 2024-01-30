@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id("kotlin-android")
     id 'firebase-vendor'
 }
 
@@ -23,6 +24,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.inappmessaging.display"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -39,6 +41,10 @@ android {
         // jetification in our SDK build will still require developers to use jetification in their
         // apps.
         disable "GradleCompatible"
+    }
+
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 
     compileOptions {
@@ -72,50 +78,55 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation project(':firebase-inappmessaging')
-
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'androidx.appcompat:appcompat:1.1.0'
-    implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.browser:browser:1.0.0'
-    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
-    implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
-
-    implementation 'com.github.bumptech.glide:glide:4.11.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
-
-    vendor ('com.google.dagger:dagger:2.27') {
-        exclude group: "javax.inject", module: "javax.inject"
-    }
-    implementation 'javax.inject:javax.inject:1'
-
-    annotationProcessor "com.google.dagger:dagger-compiler:2.27"
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
-    annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
-
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation "junit:junit:4.12"
-    testImplementation "org.mockito:mockito-core:2.25.0"
-    testImplementation "com.google.truth:truth:1.0"
-    testImplementation 'androidx.test:core:1.2.0'
-    testImplementation 'com.google.guava:guava:30.1-android'
-
-    androidTestImplementation project(':integ-testing')
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
-    androidTestImplementation "org.mockito:mockito-core:2.25.0"
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation "com.google.dexmaker:dexmaker:1.2"
     androidTestImplementation "com.linkedin.dexmaker:dexmaker-mockito:2.28.1"
+    androidTestImplementation "org.mockito:mockito-core:2.25.0"
     androidTestImplementation 'androidx.annotation:annotation:1.1.0'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation ("com.google.firebase:firebase-analytics:17.4.0") {
-        exclude group: "com.google.firebase", module: "firebase-common"
-        exclude group: "com.google.firebase", module: "firebase-components"
-        exclude group: "com.google.firebase", module: "firebase-installations-interop"
-        exclude group: "com.google.firebase", module: "firebase-installations"
+         exclude group: "com.google.firebase", module: "firebase-common"
+         exclude group: "com.google.firebase", module: "firebase-components"
+         exclude group: "com.google.firebase", module: "firebase-installations-interop"
+         exclude group: "com.google.firebase", module: "firebase-installations"
+     }
+    androidTestImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
     }
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
+    annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
+    annotationProcessor libs.dagger.compiler
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.browser:browser:1.0.0'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation 'com.github.bumptech.glide:glide:4.11.0'
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
+    implementation 'javax.inject:javax.inject:1'
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    implementation(project(":firebase-inappmessaging"))
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation "com.google.truth:truth:1.0"
+    testImplementation "junit:junit:4.12"
+    testImplementation "org.mockito:mockito-core:2.25.0"
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'com.google.guava:guava:30.1-android'
+    testImplementation 'junit:junit:4.12'
+    testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
+         exclude group: "com.google.firebase", module: "firebase-common"
+     }
+    vendor (libs.dagger.dagger) {
+         exclude group: "javax.inject", module: "javax.inject"
+     }
 }

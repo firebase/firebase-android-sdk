@@ -67,14 +67,15 @@ public abstract class Persistence {
 
   public abstract boolean isStarted();
 
-  abstract ReferenceDelegate getReferenceDelegate();
+  // Visible for testing purposes.
+  public abstract ReferenceDelegate getReferenceDelegate();
 
   /**
    * Returns a MutationQueue representing the persisted mutations for the given user.
    *
    * <p>Note: The implementation is free to return the same instance every time this is called for a
    * given user. In particular, the memory-backed implementation does this to emulate the persisted
-   * implementation to the extent possible (e.g. in the case of uid switching from
+   * implementation to the extent possible (for example, in the case of uid switching from
    * sally=>jack=>sally, sally's mutation queue will be preserved).
    */
   abstract MutationQueue getMutationQueue(User user, IndexManager indexManager);

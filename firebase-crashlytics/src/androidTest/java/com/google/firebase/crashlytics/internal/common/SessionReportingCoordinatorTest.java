@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,12 +36,10 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -58,6 +57,7 @@ public class SessionReportingCoordinatorTest {
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
+  @Mock private IdManager idManager;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
@@ -74,7 +74,12 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator =
         new SessionReportingCoordinator(
-            dataCapture, reportPersistence, reportSender, logFileManager, reportMetadata);
+            dataCapture,
+            reportPersistence,
+            reportSender,
+            logFileManager,
+            reportMetadata,
+            idManager);
   }
 
   @Test
@@ -227,8 +232,9 @@ public class SessionReportingCoordinatorTest {
     final CustomAttribute customAttribute2 =
         CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
 
-    final ImmutableList<CustomAttribute> expectedCustomAttributes =
-        ImmutableList.from(customAttribute1, customAttribute2);
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
     when(reportMetadata.getInternalKeys()).thenReturn(attributes);
@@ -267,6 +273,29 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
+  public void testNonFatalEvent_addRolloutsEvent() {
+    long timestamp = System.currentTimeMillis();
+    String sessionId = "testSessionId";
+    mockEventInteractions();
+
+    List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
+        new ArrayList<CrashlyticsReport.Session.Event.RolloutAssignment>();
+    rolloutsState.add(mockRolloutAssignment());
+    when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+
+    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).build();
+    verify(mockEventBuilder, never()).setApp(mockEventApp);
+    verify(reportMetadata).getRolloutsState();
+    // first build for custom keys
+    // second build for rollouts
+    verify(mockEventBuilder, times(2)).build();
+  }
+
+  @Test
   public void testFatalEvent_addsSortedCustomKeysToEvent() {
     final long timestamp = System.currentTimeMillis();
 
@@ -288,8 +317,9 @@ public class SessionReportingCoordinatorTest {
     final CustomAttribute customAttribute2 =
         CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
 
-    final ImmutableList<CustomAttribute> expectedCustomAttributes =
-        ImmutableList.from(customAttribute1, customAttribute2);
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
@@ -325,8 +355,9 @@ public class SessionReportingCoordinatorTest {
     final CustomAttribute customAttribute2 =
         CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
 
-    final ImmutableList<CustomAttribute> expectedCustomAttributes =
-        ImmutableList.from(customAttribute1, customAttribute2);
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
 
     when(reportMetadata.getInternalKeys()).thenReturn(attributes);
 
@@ -360,6 +391,29 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(mockEventBuilder).build();
     verify(logFileManager, never()).clearLog();
+  }
+
+  @Test
+  public void testFatalEvent_addRolloutsToEvent() {
+    long timestamp = System.currentTimeMillis();
+    String sessionId = "testSessionId";
+    mockEventInteractions();
+
+    List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
+        new ArrayList<CrashlyticsReport.Session.Event.RolloutAssignment>();
+    rolloutsState.add(mockRolloutAssignment());
+    when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+
+    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).build();
+    verify(mockEventBuilder, never()).setApp(mockEventApp);
+    verify(reportMetadata).getRolloutsState();
+    // first build for custom keys
+    // second build for rollouts
+    verify(mockEventBuilder, times(2)).build();
   }
 
   @Test
@@ -397,7 +451,8 @@ public class SessionReportingCoordinatorTest {
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
         new BytesBackedNativeSessionFile(byteBackedSessionName, "not_applicable", testBytes);
-    reportingCoordinator.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession), null);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        "id", Collections.singletonList(byteSession), null);
 
     ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
         ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);
@@ -442,6 +497,7 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.enqueueReport(mockReport1, false)).thenReturn(successfulTask);
     when(reportSender.enqueueReport(mockReport2, false)).thenReturn(failedTask);
 
+    when(idManager.fetchTrueFid()).thenReturn("fid");
     reportingCoordinator.sendReports(Runnable::run);
 
     verify(reportSender).enqueueReport(mockReport1, false);
@@ -491,11 +547,25 @@ public class SessionReportingCoordinatorTest {
     final CrashlyticsReport.Session mockSession = mock(CrashlyticsReport.Session.class);
     when(mockSession.getIdentifier()).thenReturn(sessionId);
     when(mockReport.getSession()).thenReturn(mockSession);
+    when(mockReport.withFirebaseInstallationId(anyString())).thenReturn(mockReport);
     return mockReport;
   }
 
   private static CrashlyticsReportWithSessionId mockReportWithSessionId(String sessionId) {
     return CrashlyticsReportWithSessionId.create(
         mockReport(sessionId), sessionId, new File("fake"));
+  }
+
+  private static CrashlyticsReport.Session.Event.RolloutAssignment mockRolloutAssignment() {
+    return CrashlyticsReport.Session.Event.RolloutAssignment.builder()
+        .setTemplateVersion(2)
+        .setParameterKey("my_feature")
+        .setParameterValue("false")
+        .setRolloutVariant(
+            CrashlyticsReport.Session.Event.RolloutAssignment.RolloutVariant.builder()
+                .setRolloutId("rollout_1")
+                .setVariantId("enabled")
+                .build())
+        .build();
   }
 }

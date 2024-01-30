@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
@@ -21,8 +22,9 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.appdistribution"
     compileSdkVersion project.targetSdkVersion
-
+    
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion project.targetSdkVersion
@@ -42,16 +44,25 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common:20.3.1'
+    androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation "org.mockito:mockito-android:3.4.0"
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'junit:junit:4.12'
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'org.mockito:mockito-inline:3.4.0'
     testImplementation project(':firebase-appdistribution-api')
-    androidTestImplementation "org.mockito:mockito-android:3.4.0"
-    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 }
