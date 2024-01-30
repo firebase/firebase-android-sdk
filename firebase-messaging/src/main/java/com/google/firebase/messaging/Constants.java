@@ -104,6 +104,9 @@ public final class Constants {
      */
     public static final String PRIORITY_REDUCED_V19 = RESERVED_PREFIX + "priority_reduced";
 
+    /** Product ID of message. */
+    public static final String PRODUCT_ID = RESERVED_PREFIX + "product_id";
+
     /**
      * Prefix "google.c" for keys that are reserved for the client library. While all the other
      * "google." are removed at GmsCore level, google.c keys are preserved in the intent extras, and

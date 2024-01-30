@@ -1,16 +1,18 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -108,6 +110,25 @@ fun DefaultTask.tempFile(path: String) = provider { temporaryDir.childFile(path)
  * ```
  */
 fun File.listFilesOrEmpty() = listFiles().orEmpty()
+
+/**
+ * Copies this file to the specified directory.
+ *
+ * The new file will retain the same [name][File.getName] and [extension][File.extension] as this
+ * file.
+ *
+ * @param target The directory to copy the file to.
+ * @param overwrite Whether to overwrite the file if it already exists.
+ * @param bufferSize The size of the buffer to use for the copy operation.
+ * @return The new file.
+ *
+ * @see copyTo
+ */
+fun File.copyToDirectory(
+  target: File,
+  overwrite: Boolean = false,
+  bufferSize: Int = DEFAULT_BUFFER_SIZE
+): File = copyTo(target.childFile(name), overwrite, bufferSize)
 
 /**
  * Submits a piece of work to be executed asynchronously.

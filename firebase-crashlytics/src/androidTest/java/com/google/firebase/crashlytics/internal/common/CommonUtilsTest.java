@@ -19,7 +19,6 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -48,24 +47,6 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
   }
 
   private static final String ABC_EXPECTED_HASH = "a9993e364706816aba3e25717850c26c9cd0d89d";
-
-  public void testConvertMemInfoToBytesFromKb() {
-    assertEquals(
-        1055760384,
-        CommonUtils.convertMemInfoToBytes("1031016 KB", "KB", CommonUtils.BYTES_IN_A_KILOBYTE));
-  }
-
-  public void testConvertMemInfoToBytesFromMb() {
-    assertEquals(
-        1081081856,
-        CommonUtils.convertMemInfoToBytes("1031 MB", "MB", CommonUtils.BYTES_IN_A_MEGABYTE));
-  }
-
-  public void testConvertMemInfoToBytesFromGb() {
-    assertEquals(
-        10737418240L,
-        CommonUtils.convertMemInfoToBytes("10 GB", "GB", CommonUtils.BYTES_IN_A_GIGABYTE));
-  }
 
   public void testCreateInstanceIdFromNullInput() {
     assertNull(CommonUtils.createInstanceIdFrom(((String[]) null)));
@@ -151,22 +132,10 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
   }
 
   public void testGetTotalRamInBytes() {
-    final long bytes = CommonUtils.getTotalRamInBytes();
+    final long bytes = CommonUtils.calculateTotalRamInBytes(getContext());
     // can't check complete string because emulators & devices may be different.
     assertTrue(bytes > 0);
     Log.d(Logger.TAG, "testGetTotalRam: " + bytes);
-  }
-
-  public void testGetAppProcessInfo() {
-    final Context context = getContext();
-    RunningAppProcessInfo info = CommonUtils.getAppProcessInfo(context.getPackageName(), context);
-    assertNotNull(info);
-    // It is not possible to test the state of info.importance because the value is not
-    // always the same under test as it is when the sdk is running in an app. In API 21, the
-    // importance under test started returning VISIBLE instead of FOREGROUND.
-
-    info = CommonUtils.getAppProcessInfo("nonexistant.package.name", context);
-    assertNull(info);
   }
 
   public void testIsRooted() {

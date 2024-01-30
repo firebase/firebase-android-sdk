@@ -270,6 +270,186 @@ public class ConfigContainerTest {
     assertThat(configWithoutTemplateVersion.getTemplateVersionNumber()).isEqualTo(0L);
   }
 
+  @Test
+  public void copyOfConfigContainer_withoutRolloutsMetadata_defaultsToEmptyArray()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder().withRolloutMetadata(rolloutsMetadata).build();
+    JSONObject configContainerJson = new JSONObject(configContainer.toString());
+    configContainerJson.remove(ConfigContainer.ROLLOUT_METADATA_KEY);
+
+    ConfigContainer otherConfigContainer = ConfigContainer.copyOf(configContainerJson);
+
+    assertThat(otherConfigContainer.getRolloutMetadata()).isNotNull();
+    assertThat(otherConfigContainer.getRolloutMetadata().length()).isEqualTo(0);
+  }
+
+  @Test
+  public void copyOfConfigContainer_withRolloutsMetadata_returnsSameRolloutsMetadata()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder().withRolloutMetadata(rolloutsMetadata).build();
+    ConfigContainer otherConfigContainer =
+        ConfigContainer.copyOf(new JSONObject(configContainer.toString()));
+
+    assertThat(otherConfigContainer.getRolloutMetadata().toString())
+        .isEqualTo(rolloutsMetadata.toString());
+  }
+
+  @Test
+  public void configContainer_withRolloutsMetadata_returnsCorrectRolloutsMetadata()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder().withRolloutMetadata(rolloutsMetadata).build();
+
+    assertThat(configContainer.getRolloutMetadata().toString())
+        .isEqualTo(rolloutsMetadata.toString());
+  }
+
+  @Test
+  public void getChangedParams_changedRolloutMetadata_returnsUpdatedKey() throws Exception {
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(1);
+
+    fetchedRolloutMetadata.getJSONObject(0).put("variantId", "B");
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(activeRolloutMetadata)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(fetchedRolloutMetadata)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("key_1");
+  }
+
+  @Test
+  public void getChangedParams_addedRolloutMetadataToSameKey_returnsUpdatedKey() throws Exception {
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(2);
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(activeRolloutMetadata)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(fetchedRolloutMetadata)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("key_1");
+  }
+
+  @Test
+  public void getChangedParams_deletedRolloutMetadata_returnsUpdatedKey() throws Exception {
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = new JSONArray();
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(activeRolloutMetadata)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(fetchedRolloutMetadata)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("key_1");
+  }
+
+  @Test
+  public void getChangedParams_addNewKeyWithRolloutMetadata_returnsUpdatedKey() throws Exception {
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(2);
+
+    fetchedRolloutMetadata.getJSONObject(1).getJSONArray("affectedParameterKeys").put(0, "key_2");
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(activeRolloutMetadata)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1", "key_2", "value_2"))
+            .withRolloutMetadata(fetchedRolloutMetadata)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("key_2");
+  }
+
+  @Test
+  public void getChangedParams_unchangedRolloutMetadata_returnsNoKey() throws Exception {
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(1);
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(activeRolloutMetadata)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("key_1", "value_1"))
+            .withRolloutMetadata(fetchedRolloutMetadata)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).isEmpty();
+  }
+
   private static JSONArray generateAbtExperiments(int numExperiments) throws JSONException {
     JSONArray experiments = new JSONArray();
     for (int experimentNum = 1; experimentNum <= numExperiments; experimentNum++) {
@@ -283,5 +463,19 @@ public class ConfigContainerTest {
       String p13nId, String armIndex, String choiceId, String group) {
     return ImmutableMap.of(
         PERSONALIZATION_ID, p13nId, ARM_INDEX, armIndex, CHOICE_ID, choiceId, GROUP, group);
+  }
+
+  private static JSONArray generateNRolloutMetadataEntries(int numberOfMetadata)
+      throws JSONException {
+    JSONArray rolloutMetadata = new JSONArray();
+    for (int i = 1; i <= numberOfMetadata; i++) {
+      rolloutMetadata.put(
+          new JSONObject()
+              .put("rolloutId", "rollout_" + i)
+              .put("variantId", "A")
+              .put("affectedParameterKeys", new JSONArray().put("key_1")));
+    }
+
+    return rolloutMetadata;
   }
 }

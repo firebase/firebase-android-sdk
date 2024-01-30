@@ -1,6 +1,44 @@
 # Unreleased
 
 
+# 20.4.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-inappmessaging-display-ktx`
+  to `com.google.firebase:firebase-inappmessaging-display` under the `com.google.firebase.inappmessaging.display` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-inappmessaging-display-ktx` have been added to
+  `com.google.firebase:firebase-inappmessaging-display` under the `com.google.firebase.inappmessaging.display` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-inappmessaging-display-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.3.5
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.3.4
+* [changed] Updated internal logging backend.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.3.3
+* [unchanged] Updated internal Dagger dependency.
+
 # 20.3.2
 * [fixed] Fixed nullpointer crash when using experiments
   (GitHub [#4716](//github.com/firebase/firebase-android-sdk/issues/4716){: .external})
@@ -26,9 +64,7 @@ updates.
 # 20.3.0
 * [changed] Migrated [inappmessaging] Display to use standard Firebase
   executors.
-
 * [changed] Moved Task continuations off the main thread.
-
 * [feature] Added a new API for
   [removing a dismiss listener](/docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging#removeDismissListener(com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener)).
   (GitHub
@@ -151,7 +187,6 @@ additional updates.
 # 19.1.1
 * [fixed] Improved link handling on devices without any browser installed
   or without Chrome installed.
-
 * [feature] Added the ability to register a dismiss listener that reacts to
   message dismissal.
 
@@ -168,7 +203,6 @@ additional updates.
   No developer action is necessary.
 
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -178,12 +212,10 @@ additional updates.
 * [fixed] Improved handling of activity transitions.
   (GitHub [Issue #1410](//github.com/firebase/firebase-android-sdk/issues/1410)
   and [Issue #1092](//github.com/firebase/firebase-android-sdk/issues/1092))
-
 * [changed] Migrated to use the [firebase_installations] service _directly_
   instead of using an indirect dependency via the Firebase Instance ID SDK.
 
   {% include "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html" %}
-
 
 
 ## Kotlin
@@ -213,9 +245,7 @@ additional updates.
 
 # 19.0.4
 * [fixed] Fixed issue with messages not being fetched on app first open.
-
 * [fixed] Fixed issue with first foreground trigger not being picked up.
-
 
 
 ## Kotlin
@@ -225,7 +255,6 @@ additional updates.
 
 # 19.0.3
 * [changed] Internal changes to enable future SDK improvements.
-
 
 
 ## Kotlin

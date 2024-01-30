@@ -635,7 +635,8 @@ public final class SQLitePersistence extends Persistence {
 
     /**
      * The longer version of the constructor additionally takes {@code argsHead} parameter that
-     * contains parameters that will be reissued in each subquery, i.e. subqueries take the form:
+     * contains parameters that will be reissued in each subquery, specifically, subqueries take the
+     * form:
      *
      * <p>[head][argsHead][an auto-generated comma-separated list of '?' placeholders][tail]
      */

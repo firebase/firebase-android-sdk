@@ -138,7 +138,7 @@ public class DocumentReference {
    * Overwrites the document referred to by this {@code DocumentReference}. If the document does not
    * yet exist, it will be created. If a document already exists, it will be overwritten.
    *
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   * @param data The data to write to the document (like a Map or a POJO containing the desired
    *     document contents).
    * @return A Task that will be resolved when the write finishes.
    */
@@ -152,7 +152,7 @@ public class DocumentReference {
    * yet exist, it will be created. If you pass {@code SetOptions}, the provided data can be merged
    * into an existing document.
    *
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   * @param data The data to write to the document (like a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
    * @return A Task that will be resolved when the write finishes.
@@ -402,7 +402,7 @@ public class DocumentReference {
    * Starts listening to the document referenced by this {@code DocumentReference} with the given
    * options.
    *
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     DocumentSnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -418,7 +418,7 @@ public class DocumentReference {
    * options.
    *
    * @param executor The executor to use to call the listener.
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     DocumentSnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
@@ -441,7 +441,7 @@ public class DocumentReference {
    * <p>The listener will be automatically removed during {@link Activity#onStop}.
    *
    * @param activity The activity to scope the listener to.
-   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   * @param metadataChanges Indicates whether metadata-only changes (specifically, only {@code
    *     DocumentSnapshot.getMetadata()} changed) should trigger snapshot events.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.

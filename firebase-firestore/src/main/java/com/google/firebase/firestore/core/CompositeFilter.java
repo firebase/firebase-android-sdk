@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.util.Function;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,19 +71,6 @@ public class CompositeFilter extends Filter {
       memoizedFlattenedFilters.addAll(subfilter.getFlattenedFilters());
     }
     return Collections.unmodifiableList(memoizedFlattenedFilters);
-  }
-
-  /**
-   * Returns the first inequality filter contained within this composite filter. Returns {@code
-   * null} if it does not contain any inequalities.
-   */
-  @Override
-  public FieldPath getFirstInequalityField() {
-    FieldFilter found = findFirstMatchingFilter(f -> f.isInequality());
-    if (found != null) {
-      return found.getField();
-    }
-    return null;
   }
 
   public boolean isConjunction() {

@@ -1,5 +1,23 @@
 # Unreleased
 
+
+# 21.2.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-dynamic-links-ktx`
+  to `com.google.firebase:firebase-dynamic-links` under the `com.google.firebase.dynamiclinks` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-dynamic-links-ktx` have been added to
+  `com.google.firebase:firebase-dynamic-links` under the `com.google.firebase.dynamiclinks` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-dynamic-links-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-dynamic-links` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.1.0
 * [unchanged] Updated to accommodate the release of the updated
   [ddls] Kotlin extensions library.
@@ -46,7 +64,6 @@ additional updates.
   [dependency on Google Play services](/docs/android/android-play-services),
   this SDK now requires devices and emulators to target API level 19 (KitKat)
   or higher and to use Android 4.4 or higher.
-
 * [fixed] Fixed non-null annotation.
   #2336
 
@@ -115,7 +132,6 @@ The Kotlin extensions library transitively includes the updated
 # 16.2.0
 * [changed] Refactored code to ensure functionality alignment with other
   updated Firebase libraries.
-
 * [changed] Updated minSdkVersion to API level 16.
 
 # 16.1.7
@@ -128,5 +144,4 @@ using Google Play Services 13.2.80 and FDL SDK 16.1.0. The issue only occurred
 when creating shortening links from parameters, links created using
 preconstructed long links from `setLongLink()` were unaffected. This fix also
 addresses issues in newer versions of Google Play Services.
-
 

@@ -150,8 +150,8 @@ final class SQLiteIndexManager implements IndexManager {
                     serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
 
                 // If we fetched an index state for the user above, combine it with this index.
-                // We use the default state if we don't have an index state (e.g. the index was
-                // created while a different user as logged in).
+                // We use the default state if we don't have an index state (for example, if the
+                // index was created while a different user as logged in).
                 FieldIndex.IndexState indexState =
                     indexStates.containsKey(indexId)
                         ? indexStates.get(indexId)
@@ -230,6 +230,32 @@ final class SQLiteIndexManager implements IndexManager {
     Map<Integer, FieldIndex> collectionIndices = memoizedIndexes.get(index.getCollectionGroup());
     if (collectionIndices != null) {
       collectionIndices.remove(index.getIndexId());
+    }
+  }
+
+  @Override
+  public void deleteAllFieldIndexes() {
+    db.execute("DELETE FROM index_configuration");
+    db.execute("DELETE FROM index_entries");
+    db.execute("DELETE FROM index_state");
+
+    nextIndexToUpdate.clear();
+    memoizedIndexes.clear();
+  }
+
+  @Override
+  public void createTargetIndexes(Target target) {
+    hardAssert(started, "IndexManager not started");
+
+    for (Target subTarget : getSubTargets(target)) {
+      IndexType type = getIndexType(subTarget);
+      if (type == IndexType.NONE || type == IndexType.PARTIAL) {
+        TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(subTarget);
+        FieldIndex fieldIndex = targetIndexMatcher.buildTargetIndex();
+        if (fieldIndex != null) {
+          addFieldIndex(fieldIndex);
+        }
+      }
     }
   }
 
@@ -748,7 +774,7 @@ final class SQLiteIndexManager implements IndexManager {
   /**
    * Creates a separate encoder for each element of an array.
    *
-   * <p>The method appends each value to all existing encoders (e.g. filter("a", "==",
+   * <p>The method appends each value to all existing encoders (for example, filter("a", "==",
    * "a1").filter("b", "in", ["b1", "b2"]) becomes ["a1,b1", "a1,b2"]). A list of new encoders is
    * returned.
    */

@@ -16,6 +16,8 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.util.Util.autoId;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import android.content.Context;
@@ -35,7 +37,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
+import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.Source;
 import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
@@ -283,7 +287,7 @@ public class IntegrationTestUtil {
       FirebaseFirestoreSettings settings,
       String persistenceKey) {
     return testFirestore(
-        DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID),
+        DatabaseId.forDatabase(projectId, BuildConfig.TARGET_DATABASE_ID),
         logLevel,
         settings,
         persistenceKey);
@@ -507,5 +511,24 @@ public class IntegrationTestUtil {
     List<Object> nullArray = new ArrayList<>();
     nullArray.add(null);
     return nullArray;
+  }
+
+  /**
+   * Checks that running the query while online (against the backend/emulator) results in the same
+   * documents as running the query while offline. If `expectedDocs` is provided, it also checks
+   * that both online and offline query result is equal to the expected documents.
+   *
+   * @param query The query to check
+   * @param expectedDocs Ordered list of document keys that are expected to match the query
+   */
+  public static void checkOnlineAndOfflineResultsMatch(Query query, String... expectedDocs) {
+    QuerySnapshot docsFromServer = waitFor(query.get(Source.SERVER));
+    QuerySnapshot docsFromCache = waitFor(query.get(Source.CACHE));
+
+    assertEquals(querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCache));
+    List<String> expected = asList(expectedDocs);
+    if (!expected.isEmpty()) {
+      assertEquals(expected, querySnapshotToIds(docsFromCache));
+    }
   }
 }

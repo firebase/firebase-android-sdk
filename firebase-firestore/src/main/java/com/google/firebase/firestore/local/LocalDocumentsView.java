@@ -44,9 +44,9 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * A readonly view of the local state of all documents we're tracking (i.e. we have a cached version
- * in remoteDocumentCache or local mutations for the document). The view is computed by applying the
- * mutations in the MutationQueue to the RemoteDocumentCache.
+ * A readonly view of the local state of all documents we're tracking (specifically, we have a
+ * cached version in remoteDocumentCache or local mutations for the document). The view is computed
+ * by applying the mutations in the MutationQueue to the RemoteDocumentCache.
  */
 class LocalDocumentsView {
 
@@ -258,17 +258,30 @@ class LocalDocumentsView {
    *
    * @param query The query to match documents against.
    * @param offset Read time and key to start scanning by (exclusive).
+   * @param context A optional tracker to keep a record of important details during database local
+   *     query execution.
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset) {
+      Query query, IndexOffset offset, @Nullable QueryContext context) {
     ResourcePath path = query.getPath();
     if (query.isDocumentQuery()) {
       return getDocumentsMatchingDocumentQuery(path);
     } else if (query.isCollectionGroupQuery()) {
-      return getDocumentsMatchingCollectionGroupQuery(query, offset);
+      return getDocumentsMatchingCollectionGroupQuery(query, offset, context);
     } else {
-      return getDocumentsMatchingCollectionQuery(query, offset);
+      return getDocumentsMatchingCollectionQuery(query, offset, context);
     }
+  }
+
+  /**
+   * Performs a query against the local view of all documents.
+   *
+   * @param query The query to match documents against.
+   * @param offset Read time and key to start scanning by (exclusive).
+   */
+  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset) {
+    return getDocumentsMatchingQuery(query, offset, /*context*/ null);
   }
 
   /** Performs a simple document lookup for the given path. */
@@ -284,7 +297,7 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
-      Query query, IndexOffset offset) {
+      Query query, IndexOffset offset, @Nullable QueryContext context) {
     hardAssert(
         query.getPath().isEmpty(),
         "Currently we only support collection group queries at the root.");
@@ -297,7 +310,7 @@ class LocalDocumentsView {
     for (ResourcePath parent : parents) {
       Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
       ImmutableSortedMap<DocumentKey, Document> collectionResults =
-          getDocumentsMatchingCollectionQuery(collectionQuery, offset);
+          getDocumentsMatchingCollectionQuery(collectionQuery, offset, context);
       for (Map.Entry<DocumentKey, Document> docEntry : collectionResults) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
       }
@@ -327,7 +340,7 @@ class LocalDocumentsView {
         count - docs.size() > 0
             ? documentOverlayCache.getOverlays(
                 collectionGroup, offset.getLargestBatchId(), count - docs.size())
-            : Collections.emptyMap();
+            : new HashMap<>();
 
     int largestBatchId = FieldIndex.INITIAL_LARGEST_BATCH_ID;
     for (Overlay overlay : overlays.values()) {
@@ -362,11 +375,11 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
-      Query query, IndexOffset offset) {
+      Query query, IndexOffset offset, @Nullable QueryContext context) {
     Map<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
     Map<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getDocumentsMatchingQuery(query, offset, overlays.keySet());
+        remoteDocumentCache.getDocumentsMatchingQuery(query, offset, overlays.keySet(), context);
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.

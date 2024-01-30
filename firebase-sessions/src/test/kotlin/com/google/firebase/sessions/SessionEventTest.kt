@@ -41,7 +41,7 @@ class SessionEventTest {
   fun sessionStart_populatesSessionDetailsCorrectly() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
-      SessionEvents.startSession(
+      SessionEvents.buildSession(
         fakeFirebaseApp.firebaseApp,
         TEST_SESSION_DETAILS,
         SessionsSettings(
@@ -61,7 +61,7 @@ class SessionEventTest {
     val context = firebaseApp.applicationContext
 
     val sessionEvent =
-      SessionEvents.startSession(
+      SessionEvents.buildSession(
         firebaseApp,
         TEST_SESSION_DETAILS,
         SessionsSettings(

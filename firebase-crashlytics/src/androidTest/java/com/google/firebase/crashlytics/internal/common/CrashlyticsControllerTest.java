@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.mockito.AdditionalMatchers.not;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
@@ -38,6 +39,7 @@ import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
@@ -52,6 +54,7 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 public class CrashlyticsControllerTest extends CrashlyticsTestCase {
@@ -101,7 +104,11 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     private CrashlyticsNativeComponent nativeComponent = null;
     private AnalyticsEventLogger analyticsEventLogger;
     private SessionReportingCoordinator sessionReportingCoordinator;
+
+    private CrashlyticsBackgroundWorker backgroundWorker;
     private LogFileManager logFileManager = null;
+
+    private UserMetadata userMetadata = null;
 
     ControllerBuilder() {
       dataCollectionArbiter = mockDataCollectionArbiter;
@@ -110,10 +117,17 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       analyticsEventLogger = mock(AnalyticsEventLogger.class);
 
       sessionReportingCoordinator = mockSessionReportingCoordinator;
+
+      backgroundWorker = new CrashlyticsBackgroundWorker(new SameThreadExecutorService());
     }
 
     ControllerBuilder setDataCollectionArbiter(DataCollectionArbiter arbiter) {
       dataCollectionArbiter = arbiter;
+      return this;
+    }
+
+    ControllerBuilder setUserMetadata(UserMetadata userMetadata) {
+      this.userMetadata = userMetadata;
       return this;
     }
 
@@ -153,17 +167,18 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       final CrashlyticsController controller =
           new CrashlyticsController(
               testContext.getApplicationContext(),
-              new CrashlyticsBackgroundWorker(new SameThreadExecutorService()),
+              backgroundWorker,
               idManager,
               dataCollectionArbiter,
               testFileStore,
               crashMarker,
               appData,
-              null,
+              userMetadata,
               logFileManager,
               sessionReportingCoordinator,
               nativeComponent,
-              analyticsEventLogger);
+              analyticsEventLogger,
+              mock(CrashlyticsAppQualitySessionsSubscriber.class));
       return controller;
     }
   }
@@ -208,6 +223,26 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     verify(mockSessionReportingCoordinator)
         .persistFatalEvent(eq(fatal), eq(thread), eq(sessionId), anyLong());
+  }
+
+  @Test
+  public void testOnDemandFatal_callLogFatalException() {
+    Thread thread = Thread.currentThread();
+    Exception fatal = new RuntimeException("Fatal");
+    Thread.UncaughtExceptionHandler exceptionHandler = mock(Thread.UncaughtExceptionHandler.class);
+    UserMetadata mockUserMetadata = mock(UserMetadata.class);
+    when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
+        .thenReturn(new TreeSet<>(Collections.singleton(SESSION_ID)).descendingSet());
+
+    final CrashlyticsController controller =
+        builder()
+            .setLogFileManager(new LogFileManager(testFileStore))
+            .setUserMetadata(mockUserMetadata)
+            .build();
+    controller.enableExceptionHandling(SESSION_ID, exceptionHandler, testSettingsProvider);
+    controller.logFatalException(thread, fatal);
+
+    verify(mockUserMetadata).setNewSession(not(eq(SESSION_ID)));
   }
 
   public void testNativeCrashDataCausesNativeReport() throws Exception {

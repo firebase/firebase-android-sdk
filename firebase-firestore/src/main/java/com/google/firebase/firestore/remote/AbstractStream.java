@@ -296,7 +296,7 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     cancelHealthCheck();
     this.backoff.cancel();
 
-    // Invalidates any stream-related callbacks (e.g. from auth or the underlying stream),
+    // Invalidates any stream-related callbacks (for example, from auth or the underlying stream),
     // guaranteeing they won't execute.
     this.closeCount++;
 
