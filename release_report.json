@@ -1,0 +1,12 @@
+{
+    "changesByLibraryName": {
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx"
+    ]
+}
