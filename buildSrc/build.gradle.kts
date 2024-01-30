@@ -14,7 +14,6 @@
 
 plugins {
     id("com.ncorti.ktfmt.gradle") version "0.11.0"
-    id("com.github.sherter.google-java-format") version "0.9"
     kotlin("plugin.serialization") version "1.7.10"
     `kotlin-dsl`
 }
@@ -31,11 +30,6 @@ repositories {
 // The System property allows us to integrate with an unreleased version from https://bityl.co/3oYt.
 // Refer go/fireperf-plugin-test-on-head for more details.
 val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
-
-googleJavaFormat {
-    toolVersion = "1.15.0"
-    exclude(".gradle/**")
-}
 
 ktfmt {
     googleStyle()
@@ -65,8 +59,8 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:7.4.2")
-    implementation("com.android.tools.build:builder-test-api:7.4.2")
+    implementation("com.android.tools.build:gradle:8.2.1")
+    implementation("com.android.tools.build:builder-test-api:8.2.1")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
     testImplementation(libs.bundles.kotest)

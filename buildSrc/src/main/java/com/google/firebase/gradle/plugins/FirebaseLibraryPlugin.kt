@@ -68,6 +68,8 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       targetCompatibility = JavaVersion.VERSION_1_8
     }
 
+    android.buildFeatures.buildConfig = true
+
     // In the case of and android library signing config only affects instrumentation test APK.
     // We need it signed with default debug credentials in order for FTL to accept the APK.
     android.buildTypes { getByName("release").signingConfig = getByName("debug").signingConfig }

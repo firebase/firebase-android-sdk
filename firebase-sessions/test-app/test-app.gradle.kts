@@ -30,6 +30,7 @@ plugins {
 android {
   namespace = "com.google.firebase.testing.sessions"
   compileSdk = 33
+  buildFeatures.buildConfig = true
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
     minSdk = 16
