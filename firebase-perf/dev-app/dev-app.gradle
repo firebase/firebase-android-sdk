@@ -24,7 +24,7 @@ firebaseTestLab {
 android {
     compileSdkVersion 31
 
-    namespace "com.googletest.firebase.perf.testapp.prod"
+    namespace "com.googletest.firebase.perf.testapp"
     compileOptions {
         sourceCompatibility 1.8
         targetCompatibility 1.8
