@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Internal test improvements.
 
 # 24.10.1
 * [fixed] Fixed an issue caused by calling mutation on immutable map object. [#5573](//github.com/firebase/firebase-android-sdk/pull/5573)
@@ -880,4 +880,3 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
-
