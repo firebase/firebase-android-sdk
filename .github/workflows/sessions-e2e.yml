@@ -34,7 +34,7 @@ jobs:
       - uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - name: Run sessions end-to-end tests
         env:
           FTL_RESULTS_BUCKET: fireescape

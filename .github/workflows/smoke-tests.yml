@@ -20,7 +20,7 @@ jobs:
       - uses: google-github-actions/auth@v0
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
 
       # TODO(yifany): make it a fireci plugin and remove the separately distributed jar file
       - name: Download smoke tests runner
