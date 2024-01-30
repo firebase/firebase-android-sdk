@@ -440,7 +440,6 @@ public class CustomClassMapper {
   }
 
   private static class BeanMapper<T> {
-    private static final String BRIDGE_METHOD_KEY_SUFFIX = "$$bridge";
     private final Class<T> clazz;
     private final Constructor<T> constructor;
     private final boolean throwOnUnknownProperties;
@@ -497,7 +496,8 @@ public class CustomClassMapper {
       // getMethods/getFields only returns public methods/fields we need to traverse the
       // class hierarchy to find the appropriate setter or field.
       Class<? super T> currentClass = clazz;
-      Set<String> propNamesOfExcludedSetters = new HashSet<>();
+      Map<String, Method> bridgeMethods = new HashMap<>();
+      Set<String> propertyNamesOfExcludedSetters = new HashSet<>();
       do {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
@@ -511,17 +511,20 @@ public class CustomClassMapper {
               } else if (method.isBridge()) {
                 // We ignore bridge setters when creating a bean, but include them in the map
                 // for the purpose of the `isSetterOverride()` check
-                setters.put(propertyName + BRIDGE_METHOD_KEY_SUFFIX, method);
+                bridgeMethods.put(propertyName, method);
               } else {
                 Method existingSetter = setters.get(propertyName);
-                Method correspondingBridge = setters.get(propertyName + BRIDGE_METHOD_KEY_SUFFIX);
+                Method correspondingBridgeMethod = bridgeMethods.get(propertyName);
                 if (existingSetter == null) {
                   setters.put(propertyName, method);
-                  if (!method.isAnnotationPresent(Exclude.class))
+                  if (!method.isAnnotationPresent(Exclude.class)) {
                     method.setAccessible(true);
-                  else
-                    propNamesOfExcludedSetters.add(propertyName);
-                } else if (!isSetterOverride(method, existingSetter) && !(correspondingBridge != null && isSetterOverride(method, correspondingBridge))) {
+                  } else {
+                    propertyNamesOfExcludedSetters.add(propertyName);
+                  }
+                } else if (!isSetterOverride(method, existingSetter)
+                        && !(correspondingBridgeMethod != null
+                        && isSetterOverride(method, correspondingBridgeMethod))) {
                   // We require that setters with conflicting property names are
                   // overrides from a base class
                   throw new DatabaseException(
@@ -556,7 +559,9 @@ public class CustomClassMapper {
         currentClass = currentClass.getSuperclass();
       } while (currentClass != null && !currentClass.equals(Object.class));
 
-      for (String propertyName: propNamesOfExcludedSetters) {
+      // When subclass setter is annotated with `@Exclude`, the corresponding superclass setter
+      // also need to be filtered out.
+      for (String propertyName: propertyNamesOfExcludedSetters) {
         setters.remove(propertyName);
       }
 
@@ -750,16 +755,7 @@ public class CustomClassMapper {
       if (method.getParameterTypes().length != 1) {
         return false;
       }
-      // removed the following check (although it's present in `shouldIncludeGetter()`) because bridge methods
-      // are useful in distinguishing logic between conflicting and non-conflicting generic setters
-//      if (method.isBridge()) {
-//        return false;
-//      }
-      // removed the following check (although it's present in `shouldIncludeGetter()`) because
-      // @Exclude-annotated methods are useful for `isSetterOverride()`
-//      if (method.isAnnotationPresent(Exclude.class)) {
-//        return false;
-//      }
+
       return true;
     }
 

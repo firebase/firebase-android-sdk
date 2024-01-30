@@ -22,7 +22,7 @@ interface GenericInterface<T> {
   var value: T?
 }
 
-class GenericExcludedSetterBeanKt : GenericInterface<String> {
+class GenericExcludedSetterBeanKotlin : GenericInterface<String> {
 
   @set:Exclude
   override var value: String? = null

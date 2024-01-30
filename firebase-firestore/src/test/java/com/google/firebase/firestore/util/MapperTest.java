@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import androidx.annotation.Nullable;
-
 import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Exclude;
@@ -2244,18 +2243,18 @@ public class MapperTest {
   }
 
   @Test
-  public void excludedOverridenGenericSetterSetsValueNot() {
+  public void excludedOverriddenGenericSetterSetsValueNotJava() {
     GenericExcludedSetterBean bean =
-            deserialize("{'value': 'foo'}", GenericExcludedSetterBean.class);
+        deserialize("{'value': 'foo'}", GenericExcludedSetterBean.class);
     assertEquals("foo", bean.value);
   }
 
   // Unlike Java, in Kotlin, annotations do not get propagated to bridge methods.
   // That's why there are 2 separate tests for Java and Kotlin
   @Test
-  public void excludedOverridenGenericSetterSetsValueNotKotlin() {
-    GenericExcludedSetterBeanKt bean =
-            deserialize("{'value': 'foo'}", GenericExcludedSetterBeanKt.class);
+  public void excludedOverriddenGenericSetterSetsValueNotKotlin() {
+    GenericExcludedSetterBeanKotlin bean =
+        deserialize("{'value': 'foo'}", GenericExcludedSetterBeanKotlin.class);
     assertEquals("foo", bean.getValue());
   }
 
