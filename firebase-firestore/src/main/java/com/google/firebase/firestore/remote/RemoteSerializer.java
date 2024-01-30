@@ -202,7 +202,7 @@ public final class RemoteSerializer {
   /** Validates that a path has a prefix that looks like a valid encoded databaseId. */
   private static boolean isValidResourceName(ResourcePath path) {
     // Resource names have at least 4 components (project ID, database ID)
-    // and commonly the (root) resource type, e.g. documents
+    // and commonly the (root) resource type (for example, documents).
     return path.length() >= 4
         && path.getSegment(0).equals("projects")
         && path.getSegment(2).equals("databases");
@@ -1011,8 +1011,8 @@ public final class RemoteSerializer {
 
   public SnapshotVersion decodeVersionFromListenResponse(ListenResponse watchChange) {
     // We have only reached a consistent snapshot for the entire stream if there is a read_time set
-    // and it applies to all targets (i.e. the list of targets is empty). The backend is guaranteed
-    // to send such responses.
+    // and it applies to all targets (specifically, the list of targets is empty). The backend is
+    // guaranteed to send such responses.
     if (watchChange.getResponseTypeCase() != ResponseTypeCase.TARGET_CHANGE) {
       return SnapshotVersion.NONE;
     }

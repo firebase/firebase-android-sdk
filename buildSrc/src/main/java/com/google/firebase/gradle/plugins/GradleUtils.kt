@@ -1,16 +1,18 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2022 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -58,6 +60,38 @@ fun Provider<File>.childFile(path: String) = map { File("${it.path}/$path") }
 fun File.childFile(childPath: String) = File("$path/$childPath")
 
 /**
+ * Rewrites the lines of a file.
+ *
+ * The lines of the file are first read and then transformed by the provided `block` function. The
+ * transformed lines are then joined together with a newline character and written back to the file.
+ *
+ * If the `terminateWithNewline` parameter is set to `false`, the file will not be terminated with a
+ * newline character.
+ *
+ * @param terminateWithNewline Whether to terminate the file with a newline character. Defaults to
+ * `true`.
+ * @param block A function that takes a string as input and returns a new string. This function is
+ * used to transform the lines of the file before they are rewritten.
+ *
+ * ```
+ * val file = File("my-file.txt")
+ *
+ * // Rewrite the lines of the file, replacing all spaces with tabs.
+ * file.rewriteLines { it.replace(" ", "\t") }
+ *
+ * // Rewrite the lines of the file, capitalizing the first letter of each word.
+ * file.rewriteLines { it.capitalizeWords() }
+ * ```
+ *
+ * @see [readLines]
+ * @see [writeText]
+ */
+fun File.rewriteLines(terminateWithNewline: Boolean = true, block: (String) -> String) {
+  val newLines = readLines().map(block)
+  writeText(newLines.joinToString("\n").let { if (terminateWithNewline) it + "\n" else it })
+}
+
+/**
  * Provides a temporary file for use during the task.
  *
  * Creates a file under the [temporaryDir][DefaultTask.getTemporaryDir] of the task, and should be
@@ -76,6 +110,25 @@ fun DefaultTask.tempFile(path: String) = provider { temporaryDir.childFile(path)
  * ```
  */
 fun File.listFilesOrEmpty() = listFiles().orEmpty()
+
+/**
+ * Copies this file to the specified directory.
+ *
+ * The new file will retain the same [name][File.getName] and [extension][File.extension] as this
+ * file.
+ *
+ * @param target The directory to copy the file to.
+ * @param overwrite Whether to overwrite the file if it already exists.
+ * @param bufferSize The size of the buffer to use for the copy operation.
+ * @return The new file.
+ *
+ * @see copyTo
+ */
+fun File.copyToDirectory(
+  target: File,
+  overwrite: Boolean = false,
+  bufferSize: Int = DEFAULT_BUFFER_SIZE
+): File = copyTo(target.childFile(name), overwrite, bufferSize)
 
 /**
  * Submits a piece of work to be executed asynchronously.

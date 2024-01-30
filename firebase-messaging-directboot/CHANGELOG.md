@@ -1,5 +1,12 @@
 # Unreleased
 
+
+# 23.4.0
+* [unchanged] Updated to keep messaging SDK versions aligned.
+
+# 23.3.0
+* [unchanged] Updated to keep messaging SDK versions aligned.
+
 # 23.1.2
 * [unchanged] Updated to keep messaging SDK versions aligned.
 
@@ -13,19 +20,19 @@
 # 23.0.8
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
+
 # 23.0.7
 * [changed] Updated `minSdkVersion` to 19 to match [messaging_longer]
   `minSdkVersion`.
-
 * [changed] Updated `FirebaseMessagingDirectBootReceiver` to match
   [messaging_longer] `FirebaseInstanceIdReceiver`.
-
 * [changed] Removed unused dependencies.
 
 # 23.0.6
 * [changed] Internal changes to ensure functionality alignment with other
   SDK releases. For more details, refer to the
   [[messaging_longer] v23.0.6 release notes](/support/release-notes/android#messaging_v23-0-6).
+
 # 23.0.5
 * [changed] Internal changes to ensure functionality alignment with other
   SDK releases. For more details, refer to the
@@ -46,7 +53,6 @@
   (v18.0.0, v18.0.1, and v18.0.1, respectively). For more information, see the
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
-
 * [changed] Internal changes to ensure functionality alignment with other SDK
   releases. For more details, refer to the
   [[messaging_longer] v23.0.1 release note](/support/release-notes/android#messaging_v23-0-1).
@@ -59,9 +65,7 @@
 # 22.0.0
 * [changed] Internal changes to ensure functionality alignment with other
   SDK releases.
-
 * [changed] Internal changes to support dynamic feature modules.
-
 * [changed] Internal infrastructure improvements.
 
 # 21.1.0
@@ -100,13 +104,12 @@ be used.** A related library has a known issue (for more details, see
 A fix for this issue was released on July 08, 2020
 (see [v20.2.3](/support/release-notes/android#messaging-directboot_v20-2-3)).
 
-* [changed]  Internal improvements.
+* [changed] Internal improvements.
 
 # 20.2.1
 * [changed] Internal changes to ensure functionality alignment with other SDK
   releases. For more information, refer to the
   [Firebase Instance ID v20.2.1 release notes](/support/release-notes/android#iid_v20-2-1).
-
 
 # 20.2.0
 * [feature] The Firebase Cloud Messaging Direct Boot SDK is now available

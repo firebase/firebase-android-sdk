@@ -1,16 +1,19 @@
-// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.firebase.gradle.plugins
 
 import java.io.File
@@ -27,6 +30,9 @@ import java.io.File
  * @see fromString
  */
 data class Changelog(val releases: List<ReleaseEntry>) {
+
+  override fun toString(): String = releases.joinToString("\n") + "\n"
+
   companion object {
     /**
      * Regex for finding the version titles in a changelog file.
@@ -114,7 +120,41 @@ data class ReleaseEntry(
   val content: ReleaseContent,
   val ktx: ReleaseContent?
 ) {
+
+  override fun toString(): String {
+    return """
+      |# ${version ?: "Unreleased"}
+      |$content
+      |${ktx?.let { """
+      |
+      |## Kotlin
+      |$it
+      |""" }.orEmpty()}
+    """
+      .trimMargin()
+  }
+
+  /**
+   * If there is any content in this release.
+   *
+   * Meaning that there is content in either the [base release][content] or [ktx].
+   *
+   * @see ReleaseContent.hasContent
+   */
+  fun hasContent() = content.hasContent() || ktx?.hasContent() ?: false
+
   companion object {
+
+    /**
+     * A static instance of a [ReleaseEntry] without any content.
+     *
+     * This exists to provide a means for tooling to create new sections explicitly, versus offering
+     * default values to [ReleaseEntry]
+     * - as this could lead to edge case scenarios where empty [ReleaseEntry] instances are
+     * accidentally created.
+     */
+    val Empty = ReleaseEntry(null, ReleaseContent("", emptyList()), null)
+
     /**
      * Regex for finding the Kotlin header in a changelog file.
      *
@@ -164,18 +204,12 @@ data class ReleaseEntry(
       val ktx = ktxString?.let { ReleaseContent.fromString(it) }
       val version = ModuleVersion.fromStringOrNull(versionString)
 
+      if (ktx?.hasContent() == false)
+        throw RuntimeException("KTX header found without any content:\n $string")
+
       return ReleaseEntry(version, content, ktx)
     }
   }
-
-  /**
-   * If there is any content in this release.
-   *
-   * Meaning that there is content in either the [base release][content] or [ktx].
-   *
-   * @see ReleaseContent.hasContent
-   */
-  fun hasContent() = content.hasContent() || ktx?.hasContent() ?: false
 }
 
 /**
@@ -186,6 +220,25 @@ data class ReleaseEntry(
  * @see fromString
  */
 data class ReleaseContent(val subtext: String, val changes: List<Change>) {
+
+  override fun toString(): String {
+    val changes = changes.joinToString("\n")
+
+    return when {
+      subtext.isNotBlank() && changes.isNotBlank() -> "$subtext\n\n$changes"
+      subtext.isNotBlank() -> subtext
+      changes.isNotBlank() -> changes
+      else -> ""
+    }
+  }
+
+  /**
+   * If there is any content in this release.
+   *
+   * Meaning that there is either [changes] or [subtext] present.
+   */
+  fun hasContent() = changes.isNotEmpty() || subtext.isNotBlank()
+
   companion object {
     /**
      * Regex for finding the changes in a release.
@@ -235,7 +288,7 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
      * "This release contains a known bug. We will address this in a future bugfix."
      * ```
      */
-    val SUBTEXT_REGEX = Regex("^([^\\*\\s][\\s\\S]+?)(\\n\\n|(?![\\s\\S]))", RegexOption.MULTILINE)
+    val SUBTEXT_REGEX = Regex("^([^\\*\\s][\\s\\S]+?)(\\n\\n|(?![\\s\\S]))")
 
     /**
      * Parses [ReleaseContent] from a [String].
@@ -254,19 +307,14 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
      * @see Change
      */
     fun fromString(string: String): ReleaseContent {
-      val subtext = SUBTEXT_REGEX.find(string)?.value.orEmpty().trim()
-      val changes = CHANGE_REGEX.findAll(string).map { Change.fromString(it.firstCapturedValue) }
+      val changes =
+        CHANGE_REGEX.findAll(string).map { Change.fromString(it.firstCapturedValue) }.toList()
+      val firstChange = CHANGE_REGEX.find(string)
+      val subtext = if (firstChange != null) string.substringBefore(firstChange.value) else string
 
-      return ReleaseContent(subtext, changes.toList())
+      return ReleaseContent(subtext.trim(), changes.toList())
     }
   }
-
-  /**
-   * If there is any content in this release.
-   *
-   * Meaning that there is either [changes] or [subtext] present.
-   */
-  fun hasContent() = changes.isNotEmpty() || subtext.isNotBlank()
 }
 
 /**
@@ -277,6 +325,9 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
  * @see fromString
  */
 data class Change(val type: ChangeType, val message: String) {
+
+  override fun toString(): String = "* [$type] $message"
+
   companion object {
     /**
      * Regex for finding the information about a [Change].
@@ -331,5 +382,7 @@ enum class ChangeType {
   CHANGED,
   UNCHANGED,
   REMOVED,
-  DEPRECATED
+  DEPRECATED;
+
+  override fun toString(): String = name.toLowerCase()
 }

@@ -1,16 +1,18 @@
-// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -30,6 +32,7 @@ import org.gradle.api.Project
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 
@@ -60,12 +63,19 @@ import org.gradle.kotlin.dsl.register
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
  * - [PUBLISH_ALL_TO_BUILD_TASK][registerPublishAllToBuildDir]
+ * - [LIBRARY_GROUPS_TASK][registerLibraryGroupsTask]
+ *
+ * Additionally, this plugin registers the [PostReleasePlugin] via [registerPostReleasePlugin] for
+ * each releasing library.
  */
 abstract class PublishingPlugin : Plugin<Project> {
+
   override fun apply(project: Project) {
     project.gradle.projectsEvaluated {
       val allFirebaseLibraries = project.subprojects.mapNotNull { it.firebaseLibraryOrNull }
-      val releaseMetadata = computeReleaseMetadata(project, allFirebaseLibraries)
+      val libraryGroups = computeLibraryGroups(project)
+      fixLibraryGroupVersions(libraryGroups)
+      val releaseMetadata = computeReleaseMetadata(project, allFirebaseLibraries, libraryGroups)
 
       val releasingFirebaseLibraries = releaseMetadata?.releasingLibraries.orEmpty()
       val releasingProjects = releasingFirebaseLibraries.map { it.project }
@@ -75,7 +85,13 @@ abstract class PublishingPlugin : Plugin<Project> {
       val checkHeadDependencies =
         registerCheckHeadDependenciesTask(project, releasingFirebaseLibraries)
       val validateProjectsToPublish =
-        registerValidateProjectsToPublishTask(project, releasingProjects)
+        registerValidateProjectsToPublishTask(project, releasingFirebaseLibraries)
+      val validateLibraryGroupsToPublish =
+        registerValidateLibraryGroupsToPublishTask(
+          project,
+          releasingFirebaseLibraries,
+          libraryGroups
+        )
       val publishReleasingLibrariesToBuildDir =
         registerPublishReleasingLibrariesToBuildDirTask(project, releasingProjects)
       val generateKotlindocsForRelease =
@@ -87,10 +103,12 @@ abstract class PublishingPlugin : Plugin<Project> {
           releaseMetadata?.name.orEmpty()
         )
 
-      registerGenerateReleaseConfigFilesTask(project)
+      registerGenerateReleaseConfigFilesTask(project, libraryGroups)
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
       registerSemverCheckForReleaseTask(project, releasingProjects)
       registerPublishAllToBuildDir(project, allFirebaseLibraries)
+      registerPostReleasePlugin(releasingProjects)
+      registerLibraryGroupsTask(project, libraryGroups)
 
       val buildMavenZip =
         project.tasks.register<Zip>(BUILD_MAVEN_ZIP_TASK) {
@@ -122,6 +140,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       project.tasks.register(FIREBASE_PUBLISH_TASK) {
         dependsOn(
           validateProjectsToPublish,
+          validateLibraryGroupsToPublish,
           checkHeadDependencies,
           // validatePomForRelease, TODO(b/279466888) - Make GmavenHelper testable
           buildMavenZip,
@@ -135,6 +154,19 @@ abstract class PublishingPlugin : Plugin<Project> {
             releasingProjects.map { it.path }.joinToString("\n")
           )
         }
+      }
+    }
+  }
+
+  private fun registerLibraryGroupsTask(
+    project: Project,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
+  ) {
+    project.tasks.register(LIBRARY_GROUPS_TASK) {
+      for (libraryGroup in libraryGroups) {
+        println(
+          "${libraryGroup.key} -> ${libraryGroup.value.joinToString(" | ") { it.artifactName }}"
+        )
       }
     }
   }
@@ -173,33 +205,56 @@ abstract class PublishingPlugin : Plugin<Project> {
    */
   private fun computeReleaseMetadata(
     project: Project,
-    allFirebaseLibraries: List<FirebaseLibraryExtension>
+    allFirebaseLibraries: List<FirebaseLibraryExtension>,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
   ): ReleaseMetadata? =
-    releaseMetadataFromProperties(project, allFirebaseLibraries)
-      ?: releaseMetadataFromReleaseConfig(project, allFirebaseLibraries)
+    releaseMetadataFromProperties(project, allFirebaseLibraries, libraryGroups)
+      ?: releaseMetadataFromReleaseConfig(project, allFirebaseLibraries, libraryGroups)
 
   private fun releaseMetadataFromProperties(
     project: Project,
-    allFirebaseLibraries: List<FirebaseLibraryExtension>
+    allFirebaseLibraries: List<FirebaseLibraryExtension>,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
   ): ReleaseMetadata? {
     val projectsToPublish = project.provideProperty<String>("projectsToPublish").orNull
-    val releaseName = project.provideProperty<String>("releaseName").orNull
+    val releaseName = project.provideProperty<String>("releaseName").orNull ?: "NO_NAME"
 
-    if (projectsToPublish == null || releaseName == null) return null
+    if (projectsToPublish == null) return null
 
-    val projectNames = projectsToPublish.split(",")
-    val librariesToRelease =
-      allFirebaseLibraries
-        .filter { it.artifactId.get() in projectNames }
-        .flatMap { it.librariesToRelease }
-        .distinctBy { it.artifactId.get() }
+    val publishingProjects =
+      allFirebaseLibraries.filter { it.artifactId.get() in projectsToPublish.split(",") }
+
+    val librariesToRelease = getDeepTransitiveReleases(publishingProjects, libraryGroups)
 
     return ReleaseMetadata(librariesToRelease, releaseName)
   }
 
+  /**
+   * Finds all transitive libraries that need to be released so that the input list of project names
+   * can be released. This includes all project level dependencies, and anything in the same library
+   * group.
+   */
+  private tailrec fun getDeepTransitiveReleases(
+    inputProjects: List<FirebaseLibraryExtension>,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
+  ): List<FirebaseLibraryExtension> {
+    val libraryGroupsToRelease =
+      inputProjects
+        .flatMap { it.resolveProjectLevelDependencies() + it }
+        .map { it.libraryGroupName }
+    val projectsToRelease =
+      libraryGroups
+        .filterKeys { it in libraryGroupsToRelease }
+        .flatMap { it.value }
+        .distinctBy { it.artifactId.get() }
+    return if (inputProjects == projectsToRelease) inputProjects
+    else getDeepTransitiveReleases(projectsToRelease, libraryGroups)
+  }
+
   private fun releaseMetadataFromReleaseConfig(
     project: Project,
-    allFirebaseLibraries: List<FirebaseLibraryExtension>
+    allFirebaseLibraries: List<FirebaseLibraryExtension>,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
   ): ReleaseMetadata? {
     val releaseConfigFile =
       project.layout.projectDirectory.file(RELEASE_CONFIG_FILE).asFile.takeIf { it.exists() }
@@ -207,6 +262,16 @@ abstract class PublishingPlugin : Plugin<Project> {
     return releaseConfigFile?.let {
       val releaseConfig = ReleaseConfig.fromFile(it)
       val librariesToRelease = allFirebaseLibraries.filter { it.path in releaseConfig.libraries }
+
+      val missingLibrariesToRelease =
+        computeMissingLibrariesToRelease(librariesToRelease, libraryGroups)
+      if (missingLibrariesToRelease.isNotEmpty()) {
+        throw GradleException(
+          "Invalid release configuration. " +
+            "It's should include the following libraries due to library groups: \n" +
+            "${missingLibrariesToRelease.joinToString("\n"){ it.artifactName }}"
+        )
+      }
 
       ReleaseMetadata(librariesToRelease, releaseConfig.name)
     }
@@ -270,15 +335,41 @@ abstract class PublishingPlugin : Plugin<Project> {
   // TODO(b/280320915): Remove doLast when Gradle + IDEA fix task configuration avoidance bug
   private fun registerValidateProjectsToPublishTask(
     project: Project,
-    releasingProjects: List<Project>
+    releasinglibraries: List<FirebaseLibraryExtension>
   ) =
     project.tasks.register(VALIDATE_PROJECTS_TO_PUBLISH_TASK) {
       doLast {
-        if (releasingProjects.isEmpty()) {
+        if (releasinglibraries.isEmpty()) {
           throw GradleException(
             "No projects to release. " +
               "Ensure you've specified the projectsToPublish parameter, " +
               "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
+          )
+        }
+      }
+    }
+
+  /**
+   * Registers the [VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK] task.
+   *
+   * Validates that all library groups of all publishing projects are included in the release config
+   *
+   * @throws GradleException if a library is releasing without it's library group.
+   */
+  private fun registerValidateLibraryGroupsToPublishTask(
+    project: Project,
+    librariesToRelease: List<FirebaseLibraryExtension>,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
+  ) =
+    project.tasks.register(VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK) {
+      doLast {
+        val missingLibrariesToRelease =
+          computeMissingLibrariesToRelease(librariesToRelease, libraryGroups)
+        if (missingLibrariesToRelease.isNotEmpty()) {
+          throw GradleException(
+            "Invalid release configuration. " +
+              "It's should include the following libraries due to library groups: \n" +
+              "${missingLibrariesToRelease.joinToString("\n")}"
           )
         }
       }
@@ -368,17 +459,22 @@ abstract class PublishingPlugin : Plugin<Project> {
    *
    * @see [ReleaseGenerator]
    */
-  private fun registerGenerateReleaseConfigFilesTask(project: Project) =
+  private fun registerGenerateReleaseConfigFilesTask(
+    project: Project,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
+  ) =
     project.tasks.register<ReleaseGenerator>(RELEASE_GENEATOR_TASK) {
       currentRelease.convention(project.provideProperty("currentRelease"))
       pastRelease.convention(project.provideProperty("pastRelease"))
       printReleaseConfig.convention(project.provideProperty("printOutput"))
+      commitsToIgnoreFile.convention(project.layout.projectDirectory.file("ignoreCommits.txt"))
 
       releaseConfigFile.convention(project.layout.projectDirectory.file(RELEASE_CONFIG_FILE))
       releaseReportMdFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_MD_FILE))
       releaseReportJsonFile.convention(
         project.layout.projectDirectory.file(RELEASE_REPORT_JSON_FILE)
       )
+      this.libraryGroups = libraryGroups
     }
 
   /**
@@ -417,7 +513,6 @@ abstract class PublishingPlugin : Plugin<Project> {
     project.tasks.register(SEMVER_CHECK_TASK) {
       for (releasingProject in releasingProjects) {
         val semverCheckTask = releasingProject.tasks.named("semverCheck")
-
         dependsOn(semverCheckTask)
       }
     }
@@ -444,6 +539,13 @@ abstract class PublishingPlugin : Plugin<Project> {
       }
     }
 
+  /** Registers the [PostReleasePlugin] to each releaing project. */
+  private fun registerPostReleasePlugin(releasingProjects: List<Project>) {
+    for (releasingProject in releasingProjects) {
+      releasingProject.apply<PostReleasePlugin>()
+    }
+  }
+
   companion object {
     const val RELEASE_CONFIG_FILE = "release.json"
     const val RELEASE_REPORT_MD_FILE = "release_report.md"
@@ -452,9 +554,11 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     const val GENERATE_BOM_TASK = "generateBom"
     const val VALIDATE_PROJECTS_TO_PUBLISH_TASK = "validateProjectsToPublish"
+    const val VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK = "validateLibraryGroupsToPublish"
     const val SEMVER_CHECK_TASK = "semverCheckForRelease"
     const val RELEASE_GENEATOR_TASK = "generateReleaseConfig"
     const val VALIDATE_POM_TASK = "validatePomForRelease"
+    const val LIBRARY_GROUPS_TASK = "libraryGroups"
     const val PUBLISH_RELEASING_LIBS_TO_BUILD_TASK = "publishReleasingLibrariesToBuildDir"
     const val PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK = "publishReleasingLibrariesToMavenLocal"
     const val GENERATE_KOTLINDOC_FOR_RELEASE_TASK = "generateKotlindocForRelease"
@@ -476,7 +580,6 @@ abstract class PublishingPlugin : Plugin<Project> {
  *
  * @property releasingLibraries A list of libraries that should be released
  * @property name The name of the release (such as `m123`)
- *
  * @see computeReleaseMetadata
  */
 data class ReleaseMetadata(

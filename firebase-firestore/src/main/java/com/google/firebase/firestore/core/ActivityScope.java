@@ -27,11 +27,11 @@ import java.util.List;
 /**
  * Scopes the lifetime of a ListenerRegistration to an Activity.
  *
- * <p>Regarding activity-scoped listeners, Android provides lifecycle callbacks (eg onStop()) that
- * custom `Activity`s can implement via subclassing. But we can't take advantage of that, since we
- * need to be usable with a generic Activity. So instead, we create a custom Fragment, and add that
- * Fragment to the given Activity. When the Activity stops, it will automatically stop the attached
- * Fragments too.
+ * <p>Regarding activity-scoped listeners, Android provides lifecycle callbacks (for example,
+ * onStop()) that custom `Activity`s can implement via subclassing. But we can't take advantage of
+ * that, since we need to be usable with a generic Activity. So instead, we create a custom
+ * Fragment, and add that Fragment to the given Activity. When the Activity stops, it will
+ * automatically stop the attached Fragments too.
  *
  * <p>One difficulty with this approach is that how you get a Fragment and attach it to an Activity
  * differs based on the type of Activity. If the Activity is actually a FragmentActivity, then you

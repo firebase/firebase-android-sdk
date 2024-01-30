@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.keyMap;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
@@ -365,5 +366,380 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
       throw new AssertionError(e);
     }
     assertThat(error.get()).isNull();
+  }
+
+  @Test
+  public void testCanAutoCreateIndexes() {
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+
+    // First time query runs without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("matches", true)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 1);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testCanAutoCreateIndexesWorksWithOrQuery() {
+    Query query = query("coll").filter(orFilters(filter("a", "==", 3), filter("b", "==", true)));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("b", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("b", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("a", 5, "b", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("a", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("a", 3, "b", true)), targetId));
+
+    // First time query runs without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/e", "coll/a");
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("a", 3, "b", false)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 1);
+    assertQueryReturned("coll/f", "coll/e", "coll/a");
+  }
+
+  @Test
+  public void testDoesNotAutoCreateIndexesForSmallCollections() {
+    Query query = query("coll").filter(filter("foo", "==", 9)).filter(filter("count", ">=", 3));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("foo", 9, "count", 5)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("foo", 8, "count", 6)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("foo", 9, "count", 0)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("count", 4)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("foo", 9, "count", 3)), targetId));
+
+    // SDK will not create indexes since collection size is too small.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("foo", 9, "count", 4)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 3);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testDoesNotAutoCreateIndexesWhenIndexLookUpIsExpensive() {
+    Query query = query("coll").filter(filter("array", "array-contains-any", Arrays.asList(0, 7)));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(5);
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/a", 10, map("array", Arrays.asList(2, 7))), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("array", emptyList())), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("array", singletonList(3))), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/d", 10, map("array", Arrays.asList(2, 10, 20))), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/e", 10, map("array", Arrays.asList(2, 0, 8))), targetId));
+
+    // SDK will not create indexes since relative read cost is too large.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("array", singletonList(0))), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 3);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testIndexAutoCreationWorksWhenBackfillerRunsHalfway() {
+    Query query =
+        query("coll").filter(filter("matches", "==", "foo")).filter(filter("count", ">", 10));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/a", 10, map("matches", "foo", "count", 11)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/b", 10, map("matches", "foo", "count", 9)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", "foo")), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", 7, "count", 11)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/e", 10, map("matches", "foo", "count", 21)), targetId));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    setBackfillerMaxDocumentsToProcess(2);
+    backfillIndexes();
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/f", 20, map("matches", "foo", "count", 15)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testIndexCreatedByIndexAutoCreationExistsAfterTurnOffAutoCreation() {
+    Query query = query("coll").filter(filter("value", "not-in", Collections.singletonList(3)));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("value", 5)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("value", 3)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("value", 3)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("value", 3)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("value", 2)), targetId));
+
+    // First time query runs without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    setIndexAutoCreationEnabled(false);
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("value", 7)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 1);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testDisableIndexAutoCreationWorks() {
+    Query query1 = query("coll").filter(filter("value", "in", Arrays.asList(0, 1)));
+    int targetId1 = allocateQuery(query1);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("value", 1)), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("value", 8)), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("value", "string")), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("value", false)), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("value", 0)), targetId1));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query1);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    setIndexAutoCreationEnabled(false);
+
+    backfillIndexes();
+
+    executeQuery(query1);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertQueryReturned("coll/a", "coll/e");
+
+    Query query2 = query("foo").filter(filter("value", "!=", Double.NaN));
+    int targetId2 = allocateQuery(query2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("value", 5)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/b", 10, map("value", Double.NaN)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/c", 10, map("value", Double.NaN)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/d", 10, map("value", Double.NaN)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/e", 10, map("value", "string")), targetId2));
+
+    executeQuery(query2);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("foo/a", "foo/e");
+
+    backfillIndexes();
+
+    // Run the query in second time, test index won't be created
+    executeQuery(query2);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("foo/a", "foo/e");
+  }
+
+  @Test
+  public void testDeleteAllIndexesWorksWithIndexAutoCreation() {
+    Query query = query("coll").filter(filter("value", "==", "match"));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("value", "match")), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("value", Double.NaN)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("value", null)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("value", "mismatch")), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("value", "match")), targetId));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertQueryReturned("coll/a", "coll/e");
+
+    deleteAllIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    // Field index is created again.
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertQueryReturned("coll/a", "coll/e");
+  }
+
+  @Test
+  public void testDeleteAllIndexesWorksWithManualAddedIndexes() {
+    FieldIndex index =
+        fieldIndex(
+            "coll", 0, FieldIndex.INITIAL_STATE, "matches", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertQueryReturned("coll/a");
+
+    deleteAllIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 1);
+    assertQueryReturned("coll/a");
+  }
+
+  @Test
+  public void testIndexAutoCreationWorksWithMutation() {
+    Query query =
+        query("coll").filter(filter("value", "array-contains-any", Arrays.asList(8, 1, "string")));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/a", 10, map("value", Arrays.asList(8, 1, "string"))), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("value", emptyList())), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("value", singletonList(3))), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/d", 10, map("value", Arrays.asList(0, 5))), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/e", 10, map("value", singletonList("string"))), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    writeMutation(deleteMutation("coll/e"));
+
+    backfillIndexes();
+
+    writeMutation(setMutation("coll/f", map("value", singletonList(1))));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 1);
+    assertQueryReturned("coll/a", "coll/f");
+  }
+
+  @Test
+  public void testIndexAutoCreationDoesnotWorkWithMultipleInequality() {
+    Query query = query("coll").filter(filter("field1", "<", 5)).filter(filter("field2", "<", 5));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("field1", 1, "field2", 2)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("field1", 8, "field2", 2)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/c", 10, map("field1", "string", "field2", 2)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("field1", 2)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("field1", 4, "field2", 4)), targetId));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index will not be created since FieldIndex does not support multiple inequality.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
   }
 }

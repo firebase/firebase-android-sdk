@@ -1,5 +1,24 @@
 # Unreleased
 
+
+# 18.6.0
+* [changed] Updated `firebase-crashlytics` dependency to v18.6.0
+
+# 18.5.0
+* [changed] Updated `firebase-crashlytics` dependency to v18.5.0
+
+# 18.4.3
+* [changed] Updated `firebase-crashlytics` dependency to v18.4.3
+
+# 18.4.2
+* [changed] Updated `firebase-crashlytics` dependency to v18.4.2
+
+# 18.4.1
+* [changed] Updated `firebase-crashlytics` dependency to v18.4.1
+
+# 18.4.0
+* [changed] Updated `firebase-crashlytics` dependency to v18.4.0
+
 # 18.3.7
 * [changed] Updated `firebase-crashlytics` dependency to v18.3.7
 
@@ -9,8 +28,8 @@
 # 18.3.5
 * [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an
   issue that was causing a nondeterministic crash on startup.
+* [changed] Updated `firebase-crashlytics` dependency to v18.3.5.
 
-* [changed] Updated `firebase-crashlytics` dependency to v18.3.5.  
 # 18.3.4
 <aside class="caution">This version of <code>firebase-crashlytics-ndk</code> can
   cause a nondeterministic crash on startup. For more information, see
@@ -71,13 +90,11 @@ using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
   change, disabling tagged pointers is no longer required, so the following can
   be removed from your manifest's `application` tag:
   `android:allowNativeHeapPointerTagging=false`.
-
 * [changed] Updated `firebase-crashlytics` dependency to v18.2.6.
 
 # 18.2.5
 * [changed] Internal improvements to [crashlytics] file management, to
   ensure consistent creation and removal of intermediate [crashlytics] files.
-
 * [changed] Updated `firebase-crashlytics` dependency to v18.2.5.
 
 # 18.2.4
@@ -85,13 +102,11 @@ using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
   `com.google.firebase.crashlytics.ndk.FirebaseCrashlyticsNdk` to the Proguard
   configuration for this AAR, to avoid potential reflection errors when
   obfuscating NDK-enabled apps.
-
 * [changed] Updated `firebase-crashlytics` dependency to v18.2.4.
 
 # 18.2.3
 * [changed] Internal changes to support upcoming Unity crash reporting
   improvements.
-
 * [changed] Updated `firebase-crashlytics` dependency to v18.2.3.
 
 # 18.2.1
@@ -101,7 +116,6 @@ using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
   module to consistently report native crashes for all supported Android
   versions. [crashlytics] will now report native crashes when used as a
   dependency of a feature module.
-
 * [changed] Updated `firebase-crashlytics` dependency to v18.2.1.
 
 # 18.2.0
@@ -117,7 +131,6 @@ using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
 
 # 18.0.0
 * [changed] Internal changes to support dynamic feature modules.
-
 * [changed] Updated `firebase-crashlytics` dependency to v18.0.0.
 
 # 17.4.1
@@ -146,7 +159,6 @@ using this version of the [crashlytics] NDK SDK and above.
 # 17.2.1
 * [fixed] Fixed signal handler to properly release storage on app exit.
   ([Github Issue #1749](https://github.com/firebase/firebase-android-sdk/issues/1749))
-
 * [changed] Updated `firebase-crashlytics` dependency to v17.2.1.
 
 # 17.1.1
@@ -161,7 +173,6 @@ using this version of the [crashlytics] NDK SDK and above.
 # 17.0.0
 * [changed] The [firebase_crashlytics] SDK for NDK is now generally
   available.
-
 * [changed] Updated `firebase-crashlytics` dependency to v17.0.0.
 
 # 17.0.0-beta04
@@ -170,11 +181,8 @@ using this version of the [crashlytics] NDK SDK and above.
 # 17.0.0-beta03
 * [fixed] Updated package name in `AndroidManifest.xml` to reflect new
   [firebase_crashlytics] NDK package name.
-
 * [changed] Improved debug logging.
-
 * [changed] Released new `crashlytics.h` with updated C++ APIs.
-
 * [changed] Added ProGuard rules files to avoid obfuscating public APIs called
   from C++.
 

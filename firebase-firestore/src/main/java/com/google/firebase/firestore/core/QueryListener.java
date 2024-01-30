@@ -39,8 +39,8 @@ public class QueryListener {
   private final EventListener<ViewSnapshot> listener;
 
   /**
-   * Initial snapshots (e.g. from cache) may not be propagated to the wrapped observer. This flag is
-   * set to true once we've actually raised an event.
+   * Initial snapshots (from cache for example) may not be propagated to the wrapped observer. This
+   * flag is set to true once we've actually raised an event.
    */
   private boolean raisedInitialEvent = false;
 

@@ -14,13 +14,13 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
     libraryGroup "appdistribution"
     testLab.enabled = true
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
@@ -52,21 +52,16 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation project(path: ':firebase-appdistribution-api')
-
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-
-    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:core:1.2.0'
+    androidTestImplementation 'junit:junit:4.12'
+    api(project(":firebase-appdistribution-api"))
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
 }

@@ -60,21 +60,29 @@ internal data class SessionInfo(
   /** What order this Session came in this run of the app. For the first Session this will be 0. */
   val sessionIndex: Int,
 
-  /** Tracks when the event was initiated */
-  var eventTimestampUs: Long,
+  /** Tracks when the event was initiated. */
+  val eventTimestampUs: Long,
 
   /** Data collection status of the dependent product SDKs. */
-  var dataCollectionStatus: DataCollectionStatus = DataCollectionStatus(),
+  val dataCollectionStatus: DataCollectionStatus = DataCollectionStatus(),
 
   /** Identifies a unique device+app installation: go/firebase-installations */
-  var firebaseInstallationId: String = "",
+  val firebaseInstallationId: String = "",
 )
 
 /** Contains the data collection state for all dependent SDKs and sampling info */
 internal data class DataCollectionStatus(
-  val performance: DataCollectionState = DataCollectionState.COLLECTION_ENABLED,
-  val crashlytics: DataCollectionState = DataCollectionState.COLLECTION_ENABLED,
+  val performance: DataCollectionState = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
+  val crashlytics: DataCollectionState = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
   val sessionSamplingRate: Double = 1.0,
+)
+
+/** Container for information about the process */
+internal data class ProcessDetails(
+  val processName: String,
+  val pid: Int,
+  val importance: Int,
+  val isDefaultProcess: Boolean,
 )
 
 /** Enum denoting different data collection states. */
