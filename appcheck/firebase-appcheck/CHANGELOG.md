@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies.
 
 # 17.1.1
 * [fixed] Fixed a bug causing internal tests to depend directly on `firebase-common`.
@@ -118,4 +118,3 @@ additional updates:
 # 16.0.0-beta01
 * [feature] Initial beta release of the [app_check] SDK with abuse reduction
   features.
-

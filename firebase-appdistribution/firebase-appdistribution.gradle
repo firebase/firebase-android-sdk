@@ -55,12 +55,12 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-components:17.1.5'
     implementation('com.google.firebase:firebase-installations-interop:17.1.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-common:20.4.2'
     testImplementation project(path: ':firebase-appdistribution')
     testImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
