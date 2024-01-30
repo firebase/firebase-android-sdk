@@ -38,6 +38,7 @@ class NewReleaseFetcher {
 
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final ReleaseIdentifier releaseIdentifier;
+  private final DevModeDetector devModeDetector;
   private @Lightweight Executor lightweightExecutor;
   private final Context context;
 
@@ -48,16 +49,22 @@ class NewReleaseFetcher {
       @NonNull Context applicationContext,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
       ReleaseIdentifier releaseIdentifier,
+      DevModeDetector devModeDetector,
       @Lightweight Executor lightweightExecutor) {
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.context = applicationContext;
     this.releaseIdentifier = releaseIdentifier;
+    this.devModeDetector = devModeDetector;
     this.lightweightExecutor = lightweightExecutor;
     this.cachedCheckForNewRelease = new TaskCache<>(lightweightExecutor);
   }
 
   @NonNull
   public Task<AppDistributionReleaseInternal> checkForNewRelease() {
+    if (devModeDetector.isDevModeEnabled()) {
+      LogWrapper.w(TAG, "Not checking for new release because development mode is enabled.");
+      return Tasks.forResult(null);
+    }
     return cachedCheckForNewRelease.getOrCreateTask(
         () ->
             firebaseAppDistributionTesterApiClient

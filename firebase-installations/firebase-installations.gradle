@@ -15,6 +15,7 @@
 
 plugins {
     id 'firebase-library'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
@@ -22,6 +23,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.installations"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
@@ -42,32 +44,37 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
-
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-
-    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
-
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
-    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
-
-    testImplementation project(':integ-testing')
-    testImplementation 'androidx.test:core:1.2.0'
-    testImplementation 'junit:junit:4.12'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-inline:2.25.0'
-
-    androidTestImplementation project(':integ-testing')
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-inline:2.25.0'
+    androidTestImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
+    api("com.google.firebase:firebase-installations-interop:17.1.1")
+    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation 'com.google.firebase:firebase-annotations:16.2.0'
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'junit:junit:4.13'
+    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation 'org.mockito:mockito-inline:2.25.0'
+    testImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
 }

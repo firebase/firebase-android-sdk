@@ -156,6 +156,15 @@ public class ConfigResolver {
     return null;
   }
 
+  /**
+   * Returns whether data collection flag is fetched either through device cache or remote config.
+   */
+  public boolean isCollectionEnabledConfigValueAvailable() {
+    Optional<Boolean> remoteConfigValue = getRemoteConfigBoolean(SdkEnabled.getInstance());
+    Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(CollectionEnabled.getInstance());
+    return deviceCacheValue.isAvailable() || remoteConfigValue.isAvailable();
+  }
+
   /** Returns whether developers have deactivated Firebase Performance event collection. */
   @Nullable
   public Boolean getIsPerformanceCollectionDeactivated() {
@@ -290,7 +299,8 @@ public class ConfigResolver {
     // Order of precedence is:
     // 1. If the value exists through Firebase Remote Config, cache and return this value.
     // 2. If the value exists in device cache, return this value.
-    // 3. Otherwise, return default value.
+    // 3. If the Firebase Remote Config fetch failed, return the default "rc failure" value.
+    // 4. Otherwise, return default value.
     TraceSamplingRate config = TraceSamplingRate.getInstance();
 
     // 1. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
@@ -306,7 +316,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 3. Returns default value if there is no valid value from above approaches.
+    // 3. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 4. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -315,7 +330,8 @@ public class ConfigResolver {
     // Order of precedence is:
     // 1. If the value exists through Firebase Remote Config, cache and return this value.
     // 2. If the value exists in device cache, return this value.
-    // 3. Otherwise, return default value.
+    // 3. If the Firebase Remote Config fetch failed, return the default "rc failure" value.
+    // 4. Otherwise, return default value.
     NetworkRequestSamplingRate config = NetworkRequestSamplingRate.getInstance();
 
     // 1. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
@@ -331,7 +347,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 3. Returns default value if there is no valid value from above approaches.
+    // 3. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 4. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -342,7 +363,8 @@ public class ConfigResolver {
     // and return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return the default "rc failure" value.
+    // 5. Otherwise, return default value.
     SessionsSamplingRate config = SessionsSamplingRate.getInstance();
 
     // 1. Reads value in Android Manifest (it is set by developers during build time).
@@ -368,7 +390,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -381,7 +408,8 @@ public class ConfigResolver {
     // 1. If the value exists in Android Manifest, return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return default failure value.
+    // 5. Otherwise, return default value.
     SessionsCpuCaptureFrequencyForegroundMs config =
         SessionsCpuCaptureFrequencyForegroundMs.getInstance();
 
@@ -404,7 +432,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -453,7 +486,8 @@ public class ConfigResolver {
     // 1. If the value exists in Android Manifest, return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return default failure value.
+    // 5. Otherwise, return default value.
     SessionsMemoryCaptureFrequencyForegroundMs config =
         SessionsMemoryCaptureFrequencyForegroundMs.getInstance();
 
@@ -476,7 +510,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 

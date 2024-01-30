@@ -180,6 +180,7 @@ public class FirebaseApp {
                 + ". Make sure to call "
                 + "FirebaseApp.initializeApp(Context) first.");
       }
+      defaultApp.defaultHeartBeatController.get().registerHeartBeat();
       return defaultApp;
     }
   }

@@ -20,9 +20,9 @@ jobs:
         environment: [ prod, autopush ]
     steps:
       - name: Checkout firebase-android-sdk
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.3
       - name: Checkout firebase-android-buildtools
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.3
         with:
           repository: FirebasePrivate/firebase-android-buildtools
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
@@ -39,10 +39,10 @@ jobs:
           python-version: '3.10'
       - name: Set up fireci
         run: pip3 install -e ci/fireci
-      - uses: google-github-actions/auth@v0
+      - uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      - uses: google-github-actions/setup-gcloud@v0
+      - uses: google-github-actions/setup-gcloud@v2
       - name: Add google-services.json
         run: echo $PERF_E2E_GOOGLE_SERVICES | base64 -d > google-services.json
       - name: Run fireperf end-to-end tests

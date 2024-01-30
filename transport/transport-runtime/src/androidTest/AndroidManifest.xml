@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.android.datatransport.runtime.androidTest">
+          package="com.google.android.datatransport.runtime.androidTest">
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
     <!--<uses-sdk android:minSdkVersion="14"/>-->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

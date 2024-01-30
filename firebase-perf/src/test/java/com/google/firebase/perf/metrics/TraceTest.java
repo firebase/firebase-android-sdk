@@ -1016,7 +1016,8 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
     int numberOfSessionIds = trace.getSessions().size();
 
-    SessionManager.getInstance().updatePerfSession(ApplicationProcessState.FOREGROUND);
+    PerfSession perfSession = PerfSession.createWithId("test_session_id");
+    SessionManager.getInstance().updatePerfSession(perfSession);
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds + 1);
 
     trace.stop();
@@ -1031,23 +1032,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
     int numberOfSessionIds = trace.getSessions().size();
 
-    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class))
-        .onUpdateAppState(ApplicationProcessState.FOREGROUND);
-
-    assertThat(trace.getSessions()).hasSize(numberOfSessionIds);
-
-    trace.stop();
-  }
-
-  @Test
-  public void testSessionIdNotAddedInBackgroundInTrace() {
-    Trace trace = Trace.getTrace("myRandomTrace4");
-    trace.start();
-
-    assertThat(trace.getSessions()).isNotNull();
-
-    int numberOfSessionIds = trace.getSessions().size();
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.BACKGROUND);
+    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class));
 
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds);
 
@@ -1086,7 +1071,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     trace.start();
 
     assertThat(trace.getSessions()).hasSize(1);
-    trace.updateSession(PerfSession.create());
+    trace.updateSession(PerfSession.createWithId("test_session_id"));
     assertThat(trace.getSessions()).hasSize(2);
 
     trace.stop();

@@ -70,6 +70,8 @@ public class CctTransportBackendTest {
   private static final String JSON_PAYLOAD = "{\"hello\": false}";
   private static final String JSON_PAYLOAD_ESCAPED = "{\\\"hello\\\": false}";
   private static final int CODE = 5;
+
+  private static final int PRODUCT_ID = 98765;
   private static final String TEST_NAME = "hello";
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
   private static final Encoding JSON_ENCODING = Encoding.of("json");
@@ -110,6 +112,7 @@ public class CctTransportBackendTest {
                             new EncodedPayload(
                                 JSON_ENCODING, JSON_PAYLOAD.getBytes(Charset.defaultCharset())))
                         .setCode(CODE)
+                        .setProductId(PRODUCT_ID)
                         .build())))
         .setExtras(destination.getExtras())
         .build();
@@ -185,6 +188,13 @@ public class CctTransportBackendTest {
                             activeNetworkInfo.getSubtype()))))
             .withRequestBody(notMatching("$[?(@.logRequest[0].logEvent[0].eventCode)]"))
             .withRequestBody(matchingJsonPath("$[?(@.logRequest[0].logEvent[1].eventCode == 5)]"))
+            .withRequestBody(
+                matchingJsonPath("$[?(@.logRequest[0].logEvent[0].complianceData)]", absent()))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].complianceData.privacyContext.prequest.originAssociatedProductId == %s)]",
+                        PRODUCT_ID)))
             .withRequestBody(
                 matchingJsonPath(
                     String.format(

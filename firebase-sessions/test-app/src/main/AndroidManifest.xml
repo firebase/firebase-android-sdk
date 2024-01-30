@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+  ~ Copyright 2023 Google LLC
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:tools="http://schemas.android.com/tools">
+
+  <application
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:name=".TestApplication"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.Widget_test_app"
+    tools:targetApi="31">
+    <meta-data
+      android:name="firebase_performance_logcat_enabled"
+      android:value="true" />
+    <!-- Override the background timeout for the test app to be 5s instead of 30m -->
+    <meta-data
+      android:name="firebase_sessions_sessions_restart_timeout"
+      android:value="5" />
+    <activity
+      android:exported="true"
+      android:label="@string/app_name"
+      android:name=".MainActivity"
+      android:process=":main"
+      android:theme="@style/Theme.Widget_test_app.NoActionBar">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+
+    <activity
+      android:exported="true"
+      android:label="@string/app_name"
+      android:name=".SecondActivity"
+      android:process=":second"
+      android:theme="@style/Theme.Widget_test_app.NoActionBar" />
+
+    <receiver
+      android:exported="false"
+      android:name="CrashWidgetProvider"
+      android:process=":widgetProcess">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/homescreen_widget" />
+    </receiver>
+
+    <receiver android:name=".CrashBroadcastReceiver" />
+
+    <service
+      android:enabled="true"
+      android:exported="false"
+      android:name=".ForegroundService"
+      android:process=":foregroundServiceProcess" />
+
+  </application>
+
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+</manifest>

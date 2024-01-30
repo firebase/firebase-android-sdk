@@ -15,6 +15,7 @@
 plugins {
     id("com.ncorti.ktfmt.gradle") version "0.11.0"
     id("com.github.sherter.google-java-format") version "0.9"
+    kotlin("plugin.serialization") version "1.7.10"
     `kotlin-dsl`
 }
 
@@ -40,11 +41,6 @@ ktfmt {
     googleStyle()
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
 dependencies {
     // Firebase performance plugin, it should be added here because of how gradle dependency
     // resolution works, otherwise it breaks Fireperf Test Apps.
@@ -67,15 +63,16 @@ dependencies {
 
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
 
+    implementation(libs.kotlinx.serialization.json)
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:7.2.2")
-    implementation("com.android.tools.build:builder-test-api:7.2.2")
+    implementation("com.android.tools.build:gradle:7.4.2")
+    implementation("com.android.tools.build:builder-test-api:7.4.2")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
     testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")
-    testImplementation("com.google.truth:truth:1.1.2")
-    testImplementation("commons-io:commons-io:2.6")
+    testImplementation("com.google.truth:truth:1.3.0")
+    testImplementation("commons-io:commons-io:2.15.1")
 }
 
 gradlePlugin {
@@ -90,7 +87,7 @@ gradlePlugin {
         }
         register("publishingPlugin") {
             id = "PublishingPlugin"
-            implementationClass = "com.google.firebase.gradle.plugins.publish.PublishingPlugin"
+            implementationClass = "com.google.firebase.gradle.plugins.PublishingPlugin"
         }
         register("firebaseLibraryPlugin") {
             id = "firebase-library"

@@ -24,7 +24,7 @@ import androidx.annotation.Nullable;
  * <p>To use, create an instance using {@link MemoryCacheSettings#newBuilder().build()}, then set
  * the instance to {@link
  * FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)}, and use the built
- * `FirebaseFirestoreSettings` instance to configure Firestore SDK.
+ * {@code FirebaseFirestoreSettings} instance to configure the Firestore SDK.
  */
 public final class MemoryCacheSettings implements LocalCacheSettings {
   private MemoryGarbageCollectorSettings gcSettings;
@@ -58,6 +58,7 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
     return "MemoryCacheSettings{gcSettings=" + getGarbageCollectorSettings() + "}";
   }
 
+  /** Returns the {@link MemoryGarbageCollectorSettings} object used to configure the SDK cache. */
   @NonNull
   public MemoryGarbageCollectorSettings getGarbageCollectorSettings() {
     return gcSettings;
@@ -75,6 +76,7 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
       return new MemoryCacheSettings(gcSettings);
     }
 
+    /** Uses the given garbage collector settings to configure memory cache. */
     @NonNull
     public Builder setGcSettings(@NonNull MemoryGarbageCollectorSettings gcSettings) {
       this.gcSettings = gcSettings;

@@ -14,6 +14,7 @@
 
 plugins {
     id("firebase-library")
+    id("kotlin-android")
 }
 
 firebaseLibrary {
@@ -27,6 +28,7 @@ android {
   val minSdkVersion : Int by rootProject
 
   compileSdk = targetSdkVersion
+  namespace = "com.google.firebase"
   defaultConfig {
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
@@ -50,34 +52,41 @@ android {
 }
 
 dependencies {
+    api(libs.kotlin.coroutines.tasks)
+
+    implementation(project(":firebase-components"))
     implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation("com.google.firebase:firebase-components:17.1.0")
+    implementation(libs.androidx.annotation)
     implementation(libs.androidx.futures)
+    implementation(libs.kotlin.stdlib)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
 
-    annotationProcessor(libs.autovalue)
-
     compileOnly(libs.autovalue.annotations)
     compileOnly(libs.findbugs.jsr305)
-    // needed for Kotlin detection to compile, but not necessarily present at runtime.
     compileOnly(libs.kotlin.stdlib)
 
+    annotationProcessor(libs.autovalue)
+
     testImplementation("com.google.guava:guava-testlib:12.0-rc2")
-    testImplementation(libs.androidx.test.junit)
+    testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.runner)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlin.coroutines.test)
     testImplementation(libs.mockito.core)
     testImplementation(libs.org.json)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
 
+    androidTestImplementation(project(":integ-testing")) {
+        exclude("com.google.firebase","firebase-common")
+        exclude("com.google.firebase","firebase-common-ktx")
+    }
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.dexmaker)
     androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":integ-testing"))
 }

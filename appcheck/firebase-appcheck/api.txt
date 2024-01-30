@@ -32,5 +32,23 @@ package com.google.firebase.appcheck {
     method public void onAppCheckTokenChanged(@NonNull com.google.firebase.appcheck.AppCheckToken);
   }
 
+  public final class FirebaseAppCheckKt {
+    method @NonNull public static com.google.firebase.appcheck.FirebaseAppCheck appCheck(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @NonNull public static operator String component1(@NonNull com.google.firebase.appcheck.AppCheckToken);
+    method public static operator long component2(@NonNull com.google.firebase.appcheck.AppCheckToken);
+    method @NonNull public static com.google.firebase.appcheck.FirebaseAppCheck getAppCheck(@NonNull com.google.firebase.Firebase);
+  }
+
+}
+
+package com.google.firebase.appcheck.ktx {
+
+  public final class FirebaseAppCheckKt {
+    method @Deprecated @NonNull public static com.google.firebase.appcheck.FirebaseAppCheck appCheck(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @Deprecated @NonNull public static operator String component1(@NonNull com.google.firebase.appcheck.AppCheckToken);
+    method @Deprecated public static operator long component2(@NonNull com.google.firebase.appcheck.AppCheckToken);
+    method @Deprecated @NonNull public static com.google.firebase.appcheck.FirebaseAppCheck getAppCheck(@NonNull com.google.firebase.ktx.Firebase);
+  }
+
 }
 

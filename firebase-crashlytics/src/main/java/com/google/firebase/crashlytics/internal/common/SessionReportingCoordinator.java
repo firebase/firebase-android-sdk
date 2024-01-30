@@ -29,7 +29,6 @@ import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.FilesPayload;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
@@ -68,16 +67,17 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       UserMetadata userMetadata,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsProvider settingsProvider,
-      OnDemandCounter onDemandCounter) {
+      OnDemandCounter onDemandCounter,
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
     final CrashlyticsReportPersistence reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, settingsProvider);
+        new CrashlyticsReportPersistence(fileStore, settingsProvider, sessionsSubscriber);
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context, settingsProvider, onDemandCounter);
     return new SessionReportingCoordinator(
-        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata);
+        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata, idManager);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -85,18 +85,21 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
+  private final IdManager idManager;
 
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
-      UserMetadata reportMetadata) {
+      UserMetadata reportMetadata,
+      IdManager idManager) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
+    this.idManager = idManager;
   }
 
   @Override
@@ -153,11 +156,13 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         dataCapture.captureAnrEventData(convertApplicationExitInfo(relevantApplicationExitInfo));
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-    reportPersistence.persistEvent(
+
+    CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
         addLogsAndCustomKeysToEvent(
-            capturedEvent, logFileManagerForSession, userMetadataForSession),
-        sessionId,
-        true);
+            capturedEvent, logFileManagerForSession, userMetadataForSession);
+    CrashlyticsReport.Session.Event eventWithRolloutsState =
+        addRolloutsStateToEvent(eventWithLogsAndCustomKeys, userMetadataForSession);
+    reportPersistence.persistEvent(eventWithRolloutsState, sessionId, true);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -177,7 +182,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
     reportPersistence.finalizeSessionWithNativeEvent(
         sessionId,
-        FilesPayload.builder().setFiles(ImmutableList.from(nativeFiles)).build(),
+        FilesPayload.builder().setFiles(Collections.unmodifiableList(nativeFiles)).build(),
         applicationExitInfo);
   }
 
@@ -208,7 +213,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *     sent.
    */
   public Task<Void> sendReports(@NonNull Executor reportSendCompleteExecutor) {
-    return sendReports(reportSendCompleteExecutor, /*sessionId=*/ null);
+    return sendReports(reportSendCompleteExecutor, /* sessionId= */ null);
   }
 
   public Task<Void> sendReports(
@@ -220,11 +225,40 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       if (sessionId == null || sessionId.equals(reportToSend.getSessionId())) {
         sendTasks.add(
             reportsSender
-                .enqueueReport(reportToSend, sessionId != null)
+                .enqueueReport(ensureHasFid(reportToSend), sessionId != null)
                 .continueWith(reportSendCompleteExecutor, this::onReportSendComplete));
       }
     }
     return Tasks.whenAll(sendTasks);
+  }
+
+  /**
+   * Ensure reportToSend has a populated fid.
+   *
+   * <p>This is needed because it's possible to capture reports while data collection is disabled,
+   * and then upload the report later by calling sendUnsentReports or enabling data collection.
+   */
+  private CrashlyticsReportWithSessionId ensureHasFid(CrashlyticsReportWithSessionId reportToSend) {
+    // Only do the update if the fid is already missing from the report.
+    if (reportToSend.getReport().getFirebaseInstallationId() == null) {
+      // Fetch the true fid, regardless of automatic data collection since it's uploading.
+      String fid = idManager.fetchTrueFid();
+      return CrashlyticsReportWithSessionId.create(
+          reportToSend.getReport().withFirebaseInstallationId(fid),
+          reportToSend.getSessionId(),
+          reportToSend.getReportFile());
+    }
+
+    return reportToSend;
+  }
+
+  private CrashlyticsReport.Session.Event addMetaDataToEvent(
+      CrashlyticsReport.Session.Event capturedEvent) {
+    CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
+        addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
+    CrashlyticsReport.Session.Event eventWithRollouts =
+        addRolloutsStateToEvent(eventWithLogsAndCustomKeys, reportMetadata);
+    return eventWithRollouts;
   }
 
   private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
@@ -257,11 +291,28 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     if (!sortedCustomAttributes.isEmpty() || !sortedInternalKeys.isEmpty()) {
       eventBuilder.setApp(
           capturedEvent.getApp().toBuilder()
-              .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))
-              .setInternalKeys(ImmutableList.from(sortedInternalKeys))
+              .setCustomAttributes(sortedCustomAttributes)
+              .setInternalKeys(sortedInternalKeys)
               .build());
     }
 
+    return eventBuilder.build();
+  }
+
+  private CrashlyticsReport.Session.Event addRolloutsStateToEvent(
+      CrashlyticsReport.Session.Event capturedEvent, UserMetadata reportMetadata) {
+    List<CrashlyticsReport.Session.Event.RolloutAssignment> reportRolloutAssignments =
+        reportMetadata.getRolloutsState();
+
+    if (reportRolloutAssignments.isEmpty()) {
+      return capturedEvent;
+    }
+
+    CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
+    eventBuilder.setRollouts(
+        CrashlyticsReport.Session.Event.RolloutsState.builder()
+            .setRolloutAssignments(reportRolloutAssignments)
+            .build());
     return eventBuilder.build();
   }
 
@@ -285,8 +336,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             MAX_CHAINED_EXCEPTION_DEPTH,
             includeAllThreads);
 
-    reportPersistence.persistEvent(
-        addLogsAndCustomKeysToEvent(capturedEvent), sessionId, isHighPriority);
+    reportPersistence.persistEvent(addMetaDataToEvent(capturedEvent), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
@@ -322,7 +372,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         attributesList,
         (CustomAttribute attr1, CustomAttribute attr2) -> attr1.getKey().compareTo(attr2.getKey()));
 
-    return attributesList;
+    return Collections.unmodifiableList(attributesList);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)

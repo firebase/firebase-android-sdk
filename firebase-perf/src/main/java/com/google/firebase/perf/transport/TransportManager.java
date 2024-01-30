@@ -381,9 +381,8 @@ public class TransportManager implements AppStateCallback {
     if (isAllowedToDispatch(perfMetric)) {
       dispatchLog(perfMetric);
 
-      // TODO(b/172008005): This might not be the best place for this call, consider utilizing a
-      //  callback in the SessionManager itself.
-      SessionManager.getInstance().updatePerfSessionIfExpired();
+      // Check if the session is expired. If so, stop gauge collection.
+      SessionManager.getInstance().stopGaugeCollectionIfSessionRunningTooLong();
     }
   }
 

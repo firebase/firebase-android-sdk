@@ -16,6 +16,13 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 
+/**
+ * Configures the SDK to use a Least-Recently-Used garbage collector for memory cache.
+ *
+ * <p>To use, create an instance using {@code MemoryLruGcSettings#newBuilder().build()}, then set
+ * the instance to {@code MemoryCacheSettings.Builder#setGcSettings}, and use the built {@code
+ * MemoryCacheSettings} instance to configure the Firestore SDK.
+ */
 public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings {
 
   private long sizeBytes;
@@ -30,8 +37,21 @@ public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings
       return new MemoryLruGcSettings(sizeBytes);
     }
 
-    public void setSizeBytes(long size) {
+    /**
+     * Sets an approximate cache size threshold for the memory cache. If the cache grows beyond this
+     * size, Firestore SDK will start removing data that hasn't been recently used. The size is not
+     * a guarantee that the cache will stay below that size, only that if the cache exceeds the
+     * given size, cleanup will be attempted.
+     *
+     * <p>A default size of 100MB (100 * 1024 * 1024) is used if unset. The minimum value to set is
+     * 1 MB (1024 * 1024).
+     *
+     * @return this {@code Builder} instance.
+     */
+    @NonNull
+    public Builder setSizeBytes(long size) {
       sizeBytes = size;
+      return this;
     }
   }
 
@@ -39,11 +59,21 @@ public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings
     sizeBytes = size;
   }
 
+  /** Returns a new instance of {@link MemoryLruGcSettings.Builder} with default configurations. */
   @NonNull
   public static MemoryLruGcSettings.Builder newBuilder() {
     return new Builder();
   }
 
+  /**
+   * Returns cache size threshold for the memory cache. If the cache grows beyond this size,
+   * Firestore SDK will start removing data that hasn't been recently used. The size is not a
+   * guarantee that the cache will stay below that size, only that if the cache exceeds the given
+   * size, cleanup will be attempted.
+   *
+   * <p>By default, memory LRU cache is enabled with a cache size of 100MB (100 * 1024 * 1024). The
+   * minimum value is 1 MB (1024 * 1024).
+   */
   public long getSizeBytes() {
     return sizeBytes;
   }

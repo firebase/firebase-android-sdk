@@ -220,7 +220,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -4461,7 +4461,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -4488,7 +4488,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "4": {
               "queries": [
@@ -4625,7 +4625,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "4": {
               "queries": [
@@ -4650,7 +4650,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             }
           }
         }
@@ -4794,7 +4794,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "7": {
               "queries": [
@@ -4807,7 +4807,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             }
           }
         }
@@ -4950,7 +4950,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             }
           }
         }
@@ -5449,7 +5449,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "4": {
               "queries": [
@@ -5611,11 +5611,21 @@
         }
       },
       {
-        "watchFilter": [
+        "watchFilter": {
+          "keys": [
+            "collection/b"
+          ],
+          "targetIds": [
+            2
+          ]
+        }
+      },
+      {
+        "watchCurrent": [
           [
             2
           ],
-          "collection/b"
+          "resume-token-1004"
         ]
       },
       {
@@ -5643,7 +5653,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5711,7 +5721,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -5730,7 +5740,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5823,7 +5833,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }

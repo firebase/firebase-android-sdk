@@ -39,6 +39,8 @@ import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.testutil.TestTargetMetadataProvider;
+import com.google.firestore.v1.BitSequence;
+import com.google.firestore.v1.BloomFilter;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -445,6 +447,120 @@ public class RemoteEventTest {
 
     WatchChange.ExistenceFilterWatchChange watchChange =
         new WatchChange.ExistenceFilterWatchChange(1, new ExistenceFilter(1));
+    aggregator.handleExistenceFilter(watchChange);
+
+    event = aggregator.createRemoteEvent(version(3));
+
+    TargetChange mapping3 = targetChange(ByteString.EMPTY, false, null, null, asList(doc1, doc2));
+    assertEquals(1, event.getTargetChanges().size());
+    assertEquals(mapping3, event.getTargetChanges().get(1));
+    assertEquals(1, event.getTargetMismatches().size());
+    assertEquals(0, event.getDocumentUpdates().size());
+  }
+
+  @Test
+  public void existenceFilterMismatchWithSuccessfulBloomFilterApplication() {
+    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
+
+    WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
+    WatchChange change2 = new DocumentChange(asList(1), emptyList(), doc2.getKey(), doc2);
+    WatchChange change3 = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
+
+    // The BloomFilter proto value below is created based on the document paths that are constructed
+    // using the pattern: "projects/test-project/databases/test-database/documents/"+document_key.
+    // Override the default database ID to ensure that the document path matches the pattern above.
+    targetMetadataProvider.setDatabaseId("test-project", "test-database");
+    WatchChangeAggregator aggregator =
+        createAggregator(
+            targetMap,
+            noOutstandingResponses,
+            keySet(doc1.getKey(), doc2.getKey()),
+            change1,
+            change2,
+            change3);
+
+    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+
+    assertEquals(version(3), event.getSnapshotVersion());
+    assertEquals(2, event.getDocumentUpdates().size());
+    assertEquals(doc1, event.getDocumentUpdates().get(doc1.getKey()));
+    assertEquals(doc2, event.getDocumentUpdates().get(doc2.getKey()));
+
+    assertEquals(2, event.getTargetChanges().size());
+
+    TargetChange mapping1 = targetChange(resumeToken, true, null, asList(doc1, doc2), null);
+    assertEquals(mapping1, event.getTargetChanges().get(1));
+
+    TargetChange mapping2 = targetChange(resumeToken, false, null, null, null);
+    assertEquals(mapping2, event.getTargetChanges().get(2));
+
+    // This BloomFilter will return false on MightContain(doc1) and true on MightContain(doc2).
+    BitSequence.Builder bitSequence = BitSequence.newBuilder();
+    bitSequence.setPadding(1);
+    bitSequence.setBitmap(ByteString.copyFrom(new byte[] {0x0E, 0x0F}));
+    com.google.firestore.v1.BloomFilter.Builder bloomFilter = BloomFilter.newBuilder();
+    bloomFilter.setBits(bitSequence);
+    bloomFilter.setHashCount(7);
+
+    WatchChange.ExistenceFilterWatchChange watchChange =
+        new WatchChange.ExistenceFilterWatchChange(1, new ExistenceFilter(1, bloomFilter.build()));
+    aggregator.handleExistenceFilter(watchChange);
+
+    event = aggregator.createRemoteEvent(version(3));
+
+    assertEquals(1, event.getTargetChanges().size());
+    assertEquals(0, event.getTargetMismatches().size());
+    assertEquals(0, event.getDocumentUpdates().size());
+  }
+
+  @Test
+  public void existenceFilterMismatchWithBloomFilterFalsePositiveResult() {
+    Map<Integer, TargetData> targetMap = activeQueries(1, 2);
+
+    MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
+    MutableDocument doc2 = doc("docs/2", 2, map("value", 2));
+
+    WatchChange change1 = new DocumentChange(asList(1), emptyList(), doc1.getKey(), doc1);
+    WatchChange change2 = new DocumentChange(asList(1), emptyList(), doc2.getKey(), doc2);
+    WatchChange change3 = new WatchTargetChange(WatchTargetChangeType.Current, asList(1));
+
+    WatchChangeAggregator aggregator =
+        createAggregator(
+            targetMap,
+            noOutstandingResponses,
+            keySet(doc1.getKey(), doc2.getKey()),
+            change1,
+            change2,
+            change3);
+
+    RemoteEvent event = aggregator.createRemoteEvent(version(3));
+
+    assertEquals(version(3), event.getSnapshotVersion());
+    assertEquals(2, event.getDocumentUpdates().size());
+    assertEquals(doc1, event.getDocumentUpdates().get(doc1.getKey()));
+    assertEquals(doc2, event.getDocumentUpdates().get(doc2.getKey()));
+
+    assertEquals(2, event.getTargetChanges().size());
+
+    TargetChange mapping1 = targetChange(resumeToken, true, null, asList(doc1, doc2), null);
+    assertEquals(mapping1, event.getTargetChanges().get(1));
+
+    TargetChange mapping2 = targetChange(resumeToken, false, null, null, null);
+    assertEquals(mapping2, event.getTargetChanges().get(2));
+
+    // With this BloomFilter, mightContain() will return true for all documents.
+    BitSequence.Builder bitSequence = BitSequence.newBuilder();
+    bitSequence.setPadding(7);
+    bitSequence.setBitmap(ByteString.copyFrom(new byte[] {(byte) 0xFF, (byte) 0xFF}));
+    com.google.firestore.v1.BloomFilter.Builder bloomFilter = BloomFilter.newBuilder();
+    bloomFilter.setBits(bitSequence);
+    bloomFilter.setHashCount(33);
+
+    WatchChange.ExistenceFilterWatchChange watchChange =
+        new WatchChange.ExistenceFilterWatchChange(1, new ExistenceFilter(1, bloomFilter.build()));
     aggregator.handleExistenceFilter(watchChange);
 
     event = aggregator.createRemoteEvent(version(3));

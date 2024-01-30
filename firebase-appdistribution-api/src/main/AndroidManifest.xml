@@ -13,13 +13,11 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.appdistribution">
-
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <service
             android:name="com.google.firebase.components.ComponentDiscoveryService"
-            android:exported="false">
+            android:exported="false"> <meta-data android:name="com.google.firebase.components:com.google.firebase.appdistribution.FirebaseAppDistributionKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/>
             <meta-data
                 android:name="com.google.firebase.components:com.google.firebase.appdistribution.FirebaseAppDistributionApiRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />

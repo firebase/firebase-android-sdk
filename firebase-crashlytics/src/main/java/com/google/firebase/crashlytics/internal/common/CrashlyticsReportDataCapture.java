@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData.makeTrimmedThrowableData;
+
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
@@ -23,16 +25,18 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.BuildConfig;
+import com.google.firebase.crashlytics.internal.ProcessDetailsProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Architecture;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.BinaryImage;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -42,6 +46,7 @@ import java.util.Map;
  * This class is responsible for capturing information from the system and exception objects,
  * parsing them, and returning canonical CrashlyticsReport and Event objects.
  */
+@SuppressWarnings("KotlinInternal")
 public class CrashlyticsReportDataCapture {
 
   private static final Map<String, Integer> ARCHITECTURES_BY_NAME = new HashMap<>();
@@ -69,6 +74,7 @@ public class CrashlyticsReportDataCapture {
   private final AppData appData;
   private final StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
   private final SettingsProvider settingsProvider;
+  private final ProcessDetailsProvider processDetailsProvider = ProcessDetailsProvider.INSTANCE;
 
   public CrashlyticsReportDataCapture(
       Context context,
@@ -97,7 +103,7 @@ public class CrashlyticsReportDataCapture {
       boolean includeAllThreads) {
     final int orientation = context.getResources().getConfiguration().orientation;
     final TrimmedThrowableData trimmedEvent =
-        new TrimmedThrowableData(event, stackTraceTrimmingStrategy);
+        makeTrimmedThrowableData(event, stackTraceTrimmingStrategy);
 
     return Event.builder()
         .setType(type)
@@ -130,7 +136,7 @@ public class CrashlyticsReportDataCapture {
 
   private CrashlyticsReport.ApplicationExitInfo addBuildIdInfo(
       CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
-    ImmutableList<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
+    List<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
         buildIdMappingForArchImmutableList = null;
     if (settingsProvider.getSettingsSync().featureFlagData.collectBuildIds
         && appData.buildIdInfoList.size() > 0) {
@@ -144,7 +150,7 @@ public class CrashlyticsReportDataCapture {
                 .setBuildId(buildIdInfo.getBuildId())
                 .build());
       }
-      buildIdMappingForArchImmutableList = ImmutableList.from(buildIdMappingForArchList);
+      buildIdMappingForArchImmutableList = Collections.unmodifiableList(buildIdMappingForArchList);
     }
 
     return CrashlyticsReport.ApplicationExitInfo.builder()
@@ -164,7 +170,8 @@ public class CrashlyticsReportDataCapture {
     return CrashlyticsReport.builder()
         .setSdkVersion(BuildConfig.VERSION_NAME)
         .setGmpAppId(appData.googleAppId)
-        .setInstallationUuid(idManager.getCrashlyticsInstallId())
+        .setInstallationUuid(idManager.getInstallIds().getCrashlyticsInstallId())
+        .setFirebaseInstallationId(idManager.getInstallIds().getFirebaseInstallationId())
         .setBuildVersion(appData.versionCode)
         .setDisplayVersion(appData.versionName)
         .setPlatform(REPORT_ANDROID_PLATFORM);
@@ -188,7 +195,7 @@ public class CrashlyticsReportDataCapture {
             .setIdentifier(idManager.getAppIdentifier())
             .setVersion(appData.versionCode)
             .setDisplayVersion(appData.versionName)
-            .setInstallationUuid(idManager.getCrashlyticsInstallId())
+            .setInstallationUuid(idManager.getInstallIds().getCrashlyticsInstallId())
             .setDevelopmentPlatform(appData.developmentPlatformProvider.getDevelopmentPlatform())
             .setDevelopmentPlatformVersion(
                 appData.developmentPlatformProvider.getDevelopmentPlatformVersion());
@@ -208,7 +215,7 @@ public class CrashlyticsReportDataCapture {
     final StatFs statFs = new StatFs(Environment.getDataDirectory().getPath());
     final int arch = getDeviceArchitecture();
     final int availableProcessors = Runtime.getRuntime().availableProcessors();
-    final long totalRam = CommonUtils.getTotalRamInBytes();
+    final long totalRam = CommonUtils.calculateTotalRamInBytes(context);
     final long diskSpace = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
     final boolean isEmulator = CommonUtils.isEmulator();
     final int state = CommonUtils.getDeviceState();
@@ -236,17 +243,18 @@ public class CrashlyticsReportDataCapture {
       int maxChainedExceptions,
       boolean includeAllThreads) {
     Boolean isBackground = null;
-    final RunningAppProcessInfo runningAppProcessInfo =
-        CommonUtils.getAppProcessInfo(appData.packageName, context);
-    if (runningAppProcessInfo != null) {
+    ProcessDetails currentProcessDetails = processDetailsProvider.getCurrentProcessDetails(context);
+    if (currentProcessDetails.getImportance() > 0) {
       // Several different types of "background" states, easiest to check for not foreground.
       isBackground =
-          runningAppProcessInfo.importance
+          currentProcessDetails.getImportance()
               != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
     }
 
     return Event.Application.builder()
         .setBackground(isBackground)
+        .setCurrentProcessDetails(currentProcessDetails)
+        .setAppProcessDetails(processDetailsProvider.getAppProcessDetails(context))
         .setUiOrientation(orientation)
         .setExecution(
             populateExecutionData(
@@ -265,6 +273,7 @@ public class CrashlyticsReportDataCapture {
 
     return Event.Application.builder()
         .setBackground(isBackground)
+        .setCurrentProcessDetails(processDetailsFromApplicationExitInfo(applicationExitInfo))
         .setUiOrientation(orientation)
         .setExecution(populateExecutionData(applicationExitInfo))
         .build();
@@ -277,7 +286,9 @@ public class CrashlyticsReportDataCapture {
     final int batteryVelocity = battery.getBatteryVelocity();
     final boolean proximityEnabled = CommonUtils.getProximitySensorEnabled(context);
     final long usedRamBytes =
-        CommonUtils.getTotalRamInBytes() - CommonUtils.calculateFreeRamInBytes(context);
+        ensureNonNegative(
+            CommonUtils.calculateTotalRamInBytes(context)
+                - CommonUtils.calculateFreeRamInBytes(context));
     final long diskUsedBytes =
         CommonUtils.calculateUsedDiskSpaceInBytes(Environment.getDataDirectory().getPath());
 
@@ -317,7 +328,7 @@ public class CrashlyticsReportDataCapture {
         .build();
   }
 
-  private ImmutableList<Execution.Thread> populateThreadsList(
+  private List<Execution.Thread> populateThreadsList(
       TrimmedThrowableData trimmedEvent,
       Thread eventThread,
       int eventThreadImportance,
@@ -340,7 +351,7 @@ public class CrashlyticsReportDataCapture {
       }
     }
 
-    return ImmutableList.from(threadsList);
+    return Collections.unmodifiableList(threadsList);
   }
 
   private Execution.Thread populateThreadData(Thread thread, StackTraceElement[] stacktrace) {
@@ -352,18 +363,18 @@ public class CrashlyticsReportDataCapture {
     return Execution.Thread.builder()
         .setName(thread.getName())
         .setImportance(importance)
-        .setFrames(ImmutableList.from(populateFramesList(stacktrace, importance)))
+        .setFrames(populateFramesList(stacktrace, importance))
         .build();
   }
 
-  private ImmutableList<Execution.Thread.Frame> populateFramesList(
+  private List<Execution.Thread.Frame> populateFramesList(
       StackTraceElement[] stacktrace, int importance) {
     final List<Execution.Thread.Frame> framesList = new ArrayList<>();
     for (StackTraceElement element : stacktrace) {
       framesList.add(
           populateFrameData(element, Execution.Thread.Frame.builder().setImportance(importance)));
     }
-    return ImmutableList.from(framesList);
+    return Collections.unmodifiableList(framesList);
   }
 
   private Execution.Exception populateExceptionData(
@@ -395,7 +406,7 @@ public class CrashlyticsReportDataCapture {
         Execution.Exception.builder()
             .setType(type)
             .setReason(reason)
-            .setFrames(ImmutableList.from(populateFramesList(stacktrace, eventThreadImportance)))
+            .setFrames(populateFramesList(stacktrace, eventThreadImportance))
             .setOverflowCount(overflowCount);
 
     if (cause != null && overflowCount == 0) {
@@ -429,8 +440,8 @@ public class CrashlyticsReportDataCapture {
     return frameBuilder.setPc(pc).setSymbol(symbol).setFile(file).setOffset(offset).build();
   }
 
-  private ImmutableList<BinaryImage> populateBinaryImagesList() {
-    return ImmutableList.from(populateBinaryImageData());
+  private List<BinaryImage> populateBinaryImagesList() {
+    return Collections.singletonList(populateBinaryImageData());
   }
 
   private Execution.BinaryImage populateBinaryImageData() {
@@ -464,5 +475,19 @@ public class CrashlyticsReportDataCapture {
     }
 
     return arch;
+  }
+
+  /** Returns the given value, or zero is the value is negative. */
+  private static long ensureNonNegative(long value) {
+    return value > 0 ? value : 0;
+  }
+
+  /** Builds a ProcessDetails object from the details in applicationExitInfo. */
+  private ProcessDetails processDetailsFromApplicationExitInfo(
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    return processDetailsProvider.buildProcessDetails(
+        applicationExitInfo.getProcessName(),
+        applicationExitInfo.getPid(),
+        applicationExitInfo.getImportance());
   }
 }

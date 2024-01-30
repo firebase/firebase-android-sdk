@@ -39,14 +39,14 @@ public class LogicUtils {
         "Only field filters and composite filters are accepted.");
   }
 
-  /** Returns true if the given filter is a single field filter. e.g. (a == 10). */
+  /** Returns true if the given filter is a single field filter. For example, (a == 10). */
   private static boolean isSingleFieldFilter(Filter filter) {
     return filter instanceof FieldFilter;
   }
 
   /**
-   * Returns true if the given filter is the conjunction of one or more field filters. e.g. (a == 10
-   * && b == 20)
+   * Returns true if the given filter is the conjunction of one or more field filters. For example,
+   * (a == 10 && b == 20)
    */
   private static boolean isFlatConjunction(Filter filter) {
     return filter instanceof CompositeFilter && ((CompositeFilter) filter).isFlatConjunction();
@@ -54,7 +54,7 @@ public class LogicUtils {
 
   /**
    * Returns true if the given filter is the disjunction of one or more "flat conjunctions" and
-   * field filters. e.g. (a == 10) || (b==20 && c==30)
+   * field filters. For example, (a == 10) || (b==20 && c==30)
    */
   private static boolean isDisjunctionOfFieldFiltersAndFlatConjunctions(Filter filter) {
     if (filter instanceof CompositeFilter) {
@@ -81,8 +81,8 @@ public class LogicUtils {
    */
   private static boolean isDisjunctiveNormalForm(Filter filter) {
     // A single field filter is always in DNF form.
-    // An AND of several field filters ("Flat AND") is in DNF form. e.g (A && B).
-    // An OR of field filters and "Flat AND"s is in DNF form. e.g. A || (B && C) || (D && F).
+    // An AND of several field filters ("Flat AND") is in DNF form. Example: (A && B).
+    // An OR of field filters and "Flat AND"s is in DNF form. Example: A || (B && C) || (D && F).
     // Everything else is not in DNF form.
     return isSingleFieldFilter(filter)
         || isFlatConjunction(filter)

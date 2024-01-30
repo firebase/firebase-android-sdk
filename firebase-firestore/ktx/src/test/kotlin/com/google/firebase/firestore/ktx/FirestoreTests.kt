@@ -1,16 +1,18 @@
-// Copyright 2019 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.firestore.ktx
 
@@ -80,9 +82,21 @@ class FirestoreTests : BaseTestCase() {
   }
 
   @Test
+  fun `Database#firestore should delegate to FirebaseFirestore#getInstance(Database)`() {
+    assertThat(Firebase.firestore("name")).isSameInstanceAs(FirebaseFirestore.getInstance("name"))
+  }
+
+  @Test
   fun `FirebaseApp#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp)`() {
     val app = Firebase.app(EXISTING_APP)
     assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
+  }
+
+  @Test
+  fun `FirebaseApp#Database#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp,Database)`() {
+    val app = Firebase.app(EXISTING_APP)
+    assertThat(Firebase.firestore(app, "name"))
+      .isSameInstanceAs(FirebaseFirestore.getInstance(app, "name"))
   }
 
   @Test

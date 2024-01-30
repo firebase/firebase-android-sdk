@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        xmlns:tools="http://schemas.android.com/tools"
-        package="com.google.firebase.firestore">
+        xmlns:tools="http://schemas.android.com/tools">
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
     <!--<uses-sdk android:minSdkVersion="14" />-->
 
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application>
-        <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
+        <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false"> <meta-data android:name="com.google.firebase.components:com.google.firebase.firestore.FirebaseFirestoreKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/>
             <meta-data android:name="com.google.firebase.components:com.google.firebase.firestore.FirestoreRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>

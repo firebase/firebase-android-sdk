@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?><!-- Copyright 2020 Google Inc. All Rights Reserved. -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.google.firebase.perf">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
   <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -9,7 +8,7 @@
 
     <service
       android:exported="false"
-      android:name="com.google.firebase.components.ComponentDiscoveryService">
+      android:name="com.google.firebase.components.ComponentDiscoveryService"> <meta-data android:name="com.google.firebase.components:com.google.firebase.perf.FirebasePerfKtxRegistrar" android:value="com.google.firebase.components.ComponentRegistrar"/>
 
       <meta-data
         android:name="com.google.firebase.components:com.google.firebase.perf.FirebasePerfRegistrar"

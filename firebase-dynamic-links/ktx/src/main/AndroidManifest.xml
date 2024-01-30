@@ -13,13 +13,12 @@
 <!-- See the License for the specific language governing permissions and -->
 <!-- limitations under the License. -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.google.firebase.dynamiclinks.ktx">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
     <!--<uses-sdk android:minSdkVersion="16"/>-->
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
-            <meta-data android:name="com.google.firebase.components:com.google.firebase.dynamiclinks.ktx.FirebaseDynamicLinksKtxRegistrar"
+            <meta-data android:name="com.google.firebase.components:com.google.firebase.dynamiclinks.ktx.FirebaseDynamicLinksLegacyRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>

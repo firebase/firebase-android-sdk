@@ -1,16 +1,18 @@
-// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -29,7 +31,11 @@ import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
@@ -41,6 +47,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupAndroidLibraryExtension(project)
+    registerMakeReleaseNotesTask(project)
 
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
@@ -49,7 +56,6 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     project.apply<DackkaPlugin>()
     project.apply<GitSubmodulePlugin>()
-    project.apply<PostReleasePlugin>()
     project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
   }
 
@@ -81,12 +87,19 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
-    getSemverTaskAar(project, firebaseLibrary)
+    setupVersionCheckTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
   }
 
-  private fun getSemverTaskAar(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+  private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      version.value(firebaseLibrary.version)
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+    }
     project.mkdir("semver")
+    project.mkdir("semver/previous-version")
     project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
       dependsOn("bundleReleaseAar")
       project.file("semver/previous.aar").delete()
@@ -104,17 +117,24 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       from(project.zipTree("build/outputs/aar/${releaseAar}"))
       into(project.file("semver/current-version"))
     }
+
     project.tasks.register<Copy>("extractPreviousClasses") {
       dependsOn("copyPreviousArtifacts")
-
-      from(project.zipTree("semver/previous.aar"))
-      into(project.file("semver/previous-version"))
+      if (
+        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
+          .isPresentInGmaven()
+      ) {
+        from(project.zipTree("semver/previous.aar"))
+        into(project.file("semver/previous-version"))
+      }
     }
 
     val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
 
     val previousJarFile = project.file("semver/previous-version/classes.jar").absolutePath
     project.tasks.register<ApiDiffer>("semverCheck") {
+      dependsOn("extractCurrentClasses")
+      dependsOn("extractPreviousClasses")
       currentJar.value(currentJarFile)
       previousJar.value(previousJarFile)
       version.value(firebaseLibrary.version)
@@ -122,8 +142,6 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
         GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
           .getLatestReleasedVersion()
       )
-      dependsOn("extractCurrentClasses")
-      dependsOn("extractPreviousClasses")
     }
   }
 

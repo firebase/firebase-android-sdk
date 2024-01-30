@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:
@@ -13,7 +13,7 @@ jobs:
         run: mkdir ~/diff
 
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -32,7 +32,7 @@ jobs:
         run: mv build ~/diff/modified
 
       - name: Checkout master
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.3
         with:
           ref: ${{ github.base_ref }}
 

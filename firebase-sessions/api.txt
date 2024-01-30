@@ -1,0 +1,35 @@
+// Signature format: 2.0
+package com.google.firebase.sessions.api {
+
+  public final class FirebaseSessionsDependencies {
+    method public static void addDependency(@NonNull com.google.firebase.sessions.api.SessionSubscriber.Name subscriberName);
+    method public static void register(@NonNull com.google.firebase.sessions.api.SessionSubscriber subscriber);
+    field @NonNull public static final com.google.firebase.sessions.api.FirebaseSessionsDependencies INSTANCE;
+  }
+
+  public interface SessionSubscriber {
+    method @NonNull public com.google.firebase.sessions.api.SessionSubscriber.Name getSessionSubscriberName();
+    method public boolean isDataCollectionEnabled();
+    method public void onSessionChanged(@NonNull com.google.firebase.sessions.api.SessionSubscriber.SessionDetails sessionDetails);
+    property public abstract boolean isDataCollectionEnabled;
+    property @NonNull public abstract com.google.firebase.sessions.api.SessionSubscriber.Name sessionSubscriberName;
+  }
+
+  public enum SessionSubscriber.Name {
+    method @NonNull public static com.google.firebase.sessions.api.SessionSubscriber.Name valueOf(@NonNull String name) throws java.lang.IllegalArgumentException;
+    method @NonNull public static com.google.firebase.sessions.api.SessionSubscriber.Name[] values();
+    enum_constant public static final com.google.firebase.sessions.api.SessionSubscriber.Name CRASHLYTICS;
+    enum_constant @Discouraged(message="This is for testing purposes only.") public static final com.google.firebase.sessions.api.SessionSubscriber.Name MATT_SAYS_HI;
+    enum_constant public static final com.google.firebase.sessions.api.SessionSubscriber.Name PERFORMANCE;
+  }
+
+  public static final class SessionSubscriber.SessionDetails {
+    ctor public SessionSubscriber.SessionDetails(@NonNull String sessionId);
+    method @NonNull public String component1();
+    method @NonNull public com.google.firebase.sessions.api.SessionSubscriber.SessionDetails copy(@NonNull String sessionId);
+    method @NonNull public String getSessionId();
+    property @NonNull public final String sessionId;
+  }
+
+}
+

@@ -65,5 +65,31 @@ package com.google.firebase.ml.modeldownloader {
     method public void setModelDownloaderCollectionEnabled(@Nullable Boolean);
   }
 
+  public final class ModelDownloaderKt {
+    method @Nullable public static operator java.io.File component1(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method public static operator long component2(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method public static operator long component3(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method @NonNull public static operator String component4(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method @NonNull public static operator String component5(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method @NonNull public static com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions customModelDownloadConditions(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder,kotlin.Unit> init);
+    method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getModelDownloader(@NonNull com.google.firebase.Firebase);
+    method @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader modelDownloader(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+  }
+
+}
+
+package com.google.firebase.ml.modeldownloader.ktx {
+
+  public final class ModelDownloaderKt {
+    method @Nullable public static operator java.io.File component1(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method public static operator long component2(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method public static operator long component3(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method @NonNull public static operator String component4(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method @NonNull public static operator String component5(@NonNull com.google.firebase.ml.modeldownloader.CustomModel);
+    method @Deprecated @NonNull public static com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions customModelDownloadConditions(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder,kotlin.Unit> init);
+    method @Deprecated @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getModelDownloader(@NonNull com.google.firebase.ktx.Firebase);
+    method @Deprecated @NonNull public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader modelDownloader(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+  }
+
 }
 

@@ -1,16 +1,19 @@
-// Copyright 2023 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.firebase.gradle.plugins.semver
 
 import org.objectweb.asm.Type
@@ -172,7 +175,9 @@ enum class DeltaType {
       ((publicBeforeMethods.keys intersect nonPublicMethods.keys) union
           (protectedBeforeMethods.keys intersect privateMethods.keys))
         .forEach {
-          val method = allAfterMethods.get(it)
+          val method =
+            if (allAfterMethods.get(it) != null) allAfterMethods.get(it)
+            else allBeforeMethods.get(it)
           apiDeltas.add(
             Delta(
               after.name,
@@ -191,7 +196,8 @@ enum class DeltaType {
       ((publicBeforeFields.keys intersect nonPublicFields.keys) union
           (protectedBeforeFields.keys intersect privateFields.keys))
         .forEach {
-          val field = allAfterFields.get(it)
+          val field =
+            if (allAfterFields.get(it) != null) allAfterFields.get(it) else allBeforeFields.get(it)
           apiDeltas.add(
             Delta(
               after.name,
@@ -604,8 +610,9 @@ enum class DeltaType {
             allBeforeMethods.containsKey(key) &&
             access.isStatic()
         }
+
       return (beforeStaticMethods.keys subtract afterStaticMethods.keys).map {
-        val method = allAfterMethods.get(it)
+        val method = beforeStaticMethods.get(it)
         Delta(
           after!!.name,
           method!!.name,

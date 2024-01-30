@@ -1,16 +1,18 @@
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.google.firebase.gradle.plugins
 
@@ -33,6 +35,7 @@ data class Project(
   val publishJavadoc: Boolean = false,
   val libraryType: LibraryType = LibraryType.ANDROID
 ) {
+  val path = ":$name"
   fun generateBuildFile(): String {
     return """
             plugins {
@@ -54,17 +57,6 @@ data class Project(
             }
             """
   }
-
-  fun getPublishedPom(rootDirectory: String): Pom? {
-    val v = expectedVersion
-    return File(rootDirectory)
-      .walk()
-      .asSequence()
-      .filter { it.isFile }
-      .filter { it.path.matches(Regex(".*/${group.replace('.', '/')}/$name/$v.*/.*\\.pom$")) }
-      .map(Pom::parse)
-      .firstOrNull()
-  }
 }
 
 data class License(val name: String, val url: String)
@@ -79,7 +71,7 @@ data class Artifact(
   val artifactId: String,
   val version: String,
   val type: Type = Type.JAR,
-  val scope: String = ""
+  val scope: String = "compile"
 ) {
   val simpleDepString: String
     get() = "$groupId:$artifactId:$version"
@@ -200,3 +192,35 @@ data class Pom(
     }
   }
 }
+
+/**
+ * Converts a [LibraryType] to a [Type].
+ *
+ * Uses the [LibraryType.format] to make the conversion.
+ */
+fun LibraryType.toArtifactType() = Type.valueOf(format.toUpperCase())
+
+/**
+ * Converts a [Project] to an [Artifact].
+ *
+ * @see toArtifactType
+ */
+fun Project.toArtifact() = Artifact(group, name, version, libraryType.toArtifactType())
+
+/**
+ * Converts a [Project] to a gradle dependency string.
+ *
+ * For example:
+ * ```
+ * val myProject = Project(name = "firestore", group = "com.firebase.google", version = "1.0.0")
+ *
+ * println(myProject.toDependency()) // 'com.google.firebase.google:firestore:1.0.0'
+ * println(myProject.toDependency(true)) // project(':firestore')
+ * ```
+ *
+ * @param projectLevel whether the dependency should be a project level dependency or external
+ *
+ * @see toArtifact
+ */
+fun Project.toDependency(projectLevel: Boolean = false) =
+  if (projectLevel) "project('${path}')" else "'${toArtifact().simpleDepString}'"

@@ -24,6 +24,7 @@ firebaseTestLab {
 android {
     compileSdkVersion 31
 
+    namespace "com.googletest.firebase.perf.testapp"
     compileOptions {
         sourceCompatibility 1.8
         targetCompatibility 1.8
@@ -83,7 +84,8 @@ dependencies {
     if (project.hasProperty("fireperfBuildForAutopush")) {
         println("Building with HEAD version ':firebase-perf' of SDK")
         implementation project(":firebase-perf")
-        implementation project(":firebase-common")
+        implementation "com.google.firebase:firebase-common:20.4.2"
+        implementation "com.google.firebase:firebase-common-ktx:20.4.2"
         implementation project(":firebase-config")
 
     } else {
