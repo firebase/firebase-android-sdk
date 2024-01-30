@@ -887,7 +887,7 @@ public class AggregationTest {
   }
 
   @Test
-  public void testAggregateFailWithGoodMessageIfMissingIndex() {
+  public void testAggregateErrorMessageShouldContainConsoleLinkIfMissingIndex() {
     assumeFalse(
         "Skip this test when running against the Firestore emulator because the "
             + "Firestore emulator does not use indexes and never fails with a 'missing index'"
@@ -896,21 +896,22 @@ public class AggregationTest {
 
     CollectionReference collection = testCollectionWithDocs(Collections.emptyMap());
     Query compositeIndexQuery = collection.whereEqualTo("field1", 42).whereLessThan("field2", 99);
-    AggregateQuery compositeIndexCountQuery =
+    AggregateQuery compositeIndexAggregateQuery =
         compositeIndexQuery.aggregate(AggregateField.count(), sum("pages"), average("pages"));
-    Task<AggregateQuerySnapshot> task = compositeIndexCountQuery.get(AggregateSource.SERVER);
+    Task<AggregateQuerySnapshot> task = compositeIndexAggregateQuery.get(AggregateSource.SERVER);
 
     Throwable throwable = assertThrows(Throwable.class, () -> waitFor(task));
 
     Throwable cause = throwable.getCause();
+    Truth.assertThat(cause).hasMessageThat().ignoringCase().contains("index");
+    // TODO(b/316359394) Remove this check for the default databases once cl/582465034 is rolled
+    // out to production.
     if (collection
         .firestore
         .getDatabaseId()
         .getDatabaseId()
         .equals(DatabaseId.DEFAULT_DATABASE_ID)) {
       Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
-    } else {
-      Truth.assertThat(cause).hasMessageThat().contains("Missing index configuration");
     }
   }
 

@@ -57,7 +57,7 @@ public class WriteBatch {
    * does not yet exist, it will be created. If a document already exists, it will be overwritten.
    *
    * @param documentRef The {@code DocumentReference} to overwrite.
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   * @param data The data to write to the document (like a Map or a POJO containing the desired
    *     document contents).
    * @return This {@code WriteBatch} instance. Used for chaining method calls.
    */
@@ -72,7 +72,7 @@ public class WriteBatch {
    * be merged into an existing document.
    *
    * @param documentRef The {@code DocumentReference} to overwrite.
-   * @param data The data to write to the document (e.g. a Map or a POJO containing the desired
+   * @param data The data to write to the document (like a Map or a POJO containing the desired
    *     document contents).
    * @param options An object to configure the set behavior.
    * @return This {@code WriteBatch} instance. Used for chaining method calls.

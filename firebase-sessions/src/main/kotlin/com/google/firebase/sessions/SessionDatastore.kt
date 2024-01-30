@@ -19,6 +19,7 @@ package com.google.firebase.sessions
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
@@ -26,6 +27,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.Firebase
 import com.google.firebase.app
+import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -97,7 +99,15 @@ internal class SessionDatastoreImpl(
 
   private companion object {
     private const val TAG = "FirebaseSessionsRepo"
+
     private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(name = SessionDataStoreConfigs.SESSIONS_CONFIG_NAME)
+      preferencesDataStore(
+        name = SessionDataStoreConfigs.SESSIONS_CONFIG_NAME,
+        corruptionHandler =
+          ReplaceFileCorruptionHandler { ex ->
+            Log.w(TAG, "CorruptionException in sessions DataStore in ${getProcessName()}.", ex)
+            emptyPreferences()
+          },
+      )
   }
 }

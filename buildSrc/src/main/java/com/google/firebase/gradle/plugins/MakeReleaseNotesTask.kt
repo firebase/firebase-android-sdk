@@ -17,11 +17,13 @@
 package com.google.firebase.gradle.plugins
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.StopActionException
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 
 /**
  * Creates the release notes for the given project.
@@ -35,6 +37,7 @@ import org.gradle.api.tasks.TaskAction
  * changes to release
  * @see make
  */
+@DisableCachingByDefault
 abstract class MakeReleaseNotesTask : DefaultTask() {
   @get:InputFile abstract val changelogFile: RegularFileProperty
 
@@ -82,8 +85,11 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     val unreleased = changelog.releases.first()
     val version = project.version.toString()
 
+    if (!project.firebaseLibrary.publishJavadoc)
+      throw StopActionException("No release notes required for ${project.name}")
+
     if (!unreleased.hasContent())
-      throw StopActionException("No changes to release for project: ${project.name}")
+      throw GradleException("Missing release notes for \"${project.name}\"")
 
     val versionClassifier = version.replace(".", "-")
 

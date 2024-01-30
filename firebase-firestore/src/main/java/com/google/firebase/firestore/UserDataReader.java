@@ -183,16 +183,16 @@ public final class UserDataReader {
     return accumulator.toUpdateData(updateData);
   }
 
-  /** Parse a "query value" (e.g. value in a where filter or a value in a cursor bound). */
+  /** Parse a "query value" (like a value in a where filter or a value in a cursor bound). */
   public Value parseQueryValue(Object input) {
     return parseQueryValue(input, false);
   }
 
   /**
-   * Parse a "query value" (e.g. value in a where filter or a value in a cursor bound).
+   * Parse a "query value" (like a value in a where filter or a value in a cursor bound).
    *
    * @param allowArrays Whether the query value is an array that may directly contain additional
-   *     arrays (e.g. the operand of a `whereIn` query).
+   *     arrays (for example, the operand of a `whereIn` query).
    */
   public Value parseQueryValue(Object input, boolean allowArrays) {
     ParseAccumulator accumulator =
@@ -215,8 +215,8 @@ public final class UserDataReader {
 
   /**
    * Converts a POJO to native types and then parses it into model types. It expects the input to
-   * conform to document data (i.e. it must parse into an ObjectValue model type) and will throw an
-   * appropriate error otherwise.
+   * conform to document data (specifically, it must parse into an ObjectValue model type) and will
+   * throw an appropriate error otherwise.
    */
   private ObjectValue convertAndParseDocumentData(Object input, ParseContext context) {
     String badDocReason =
@@ -381,7 +381,7 @@ public final class UserDataReader {
   }
 
   /**
-   * Helper to parse a scalar value (i.e. not a Map or List)
+   * Helper to parse a scalar value (specifically, not a Map or a List)
    *
    * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
    *     not be included in the resulting parsed data.
