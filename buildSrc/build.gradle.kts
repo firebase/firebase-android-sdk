@@ -51,7 +51,7 @@ dependencies {
     implementation(kotlin("gradle-plugin", "1.7.10"))
     implementation("org.json:json:20210307")
 
-    implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
+    implementation("org.eclipse.aether:aether-api:1.1.0")
     implementation("org.eclipse.aether:aether-util:1.0.0.v20140518")
     implementation("org.ow2.asm:asm-tree:9.5")
     implementation("org.eclipse.aether:aether-impl:1.0.0.v20140518")
