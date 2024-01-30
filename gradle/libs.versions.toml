@@ -3,7 +3,7 @@
 # it needs to match the protobuf version which grpc has transitive dependency on.
 android-lint = "30.3.1"
 autovalue = "1.10.1"
-coroutines = "1.6.4"
+coroutines = "1.7.3"
 dagger = "2.43.2"
 grpc = "1.57.2"
 javalite = "3.21.11"
