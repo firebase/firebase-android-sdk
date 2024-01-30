@@ -1,0 +1,217 @@
+{
+    "changesByLibraryName": {
+        "firebase-abt": [
+            {
+                "commitId": "69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Add dependency version bump entries to the changelog\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Bump internal dependencies\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-appdistribution": [
+            {
+                "commitId": "5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Additional version bumps\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-config": [
+            {
+                "commitId": "5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Additional version bumps\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "856bcce92826858224d0db71013880a76f0a8a2f",
+                "prId": "",
+                "author": "Rodrigo Lazo",
+                "message": "Merge branch 'master' into rl.bump.internal.deps",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/856bcce92826858224d0db71013880a76f0a8a2f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "17f40210af6613e0f6d255312e5aa6ff938f54e4",
+                "prId": "",
+                "author": "Rodrigo Lazo",
+                "message": "Merge branch 'master' into rl.bump.internal.deps",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/17f40210af6613e0f6d255312e5aa6ff938f54e4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Add dependency version bump entries to the changelog\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Bump internal dependencies\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-datatransport": [
+            {
+                "commitId": "69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Add dependency version bump entries to the changelog\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Bump internal dependencies\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Additional version bumps\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "856bcce92826858224d0db71013880a76f0a8a2f",
+                "prId": "",
+                "author": "Rodrigo Lazo",
+                "message": "Merge branch 'master' into rl.bump.internal.deps",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/856bcce92826858224d0db71013880a76f0a8a2f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Add dependency version bump entries to the changelog\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Bump internal dependencies\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-ml-modeldownloader/ktx": [
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Additional version bumps\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e8d357998aa77635a90d6c0a4bd1285f60eaaf10",
+                "prId": "5672",
+                "author": "Rodrigo Lazo",
+                "message": "Fix perf devapp namespace (#5672)\n\nNamespace should be `com.googletest.firebase.perf.testapp` without the\r\n`prod` suffix",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e8d357998aa77635a90d6c0a4bd1285f60eaaf10",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5672"
+            }
+        ],
+        "firebase-perf/ktx": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Additional version bumps\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Additional version bumps\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a3f4cc355e323b979135720b96d4ae3e1d3e034",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+        ],
+        "appcheck/firebase-appcheck/ktx": [
+        ],
+        "firebase-components/firebase-dynamic-module-support": [
+            {
+                "commitId": "69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Add dependency version bump entries to the changelog\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/69bbfe622ff1eec0c7ac847fc6818dffd1e782f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Bump internal dependencies\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2b813c36fc163c7f5ddc1d709fd69b9ceac5544",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-components",
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx"
+    ]
+}
