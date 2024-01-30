@@ -21,7 +21,6 @@ import static org.junit.Assert.fail;
 
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.database.core.utilities.encoding.CustomClassMapper;
@@ -2028,7 +2027,7 @@ public class MapperTest {
   @Test
   public void excludedOverriddenGenericSetterSetsValueNotJava() {
     GenericExcludedSetterBean bean =
-            deserialize("{'value': 'foo'}", GenericExcludedSetterBean.class);
+        deserialize("{'value': 'foo'}", GenericExcludedSetterBean.class);
     assertEquals("foo", bean.value);
   }
 
@@ -2037,7 +2036,7 @@ public class MapperTest {
   @Test
   public void excludedOverriddenGenericSetterSetsValueNotKotlin() {
     GenericExcludedSetterBeanKotlin bean =
-            deserialize("{'value': 'foo'}", GenericExcludedSetterBeanKotlin.class);
+        deserialize("{'value': 'foo'}", GenericExcludedSetterBeanKotlin.class);
     assertEquals("foo", bean.getValue());
   }
 }

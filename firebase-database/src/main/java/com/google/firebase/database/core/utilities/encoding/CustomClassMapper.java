@@ -523,7 +523,7 @@ public class CustomClassMapper {
                     propertyNamesOfExcludedSetters.add(propertyName);
                   }
                 } else if (!isSetterOverride(method, existingSetter)
-                        && !(correspondingBridgeMethod != null
+                    && !(correspondingBridgeMethod != null
                         && isSetterOverride(method, correspondingBridgeMethod))) {
                   // We require that setters with conflicting property names are
                   // overrides from a base class
@@ -561,7 +561,7 @@ public class CustomClassMapper {
 
       // When subclass setter is annotated with `@Exclude`, the corresponding superclass setter
       // also need to be filtered out.
-      for (String propertyName: propertyNamesOfExcludedSetters) {
+      for (String propertyName : propertyNamesOfExcludedSetters) {
         setters.remove(propertyName);
       }
 
