@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Bump internal dependencies.
 
 
 # 24.2.2
@@ -168,4 +169,3 @@ runtime.
   capabilities.
 * [feature] Added ability to get the model download ID, which allows progress
   tracking of file downloads.
-

@@ -1,19 +1,20 @@
 # Unreleased
-
+* [unchanged] Updated to accommodate the release of the updated
+  [appdistro] library.
 
 # 16.0.0-beta11
-* [changed] Added Kotlin extensions (KTX) APIs from 
+* [changed] Added Kotlin extensions (KTX) APIs from
   `com.google.firebase:firebase-appdistribution-api-ktx`
-  to `com.google.firebase:firebase-appdistribution-api` under the 
+  to `com.google.firebase:firebase-appdistribution-api` under the
   `com.google.firebase.appdistribution` package.
   For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
-* [deprecated] All the APIs from `com.google.firebase:firebase-appdistribution-api-ktx` have been 
+* [deprecated] All the APIs from `com.google.firebase:firebase-appdistribution-api-ktx` have been
   added to
-  `com.google.firebase:firebase-appdistribution-api` under the 
+  `com.google.firebase:firebase-appdistribution-api` under the
   `com.google.firebase.appdistribution` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-appdistribution-api-ktx`
-  are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, 
+  are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details,
   see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
@@ -118,4 +119,3 @@ API-only library: `firebase-appdistribution-api-ktx`.
 This new Kotlin extensions library transitively includes the
 `firebase-appdistribution-api` library. The Kotlin extensions library has no
 additional updates.
-

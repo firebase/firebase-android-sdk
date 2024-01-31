@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies.
 * [fixed] Handle corruption in DataStore Preferences more gracefully.
 
 # 1.2.0

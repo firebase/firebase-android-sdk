@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Bump internal dependencies.
 
 
 # 18.6.1

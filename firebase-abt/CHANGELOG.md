@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies.
 
 # 21.1.1
 * [changed] Internal changes to improve experiment reporting.
@@ -39,4 +39,3 @@
 
 # 17.1.0
 * [changed] Updated API to support the latest [remote_config] update.
-

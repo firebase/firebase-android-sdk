@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Bump internal dependencies.
 
 # 16.0.0-beta10
 * [fixed] Updated the third-party license file to include Dagger's license.
