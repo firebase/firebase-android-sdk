@@ -1,0 +1,190 @@
+{
+    "changesByLibraryName": {
+        "firebase-abt": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-appdistribution": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-appdistribution-api/ktx": [
+        ],
+        "firebase-config": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-config-interop": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-datatransport": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            },
+            {
+                "commitId": "9b48edd65856a866f752412e017f52546867c743",
+                "prId": "5660",
+                "author": "cherylEnkidu",
+                "message": "Add test coverage for bundle to verify the support for empty array and map (#5660)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9b48edd65856a866f752412e017f52546867c743",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5660"
+            },
+            {
+                "commitId": "4dcae02e0937b0fc347e7aeab971a77fcf3762e8",
+                "prId": "5634",
+                "author": "Denver Coneybeare",
+                "message": "Firestore: Small Count API documentation improvements (#5634)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4dcae02e0937b0fc347e7aeab971a77fcf3762e8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5634"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "firebase-ml-modeldownloader/ktx": [
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            },
+            {
+                "commitId": "e8d357998aa77635a90d6c0a4bd1285f60eaaf10",
+                "prId": "5672",
+                "author": "Rodrigo Lazo",
+                "message": "Fix perf devapp namespace (#5672)\n\nNamespace should be `com.googletest.firebase.perf.testapp` without the\r\n`prod` suffix",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e8d357998aa77635a90d6c0a4bd1285f60eaaf10",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5672"
+            }
+        ],
+        "firebase-perf/ktx": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prId": "5631",
+                "author": "Rodrigo Lazo",
+                "message": "Bump internal dependencies (#5631)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5c24573d473f07be6553bb30a18ef68b3ea30e3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5631"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+        ],
+        "appcheck/firebase-appcheck/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx"
+    ]
+}
