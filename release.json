@@ -24,6 +24,6 @@
         ":appcheck:firebase-appcheck-debug",
         ":appcheck:firebase-appcheck-debug-testing",
         ":appcheck:firebase-appcheck-playintegrity",
-        ":appcheck:firebase-appcheck:ktx",
+        ":appcheck:firebase-appcheck:ktx"
     ]
 }
