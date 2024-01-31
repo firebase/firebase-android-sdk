@@ -1,0 +1,33 @@
+{
+    "name": "test_m001",
+    "libraries": [
+        ":firebase-abt",
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-config-interop",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-database",
+        ":firebase-database:ktx",
+        ":firebase-datatransport",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx",
+        ":firebase-ml-modeldownloader",
+        ":firebase-ml-modeldownloader:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-sessions",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck:ktx"
+    ]
+}
