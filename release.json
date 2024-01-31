@@ -25,6 +25,5 @@
         ":appcheck:firebase-appcheck-debug-testing",
         ":appcheck:firebase-appcheck-playintegrity",
         ":appcheck:firebase-appcheck:ktx",
-        ":firebase-components:firebase-dynamic-module-support"
     ]
 }
