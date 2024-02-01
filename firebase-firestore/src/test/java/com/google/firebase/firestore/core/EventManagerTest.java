@@ -58,8 +58,8 @@ public class EventManagerTest {
 
     manager.removeQueryListener(listener1);
     manager.removeQueryListener(listener2);
-    verify(syncSpy, times(1)).listen(query);
-    verify(syncSpy, times(1)).stopListening(query);
+    verify(syncSpy, times(1)).listen(query, true);
+    verify(syncSpy, times(1)).stopListening(query, true);
   }
 
   @Test
@@ -91,8 +91,8 @@ public class EventManagerTest {
     eventManager.addQueryListener(spy2);
     eventManager.addQueryListener(spy3);
 
-    verify(syncSpy, times(1)).listen(query1);
-    verify(syncSpy, times(1)).listen(query2);
+    verify(syncSpy, times(1)).listen(query1, true);
+    verify(syncSpy, times(1)).listen(query2, true);
 
     ViewSnapshot snap1 = mock(ViewSnapshot.class);
     when(snap1.getQuery()).thenReturn(query1);

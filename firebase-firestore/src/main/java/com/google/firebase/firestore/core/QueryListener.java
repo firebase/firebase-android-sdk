@@ -55,6 +55,10 @@ public class QueryListener {
     this.options = options;
   }
 
+  public EventManager.ListenOptions getOptions() {
+    return options;
+  }
+
   public Query getQuery() {
     return query;
   }

@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.SyncEngine.SyncEngineCallback;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.Status;
@@ -41,6 +42,16 @@ public final class EventManager implements SyncEngineCallback {
     QueryListenersInfo() {
       listeners = new ArrayList<>();
     }
+
+    // Helper methods that checks if the query has listeners sourced from watch.
+    boolean hasRemoteListeners() {
+      for (QueryListener listener : listeners) {
+        if (listensToRemoteStore(listener)) {
+          return true;
+        }
+      }
+      return false;
+    }
   }
 
   /** Holds (internal) options for listening */
@@ -53,6 +64,12 @@ public final class EventManager implements SyncEngineCallback {
 
     /** Wait for a sync with the server when online, but still raise events while offline. */
     public boolean waitForSyncWhenOnline;
+
+    /**
+     * Sets the source the query listens to. Default to ListenSource.Default, which listens to both
+     * cache and server.
+     */
+    public ListenSource source = ListenSource.DEFAULT;
   }
 
   private final SyncEngine syncEngine;
@@ -67,6 +84,12 @@ public final class EventManager implements SyncEngineCallback {
     this.syncEngine = syncEngine;
     queries = new HashMap<>();
     syncEngine.setCallback(this);
+  }
+
+  private static boolean listensToRemoteStore(QueryListener listener) {
+    ListenOptions options = listener.getOptions();
+    // While not set, source should be default to ListenSource.DEFAULT.
+    return options == null || !options.source.equals(ListenSource.CACHE);
   }
 
   /**
@@ -85,6 +108,8 @@ public final class EventManager implements SyncEngineCallback {
       queryInfo = new QueryListenersInfo();
       queries.put(query, queryInfo);
     }
+    boolean firstListenToRemoteStore =
+        !queryInfo.hasRemoteListeners() && listensToRemoteStore(queryListener);
 
     queryInfo.listeners.add(queryListener);
 
@@ -101,7 +126,10 @@ public final class EventManager implements SyncEngineCallback {
     }
 
     if (firstListen) {
-      queryInfo.targetId = syncEngine.listen(query);
+      queryInfo.targetId = syncEngine.listen(query, firstListenToRemoteStore);
+    } else if (firstListenToRemoteStore) {
+      System.out.println("firstListen");
+      syncEngine.listenToRemoteStore(query);
     }
     return queryInfo.targetId;
   }
@@ -111,14 +139,19 @@ public final class EventManager implements SyncEngineCallback {
     Query query = listener.getQuery();
     QueryListenersInfo queryInfo = queries.get(query);
     boolean lastListen = false;
+    boolean lastListenToRemoteStore = false;
+
     if (queryInfo != null) {
       queryInfo.listeners.remove(listener);
       lastListen = queryInfo.listeners.isEmpty();
+      lastListenToRemoteStore = !queryInfo.hasRemoteListeners() && listensToRemoteStore(listener);
     }
 
     if (lastListen) {
       queries.remove(query);
-      syncEngine.stopListening(query);
+      syncEngine.stopListening(query, lastListenToRemoteStore);
+    } else if (lastListenToRemoteStore) {
+      syncEngine.stopListeningToRemoteStore(query);
     }
   }
 
