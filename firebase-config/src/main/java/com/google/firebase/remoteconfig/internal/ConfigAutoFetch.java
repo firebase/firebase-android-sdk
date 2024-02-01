@@ -102,7 +102,7 @@ public class ConfigAutoFetch {
   // Check connection and establish InputStream
   // TODO: Refactor connection management so it's handled by ConfigRealtimeHttpClient.
   @VisibleForTesting
-  public void listenForNotifications() throws IOException {
+  public void listenForNotifications() {
     if (httpURLConnection == null) {
       return;
     }

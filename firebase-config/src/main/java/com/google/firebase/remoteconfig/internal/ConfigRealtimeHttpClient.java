@@ -498,7 +498,7 @@ public class ConfigRealtimeHttpClient {
             this.scheduledExecutorService,
             (completedHttpUrlConnectionTask) -> {
               Integer responseCode = null;
-              this.httpURLConnection = null;
+              httpURLConnection = null;
 
               try {
                 // If HTTP connection task failed throw exception to move to the catch block.
@@ -508,8 +508,8 @@ public class ConfigRealtimeHttpClient {
                 setIsHttpConnectionRunning(true);
 
                 // Get HTTP connection and check response code.
-                this.httpURLConnection = httpURLConnectionTask.getResult();
-                responseCode = this.httpURLConnection.getResponseCode();
+                httpURLConnection = httpURLConnectionTask.getResult();
+                responseCode = httpURLConnection.getResponseCode();
 
                 // If the connection returned a 200 response code, start listening for messages.
                 if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -518,7 +518,7 @@ public class ConfigRealtimeHttpClient {
                   metadataClient.resetRealtimeBackoff();
 
                   // Start listening for realtime notifications.
-                  configAutoFetch = startAutoFetch(this.httpURLConnection);
+                  configAutoFetch = startAutoFetch(httpURLConnection);
                   configAutoFetch.listenForNotifications();
                 }
               } catch (IOException e) {
@@ -531,28 +531,31 @@ public class ConfigRealtimeHttpClient {
                   // If it's not in the background, there might have been a transient error so the
                   // client will retry the connection.
                   Log.d(
-                          TAG,
-                          "Exception connecting to real-time RC backend. Retrying the connection...",
-                          e);
+                      TAG,
+                      "Exception connecting to real-time RC backend. Retrying the connection...",
+                      e);
                 }
               } finally {
-                // The connection is closed explicitly when the app is backgrounded.
+                // The connection is closed explicitly when the app is backgrounded. Many methods
+                // on HttpUrlConnection cannot be called twice.
                 if (!isInBackground) {
                   this.closeRealtimeHttpStream();
                 }
 
+                // Either way indicate the HTTP connection is closed.
                 setIsHttpConnectionRunning(false);
 
-                boolean connectionFailed = !isInBackground &&
-                    responseCode == null || isStatusCodeRetryable(responseCode);
+                // Update backoff metadata if the connection failed in the foreground.
+                boolean connectionFailed =
+                    !isInBackground
+                        && (responseCode == null || isStatusCodeRetryable(responseCode));
                 if (connectionFailed) {
                   updateBackoffMetadataWithLastFailedStreamConnectionTime(
                       new Date(clock.currentTimeMillis()));
                 }
 
                 // If responseCode is null then no connection was made to server and the SDK should
-                // still
-                // retry.
+                // still retry.
                 if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
                   retryHttpConnectionWhenBackoffEnds();
                 } else {
@@ -561,8 +564,7 @@ public class ConfigRealtimeHttpClient {
                           "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
                           responseCode);
                   // Return server message for when the Firebase Remote Config Realtime API is
-                  // disabled and
-                  // the server returns a 403
+                  // disabled and the server returns a 403
                   if (responseCode == 403) {
                     errorMessage =
                         parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
@@ -579,28 +581,27 @@ public class ConfigRealtimeHttpClient {
             });
   }
 
-  /**
-   * Close the {@link HttpURLConnection} maintained by this client.
-   */
+  /** Close the {@link HttpURLConnection} maintained by this client. */
   public void closeRealtimeHttpStream() {
     if (httpURLConnection != null) {
       // Network operations must be off the main thread.
-      this.scheduledExecutorService.execute(() -> {
-        httpURLConnection.disconnect();
+      this.scheduledExecutorService.execute(
+          () -> {
+            httpURLConnection.disconnect();
 
-        // Explicitly close the input stream due to a bug in the Android okhttp implementation.
-        // See github.com/firebase/firebase-android-sdk/pull/808.
-        try {
-          httpURLConnection.getInputStream().close();
-          if (httpURLConnection.getErrorStream() != null) {
-            httpURLConnection.getErrorStream().close();
-          }
-        } catch (IOException|IllegalStateException e) {
-          // HttpUrlConnection enforces a strict lifecycle. If the connection is closed before
-          // the response is read, it'll throw an IllegalStateException. See docs:
-          // https://android.googlesource.com/platform/external/okhttp/+/602d5e4/okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpConnection.java#43
-        }
-      });
+            // Explicitly close the input stream due to a bug in the Android okhttp implementation.
+            // See github.com/firebase/firebase-android-sdk/pull/808.
+            try {
+              httpURLConnection.getInputStream().close();
+              if (httpURLConnection.getErrorStream() != null) {
+                httpURLConnection.getErrorStream().close();
+              }
+            } catch (IOException | IllegalStateException e) {
+              // HttpUrlConnection enforces a strict lifecycle. If the connection is closed before
+              // the response is read, it'll throw an IllegalStateException. See docs:
+              // https://android.googlesource.com/platform/external/okhttp/+/602d5e4/okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpConnection.java#43
+            }
+          });
 
       setIsHttpConnectionRunning(false);
     }
