@@ -36,6 +36,8 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
@@ -188,26 +190,30 @@ class TesterSignInManager {
   }
 
   private void openSignInFlowInBrowser(String fid, Activity activity) {
-    Uri uri =
-        Uri.parse(
-            String.format(
-                SIGNIN_REDIRECT_URL,
-                firebaseOptions.getApplicationId(),
-                fid,
-                getApplicationName(applicationContext),
-                applicationContext.getPackageName()));
-    LogWrapper.v(TAG, "Opening sign in flow in browser at " + uri);
-    if (supportsCustomTabs(applicationContext)) {
-      // If we can launch a chrome view, try that.
-      CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
-      Intent intent = customTabsIntent.intent;
-      intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      customTabsIntent.launchUrl(activity, uri);
-    } else {
-      // If we can't launch a chrome view try to launch anything that can handle a URL.
-      Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-      browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      activity.startActivity(browserIntent);
+    try {
+      Uri uri =
+          Uri.parse(
+              String.format(
+                  SIGNIN_REDIRECT_URL,
+                  firebaseOptions.getApplicationId(),
+                  fid,
+                  URLEncoder.encode(getApplicationName(applicationContext), "UTF-8"),
+                  applicationContext.getPackageName()));
+      LogWrapper.v(TAG, "Opening sign in flow in browser at " + uri);
+      if (supportsCustomTabs(applicationContext)) {
+        // If we can launch a chrome view, try that.
+        CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
+        Intent intent = customTabsIntent.intent;
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        customTabsIntent.launchUrl(activity, uri);
+      } else {
+        // If we can't launch a chrome view try to launch anything that can handle a URL.
+        Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
+        browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        activity.startActivity(browserIntent);
+      }
+    } catch (UnsupportedEncodingException e) {
+      LogWrapper.e(TAG, "Unsupported encoding used for sign-in redirect URL", e);
     }
   }
 
