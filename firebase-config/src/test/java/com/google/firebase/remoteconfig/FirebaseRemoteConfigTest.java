@@ -1286,6 +1286,8 @@ public final class FirebaseRemoteConfigTest {
     verify(mockHttpURLConnection).disconnect();
   }
 
+
+
   @Test
   public void realtime_fetchesWithoutChangedParams_doesNotCallOnUpdate() throws Exception {
     when(mockHttpURLConnection.getInputStream())
@@ -1521,6 +1523,25 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.listenForNotifications();
 
     verify(mockHttpURLConnection).disconnect();
+  }
+
+  @Test
+  public void realtime_stream_listen_backgrounded_disconnects() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream())
+            .thenReturn(
+                    new ByteArrayInputStream(
+                            "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 } }"
+                                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+            .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+
+    configAutoFetch.listenForNotifications();
+    frc.setConfigUpdateBackgroundState(true);
+
+    verify(mockHttpURLConnection, times(1)).disconnect();
   }
 
   @Test
