@@ -97,6 +97,10 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
+  // The HttpUrlConnection and auto-fetcher for this client. Only one of each exist at a time.
+  private HttpURLConnection httpURLConnection;
+  private ConfigAutoFetch configAutoFetch;
+
   /** Flag to indicate whether or not the app is in the background or not. */
   private boolean isInBackground;
 
@@ -393,6 +397,11 @@ public class ConfigRealtimeHttpClient {
 
   void setRealtimeBackgroundState(boolean backgroundState) {
     isInBackground = backgroundState;
+
+    // Propagate to ConfigAutoFetch, too.
+    if (configAutoFetch != null) {
+      this.configAutoFetch.setInBackground(backgroundState);
+    }
   }
 
   private synchronized void resetRetryCount() {
@@ -489,7 +498,7 @@ public class ConfigRealtimeHttpClient {
             this.scheduledExecutorService,
             (completedHttpUrlConnectionTask) -> {
               Integer responseCode = null;
-              HttpURLConnection httpURLConnection = null;
+              this.httpURLConnection = null;
 
               try {
                 // If HTTP connection task failed throw exception to move to the catch block.
@@ -499,8 +508,8 @@ public class ConfigRealtimeHttpClient {
                 setIsHttpConnectionRunning(true);
 
                 // Get HTTP connection and check response code.
-                httpURLConnection = httpURLConnectionTask.getResult();
-                responseCode = httpURLConnection.getResponseCode();
+                this.httpURLConnection = httpURLConnectionTask.getResult();
+                responseCode = this.httpURLConnection.getResponseCode();
 
                 // If the connection returned a 200 response code, start listening for messages.
                 if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -509,22 +518,32 @@ public class ConfigRealtimeHttpClient {
                   metadataClient.resetRealtimeBackoff();
 
                   // Start listening for realtime notifications.
-                  ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+                  configAutoFetch = startAutoFetch(this.httpURLConnection);
                   configAutoFetch.listenForNotifications();
                 }
               } catch (IOException e) {
-                // Stream could not be open due to a transient issue and the system will retry the
-                // connection
-                // without user intervention.
-                Log.d(
-                    TAG,
-                    "Exception connecting to real-time RC backend. Retrying the connection...",
-                    e);
+                if (isInBackground) {
+                  // It's possible the app was backgrounded while the connection was open, which
+                  // threw an exception trying to read the response. No real error here, so treat
+                  // this as a success, even if we haven't read a 200 response code yet.
+                  resetRetryCount();
+                } else {
+                  // If it's not in the background, there might have been a transient error so the
+                  // client will retry the connection.
+                  Log.d(
+                          TAG,
+                          "Exception connecting to real-time RC backend. Retrying the connection...",
+                          e);
+                }
               } finally {
-                closeRealtimeHttpStream(httpURLConnection);
+                // The connection is closed explicitly when the app is backgrounded.
+                if (!isInBackground) {
+                  this.closeRealtimeHttpStream();
+                }
+
                 setIsHttpConnectionRunning(false);
 
-                boolean connectionFailed =
+                boolean connectionFailed = !isInBackground &&
                     responseCode == null || isStatusCodeRetryable(responseCode);
                 if (connectionFailed) {
                   updateBackoffMetadataWithLastFailedStreamConnectionTime(
@@ -560,20 +579,30 @@ public class ConfigRealtimeHttpClient {
             });
   }
 
-  // Pauses Http stream listening
-  public void closeRealtimeHttpStream(HttpURLConnection httpURLConnection) {
+  /**
+   * Close the {@link HttpURLConnection} maintained by this client.
+   */
+  public void closeRealtimeHttpStream() {
     if (httpURLConnection != null) {
-      httpURLConnection.disconnect();
+      // Network operations must be off the main thread.
+      this.scheduledExecutorService.execute(() -> {
+        httpURLConnection.disconnect();
 
-      // Explicitly close the input stream due to a bug in the Android okhttp implementation.
-      // See github.com/firebase/firebase-android-sdk/pull/808.
-      try {
-        httpURLConnection.getInputStream().close();
-        if (httpURLConnection.getErrorStream() != null) {
-          httpURLConnection.getErrorStream().close();
+        // Explicitly close the input stream due to a bug in the Android okhttp implementation.
+        // See github.com/firebase/firebase-android-sdk/pull/808.
+        try {
+          httpURLConnection.getInputStream().close();
+          if (httpURLConnection.getErrorStream() != null) {
+            httpURLConnection.getErrorStream().close();
+          }
+        } catch (IOException|IllegalStateException e) {
+          // HttpUrlConnection enforces a strict lifecycle. If the connection is closed before
+          // the response is read, it'll throw an IllegalStateException. See docs:
+          // https://android.googlesource.com/platform/external/okhttp/+/602d5e4/okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpConnection.java#43
         }
-      } catch (IOException e) {
-      }
+      });
+
+      setIsHttpConnectionRunning(false);
     }
   }
 }
