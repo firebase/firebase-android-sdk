@@ -22,6 +22,8 @@ import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.core.Query;
@@ -812,12 +814,24 @@ public class TargetIndexMatcherTest {
     validateBuildTargetIndexCreateFullMatchIndex(query);
   }
 
+  @Test
+  public void testBuildTargetIndexReturnsNullForMultipleInequality() {
+    Query query = query("collId").filter(filter("a", ">=", 1)).filter(filter("b", "<=", 10));
+    Target target = query.toTarget();
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
+    assertTrue(targetIndexMatcher.hasMultipleInequality());
+    FieldIndex actualIndex = targetIndexMatcher.buildTargetIndex();
+    assertNull(actualIndex);
+  }
+
   private void validateBuildTargetIndexCreateFullMatchIndex(Query query) {
     Target target = query.toTarget();
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
-    FieldIndex expectedIndex = targetIndexMatcher.buildTargetIndex();
-    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+    assertFalse(targetIndexMatcher.hasMultipleInequality());
+    FieldIndex actualIndex = targetIndexMatcher.buildTargetIndex();
+    assertNotNull(actualIndex);
+    assertTrue(targetIndexMatcher.servedByIndex(actualIndex));
     // Check the index created is a FULL MATCH index
-    assertTrue(expectedIndex.getSegments().size() >= target.getSegmentCount());
+    assertTrue(actualIndex.getSegments().size() >= target.getSegmentCount());
   }
 }

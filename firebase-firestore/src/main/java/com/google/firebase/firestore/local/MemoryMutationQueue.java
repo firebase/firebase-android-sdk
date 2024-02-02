@@ -363,7 +363,7 @@ final class MemoryMutationQueue implements MutationQueue {
    * is within the bounds of the queue.
    *
    * @param batchId The batchId to search for
-   * @param action A description of what the caller is doing, phrased in passive form (e.g.
+   * @param action A description of what the caller is doing, phrased in passive form (for example
    *     "acknowledged" in a routine that acknowledges batches).
    */
   private int indexOfExistingBatchId(int batchId, String action) {

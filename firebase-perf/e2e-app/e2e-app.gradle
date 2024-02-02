@@ -29,6 +29,7 @@ firebaseTestLab {
 android {
     compileSdkVersion 31
 
+    namespace "com.google.firebase.testing.fireperf"
     // Specifies the build type that the Android plugin should use to run the instrumentation tests.
     // TL;DR Configure what build types should Firebase Test Lab (FTL) runs your tests on.
     // https://bit.ly/3j1smXH

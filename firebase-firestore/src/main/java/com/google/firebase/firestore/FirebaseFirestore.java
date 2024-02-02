@@ -23,7 +23,6 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -356,7 +355,11 @@ public class FirebaseFirestore {
    * @param json The JSON format exported by the Firebase CLI.
    * @return A task that resolves once all indices are successfully configured.
    * @throws IllegalArgumentException if the JSON format is invalid
+   * @deprecated Instead of creating cache indexes manually, consider using {@link
+   *     PersistentCacheIndexManager#enableIndexAutoCreation()} to let the SDK decide whether to
+   *     create cache indexes for queries running locally.
    */
+  @Deprecated
   @PreviewApi
   @NonNull
   public Task<Void> setIndexConfiguration(@NonNull String json) {
@@ -407,14 +410,15 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Returns the PersistentCache Index Manager used by this {@code FirebaseFirestore} object.
+   * Gets the {@code PersistentCacheIndexManager} instance used by this {@code FirebaseFirestore}
+   * object.
+   *
+   * <p>This is not the same as Cloud Firestore Indexes. Persistent cache indexes are optional
+   * indexes that only exist within the SDK to assist in local query execution.
    *
    * @return The {@code PersistentCacheIndexManager} instance or null if local persistent storage is
    *     not in use.
    */
-  // TODO(csi): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public synchronized PersistentCacheIndexManager getPersistentCacheIndexManager() {
     ensureClientConfigured();
@@ -882,7 +886,7 @@ public class FirebaseFirestore {
 
   /**
    * Sets the language of the public API in the format of "gl-<language>/<version>" where version
-   * might be blank, e.g. `gl-cpp/`. The provided string is used as is.
+   * might be blank, for example `gl-cpp/`. The provided string is used as is.
    *
    * <p>Note: this method is package-private because it is expected to only be called via JNI (which
    * ignores access modifiers).

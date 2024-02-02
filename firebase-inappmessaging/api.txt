@@ -70,6 +70,18 @@ package com.google.firebase.inappmessaging {
     method public void impressionDetected(@NonNull com.google.firebase.inappmessaging.model.InAppMessage);
   }
 
+  public final class InAppMessagingKt {
+    method @NonNull public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInAppMessaging(@NonNull com.google.firebase.Firebase);
+  }
+
+}
+
+package com.google.firebase.inappmessaging.ktx {
+
+  public final class InAppMessagingKt {
+    method @Deprecated @NonNull public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInAppMessaging(@NonNull com.google.firebase.ktx.Firebase);
+  }
+
 }
 
 package com.google.firebase.inappmessaging.model {

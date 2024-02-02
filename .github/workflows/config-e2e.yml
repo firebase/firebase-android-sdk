@@ -1,0 +1,42 @@
+name: Firebase Remote Config E2E Tests
+
+on:
+  schedule:
+    - cron: 24 */4 * * *  # every 4 hours @ 24 minutes past the hour
+  workflow_dispatch:      # allow triggering the workflow manually
+
+concurrency:
+  group: ${{ github.workflow }}
+
+env:
+  REMOTE_CONFIG_E2E_GOOGLE_SERVICES: ${{ secrets.REMOTE_CONFIG_E2E_GOOGLE_SERVICES }}
+
+jobs:
+  test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout firebase-config
+        uses: actions/checkout@v3.5.3
+
+      - name: set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Add google-services.json
+        run: |
+          echo $REMOTE_CONFIG_E2E_GOOGLE_SERVICES | base64 -d > google-services.json
+
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_service_account }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Run Remote Config end-to-end tests
+        env:
+          FTL_RESULTS_BUCKET: fireescape
+        run: |
+          ./gradlew :firebase-config:test-app:deviceCheck withErrorProne -PtargetBackend="prod"

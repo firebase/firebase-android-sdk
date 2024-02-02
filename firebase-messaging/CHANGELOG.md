@@ -1,4 +1,39 @@
 # Unreleased
+* [changed] Bump internal dependencies.
+
+# 24.0.0
+* [changed] Called messageHandled() after a message has been handled to indicate
+  that the message has been handled successfully.
+* [changed] Added an internal identifier to Firelog logging for compliance.
+
+# 23.3.1
+* [changed] Added metadata to FirebaseInstanceIdReceiver to signal that it
+  finishes background broadcasts after the message has been handled.
+* [changed] Specified notification's dismiss intent target via action instead of
+  component name.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
+
+# 23.3.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-messaging-ktx`
+  to `com.google.firebase:firebase-messaging` under the `com.google.firebase.messaging` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-messaging-ktx` have been added to
+  `com.google.firebase:firebase-messaging` under the `com.google.firebase.messaging` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-messaging-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 23.2.1
 * [changed] Changed to finish a background broadcast after the message has been
@@ -404,4 +439,3 @@ released on [March 03, 2020](/support/release-notes/android#2020-03-03).
   now return a
   [`Task`](/docs/reference/android/com/google/android/gms/tasks/Task) that can
   be used to see when the request has completed.
-

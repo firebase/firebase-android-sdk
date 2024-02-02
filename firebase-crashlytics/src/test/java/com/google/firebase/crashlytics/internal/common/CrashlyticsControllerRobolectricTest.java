@@ -75,7 +75,7 @@ public class CrashlyticsControllerRobolectricTest {
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     testContext = getApplicationContext();
     testFileStore = new FileStore(testContext);
   }
@@ -174,7 +174,8 @@ public class CrashlyticsControllerRobolectricTest {
             null,
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
-            mock(AnalyticsEventLogger.class));
+            mock(AnalyticsEventLogger.class),
+            mock(CrashlyticsAppQualitySessionsSubscriber.class));
     controller.openSession(SESSION_ID);
     return controller;
   }

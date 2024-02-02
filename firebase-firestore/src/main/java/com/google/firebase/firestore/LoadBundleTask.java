@@ -48,7 +48,7 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
   private LoadBundleTaskProgress snapshot;
 
   /**
-   * A TaskCompletionSource that is used to deliver all standard Task API events (e.g.
+   * A TaskCompletionSource that is used to deliver all standard Task API events (such as,
    * `onComplete`).
    */
   private final TaskCompletionSource<LoadBundleTaskProgress> completionSource;

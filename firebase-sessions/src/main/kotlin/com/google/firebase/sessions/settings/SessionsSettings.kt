@@ -17,11 +17,20 @@
 package com.google.firebase.sessions.settings
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
+import com.google.firebase.sessions.SessionDataStoreConfigs
+import com.google.firebase.sessions.SessionEvents
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -31,7 +40,7 @@ internal class SessionsSettings(
   private val localOverrideSettings: SettingsProvider,
   private val remoteSettings: SettingsProvider,
 ) {
-  constructor(
+  private constructor(
     context: Context,
     blockingDispatcher: CoroutineContext,
     backgroundDispatcher: CoroutineContext,
@@ -51,6 +60,19 @@ internal class SessionsSettings(
           ),
         dataStore = context.dataStore,
       ),
+  )
+
+  constructor(
+    firebaseApp: FirebaseApp,
+    blockingDispatcher: CoroutineContext,
+    backgroundDispatcher: CoroutineContext,
+    firebaseInstallationsApi: FirebaseInstallationsApi,
+  ) : this(
+    firebaseApp.applicationContext,
+    blockingDispatcher,
+    backgroundDispatcher,
+    firebaseInstallationsApi,
+    SessionEvents.getApplicationInfo(firebaseApp),
   )
 
   // Order of preference for all the configs below:
@@ -117,10 +139,20 @@ internal class SessionsSettings(
     remoteSettings.updateSettings()
   }
 
-  private companion object {
-    const val SESSION_CONFIGS_NAME = "firebase_session_settings"
+  internal companion object {
+    private const val TAG = "SessionsSettings"
+
+    val instance: SessionsSettings
+      get() = Firebase.app[SessionsSettings::class.java]
 
     private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(name = SESSION_CONFIGS_NAME)
+      preferencesDataStore(
+        name = SessionDataStoreConfigs.SETTINGS_CONFIG_NAME,
+        corruptionHandler =
+          ReplaceFileCorruptionHandler { ex ->
+            Log.w(TAG, "CorruptionException in settings DataStore in ${getProcessName()}.", ex)
+            emptyPreferences()
+          },
+      )
   }
 }

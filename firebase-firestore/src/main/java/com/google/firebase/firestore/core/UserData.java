@@ -53,8 +53,8 @@ public class UserData {
      */
     Argument,
     /**
-     * Indicates that the source is an Argument that may directly contain nested arrays (e.g. the
-     * operand of a `whereIn` query).
+     * Indicates that the source is an Argument that may directly contain nested arrays (for example
+     * the operand of a `whereIn` query).
      */
     ArrayArgument
   }
@@ -321,7 +321,7 @@ public class UserData {
     }
   }
 
-  /** The result of parsing document data (e.g. for a setData call). */
+  /** The result of parsing document data (like from a setData call). */
   public static class ParsedSetData {
     private final ObjectValue data;
     @Nullable private final FieldMask fieldMask;
@@ -356,7 +356,7 @@ public class UserData {
     }
   }
 
-  /** The result of parsing "update" data (i.e. for an updateData call). */
+  /** The result of parsing "update" data (specifically, for an updateData call). */
   public static class ParsedUpdateData {
     private final ObjectValue data;
     // The fieldMask does not include document transforms.

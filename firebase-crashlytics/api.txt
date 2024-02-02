@@ -35,5 +35,39 @@ package com.google.firebase.crashlytics {
     method public void setUserId(@NonNull String);
   }
 
+  public final class FirebaseCrashlyticsKt {
+    method @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(@NonNull com.google.firebase.Firebase);
+    method public static void setCustomKeys(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.KeyValueBuilder,kotlin.Unit> init);
+  }
+
+  public final class KeyValueBuilder {
+    ctor public KeyValueBuilder(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics crashlytics);
+    method public void key(@NonNull String key, boolean value);
+    method public void key(@NonNull String key, double value);
+    method public void key(@NonNull String key, float value);
+    method public void key(@NonNull String key, int value);
+    method public void key(@NonNull String key, long value);
+    method public void key(@NonNull String key, @NonNull String value);
+  }
+
+}
+
+package com.google.firebase.crashlytics.ktx {
+
+  public final class FirebaseCrashlyticsKt {
+    method @Deprecated @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(@NonNull com.google.firebase.ktx.Firebase);
+    method @Deprecated public static void setCustomKeys(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.ktx.KeyValueBuilder,kotlin.Unit> init);
+  }
+
+  @Deprecated public final class KeyValueBuilder {
+    ctor @Deprecated public KeyValueBuilder(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics crashlytics);
+    method @Deprecated public void key(@NonNull String key, boolean value);
+    method @Deprecated public void key(@NonNull String key, double value);
+    method @Deprecated public void key(@NonNull String key, float value);
+    method @Deprecated public void key(@NonNull String key, int value);
+    method @Deprecated public void key(@NonNull String key, long value);
+    method @Deprecated public void key(@NonNull String key, @NonNull String value);
+  }
+
 }
 
