@@ -14,7 +14,6 @@
 
 package com.googletest.firebase.remoteconfig.bandwagoner;
 
-
 import static com.googletest.firebase.remoteconfig.bandwagoner.Constants.TAG;
 
 import android.os.Bundle;
@@ -40,92 +39,92 @@ import java.util.List;
 import java.util.Map;
 
 public class RealtimeFragment extends Fragment {
-    private View rootView;
-    private TextView updatedParamsText;
-    private TextView activeParamsText;
-    private TextView realtimeExceptionText;
-    private ToggleButton realtimeToggleButton;
-    private Button activateButton;
+  private View rootView;
+  private TextView updatedParamsText;
+  private TextView activeParamsText;
+  private TextView realtimeExceptionText;
+  private ToggleButton realtimeToggleButton;
+  private Button activateButton;
 
-    private FirebaseRemoteConfig frc;
-    private ConfigUpdateListenerRegistration realtimeRegistration;
+  private FirebaseRemoteConfig frc;
+  private ConfigUpdateListenerRegistration realtimeRegistration;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+  }
+
+  @Override
+  public View onCreateView(
+      LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    super.onCreateView(inflater, container, savedInstanceState);
+
+    rootView = inflater.inflate(R.layout.realtime_fragment, container, false);
+
+    updatedParamsText = rootView.findViewById(R.id.updated_params_text);
+    activeParamsText = rootView.findViewById(R.id.active_params_text);
+    realtimeExceptionText = rootView.findViewById(R.id.realtime_exception_text);
+
+    realtimeToggleButton = rootView.findViewById(R.id.realtime_toggle_button);
+    realtimeToggleButton.setOnCheckedChangeListener(this::toggleRealtime);
+
+    activateButton = rootView.findViewById(R.id.realtime_activate_button);
+    activateButton.setOnClickListener(this::activateConfig);
+
+    return rootView;
+  }
+
+  private void toggleRealtime(View view, Boolean isChecked) {
+    frc = FirebaseRemoteConfig.getInstance();
+
+    Log.d(TAG, "Toggle realtime: " + isChecked);
+    if (isChecked && realtimeRegistration != null) {
+      Log.w(TAG, "Tried to toggle realtime on, but it's already on! Doing nothing.");
+      return;
     }
 
-    @Override
-    public View onCreateView(
-            LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        super.onCreateView(inflater, container, savedInstanceState);
-
-        rootView = inflater.inflate(R.layout.realtime_fragment, container, false);
-
-        updatedParamsText = rootView.findViewById(R.id.updated_params_text);
-        activeParamsText = rootView.findViewById(R.id.active_params_text);
-        realtimeExceptionText = rootView.findViewById(R.id.realtime_exception_text);
-
-        realtimeToggleButton = rootView.findViewById(R.id.realtime_toggle_button);
-        realtimeToggleButton.setOnCheckedChangeListener(this::toggleRealtime);
-
-        activateButton = rootView.findViewById(R.id.realtime_activate_button);
-        activateButton.setOnClickListener(this::activateConfig);
-
-        return rootView;
+    // Toggle off case
+    if (!isChecked && realtimeRegistration != null) {
+      realtimeRegistration.remove();
+      realtimeRegistration = null;
+      return;
     }
 
-    private void toggleRealtime(View view, Boolean isChecked) {
-        frc = FirebaseRemoteConfig.getInstance();
+    realtimeRegistration =
+        frc.addOnConfigUpdateListener(
+            new ConfigUpdateListener() {
+              @Override
+              public void onUpdate(ConfigUpdate configUpdate) {
+                Log.d(TAG, String.join(", ", configUpdate.getUpdatedKeys()));
+                updatedParamsText.setText(String.join(", ", configUpdate.getUpdatedKeys()));
+              }
 
-        Log.d(TAG, "Toggle realtime: " + isChecked);
-        if (isChecked && realtimeRegistration != null) {
-            Log.w(TAG, "Tried to toggle realtime on, but it's already on! Doing nothing.");
-            return;
-        }
+              @Override
+              public void onError(@NonNull FirebaseRemoteConfigException error) {
+                Log.w(TAG, "Realtime threw an exception!", error);
+                realtimeExceptionText.setText(
+                    String.format(
+                        "Message: %s, Code: %s", error.getLocalizedMessage(), error.getCode()));
+              }
+            });
+  }
 
-        // Toggle off case
-        if (!isChecked && realtimeRegistration != null) {
-            realtimeRegistration.remove();
-            realtimeRegistration = null;
-            return;
-        }
+  private void activateConfig(View view) {
+    frc = FirebaseRemoteConfig.getInstance();
 
-        realtimeRegistration =
-                frc.addOnConfigUpdateListener(
-                        new ConfigUpdateListener() {
-                            @Override
-                            public void onUpdate(ConfigUpdate configUpdate) {
-                                Log.d(TAG, String.join(", ", configUpdate.getUpdatedKeys()));
-                                updatedParamsText.setText(String.join(", ", configUpdate.getUpdatedKeys()));
-                            }
+    frc.activate()
+        .addOnCompleteListener(
+            new OnCompleteListener<Boolean>() {
+              @Override
+              public void onComplete(@NonNull Task<Boolean> task) {
+                List<String> keyValueStrings = new ArrayList<>();
+                Map<String, FirebaseRemoteConfigValue> allParams = frc.getAll();
+                for (String key : allParams.keySet()) {
+                  keyValueStrings.add(String.format("%s: %s", key, allParams.get(key).asString()));
+                }
 
-                            @Override
-                            public void onError(@NonNull FirebaseRemoteConfigException error) {
-                                Log.w(TAG, "Realtime threw an exception!", error);
-                                realtimeExceptionText.setText(
-                                        String.format(
-                                                "Message: %s, Code: %s", error.getLocalizedMessage(), error.getCode()));
-                            }
-                        });
-    }
-
-    private void activateConfig(View view) {
-        frc = FirebaseRemoteConfig.getInstance();
-
-        frc.activate()
-                .addOnCompleteListener(
-                        new OnCompleteListener<Boolean>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Boolean> task) {
-                                List<String> keyValueStrings = new ArrayList<>();
-                                Map<String, FirebaseRemoteConfigValue> allParams = frc.getAll();
-                                for (String key : allParams.keySet()) {
-                                    keyValueStrings.add(String.format("%s: %s", key, allParams.get(key).asString()));
-                                }
-
-                                activeParamsText.setText(String.join(", ", keyValueStrings));
-                            }
-                        });
-    }
+                activeParamsText.setText(String.join(", ", keyValueStrings));
+              }
+            });
+  }
 }

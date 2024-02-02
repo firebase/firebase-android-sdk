@@ -27,15 +27,12 @@ import com.google.android.material.tabs.TabLayout;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 
-/**
- * A tabbed activity for testing the Firebase Remote Config SDK.
- */
+/** A tabbed activity for testing the Firebase Remote Config SDK. */
 public class MainActivity extends AppCompatActivity {
 
   private static final ImmutableList<Tab> TABS =
       ImmutableList.of(
-              Tab.create("Fetch", new ApiFragment()),
-              Tab.create("Realtime", new RealtimeFragment()));
+          Tab.create("Fetch", new ApiFragment()), Tab.create("Realtime", new RealtimeFragment()));
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
