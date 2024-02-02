@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -131,6 +132,11 @@ public class QueryListener {
 
     // Always raise the first event when we're synced
     if (!snapshot.isFromCache()) {
+      return true;
+    }
+
+    // Always raise event if listening to cache
+    if (this.options.source.equals(ListenSource.CACHE)) {
       return true;
     }
 

@@ -63,7 +63,7 @@ public class SnapshotListenerSourceTest {
   }
 
   @Test
-  public void canRaiseSnapshotFromCacheAndLocalMutationsForDocumentReference() {
+  public void canRaiseSnapshotFromCacheForDocumentReference() {
     DocumentReference docRef = testDocumentWithData(map("k", "a", "sort", 0));
 
     waitFor(docRef.get()); // Populate the cache.
@@ -138,7 +138,6 @@ public class SnapshotListenerSourceTest {
     // Detach one listener, and do a local mutation. The other listener
     // should not be affected.
     listener1.remove();
-
     waitFor(collection.add(map("k", "c", "sort", 2)));
 
     QuerySnapshot snapshot = accumulator.await();
@@ -203,7 +202,7 @@ public class SnapshotListenerSourceTest {
         querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
 
-    // Add a document that would change the result set.
+    // Do a local mutation
     waitFor(collection.add(map("k", "d", "sort", -1)));
 
     // Verify both query get expected result.
@@ -319,7 +318,6 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void willNotGetMetadataOnlyUpdatesIfListeningToCacheOnly() {
-
     CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
     Query query = collection.orderBy("sort", Direction.ASCENDING);
 
@@ -337,7 +335,6 @@ public class SnapshotListenerSourceTest {
     assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
 
-    // Do a local mutation
     waitFor(collection.add(map("k", "b", "sort", 1)));
 
     snapshot = accumulator.await();
@@ -355,7 +352,6 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void willHaveSyncedMetadataUpdatesWhenListeningToBothCacheAndDefaultSource() {
-
     CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
     Query query = collection.orderBy("sort", Direction.ASCENDING);
 
@@ -529,7 +525,6 @@ public class SnapshotListenerSourceTest {
         querySnapshotToValues(snapshot));
 
     defaultRegistration = query.addSnapshotListener(defaultAccumulator.listener());
-
     snapshot = defaultAccumulator.await();
     assertEquals(
         asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
@@ -545,7 +540,6 @@ public class SnapshotListenerSourceTest {
         querySnapshotToValues(snapshot));
 
     cacheRegistration = query.addSnapshotListener(options, cacheAccumulator.listener());
-
     snapshot = cacheAccumulator.await();
     assertEquals(
         asList(map("k", "b", "sort", 1L), map("k", "a", "sort", 2L)),
@@ -559,7 +553,7 @@ public class SnapshotListenerSourceTest {
   }
 
   @Test
-  public void canListenToCompositeIndexQueries() {
+  public void canListenToCompositeIndexQueriesFromCache() {
     CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
     Query query = collection.whereLessThanOrEqualTo("k", "a").whereGreaterThanOrEqualTo("sort", 0);
 
@@ -598,41 +592,85 @@ public class SnapshotListenerSourceTest {
     listener.remove();
   }
 
-  //  @Test
-  //  public void willNotBeTriggeredByTransactions() {
-  //    CollectionReference collection =
-  //            testCollectionWithDocs(
-  //                    map(
-  //                            "a", map("k", "a", "sort", 0)));
-  //    Query query = collection.orderBy("sort", Direction.ASCENDING);
-  //
-  //    // Listen to the cache
-  //    EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-  //    SnapshotListenOptions options =
-  //            new
-  // SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).setSource(ListenSource.CACHE).build();
-  //    ListenerRegistration listener =
-  //            query.addSnapshotListener(options, cacheAccumulator.listener());
-  //
-  //    QuerySnapshot snapshot = cacheAccumulator.await();
-  //    // Cache is empty
-  //    assertEquals(asList(), querySnapshotToValues(snapshot));
-  //    assertTrue(snapshot.getMetadata().isFromCache());
+  @Test
+  public void willNotBeTriggeredByTransactionsWhileListeningToCache() {
+    CollectionReference collection = testCollection();
 
-  //    assertEquals(asList(), querySnapshotToValues(snapshot));
-  //    assertTrue(snapshot.getMetadata().isFromCache());
+    EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder()
+            .setMetadataChanges(MetadataChanges.INCLUDE)
+            .setSource(ListenSource.CACHE)
+            .build();
+    ListenerRegistration listener = collection.addSnapshotListener(options, accumulator.listener());
 
-  //    DocumentReference docRef = collection.document();
-  // Use a transaction to perform a write without triggering any local events.
-  //    docRef
-  //    .getFirestore()
-  //    .runTransaction(
-  //        transaction -> {
-  //          transaction.set(docRef, map("k", "a"));
-  //          return null;
-  //        });
+    QuerySnapshot snapshot = accumulator.await();
+    assertEquals(asList(), querySnapshotToValues(snapshot));
 
-  //    accumulator.assertNoAdditionalEvents();
-  //    listener.remove();
-  //  }
+    DocumentReference docRef = collection.document();
+    // Use a transaction to perform a write without triggering any local events.
+    docRef
+        .getFirestore()
+        .runTransaction(
+            transaction -> {
+              transaction.set(docRef, map("k", "a"));
+              return null;
+            });
+
+    // There should be no events raised
+    accumulator.assertNoAdditionalEvents();
+    listener.remove();
+  }
+
+  @Test
+  public void shareServerSideUpdatesWhenListeningToBothCacheAndDefault() {
+    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
+    Query query = collection.orderBy("sort", Direction.ASCENDING);
+
+    // Listen to the query with default options, which will also populates the cache
+    EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
+    ListenerRegistration defaultRegistration =
+        query.addSnapshotListener(defaultAccumulator.listener());
+    QuerySnapshot snapshot = defaultAccumulator.await();
+    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+
+    // Listen to the same query from cache
+    EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    ListenerRegistration cacheRegistration =
+        query.addSnapshotListener(options, cacheAccumulator.listener());
+    snapshot = cacheAccumulator.await();
+    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+
+    // Use a transaction to mock server side updates
+    DocumentReference docRef = collection.document();
+    docRef
+        .getFirestore()
+        .runTransaction(
+            transaction -> {
+              transaction.set(docRef, map("k", "b", "sort", 1));
+              return null;
+            });
+
+    // Default listener receives the server update
+    snapshot = defaultAccumulator.await();
+    assertEquals(
+        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
+        querySnapshotToValues(snapshot));
+    assertFalse(snapshot.getMetadata().isFromCache());
+
+    // Cache listener raises snapshot as well
+    snapshot = cacheAccumulator.await();
+    assertEquals(
+        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
+        querySnapshotToValues(snapshot));
+    assertFalse(snapshot.getMetadata().isFromCache());
+
+    defaultAccumulator.assertNoAdditionalEvents();
+    cacheAccumulator.assertNoAdditionalEvents();
+
+    defaultRegistration.remove();
+    cacheRegistration.remove();
+  }
 }

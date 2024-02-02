@@ -173,7 +173,7 @@ public class BundleTest {
   }
 
   @Test
-  public void testLoadWithDocumentsWithSnapshotListenerFromCache() throws Exception {
+  public void testLoadDocumentsPulledFromBackendWhileListeningToCache() throws Exception {
     FirebaseFirestore db = testFirestore();
     Task<Void> docA = db.document("coll-1/a").set(map("bar", "newValueA"));
     Tasks.await(docA);
