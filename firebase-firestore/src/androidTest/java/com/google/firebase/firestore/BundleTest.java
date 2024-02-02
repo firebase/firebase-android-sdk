@@ -173,6 +173,56 @@ public class BundleTest {
   }
 
   @Test
+  public void testLoadWithDocumentsWithSnapshotListenerFromCache() throws Exception {
+    FirebaseFirestore db = testFirestore();
+    Task<Void> docA = db.document("coll-1/a").set(map("bar", "newValueA"));
+    Tasks.await(docA);
+    Task<Void> docB = db.document("coll-1/b").set(map("bar", "newValueB"));
+    Tasks.await(docB);
+
+    EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+
+    ListenerRegistration listenerRegistration = null;
+    try {
+
+      listenerRegistration =
+          db.collection("coll-1").addSnapshotListener(options, accumulator.listener());
+      accumulator.awaitRemoteEvent();
+
+      ByteBuffer bundle = ByteBuffer.wrap(createBundle());
+      LoadBundleTask bundleTask = db.loadBundle(bundle); // Test the ByteBuffer overload
+      LoadBundleTaskProgress result = Tasks.await(bundleTask);
+      verifySuccessProgress(result);
+
+      // The test bundle is holding ancient documents, so no events are generated as a result.
+      // The case where a bundle has newer doc than cache can only be tested in spec tests.
+      accumulator.assertNoAdditionalEvents();
+
+      CollectionReference collectionQuery = db.collection("coll-1");
+      QuerySnapshot collectionSnapshot = Tasks.await(collectionQuery.get(Source.CACHE));
+      assertEquals(
+          asList(map("bar", "newValueA"), map("bar", "newValueB")),
+          querySnapshotToValues(collectionSnapshot));
+
+      Query limitQuery = Tasks.await(db.getNamedQuery("limit"));
+      QuerySnapshot limitSnapshot = Tasks.await(limitQuery.get(Source.CACHE));
+      assertEquals(1, limitSnapshot.size());
+      assertTrue(limitSnapshot.getMetadata().isFromCache());
+
+      Query limitToLastQuery = Tasks.await(db.getNamedQuery("limit-to-last"));
+      QuerySnapshot limitToLastSnapshot = Tasks.await(limitToLastQuery.get(Source.CACHE));
+      assertEquals(1, limitToLastSnapshot.size());
+      assertTrue(limitToLastSnapshot.getMetadata().isFromCache());
+    } finally {
+      if (listenerRegistration != null) {
+        listenerRegistration.remove();
+      }
+    }
+  }
+
+  @Test
   public void testLoadedDocumentsShouldNotBeGarbageCollectedRightAway() throws Exception {
     // This test really only makes sense with memory persistence, as SQLite persistence only ever
     // lazily deletes data
@@ -295,7 +345,7 @@ public class BundleTest {
     return createBundle(db.getDatabaseId().getProjectId(), db.getDatabaseId().getDatabaseId());
   }
 
-  private void verifySuccessProgress(LoadBundleTaskProgress progress) {
+  void verifySuccessProgress(LoadBundleTaskProgress progress) {
     assertEquals(LoadBundleTaskProgress.TaskState.SUCCESS, progress.getTaskState());
     assertEquals(progress.getTotalBytes(), progress.getBytesLoaded());
     assertEquals(progress.getTotalDocuments(), progress.getDocumentsLoaded());
