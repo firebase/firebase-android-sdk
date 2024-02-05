@@ -1,4 +1,5 @@
 # Unreleased
+* [feature] Enable snapshot listeners to source from local cache. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
 * [changed] Internal test improvements.
 * [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5626)
 
