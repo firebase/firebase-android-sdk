@@ -40,7 +40,6 @@ import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import com.google.firebase.messaging.shadows.ShadowGoogleSignatureVerifier;
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.LibraryVersion;
@@ -60,7 +59,7 @@ import org.robolectric.annotation.Config;
 
 /** Robolectric test for the GmsRpcRoboTest. */
 @RunWith(RobolectricTestRunner.class)
-@Config(shadows = {ShadowGoogleSignatureVerifier.class, ShadowPreconditions.class})
+@Config(shadows = {ShadowPreconditions.class})
 public class GmsRpcRoboTest {
 
   private static final int TIMEOUT_S = 5;
