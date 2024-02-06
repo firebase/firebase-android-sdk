@@ -56,12 +56,16 @@ public class QueryListener {
     this.options = options;
   }
 
-  public EventManager.ListenOptions getOptions() {
-    return options;
-  }
-
   public Query getQuery() {
     return query;
+  }
+
+  public boolean listensToRemoteStore() {
+    if (options != null && options.source != null) {
+      return !options.source.equals(ListenSource.CACHE);
+    }
+    // While not set, source should be default to ListenSource.DEFAULT.
+    return true;
   }
 
   /**
@@ -136,7 +140,7 @@ public class QueryListener {
     }
 
     // Always raise event if listening to cache
-    if (this.options.source.equals(ListenSource.CACHE)) {
+    if (!this.listensToRemoteStore()) {
       return true;
     }
 

@@ -15,6 +15,8 @@
 package com.google.firebase.firestore;
 
 public enum ListenSource {
+  /** Listens to both cache and server changes. */
   DEFAULT,
+  /** Listens to changes in local cache only */
   CACHE
 }

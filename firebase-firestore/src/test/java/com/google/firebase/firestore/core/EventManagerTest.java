@@ -91,8 +91,8 @@ public class EventManagerTest {
     eventManager.addQueryListener(spy2);
     eventManager.addQueryListener(spy3);
 
-    verify(syncSpy, times(1)).listen(query1, true);
-    verify(syncSpy, times(1)).listen(query2, true);
+    verify(syncSpy, times(1)).listen(query1, false);
+    verify(syncSpy, times(1)).listen(query2, false);
 
     ViewSnapshot snap1 = mock(ViewSnapshot.class);
     when(snap1.getQuery()).thenReturn(query1);

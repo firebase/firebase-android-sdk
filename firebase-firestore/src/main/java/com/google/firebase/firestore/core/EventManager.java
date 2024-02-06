@@ -46,7 +46,7 @@ public final class EventManager implements SyncEngineCallback {
     // Helper methods that checks if the query has listeners sourced from watch.
     boolean hasRemoteListeners() {
       for (QueryListener listener : listeners) {
-        if (listensToRemoteStore(listener)) {
+        if (listener.listensToRemoteStore()) {
           return true;
         }
       }
@@ -65,11 +65,8 @@ public final class EventManager implements SyncEngineCallback {
     /** Wait for a sync with the server when online, but still raise events while offline. */
     public boolean waitForSyncWhenOnline;
 
-    /**
-     * Sets the source the query listens to. Default to ListenSource.Default, which listens to both
-     * cache and server.
-     */
-    public ListenSource source = ListenSource.DEFAULT;
+    /** Sets the source the query listens to. */
+    public ListenSource source;
   }
 
   private final SyncEngine syncEngine;
@@ -84,12 +81,6 @@ public final class EventManager implements SyncEngineCallback {
     this.syncEngine = syncEngine;
     queries = new HashMap<>();
     syncEngine.setCallback(this);
-  }
-
-  private static boolean listensToRemoteStore(QueryListener listener) {
-    ListenOptions options = listener.getOptions();
-    // While not set, source should be default to ListenSource.DEFAULT.
-    return options == null || !options.source.equals(ListenSource.CACHE);
   }
 
   /**
@@ -109,7 +100,7 @@ public final class EventManager implements SyncEngineCallback {
       queries.put(query, queryInfo);
     }
     boolean firstListenToRemoteStore =
-        !queryInfo.hasRemoteListeners() && listensToRemoteStore(queryListener);
+        !queryInfo.hasRemoteListeners() && queryListener.listensToRemoteStore();
 
     queryInfo.listeners.add(queryListener);
 
@@ -144,7 +135,7 @@ public final class EventManager implements SyncEngineCallback {
     if (queryInfo != null) {
       queryInfo.listeners.remove(listener);
       lastListen = queryInfo.listeners.isEmpty();
-      lastListenToRemoteStore = !queryInfo.hasRemoteListeners() && listensToRemoteStore(listener);
+      lastListenToRemoteStore = !queryInfo.hasRemoteListeners() && listener.listensToRemoteStore();
     }
 
     if (lastListen) {
