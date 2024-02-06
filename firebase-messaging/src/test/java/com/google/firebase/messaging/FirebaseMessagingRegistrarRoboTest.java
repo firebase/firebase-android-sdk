@@ -19,6 +19,8 @@ import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
+import com.google.firebase.datatransport.TransportBackend;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
@@ -48,8 +50,9 @@ public final class FirebaseMessagingRegistrarRoboTest {
             Dependency.optional(FirebaseInstanceIdInternal.class),
             Dependency.optionalProvider(UserAgentPublisher.class),
             Dependency.optionalProvider(HeartBeatInfo.class),
-            Dependency.optional(TransportFactory.class),
             Dependency.required(FirebaseInstallationsApi.class),
+            Dependency.optionalProvider(
+                Qualified.qualified(TransportBackend.class, TransportFactory.class)),
             Dependency.required(Subscriber.class));
   }
 }

@@ -1059,7 +1059,7 @@ public class MessagingAnalyticsRoboTest {
   public void testLogNotificationReceived() throws Exception {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(true);
     FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
-    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+    FirebaseMessaging.transportFactory = () -> new FakeFirelogTransportFactory(transport);
 
     Bundle b = new Bundle();
     b.putString(MessagePayloadKeys.TTL, "22223");
@@ -1092,7 +1092,7 @@ public class MessagingAnalyticsRoboTest {
   public void testLogNotificationReceived_withProductId() {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(true);
     FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
-    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+    FirebaseMessaging.transportFactory = () -> new FakeFirelogTransportFactory(transport);
 
     Bundle b = new Bundle();
     b.putString(MessagePayloadKeys.TTL, "22223");
@@ -1126,7 +1126,7 @@ public class MessagingAnalyticsRoboTest {
   public void testLogNotificationReceived_bigQueryExportDisabled() throws Exception {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(false);
     FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
-    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+    FirebaseMessaging.transportFactory = () -> new FakeFirelogTransportFactory(transport);
 
     Bundle b = new Bundle();
     b.putString(MessagePayloadKeys.TTL, "22223");

@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Switched Firelog to use the new TransportBackend.
 
 # 23.4.1
 * [changed] Bump internal dependencies.

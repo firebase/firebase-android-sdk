@@ -33,6 +33,7 @@ import android.os.Binder;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -42,6 +43,7 @@ import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
@@ -78,6 +80,8 @@ public final class FirebaseMessagingRoboTest {
   private static final String APPLICATION_ID = FirebaseIidRoboTestHelper.APP_ID;
   private static final String PROJECT_ID = FirebaseIidRoboTestHelper.PROJECT_ID;
   private static final String API_KEY = FirebaseIidRoboTestHelper.API_KEY;
+
+  private static final Provider<TransportFactory> EMPTY_TRANSPORT_FACTORY = () -> null;
 
   private Application context;
   private FirebaseMessaging firebaseMessaging;
@@ -162,7 +166,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     assertThat(messaging.isAutoInitEnabled()).isTrue();
@@ -190,7 +194,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     assertThat(messaging.isAutoInitEnabled()).isFalse();
@@ -208,7 +212,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     assertThat(messaging.isAutoInitEnabled()).isFalse();
@@ -255,7 +259,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     messaging.setAutoInitEnabled(true);
@@ -271,8 +275,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
@@ -298,8 +301,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             mockFiid,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
             mockGmsRpc,
@@ -323,8 +325,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
@@ -352,8 +353,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             mockFiid,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
             mockGmsRpc,
@@ -377,8 +377,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
             mock(GmsRpc.class),
@@ -396,8 +395,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
             mock(GmsRpc.class),
@@ -510,8 +508,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,

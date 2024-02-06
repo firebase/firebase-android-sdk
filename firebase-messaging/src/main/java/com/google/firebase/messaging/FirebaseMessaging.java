@@ -95,13 +95,11 @@ public class FirebaseMessaging {
 
   private final FirebaseApp firebaseApp;
   @Nullable private final FirebaseInstanceIdInternal iid;
-  private final FirebaseInstallationsApi fis;
   private final Context context;
   private final GmsRpc gmsRpc;
   private final RequestDeduplicator requestDeduplicator;
   private final AutoInit autoInit;
   private final Executor initExecutor;
-  private final Executor taskExecutor;
   private final Executor fileExecutor;
   private final Task<TopicsSubscriber> topicsSubscriberTask;
   private final Metadata metadata;
@@ -111,11 +109,7 @@ public class FirebaseMessaging {
 
   private final Application.ActivityLifecycleCallbacks lifecycleCallbacks;
 
-  @Nullable
-  @SuppressLint(
-      "FirebaseUnknownNullness") // Checktest wasn't recognizing @Nullable nor @NonNull annotations.
-  @VisibleForTesting
-  static TransportFactory transportFactory;
+  @VisibleForTesting static Provider<TransportFactory> transportFactory = () -> null;
 
   @GuardedBy("FirebaseMessaging.class")
   @VisibleForTesting
@@ -154,7 +148,7 @@ public class FirebaseMessaging {
       Provider<UserAgentPublisher> userAgentPublisher,
       Provider<HeartBeatInfo> heartBeatInfo,
       FirebaseInstallationsApi firebaseInstallationsApi,
-      @Nullable TransportFactory transportFactory,
+      Provider<TransportFactory> transportFactory,
       Subscriber subscriber) {
     this(
         firebaseApp,
@@ -173,13 +167,12 @@ public class FirebaseMessaging {
       Provider<UserAgentPublisher> userAgentPublisher,
       Provider<HeartBeatInfo> heartBeatInfo,
       FirebaseInstallationsApi firebaseInstallationsApi,
-      @Nullable TransportFactory transportFactory,
+      Provider<TransportFactory> transportFactory,
       Subscriber subscriber,
       Metadata metadata) {
     this(
         firebaseApp,
         iid,
-        firebaseInstallationsApi,
         transportFactory,
         subscriber,
         metadata,
@@ -193,8 +186,7 @@ public class FirebaseMessaging {
   FirebaseMessaging(
       FirebaseApp firebaseApp,
       @Nullable FirebaseInstanceIdInternal iid,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      @Nullable TransportFactory transportFactory,
+      Provider<TransportFactory> transportFactory,
       Subscriber subscriber,
       Metadata metadata,
       GmsRpc gmsRpc,
@@ -206,12 +198,10 @@ public class FirebaseMessaging {
 
     this.firebaseApp = firebaseApp;
     this.iid = iid;
-    fis = firebaseInstallationsApi;
     autoInit = new AutoInit(subscriber);
     context = firebaseApp.getApplicationContext();
     this.lifecycleCallbacks = new FcmLifecycleCallbacks();
     this.metadata = metadata;
-    this.taskExecutor = taskExecutor;
     this.gmsRpc = gmsRpc;
     this.requestDeduplicator = new RequestDeduplicator(taskExecutor);
     this.initExecutor = initExecutor;
@@ -516,12 +506,12 @@ public class FirebaseMessaging {
   /** @hide */
   @Nullable
   public static TransportFactory getTransportFactory() {
-    return transportFactory;
+    return transportFactory.get();
   }
 
   /** @hide */
   static void clearTransportFactoryForTest() {
-    transportFactory = null;
+    transportFactory = () -> null;
   }
 
   /** Checks if Gmscore is present. */
