@@ -119,7 +119,6 @@ public final class EventManager implements SyncEngineCallback {
     if (firstListen) {
       queryInfo.targetId = syncEngine.listen(query, firstListenToRemoteStore);
     } else if (firstListenToRemoteStore) {
-      System.out.println("firstListen");
       syncEngine.listenToRemoteStore(query);
     }
     return queryInfo.targetId;
