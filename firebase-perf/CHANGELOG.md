@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Bump internal dependencies.
 
 # 20.5.1
 * [changed] Make Fireperf generate its own session Id.

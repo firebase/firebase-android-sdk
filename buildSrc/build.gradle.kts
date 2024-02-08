@@ -59,7 +59,7 @@ dependencies {
     implementation("org.eclipse.aether:aether-transport-file:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-http:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-wagon:1.0.0.v20140518")
-    implementation("org.apache.maven:maven-aether-provider:3.1.0")
+    implementation("org.apache.maven:maven-aether-provider:3.3.9")
 
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
 
@@ -71,8 +71,8 @@ dependencies {
 
     testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")
-    testImplementation("com.google.truth:truth:1.1.2")
-    testImplementation("commons-io:commons-io:2.6")
+    testImplementation("com.google.truth:truth:1.3.0")
+    testImplementation("commons-io:commons-io:2.15.1")
 }
 
 gradlePlugin {

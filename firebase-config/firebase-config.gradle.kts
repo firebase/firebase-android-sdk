@@ -66,7 +66,7 @@ dependencies {
      }
     implementation("com.google.firebase:firebase-common:20.4.2")
     implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.3")
+    implementation("com.google.firebase:firebase-components:17.1.5")
     implementation("com.google.firebase:firebase-installations:17.2.0")
 
     // Kotlin & Android

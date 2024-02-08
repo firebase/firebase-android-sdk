@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Bump internal dependencies.
 
 # 21.6.0
 * [changed] Added support for other Firebase products to integrate with [remote_config].
@@ -266,7 +267,7 @@ updates.
 
 # 19.1.2
 * [fixed] Resolved known issue where
-  [`FirebaseRemoteConfigSettings.Builder.setFetchTimeoutInSeconds()`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder) 
+  [`FirebaseRemoteConfigSettings.Builder.setFetchTimeoutInSeconds()`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder)
   was not always honored.
 
 
@@ -399,4 +400,3 @@ updates.
 
 # 16.1.0
 * [fixed] Bug fixes and internal improvements to support Firebase Performance Monitoring features.
-

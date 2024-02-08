@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Bump internal dependencies.
 
 # 24.0.0
 * [changed] Called messageHandled() after a message has been handled to indicate
@@ -438,4 +439,3 @@ released on [March 03, 2020](/support/release-notes/android#2020-03-03).
   now return a
   [`Task`](/docs/reference/android/com/google/android/gms/tasks/Task) that can
   be used to see when the request has completed.
-

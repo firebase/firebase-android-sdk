@@ -22,6 +22,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 // apply plugin: 'com.google.gms.google-services'
 
 android {
+    namespace "com.googletest.firebase.remoteconfig.bandwagoner"
     compileSdkVersion project.targetSdkVersion
     lintOptions {
         abortOnError false
@@ -85,7 +86,7 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    runtimeOnly(project(":firebase-installations")) {
+    implementation(project(":firebase-installations")) {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
