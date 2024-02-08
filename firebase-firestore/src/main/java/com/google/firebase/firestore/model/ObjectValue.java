@@ -24,7 +24,6 @@ import com.google.firestore.v1.Value;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /** A structured object value stored in Firestore. */
