@@ -1,6 +1,7 @@
 # Unreleased
 * [changed] Internal test improvements.
 * [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5626)
+* [fixed] Remove possible thread safety issues for ObjectValue. [#5699](//github.com/firebase/firebase-android-sdk/pull/5699)
 
 # 24.10.1
 * [fixed] Fixed an issue caused by calling mutation on immutable map object. [#5573](//github.com/firebase/firebase-android-sdk/pull/5573)
