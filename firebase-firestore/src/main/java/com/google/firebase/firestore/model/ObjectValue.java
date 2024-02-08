@@ -214,9 +214,17 @@ public final class ObjectValue implements Cloneable {
     }
 
     String lastSegment = path.getLastSegment();
-    if (!Objects.equals(currentLevel.get(lastSegment), value)) {
-      currentLevel.put(lastSegment, value);
-      dirty = true;
+    if (value == null) { // Delete
+      // Get will return null if entry does not exist, so we must also do containsKey.
+      if (currentLevel.get(lastSegment) != null || !currentLevel.containsKey(lastSegment)) {
+        currentLevel.put(lastSegment, null);
+        dirty = true;
+      }
+    } else { // Set
+      if (!value.equals(currentLevel.get(lastSegment))) {
+        currentLevel.put(lastSegment, value);
+        dirty = true;
+      }
     }
   }
 
