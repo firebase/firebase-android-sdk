@@ -180,7 +180,9 @@ public final class ObjectValue implements Cloneable {
       hardAssert(
           !data.containsKey(FieldPath.EMPTY_PATH),
           "Cannot setAll on ObjectValue because map contains empty path");
-      data.forEach(this::setOverlay);
+      for (Map.Entry<FieldPath, Value> entry : data.entrySet()) {
+        setOverlay(entry.getKey(), entry.getValue());
+      }
     }
   }
 
