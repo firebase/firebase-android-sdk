@@ -42,7 +42,6 @@ public final class ObjectValue implements Cloneable {
    */
   private final Map<String, Object> overlayMap = new HashMap<>();
 
-
   /**
    * Dirty bit for when `overlayMap` is modified. The memoized `partialValue` only needs to be
    * updated when dirty bit is true.
@@ -179,7 +178,9 @@ public final class ObjectValue implements Cloneable {
 
   public void setAll(Map<FieldPath, Value> data) {
     synchronized (overlayMap) {
-      hardAssert(!data.containsKey(FieldPath.EMPTY_PATH), "Cannot setAll on ObjectValue because map contains empty path");
+      hardAssert(
+          !data.containsKey(FieldPath.EMPTY_PATH),
+          "Cannot setAll on ObjectValue because map contains empty path");
       data.forEach(this::setOverlay);
     }
   }
@@ -231,7 +232,7 @@ public final class ObjectValue implements Cloneable {
    * @return The merged data at `currentPath` or null if no modifications were applied.
    */
   private static @Nullable MapValue applyOverlay(
-          FieldPath currentPath, Map<String, Object> currentOverlays, Value currentValue) {
+      FieldPath currentPath, Map<String, Object> currentOverlays, Value currentValue) {
     if (currentOverlays.isEmpty()) {
       return null;
     }
@@ -250,7 +251,10 @@ public final class ObjectValue implements Cloneable {
       if (value instanceof Map) {
         @Nullable
         MapValue nested =
-            applyOverlay(currentPath.append(pathSegment), (Map<String, Object>) value, extractSegmentValue(currentValue, pathSegment));
+            applyOverlay(
+                currentPath.append(pathSegment),
+                (Map<String, Object>) value,
+                extractSegmentValue(currentValue, pathSegment));
         if (nested != null) {
           resultAtPath.putFields(pathSegment, Value.newBuilder().setMapValue(nested).build());
           modified = true;
