@@ -73,5 +73,3 @@ dependencies {
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
-
-apply<com.google.firebase.dataconnect.plugin.CodegenPlugin>()
