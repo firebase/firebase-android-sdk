@@ -39,7 +39,16 @@ public class SnapshotListenerSourceTest {
 
   @After
   public void tearDown() {
-    IntegrationTestUtil.tearDown();
+      IntegrationTestUtil.tearDown();
+  }
+
+  SnapshotListenOptions optionSourceFromCache() {
+      SnapshotListenOptions options = new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+  }
+  
+  SnapshotListenOptions optionSourceFromCacheAndIncludeMetadataChanges(){
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
   }
 
   @Test
@@ -50,8 +59,7 @@ public class SnapshotListenerSourceTest {
     waitFor(collection.get()); // Populate the cache.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration listener = query.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
@@ -69,8 +77,7 @@ public class SnapshotListenerSourceTest {
     waitFor(docRef.get()); // Populate the cache.
 
     EventAccumulator<DocumentSnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration listener = docRef.addSnapshotListener(options, accumulator.listener());
 
     DocumentSnapshot snapshot = accumulator.await();
@@ -89,11 +96,7 @@ public class SnapshotListenerSourceTest {
     waitFor(collection.get()); // Populate the cache.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder()
-            .setMetadataChanges(MetadataChanges.INCLUDE)
-            .setSource(ListenSource.CACHE)
-            .build();
+    SnapshotListenOptions options = optionSourceFromCacheAndIncludeMetadataChanges();
     ListenerRegistration listener = query.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
@@ -115,8 +118,7 @@ public class SnapshotListenerSourceTest {
     waitFor(collection.get()); // Populate the cache.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration listener1 = query.addSnapshotListener(options, accumulator.listener());
     ListenerRegistration listener2 = query.addSnapshotListener(options, accumulator.listener());
 
@@ -166,8 +168,7 @@ public class SnapshotListenerSourceTest {
                 "c", map("k", "c", "sort", 1)));
 
     waitFor(collection.get()); // Populate the cache.
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
 
     // Setup `limit` query.
     Query limit = collection.limit(2).orderBy("sort", Direction.ASCENDING);
@@ -255,8 +256,7 @@ public class SnapshotListenerSourceTest {
 
     // Listen to the same query from cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
@@ -279,11 +279,7 @@ public class SnapshotListenerSourceTest {
 
     // Listen to the cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder()
-            .setMetadataChanges(MetadataChanges.INCLUDE)
-            .setSource(ListenSource.CACHE)
-            .build();
+    SnapshotListenOptions options = optionSourceFromCacheAndIncludeMetadataChanges();
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
@@ -294,10 +290,8 @@ public class SnapshotListenerSourceTest {
 
     // Listen to the same query from server
     EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
-    options =
-        new SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).build();
     ListenerRegistration defaultRegistration =
-        query.addSnapshotListener(options, defaultAccumulator.listener());
+        query.addSnapshotListener(MetadataChanges.INCLUDE, defaultAccumulator.listener());
 
     snapshot = defaultAccumulator.await();
     assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
@@ -324,11 +318,7 @@ public class SnapshotListenerSourceTest {
     waitFor(collection.get()); // Populate the cache.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder()
-            .setMetadataChanges(MetadataChanges.INCLUDE)
-            .setSource(ListenSource.CACHE)
-            .build();
+    SnapshotListenOptions options = optionSourceFromCacheAndIncludeMetadataChanges();
     ListenerRegistration listener = query.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
@@ -359,11 +349,7 @@ public class SnapshotListenerSourceTest {
 
     // Listen to the cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder()
-            .setMetadataChanges(MetadataChanges.INCLUDE)
-            .setSource(ListenSource.CACHE)
-            .build();
+    SnapshotListenOptions options = optionSourceFromCacheAndIncludeMetadataChanges();
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
@@ -373,10 +359,8 @@ public class SnapshotListenerSourceTest {
 
     // Listen to the same query from server
     EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
-    options =
-        new SnapshotListenOptions.Builder().setMetadataChanges(MetadataChanges.INCLUDE).build();
     ListenerRegistration defaultRegistration =
-        query.addSnapshotListener(options, defaultAccumulator.listener());
+        query.addSnapshotListener(MetadataChanges.INCLUDE, defaultAccumulator.listener());
 
     // First snapshot will be raised from cache.
     snapshot = defaultAccumulator.await();
@@ -436,8 +420,7 @@ public class SnapshotListenerSourceTest {
     defaultAccumulator.await();
 
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
     cacheAccumulator.await();
@@ -470,8 +453,7 @@ public class SnapshotListenerSourceTest {
     defaultAccumulator.await();
 
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
     cacheAccumulator.await();
@@ -507,8 +489,7 @@ public class SnapshotListenerSourceTest {
 
     // Listen to the same query from cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
@@ -560,8 +541,7 @@ public class SnapshotListenerSourceTest {
     waitFor(collection.get()); // Populate the cache.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration listener = query.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
@@ -580,8 +560,7 @@ public class SnapshotListenerSourceTest {
     assertEquals(asList(), querySnapshotToValues(snapshot)); // Precondition check.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration listener = collection.addSnapshotListener(options, accumulator.listener());
 
     snapshot = accumulator.await();
@@ -597,11 +576,7 @@ public class SnapshotListenerSourceTest {
     CollectionReference collection = testCollection();
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder()
-            .setMetadataChanges(MetadataChanges.INCLUDE)
-            .setSource(ListenSource.CACHE)
-            .build();
+    SnapshotListenOptions options = optionSourceFromCacheAndIncludeMetadataChanges();
     ListenerRegistration listener = collection.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
@@ -636,8 +611,7 @@ public class SnapshotListenerSourceTest {
 
     // Listen to the same query from cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
-    SnapshotListenOptions options =
-        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options = optionSourceFromCache();
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
     snapshot = cacheAccumulator.await();
