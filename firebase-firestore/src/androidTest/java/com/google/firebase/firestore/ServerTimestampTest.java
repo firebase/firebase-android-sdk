@@ -23,8 +23,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -357,29 +357,25 @@ public class ServerTimestampTest {
   @Test
   public void testPOJOWithWrongType() {
     DocumentReference ref = testDocument();
-    try {
-      ref.set(new TimestampPOJOWithWrongType());
-      fail("Expected exception.");
-    } catch (IllegalArgumentException e) {
-      assertEquals(
-          "Field timestamp is annotated with @ServerTimestamp but is class "
-              + "java.lang.String instead of Date or Timestamp.",
-          e.getMessage());
-    }
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class, () -> ref.set(new TimestampPOJOWithWrongType()));
+    assertEquals(
+        "Field timestamp is annotated with @ServerTimestamp but is class "
+            + "java.lang.String instead of Date or Timestamp.",
+        e.getMessage());
   }
 
   @Test
   public void testPOJOWithAnnotatedSetter() {
     DocumentReference ref = testDocument();
-    try {
-      ref.set(new TimestampPOJOWithAnnotatedSetter());
-      fail("Expected exception.");
-    } catch (IllegalArgumentException e) {
-      assertEquals(
-          "Method setTimestamp is annotated with @ServerTimestamp but should not be. "
-              + "@ServerTimestamp can only be applied to fields and getters, not setters.",
-          e.getMessage());
-    }
+    IllegalArgumentException e =
+        assertThrows(
+            IllegalArgumentException.class, () -> ref.set(new TimestampPOJOWithAnnotatedSetter()));
+    assertEquals(
+        "Method setTimestamp is annotated with @ServerTimestamp but should not be. "
+            + "@ServerTimestamp can only be applied to fields and getters, not setters.",
+        e.getMessage());
   }
 
   private static class TimestampPOJO {
