@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-import { parseArguments } from './argument_parser';
+export interface ParsedArguments {}
 
-function main() {
-  const args = parseArguments();
-}
-
-main();
+export function parseArguments(): ParsedArguments {}
