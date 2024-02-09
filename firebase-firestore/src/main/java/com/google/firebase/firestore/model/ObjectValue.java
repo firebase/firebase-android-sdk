@@ -45,7 +45,7 @@ public final class ObjectValue implements Cloneable {
    * Dirty bit for when `overlayMap` is modified. The memoized `partialValue` only needs to be
    * updated when dirty bit is true.
    */
-  private volatile boolean dirty = false;
+  private boolean dirty = false;
 
   public static ObjectValue fromMap(Map<String, Value> value) {
     return new ObjectValue(
