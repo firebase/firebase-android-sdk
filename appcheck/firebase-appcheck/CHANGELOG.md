@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 17.1.2
 * [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
 
 # 17.1.1
 * [fixed] Fixed a bug causing internal tests to depend directly on `firebase-common`.
@@ -118,3 +127,4 @@ additional updates:
 # 16.0.0-beta01
 * [feature] Initial beta release of the [app_check] SDK with abuse reduction
   features.
+
