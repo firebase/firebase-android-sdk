@@ -17,6 +17,7 @@
 import * as fs from 'node:fs';
 
 import * as graphql from 'graphql';
+import * as nunjucks from 'nunjucks';
 
 const GRAPHQL_SCHEMA_FILE =
   '/home/dconeybe/dev/firebase/android/firebase-dataconnect/src/androidTest' +
@@ -121,6 +122,21 @@ function parseGraphQLFile(path: string): graphql.DocumentNode {
   const body = fs.readFileSync(path, { encoding: 'utf-8' });
   const source = new graphql.Source(body, path);
   return graphql.parse(source);
+}
+
+function runNunjucks(templateName: string, outputFile: string, context: object): void {
+  const env = nunjucks.configure(__dirname, {
+    // Disable `autoescape` since it's only relevant when generating HTML.
+    autoescape: false,
+    // Fail loudly when undefined variables are used, for robustness.
+    throwOnUndefined: true
+  });
+
+  const template = env.getTemplate(templateName);
+
+  const renderedTemplate = template.render(context);
+
+  fs.writeFileSync(outputFile, renderedTemplate, { encoding: 'utf-8' });
 }
 
 function displayStringFromLocation(
