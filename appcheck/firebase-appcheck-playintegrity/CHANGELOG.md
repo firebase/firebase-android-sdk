@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 17.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.
 
 # 17.1.1
@@ -37,3 +40,4 @@
 * [feature] Added support for
   [Play Integrity](https://developer.android.com/google/play/integrity) as an
   attestation provider.
+
