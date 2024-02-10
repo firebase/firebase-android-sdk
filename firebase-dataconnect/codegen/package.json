@@ -9,6 +9,7 @@
     "@tsconfig/node20": "^20.1.2",
     "@types/node": "^20.8.2",
     "@types/yargs": "^17.0.32",
+    "graphql": "^16.8.1",
     "nunjucks": "^3.2.4",
     "prettier": "3.0.3",
     "ts-node": "^10.9.1",
