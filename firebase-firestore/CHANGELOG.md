@@ -3,7 +3,6 @@
 
 # 24.10.2
 * [changed] Internal test improvements.
-* [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5626)
 
 
 ## Kotlin
@@ -890,4 +889,3 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
-
