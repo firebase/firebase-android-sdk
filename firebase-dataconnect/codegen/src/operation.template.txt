@@ -12,10 +12,20 @@
         {{- if eq ($variableInfo.type) "string" -}}
             String
         {{- else -}}
-            unknown
+            {{ fail3 "unsupported variable type" $variableName $variableInfo.type }}
         {{- end -}},
     {{- end -}}
 {{- end -}}
+{{- end -}}
+
+{{- define "ConvenienceFunctionForwardedArgs" -}}
+    {{- if .variables -}}
+        {{- range $variableName, $variableInfo := .variables -}}
+            {{ $variableName }}={{ $variableName }},
+        {{- end -}}
+    {{- else -}}
+        Unit
+    {{- end -}}
 {{- end -}}
 
 package {{.kotlinPackage}}
@@ -35,7 +45,7 @@ object {{.operationName}} {
         {{- if eq ($variableInfo.type) "string" -}}
             String
         {{- else -}}
-            unknown
+            {{ fail3 "unsupported variable type" $variableName $variableInfo.type }}
         {{- end -}}
     ,
     {{- end -}}
@@ -50,39 +60,17 @@ object {{.operationName}} {
 typealias {{ .operationName }}QueryRef = QueryRef<{{ template "RefTypeParameters" . }}>
 typealias {{ .operationName }}Subscription = QuerySubscription<{{ template "RefTypeParameters" . }}>
 
-suspend fun QueryRef<{{ template "RefTypeParameters" . }}>.execute({{ template "ConvenienceFunctionArgs" .}})
-  = execute(
-    {{- if .variables -}}
-        variablesFor(
-        {{- range $variableName, $variableInfo := .variables -}}
-            {{ $variableName }}={{ $variableName }},
-        {{- end -}}
-        )
-    {{- else -}}
-        Unit
-    {{- end -}}
+suspend fun QueryRef<{{ template "RefTypeParameters" . -}}>.execute(
+  {{- template "ConvenienceFunctionArgs" .}}
+) = execute(
+  {{- template "ConvenienceFunctionForwardedArgs" . -}}
 )
 
-fun QueryRef<{{ template "RefTypeParameters" . }}>.subscribe({{ template "ConvenienceFunctionArgs" .}})
-  = subscribe(
-    {{- if .variables -}}
-        variablesFor(
-        {{- range $variableName, $variableInfo := .variables -}}
-            {{ $variableName }}={{ $variableName }},
-        {{- end -}}
-        )
-    {{- else -}}
-        Unit
-    {{- end -}}
+suspend fun QueryRef<{{ template "RefTypeParameters" . -}}>.subscribe(
+  {{- template "ConvenienceFunctionArgs" .}}
+) = subscribe(
+  {{- template "ConvenienceFunctionForwardedArgs" . -}}
 )
-
-{{ if .variables }}
-private fun variablesFor({{ template "ConvenienceFunctionArgs" .}}) = {{ .operationName }}.Variables(
-    {{- range $variableName, $variableInfo := .variables -}}
-        {{ $variableName }}={{ $variableName }},
-    {{- end -}}
-)
-{{ end }}
 
 {{ else if eq .operationType "mutation" }}
 
@@ -92,5 +80,5 @@ private fun variablesFor({{ template "ConvenienceFunctionArgs" .}}) = {{ .operat
     {{- end -}}
     , Unit>
 {{ else }}
-    {{ fail "unsupported operationType" }}
+    {{ fail2 "unsupported operationType" .operationType }}
 {{ end }}

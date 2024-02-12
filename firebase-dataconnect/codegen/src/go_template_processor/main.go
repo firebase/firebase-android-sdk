@@ -49,7 +49,7 @@ func main() {
 		log.Fatal("TOML config file must specify OperationName: ", configFile)
 	}
 
-	funcs := template.FuncMap{"fail": templateFail}
+	funcs := template.FuncMap{"fail": templateFail1, "fail2": templateFail2, "fail3": templateFail3}
 
 	loadedTemplate, err := template.New(templateFile).Funcs(funcs).Parse(templateFileText)
 	if err != nil {
@@ -69,6 +69,14 @@ func main() {
 	}
 }
 
-func templateFail(msg string) error {
+func templateFail1(msg string) error {
 	panic(msg)
+}
+
+func templateFail2(msg1 string, msg2 string) error {
+	panic(msg1 + ": " + msg2)
+}
+
+func templateFail3(msg1 string, msg2 string, msg3 string) error {
+	panic(msg1 + ": " + msg2 + ": " + msg3)
 }
