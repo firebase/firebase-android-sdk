@@ -39,14 +39,15 @@ public class SnapshotListenerSourceTest {
 
   @After
   public void tearDown() {
-      IntegrationTestUtil.tearDown();
+    IntegrationTestUtil.tearDown();
   }
 
   SnapshotListenOptions optionSourceFromCache() {
-      SnapshotListenOptions options = new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    SnapshotListenOptions options =
+        new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
   }
-  
-  SnapshotListenOptions optionSourceFromCacheAndIncludeMetadataChanges(){
+
+  SnapshotListenOptions optionSourceFromCacheAndIncludeMetadataChanges() {
     SnapshotListenOptions options =
         new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
   }
