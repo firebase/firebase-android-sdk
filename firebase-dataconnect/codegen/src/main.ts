@@ -71,22 +71,24 @@ async function generateOperationKtSource(
     const args = [
       goExecutable,
       'run',
+      '-C',
+      goAppDir,
       '.',
       '--',
       tomlFile,
       templateFile,
       outputFile
     ];
-    console.log(`Running command in directory ${goAppDir}: ${args.join(' ')}`);
+    console.log(`Running command: ${args.join(' ')}`);
     const spawnResult = child_process.spawnSync(args[0], args.slice(1), {
-      cwd: goAppDir,
       stdio: 'inherit'
     });
     if (spawnResult.error) {
       throw spawnResult.error;
     } else if (spawnResult.status !== 0) {
       throw new Error(
-        `go command completed with non-zero exit code: ${spawnResult.status}`
+        `command completed with non-zero exit code ${spawnResult.status}: ` +
+          args.join(' ')
       );
     }
   } finally {

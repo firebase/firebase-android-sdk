@@ -43,7 +43,7 @@ func main() {
 	}
 
 	if len(config.KotlinPackage) == 0 {
-		config.KotlinPackage = "com.google.firebase.dataconnect.connectors"
+		log.Fatal("TOML config file must specify KotlinPackage: ", configFile)
 	}
 
 	loadedTemplate, err := template.New(templateFile).Parse(templateFileText)
