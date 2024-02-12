@@ -48,18 +48,18 @@ import org.gradle.kotlin.dsl.register
  * - [VALIDATE_POM_TASK][registerValidatePomForReleaseTask]
  * - [VALIDATE_PROJECTS_TO_PUBLISH_TASK][registerValidateProjectsToPublishTask]
  * - [BUILD_MAVEN_ZIP_TASK] -> Creates a zip file of the contents of
- *   [PUBLISH_RELEASING_LIBS_TO_BUILD_TASK] [registerPublishReleasingLibrariesToBuildDirTask]
+ * [PUBLISH_RELEASING_LIBS_TO_BUILD_TASK] [registerPublishReleasingLibrariesToBuildDirTask]
  * - [BUILD_KOTLINDOC_ZIP_TASK] -> Creates a zip file of the contents of
- *   [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] [registerGenerateKotlindocForReleaseTask]
+ * [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] [registerGenerateKotlindocForReleaseTask]
  * - [BUILD_RELEASE_NOTES_ZIP_TASK] -> Creates a zip file of the contents of
- *   [PREPARE_RELEASE_NOTES_FOR_DROP][registerPrepareReleaseNotesForDropTask]
+ * [PREPARE_RELEASE_NOTES_FOR_DROP][registerPrepareReleaseNotesForDropTask]
  * - [FIREBASE_PUBLISH_TASK] -> Runs all the tasks above
  *
  * The following are additional tasks provided- that are either for convenience sake, or are used
  * outside of the standard [FIREBASE_PUBLISH_TASK] workflow (possibly at a later time in the release
  * cycle):
  * - [BUILD_BOM_ZIP_TASK] -> Creates a zip file of the contents of [GENERATE_BOM_TASK]
- *   [registerGenerateBomTask]
+ * [registerGenerateBomTask]
  * - [RELEASE_GENEATOR_TASK][registerGenerateReleaseConfigFilesTask]
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
