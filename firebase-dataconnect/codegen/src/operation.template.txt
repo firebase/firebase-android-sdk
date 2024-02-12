@@ -20,11 +20,21 @@
 
 {{- define "ConvenienceFunctionForwardedArgs" -}}
     {{- if .variables -}}
+        {{- .operationName -}}.Variables(
         {{- range $variableName, $variableInfo := .variables -}}
             {{ $variableName }}={{ $variableName }},
         {{- end -}}
+        )
     {{- else -}}
         Unit
+    {{- end -}}
+{{- end -}}
+
+{{- define "KotlinTypeFromConfigType" -}}
+    {{- if eq .type "string" -}}
+        String
+    {{- else -}}
+        {{ fail2 "unsupported variable type" .type }}
     {{- end -}}
 {{- end -}}
 
@@ -41,13 +51,7 @@ object {{.operationName}} {
     data class Variables(
 
     {{- range $variableName, $variableInfo := .variables -}}
-        val {{ $variableName }}:
-        {{- if eq ($variableInfo.type) "string" -}}
-            String
-        {{- else -}}
-            {{ fail3 "unsupported variable type" $variableName $variableInfo.type }}
-        {{- end -}}
-    ,
+        val {{ $variableName }}: {{ template "KotlinTypeFromConfigType" $variableInfo }},
     {{- end -}}
     ) {
     }
@@ -61,24 +65,23 @@ typealias {{ .operationName }}QueryRef = QueryRef<{{ template "RefTypeParameters
 typealias {{ .operationName }}Subscription = QuerySubscription<{{ template "RefTypeParameters" . }}>
 
 suspend fun QueryRef<{{ template "RefTypeParameters" . -}}>.execute(
-  {{- template "ConvenienceFunctionArgs" .}}
-) = execute(
-  {{- template "ConvenienceFunctionForwardedArgs" . -}}
-)
+  {{- template "ConvenienceFunctionArgs" . -}}
+) = execute({{- template "ConvenienceFunctionForwardedArgs" . -}})
 
 suspend fun QueryRef<{{ template "RefTypeParameters" . -}}>.subscribe(
-  {{- template "ConvenienceFunctionArgs" .}}
-) = subscribe(
-  {{- template "ConvenienceFunctionForwardedArgs" . -}}
-)
+  {{- template "ConvenienceFunctionArgs" . -}}
+) = subscribe({{- template "ConvenienceFunctionForwardedArgs" . -}})
 
 {{ else if eq .operationType "mutation" }}
 
-    typealias {{ .operationName }}MutationRef = MutationRef<
-    {{- if .variables }}{{ .operationName }}.Variables
-    {{- else }}Unit
-    {{- end -}}
-    , Unit>
+typealias {{ .operationName }}MutationRef = MutationRef<{{ template "RefTypeParameters" . }}>
+
+suspend fun MutationRef<{{ template "RefTypeParameters" . -}}>.execute(
+  {{- template "ConvenienceFunctionArgs" . -}}
+) = execute({{- template "ConvenienceFunctionForwardedArgs" . -}})
+
 {{ else }}
-    {{ fail2 "unsupported operationType" .operationType }}
+
+{{ fail2 "unsupported operationType" .operationType }}
+
 {{ end }}
