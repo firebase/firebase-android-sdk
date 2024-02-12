@@ -50,19 +50,49 @@ async function generateOperationsKtSources(
   }
 }
 
+interface GraphQLVariableInfo {
+  type: 'string';
+  isNullable: boolean;
+  isList: boolean;
+}
+
+function graphqlVariableInfoFromTypeNode(
+  node: graphql.TypeNode
+): GraphQLVariableInfo {
+  if (node.kind === graphql.Kind.NAMED_TYPE) {
+    return { type: node.name.value as any, isNullable: false, isList: false };
+  } else if (node.kind === graphql.Kind.LIST_TYPE) {
+    const listComponentType = node.type;
+    if (listComponentType.kind === graphql.Kind.LIST_TYPE) {
+      throw new UnsupportedGraphQLOperationTypeError(
+        `nested list types are unsupported at ` +
+          displayStringFromLocation(node.loc)
+      );
+    }
+    return {
+      ...graphqlVariableInfoFromTypeNode(listComponentType),
+      isList: true
+    };
+  } else {
+    return { ...graphqlVariableInfoFromTypeNode(node.type), isNullable: false };
+  }
+}
+
 function* tomlConfigLines(config: {
   kotlinPackage: string;
   operationName: string;
   operationType: 'query' | 'mutation';
-  variables: string[];
+  variables: Map<string, GraphQLVariableInfo>;
 }): Generator<string> {
   yield `kotlinPackage = '${config.kotlinPackage}'`;
   yield `operationName = '${config.operationName}'`;
   yield `operationType = '${config.operationType}'`;
 
-  for (const variable of config.variables) {
-    yield `[variables.${variable}]`;
-    yield "type = 'string'";
+  for (const [variableName, variableInfo] of config.variables.entries()) {
+    yield `[variables.${variableName}]`;
+    yield `type = '${variableInfo.type}'`;
+    yield `isNullable = ${variableInfo.isNullable ? 'true' : 'false'}`;
+    yield `isList = ${variableInfo.isList ? 'true' : 'false'}`;
   }
 }
 
@@ -79,10 +109,14 @@ async function generateOperationKtSource(
   const goAppDir = `${__dirname}/go_template_processor`;
   const goExecutable = which.sync('go');
 
-  const variables: string[] = [];
+  const variables = new Map<string, GraphQLVariableInfo>();
   if (operation.variableDefinitions) {
     for (const variableDefinition of operation.variableDefinitions) {
-      variables.push(variableDefinition.variable.name.value);
+      const variableName = variableDefinition.variable.name.value;
+      variables.set(
+        variableName,
+        graphqlVariableInfoFromTypeNode(variableDefinition.type)
+      );
     }
   }
 
@@ -233,6 +267,12 @@ class UnsupportedGraphQLDefinitionKindError extends Error {
 }
 
 class UnsupportedGraphQLOperationTypeError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+class NestedListTypesNotSupportedError extends Error {
   constructor(message: string) {
     super(message);
   }
