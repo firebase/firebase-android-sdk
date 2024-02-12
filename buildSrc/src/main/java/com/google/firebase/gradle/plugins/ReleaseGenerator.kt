@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.eclipse.jgit.api.Git
@@ -47,10 +48,12 @@ import org.gradle.api.tasks.TaskAction
 @Serializable
 data class ReleaseReport(
   val changesByLibraryName: Map<String, List<CommitDiff>>,
-  val changedLibrariesWithNoChangelog: Set<String>
+  val changedLibrariesWithNoChangelog: Set<String>,
 ) {
   companion object {
     val formatter = Json { prettyPrint = true }
+
+    fun fromFile(file: File) = formatter.decodeFromString<ReleaseReport>(file.readText())
   }
 
   fun toFile(file: File) = file.also { it.writeText(formatter.encodeToString(this)) }
@@ -59,14 +62,14 @@ data class ReleaseReport(
     """
       |# Release Report
       |${
-      changesByLibraryName.entries.joinToString("\n") {
-      """
+        changesByLibraryName.entries.joinToString("\n") {
+            """
       |## ${it.key}
       
       |${it.value.joinToString("\n") { it.toString() }}
       """.trimMargin()
+        }
     }
-  }
       |
       |## SDKs with changes, but no changelogs
       |${changedLibrariesWithNoChangelog.joinToString("  \n")}
@@ -98,7 +101,7 @@ data class CommitDiff(
         commit.authorIdent.name,
         commit.fullMessage,
         "https://github.com/firebase/firebase-android-sdk/commit/$commitId",
-        "https://github.com/firebase/firebase-android-sdk/pull/$prId"
+        "https://github.com/firebase/firebase-android-sdk/pull/$prId",
       )
     }
   }
@@ -133,8 +136,6 @@ abstract class ReleaseGenerator : DefaultTask() {
 
   @get:OutputFile abstract val releaseConfigFile: RegularFileProperty
 
-  @get:OutputFile abstract val releaseReportMdFile: RegularFileProperty
-
   @get:OutputFile abstract val releaseReportJsonFile: RegularFileProperty
 
   @get:Internal lateinit var libraryGroups: Map<String, List<FirebaseLibraryExtension>>
@@ -163,7 +164,6 @@ abstract class ReleaseGenerator : DefaultTask() {
     if (printReleaseConfig.orNull.toBoolean()) {
       project.logger.info(releaseReport.toString())
     }
-    releaseReportMdFile.get().asFile.writeText(releaseReport.toString())
     releaseReportJsonFile.get().asFile.let { releaseReport.toFile(it) }
   }
 
@@ -171,7 +171,7 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     branchRef: ObjectId,
     headRef: ObjectId,
-    changedLibraries: Set<Project>
+    changedLibraries: Set<Project>,
   ) =
     changedLibraries
       .map { getRelativeDir(it) }
@@ -192,7 +192,7 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    libraries: List<Project>
+    libraries: List<Project>,
   ) =
     libraries
       .filter {
@@ -206,7 +206,7 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    libraries: List<Project>
+    libraries: List<Project>,
   ): Set<Project> =
     libraries
       .filter { library ->
@@ -214,7 +214,7 @@ abstract class ReleaseGenerator : DefaultTask() {
           repo,
           previousReleaseRef,
           currentReleaseRef,
-          "${getRelativeDir(library)}/CHANGELOG.md"
+          "${getRelativeDir(library)}/CHANGELOG.md",
         )
       }
       .flatMap {
@@ -227,7 +227,7 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    directory: String
+    directory: String,
   ) =
     repo
       .log()
@@ -245,7 +245,7 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    directory: String
+    directory: String,
   ) =
     repo
       .log()
@@ -259,6 +259,26 @@ abstract class ReleaseGenerator : DefaultTask() {
       .map { CommitDiff.fromRevCommit(it) }
 
   private fun getRelativeDir(project: Project) = project.path.substring(1).replace(':', '/')
+}
+
+abstract class ReleaseReportGenerator : DefaultTask() {
+
+  @get:InputFiles abstract val releaseReportJsonFile: RegularFileProperty
+
+  @get:OutputFile abstract val releaseReportMdFile: RegularFileProperty
+
+  @TaskAction
+  @Throws(Exception::class)
+  fun generateReleaseReport() {
+    val rootDir = project.rootDir
+
+    val releaseReport =
+      ReleaseReport.fromFile(
+        releaseReportJsonFile.asFileIfExistsOrNull()
+          ?: throw RuntimeException("Missing release json file")
+      )
+    releaseReportMdFile.get().asFile.writeText(releaseReport.toString())
+  }
 }
 
 fun RegularFileProperty.asFileIfExistsOrNull(): File? =
