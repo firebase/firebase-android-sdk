@@ -47,7 +47,10 @@ public class SnapshotListenerSourceTest {
   }
 
   public SnapshotListenOptions optionSourceFromCacheAndIncludeMetadataChanges() {
-    return new SnapshotListenOptions.Builder().setSource(ListenSource.CACHE).build();
+    return new SnapshotListenOptions.Builder()
+        .setMetadataChanges(MetadataChanges.INCLUDE)
+        .setSource(ListenSource.CACHE)
+        .build();
   }
 
   @Test
@@ -341,6 +344,7 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void willHaveSyncedMetadataUpdatesWhenListeningToBothCacheAndDefaultSource() {
+
     CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
     Query query = collection.orderBy("sort", Direction.ASCENDING);
 
@@ -349,6 +353,7 @@ public class SnapshotListenerSourceTest {
     // Listen to the cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
     SnapshotListenOptions options = optionSourceFromCacheAndIncludeMetadataChanges();
+
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
