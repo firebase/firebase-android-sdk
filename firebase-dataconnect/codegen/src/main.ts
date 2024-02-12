@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
+import * as child_process from 'node:child_process';
 import * as fs from 'node:fs';
 
 import * as graphql from 'graphql';
-import * as nunjucks from 'nunjucks';
+import * as which from 'which';
 
 const GRAPHQL_SCHEMA_FILE =
   '/home/dconeybe/dev/firebase/android/firebase-dataconnect/src/androidTest' +
@@ -31,32 +32,66 @@ const OUTPUT_BASE_DIR =
 const CONNECTOR_NAME = 'crud';
 const KOTLIN_BASE_PACKAGE = 'com.google.firebase.dataconnect.connectors';
 
-function main() {
+async function main(): Promise<void> {
   const types = parseGraphQLTypes();
   const operations = parseGraphQLOperations();
-  generateOperationsKtSources(operations, types);
+  await generateOperationsKtSources(operations, types);
 }
 
-function generateOperationsKtSources(
+async function generateOperationsKtSources(
   operations: Map<string, graphql.OperationDefinitionNode>,
   types: Map<string, graphql.ObjectTypeDefinitionNode>
-): void {
+): Promise<void> {
   const operationNamesSorted = Array.from(operations.keys()).sort();
   for (const operationName of operationNamesSorted) {
     const operation = operations.get(operationName)!;
-    generateOperationKtSource(operationName, operation, types);
+    await generateOperationKtSource(operationName, operation, types);
   }
 }
 
-function generateOperationKtSource(
+async function generateOperationKtSource(
   operationName: string,
   operation: graphql.OperationDefinitionNode,
   types: Map<string, graphql.ObjectTypeDefinitionNode>
-): void {
+): Promise<void> {
   const outputDir = `${OUTPUT_BASE_DIR}/${CONNECTOR_NAME}`;
   const outputFile = `${outputDir}/${operationName}.kt`;
   console.log(`Creating ${outputFile}`);
   fs.mkdirSync(outputDir, { recursive: true });
+
+  const templateFile = `${__dirname}/operation.template.txt`;
+  const goAppDir = `${__dirname}/go_template_processor`;
+  const goExecutable = which.sync('go');
+
+  const tempy = await import('tempy');
+  const tomlFile = tempy.temporaryWriteSync(`
+    KotlinPackage = "com.google.firebase.dataconnect.connectors.${CONNECTOR_NAME}"
+  `);
+  try {
+    const args = [
+      goExecutable,
+      'run',
+      '.',
+      '--',
+      tomlFile,
+      templateFile,
+      outputFile
+    ];
+    console.log(`Running command in directory ${goAppDir}: ${args.join(' ')}`);
+    const spawnResult = child_process.spawnSync(args[0], args.slice(1), {
+      cwd: goAppDir,
+      stdio: 'inherit'
+    });
+    if (spawnResult.error) {
+      throw spawnResult.error;
+    } else if (spawnResult.status !== 0) {
+      throw new Error(
+        `go command completed with non-zero exit code: ${spawnResult.status}`
+      );
+    }
+  } finally {
+    fs.unlinkSync(tomlFile);
+  }
 }
 
 function parseGraphQLTypes(): Map<string, graphql.ObjectTypeDefinitionNode> {
@@ -122,21 +157,6 @@ function parseGraphQLFile(path: string): graphql.DocumentNode {
   const body = fs.readFileSync(path, { encoding: 'utf-8' });
   const source = new graphql.Source(body, path);
   return graphql.parse(source);
-}
-
-function runNunjucks(templateName: string, outputFile: string, context: object): void {
-  const env = nunjucks.configure(__dirname, {
-    // Disable `autoescape` since it's only relevant when generating HTML.
-    autoescape: false,
-    // Fail loudly when undefined variables are used, for robustness.
-    throwOnUndefined: true
-  });
-
-  const template = env.getTemplate(templateName);
-
-  const renderedTemplate = template.render(context);
-
-  fs.writeFileSync(outputFile, renderedTemplate, { encoding: 'utf-8' });
 }
 
 function displayStringFromLocation(
