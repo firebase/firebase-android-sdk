@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 21.6.1
 * [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.6.0
 * [changed] Added support for other Firebase products to integrate with [remote_config].
@@ -400,3 +409,4 @@ updates.
 
 # 16.1.0
 * [fixed] Bug fixes and internal improvements to support Firebase Performance Monitoring features.
+
