@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 20.5.2
 * [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.5.1
 * [changed] Make Fireperf generate its own session Id.
@@ -9,7 +18,6 @@
   to `com.google.firebase:firebase-perf` under the `com.google.firebase.perf` package.
   For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
-
 * [deprecated] All the APIs from `com.google.firebase:firebase-perf-ktx` have been added to
   `com.google.firebase:firebase-perf` under the `com.google.firebase.perf` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-perf-ktx` are
@@ -367,3 +375,4 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
+

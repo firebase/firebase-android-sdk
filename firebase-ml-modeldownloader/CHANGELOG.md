@@ -1,6 +1,14 @@
 # Unreleased
+
+
+# 24.2.3
 * [changed] Bump internal dependencies.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.2.2
 * [fixed] Fixed `SecurityException` where the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag should be 
@@ -169,3 +177,4 @@ runtime.
   capabilities.
 * [feature] Added ability to get the model download ID, which allows progress
   tracking of file downloads.
+

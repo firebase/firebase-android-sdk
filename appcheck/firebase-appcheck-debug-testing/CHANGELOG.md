@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 17.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.
 
 # 17.1.1
@@ -55,3 +58,4 @@
 # 16.0.0-beta01
 * [feature] Initial beta release of the [app_check] Debug Testing SDK with
   abuse reduction features.
+
