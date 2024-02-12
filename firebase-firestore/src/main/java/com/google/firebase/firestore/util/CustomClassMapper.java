@@ -673,11 +673,11 @@ public class CustomClassMapper {
                 Method correspondingBridgeMethod = bridgeMethods.get(propertyName);
                 if (existingSetter == null) {
                   setters.put(propertyName, method);
-                  if (!method.isAnnotationPresent(Exclude.class)) {
-                    method.setAccessible(true);
-                  } else {
+                  method.setAccessible(true);
+                  if (method.isAnnotationPresent(Exclude.class)) {
                     propertyNamesOfExcludedSetters.add(propertyName);
                   }
+                  applySetterAnnotations(method);
                 } else if (!isSetterOverride(method, existingSetter)
                     && !(correspondingBridgeMethod != null
                         && isSetterOverride(method, correspondingBridgeMethod))) {
@@ -728,6 +728,8 @@ public class CustomClassMapper {
       // When subclass setter is annotated with `@Exclude`, the corresponding superclass setter
       // also need to be filtered out.
       for (String propertyName : propertyNamesOfExcludedSetters) {
+        Method superclassSetter = setters.get(propertyName);
+        superclassSetter.setAccessible(false);
         setters.remove(propertyName);
       }
 
@@ -977,6 +979,10 @@ public class CustomClassMapper {
                 + method.getName()
                 + " is annotated with @ServerTimestamp but should not be. @ServerTimestamp can"
                 + " only be applied to fields and getters, not setters.");
+      }
+
+      if (method.isAnnotationPresent(Exclude.class)) {
+        method.setAccessible(false);
       }
 
       if (method.isAnnotationPresent(DocumentId.class)) {
