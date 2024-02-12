@@ -18,6 +18,7 @@ import * as child_process from 'node:child_process';
 import * as fs from 'node:fs';
 
 import * as graphql from 'graphql';
+import { OperationTypeNode } from 'graphql';
 import * as which from 'which';
 
 const GRAPHQL_SCHEMA_FILE =
@@ -49,6 +50,22 @@ async function generateOperationsKtSources(
   }
 }
 
+function* tomlConfigLines(config: {
+  kotlinPackage: string;
+  operationName: string;
+  operationType: 'query' | 'mutation';
+  variables: string[];
+}): Generator<string> {
+  yield `kotlinPackage = '${config.kotlinPackage}'`;
+  yield `operationName = '${config.operationName}'`;
+  yield `operationType = '${config.operationType}'`;
+
+  for (const variable of config.variables) {
+    yield `[variables.${variable}]`;
+    yield "type = 'string'";
+  }
+}
+
 async function generateOperationKtSource(
   operationName: string,
   operation: graphql.OperationDefinitionNode,
@@ -56,17 +73,41 @@ async function generateOperationKtSource(
 ): Promise<void> {
   const outputDir = `${OUTPUT_BASE_DIR}/${CONNECTOR_NAME}`;
   const outputFile = `${outputDir}/${operationName}.kt`;
-  console.log(`Creating ${outputFile}`);
   fs.mkdirSync(outputDir, { recursive: true });
 
   const templateFile = `${__dirname}/operation.template.txt`;
   const goAppDir = `${__dirname}/go_template_processor`;
   const goExecutable = which.sync('go');
 
+  const variables: string[] = [];
+  if (operation.variableDefinitions) {
+    for (const variableDefinition of operation.variableDefinitions) {
+      variables.push(variableDefinition.variable.name.value);
+    }
+  }
+
+  let operationType: 'query' | 'mutation';
+  if (operation.operation === OperationTypeNode.QUERY) {
+    operationType = 'query';
+  } else if (operation.operation === OperationTypeNode.MUTATION) {
+    operationType = 'mutation';
+  } else {
+    throw new UnsupportedGraphQLOperationTypeError(
+      `unsupported GraphQL operation type  ` +
+        `at ${displayStringFromLocation(operation.loc)}: ${operation.operation}`
+    );
+  }
+
   const tempy = await import('tempy');
-  const tomlFile = tempy.temporaryWriteSync(`
-    KotlinPackage = "com.google.firebase.dataconnect.connectors.${CONNECTOR_NAME}"
-  `);
+  const tomlLines = Array.from(
+    tomlConfigLines({
+      kotlinPackage: `com.google.firebase.dataconnect.connectors.${CONNECTOR_NAME}`,
+      operationName,
+      operationType,
+      variables
+    })
+  );
+  const tomlFile = tempy.temporaryWriteSync(tomlLines.join('\n'));
   try {
     const args = [
       goExecutable,
@@ -186,6 +227,12 @@ function hasDirective(
 }
 
 class UnsupportedGraphQLDefinitionKindError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+class UnsupportedGraphQLOperationTypeError extends Error {
   constructor(message: string) {
     super(message);
   }

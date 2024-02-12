@@ -36,17 +36,22 @@ func main() {
 	}
 	templateFileText := string(templateFileBytes)
 
-	var config Config
-	_, err = toml.Decode(configFileText, &config)
+	var config map[string]interface{}
+	configMetaData, err := toml.Decode(configFileText, &config)
 	if err != nil {
 		log.Fatal("decoding TOML config file failed: ", configFile, " (", err, ")")
 	}
 
-	if len(config.KotlinPackage) == 0 {
+	if !configMetaData.IsDefined("kotlinPackage") {
 		log.Fatal("TOML config file must specify KotlinPackage: ", configFile)
 	}
+	if !configMetaData.IsDefined("operationName") {
+		log.Fatal("TOML config file must specify OperationName: ", configFile)
+	}
 
-	loadedTemplate, err := template.New(templateFile).Parse(templateFileText)
+	funcs := template.FuncMap{"fail": templateFail}
+
+	loadedTemplate, err := template.New(templateFile).Funcs(funcs).Parse(templateFileText)
 	if err != nil {
 		log.Fatal("parsing Go template file failed: ", templateFile, " (", err, ")")
 	}
@@ -64,6 +69,6 @@ func main() {
 	}
 }
 
-type Config struct {
-	KotlinPackage string
+func templateFail(msg string) error {
+	panic(msg)
 }

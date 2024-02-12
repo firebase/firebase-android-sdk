@@ -1,1 +1,120 @@
-package {{.KotlinPackage}}
+package {{.kotlinPackage}}
+
+import com.google.firebase.dataconnect.*
+import kotlinx.serialization.Serializable
+
+object {{.operationName}} {
+
+{{ if .variables }}
+
+    @Serializable
+    data class Variables(
+
+    {{- range $variableName, $variableInfo := .variables -}}
+        val {{ $variableName }}:
+        {{- if eq ($variableInfo.type) "string" -}}
+            String
+        {{- else -}}
+            unknown
+        {{- end -}}
+    ,
+    {{- end -}}
+    ) {
+    }
+{{ end }}
+
+}
+
+{{ if eq .operationType "query" }}
+typealias {{ .operationName }}QueryRef = QueryRef<
+    {{- if .variables }}{{ .operationName }}.Variables
+    {{- else }}Unit
+    {{- end -}}
+  , Unit>
+typealias {{ .operationName }}Subscription = QuerySubscription<
+    {{- if .variables }}{{ .operationName }}.Variables
+    {{- else }}Unit
+    {{- end -}}
+  , Unit>
+
+suspend fun QueryRef<
+    {{- if .variables }}{{ .operationName }}.Variables
+    {{- else }}Unit
+    {{- end -}}
+  , Unit>.execute(
+    {{- if .variables -}}
+        {{- range $variableName, $variableInfo := .variables -}}
+            {{ $variableName }}:
+            {{- if eq ($variableInfo.type) "string" -}}
+                String
+            {{- else -}}
+                unknown
+            {{- end -}},
+        {{- end -}}
+    {{- end -}}
+) = execute(
+    {{- if .variables -}}
+        variablesFor(
+        {{- range $variableName, $variableInfo := .variables -}}
+            {{ $variableName }}={{ $variableName }},
+        {{- end -}}
+        )
+    {{- else -}}
+        Unit
+    {{- end -}}
+)
+
+fun QueryRef<
+    {{- if .variables }}{{ .operationName }}.Variables
+    {{- else }}Unit
+    {{- end -}}
+  , Unit>.subscribe(
+    {{- if .variables -}}
+        {{- range $variableName, $variableInfo := .variables -}}
+            {{ $variableName }}:
+            {{- if eq ($variableInfo.type) "string" -}}
+                String
+            {{- else -}}
+                unknown
+            {{- end -}},
+        {{- end -}}
+    {{- end -}}
+) = subscribe(
+    {{- if .variables -}}
+        variablesFor(
+        {{- range $variableName, $variableInfo := .variables -}}
+            {{ $variableName }}={{ $variableName }},
+        {{- end -}}
+        )
+    {{- else -}}
+        Unit
+    {{- end -}}
+)
+
+{{ if .variables }}
+private fun variablesFor(
+{{- range $variableName, $variableInfo := .variables -}}
+    {{ $variableName }}:
+    {{- if eq ($variableInfo.type) "string" -}}
+        String
+    {{- else -}}
+        unknown
+    {{- end -}},
+{{- end -}}
+) = {{ .operationName }}.Variables(
+    {{- range $variableName, $variableInfo := .variables -}}
+        {{ $variableName }}={{ $variableName }},
+    {{- end -}}
+)
+{{ end }}
+
+{{ else if eq .operationType "mutation" }}
+
+    typealias {{ .operationName }}MutationRef = MutationRef<
+    {{- if .variables }}{{ .operationName }}.Variables
+    {{- else }}Unit
+    {{- end -}}
+    , Unit>
+{{ else }}
+    {{ fail "unsupported operationType" }}
+{{ end }}
