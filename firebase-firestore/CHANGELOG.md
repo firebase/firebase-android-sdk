@@ -1,7 +1,13 @@
 # Unreleased
 * [feature] Enable snapshot listeners to source from local cache. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
+
+# 24.10.2
 * [changed] Internal test improvements.
-* [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5626)
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.10.1
 * [fixed] Fixed an issue caused by calling mutation on immutable map object. [#5573](//github.com/firebase/firebase-android-sdk/pull/5573)
@@ -882,4 +888,3 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
-
