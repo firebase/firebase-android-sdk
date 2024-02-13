@@ -1174,6 +1174,7 @@ public class FirestoreTest {
     // Emulator doesn't care if database was created beforehand.
     assumeTrue(isRunningAgainstEmulator());
 
+    // Trigger CI
     // FirebaseFirestore db1 = FirebaseFirestore.getInstance();
     String projectId = provider().projectId();
     FirebaseFirestore db1 =
