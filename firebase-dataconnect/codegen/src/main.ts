@@ -18,8 +18,11 @@ import * as child_process from 'node:child_process';
 import * as fs from 'node:fs';
 
 import * as graphql from 'graphql';
-import { OperationTypeNode } from 'graphql';
 import * as which from 'which';
+
+import type { VariableInfo as TomlVariableInfo } from './tomlgen';
+
+import { tomlConfigLines } from './tomlgen';
 
 const GRAPHQL_SCHEMA_FILE =
   '/home/dconeybe/dev/firebase/android/firebase-dataconnect/src/androidTest' +
@@ -50,68 +53,33 @@ async function generateOperationsKtSources(
   }
 }
 
-interface GraphQLVariableInfo {
-  type: 'string';
-  isNullable: boolean;
+function typeInfoFromTypeNode(node: graphql.TypeNode): {
+  name: string;
   isList: boolean;
-}
-
-interface GraphQLTypeInfo {
-  fields: Map<string, GraphQLVariableInfo>;
-}
-
-function graphqlVariableInfoFromTypeNode(
-  node: graphql.TypeNode
-): GraphQLVariableInfo {
+  isNullable: boolean;
+} {
   if (node.kind === graphql.Kind.NAMED_TYPE) {
-    return { type: node.name.value as any, isNullable: false, isList: false };
+    return { name: node.name.value, isList: false, isNullable: true };
   } else if (node.kind === graphql.Kind.LIST_TYPE) {
-    const listComponentType = node.type;
-    if (listComponentType.kind === graphql.Kind.LIST_TYPE) {
-      throw new UnsupportedGraphQLOperationTypeError(
-        `nested list types are unsupported at ` +
-          displayStringFromLocation(node.loc)
-      );
-    }
-    return {
-      ...graphqlVariableInfoFromTypeNode(listComponentType),
-      isList: true
-    };
+    return { ...typeInfoFromTypeNode(node.type), isList: true };
+  } else if (node.kind === graphql.Kind.NON_NULL_TYPE) {
+    return { ...typeInfoFromTypeNode(node.type), isNullable: false };
   } else {
-    return { ...graphqlVariableInfoFromTypeNode(node.type), isNullable: false };
+    throw new Error('internal error: unknown node.kind');
   }
 }
 
-function* tomlConfigLines(config: {
-  kotlinPackage: string;
-  operationName: string;
-  operationType: 'query' | 'mutation';
-  variables: Map<string, GraphQLVariableInfo>;
-  types: Map<string, GraphQLTypeInfo>;
-}): Generator<string> {
-  yield `kotlinPackage = '${config.kotlinPackage}'`;
-  yield `operationName = '${config.operationName}'`;
-  yield `operationType = '${config.operationType}'`;
-
-  for (const [variableName, variableInfo] of config.variables.entries()) {
-    yield `[variables.${variableName}]`;
-    yield `type = '${variableInfo.type}'`;
-    yield `isNullable = ${variableInfo.isNullable ? 'true' : 'false'}`;
-    yield `isList = ${variableInfo.isList ? 'true' : 'false'}`;
-  }
-
-  for (const [typeName, typeInfo] of config.types.entries()) {
-    yield `[types.${typeName}_Data]`;
-    yield `fields = [`;
-    for (const [fieldName, fieldInfo] of typeInfo.fields.entries()) {
-      yield `  {name = '${fieldName}', ` +
-        `type = '${fieldInfo.type}', ` +
-        `isNullable = ${fieldInfo.isNullable ? 'true' : 'false'}, ` +
-        `isList = ${fieldInfo.isList ? 'true' : 'false'}` +
-        `},`;
-    }
-    yield `]`;
-  }
+function tomlVariableInfoFromVariableDefinition(
+  node: graphql.VariableDefinitionNode
+): TomlVariableInfo {
+  const name = node.variable.name.value;
+  const typeInfo = typeInfoFromTypeNode(node.type);
+  return {
+    name,
+    type: typeInfo.name,
+    isList: typeInfo.isList,
+    isNullable: typeInfo.isNullable
+  };
 }
 
 async function generateOperationKtSource(
@@ -127,56 +95,22 @@ async function generateOperationKtSource(
   const goAppDir = `${__dirname}/go_template_processor`;
   const goExecutable = which.sync('go');
 
-  const variables = new Map<string, GraphQLVariableInfo>();
-  if (operation.variableDefinitions) {
-    for (const variableDefinition of operation.variableDefinitions) {
-      const variableName = variableDefinition.variable.name.value;
-      variables.set(
-        variableName,
-        graphqlVariableInfoFromTypeNode(variableDefinition.type)
-      );
-    }
-  }
-
-  const tomlTypes = new Map<string, GraphQLTypeInfo>();
-  for (const [typeName, typeInfo] of types.entries()) {
-    const fields = new Map<string, GraphQLVariableInfo>();
-    if (typeInfo.fields) {
-      for (const field of typeInfo.fields) {
-        const fieldName = field.name.value;
-        const fieldType = graphqlVariableInfoFromTypeNode(field.type);
-        fields.set(fieldName, fieldType);
-      }
-    }
-    tomlTypes.set(typeName, { fields });
-  }
-
-  let operationType: 'query' | 'mutation';
-  if (operation.operation === OperationTypeNode.QUERY) {
-    operationType = 'query';
-  } else if (operation.operation === OperationTypeNode.MUTATION) {
-    operationType = 'mutation';
-  } else {
-    throw new UnsupportedGraphQLOperationTypeError(
-      `unsupported GraphQL operation type  ` +
-        `at ${displayStringFromLocation(operation.loc)}: ${operation.operation}`
-    );
-  }
+  const tomlVariables = (operation.variableDefinitions ?? []).map(
+    tomlVariableInfoFromVariableDefinition
+  );
 
   const tomlLines = Array.from(
     tomlConfigLines({
       kotlinPackage: `com.google.firebase.dataconnect.connectors.${CONNECTOR_NAME}`,
       operationName,
-      operationType,
-      variables,
-      types: tomlTypes
+      variables: tomlVariables
     })
   );
   const tomlText = tomlLines.join('\n');
+  console.log(`======\n${tomlText}======`);
 
   const tempy = await import('tempy');
   const tomlFile = tempy.temporaryWriteSync(tomlText);
-  console.log(tomlText);
 
   try {
     const args = [
@@ -297,18 +231,6 @@ function hasDirective(
 }
 
 class UnsupportedGraphQLDefinitionKindError extends Error {
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-class UnsupportedGraphQLOperationTypeError extends Error {
-  constructor(message: string) {
-    super(message);
-  }
-}
-
-class NestedListTypesNotSupportedError extends Error {
   constructor(message: string) {
     super(message);
   }
