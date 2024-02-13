@@ -64,38 +64,41 @@ function typeInfoFromTypeNode(node: graphql.TypeNode): {
 }
 
 function fieldInfoFromVariableDefinition(
-  node: graphql.VariableDefinitionNode
+  node: graphql.VariableDefinitionNode,
+  types: Map<string, graphql.ObjectTypeDefinitionNode>
 ): FieldInfo {
   const name = node.variable.name.value;
   const typeInfo = typeInfoFromTypeNode(node.type);
+
+  const fields: FieldInfo[] = [];
+  if (typeInfo.name.endsWith('_Data')) {
+    const typesKey = typeInfo.name.substring(0, typeInfo.name.length - 5);
+    const typeInfo2 = types.get(typesKey);
+    if (typeInfo2 === undefined) {
+      throw new Error(`typesKey not found: ${typesKey}`);
+    }
+    if (typeInfo2.fields) {
+      for (const fieldDefinition of typeInfo2.fields) {
+        const fieldName = fieldDefinition.name.value;
+        const fieldType = typeInfoFromTypeNode(fieldDefinition.type);
+        fields.push({
+          name: fieldName,
+          type: fieldType.name,
+          isList: fieldType.isList,
+          isNullable: fieldType.isNullable,
+          fields: []
+        });
+      }
+    }
+  }
+
   return {
     name,
     type: typeInfo.name,
     isList: typeInfo.isList,
-    isNullable: typeInfo.isNullable
+    isNullable: typeInfo.isNullable,
+    fields
   };
-}
-
-function typeInfoFromObjectTypeDefinition(
-  node: graphql.ObjectTypeDefinitionNode
-): TypeInfo {
-  const name = node.name.value;
-  const fields: FieldInfo[] = [];
-
-  if (node.fields) {
-    for (const fieldDefinition of node.fields) {
-      const fieldName = fieldDefinition.name.value;
-      const typeInfo = typeInfoFromTypeNode(fieldDefinition.type);
-      fields.push({
-        name: fieldName,
-        type: typeInfo.name,
-        isList: typeInfo.isList,
-        isNullable: typeInfo.isNullable
-      });
-    }
-  }
-
-  return { name, fields };
 }
 
 async function generateOperationKtSource(
@@ -116,7 +119,8 @@ async function generateOperationKtSource(
   const goExecutable = which.sync('go');
 
   const configVariables = (operation.variableDefinitions ?? []).map(
-    fieldInfoFromVariableDefinition
+    variableDefinition =>
+      fieldInfoFromVariableDefinition(variableDefinition, types)
   );
 
   const config = {
@@ -263,16 +267,12 @@ class DuplicateGraphQLOperationDefinitionError extends Error {
   }
 }
 
-export interface TypeInfo {
-  name: string;
-  fields: FieldInfo[];
-}
-
 export interface FieldInfo {
   name: string;
   type: string;
   isList: boolean;
   isNullable: boolean;
+  fields: FieldInfo[];
 }
 
 main();

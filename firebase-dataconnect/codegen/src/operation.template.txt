@@ -20,6 +20,9 @@ val {{ .name }}: {{ template "KotlinTypeFor" . }},
 
 {{- define "VariablesNestedClassDefinition" }}
     @Serializable data class {{ .type }}(
+    {{- range .fields -}}
+        val {{ .name }}: {{ template "KotlinTypeFor" . }},
+    {{- end -}}
     )
 {{ end -}}
 
