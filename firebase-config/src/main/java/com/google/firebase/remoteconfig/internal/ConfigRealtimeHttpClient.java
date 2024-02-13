@@ -293,6 +293,11 @@ public class ConfigRealtimeHttpClient {
         && !isInBackground;
   }
 
+  /**
+   * The check and set http connection method are combined so that when canMakeHttpStreamConnection
+   * returns true, the same thread can mark isHttpConnectionIsRunning as true to prevent a race
+   * condition with another thread.
+   */
   private synchronized boolean checkAndSetHttpConnectionFlagIfNotRunning() {
     boolean canMakeConnection = canMakeHttpStreamConnection();
     if (canMakeConnection) {
@@ -381,10 +386,6 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized void makeRealtimeHttpConnection(long retryMilliseconds) {
-    if (!canMakeHttpStreamConnection()) {
-      return;
-    }
-
     if (httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
