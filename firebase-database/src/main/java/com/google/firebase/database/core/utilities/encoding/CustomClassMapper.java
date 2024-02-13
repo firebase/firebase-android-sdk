@@ -38,11 +38,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -496,8 +494,6 @@ public class CustomClassMapper {
       // getMethods/getFields only returns public methods/fields we need to traverse the
       // class hierarchy to find the appropriate setter or field.
       Class<? super T> currentClass = clazz;
-      Map<String, Method> bridgeMethods = new HashMap<>();
-      Set<String> propertyNamesOfExcludedSetters = new HashSet<>();
       do {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
@@ -508,23 +504,12 @@ public class CustomClassMapper {
               if (!existingPropertyName.equals(propertyName)) {
                 throw new DatabaseException(
                     "Found setter with invalid " + "case-sensitive name: " + method.getName());
-              } else if (method.isBridge()) {
-                // We ignore bridge setters when creating a bean, but include them in the map
-                // for the purpose of the `isSetterOverride()` check
-                bridgeMethods.put(propertyName, method);
               } else {
                 Method existingSetter = setters.get(propertyName);
-                Method correspondingBridgeMethod = bridgeMethods.get(propertyName);
                 if (existingSetter == null) {
+                  method.setAccessible(true);
                   setters.put(propertyName, method);
-                  if (!method.isAnnotationPresent(Exclude.class)) {
-                    method.setAccessible(true);
-                  } else {
-                    propertyNamesOfExcludedSetters.add(propertyName);
-                  }
-                } else if (!isSetterOverride(method, existingSetter)
-                    && !(correspondingBridgeMethod != null
-                        && isSetterOverride(method, correspondingBridgeMethod))) {
+                } else if (!isSetterOverride(method, existingSetter)) {
                   // We require that setters with conflicting property names are
                   // overrides from a base class
                   throw new DatabaseException(
@@ -558,12 +543,6 @@ public class CustomClassMapper {
         // of fields/getters we don't want to serialize
         currentClass = currentClass.getSuperclass();
       } while (currentClass != null && !currentClass.equals(Object.class));
-
-      // When subclass setter is annotated with `@Exclude`, the corresponding superclass setter
-      // also need to be filtered out.
-      for (String propertyName : propertyNamesOfExcludedSetters) {
-        setters.remove(propertyName);
-      }
 
       if (properties.isEmpty()) {
         throw new DatabaseException("No properties to serialize found on class " + clazz.getName());
@@ -724,10 +703,6 @@ public class CustomClassMapper {
       if (method.getParameterTypes().length != 0) {
         return false;
       }
-      // Bridge methods
-      if (method.isBridge()) {
-        return false;
-      }
       // Excluded methods
       if (method.isAnnotationPresent(Exclude.class)) {
         return false;
@@ -755,7 +730,10 @@ public class CustomClassMapper {
       if (method.getParameterTypes().length != 1) {
         return false;
       }
-
+      // Excluded methods
+      if (method.isAnnotationPresent(Exclude.class)) {
+        return false;
+      }
       return true;
     }
 
