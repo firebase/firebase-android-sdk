@@ -1,10 +1,29 @@
+{{- /* ================================================================== */ -}}
+
 {{- define "VariablesClassDefinition" -}}
 @Serializable data class Variables(
 {{- range .variables -}}
 val {{ .name }}: {{ template "KotlinTypeFor" . }},
 {{- end -}}
-)
+) {
+
+{{- range .variables -}}
+    {{- if eq .type "String" }}{{ continue }}{{ end -}}
+    {{- if eq .type "Int" }}{{ continue }}{{ end -}}
+    {{ template "VariablesNestedClassDefinition" . }}
 {{- end -}}
+
+}
+{{- end -}}
+
+{{- /* ================================================================== */ -}}
+
+{{- define "VariablesNestedClassDefinition" }}
+    @Serializable data class {{ .type }}(
+    )
+{{ end -}}
+
+{{- /* ================================================================== */ -}}
 
 {{ define "KotlinTypeFor" -}}
 {{- if .isList -}}List<{{- end -}}
@@ -12,6 +31,8 @@ val {{ .name }}: {{ template "KotlinTypeFor" . }},
 {{- if .isList -}}>{{- end -}}
 {{- if .isNullable -}}?{{- end -}}
 {{- end -}}
+
+{{- /* ==== MAIN CONTENT ================================================ */ -}}
 
 package {{.kotlinPackage}}
 

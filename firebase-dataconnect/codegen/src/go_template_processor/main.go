@@ -1,12 +1,11 @@
 package main
 
 import "bytes"
+import "encoding/json"
 import "flag"
 import "log"
 import "os"
 import "text/template"
-
-import "github.com/BurntSushi/toml"
 
 func main() {
 	log.SetPrefix("codegen: ")
@@ -22,12 +21,11 @@ func main() {
 	templateFile := args[1]
 	outputFile := args[2]
 
-	log.Printf("loading TOML config file: %s", configFile)
+	log.Printf("loading JSON config file: %s", configFile)
 	configFileBytes, err := os.ReadFile(configFile)
 	if err != nil {
-		log.Fatal("reading TOML config file failed: ", err)
+		log.Fatal("reading JSON config file failed: ", err)
 	}
-	configFileText := string(configFileBytes)
 
 	log.Printf("loading Go template file: %s", templateFile)
 	templateFileBytes, err := os.ReadFile(templateFile)
@@ -37,16 +35,9 @@ func main() {
 	templateFileText := string(templateFileBytes)
 
 	var config map[string]interface{}
-	configMetaData, err := toml.Decode(configFileText, &config)
+	err = json.Unmarshal(configFileBytes, &config)
 	if err != nil {
-		log.Fatal("decoding TOML config file failed: ", configFile, " (", err, ")")
-	}
-
-	if !configMetaData.IsDefined("kotlinPackage") {
-		log.Fatal("TOML config file must specify KotlinPackage: ", configFile)
-	}
-	if !configMetaData.IsDefined("operationName") {
-		log.Fatal("TOML config file must specify OperationName: ", configFile)
+		log.Fatal("decoding JSON config file failed: ", configFile, " (", err, ")")
 	}
 
 	funcs := template.FuncMap{"fail": templateFail1, "fail2": templateFail2, "fail3": templateFail3}

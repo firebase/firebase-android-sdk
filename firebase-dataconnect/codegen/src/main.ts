@@ -20,10 +20,6 @@ import * as fs from 'node:fs';
 import * as graphql from 'graphql';
 import * as which from 'which';
 
-import type { VariableInfo as TomlVariableInfo } from './tomlgen';
-
-import { tomlConfigLines } from './tomlgen';
-
 const GRAPHQL_SCHEMA_FILE =
   '/home/dconeybe/dev/firebase/android/firebase-dataconnect/src/androidTest' +
   '/assets/testing_graphql_schemas/person/schema.gql';
@@ -43,13 +39,11 @@ async function main(): Promise<void> {
 }
 
 async function generateOperationsKtSources(
-  operations: Map<string, graphql.OperationDefinitionNode>,
+  operations: graphql.OperationDefinitionNode[],
   types: Map<string, graphql.ObjectTypeDefinitionNode>
 ): Promise<void> {
-  const operationNamesSorted = Array.from(operations.keys()).sort();
-  for (const operationName of operationNamesSorted) {
-    const operation = operations.get(operationName)!;
-    await generateOperationKtSource(operationName, operation, types);
+  for (const operation of operations) {
+    await generateOperationKtSource(operation, types);
   }
 }
 
@@ -69,9 +63,9 @@ function typeInfoFromTypeNode(node: graphql.TypeNode): {
   }
 }
 
-function tomlVariableInfoFromVariableDefinition(
+function fieldInfoFromVariableDefinition(
   node: graphql.VariableDefinitionNode
-): TomlVariableInfo {
+): FieldInfo {
   const name = node.variable.name.value;
   const typeInfo = typeInfoFromTypeNode(node.type);
   return {
@@ -82,11 +76,37 @@ function tomlVariableInfoFromVariableDefinition(
   };
 }
 
+function typeInfoFromObjectTypeDefinition(
+  node: graphql.ObjectTypeDefinitionNode
+): TypeInfo {
+  const name = node.name.value;
+  const fields: FieldInfo[] = [];
+
+  if (node.fields) {
+    for (const fieldDefinition of node.fields) {
+      const fieldName = fieldDefinition.name.value;
+      const typeInfo = typeInfoFromTypeNode(fieldDefinition.type);
+      fields.push({
+        name: fieldName,
+        type: typeInfo.name,
+        isList: typeInfo.isList,
+        isNullable: typeInfo.isNullable
+      });
+    }
+  }
+
+  return { name, fields };
+}
+
 async function generateOperationKtSource(
-  operationName: string,
   operation: graphql.OperationDefinitionNode,
   types: Map<string, graphql.ObjectTypeDefinitionNode>
 ): Promise<void> {
+  const operationName = operation.name?.value;
+  if (operationName === undefined) {
+    throw new Error('internal error: operationName === undefined');
+  }
+
   const outputDir = `${OUTPUT_BASE_DIR}/${CONNECTOR_NAME}`;
   const outputFile = `${outputDir}/${operationName}.kt`;
   fs.mkdirSync(outputDir, { recursive: true });
@@ -95,22 +115,20 @@ async function generateOperationKtSource(
   const goAppDir = `${__dirname}/go_template_processor`;
   const goExecutable = which.sync('go');
 
-  const tomlVariables = (operation.variableDefinitions ?? []).map(
-    tomlVariableInfoFromVariableDefinition
+  const configVariables = (operation.variableDefinitions ?? []).map(
+    fieldInfoFromVariableDefinition
   );
 
-  const tomlLines = Array.from(
-    tomlConfigLines({
-      kotlinPackage: `com.google.firebase.dataconnect.connectors.${CONNECTOR_NAME}`,
-      operationName,
-      variables: tomlVariables
-    })
-  );
-  const tomlText = tomlLines.join('\n');
-  console.log(`======\n${tomlText}======`);
+  const config = {
+    kotlinPackage: `${KOTLIN_BASE_PACKAGE}.${CONNECTOR_NAME}`,
+    operationName,
+    variables: configVariables
+  };
+  const configText = JSON.stringify(config, null, 2);
+  console.log(configText);
 
   const tempy = await import('tempy');
-  const tomlFile = tempy.temporaryWriteSync(tomlText);
+  const tomlFile = tempy.temporaryWriteSync(configText);
 
   try {
     const args = [
@@ -168,10 +186,7 @@ function parseGraphQLTypes(): Map<string, graphql.ObjectTypeDefinitionNode> {
   return types;
 }
 
-function parseGraphQLOperations(): Map<
-  string,
-  graphql.OperationDefinitionNode
-> {
+function parseGraphQLOperations(): graphql.OperationDefinitionNode[] {
   const parsedFile = parseGraphQLFile(GRAPHQL_OPS_FILE);
 
   const operations = new Map<string, graphql.OperationDefinitionNode>();
@@ -196,7 +211,7 @@ function parseGraphQLOperations(): Map<
     }
   }
 
-  return operations;
+  return Array.from(operations.values());
 }
 
 function parseGraphQLFile(path: string): graphql.DocumentNode {
@@ -246,6 +261,18 @@ class DuplicateGraphQLOperationDefinitionError extends Error {
   constructor(message: string) {
     super(message);
   }
+}
+
+export interface TypeInfo {
+  name: string;
+  fields: FieldInfo[];
+}
+
+export interface FieldInfo {
+  name: string;
+  type: string;
+  isList: boolean;
+  isNullable: boolean;
 }
 
 main();
