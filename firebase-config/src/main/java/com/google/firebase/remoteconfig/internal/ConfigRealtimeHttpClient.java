@@ -293,6 +293,15 @@ public class ConfigRealtimeHttpClient {
         && !isInBackground;
   }
 
+  private synchronized boolean checkAndSetHttpConnectionFlagIfNotRunning() {
+    boolean canMakeConnection = canMakeHttpStreamConnection();
+    if (canMakeConnection) {
+      setIsHttpConnectionRunning(true);
+    }
+
+    return canMakeConnection;
+  }
+
   private String getRealtimeURL(String namespace) {
     return String.format(
         REALTIME_REGEX_URL,
@@ -478,7 +487,7 @@ public class ConfigRealtimeHttpClient {
    */
   @SuppressLint({"VisibleForTests", "DefaultLocale"})
   public void beginRealtimeHttpStream() {
-    if (!canMakeHttpStreamConnection()) {
+    if (!checkAndSetHttpConnectionFlagIfNotRunning()) {
       return;
     }
 
