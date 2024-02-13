@@ -56,6 +56,10 @@ interface GraphQLVariableInfo {
   isList: boolean;
 }
 
+interface GraphQLTypeInfo {
+  fields: Map<string, GraphQLVariableInfo>;
+}
+
 function graphqlVariableInfoFromTypeNode(
   node: graphql.TypeNode
 ): GraphQLVariableInfo {
@@ -83,6 +87,7 @@ function* tomlConfigLines(config: {
   operationName: string;
   operationType: 'query' | 'mutation';
   variables: Map<string, GraphQLVariableInfo>;
+  types: Map<string, GraphQLTypeInfo>;
 }): Generator<string> {
   yield `kotlinPackage = '${config.kotlinPackage}'`;
   yield `operationName = '${config.operationName}'`;
@@ -93,6 +98,19 @@ function* tomlConfigLines(config: {
     yield `type = '${variableInfo.type}'`;
     yield `isNullable = ${variableInfo.isNullable ? 'true' : 'false'}`;
     yield `isList = ${variableInfo.isList ? 'true' : 'false'}`;
+  }
+
+  for (const [typeName, typeInfo] of config.types.entries()) {
+    yield `[types.${typeName}_Data]`;
+    yield `fields = [`;
+    for (const [fieldName, fieldInfo] of typeInfo.fields.entries()) {
+      yield `  {name = '${fieldName}', ` +
+        `type = '${fieldInfo.type}', ` +
+        `isNullable = ${fieldInfo.isNullable ? 'true' : 'false'}, ` +
+        `isList = ${fieldInfo.isList ? 'true' : 'false'}` +
+        `},`;
+    }
+    yield `]`;
   }
 }
 
@@ -120,6 +138,19 @@ async function generateOperationKtSource(
     }
   }
 
+  const tomlTypes = new Map<string, GraphQLTypeInfo>();
+  for (const [typeName, typeInfo] of types.entries()) {
+    const fields = new Map<string, GraphQLVariableInfo>();
+    if (typeInfo.fields) {
+      for (const field of typeInfo.fields) {
+        const fieldName = field.name.value;
+        const fieldType = graphqlVariableInfoFromTypeNode(field.type);
+        fields.set(fieldName, fieldType);
+      }
+    }
+    tomlTypes.set(typeName, { fields });
+  }
+
   let operationType: 'query' | 'mutation';
   if (operation.operation === OperationTypeNode.QUERY) {
     operationType = 'query';
@@ -132,16 +163,21 @@ async function generateOperationKtSource(
     );
   }
 
-  const tempy = await import('tempy');
   const tomlLines = Array.from(
     tomlConfigLines({
       kotlinPackage: `com.google.firebase.dataconnect.connectors.${CONNECTOR_NAME}`,
       operationName,
       operationType,
-      variables
+      variables,
+      types: tomlTypes
     })
   );
-  const tomlFile = tempy.temporaryWriteSync(tomlLines.join('\n'));
+  const tomlText = tomlLines.join('\n');
+
+  const tempy = await import('tempy');
+  const tomlFile = tempy.temporaryWriteSync(tomlText);
+  console.log(tomlText);
+
   try {
     const args = [
       goExecutable,

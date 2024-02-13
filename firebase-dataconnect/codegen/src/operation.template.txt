@@ -12,7 +12,7 @@
         {{- if eq ($variableInfo.type) "string" -}}
             String
         {{- else -}}
-            {{ fail3 "unsupported variable type" $variableName $variableInfo.type }}
+            {{- $variableInfo.type -}}
         {{- end -}},
     {{- end -}}
 {{- end -}}
@@ -34,7 +34,7 @@
     {{- if eq .type "string" -}}
         String
     {{- else -}}
-        {{ fail2 "unsupported variable type" .type }}
+        {{- .type -}}
     {{- end -}}
 {{- end -}}
 
@@ -47,13 +47,25 @@ object {{.operationName}} {
 
 {{ if .variables }}
 
-    @Serializable
-    data class Variables(
+    {{ $types := .types }}
+
+    @Serializable data class Variables(
 
     {{- range $variableName, $variableInfo := .variables -}}
         val {{ $variableName }}: {{ template "KotlinTypeFromConfigType" $variableInfo }},
     {{- end -}}
     ) {
+
+    {{- range $variableName, $variableInfo := .variables -}}
+        {{ if eq ($variableInfo.type) "String" }}{{ continue }}{{ end }}
+        @Serializable data class {{ $variableInfo.type }}(
+            {{- $fields := index $types ($variableInfo.type) "fields" -}}
+            {{- range $_, $fieldInfo := $fields -}}
+                val {{ $fieldInfo.name }}: {{ template "KotlinTypeFromConfigType" $fieldInfo }},
+            {{- end -}}
+        ) { }
+    {{- end }}
+
     }
 {{ end }}
 
