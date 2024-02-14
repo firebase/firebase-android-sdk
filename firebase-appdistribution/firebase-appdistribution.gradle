@@ -18,7 +18,9 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "appdistribution"
     publishJavadoc = false
+    publishReleaseNotes = true
 }
 
 android {
