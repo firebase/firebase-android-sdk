@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Fixed an issue that could cause Remote Config personalizations to be logged early in
+* [fixed] Fixed an issue that could cause [remote_config] personalizations to be logged early in
   specific cases.
 
 
