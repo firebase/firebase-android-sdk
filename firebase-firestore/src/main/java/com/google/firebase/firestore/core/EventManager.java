@@ -116,7 +116,7 @@ public final class EventManager implements SyncEngineCallback {
           queryListener.listensToRemoteStore()
               ? ListenerSetupAction.INITIALIZE_LOCAL_LISTEN_AND_REQUIRE_WATCH_CONNECTION
               : ListenerSetupAction.INITIALIZE_LOCAL_LISTEN_ONLY;
-    } else if (queryListener.listensToRemoteStore()) {
+    } else if (!queryInfo.hasRemoteListeners() && queryListener.listensToRemoteStore()) {
       // Query has been listening to local cache, and tries to add a new listener sourced from
       // watch.
       listenerAction = ListenerSetupAction.REQUIRE_WATCH_CONNECTION_ONLY;
