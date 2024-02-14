@@ -116,31 +116,6 @@ public class ConfigGetParameterHandler {
   }
 
   /**
-   * Returns the parameter value of the given parameter key as a {@link String} without side effects
-   * present in the 3P-facing {@link ConfigGetParameterHandler#getString}.
-   *
-   * <p>This implementation is intended for internal use. It does not call listeners to report
-   * Personalization activations to Google Analytics nor does it log a warning if the parameter key
-   * does not exist. See {@link ConfigGetParameterHandler#getString} for additional documentation.
-   *
-   * @param key A Firebase Remote Config parameter key.
-   * @hide
-   */
-  public String getStringWithoutSideEffects(String key) {
-    String activatedString = getStringFromCache(activatedConfigsCache, key);
-    if (activatedString != null) {
-      return activatedString;
-    }
-
-    String defaultsString = getStringFromCache(defaultConfigsCache, key);
-    if (defaultsString != null) {
-      return defaultsString;
-    }
-
-    return DEFAULT_VALUE_FOR_STRING;
-  }
-
-  /**
    * Returns the parameter value of the given parameter key as a {@code boolean}.
    *
    * <p>Evaluates the value of the parameter in the following order:
