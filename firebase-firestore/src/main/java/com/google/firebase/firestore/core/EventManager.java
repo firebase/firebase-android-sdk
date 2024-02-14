@@ -43,7 +43,7 @@ public final class EventManager implements SyncEngineCallback {
       listeners = new ArrayList<>();
     }
 
-    // Helper methods that checks if the query has listeners sourced from watch.
+    // Helper methods that checks if the query has listeners that listening to remote store
     boolean hasRemoteListeners() {
       for (QueryListener listener : listeners) {
         if (listener.listensToRemoteStore()) {
@@ -83,6 +83,20 @@ public final class EventManager implements SyncEngineCallback {
     syncEngine.setCallback(this);
   }
 
+  private enum ListenerSetupAction {
+    INITIALIZE_LOCAL_LISTEN_AND_REQUIRE_WATCH_CONNECTION,
+    INITIALIZE_LOCAL_LISTEN_ONLY,
+    REQUIRE_WATCH_CONNECTION_ONLY,
+    NO_ACTION_REQUIRED
+  }
+
+  private enum ListenerRemovalAction {
+    TERMINATE_LOCAL_LISTEN_AND_REQUIRE_WATCH_DISCONNECTION,
+    TERMINATE_LOCAL_LISTEN_ONLY,
+    REQUIRE_WATCH_DISCONNECTION_ONLY,
+    NO_ACTION_REQUIRED
+  }
+
   /**
    * Adds a query listener that will be called with new snapshots for the query. The EventManager is
    * responsible for multiplexing many listeners to a single listen in the SyncEngine and will
@@ -92,15 +106,21 @@ public final class EventManager implements SyncEngineCallback {
    */
   public int addQueryListener(QueryListener queryListener) {
     Query query = queryListener.getQuery();
+    ListenerSetupAction listenerAction = ListenerSetupAction.NO_ACTION_REQUIRED;
 
     QueryListenersInfo queryInfo = queries.get(query);
-    boolean firstListen = queryInfo == null;
-    if (firstListen) {
+    if (queryInfo == null) {
       queryInfo = new QueryListenersInfo();
       queries.put(query, queryInfo);
+      listenerAction =
+          queryListener.listensToRemoteStore()
+              ? ListenerSetupAction.INITIALIZE_LOCAL_LISTEN_AND_REQUIRE_WATCH_CONNECTION
+              : ListenerSetupAction.INITIALIZE_LOCAL_LISTEN_ONLY;
+    } else if (queryListener.listensToRemoteStore()) {
+      // Query has been listening to local cache, and tries to add a new listener sourced from
+      // watch.
+      listenerAction = ListenerSetupAction.REQUIRE_WATCH_CONNECTION_ONLY;
     }
-    boolean firstListenToRemoteStore =
-        !queryInfo.hasRemoteListeners() && queryListener.listensToRemoteStore();
 
     queryInfo.listeners.add(queryListener);
 
@@ -116,11 +136,28 @@ public final class EventManager implements SyncEngineCallback {
       }
     }
 
-    if (firstListen) {
-      queryInfo.targetId = syncEngine.listen(query, firstListenToRemoteStore);
-    } else if (firstListenToRemoteStore) {
-      syncEngine.listenToRemoteStore(query);
+    switch (listenerAction) {
+      case INITIALIZE_LOCAL_LISTEN_AND_REQUIRE_WATCH_CONNECTION:
+        queryInfo.targetId =
+            syncEngine.listen(
+                query,
+                /** shouldListenToRemote= */
+                true);
+        break;
+      case INITIALIZE_LOCAL_LISTEN_ONLY:
+        queryInfo.targetId =
+            syncEngine.listen(
+                query,
+                /** shouldListenToRemote= */
+                false);
+        break;
+      case REQUIRE_WATCH_CONNECTION_ONLY:
+        syncEngine.listenToRemoteStore(query);
+        break;
+      default:
+        break;
     }
+
     return queryInfo.targetId;
   }
 
@@ -128,20 +165,42 @@ public final class EventManager implements SyncEngineCallback {
   public void removeQueryListener(QueryListener listener) {
     Query query = listener.getQuery();
     QueryListenersInfo queryInfo = queries.get(query);
-    boolean lastListen = false;
-    boolean lastListenToRemoteStore = false;
+    ListenerRemovalAction listenerAction = ListenerRemovalAction.NO_ACTION_REQUIRED;
 
     if (queryInfo != null) {
       queryInfo.listeners.remove(listener);
-      lastListen = queryInfo.listeners.isEmpty();
-      lastListenToRemoteStore = !queryInfo.hasRemoteListeners() && listener.listensToRemoteStore();
+      if (queryInfo.listeners.isEmpty()) {
+        listenerAction =
+            listener.listensToRemoteStore()
+                ? ListenerRemovalAction.TERMINATE_LOCAL_LISTEN_AND_REQUIRE_WATCH_DISCONNECTION
+                : ListenerRemovalAction.TERMINATE_LOCAL_LISTEN_ONLY;
+
+      } else if (!queryInfo.hasRemoteListeners() && listener.listensToRemoteStore()) {
+        // The removed listener is the last one that sourced from watch.
+        listenerAction = ListenerRemovalAction.REQUIRE_WATCH_DISCONNECTION_ONLY;
+      }
     }
 
-    if (lastListen) {
-      queries.remove(query);
-      syncEngine.stopListening(query, lastListenToRemoteStore);
-    } else if (lastListenToRemoteStore) {
-      syncEngine.stopListeningToRemoteStore(query);
+    switch (listenerAction) {
+      case TERMINATE_LOCAL_LISTEN_AND_REQUIRE_WATCH_DISCONNECTION:
+        queries.remove(query);
+        syncEngine.stopListening(
+            query,
+            /** shouldUnlistenToRemote= */
+            true);
+        break;
+      case TERMINATE_LOCAL_LISTEN_ONLY:
+        queries.remove(query);
+        syncEngine.stopListening(
+            query,
+            /** shouldUnlistenToRemote= */
+            false);
+        break;
+      case REQUIRE_WATCH_DISCONNECTION_ONLY:
+        syncEngine.stopListeningToRemoteStore(query);
+        break;
+      default:
+        break;
     }
   }
 

@@ -30,6 +30,7 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.List;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,17 +56,16 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void canRaiseSnapshotFromCacheForQuery() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a")));
 
     waitFor(collection.get()); // Populate the cache.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
     SnapshotListenOptions options = optionSourceFromCache();
-    ListenerRegistration listener = query.addSnapshotListener(options, accumulator.listener());
+    ListenerRegistration listener = collection.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(asList(map("k", "a")), querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
 
     accumulator.assertNoAdditionalEvents();
@@ -74,7 +74,7 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void canRaiseSnapshotFromCacheForDocumentReference() {
-    DocumentReference docRef = testDocumentWithData(map("k", "a", "sort", 0));
+    DocumentReference docRef = testDocumentWithData(map("k", "a"));
 
     waitFor(docRef.get()); // Populate the cache.
 
@@ -83,7 +83,7 @@ public class SnapshotListenerSourceTest {
     ListenerRegistration listener = docRef.addSnapshotListener(options, accumulator.listener());
 
     DocumentSnapshot snapshot = accumulator.await();
-    assertEquals(map("k", "a", "sort", 0L), snapshot.getData());
+    assertEquals(map("k", "a"), snapshot.getData());
     assertTrue(snapshot.getMetadata().isFromCache());
 
     accumulator.assertNoAdditionalEvents();
@@ -92,17 +92,16 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void listenToCacheShouldNotBeAffectedByOnlineStatusChange() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a")));
 
     waitFor(collection.get()); // Populate the cache.
 
     EventAccumulator<QuerySnapshot> accumulator = new EventAccumulator<>();
     SnapshotListenOptions options = optionSourceFromCacheAndIncludeMetadataChanges();
-    ListenerRegistration listener = query.addSnapshotListener(options, accumulator.listener());
+    ListenerRegistration listener = collection.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(asList(map("k", "a")), querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
 
     waitFor(collection.firestore.disableNetwork());
@@ -114,8 +113,9 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void multipleListenersSourcedFromCacheCanWorkIndependently() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereGreaterThan("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     waitFor(collection.get()); // Populate the cache.
 
@@ -125,16 +125,16 @@ public class SnapshotListenerSourceTest {
     ListenerRegistration listener2 = query.addSnapshotListener(options, accumulator.listener());
 
     List<QuerySnapshot> snapshots = accumulator.await(2);
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshots.get(0)));
+    assertEquals(asList(map("k", "b", "sort", 1L)), querySnapshotToValues(snapshots.get(0)));
     assertEquals(querySnapshotToValues(snapshots.get(0)), querySnapshotToValues(snapshots.get(1)));
     assertEquals(snapshots.get(0).getMetadata(), snapshots.get(1).getMetadata());
 
     // Do a local mutation
-    waitFor(collection.add(map("k", "b", "sort", 1)));
+    waitFor(collection.add(map("k", "c", "sort", 2)));
 
     snapshots = accumulator.await(2);
     assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
+        asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 2L)),
         querySnapshotToValues(snapshots.get(0)));
     assertEquals(querySnapshotToValues(snapshots.get(0)), querySnapshotToValues(snapshots.get(1)));
     assertEquals(snapshots.get(0).getMetadata(), snapshots.get(1).getMetadata());
@@ -142,11 +142,11 @@ public class SnapshotListenerSourceTest {
     // Detach one listener, and do a local mutation. The other listener
     // should not be affected.
     listener1.remove();
-    waitFor(collection.add(map("k", "c", "sort", 2)));
+    waitFor(collection.add(map("k", "d", "sort", 3)));
 
     QuerySnapshot snapshot = accumulator.await();
     assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L), map("k", "c", "sort", 2L)),
+        asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 2L), map("k", "d", "sort", 3L)),
         querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
 
@@ -161,7 +161,7 @@ public class SnapshotListenerSourceTest {
   // orderBy() clause, they can map to the same target representation as
   // limit() query, even if both queries appear separate to the user.
   @Test
-  public void canListenUnlistenRelistenMirrorQueries() {
+  public void canListenUnlistenRelistenMirrorQueriesFromCache() {
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -244,8 +244,10 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void canListenToDefaultSourceFirstAndThenCache() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query =
+        collection.whereGreaterThanOrEqualTo("sort", 1).orderBy("sort", Direction.ASCENDING);
 
     // Listen to the query with default options, which will also populates the cache
     EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
@@ -253,7 +255,7 @@ public class SnapshotListenerSourceTest {
         query.addSnapshotListener(defaultAccumulator.listener());
 
     QuerySnapshot snapshot = defaultAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(asList(map("k", "b", "sort", 1L)), querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
 
     // Listen to the same query from cache
@@ -263,7 +265,7 @@ public class SnapshotListenerSourceTest {
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
     snapshot = cacheAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(asList(map("k", "b", "sort", 1L)), querySnapshotToValues(snapshot));
     // The metadata is sync with server due to the default listener
     assertFalse(snapshot.getMetadata().isFromCache());
 
@@ -276,8 +278,9 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void canListenToCacheSourceFirstAndThenDefault() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereNotEqualTo("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     // Listen to the cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
@@ -296,12 +299,12 @@ public class SnapshotListenerSourceTest {
         query.addSnapshotListener(MetadataChanges.INCLUDE, defaultAccumulator.listener());
 
     snapshot = defaultAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(asList(map("k", "b", "sort", 1L)), querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
 
     // Default listener updates the cache, which triggers cache listener to raise snapshot.
     snapshot = cacheAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(asList(map("k", "b", "sort", 1L)), querySnapshotToValues(snapshot));
     // The metadata is sync with server due to the default listener
     assertFalse(snapshot.getMetadata().isFromCache());
 
@@ -314,8 +317,9 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void willNotGetMetadataOnlyUpdatesIfListeningToCacheOnly() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereNotEqualTo("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     waitFor(collection.get()); // Populate the cache.
 
@@ -324,14 +328,14 @@ public class SnapshotListenerSourceTest {
     ListenerRegistration listener = query.addSnapshotListener(options, accumulator.listener());
 
     QuerySnapshot snapshot = accumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(asList(map("k", "b", "sort", 1L)), querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
 
-    waitFor(collection.add(map("k", "b", "sort", 1)));
+    waitFor(collection.add(map("k", "c", "sort", 2)));
 
     snapshot = accumulator.await();
     assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
+        asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 2L)),
         querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
     assertTrue(snapshot.getMetadata().hasPendingWrites());
@@ -344,9 +348,9 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void willHaveSyncedMetadataUpdatesWhenListeningToBothCacheAndDefaultSource() {
-
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereNotEqualTo("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     waitFor(collection.get()); // Populate the cache.
 
@@ -358,7 +362,8 @@ public class SnapshotListenerSourceTest {
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
     QuerySnapshot snapshot = cacheAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    List<Map<String, Object>> expected = asList(map("k", "b", "sort", 1L));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
 
     // Listen to the same query from server
@@ -368,32 +373,29 @@ public class SnapshotListenerSourceTest {
 
     // First snapshot will be raised from cache.
     snapshot = defaultAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertTrue(snapshot.getMetadata().isFromCache());
     // Second snapshot will be raised from server result
     snapshot = defaultAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
 
     // As listening to metadata changes, the cache listener also gets triggered and synced
     // with default listener.
     snapshot = cacheAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
 
-    waitFor(collection.add(map("k", "b", "sort", 1)));
+    waitFor(collection.add(map("k", "c", "sort", 2)));
 
     // snapshot gets triggered by local mutation
     snapshot = defaultAccumulator.await();
-    assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
-        querySnapshotToValues(snapshot));
+    expected = asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 2L));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
     assertTrue(snapshot.getMetadata().hasPendingWrites());
     snapshot = cacheAccumulator.await();
-    assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
-        querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
     assertTrue(snapshot.getMetadata().hasPendingWrites());
 
@@ -414,8 +416,9 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void canUnlistenToDefaultSourceWhileStillListeningToCache() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereNotEqualTo("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     // Listen to the query with both source options
     EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
@@ -434,11 +437,11 @@ public class SnapshotListenerSourceTest {
     defaultAccumulator.assertNoAdditionalEvents();
 
     // Add a document and verify listener to cache works as expected
-    waitFor(collection.add(map("k", "b", "sort", -1)));
+    waitFor(collection.add(map("k", "c", "sort", -1)));
 
     QuerySnapshot snapshot = cacheAccumulator.await();
     assertEquals(
-        asList(map("k", "b", "sort", -1L), map("k", "a", "sort", 0L)),
+        asList(map("k", "c", "sort", -1L), map("k", "b", "sort", 1L)),
         querySnapshotToValues(snapshot));
 
     cacheAccumulator.assertNoAdditionalEvents();
@@ -446,9 +449,10 @@ public class SnapshotListenerSourceTest {
   }
 
   @Test
-  public void canUnlistenToCachetSourceWhileStillListeningToDefault() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+  public void canUnlistenToCachetSourceWhileStillListeningToServer() {
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereNotEqualTo("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     // Listen to the query with both source options
     EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
@@ -467,11 +471,11 @@ public class SnapshotListenerSourceTest {
     cacheAccumulator.assertNoAdditionalEvents();
 
     // Add a document and verify listener to server works as expected.
-    waitFor(collection.add(map("k", "b", "sort", -1)));
+    waitFor(collection.add(map("k", "c", "sort", -1)));
 
     QuerySnapshot snapshot = defaultAccumulator.await();
     assertEquals(
-        asList(map("k", "b", "sort", -1L), map("k", "a", "sort", 0L)),
+        asList(map("k", "c", "sort", -1L), map("k", "b", "sort", 1L)),
         querySnapshotToValues(snapshot));
 
     defaultAccumulator.assertNoAdditionalEvents();
@@ -480,8 +484,9 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void canListenUnlistenRelistentoSameQueryWithDifferentSourceOptions() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereGreaterThan("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     // Listen to the query with default options, which will also populates the cache
     EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
@@ -489,7 +494,8 @@ public class SnapshotListenerSourceTest {
         query.addSnapshotListener(defaultAccumulator.listener());
 
     QuerySnapshot snapshot = defaultAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    List<Map<String, Object>> expected = asList(map("k", "b", "sort", 1L));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     // Listen to the same query from cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
@@ -498,37 +504,31 @@ public class SnapshotListenerSourceTest {
         query.addSnapshotListener(options, cacheAccumulator.listener());
 
     snapshot = cacheAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     // Un-listen to the default listener, add a doc and re-listen.
     defaultRegistration.remove();
-    waitFor(collection.add(map("k", "b", "sort", 1)));
+    waitFor(collection.add(map("k", "c", "sort", 2)));
 
     snapshot = cacheAccumulator.await();
-    assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
-        querySnapshotToValues(snapshot));
+    expected = asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 2L));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     defaultRegistration = query.addSnapshotListener(defaultAccumulator.listener());
     snapshot = defaultAccumulator.await();
-    assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
-        querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     // Un-listen to cache, update a doc, then re-listen to cache.
     cacheRegistration.remove();
-    waitFor(collection.document("a").update(map("k", "a", "sort", 2)));
+    waitFor(collection.document("b").update(map("k", "b", "sort", 3)));
 
     snapshot = defaultAccumulator.await();
-    assertEquals(
-        asList(map("k", "b", "sort", 1L), map("k", "a", "sort", 2L)),
-        querySnapshotToValues(snapshot));
+    expected = asList(map("k", "c", "sort", 2L), map("k", "b", "sort", 3L));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     cacheRegistration = query.addSnapshotListener(options, cacheAccumulator.listener());
     snapshot = cacheAccumulator.await();
-    assertEquals(
-        asList(map("k", "b", "sort", 1L), map("k", "a", "sort", 2L)),
-        querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     defaultAccumulator.assertNoAdditionalEvents();
     cacheAccumulator.assertNoAdditionalEvents();
@@ -539,7 +539,8 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void canListenToCompositeIndexQueriesFromCache() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
     Query query = collection.whereLessThanOrEqualTo("k", "a").whereGreaterThanOrEqualTo("sort", 0);
 
     waitFor(collection.get()); // Populate the cache.
@@ -603,15 +604,17 @@ public class SnapshotListenerSourceTest {
 
   @Test
   public void shareServerSideUpdatesWhenListeningToBothCacheAndDefault() {
-    CollectionReference collection = testCollectionWithDocs(map("a", map("k", "a", "sort", 0)));
-    Query query = collection.orderBy("sort", Direction.ASCENDING);
+    CollectionReference collection =
+        testCollectionWithDocs(map("a", map("k", "a", "sort", 0), "b", map("k", "b", "sort", 1)));
+    Query query = collection.whereGreaterThan("sort", 0).orderBy("sort", Direction.ASCENDING);
 
     // Listen to the query with default options, which will also populates the cache
     EventAccumulator<QuerySnapshot> defaultAccumulator = new EventAccumulator<>();
     ListenerRegistration defaultRegistration =
         query.addSnapshotListener(defaultAccumulator.listener());
     QuerySnapshot snapshot = defaultAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    List<Map<String, Object>> expected = asList(map("k", "b", "sort", 1L));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     // Listen to the same query from cache
     EventAccumulator<QuerySnapshot> cacheAccumulator = new EventAccumulator<>();
@@ -619,7 +622,7 @@ public class SnapshotListenerSourceTest {
     ListenerRegistration cacheRegistration =
         query.addSnapshotListener(options, cacheAccumulator.listener());
     snapshot = cacheAccumulator.await();
-    assertEquals(asList(map("k", "a", "sort", 0L)), querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
 
     // Use a transaction to mock server side updates
     DocumentReference docRef = collection.document();
@@ -627,22 +630,19 @@ public class SnapshotListenerSourceTest {
         .getFirestore()
         .runTransaction(
             transaction -> {
-              transaction.set(docRef, map("k", "b", "sort", 1));
+              transaction.set(docRef, map("k", "c", "sort", 2));
               return null;
             });
 
     // Default listener receives the server update
     snapshot = defaultAccumulator.await();
-    assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
-        querySnapshotToValues(snapshot));
+    expected = asList(map("k", "b", "sort", 1L), map("k", "c", "sort", 2L));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
 
     // Cache listener raises snapshot as well
     snapshot = cacheAccumulator.await();
-    assertEquals(
-        asList(map("k", "a", "sort", 0L), map("k", "b", "sort", 1L)),
-        querySnapshotToValues(snapshot));
+    assertEquals(expected, querySnapshotToValues(snapshot));
     assertFalse(snapshot.getMetadata().isFromCache());
 
     defaultAccumulator.assertNoAdditionalEvents();

@@ -272,7 +272,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * to the remote store, while already listening to the cache.
    */
   public void listenToRemoteStore(Query query) {
-    assertCallback("triggerRemoteStoreListen");
+    assertCallback("listenToRemoteStore");
     hardAssert(
         queryViewsByQuery.containsKey(query), "This is the first listen to query: %s", query);
 
