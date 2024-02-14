@@ -727,11 +727,11 @@ public class CustomClassMapper {
 
       // When subclass setter is annotated with `@Exclude`, the corresponding superclass setter
       // also need to be filtered out.
-      for (String propertyName : propertyNamesOfExcludedSetters) {
-        Method superclassSetter = setters.get(propertyName);
-        superclassSetter.setAccessible(false);
-        setters.remove(propertyName);
-      }
+//      for (String propertyName : propertyNamesOfExcludedSetters) {
+//        Method superclassSetter = setters.get(propertyName);
+//        superclassSetter.setAccessible(false);
+//        setters.remove(propertyName);
+//      }
 
       if (properties.isEmpty()) {
         throw new RuntimeException("No properties to serialize found on class " + clazz.getName());
@@ -1059,7 +1059,10 @@ public class CustomClassMapper {
       if (method.getParameterTypes().length != 1) {
         return false;
       }
-
+      // Excluded methods
+      if (method.isAnnotationPresent(Exclude.class)) {
+        return false;
+      }
       return true;
     }
 
