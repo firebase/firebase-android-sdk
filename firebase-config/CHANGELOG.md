@@ -1,6 +1,6 @@
 # Unreleased
-* [fixed] Fixed an issue that could cause unexpected interactions between other Firebase product 
-  integrations and [remote_config].
+* [fixed] Fixed an issue that could cause Remote Config personalizations to be logged early in
+  specific cases.
 
 
 # 21.6.1
