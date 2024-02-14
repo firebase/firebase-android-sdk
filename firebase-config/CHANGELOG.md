@@ -1,4 +1,6 @@
 # Unreleased
+* [fixed] Fixed an issue that could cause [remote_config] personalizations to be logged early in
+  specific cases.
 
 
 # 21.6.1
