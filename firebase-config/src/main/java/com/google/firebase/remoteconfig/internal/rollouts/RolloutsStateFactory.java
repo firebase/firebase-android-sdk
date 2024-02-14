@@ -66,7 +66,7 @@ public class RolloutsStateFactory {
 
         // Fallback to empty string if (for some reason) there's no affected parameter key.
         String parameterKey = affectedParameterKeys.optString(0, "");
-        String parameterValue = getParameterHandler.getString(parameterKey);
+        String parameterValue = getParameterHandler.getStringWithoutSideEffects(parameterKey);
 
         rolloutAssignments.add(
             RolloutAssignment.builder()
