@@ -85,7 +85,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     val unreleased = changelog.releases.first()
     val version = project.version.toString()
 
-    if (!project.firebaseLibrary.publishJavadoc)
+    if (!project.firebaseLibrary.publishReleaseNotes)
       throw StopActionException("No release notes required for ${project.name}")
 
     if (!unreleased.hasContent())

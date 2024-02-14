@@ -1,0 +1,14 @@
+{
+    "name": "m144",
+    "libraries": [
+        ":firebase-database",
+        ":firebase-database:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck:ktx"
+    ]
+}
