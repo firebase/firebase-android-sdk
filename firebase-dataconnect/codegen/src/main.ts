@@ -19,6 +19,7 @@ import * as fs from 'node:fs';
 
 import * as graphql from 'graphql';
 import * as which from 'which';
+import { OperationTypeNode } from 'graphql/language/ast';
 
 const GRAPHQL_SCHEMA_FILE =
   '/home/dconeybe/dev/firebase/android/firebase-dataconnect/src/androidTest' +
@@ -47,11 +48,13 @@ async function generateOperationsKtSources(
   }
 }
 
-function typeInfoFromTypeNode(node: graphql.TypeNode): {
+interface TypeInfo {
   name: string;
   isList: boolean;
   isNullable: boolean;
-} {
+}
+
+function typeInfoFromTypeNode(node: graphql.TypeNode): TypeInfo {
   if (node.kind === graphql.Kind.NAMED_TYPE) {
     return { name: node.name.value, isList: false, isNullable: true };
   } else if (node.kind === graphql.Kind.LIST_TYPE) {
@@ -101,6 +104,59 @@ function fieldInfoFromVariableDefinition(
   };
 }
 
+function flattenedVariablesFrom(
+  operation: graphql.OperationDefinitionNode,
+  types: Map<string, graphql.ObjectTypeDefinitionNode>
+): Map<string, TypeInfo> | null {
+  if (!operation.variableDefinitions) {
+    return null;
+  }
+
+  const flattenedVariables = new Map<string, TypeInfo>();
+  const requiredTypeNames: string[] = [];
+  for (const variableDefinition of operation.variableDefinitions) {
+    const variableName = variableDefinition.variable.name.value;
+    if (flattenedVariables.has(variableName)) {
+      return null;
+    }
+
+    const typeInfo = typeInfoFromTypeNode(variableDefinition.type);
+    if (typeInfo.name === 'String' || typeInfo.name === 'Int') {
+      flattenedVariables.set(variableName, typeInfo);
+    } else {
+      requiredTypeNames.push(typeInfo.name);
+    }
+  }
+
+  for (const typeName of requiredTypeNames) {
+    const realTypeName = typeName.endsWith('_Data')
+      ? typeName.substring(0, typeName.length - 5)
+      : typeName;
+    const typeNode = types.get(realTypeName);
+    if (!typeNode) {
+      throw new Error(`missing type definition: ${realTypeName}`);
+    }
+    if (!typeNode.fields) {
+      continue;
+    }
+
+    for (const field of typeNode.fields) {
+      const fieldName = field.name.value;
+      if (flattenedVariables.has(fieldName)) {
+        return null;
+      }
+      const typeInfo = typeInfoFromTypeNode(field.type);
+      if (typeInfo.name === 'String' || typeInfo.name === 'Int') {
+        flattenedVariables.set(fieldName, typeInfo);
+      } else {
+        requiredTypeNames.push(typeInfo.name);
+      }
+    }
+  }
+
+  return flattenedVariables;
+}
+
 async function generateOperationKtSource(
   operation: graphql.OperationDefinitionNode,
   types: Map<string, graphql.ObjectTypeDefinitionNode>
@@ -123,16 +179,47 @@ async function generateOperationKtSource(
       fieldInfoFromVariableDefinition(variableDefinition, types)
   );
 
-  const config = {
+  const flattenedConfigVariables = flattenedVariablesFrom(operation, types);
+
+  let operationType: 'query' | 'mutation';
+  if (operation.operation === graphql.OperationTypeNode.QUERY) {
+    operationType = 'query';
+  } else if (operation.operation === graphql.OperationTypeNode.MUTATION) {
+    operationType = 'mutation';
+  } else {
+    throw new UnsupportedGraphQLOperationTypeError(
+      `unsupported graphql operation type: ${operation.operation}`
+    );
+  }
+
+  const config: Record<string, unknown> = {
     kotlinPackage: `${KOTLIN_BASE_PACKAGE}.${CONNECTOR_NAME}`,
     operationName,
-    variables: configVariables
+    operationType
   };
+
+  if (configVariables.length > 0) {
+    config.variables = configVariables;
+  }
+
+  if (flattenedConfigVariables && flattenedConfigVariables.size > 0) {
+    config.flattenedVariables = Array.from(
+      flattenedConfigVariables.entries()
+    ).map(([variableName, typeInfo]) => {
+      return {
+        name: variableName,
+        type: typeInfo.name,
+        isList: typeInfo.isList,
+        isNullable: typeInfo.isNullable
+      };
+    });
+  }
+
   const configText = JSON.stringify(config, null, 2);
   console.log(configText);
 
   const tempy = await import('tempy');
-  const tomlFile = tempy.temporaryWriteSync(configText);
+  const jsonConfigFile = tempy.temporaryWriteSync(configText);
 
   try {
     const args = [
@@ -142,7 +229,7 @@ async function generateOperationKtSource(
       goAppDir,
       '.',
       '--',
-      tomlFile,
+      jsonConfigFile,
       templateFile,
       outputFile
     ];
@@ -159,7 +246,7 @@ async function generateOperationKtSource(
       );
     }
   } finally {
-    fs.unlinkSync(tomlFile);
+    fs.unlinkSync(jsonConfigFile);
   }
 }
 
@@ -250,6 +337,12 @@ function hasDirective(
 }
 
 class UnsupportedGraphQLDefinitionKindError extends Error {
+  constructor(message: string) {
+    super(message);
+  }
+}
+
+class UnsupportedGraphQLOperationTypeError extends Error {
   constructor(message: string) {
     super(message);
   }

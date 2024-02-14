@@ -35,6 +35,42 @@ val {{ .name }}: {{ template "KotlinTypeFor" . }},
 {{- if .isNullable -}}?{{- end -}}
 {{- end -}}
 
+{{- /* ================================================================== */ -}}
+
+{{- define "QueryHelpers" -}}
+{{- end -}}
+
+{{- /* ================================================================== */ -}}
+
+{{- define "MutationHelpers" -}}
+    {{- if and .flattenedVariables (gt (len .flattenedVariables) 0) -}}
+    suspend fun MutationRef<
+      {{- template "VariablesKotlinType" . -}}, {{ template "DataKotlinType" . -}}
+    >.execute(
+        {{- range .flattenedVariables -}}
+        {{ .name }}: {{ template "KotlinTypeFor" . }},
+        {{- end -}}
+    ) =
+        execute(zzyzx())
+    {{- end -}}
+{{- end -}}
+
+{{- /* ================================================================== */ -}}
+
+{{- define "VariablesKotlinType" -}}
+    {{- if and .variables (gt (len .variables) 0) -}}
+    {{.operationName}}.Variables
+    {{- else -}}
+    Unit
+    {{- end -}}
+{{- end -}}
+
+{{- /* ================================================================== */ -}}
+
+{{- define "DataKotlinType" -}}
+    Unit
+{{- end -}}
+
 {{- /* ==== MAIN CONTENT ================================================ */ -}}
 
 package {{.kotlinPackage}}
@@ -49,3 +85,11 @@ object {{.operationName}} {
 {{ end }}
 
 }
+
+{{ if eq .operationType "query" }}
+{{ template "QueryHelpers" . }}
+{{ else if eq .operationType "mutation" }}
+{{ template "MutationHelpers" . }}
+{{ else }}
+{{ fail2 "unrecognized value for operationType" .operationType }}
+{{ end }}
