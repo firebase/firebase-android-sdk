@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 17.1.2
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
+
 # 17.1.1
 * [fixed] Fixed a bug causing internal tests to depend directly on `firebase-common`.
 * [fixed] Fixed client-side throttling in Play Integrity flows.

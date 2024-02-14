@@ -122,6 +122,7 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "firebase-common-license",
           "firebase-components",
           "firebase-config-license",
+          "firebase-config-interop",
           "firebase-crash",
           "firebase-crash-license",
           "firebase-crashlytics-buildtools",

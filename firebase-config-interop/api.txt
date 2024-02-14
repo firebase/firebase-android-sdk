@@ -1,0 +1,46 @@
+// Signature format: 2.0
+package com.google.firebase.remoteconfig.interop {
+
+  public interface FirebaseRemoteConfigInterop {
+    method public void registerRolloutsStateSubscriber(@NonNull String, @NonNull com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber);
+  }
+
+}
+
+package com.google.firebase.remoteconfig.interop.rollouts {
+
+  @com.google.auto.value.AutoValue @com.google.firebase.encoders.annotations.Encodable public abstract class RolloutAssignment {
+    ctor public RolloutAssignment();
+    method @NonNull public static com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment.Builder builder();
+    method @NonNull public static com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment create(@NonNull org.json.JSONObject) throws org.json.JSONException;
+    method @NonNull public static com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment create(@NonNull String) throws org.json.JSONException;
+    method @NonNull public abstract String getParameterKey();
+    method @NonNull public abstract String getParameterValue();
+    method @NonNull public abstract String getRolloutId();
+    method public abstract long getTemplateVersion();
+    method @NonNull public abstract String getVariantId();
+    field public static final com.google.firebase.encoders.DataEncoder ROLLOUT_ASSIGNMENT_JSON_ENCODER;
+  }
+
+  @com.google.auto.value.AutoValue.Builder public abstract static class RolloutAssignment.Builder {
+    ctor public RolloutAssignment.Builder();
+    method @NonNull public abstract com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment build();
+    method @NonNull public abstract com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment.Builder setParameterKey(@NonNull String);
+    method @NonNull public abstract com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment.Builder setParameterValue(@NonNull String);
+    method @NonNull public abstract com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment.Builder setRolloutId(@NonNull String);
+    method @NonNull public abstract com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment.Builder setTemplateVersion(long);
+    method @NonNull public abstract com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment.Builder setVariantId(@NonNull String);
+  }
+
+  @com.google.auto.value.AutoValue public abstract class RolloutsState {
+    ctor public RolloutsState();
+    method @NonNull public static com.google.firebase.remoteconfig.interop.rollouts.RolloutsState create(@NonNull java.util.Set<com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment>);
+    method @NonNull public abstract java.util.Set<com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment> getRolloutAssignments();
+  }
+
+  public interface RolloutsStateSubscriber {
+    method public void onRolloutsStateChanged(@NonNull com.google.firebase.remoteconfig.interop.rollouts.RolloutsState);
+  }
+
+}
+

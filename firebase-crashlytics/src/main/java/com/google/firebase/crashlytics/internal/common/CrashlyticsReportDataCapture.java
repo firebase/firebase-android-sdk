@@ -46,6 +46,7 @@ import java.util.Map;
  * This class is responsible for capturing information from the system and exception objects,
  * parsing them, and returning canonical CrashlyticsReport and Event objects.
  */
+@SuppressWarnings("KotlinInternal")
 public class CrashlyticsReportDataCapture {
 
   private static final Map<String, Integer> ARCHITECTURES_BY_NAME = new HashMap<>();

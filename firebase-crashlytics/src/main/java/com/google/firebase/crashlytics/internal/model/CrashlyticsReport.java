@@ -664,6 +664,9 @@ public abstract class CrashlyticsReport {
       @Nullable
       public abstract Log getLog();
 
+      @Nullable
+      public abstract RolloutsState getRollouts();
+
       @NonNull
       public abstract Builder toBuilder();
 
@@ -1101,6 +1104,98 @@ public abstract class CrashlyticsReport {
         }
       }
 
+      @AutoValue
+      public abstract static class RolloutsState {
+        @NonNull
+        public static RolloutsState.Builder builder() {
+          return new AutoValue_CrashlyticsReport_Session_Event_RolloutsState.Builder();
+        }
+
+        @NonNull
+        @Field(name = "assignments")
+        public abstract List<RolloutAssignment> getRolloutAssignments();
+
+        @AutoValue.Builder
+        public abstract static class Builder {
+          @NonNull
+          public abstract RolloutsState.Builder setRolloutAssignments(
+              @NonNull List<RolloutAssignment> rolloutAssignments);
+
+          @NonNull
+          public abstract RolloutsState build();
+        }
+      }
+
+      @AutoValue
+      public abstract static class RolloutAssignment {
+
+        @NonNull
+        public static RolloutAssignment.Builder builder() {
+          return new AutoValue_CrashlyticsReport_Session_Event_RolloutAssignment.Builder();
+        }
+
+        @NonNull
+        public abstract RolloutVariant getRolloutVariant();
+
+        @NonNull
+        public abstract String getParameterKey();
+
+        @NonNull
+        public abstract String getParameterValue();
+
+        @NonNull
+        public abstract long getTemplateVersion();
+
+        /** Builder for {@link RolloutAssignment}. */
+        @AutoValue.Builder
+        public abstract static class Builder {
+          @NonNull
+          public abstract RolloutAssignment.Builder setRolloutVariant(
+              @NonNull RolloutVariant rolloutVariant);
+
+          @NonNull
+          public abstract RolloutAssignment.Builder setParameterKey(@NonNull String parameterKey);
+
+          @NonNull
+          public abstract RolloutAssignment.Builder setParameterValue(
+              @NonNull String parameterValue);
+
+          @NonNull
+          public abstract RolloutAssignment.Builder setTemplateVersion(
+              @NonNull long templateVersion);
+
+          @NonNull
+          public abstract RolloutAssignment build();
+        }
+
+        @AutoValue
+        public abstract static class RolloutVariant {
+          public static RolloutVariant.Builder builder() {
+            return new AutoValue_CrashlyticsReport_Session_Event_RolloutAssignment_RolloutVariant
+                .Builder();
+          }
+
+          @NonNull
+          public abstract String getRolloutId();
+
+          @NonNull
+          public abstract String getVariantId();
+
+          /** Builder for {@link RolloutVariant}. */
+          @AutoValue.Builder
+          public abstract static class Builder {
+            @NonNull
+            public abstract RolloutVariant.Builder setRolloutId(@NonNull String rolloutId);
+
+            @NonNull
+            public abstract RolloutVariant.Builder setVariantId(@NonNull String variantId);
+
+            @NonNull
+            public abstract RolloutVariant build();
+          }
+        }
+      }
+
       /** Builder for {@link Event}. */
       @AutoValue.Builder
       public abstract static class Builder {
@@ -1119,6 +1214,9 @@ public abstract class CrashlyticsReport {
 
         @NonNull
         public abstract Builder setLog(@NonNull Log value);
+
+        @NonNull
+        public abstract Builder setRollouts(@NonNull RolloutsState rolloutsState);
 
         @NonNull
         public abstract Event build();

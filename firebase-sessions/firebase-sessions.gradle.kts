@@ -51,7 +51,7 @@ dependencies {
   api("com.google.firebase:firebase-common:20.4.2")
   api("com.google.firebase:firebase-common-ktx:20.4.2")
 
-  implementation("com.google.firebase:firebase-components:17.1.3")
+  implementation("com.google.firebase:firebase-components:17.1.5")
   implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
