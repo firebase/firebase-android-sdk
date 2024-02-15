@@ -220,7 +220,7 @@ public class FirebaseInAppMessagingDisplayTest {
             windowManager,
             ApplicationProvider.getApplicationContext(),
             bindingClient,
-            animator, null);
+            animator);
   }
 
   @Test

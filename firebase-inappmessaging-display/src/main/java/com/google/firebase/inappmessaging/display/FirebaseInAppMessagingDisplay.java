@@ -98,8 +98,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
 
-  private final GlideErrorListener glideErrorListener;
-
   @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
   @Inject
@@ -112,8 +110,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
       FiamWindowManager windowManager,
       Application application,
       BindingWrapperFactory bindingWrapperFactory,
-      FiamAnimator animator,
-      GlideErrorListener glideErrorListener) {
+      FiamAnimator animator) {
     super();
     this.headlessInAppMessaging = headlessInAppMessaging;
     this.layoutConfigs = layoutConfigs;
@@ -124,7 +121,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     this.application = application;
     this.bindingWrapperFactory = bindingWrapperFactory;
     this.animator = animator;
-    this.glideErrorListener = glideErrorListener;
   }
 
   /**
@@ -157,7 +153,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                                             FirebaseInAppMessagingDisplayCallbacks callbacks) {
     this.inAppMessage = inAppMessage;
     this.callbacks = callbacks;
-    glideErrorListener.setInAppMessage(inAppMessage, callbacks);
   }
 
   private void clearInAppMessageAndCallbacks() {
@@ -504,6 +499,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     if (isValidImageData(imageData)) {
       imageLoader
           .load(imageData.getImageUrl())
+          .addErrorListener(new GlideErrorListener(inAppMessage, callbacks))
           .tag(activity.getClass())
           .placeholder(R.drawable.image_placeholder)
           .into(fiam.getImageView(), callback);
