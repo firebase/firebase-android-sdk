@@ -50,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -650,7 +649,6 @@ public class CustomClassMapper {
       // class hierarchy to find the appropriate setter or field.
       Class<? super T> currentClass = clazz;
       Map<String, Method> bridgeMethods = new HashMap<>();
-      Set<String> propertyNamesOfExcludedSetters = new HashSet<>();
       do {
         // Add any setters
         for (Method method : currentClass.getDeclaredMethods()) {
@@ -672,11 +670,8 @@ public class CustomClassMapper {
                 Method existingSetter = setters.get(propertyName);
                 Method correspondingBridgeMethod = bridgeMethods.get(propertyName);
                 if (existingSetter == null) {
-                  setters.put(propertyName, method);
                   method.setAccessible(true);
-                  if (method.isAnnotationPresent(Exclude.class)) {
-                    propertyNamesOfExcludedSetters.add(propertyName);
-                  }
+                  setters.put(propertyName, method);
                   applySetterAnnotations(method);
                 } else if (!isSetterOverride(method, existingSetter)
                     && !(correspondingBridgeMethod != null
@@ -724,14 +719,6 @@ public class CustomClassMapper {
         // of fields/getters we don't want to serialize
         currentClass = currentClass.getSuperclass();
       } while (currentClass != null && !currentClass.equals(Object.class));
-
-      // When subclass setter is annotated with `@Exclude`, the corresponding superclass setter
-      // also need to be filtered out.
-      for (String propertyName : propertyNamesOfExcludedSetters) {
-        Method superclassSetter = setters.get(propertyName);
-        superclassSetter.setAccessible(false);
-        setters.remove(propertyName);
-      }
 
       if (properties.isEmpty()) {
         throw new RuntimeException("No properties to serialize found on class " + clazz.getName());
@@ -981,10 +968,6 @@ public class CustomClassMapper {
                 + " only be applied to fields and getters, not setters.");
       }
 
-      if (method.isAnnotationPresent(Exclude.class)) {
-        method.setAccessible(false);
-      }
-
       if (method.isAnnotationPresent(DocumentId.class)) {
         Class<?> paramType = method.getParameterTypes()[0];
         ensureValidDocumentIdType("Method", "accepts", paramType);
@@ -1059,7 +1042,10 @@ public class CustomClassMapper {
       if (method.getParameterTypes().length != 1) {
         return false;
       }
-
+      // Excluded methods
+      if (method.isAnnotationPresent(Exclude.class)) {
+        return false;
+      }
       return true;
     }
 
