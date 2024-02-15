@@ -37,6 +37,7 @@ func main() {
 		renderConfig := RenderOperationTemplateConfig{
 			OperationName: operationName,
 			KotlinPackage: "com.google.firebase.dataconnect.connectors." + args.ConnectorName,
+			Operation:     operation,
 		}
 		err = RenderOperationTemplate(operationTemplate, outputFile, renderConfig)
 		if err != nil {

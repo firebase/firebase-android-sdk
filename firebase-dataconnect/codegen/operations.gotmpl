@@ -1,3 +1,33 @@
+{{- define "VariablesClass" -}}
+@Serializable data class Variables({{ template "VariablesClassConstructorParameters" .Variables }}) {
+{{ template "VariablesClassNestedClassDefinitions" .Variables }}
+}
+{{- end -}}
+
+{{- define "VariablesClassConstructorParameters" -}}
+    {{- range . -}}
+        val {{ .Name }}: {{ .Type.Name }}
+        {{- if .Type.IsNullable }}?{{ end -}}
+    {{- end -}}
+{{- end -}}
+
+{{- define "VariablesClassNestedClassDefinitions" -}}
+{{- range . -}}
+{{- if .Type.IsScalar }}{{ continue }}{{ end -}}
+@Serializable data class {{ .Type.Name }}() {
+}
+{{- end -}}
+{{- end -}}
+
 package {{ .KotlinPackage }}
 
-object {{ .OperationName }}
+import com.google.firebase.dataconnect.*
+import kotlinx.serialization.Serializable
+
+object {{ .OperationName }} {
+
+{{ if and .Variables (gt (len .Variables) 0) -}}
+{{ template "VariablesClass" . }}
+{{- end }}
+
+}
