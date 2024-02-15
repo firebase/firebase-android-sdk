@@ -1,0 +1,257 @@
+"Conditions on a string value"
+input String_Filter {
+  isNull: Boolean
+  eq: String
+  ne: String
+  in: [String!]
+  nin: [String!]
+  gt: String
+  ge: String
+  lt: String
+  le: String
+  contains: String
+  startsWith: String
+  endsWith: String
+  pattern: String_Pattern
+}
+
+"""
+The pattern match condition on a string. Specify either like or regex.
+https://www.postgresql.org/docs/current/functions-matching.html
+"""
+input String_Pattern {
+  "the LIKE expression to use"
+  like: String
+  "the POSIX regular expression"
+  regex: String
+  "when true, it's case-insensitive. In Postgres: ILIKE, ~*"
+  ignoreCase: Boolean
+  "when true, invert the condition. In Postgres: NOT LIKE, !~"
+  invert: Boolean
+}
+
+"Conditions on a string list"
+input String_ListFilter {
+  includes: String
+  excludes: String
+  includesAll: [String!]
+  excludesAll: [String!]
+}
+
+"Conditions on an ID value"
+input ID_Filter {
+  isNull: Boolean
+  eq: ID
+  ne: ID
+  in: [ID!]
+  nin: [ID!]
+}
+
+"Conditions on an ID list"
+input ID_ListFilter {
+  includes: ID
+  excludes: ID
+  includesAll: [ID!]
+  excludesAll: [ID!]
+}
+
+"Conditions on an Int value"
+input Int_Filter {
+  isNull: Boolean
+  eq: Int
+  ne: Int
+  in: [Int!]
+  nin: [Int!]
+  gt: Int
+  ge: Int
+  lt: Int
+  le: Int
+}
+
+"Conditions on an Int list"
+input Int_ListFilter {
+  includes: Int
+  excludes: Int
+  includesAll: [Int!]
+  excludesAll: [Int!]
+}
+
+"Conditions on an Int64 value"
+input Int64_Filter {
+  isNull: Boolean
+  eq: Int64
+  ne: Int64
+  in: [Int64!]
+  nin: [Int64!]
+  gt: Int64
+  ge: Int64
+  lt: Int64
+  le: Int64
+}
+
+"Conditions on an Int64 list"
+input Int64_ListFilter {
+  includes: Int64
+  excludes: Int64
+  includesAll: [Int64!]
+  excludesAll: [Int64!]
+}
+
+"Conditions on a Float value"
+input Float_Filter {
+  isNull: Boolean
+  eq: Float
+  ne: Float
+  in: [Float!]
+  nin: [Float!]
+  gt: Float
+  ge: Float
+  lt: Float
+  le: Float
+}
+
+"Conditions on a Float list"
+input Float_ListFilter {
+  includes: Float
+  excludes: Float
+  includesAll: [Float!]
+  excludesAll: [Float!]
+}
+
+"Conditions on a Boolean value"
+input Boolean_Filter {
+  isNull: Boolean
+  eq: Boolean
+  ne: Boolean
+  in: [Boolean!]
+  nin: [Boolean!]
+}
+
+"Conditions on a Boolean list"
+input Boolean_ListFilter {
+  includes: Boolean
+  excludes: Boolean
+  includesAll: [Boolean!]
+  excludesAll: [Boolean!]
+}
+
+"Conditions on a Date value"
+input Date_Filter {
+  isNull: Boolean
+  eq: Date
+  ne: Date
+  in: [Date!]
+  nin: [Date!]
+  gt: Date
+  ge: Date
+  lt: Date
+  le: Date
+  """
+  Offset the date filters by a fixed duration.
+  last 3 months is {ge: {today: true}, offset: {months: -3}}
+  """
+  offset:  Date_Offset
+}
+
+"Duration to offset a date value"
+input Date_Offset {
+  days: Int
+  months: Int
+  years: Int
+}
+
+"Conditions on a Date list"
+input Date_ListFilter {
+  includes: Date
+  excludes: Date
+  includesAll: [Date!]
+  excludesAll: [Date!]
+}
+
+"Conditions on an Timestamp value"
+input Timestamp_Filter {
+  isNull: Boolean
+  eq: Timestamp
+  ne: Timestamp
+  in: [Timestamp!]
+  nin: [Timestamp!]
+  gt: Timestamp
+  ge: Timestamp
+  lt: Timestamp
+  le: Timestamp
+  """
+  Offset timestamp input by a fixed duration.
+  in 12h is {le: {now: true}, offset: {hours: 12}}
+  """
+  offset: Timestamp_Offset
+}
+
+"Duration to offset a timestamp value"
+input Timestamp_Offset {
+  milliseconds: Int
+  seconds: Int
+  minutes: Int
+  hours: Int
+  days: Int
+  months: Int
+  years: Int
+}
+
+"Conditions on a Timestamp list"
+input Timestamp_ListFilter {
+  includes: Timestamp
+  excludes: Timestamp
+  includesAll: [Timestamp!]
+  excludesAll: [Timestamp!]
+}
+
+"Conditions on an Any value"
+input Any_Filter {
+  isNull: Boolean
+  eq: Any
+  ne: Any
+  in: [Any!]
+  nin: [Any!]
+}
+
+"Conditions on a Any list"
+input Any_ListFilter {
+  includes: Any
+  excludes: Any
+  includesAll: [Any!]
+  excludesAll: [Any!]
+}
+
+"Conditions on an AuthUID value"
+input AuthUID_Filter {
+  eq: AuthUID
+  ne: AuthUID
+  in: [AuthUID!]
+  nin: [AuthUID!]
+  isNull: Boolean
+}
+
+input AuthUID_ListFilter {
+  "When true, will match if the list includes the id of the current user."
+  includes: AuthUID
+  excludes: AuthUID
+  includesAll: [AuthUID!]
+  excludesAll: [AuthUID!]
+}
+
+"Conditions on an Vector value"
+input Vector_Filter {
+  eq: Vector
+  ne: Vector
+  in: [Vector!]
+  nin: [Vector!]
+  isNull: Boolean
+}
+
+input Vector_ListFilter {
+  "When true, will match if the list includes the supplied vector."
+  includes: Vector
+  excludes: Vector
+  includesAll: [Vector!]
+  excludesAll: [Vector!]
+}

@@ -1,0 +1,35 @@
+"""
+Pick expected fields on data input variable.
+"""
+directive @pick(
+  "Expected fields on data input variable."
+  fields: [String!]!
+) on VARIABLE_DEFINITION
+
+"AccessPolicy specifies coarse "
+enum AccessType {
+  "This operation can only be executed using developer IAM credentials."
+  ADMIN
+  "This operation can only be executed by someone with a valid Firebase Auth ID token."
+  USER
+  "This operation can be executed by anyone with or without authentication."
+  PUBLIC
+}
+
+"""
+Defines the auth policy for a query or mutation. This directive must be added to
+any operation you wish to be accessible from a client application. If left
+unspecified, defaults to `@auth(is: ADMIN)`.
+
+Only one of `is` and `expr` may be specified.
+"""
+directive @auth(
+  "Restrict access to this operation to the specified coarse access policy."
+  is: AccessType
+  # TODO(b/279199162): Implement ss CEL expression auth.
+  """
+  **UNIMPLEMENTED.** A CEL expression that allows access to this operation
+  if the expression evaluates to `true`.
+  """
+  expr: String
+) on QUERY | MUTATION

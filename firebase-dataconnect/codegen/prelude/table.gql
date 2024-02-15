@@ -1,0 +1,265 @@
+"""
+Defines a relational database table.
+
+Given `type TableName @table`,
+
+ - `TableName` is the GQL type name.
+ - `tableName` is the singular name. Override with `@table(singular)`.
+ - `tableNames` is the plural name. Override with `@table(plural)`.
+ - `table_name` is the SQL table id. Override with `@table(name)`.
+
+Only a table type can be configured further with:
+
+ - Customized data types. See `@col`.
+ - Index. See `@index`
+ - Unique constraint. See `@unqiue`
+ - Relation. See `@ref`
+ - Embedded Json. See `@embed`
+
+A scalar field map to a SQL database column.
+An object field (like `type TableName @table { field: AnotherType }`) are either
+
+ - a relation reference field if `AnotherType` is annotated with `@table`.
+ - an embedded json field if `field` is annotated with `@embed`.
+
+"""
+directive @table(
+  "Override the SQL database table name. Defaults to <table_name>."
+  name: String
+  "Override the singular name. Default is the camel case of the type name."
+  singular: String
+  "Override the plural name. Default is generated based on English patterns."
+  plural: String
+  "The primary key of the table. Defaults to a single field `id: ID`. Generate if missing."
+  key: [String!]
+) on OBJECT
+
+"""
+Defines a relational database view. Specify one of `name` or `sql`:
+
+Given `type ViewName @view`,
+ - `ViewName` is the GQL type name.
+ - `viewName` is the singular name. Override with `@view(singular)`.
+ - `viewNames` is the plural name. Override with `@view(plural)`.
+ - `view_name` is the SQL view id. Override with `@view(name)`.
+    When `@view(sql)` is defined, it uses the given raw SQL as the view instead.
+
+A view type can be used just as a table type with queries.
+A view type may have a nullable `@ref` field to another table, but cannot be
+referenced in a `@ref`.
+
+WARNING: Firebase Data Connect does not validate the SQL of the view or
+evaluate whether it matches the defined fields.
+
+If the SQL view is invalid or undefined, related requests may fail.
+If the SQL view return incompatible types. Firebase Data Connect will surface
+an error in the response.
+"""
+directive @view(
+  """
+  The SQL view name. If no `name` or `sql` are provided, defaults to
+  snake_case of the singular type name.
+  """
+  name: String
+  """
+  SQL SELECT statement to use as the basis for this type. Note that all SQL
+  identifiers should be snake_case and all GraphQL identifiers should be
+  camelCase.
+  """
+  sql: String
+  "Override the singular name. Default is the camel case of the type name."
+  singular: String
+  "Override the plural name. Default is generated based on English patterns."
+  plural: String
+) on OBJECT
+
+"""
+Specify additional column options.
+
+Given `type TableName @table { fieldName: Int } `
+
+ - `field_name` is the SQL column name. Override with `@col(name)`.
+
+"""
+directive @col(
+  "The SQL database column name. Defaults to <field_name>."
+  name: String
+  """
+  Override SQL columns data type.
+  Each GraphQL type could map to many SQL data types.
+  Refer to Postgres supported data types and mappings to GQL.
+  """
+  dataType: String
+  """
+  Defines a fixed column size for certain scalar types.
+
+  - For Vector, size is required. It establishes the length of the vector.
+  - For String, size converts `text` type to `varchar(size)`.
+  """
+  size: Int
+) on FIELD_DEFINITION
+
+
+"""
+Define an embedded JSON field represented as Postgres `jsonb` (or `json`).
+
+Given `type TableName @table { fieldName: EmbeddedType @embed }`
+`EmbeddedType` must NOT have `@table`.
+
+ - Store JSON object if `EmbeddedType`. Required column if `EmbeddedType!`.
+ - Store JSON array if `[EmbeddedType]`. Required column if `[EmbeddedType]!`.
+
+"""
+directive @embed on FIELD_DEFINITION
+
+"""
+Define a reference field to another table.
+
+Given `type TableName @table { refField: AnotherTableName }`, it defines a foreign-key constraint
+
+ - with id `table_name_ref_field_fkey` (override with `@ref(constraintName)`)
+ - from `table_name.ref_field` (override with `@ref(fields)`)
+ - to `another_table_name.id` (override with `@ref(references)`)
+
+Does not support `[AnotherTableName]` because array fields cannot have foreign-key constraints.
+Nullability determines whether the reference is required.
+
+ - `refField: AnotherTableName`: optional reference, SET_NULL on delete.
+ - `refField: AnotherTableName!`: required reference, CASCADE on delete.
+
+Consider all types of SQL relations:
+
+ - many-to-one relations involve a reference field on the many-side.
+    - many-to-maybe-one if `refField: AnotherTableName`.
+    - many-to-exactly-one if `refField: AnotherTableName!`.
+ - one-to-one relations involve a unique reference field on one side.
+    - maybe-one-to-maybe-one if `refField: AnotherTableName @unique`.
+    - maybe-one-to-exact-one if `refField: AnotherTableName! @unique`.
+    - exact-one-to-exact-one shall be represented as a single table instead.
+ - many-to-many relations involve a join table.
+    - Its primary keys must be two non-null reference fields to tables bridged together to guarantee at most one relation per pair.
+
+type TableNameToAnotherTableName @table(key: ["refField", "anotherRefField"]) {
+  refField: TableName!
+  anotherRefField: AnotherTableName!
+}
+
+"""
+directive @ref(
+  "The SQL database foreign key constraint name. Default to <table_name>_<field_name>_fkey."
+  constraintName: String
+  """
+  Foreign key fields. Default to <tableName><PrimaryIdName>.
+  """
+  fields: [String!]
+  "The fields that the foreign key references in the other table. Default to the primary key."
+  references: [String!]
+) on FIELD_DEFINITION
+
+enum IndexFieldOrder { ASC DESC }
+
+"""
+Defines a database index to optimize query performance.
+
+Given `type TableName @table @index(fields: [“fieldName”, “secondFieldName”])`,
+`table_name_field_name_second_field_name_aa_idx` is the SQL index id.
+`table_name_field_name_second_field_name_ad_idx` if `order: [ASC DESC]`.
+`table_name_field_name_second_field_name_dd_idx` if `order: [DESC DESC]`.
+
+Given `type TableName @table { fieldName: Int @index } `
+`table_name_field_name_idx` is the SQL index id.
+`order` matters less for single field indexes because they can be scanned in both ways.
+
+Override with `@index(name)` in case of index name conflicts.
+"""
+directive @index(
+  "The SQL database index id. Defaults to <table_name>_<field_name>_idx."
+  name: String
+  """
+  Only allowed and required when used on OBJECT.
+  The fields to create an index on.
+  """
+  fields: [String!]
+  """
+  Only allowed when used on OBJECT.
+  Index order of each column. Default to all ASC.
+  """
+  order: [IndexFieldOrder!]
+) repeatable on FIELD_DEFINITION | OBJECT
+
+"""
+Defines a unique constraint.
+
+Given `type TableName @table @unique(fields: [“fieldName”, “secondFieldName”])`,
+`table_name_field_name_second_field_name_uidx` is the SQL unique index id.
+Given `type TableName @table { fieldName: Int @unique } `
+`table_name_field_name_idx` is the SQL unique index id.
+
+Override with `@unique(indexName)` in case of index name conflicts.
+"""
+directive @unique(
+  "The SQL database unique index name. Defaults to <table_name>_<field_name>_uidx."
+  indexName: String
+  """
+  Only allowed and required when used on OBJECT.
+  The fields to create a unique constraint on.
+  """
+  fields: [String!]
+) repeatable on FIELD_DEFINITION | OBJECT
+
+"Define the direction of an orderby query"
+enum OrderDirection {
+  ASC
+  DESC
+}
+
+"Define the intervals used in timestamps and dates (subset)"
+enum TimestampInterval {
+  second
+  minute
+  hour
+  day
+  week
+  month
+  year
+}
+
+"""
+Defines what siliarlity function to use for fetching vectors.
+Details here: https://github.com/pgvector/pgvector?tab=readme-ov-file#vector-functions
+"""
+enum VectorSimilarityMethod {
+  L2
+  COSINE
+  INNER_PRODUCT
+}
+
+enum ColDefault {
+  """
+  Generates a random UUID (v4) as the default column value.
+  Compatible with String or ID typed fields.
+  """
+  UUID
+  """
+  Generates an auto-incrementing sequence as the default column value.
+  Compatible with Int and Int64 typed fields.
+  """
+  SEQUENCE
+  """
+  Populates the default column value with the current date or timestamp.
+  Compatible with Date and Timestamp typed fields.
+  """
+  NOW
+}
+
+"""
+Specify the default column value.
+
+Supports literals and generating a few common patterns.
+"""
+directive @default(
+  "Literals. Validated against the column data type at compile-time."
+  value: Any
+  "Built-in common ways to generate initial value."
+  generate: ColDefault
+) on FIELD_DEFINITION

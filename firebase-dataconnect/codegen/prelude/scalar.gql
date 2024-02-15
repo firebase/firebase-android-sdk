@@ -1,0 +1,25 @@
+scalar Int64
+scalar Date
+scalar Timestamp @specifiedBy(url: "https://scalars.graphql.org/andimarek/date-time")
+scalar Any
+scalar Void
+"""
+AuthUID is a string representing a Firebase Auth uid. When passing a literal
+value for an AuthUID in a query, you may instead pass `{current: true}` and the
+currently signed in user's uid will be injected instead. For example:
+
+```gql
+type Order {
+  customerId: AuthUID!
+  # ...
+}
+
+query myOrders {
+  orders: (where: {
+    customerId: {eq: {current: true}}
+  }) { customerId }
+}
+```
+"""
+scalar AuthUID
+scalar Vector

@@ -1,0 +1,11 @@
+"""
+Mark this field as a customized resolver.
+It may takes customized input arguments and return customized types.
+
+TODO(b/315857408): Funnel this through API review.
+
+See:
+- go/firemat:custom-resolvers
+- go/custom-resolvers-hackweek
+"""
+directive @resolver on FIELD_DEFINITION

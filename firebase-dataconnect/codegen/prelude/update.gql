@@ -1,0 +1,174 @@
+"Update input of a String value"
+input String_Update {
+  set: String
+}
+
+"Update input of a String list value"
+input String_ListUpdate {
+  set: [String!]
+  append: [String!]
+  prepend: [String!]
+  delete: Int
+  i: Int
+  update: String
+}
+
+"Update input of an ID value"
+input ID_Update {
+  set: ID
+}
+
+"Update input of an ID list value"
+input ID_ListUpdate {
+  set: [ID!]
+  append: [ID!]
+  prepend: [ID!]
+  delete: Int
+  i: Int
+  update: ID
+}
+
+"Update input of an Int value"
+input Int_Update {
+  set: Int
+  inc: Int
+  dec: Int
+}
+
+"Update input of an Int list value"
+input Int_ListUpdate {
+  set: [Int!]
+  append: [Int!]
+  prepend: [Int!]
+  delete: Int
+  i: Int
+  update: Int
+}
+
+"Update input of an Int64 value"
+input Int64_Update {
+  set: Int64
+  inc: Int64
+  dec: Int64
+}
+
+"Update input of an Int64 list value"
+input Int64_ListUpdate {
+  set: [Int64!]
+  append: [Int64!]
+  prepend: [Int64!]
+  delete: Int
+  i: Int
+  update: Int64
+}
+
+"Update input of a Float value"
+input Float_Update {
+  set: Float
+  inc: Float
+  dec: Float
+}
+
+"Update input of a Float list value"
+input Float_ListUpdate {
+  set: [Float!]
+  append: [Float!]
+  prepend: [Float!]
+  delete: Int
+  i: Int
+  update: Float
+}
+
+"Update input of a Boolean value"
+input Boolean_Update {
+  set: Boolean
+}
+
+"Update input of a Boolean list value"
+input Boolean_ListUpdate {
+  set: [Boolean!]
+  append: [Boolean!]
+  prepend: [Boolean!]
+  delete: Int
+  i: Int
+  update: Boolean
+}
+
+"Update input of a Date value"
+input Date_Update {
+  set: Date
+  inc: Date_Offset
+  dec: Date_Offset
+}
+
+"Update input of a Date list value"
+input Date_ListUpdate {
+  set: [Date!]
+  append: [Date!]
+  prepend: [Date!]
+  delete: Int
+  i: Int
+  update: Date
+}
+
+"Update input of a Timestamp value"
+input Timestamp_Update {
+  set: Timestamp
+  inc: Timestamp_Offset
+  dec: Timestamp_Offset
+}
+
+"Update input of a Timestamp list value"
+input Timestamp_ListUpdate {
+  set: [Timestamp!]
+  append: [Timestamp!]
+  prepend: [Timestamp!]
+  delete: Int
+  i: Int
+  update: Timestamp
+}
+
+"Update input of an Any value"
+input Any_Update {
+  set: Any
+}
+
+"Update input of an Any list value"
+input Any_ListUpdate {
+  set: [Any!]
+  append: [Any!]
+  prepend: [Any!]
+  delete: Int
+  i: Int
+  update: Any
+}
+
+"Update input of an AuthUID value"
+input AuthUID_Update {
+  set: AuthUID
+}
+
+"Update input of an AuthUID list value"
+input AuthUID_ListUpdate {
+  set: [AuthUID]
+  append: [AuthUID]
+  prepend: [AuthUID]
+  delete: Int
+  i: Int
+  update: AuthUID
+}
+
+"Update input of an Vector value"
+input Vector_Update {
+  set: Vector
+}
+
+"Update input of a Vector list value"
+input Vector_ListUpdate {
+  set: [Vector]
+  append: [Vector]
+  prepend: [Vector]
+  delete: Int
+  i: Int
+  update: Vector
+}
