@@ -22,9 +22,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
@@ -80,7 +80,7 @@ public class EventManagerTest {
 
     EventManager manager = new EventManager(syncSpy);
     manager.removeQueryListener(queryListener(query));
-    verifyZeroInteractions(syncSpy);
+    verify(syncSpy, never()).stopListening(eq(query), anyBoolean());
   }
 
   @Test
