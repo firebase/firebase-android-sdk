@@ -92,7 +92,7 @@ public final class SnapshotListenOptions {
       this.executor = executor;
       return this;
     }
-    
+
     @NonNull
     public Builder setActivity(@NonNull Activity activity) {
       checkNotNull(activity, "activity must not be null.");
