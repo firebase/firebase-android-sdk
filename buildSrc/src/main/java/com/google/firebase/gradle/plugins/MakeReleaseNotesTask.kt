@@ -47,8 +47,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
 
   @get:OutputFile abstract val releaseNotesFile: RegularFileProperty
 
-  @get:Optional
-  @get:Input abstract val skipMissingEntries: Property<Boolean>
+  @get:Optional @get:Input abstract val skipMissingEntries: Property<Boolean>
 
   /**
    * Converts the [changelogFile] into a [Changelog], and then uses that data to create release
