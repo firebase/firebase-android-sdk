@@ -92,8 +92,10 @@ public final class SnapshotListenOptions {
       this.executor = executor;
       return this;
     }
-
-    public Builder setActivity(@Nullable Activity activity) {
+    
+    @NonNull
+    public Builder setActivity(@NonNull Activity activity) {
+      checkNotNull(activity, "activity must not be null.");
       this.activity = activity;
       return this;
     }
