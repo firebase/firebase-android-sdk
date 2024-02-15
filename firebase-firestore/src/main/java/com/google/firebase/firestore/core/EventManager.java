@@ -66,7 +66,7 @@ public final class EventManager implements SyncEngineCallback {
     public boolean waitForSyncWhenOnline;
 
     /** Sets the source the query listens to. */
-    public ListenSource source;
+    public ListenSource source = ListenSource.DEFAULT;
   }
 
   private final SyncEngine syncEngine;
@@ -166,19 +166,18 @@ public final class EventManager implements SyncEngineCallback {
     Query query = listener.getQuery();
     QueryListenersInfo queryInfo = queries.get(query);
     ListenerRemovalAction listenerAction = ListenerRemovalAction.NO_ACTION_REQUIRED;
+    if (queryInfo == null) return;
 
-    if (queryInfo != null) {
-      queryInfo.listeners.remove(listener);
-      if (queryInfo.listeners.isEmpty()) {
-        listenerAction =
-            listener.listensToRemoteStore()
-                ? ListenerRemovalAction.TERMINATE_LOCAL_LISTEN_AND_REQUIRE_WATCH_DISCONNECTION
-                : ListenerRemovalAction.TERMINATE_LOCAL_LISTEN_ONLY;
+    queryInfo.listeners.remove(listener);
+    if (queryInfo.listeners.isEmpty()) {
+      listenerAction =
+          listener.listensToRemoteStore()
+              ? ListenerRemovalAction.TERMINATE_LOCAL_LISTEN_AND_REQUIRE_WATCH_DISCONNECTION
+              : ListenerRemovalAction.TERMINATE_LOCAL_LISTEN_ONLY;
 
-      } else if (!queryInfo.hasRemoteListeners() && listener.listensToRemoteStore()) {
-        // The removed listener is the last one that sourced from watch.
-        listenerAction = ListenerRemovalAction.REQUIRE_WATCH_DISCONNECTION_ONLY;
-      }
+    } else if (!queryInfo.hasRemoteListeners() && listener.listensToRemoteStore()) {
+      // The removed listener is the last one that sourced from watch.
+      listenerAction = ListenerRemovalAction.REQUIRE_WATCH_DISCONNECTION_ONLY;
     }
 
     switch (listenerAction) {

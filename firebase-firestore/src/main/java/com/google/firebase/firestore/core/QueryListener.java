@@ -61,10 +61,11 @@ public class QueryListener {
   }
 
   public boolean listensToRemoteStore() {
-    if (options != null && options.source != null) {
+    if (options != null) {
       return !options.source.equals(ListenSource.CACHE);
     }
-    // While not set, source should be default to ListenSource.DEFAULT.
+    // While not set, source should be default to ListenSource.DEFAULT, which listens to remote
+    // store.
     return true;
   }
 

@@ -195,17 +195,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
   /**
    * Initiates a new listen. The LocalStore will be queried for initial data and the listen will be
-   * sent to the RemoteStore to get remote data. The registered SyncEngineCallback will be notified
-   * of resulting view snapshots and/or listen errors.
-   *
-   * @return the target ID assigned to the query.
-   */
-  public int listen(Query query) {
-    return listen(query, true);
-  }
-
-  /**
-   * Initiates a new listen. The LocalStore will be queried for initial data and the listen will be
    * sent to the RemoteStore if the query is listening to watch. The registered SyncEngineCallback
    * will be notified of resulting view snapshots and/or listen errors.
    *
@@ -278,11 +267,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     TargetData targetData = localStore.allocateTarget(query.toTarget());
     remoteStore.listen(targetData);
-  }
-
-  /** Stops listening to a query previously listened to via listen. */
-  void stopListening(Query query) {
-    stopListening(query, true);
   }
 
   /**

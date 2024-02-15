@@ -14,9 +14,22 @@
 
 package com.google.firebase.firestore;
 
+/**
+ * Configures the source option of {@code addSnapshotListener()} calls on {@link DocumentReference}
+ * and {@link Query}. This controls how a listener retrieves data updates.
+ */
 public enum ListenSource {
-  /** Listens to both cache and server changes. */
+  /**
+   * The default behavior. The listener attempts to raise initial snapshot from cache and retrieve
+   * up-to-date snapshots from the Firestore server. Snapshots will be raised on local mutations and
+   * server side updates.
+   */
   DEFAULT,
-  /** Listens to changes in local cache only */
+
+  /**
+   * The listener retrieves data and listen to updates from the local Firestore cache only. If cache
+   * is empty, an empty snapshot will be raised. Note that the data might be stale if the cache
+   * hasn't synchronized with recent server-side changes.
+   */
   CACHE
 }

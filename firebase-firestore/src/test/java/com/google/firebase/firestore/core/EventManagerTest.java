@@ -17,12 +17,14 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
@@ -58,8 +60,16 @@ public class EventManagerTest {
 
     manager.removeQueryListener(listener1);
     manager.removeQueryListener(listener2);
-    verify(syncSpy, times(1)).listen(query, true);
-    verify(syncSpy, times(1)).stopListening(query, true);
+    verify(syncSpy, times(1))
+        .listen(
+            query,
+            /** shouldListenToRemote= */
+            true);
+    verify(syncSpy, times(1))
+        .stopListening(
+            query,
+            /** shouldUnlistenToRemote= */
+            true);
   }
 
   @Test
@@ -70,7 +80,7 @@ public class EventManagerTest {
 
     EventManager manager = new EventManager(syncSpy);
     manager.removeQueryListener(queryListener(query));
-    verify(syncSpy, never()).stopListening(query);
+    verifyZeroInteractions(syncSpy);
   }
 
   @Test
@@ -91,8 +101,8 @@ public class EventManagerTest {
     eventManager.addQueryListener(spy2);
     eventManager.addQueryListener(spy3);
 
-    verify(syncSpy, times(1)).listen(query1, false);
-    verify(syncSpy, times(1)).listen(query2, false);
+    verify(syncSpy, times(1)).listen(eq(query1), anyBoolean());
+    verify(syncSpy, times(1)).listen(eq(query2), anyBoolean());
 
     ViewSnapshot snap1 = mock(ViewSnapshot.class);
     when(snap1.getQuery()).thenReturn(query1);
