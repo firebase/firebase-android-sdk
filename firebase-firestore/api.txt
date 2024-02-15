@@ -527,7 +527,7 @@ package com.google.firebase.firestore {
   public static class SnapshotListenOptions.Builder {
     ctor public SnapshotListenOptions.Builder();
     method @NonNull public com.google.firebase.firestore.SnapshotListenOptions build();
-    method public com.google.firebase.firestore.SnapshotListenOptions.Builder setActivity(@Nullable android.app.Activity);
+    method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setActivity(@NonNull android.app.Activity);
     method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setExecutor(@NonNull java.util.concurrent.Executor);
     method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setMetadataChanges(@NonNull com.google.firebase.firestore.MetadataChanges);
     method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setSource(@NonNull com.google.firebase.firestore.ListenSource);
