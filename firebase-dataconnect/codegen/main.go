@@ -10,31 +10,37 @@ func main() {
 	log.SetPrefix("codegen: ")
 	log.SetFlags(0)
 
-	config, err := ParseCommandLineArguments()
+	args, err := ParseCommandLineArguments()
 	if err != nil {
 		fmt.Println("ERROR: invalid command-line arguments:", err)
 		os.Exit(2)
 	}
 
-	graphQLSchema, err := LoadGraphQLSchemaFile(config.SchemaFile, config.PreludeDir)
+	graphQLSchema, err := LoadGraphQLSchemaFile(args.SchemaFile, args.PreludeDir)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	graphQLOperations, err := LoadGraphQLOperationsFile(config.OperationsFile, graphQLSchema)
+	graphQLOperations, err := LoadGraphQLOperationsFile(args.OperationsFile, graphQLSchema)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	operationTemplate, err := LoadGoTemplateFromFile(args.TemplateFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, operation := range graphQLOperations.Operations {
-		fmt.Println("op:", operation.Name)
-	}
-
-	for key, value := range graphQLSchema.Types {
-		if !value.BuiltIn {
-			fmt.Println("type:", key, value.Name)
+		operationName := operation.Name
+		outputFile := args.DestDir + "/" + args.ConnectorName + "/" + operationName + ".kt"
+		renderConfig := RenderOperationTemplateConfig{
+			OperationName: operationName,
+			KotlinPackage: "com.google.firebase.dataconnect.connectors." + args.ConnectorName,
+		}
+		err = RenderOperationTemplate(operationTemplate, outputFile, renderConfig)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
-
-	fmt.Println(config.ConnectorName)
 }
