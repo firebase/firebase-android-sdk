@@ -17,5 +17,6 @@ func main() {
 	}
 
 	fmt.Println("DestDir", parsedCommandLineArguments.DestDir)
-	fmt.Println("InputFiles", parsedCommandLineArguments.GraphQLInputFiles)
+	fmt.Println("SchemaFile", parsedCommandLineArguments.SchemaFile)
+	fmt.Println("OperationsFile", parsedCommandLineArguments.OperationsFile)
 }

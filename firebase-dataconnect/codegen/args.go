@@ -7,12 +7,14 @@ import (
 )
 
 type ParsedCommandLineArguments struct {
-	DestDir           string
-	GraphQLInputFiles []string
+	DestDir        string
+	SchemaFile     string
+	OperationsFile string
 }
 
 func ParseCommandLineArguments() (ParsedCommandLineArguments, error) {
 	flagSet := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	parsedCommandLineArguments := ParsedCommandLineArguments{}
 
 	destDir := flagSet.String(
 		"dest_dir",
@@ -22,12 +24,20 @@ func ParseCommandLineArguments() (ParsedCommandLineArguments, error) {
 
 	err := flagSet.Parse(os.Args[1:])
 	if err != nil {
-		return ParsedCommandLineArguments{}, err
+		return parsedCommandLineArguments, err
 	}
 
 	if flagSet.NArg() == 0 {
-		return ParsedCommandLineArguments{}, errors.New("no input graphql files specified")
+		return parsedCommandLineArguments, errors.New("no graphql schema file specified")
+	} else if flagSet.NArg() == 1 {
+		return parsedCommandLineArguments, errors.New("no graphql operations file specified")
+	} else if flagSet.NArg() > 2 {
+		return parsedCommandLineArguments, errors.New("unexpected argument: " + flagSet.Args()[2])
 	}
 
-	return ParsedCommandLineArguments{*destDir, flagSet.Args()}, nil
+	parsedCommandLineArguments.DestDir = *destDir
+	parsedCommandLineArguments.SchemaFile = flagSet.Args()[0]
+	parsedCommandLineArguments.OperationsFile = flagSet.Args()[1]
+
+	return parsedCommandLineArguments, nil
 }
