@@ -26,7 +26,6 @@ import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 /** Responsible for uploading session events to Firelog. */
 internal fun interface SessionFirelogPublisher {
@@ -62,13 +61,15 @@ internal class SessionFirelogPublisherImpl(
   override fun logSession(sessionDetails: SessionDetails) {
     CoroutineScope(backgroundDispatcher).launch {
       if (shouldLogSession()) {
+        val installationId = InstallationId.create(firebaseInstallations)
         attemptLoggingSessionEvent(
           SessionEvents.buildSession(
             firebaseApp,
             sessionDetails,
             sessionSettings,
             FirebaseSessionsDependencies.getRegisteredSubscribers(),
-            getFirebaseInstallationId(),
+            firebaseInstallationId = installationId.fid,
+            firebaseAuthenticationToken = installationId.authToken
           )
         )
       }
@@ -104,16 +105,6 @@ internal class SessionFirelogPublisherImpl(
 
     return true
   }
-
-  /** Gets the Firebase Installation ID for the current app installation. */
-  private suspend fun getFirebaseInstallationId() =
-    try {
-      firebaseInstallations.id.await()
-    } catch (ex: Exception) {
-      Log.e(TAG, "Error getting Firebase Installation ID. Using an empty ID", ex)
-      // Use an empty fid if there is any failure.
-      ""
-    }
 
   /** Calculate whether we should sample events using [SessionsSettings] data. */
   private fun shouldCollectEvents(): Boolean {
