@@ -23,6 +23,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import com.google.firebase.sessions.InstallationId
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -73,8 +74,8 @@ internal class RemoteSettings(
       }
 
       // Get the installations ID before making a remote config fetch.
-      val installationId = firebaseInstallationsApi.id.await()
-      if (installationId == null) {
+      val installationId = InstallationId.create(firebaseInstallationsApi).fid
+      if (installationId == "") {
         Log.w(TAG, "Error getting Firebase Installation ID. Skipping this Session Event.")
         return
       }

@@ -23,7 +23,7 @@ import kotlinx.coroutines.tasks.await
 /** Provides the Firebase installation id and Firebase authentication token. */
 internal class InstallationId private constructor(val fid: String, val authToken: String) {
   companion object {
-    private const val TAG = "FirebaseInstallationId"
+    private const val TAG = "InstallationId"
 
     suspend fun create(firebaseInstallations: FirebaseInstallationsApi) =
       try {
@@ -32,7 +32,7 @@ internal class InstallationId private constructor(val fid: String, val authToken
         val fid = firebaseInstallations.id.await()
         InstallationId(fid, authToken)
       } catch (ex: Exception) {
-        Log.e(TAG, "Error getting Firebase installation id or authentication token.", ex)
+        Log.w(TAG, "Error getting Firebase installation id or authentication token.", ex)
         // If there are any failures, the fid is not validated. So return empty values for both.
         InstallationId(fid = "", authToken = "")
       }
