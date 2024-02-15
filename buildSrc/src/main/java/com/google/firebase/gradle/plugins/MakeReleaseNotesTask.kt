@@ -19,6 +19,8 @@ package com.google.firebase.gradle.plugins
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.StopActionException
@@ -33,6 +35,7 @@ import org.gradle.work.DisableCachingByDefault
  *
  * @property changelogFile The `CHANGELOG.md` file to use as a [Changelog]
  * @property releaseNotesFile The output file to write the release notes to
+ * @property skipMissingEntries Continue the build if the release notes are missing entries
  * @throws StopActionException If metadata does not exist for the given project, or there are no
  * changes to release
  * @see make
@@ -42,6 +45,8 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
   @get:InputFile abstract val changelogFile: RegularFileProperty
 
   @get:OutputFile abstract val releaseNotesFile: RegularFileProperty
+
+  @get:Input abstract val skipMissingEntries: Property<Boolean>
 
   /**
    * Converts the [changelogFile] into a [Changelog], and then uses that data to create release
@@ -84,12 +89,19 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     val metadata = convertToMetadata(project.name)
     val unreleased = changelog.releases.first()
     val version = project.version.toString()
+    val skipMissing = skipMissingEntries.getOrElse(false)
 
     if (!project.firebaseLibrary.publishReleaseNotes)
       throw StopActionException("No release notes required for ${project.name}")
 
-    if (!unreleased.hasContent())
+    if (!unreleased.hasContent()) {
+      if (skipMissing)
+        throw StopActionException(
+          "Missing releasing notes for  \"${project.name}\", but skip missing enabled."
+        )
+
       throw GradleException("Missing release notes for \"${project.name}\"")
+    }
 
     val versionClassifier = version.replace(".", "-")
 
