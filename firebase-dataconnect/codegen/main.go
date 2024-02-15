@@ -10,19 +10,31 @@ func main() {
 	log.SetPrefix("codegen: ")
 	log.SetFlags(0)
 
-	parsedCommandLineArguments, err := ParseCommandLineArguments()
+	config, err := ParseCommandLineArguments()
 	if err != nil {
 		fmt.Println("ERROR: invalid command-line arguments:", err)
 		os.Exit(2)
 	}
 
-	fmt.Println("Loading GraphQL schema file:", parsedCommandLineArguments.SchemaFile)
-	graphQLSchema, err := LoadGraphQLSchemaFile(parsedCommandLineArguments.SchemaFile, parsedCommandLineArguments.PreludeDir)
+	graphQLSchema, err := LoadGraphQLSchemaFile(config.SchemaFile, config.PreludeDir)
 	if err != nil {
-		log.Fatal("Loading GraphQL schema file failed: ", parsedCommandLineArguments.SchemaFile, " (", err, ")")
+		log.Fatal(err)
 	}
 
-	fmt.Println("DestDir", parsedCommandLineArguments.DestDir)
-	fmt.Println("SchemaFile", graphQLSchema)
-	fmt.Println("OperationsFile", parsedCommandLineArguments.OperationsFile)
+	graphQLOperations, err := LoadGraphQLOperationsFile(config.OperationsFile, graphQLSchema)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, operation := range graphQLOperations.Operations {
+		fmt.Println("op:", operation.Name)
+	}
+
+	for key, value := range graphQLSchema.Types {
+		if !value.BuiltIn {
+			fmt.Println("type:", key, value.Name)
+		}
+	}
+
+	fmt.Println(config.ConnectorName)
 }

@@ -3,6 +3,8 @@ package main
 import (
 	"github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
+	"github.com/vektah/gqlparser/v2/gqlerror"
+	"github.com/vektah/gqlparser/v2/parser"
 	"log"
 	"os"
 	"strings"
@@ -12,14 +14,14 @@ func LoadGraphQLSchemaFile(file string, preludeDir string) (*ast.Schema, error) 
 	sources := make([]*ast.Source, 0, 1)
 
 	if len(preludeDir) > 0 {
-		log.Println("Loading GraphQL prelude files from directory:", preludeDir)
+		log.Println("Loading GraphQL schema prelude files from directory:", preludeDir)
 		preludeFileNames, err := getFileNamesOfGqlFilesInDir(preludeDir)
 		if err != nil {
 			return nil, err
 		}
 		for _, fileName := range preludeFileNames {
 			preludeFile := preludeDir + "/" + fileName
-			log.Println("Loading GraphQL prelude file:", preludeFile)
+			log.Println("Loading GraphQL schema prelude file:", preludeFile)
 			source, err := loadGraphQLSource(preludeFile, true)
 			if err != nil {
 				return nil, err
@@ -35,13 +37,31 @@ func LoadGraphQLSchemaFile(file string, preludeDir string) (*ast.Schema, error) 
 	}
 	sources = append(sources, source)
 
-	log.Println("Validating GraphQL schema")
 	graphqlSchema, err := gqlparser.LoadSchema(sources...)
 	if err != nil {
 		return nil, err
 	}
 
 	return graphqlSchema, nil
+}
+
+func LoadGraphQLOperationsFile(file string, schema *ast.Schema) (*ast.QueryDocument, error) {
+	log.Println("Loading GraphQL operations file:", file)
+	source, err := loadGraphQLSource(file, false)
+	if err != nil {
+		return nil, err
+	}
+
+	query, err := parser.ParseQuery(source)
+	if err != nil {
+		gqlErr, ok := err.(*gqlerror.Error)
+		if ok {
+			return nil, gqlerror.List{gqlErr}
+		}
+		return nil, gqlerror.List{gqlerror.Wrap(err)}
+	}
+
+	return query, nil
 }
 
 func loadGraphQLSource(file string, builtIn bool) (*ast.Source, error) {

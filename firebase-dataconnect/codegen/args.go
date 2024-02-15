@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"os"
+	"path"
 )
 
 type ParsedCommandLineArguments struct {
@@ -11,11 +12,11 @@ type ParsedCommandLineArguments struct {
 	PreludeDir     string
 	SchemaFile     string
 	OperationsFile string
+	ConnectorName  string
 }
 
-func ParseCommandLineArguments() (ParsedCommandLineArguments, error) {
+func ParseCommandLineArguments() (*ParsedCommandLineArguments, error) {
 	flagSet := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	parsedCommandLineArguments := ParsedCommandLineArguments{}
 
 	destDir := flagSet.String(
 		"dest_dir",
@@ -31,23 +32,46 @@ func ParseCommandLineArguments() (ParsedCommandLineArguments, error) {
 			"then no builtins will be loaded and schema validation will likely fail with an error "+
 			"about undefined types (like String) or undefined directives (like @table)")
 
+	connectorName := flagSet.String(
+		"connector",
+		"",
+		"The name of the connector to use. If not specified, a default value will be used.")
+
 	err := flagSet.Parse(os.Args[1:])
 	if err != nil {
-		return parsedCommandLineArguments, err
+		return nil, err
 	}
 
 	if flagSet.NArg() == 0 {
-		return parsedCommandLineArguments, errors.New("no graphql schema file specified")
+		return nil, errors.New("no graphql schema file specified")
 	} else if flagSet.NArg() == 1 {
-		return parsedCommandLineArguments, errors.New("no graphql operations file specified")
+		return nil, errors.New("no graphql operations file specified")
 	} else if flagSet.NArg() > 2 {
-		return parsedCommandLineArguments, errors.New("unexpected argument: " + flagSet.Args()[2])
+		return nil, errors.New("unexpected argument: " + flagSet.Args()[2])
 	}
 
-	parsedCommandLineArguments.DestDir = *destDir
-	parsedCommandLineArguments.PreludeDir = *preludeDir
-	parsedCommandLineArguments.SchemaFile = flagSet.Args()[0]
-	parsedCommandLineArguments.OperationsFile = flagSet.Args()[1]
+	schemaFile := flagSet.Args()[0]
+	operationsFile := flagSet.Args()[1]
+
+	parsedCommandLineArguments := &ParsedCommandLineArguments{
+		DestDir:        *destDir,
+		PreludeDir:     *preludeDir,
+		SchemaFile:     schemaFile,
+		OperationsFile: operationsFile,
+		ConnectorName:  connectorNameFrom(connectorName, operationsFile),
+	}
 
 	return parsedCommandLineArguments, nil
+}
+
+func connectorNameFrom(flagValue *string, operationsFile string) string {
+	if flagValue != nil && len(*flagValue) > 0 {
+		return *flagValue
+	}
+
+	cleanFile := path.Clean(operationsFile)
+	fileName := path.Base(cleanFile)
+	fileExt := path.Ext(fileName)
+
+	return fileName[0 : len(fileName)-len(fileExt)]
 }
