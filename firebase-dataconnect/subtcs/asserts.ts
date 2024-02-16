@@ -7,4 +7,5 @@ export declare function assertThat(
 export interface QuerySubscriptionListenerAssertions {
   isEventuallyNotifiedWithSomeResult(): Promise<void>;
   isEventuallyNotifiedWithResult(result: QueryResult): Promise<void>;
+  isImmediatelyNotifiedWithResult(result: QueryResult): void;
 }
