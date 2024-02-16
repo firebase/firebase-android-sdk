@@ -10,7 +10,6 @@ import (
 type ParsedArguments struct {
 	DestDir        string
 	PreludeDir     string
-	TemplateFile   string
 	SchemaFile     string
 	OperationsFile string
 	ConnectorName  string
@@ -44,23 +43,19 @@ func Parse() (*ParsedArguments, error) {
 	}
 
 	if flagSet.NArg() == 0 {
-		return nil, errors.New("no go template file specified")
-	} else if flagSet.NArg() == 1 {
 		return nil, errors.New("no graphql schema file specified")
-	} else if flagSet.NArg() == 2 {
+	} else if flagSet.NArg() == 1 {
 		return nil, errors.New("no graphql operations file specified")
-	} else if flagSet.NArg() > 3 {
+	} else if flagSet.NArg() > 2 {
 		return nil, errors.New("unexpected argument: " + flagSet.Args()[3])
 	}
 
-	templateFile := flagSet.Args()[0]
-	schemaFile := flagSet.Args()[1]
-	operationsFile := flagSet.Args()[2]
+	schemaFile := flagSet.Args()[0]
+	operationsFile := flagSet.Args()[1]
 
 	parsedArguments := &ParsedArguments{
 		DestDir:        *destDir,
 		PreludeDir:     *preludeDir,
-		TemplateFile:   templateFile,
 		SchemaFile:     schemaFile,
 		OperationsFile: operationsFile,
 		ConnectorName:  connectorNameFrom(connectorName, operationsFile),

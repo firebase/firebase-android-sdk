@@ -31,12 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	operationTemplate, err := templates.LoadGoTemplateFromFile(parsedArgs.TemplateFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = generateOperationKotlinFiles(graphQLOperations.Operations, graphQLSchema, operationTemplate, parsedArgs)
+	err = generateOperationKotlinFiles(graphQLOperations.Operations, graphQLSchema, parsedArgs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,14 +40,20 @@ func main() {
 func generateOperationKotlinFiles(
 	operations ast.OperationList,
 	schema *ast.Schema,
-	operationTemplate *template.Template,
 	parsedArgs *args.ParsedArguments) error {
+
+	operationTemplate, err := templates.LoadOperationTemplate()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	for _, operation := range operations {
 		err := generateOperationKotlinFile(operation, schema, operationTemplate, parsedArgs)
 		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 

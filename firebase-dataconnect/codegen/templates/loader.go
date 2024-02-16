@@ -1,23 +1,16 @@
 package templates
 
 import (
+	_ "embed"
 	"log"
-	"os"
 	"text/template"
 )
 
-func LoadGoTemplateFromFile(file string) (*template.Template, error) {
-	log.Println("Loading Go template from file:", file)
+//go:embed operation.gotmpl
+var operationTemplate string
 
-	fileBytes, err := os.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	parsedTemplate, err := template.New(file).Parse(string(fileBytes))
-	if err != nil {
-		return nil, err
-	}
-
-	return parsedTemplate, nil
+func LoadOperationTemplate() (*template.Template, error) {
+	templateName := "operation.gotmpl"
+	log.Println("Loading Go template:", templateName)
+	return template.New(templateName).Parse(operationTemplate)
 }
