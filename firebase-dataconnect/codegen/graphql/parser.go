@@ -1,4 +1,4 @@
-package main
+package graphql
 
 import (
 	"github.com/vektah/gqlparser/v2"

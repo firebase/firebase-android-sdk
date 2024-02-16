@@ -5,10 +5,10 @@ readonly args=(
   run
   .
   -prelude_dir
-  prelude
+  templates/prelude
   -dest_dir
   ../src/main/kotlin/com/google/firebase/dataconnect/connectors
-  operations.gotmpl
+  templates/operations.gotmpl
   ../src/androidTest/assets/testing_graphql_schemas/person/schema.gql
   ../src/androidTest/assets/testing_graphql_schemas/person/ops.gql
 )
