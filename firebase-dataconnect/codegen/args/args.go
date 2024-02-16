@@ -9,7 +9,6 @@ import (
 
 type ParsedArguments struct {
 	DestDir        string
-	PreludeDir     string
 	SchemaFile     string
 	OperationsFile string
 	ConnectorName  string
@@ -23,14 +22,6 @@ func Parse() (*ParsedArguments, error) {
 		"",
 		"The directory into which to write the output files. "+
 			"If not specified or the empty string, then the current directory is used.")
-
-	preludeDir := flagSet.String(
-		"prelude_dir",
-		"",
-		"The directory that contains the graphql schema files for builtin types and directives"+
-			"each file with a .gql extension will be loaded from this directory; if not specified, "+
-			"then no builtins will be loaded and schema validation will likely fail with an error "+
-			"about undefined types (like String) or undefined directives (like @table)")
 
 	connectorName := flagSet.String(
 		"connector",
@@ -55,7 +46,6 @@ func Parse() (*ParsedArguments, error) {
 
 	parsedArguments := &ParsedArguments{
 		DestDir:        *destDir,
-		PreludeDir:     *preludeDir,
 		SchemaFile:     schemaFile,
 		OperationsFile: operationsFile,
 		ConnectorName:  connectorNameFrom(connectorName, operationsFile),

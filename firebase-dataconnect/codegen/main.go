@@ -21,7 +21,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	graphQLSchema, err := graphql.LoadSchemaFile(parsedArgs.SchemaFile, parsedArgs.PreludeDir)
+	graphQLSchema, err := graphql.LoadSchemaFile(parsedArgs.SchemaFile)
 	if err != nil {
 		log.Fatal(err)
 	}

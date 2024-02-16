@@ -4,8 +4,6 @@ readonly args=(
   go
   run
   .
-  -prelude_dir
-  templates/prelude
   -dest_dir
   ../src/main/kotlin/com/google/firebase/dataconnect/connectors
   ../src/androidTest/assets/testing_graphql_schemas/person/schema.gql
