@@ -26,8 +26,7 @@ import dagger.Provides;
 public class GlideModule {
   @Provides
   @FirebaseAppScope
-  RequestManager providesGlideRequestManager(
-      Application application) {
+  RequestManager providesGlideRequestManager(Application application) {
     return Glide.with(application);
   }
 }

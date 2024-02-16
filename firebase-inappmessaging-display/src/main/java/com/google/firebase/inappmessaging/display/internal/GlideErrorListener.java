@@ -27,9 +27,8 @@ public class GlideErrorListener implements RequestListener<Drawable> {
   private final InAppMessage inAppMessage;
   private final FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
 
-
   public GlideErrorListener(
-          InAppMessage inAppMessage, FirebaseInAppMessagingDisplayCallbacks displayCallbacks) {
+      InAppMessage inAppMessage, FirebaseInAppMessagingDisplayCallbacks displayCallbacks) {
     this.inAppMessage = inAppMessage;
     this.displayCallbacks = displayCallbacks;
   }

@@ -149,8 +149,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     showActiveFiam(activity);
   }
 
-  private void setInAppMessageAndCallbacks(InAppMessage inAppMessage,
-                                            FirebaseInAppMessagingDisplayCallbacks callbacks) {
+  private void setInAppMessageAndCallbacks(
+      InAppMessage inAppMessage, FirebaseInAppMessagingDisplayCallbacks callbacks) {
     this.inAppMessage = inAppMessage;
     this.callbacks = callbacks;
   }
