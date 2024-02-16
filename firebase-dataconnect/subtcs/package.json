@@ -1,0 +1,13 @@
+{
+  "name": "subtcs",
+  "scripts": {
+    "build": "tsc",
+    "prettier": "prettier --write ."
+  },
+  "devDependencies": {
+    "@tsconfig/node20": "^20.1.2",
+    "@types/node": "^20.8.2",
+    "prettier": "3.0.3",
+    "typescript": "^5.2.2"
+  }
+}
