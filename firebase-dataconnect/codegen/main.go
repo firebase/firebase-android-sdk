@@ -62,13 +62,11 @@ func generateOperationKotlinFile(
 	schema *ast.Schema,
 	operationTemplate *template.Template,
 	parsedArgs *args.ParsedArguments) error {
-	operationName := operation.Name
 	kotlinPackage := "com.google.firebase.dataconnect.connectors." + parsedArgs.ConnectorName
 
-	outputFile := parsedArgs.DestDir + "/" + parsedArgs.ConnectorName + "/" + operationName + ".kt"
+	outputFile := parsedArgs.DestDir + "/" + parsedArgs.ConnectorName + "/" + operation.Name + ".kt"
 
 	renderConfig := templates.RenderOperationTemplateConfig{
-		OperationName: operationName,
 		KotlinPackage: kotlinPackage,
 		Operation:     operation,
 		Schema:        schema,
