@@ -114,7 +114,7 @@ public final class SnapshotListenOptions {
     return metadataChanges == that.metadataChanges
         && source == that.source
         && executor.equals(that.executor)
-        && activity.equals(activity);
+        && activity.equals(that.activity);
   }
 
   @Override
