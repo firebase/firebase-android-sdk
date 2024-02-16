@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func LoadGraphQLSchemaFile(file string, preludeDir string) (*ast.Schema, error) {
+func LoadSchemaFile(file string, preludeDir string) (*ast.Schema, error) {
 	sources := make([]*ast.Source, 0, 1)
 
 	if len(preludeDir) > 0 {
@@ -45,7 +45,7 @@ func LoadGraphQLSchemaFile(file string, preludeDir string) (*ast.Schema, error) 
 	return graphqlSchema, nil
 }
 
-func LoadGraphQLOperationsFile(file string, schema *ast.Schema) (*ast.QueryDocument, error) {
+func LoadOperationsFile(file string) (*ast.QueryDocument, error) {
 	log.Println("Loading GraphQL operations file:", file)
 	source, err := loadGraphQLSource(file, false)
 	if err != nil {

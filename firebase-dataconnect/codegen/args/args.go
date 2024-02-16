@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-type ParsedCommandLineArguments struct {
+type ParsedArguments struct {
 	DestDir        string
 	PreludeDir     string
 	TemplateFile   string
@@ -16,7 +16,7 @@ type ParsedCommandLineArguments struct {
 	ConnectorName  string
 }
 
-func ParseCommandLineArguments() (*ParsedCommandLineArguments, error) {
+func Parse() (*ParsedArguments, error) {
 	flagSet := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
 	destDir := flagSet.String(
@@ -57,7 +57,7 @@ func ParseCommandLineArguments() (*ParsedCommandLineArguments, error) {
 	schemaFile := flagSet.Args()[1]
 	operationsFile := flagSet.Args()[2]
 
-	parsedCommandLineArguments := &ParsedCommandLineArguments{
+	parsedArguments := &ParsedArguments{
 		DestDir:        *destDir,
 		PreludeDir:     *preludeDir,
 		TemplateFile:   templateFile,
@@ -66,7 +66,7 @@ func ParseCommandLineArguments() (*ParsedCommandLineArguments, error) {
 		ConnectorName:  connectorNameFrom(connectorName, operationsFile),
 	}
 
-	return parsedCommandLineArguments, nil
+	return parsedArguments, nil
 }
 
 func connectorNameFrom(flagValue *string, operationsFile string) string {

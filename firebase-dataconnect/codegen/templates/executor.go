@@ -13,6 +13,7 @@ type RenderOperationTemplateConfig struct {
 	OperationName string
 	KotlinPackage string
 	Operation     *ast.OperationDefinition
+	Schema        *ast.Schema
 }
 
 func RenderOperationTemplate(tmpl *template.Template, outputFile string, config RenderOperationTemplateConfig) error {
