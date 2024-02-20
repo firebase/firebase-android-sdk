@@ -16,7 +16,13 @@ var operationTemplate string
 func LoadOperationTemplate() (*template.Template, error) {
 	templateName := "operation.gotmpl"
 	log.Println("Loading Go template:", templateName)
-	return template.New(templateName).Parse(operationTemplate)
+
+	funcMap := template.FuncMap{
+		"kotlinTypeFromGraphQLType": kotlinTypeFromGraphQLType,
+		"isScalarType":              isScalarType,
+	}
+
+	return template.New(templateName).Funcs(funcMap).Parse(operationTemplate)
 }
 
 type RenderOperationTemplateConfig struct {
@@ -32,13 +38,8 @@ func RenderOperationTemplate(
 
 	log.Println("Generating:", outputFile)
 
-	funcMap := template.FuncMap{
-		"kotlinTypeFromGraphQLType": kotlinTypeFromGraphQLType,
-		"isScalarType":              isScalarType,
-	}
-
 	var outputBuffer bytes.Buffer
-	err := tmpl.Funcs(funcMap).Execute(&outputBuffer, config)
+	err := tmpl.Execute(&outputBuffer, config)
 	if err != nil {
 		return err
 	}
