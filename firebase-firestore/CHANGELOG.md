@@ -1,5 +1,5 @@
 # Unreleased
-* [feature] Enable snapshot listeners to source from local cache. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
+* [feature] Enable snapshot listeners to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
 
 # 24.10.2
 * [changed] Internal test improvements.

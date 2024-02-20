@@ -44,26 +44,48 @@ public final class SnapshotListenOptions {
     this.activity = builder.activity;
   }
 
+  /**
+   * Returns the setting for whether metadata-only changes should trigger snapshot events.
+   *
+   * @return The setting for whether metadata-only changes should trigger snapshot events.
+   */
   @NonNull
   public MetadataChanges getMetadataChanges() {
     return metadataChanges;
   }
 
+  /**
+   * Returns the preferred source for retrieving data in snapshot listeners.
+   *
+   * @return The listen source for retrieving data.
+   */
   @NonNull
   public ListenSource getSource() {
     return source;
   }
 
+  /**
+   * Returns the executor that will be used to execute the snapshot listener's callback.
+   *
+   * @return The executor for snapshot listener callbacks.
+   */
   @NonNull
   public Executor getExecutor() {
     return executor;
   }
 
+  /**
+   * Returns the optional Activity that scopes this snapshot listener's lifespan. If provided, the
+   * listener will automatically stop receiving events when the activity is destroyed.
+   *
+   * @return The Activity associated with this listener, or null if no activity is set.
+   */
   @Nullable
   public Activity getActivity() {
     return activity;
   }
 
+  /** Builder for constructing {@link SnapshotListenOptions} instances. */
   public static class Builder {
     private MetadataChanges metadataChanges = MetadataChanges.EXCLUDE;
     private ListenSource source = ListenSource.DEFAULT;
@@ -72,6 +94,12 @@ public final class SnapshotListenOptions {
 
     public Builder() {}
 
+    /**
+     * Sets whether metadata-only changes should trigger snapshot events.
+     *
+     * @param metadataChanges The setting for metadata-only changes.
+     * @return This Builder instance to allow chaining of method calls.
+     */
     @NonNull
     public Builder setMetadataChanges(@NonNull MetadataChanges metadataChanges) {
       checkNotNull(metadataChanges, "metadataChanges must not be null.");
@@ -79,6 +107,12 @@ public final class SnapshotListenOptions {
       return this;
     }
 
+    /**
+     * Sets the preferred source for retrieving data in snapshot listeners.
+     *
+     * @param source The preferred source for data retrieval.
+     * @return This Builder instance to allow chaining of method calls.
+     */
     @NonNull
     public Builder setSource(@NonNull ListenSource source) {
       checkNotNull(source, "listen source must not be null.");
@@ -86,6 +120,12 @@ public final class SnapshotListenOptions {
       return this;
     }
 
+    /**
+     * Sets the executor to be used for snapshot listener callbacks.
+     *
+     * @param executor The executor to be used.
+     * @return This Builder instance to allow chaining of method calls.
+     */
     @NonNull
     public Builder setExecutor(@NonNull Executor executor) {
       checkNotNull(executor, "executor must not be null.");
@@ -93,6 +133,13 @@ public final class SnapshotListenOptions {
       return this;
     }
 
+    /**
+     * Associates an Activity with this snapshot listener's lifecycle. If set, the listener will
+     * automatically stop when the Activity is destroyed.
+     *
+     * @param activity The Activity to associate with the listener.
+     * @return This Builder instance to allow chaining of method calls.
+     */
     @NonNull
     public Builder setActivity(@NonNull Activity activity) {
       checkNotNull(activity, "activity must not be null.");
@@ -100,6 +147,12 @@ public final class SnapshotListenOptions {
       return this;
     }
 
+    /**
+     * Constructs a {@link SnapshotListenOptions} instance using the current settings in this
+     * Builder.
+     *
+     * @return The constructed SnapshotListenOptions instance.
+     */
     @NonNull
     public SnapshotListenOptions build() {
       return new SnapshotListenOptions(this);

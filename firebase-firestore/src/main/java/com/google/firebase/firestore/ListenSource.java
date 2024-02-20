@@ -28,8 +28,11 @@ public enum ListenSource {
 
   /**
    * The listener retrieves data and listen to updates from the local Firestore cache only. If cache
-   * is empty, an empty snapshot will be raised. Note that the data might be stale if the cache
-   * hasn't synchronized with recent server-side changes.
+   * is empty, an empty snapshot will be raised. Snapshots will be raised on cache updates, like
+   * local mutations or load bundles.
+   *
+   * <p>Note that the data might be stale if the cache hasn't synchronized with recent server-side
+   * changes.
    */
   CACHE
 }
