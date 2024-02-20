@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	pluralize "github.com/gertd/go-pluralize"
 	"github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -49,7 +50,7 @@ func addSynthesizedInputTypesAndFields(schema *ast.Schema) {
 		synthesizedInputType.Kind = ast.InputObject
 		synthesizedInputTypes = append(synthesizedInputTypes, synthesizedInputType)
 
-		log.Println("Adding input type to schema: ", synthesizedInputType.Name)
+		log.Println("Adding input type to schema:", synthesizedInputType.Name)
 		schema.Types[synthesizedInputType.Name] = synthesizedInputType
 	}
 
@@ -62,8 +63,19 @@ func addSynthesizedInputTypesAndFields(schema *ast.Schema) {
 		mutationFields = append(mutationFields, createUpdateMutationField(typeInfo, synthesizedTypeInfo))
 
 		for _, mutationField := range mutationFields {
-			log.Println("Adding mutation field to schema: ", mutationField.Name)
+			log.Println("Adding mutation field to schema:", mutationField.Name)
 			schema.Mutation.Fields = append(schema.Mutation.Fields, mutationField)
+		}
+	}
+
+	for _, typeInfo := range typesRequiringSynthesizedTypesAndFields {
+		queryFields := make([]*ast.FieldDefinition, 0, 0)
+		queryFields = append(queryFields, createSingularQueryField(typeInfo))
+		queryFields = append(queryFields, createPluralQueryField(typeInfo))
+
+		for _, queryField := range queryFields {
+			log.Println("Adding query field to schema:", queryField.Name)
+			schema.Query.Fields = append(schema.Query.Fields, queryField)
 		}
 	}
 }
@@ -82,7 +94,7 @@ func createInsertMutationField(definition *ast.Definition, synthesizedDefinition
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_insert",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be-seen", NonNull: false},
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen", NonNull: false},
 	}
 }
 
@@ -102,7 +114,7 @@ func createDeleteMutationField(definition *ast.Definition) *ast.FieldDefinition 
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_delete",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be-seen", NonNull: false},
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen", NonNull: false},
 	}
 }
 
@@ -127,7 +139,41 @@ func createUpdateMutationField(definition *ast.Definition, synthesizedDefinition
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_update",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be-seen", NonNull: false},
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen", NonNull: false},
+	}
+}
+
+func createQueryFieldArguments(definition *ast.Definition) []*ast.ArgumentDefinition {
+	arguments := make([]*ast.ArgumentDefinition, 0, 0)
+	for _, field := range definition.Fields {
+		argumentType := new(ast.Type)
+		*argumentType = *field.Type
+		argumentType.NonNull = false
+		arguments = append(arguments, &ast.ArgumentDefinition{
+			Description: field.Description,
+			Name:        field.Name,
+			Type:        argumentType,
+		})
+	}
+	return arguments
+}
+
+func createSingularQueryField(definition *ast.Definition) *ast.FieldDefinition {
+	arguments := createQueryFieldArguments(definition)
+	return &ast.FieldDefinition{
+		Name:      strings.ToLower(definition.Name),
+		Arguments: arguments,
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen"},
+	}
+}
+
+func createPluralQueryField(definition *ast.Definition) *ast.FieldDefinition {
+	arguments := createQueryFieldArguments(definition)
+
+	return &ast.FieldDefinition{
+		Name:      pluralize.NewClient().Plural(strings.ToLower(definition.Name)),
+		Arguments: arguments,
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen"},
 	}
 }
 
