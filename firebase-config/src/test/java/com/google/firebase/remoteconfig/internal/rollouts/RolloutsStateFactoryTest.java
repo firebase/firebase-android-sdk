@@ -22,10 +22,12 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
+import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
-import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
+import java.util.HashMap;
+import java.util.Map;
 import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,7 +38,9 @@ import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public class RolloutsStateFactoryTest {
-  @Mock ConfigGetParameterHandler mockConfigGetParameterHandler;
+  @Mock ConfigCacheClient activatedConfigsCache;
+
+  @Mock ConfigCacheClient defaultConfigsCache;
 
   private static final String PARAMETER_KEY = "my_feature";
   private static final String PARAMETER_VALUE = "true";
@@ -60,8 +64,12 @@ public class RolloutsStateFactoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
 
+    Map<String, String> configsMap = new HashMap<>();
+    configsMap.put(PARAMETER_KEY, PARAMETER_VALUE);
+
     configContainerWithRollout =
         ConfigContainer.newBuilder()
+            .replaceConfigsWith(configsMap)
             .withRolloutMetadata(
                 new JSONArray(
                     "["
@@ -76,7 +84,7 @@ public class RolloutsStateFactoryTest {
             .build();
     configContainerWithoutRollout = ConfigContainer.newBuilder().build();
 
-    factory = new RolloutsStateFactory(mockConfigGetParameterHandler);
+    factory = new RolloutsStateFactory(activatedConfigsCache, defaultConfigsCache);
   }
 
   @Test
@@ -88,7 +96,19 @@ public class RolloutsStateFactoryTest {
 
   @Test
   public void getActiveRolloutsState_hasRolloutsMetadata_populatesRolloutsState() throws Exception {
-    when(mockConfigGetParameterHandler.getString(PARAMETER_KEY)).thenReturn(PARAMETER_VALUE);
+    when(activatedConfigsCache.getBlocking()).thenReturn(configContainerWithRollout);
+
+    RolloutsState actual = factory.getActiveRolloutsState(configContainerWithRollout);
+
+    assertThat(actual).isEqualTo(rolloutsState);
+  }
+
+  @Test
+  public void
+      getActiveRolloutsState_hasRolloutsMetadata_noActivatedCacheValue_populatesRolloutsStateFromDefault()
+          throws Exception {
+    when(activatedConfigsCache.getBlocking()).thenReturn(configContainerWithoutRollout);
+    when(defaultConfigsCache.getBlocking()).thenReturn(configContainerWithRollout);
 
     RolloutsState actual = factory.getActiveRolloutsState(configContainerWithRollout);
 
@@ -97,7 +117,7 @@ public class RolloutsStateFactoryTest {
 
   @Test
   public void getActiveRolloutsState_rolloutsMetadataMultipleKeys_keepsFirstKey() throws Exception {
-    when(mockConfigGetParameterHandler.getString(PARAMETER_KEY)).thenReturn(PARAMETER_VALUE);
+    when(activatedConfigsCache.getBlocking()).thenReturn(configContainerWithRollout);
 
     // Add a key to affectedParameterKeys in configContainerWithRollout
     ConfigContainer configContainerWithRolloutWithMultipleKeys =
@@ -124,8 +144,8 @@ public class RolloutsStateFactoryTest {
 
   @Test
   public void getActiveRolloutsState_jsonException_throwsRemoteConfigException() throws Exception {
-    when(mockConfigGetParameterHandler.getString(PARAMETER_KEY)).thenReturn(PARAMETER_VALUE);
-    JSONArray rolloutMetadatamMissingVariantId =
+    when(activatedConfigsCache.getBlocking()).thenReturn(configContainerWithRollout);
+    JSONArray rolloutMetadataMissingVariantId =
         new JSONArray(
             "["
                 + "{"
@@ -140,7 +160,7 @@ public class RolloutsStateFactoryTest {
         () ->
             factory.getActiveRolloutsState(
                 ConfigContainer.newBuilder()
-                    .withRolloutMetadata(rolloutMetadatamMissingVariantId)
+                    .withRolloutMetadata(rolloutMetadataMissingVariantId)
                     .build()));
   }
 }
