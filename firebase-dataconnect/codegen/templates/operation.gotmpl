@@ -44,6 +44,38 @@ Argument: []*FieldDefinition The fields for the type being emitted.
     {{- end -}}
 {{- end -}}
 
+{{- /***************************************************************************
+Emits the convenience functions for working with the graphql mutation.
+Argument: RenderOperationTemplateConfig
+*************************************************************************/ -}}
+{{- define "MutationConvenienceFunctions" -}}
+suspend fun MutationRef<{{ .Operation.Name }}.Variables, Unit>.execute(
+  {{- template "MutationConvenienceFunctionParameters" . -}}
+)
+  = execute({{ .Operation.Name }}.Variables(
+  {{- template "MutationConvenienceFunctionVariablesConstruction" . -}}
+))
+{{- end -}}
+
+{{- /***************************************************************************
+Emits the parameter list for a convenience function for the graphql operation.
+Argument: RenderOperationTemplateConfig
+*************************************************************************/ -}}
+{{- define "MutationConvenienceFunctionParameters" -}}
+  {{- range flattenedVariablesFor .Operation .Schema -}}
+  {{ .Variable }}: {{ kotlinTypeFromGraphQLType .Type }},
+  {{- end -}}
+{{- end -}}
+
+{{- /***************************************************************************
+Emits the code to create the Variables object from the arguments to a
+convenience function for the graphql operation.
+Argument: RenderOperationTemplateConfig
+*************************************************************************/ -}}
+{{- define "MutationConvenienceFunctionVariablesConstruction" -}}
+zzyzx
+{{- end -}}
+
 package {{ .KotlinPackage }}
 
 import com.google.firebase.dataconnect.*
@@ -56,3 +88,7 @@ object {{ .Operation.Name }} {
 {{- end }}
 
 }
+
+{{ if and (gt (len .Operation.VariableDefinitions) 0) (hasNonScalarVariable .Operation) -}}
+{{ template "MutationConvenienceFunctions" . }}
+{{- end }}

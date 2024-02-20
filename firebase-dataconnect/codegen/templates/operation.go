@@ -20,6 +20,8 @@ func LoadOperationTemplate() (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"kotlinTypeFromGraphQLType": kotlinTypeFromGraphQLType,
 		"isScalarType":              isScalarType,
+		"hasNonScalarVariable":      hasNonScalarVariable,
+		"flattenedVariablesFor":     flattenedVariablesFor,
 	}
 
 	return template.New(templateName).Funcs(funcMap).Parse(operationTemplate)
@@ -106,4 +108,45 @@ func isScalarTypeName(typeName string) bool {
 	} else {
 		return false
 	}
+}
+
+func hasNonScalarVariable(operation *ast.OperationDefinition) bool {
+	for _, variableDefinition := range operation.VariableDefinitions {
+		if !isScalarType(variableDefinition.Type) {
+			return true
+		}
+	}
+	return false
+}
+
+func flattenedVariablesFor(operation *ast.OperationDefinition, schema *ast.Schema) []*ast.VariableDefinition {
+	flattenedVariables := make([]*ast.VariableDefinition, 0, 0)
+
+	for _, variableDefinition := range operation.VariableDefinitions {
+		if isScalarType(variableDefinition.Type) {
+			flattenedVariables = append(flattenedVariables, variableDefinition)
+		} else {
+			flattenedVariables = append(flattenedVariables, flattenedVariablesForType(variableDefinition.Type, schema)...)
+		}
+	}
+
+	return flattenedVariables
+}
+
+func flattenedVariablesForType(typeNode *ast.Type, schema *ast.Schema) []*ast.VariableDefinition {
+	flattenedVariables := make([]*ast.VariableDefinition, 0, 0)
+
+	typeInfo := schema.Types[typeNode.NamedType]
+	for _, field := range typeInfo.Fields {
+		if isScalarType(field.Type) {
+			flattenedVariables = append(flattenedVariables, &ast.VariableDefinition{
+				Variable: field.Name,
+				Type:     field.Type,
+			})
+		} else {
+			flattenedVariables = append(flattenedVariables, flattenedVariablesForType(field.Type, schema)...)
+		}
+	}
+
+	return flattenedVariables
 }
