@@ -26,7 +26,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	graphQLOperations, err := graphql.LoadOperationsFile(parsedArgs.OperationsFile)
+	graphQLOperations, err := graphql.LoadOperationsFile(parsedArgs.OperationsFile, graphQLSchema)
 	if err != nil {
 		log.Fatal(err)
 	}

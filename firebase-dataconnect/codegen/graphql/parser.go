@@ -6,6 +6,7 @@ import (
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 	"github.com/vektah/gqlparser/v2/parser"
+	"github.com/vektah/gqlparser/v2/validator"
 	"log"
 	"os"
 	"strings"
@@ -191,6 +192,11 @@ func LoadOperationsFile(file string, schema *ast.Schema) (*ast.QueryDocument, er
 			return nil, gqlerror.List{gqlErr}
 		}
 		return nil, gqlerror.List{gqlerror.Wrap(err)}
+	}
+
+	errs := validator.Validate(schema, query)
+	if len(errs) > 0 {
+		return nil, errs
 	}
 
 	return query, nil

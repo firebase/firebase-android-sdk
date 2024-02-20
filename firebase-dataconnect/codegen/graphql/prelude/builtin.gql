@@ -1,0 +1,7 @@
+type Query {
+  _firebase: Void
+}
+
+type Mutation {
+  _firebase: Void
+}

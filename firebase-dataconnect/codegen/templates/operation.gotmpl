@@ -1,21 +1,47 @@
+{{- /***************************************************************************
+Emits the "Variables" data class definition for the graphql operation.
+Argument: []*VariableDefinition The list of operation's variables.
+*************************************************************************/ -}}
 {{- define "VariablesClass" -}}
 @Serializable data class Variables({{ template "VariablesClassConstructorParameters" . }}) {
 {{ template "VariablesClassNestedClassDefinitions" . }}
 }
 {{- end -}}
 
+{{- /***************************************************************************
+Emits the parameter list of the "Variables" data class definition for the
+graphql operation.
+Argument: []*VariableDefinition The list of operation's variables.
+*************************************************************************/ -}}
 {{- define "VariablesClassConstructorParameters" -}}
     {{- range . -}}
-        val {{ .Variable }}: {{ kotlinTypeFromGraphQLType .Type }}
+        val {{ .Variable }}: {{ kotlinTypeFromGraphQLType .Type }},
     {{- end -}}
 {{- end -}}
 
+{{- /***************************************************************************
+Emits the nested class definitions that should be nested inside the "Variables"
+data class definition for the graphql operation.
+Argument: []*VariableDefinition The list of operation's variables.
+*************************************************************************/ -}}
 {{- define "VariablesClassNestedClassDefinitions" -}}
-{{- range . -}}
-{{- if isScalarType .Type }}{{ continue }}{{ end -}}
-@Serializable data class {{ .Type.Name }}() {
-}
+  {{- range . -}}
+    {{- if isScalarType .Type }}{{ continue }}{{ end -}}
+    @Serializable data class {{ .Type.Name }}(
+      {{- template "VariablesClassNestedClassConstructorParameters" .Definition.Fields -}}
+    )
+  {{- end -}}
 {{- end -}}
+
+{{- /***************************************************************************
+Emits the constructor parameter list for a nested class definitions nested
+inside the "Variables" data class definition for the graphql operation.
+Argument: []*FieldDefinition The fields for the type being emitted.
+*************************************************************************/ -}}
+{{- define "VariablesClassNestedClassConstructorParameters" -}}
+    {{- range . -}}
+        val {{ .Name }}: {{ kotlinTypeFromGraphQLType .Type }},
+    {{- end -}}
 {{- end -}}
 
 package {{ .KotlinPackage }}
