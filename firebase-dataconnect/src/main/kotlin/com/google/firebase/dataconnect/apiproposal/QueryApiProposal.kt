@@ -1,6 +1,7 @@
 package com.google.firebase.dataconnect.apiproposal
 
 import android.app.Activity
+import com.google.firebase.FirebaseApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -10,17 +11,82 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// CORE SDK
+// CORE SDK INIT
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+class ConnectorConfig constructor(
+  val connector: String,
+  val location: String,
+  val service: String
+)
 
-class FirebaseDataConnect {
+class DataConnectSetting internal constructor()
+
+enum class LoggerLevel {
+  DEBUG, WARN, NONE
+}
+
+class FirebaseDataConnect internal constructor() : AutoCloseable {
 
   class Queries internal constructor() {
     val dataConnect: FirebaseDataConnect
       get() = TODO()
   }
   val queries: Queries = TODO()
+
+  fun useEmulator(host : String,  port : Int) : Unit = TODO()
+
+  override fun close() = TODO()
+
+  override fun toString(): String = TODO()
+
+  companion object {
+    fun getInstance(app : FirebaseApp, connectorConfig : ConnectorConfig) : FirebaseDataConnect = TODO()
+
+    // Future Add On
+    fun getInstance(app : FirebaseApp, connectorConfig : ConnectorConfig, setting : DataConnectSetting) : FirebaseDataConnect = TODO()
+
+    var logLevel : LoggerLevel
+      get() = TODO()
+      set(level : LoggerLevel) = TODO()
+  }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// GEN SDK INIT
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class PostConnector internal constructor () {
+  companion object {
+    fun getConfig(location: String = "default.location", service: String = "default.service"): ConnectorConfig = TODO()
+  }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Third Party Examples
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+fun thirdPartyApp() {
+  FirebaseDataConnect.logLevel = LoggerLevel.DEBUG
+
+  val app = FirebaseApp.getInstance()
+
+  val config = PostConnector.getConfig()
+  val configOverrideLocation = PostConnector.getConfig(location = "new.location")
+  val configOverrideAllVariables = PostConnector.getConfig(location = "new.location", service = "new.service")
+
+  val dataConnect = FirebaseDataConnect.getInstance(app, config)
+
+  dataConnect.useEmulator("10.0.2.2", 9000)
+
+  val settingFuture = DataConnectSetting()
+  val dataConnectFuture = FirebaseDataConnect.getInstance(app, PostConnector.getConfig(), settingFuture)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// CORE SDK Query
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 fun <VariablesType, DataType> FirebaseDataConnect.query(
   operationName: String,
