@@ -27,10 +27,32 @@ func LoadSchemaFile(file string) (*ast.Schema, error) {
 		return nil, err
 	}
 
+	addUnderscoreDataInputTypes(graphqlSchema)
+
 	return graphqlSchema, nil
 }
 
-func LoadOperationsFile(file string) (*ast.QueryDocument, error) {
+func addUnderscoreDataInputTypes(graphqlSchema *ast.Schema) {
+	dataTypeDefinitions := make([]*ast.Definition, 0, 0)
+	for _, typeInfo := range graphqlSchema.Types {
+		if typeInfo.BuiltIn {
+			continue
+		}
+
+		dataTypeDefinition := new(ast.Definition)
+		*dataTypeDefinition = *typeInfo
+		dataTypeDefinition.Name = typeInfo.Name + "_Data"
+		dataTypeDefinition.Kind = ast.InputObject
+		dataTypeDefinitions = append(dataTypeDefinitions, dataTypeDefinition)
+	}
+
+	for _, dataTypeDefinition := range dataTypeDefinitions {
+		log.Println("Adding input type to schema: ", dataTypeDefinition.Name)
+		graphqlSchema.Types[dataTypeDefinition.Name] = dataTypeDefinition
+	}
+}
+
+func LoadOperationsFile(file string, schema *ast.Schema) (*ast.QueryDocument, error) {
 	log.Println("Loading GraphQL operations file:", file)
 	source, err := loadGraphQLSourceFromFile(file)
 	if err != nil {
