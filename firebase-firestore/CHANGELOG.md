@@ -1,11 +1,12 @@
 # Unreleased
 
-* [feature] Enable snapshot listeners to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
+* [feature] Enable snapshot listener option to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
 * [fixed] Fixed the missing handling setter annotations bug introduced by [#5626](//github.com/firebase/firebase-android-sdk/pull/5626). [#5706](//github.com/firebase/firebase-android-sdk/pull/5706)
 
 # 24.10.2
 * [changed] Internal test improvements.
 * [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5626)
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
