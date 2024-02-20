@@ -7,6 +7,7 @@ import (
 	"github.com/vektah/gqlparser/v2/parser"
 	"log"
 	"os"
+	"strings"
 )
 
 func LoadSchemaFile(file string) (*ast.Schema, error) {
@@ -27,28 +28,106 @@ func LoadSchemaFile(file string) (*ast.Schema, error) {
 		return nil, err
 	}
 
-	addUnderscoreDataInputTypes(graphqlSchema)
+	addSynthesizedInputTypesAndFields(graphqlSchema)
 
 	return graphqlSchema, nil
 }
 
-func addUnderscoreDataInputTypes(graphqlSchema *ast.Schema) {
-	dataTypeDefinitions := make([]*ast.Definition, 0, 0)
-	for _, typeInfo := range graphqlSchema.Types {
-		if typeInfo.BuiltIn {
-			continue
+func addSynthesizedInputTypesAndFields(schema *ast.Schema) {
+	typesRequiringSynthesizedTypesAndFields := make([]*ast.Definition, 0, 0)
+	for _, typeInfo := range schema.Types {
+		if !typeInfo.BuiltIn {
+			typesRequiringSynthesizedTypesAndFields = append(typesRequiringSynthesizedTypesAndFields, typeInfo)
 		}
-
-		dataTypeDefinition := new(ast.Definition)
-		*dataTypeDefinition = *typeInfo
-		dataTypeDefinition.Name = typeInfo.Name + "_Data"
-		dataTypeDefinition.Kind = ast.InputObject
-		dataTypeDefinitions = append(dataTypeDefinitions, dataTypeDefinition)
 	}
 
-	for _, dataTypeDefinition := range dataTypeDefinitions {
-		log.Println("Adding input type to schema: ", dataTypeDefinition.Name)
-		graphqlSchema.Types[dataTypeDefinition.Name] = dataTypeDefinition
+	synthesizedInputTypes := make([]*ast.Definition, 0, 0)
+	for _, typeInfo := range typesRequiringSynthesizedTypesAndFields {
+		synthesizedInputType := new(ast.Definition)
+		*synthesizedInputType = *typeInfo
+		synthesizedInputType.Name = typeInfo.Name + "_Data"
+		synthesizedInputType.Kind = ast.InputObject
+		synthesizedInputTypes = append(synthesizedInputTypes, synthesizedInputType)
+
+		log.Println("Adding input type to schema: ", synthesizedInputType.Name)
+		schema.Types[synthesizedInputType.Name] = synthesizedInputType
+	}
+
+	for i, typeInfo := range typesRequiringSynthesizedTypesAndFields {
+		synthesizedTypeInfo := synthesizedInputTypes[i]
+
+		mutationFields := make([]*ast.FieldDefinition, 0, 0)
+		mutationFields = append(mutationFields, createInsertMutationField(typeInfo, synthesizedTypeInfo))
+		mutationFields = append(mutationFields, createDeleteMutationField(typeInfo))
+		mutationFields = append(mutationFields, createUpdateMutationField(typeInfo, synthesizedTypeInfo))
+
+		for _, mutationField := range mutationFields {
+			log.Println("Adding mutation field to schema: ", mutationField.Name)
+			schema.Mutation.Fields = append(schema.Mutation.Fields, mutationField)
+		}
+	}
+}
+
+func createInsertMutationField(definition *ast.Definition, synthesizedDefinition *ast.Definition) *ast.FieldDefinition {
+	arguments := []*ast.ArgumentDefinition{
+		&ast.ArgumentDefinition{
+			Name: "data",
+			Type: &ast.Type{
+				NamedType: synthesizedDefinition.Name,
+				NonNull:   false,
+			},
+		},
+	}
+
+	return &ast.FieldDefinition{
+		Name:      strings.ToLower(definition.Name) + "_insert",
+		Arguments: arguments,
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be-seen", NonNull: false},
+	}
+}
+
+func createDeleteMutationField(definition *ast.Definition) *ast.FieldDefinition {
+	arguments := []*ast.ArgumentDefinition{
+		&ast.ArgumentDefinition{
+			Name: "id",
+			Type: &ast.Type{
+				NamedType: "String",
+				Elem:      nil,
+				NonNull:   false,
+				Position:  nil,
+			},
+		},
+	}
+
+	return &ast.FieldDefinition{
+		Name:      strings.ToLower(definition.Name) + "_delete",
+		Arguments: arguments,
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be-seen", NonNull: false},
+	}
+}
+
+func createUpdateMutationField(definition *ast.Definition, synthesizedDefinition *ast.Definition) *ast.FieldDefinition {
+	arguments := []*ast.ArgumentDefinition{
+		&ast.ArgumentDefinition{
+			Name: "id",
+			Type: &ast.Type{
+				NamedType: "String",
+				NonNull:   false,
+			},
+		},
+		&ast.ArgumentDefinition{
+			Name: "data",
+			Type: &ast.Type{
+				NamedType: synthesizedDefinition.Name,
+				NonNull:   false,
+			},
+		},
+	}
+
+	return &ast.FieldDefinition{
+		Name:      strings.ToLower(definition.Name) + "_update",
+		Arguments: arguments,
+		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be-seen", NonNull: false},
 	}
 }
 
