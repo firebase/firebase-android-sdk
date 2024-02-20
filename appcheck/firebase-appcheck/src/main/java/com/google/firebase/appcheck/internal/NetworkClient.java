@@ -121,7 +121,8 @@ public class NetworkClient {
       throw new FirebaseException("Too many attempts.");
     }
     URL url = new URL(String.format(getUrlTemplate(tokenType), projectId, appId, apiKey));
-    String response = makeNetworkRequest(url, requestBytes, retryManager);
+    String response =
+        makeNetworkRequest(url, requestBytes, retryManager, /* resetRetryManagerOnSuccess= */ true);
     return AppCheckTokenResponse.fromJsonString(response);
   }
 
@@ -138,11 +139,15 @@ public class NetworkClient {
     }
     URL url =
         new URL(String.format(PLAY_INTEGRITY_CHALLENGE_URL_TEMPLATE, projectId, appId, apiKey));
-    return makeNetworkRequest(url, requestBytes, retryManager);
+    return makeNetworkRequest(
+        url, requestBytes, retryManager, /* resetRetryManagerOnSuccess= */ false);
   }
 
   private String makeNetworkRequest(
-      @NonNull URL url, @NonNull byte[] requestBytes, @NonNull RetryManager retryManager)
+      @NonNull URL url,
+      @NonNull byte[] requestBytes,
+      @NonNull RetryManager retryManager,
+      boolean resetRetryManagerOnSuccess)
       throws FirebaseException, IOException, JSONException {
     HttpURLConnection urlConnection = createHttpUrlConnection(url);
 
@@ -187,7 +192,9 @@ public class NetworkClient {
                 + " body: "
                 + httpErrorResponse.getErrorMessage());
       }
-      retryManager.resetBackoffOnSuccess();
+      if (resetRetryManagerOnSuccess) {
+        retryManager.resetBackoffOnSuccess();
+      }
       return responseBody;
     } finally {
       urlConnection.disconnect();

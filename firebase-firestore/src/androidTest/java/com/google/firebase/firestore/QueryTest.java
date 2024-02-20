@@ -29,6 +29,7 @@ import static com.google.firebase.firestore.Filter.notEqualTo;
 import static com.google.firebase.firestore.Filter.notInArray;
 import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.remote.TestingHooksUtil.captureExistenceFilterMismatches;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -37,6 +38,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
@@ -76,25 +78,6 @@ public class QueryTest {
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
-  }
-
-  /**
-   * Checks that running the query while online (against the backend/emulator) results in the same
-   * documents as running the query while offline. If `expectedDocs` is provided, it also checks
-   * that both online and offline query result is equal to the expected documents.
-   *
-   * @param query The query to check
-   * @param expectedDocs Ordered list of document keys that are expected to match the query
-   */
-  public void checkOnlineAndOfflineResultsMatch(Query query, String... expectedDocs) {
-    QuerySnapshot docsFromServer = waitFor(query.get(Source.SERVER));
-    QuerySnapshot docsFromCache = waitFor(query.get(Source.CACHE));
-
-    assertEquals(querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCache));
-    List<String> expected = asList(expectedDocs);
-    if (!expected.isEmpty()) {
-      assertEquals(expected, querySnapshotToIds(docsFromCache));
-    }
   }
 
   @Test
@@ -1358,8 +1341,8 @@ public class QueryTest {
         isRunningAgainstEmulator());
 
     // Firestore does not do any Unicode normalization on the document IDs. Therefore, two document
-    // IDs that are canonically-equivalent (i.e. they visually appear identical) but are represented
-    // by a different sequence of Unicode code points are treated as distinct document IDs.
+    // IDs that are canonically-equivalent (they visually appear identical) but are represented by a
+    // different sequence of Unicode code points are treated as distinct document IDs.
     ArrayList<String> testDocIds = new ArrayList<>();
     testDocIds.add("DocumentToDelete");
     // The next two strings both end with "e" with an accent: the first uses the dedicated Unicode
@@ -1523,46 +1506,6 @@ public class QueryTest {
   }
 
   @Test
-  public void testOrQueriesWithCompositeIndexes() {
-    assumeTrue(
-        "Skip this test if running against production because it results in a "
-            + "'missing index' error. The Firestore Emulator, however, does serve these "
-            + " queries.",
-        isRunningAgainstEmulator());
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "doc1", map("a", 1, "b", 0),
-            "doc2", map("a", 2, "b", 1),
-            "doc3", map("a", 3, "b", 2),
-            "doc4", map("a", 1, "b", 3),
-            "doc5", map("a", 1, "b", 1));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    // with one inequality: a>2 || b==1.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(greaterThan("a", 2), equalTo("b", 1))), "doc5", "doc2", "doc3");
-
-    // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limit(2), "doc1", "doc2");
-
-    // Test with limits (explicit order by): (a==1) || (b > 0) LIMIT_TO_LAST 2
-    // Note: The public query API does not allow implicit ordering when limitToLast is used.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limitToLast(2).orderBy("b"),
-        "doc3",
-        "doc4");
-
-    // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1).orderBy("a"), "doc5");
-
-    // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limitToLast(1).orderBy("a"), "doc2");
-  }
-
-  @Test
   public void testOrQueriesWithIn() {
     Map<String, Map<String, Object>> testDocs =
         map(
@@ -1577,29 +1520,6 @@ public class QueryTest {
     // a==2 || b in [2,3]
     checkOnlineAndOfflineResultsMatch(
         collection.where(or(equalTo("a", 2), inArray("b", asList(2, 3)))), "doc3", "doc4", "doc6");
-  }
-
-  @Test
-  public void testOrQueriesWithNotIn() {
-    assumeTrue(
-        "Skip this test if running against production because it results in a "
-            + "'missing index' error. The Firestore Emulator, however, does serve these "
-            + " queries",
-        isRunningAgainstEmulator());
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "doc1", map("a", 1, "b", 0),
-            "doc2", map("b", 1),
-            "doc3", map("a", 3, "b", 2),
-            "doc4", map("a", 1, "b", 3),
-            "doc5", map("a", 1),
-            "doc6", map("a", 2));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    // a==2 || b not-in [2,3]
-    // Has implicit orderBy b.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), notInArray("b", asList(2, 3)))), "doc1", "doc2");
   }
 
   @Test
@@ -1628,10 +1548,6 @@ public class QueryTest {
 
   @Test
   public void testMultipleInOps() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because it's not yet supported.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", 0),
@@ -1654,10 +1570,6 @@ public class QueryTest {
 
   @Test
   public void testUsingInWithArrayContainsAny() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because it's not yet supported.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -1711,11 +1623,6 @@ public class QueryTest {
 
   @Test
   public void testOrderByEquality() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because order-by-equality is "
-            + "not supported yet.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -2286,5 +2193,46 @@ public class QueryTest {
     // explicit OR: a>2 || b<1.
     Query query5 = collection.where(or(greaterThan("a", 2), lessThan("b", 1)));
     checkOnlineAndOfflineResultsMatch(query5, "doc1", "doc3");
+  }
+
+  @Test
+  public void testMultipleInequalityRejectsIfDocumentKeyIsNotTheLastOrderByField() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection = testCollection();
+
+    // Implicitly ordered by:  __name__ asc, 'key' asc,
+    Query query = collection.whereNotEqualTo("key", 42).orderBy(FieldPath.documentId());
+    Exception e = waitForException(query.get());
+    FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
+    assertTrue(
+        firestoreException
+            .getMessage()
+            .contains("order by clause cannot contain more fields after the key"));
+  }
+
+  @Test
+  public void testMultipleInequalityRejectsIfDocumentKeyAppearsOnlyInEqualityFilter() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection = testCollection();
+
+    Query query =
+        collection.whereNotEqualTo("key", 42).whereEqualTo(FieldPath.documentId(), "doc1");
+    Exception e = waitForException(query.get());
+    FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
+    assertTrue(
+        firestoreException
+            .getMessage()
+            .contains(
+                "Equality on key is not allowed if there are other inequality fields and key does not appear in inequalities."));
   }
 }

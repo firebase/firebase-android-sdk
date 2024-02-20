@@ -96,8 +96,8 @@ android {
 }
 
 dependencies {
-  implementation(project(":firebase-common"))
-  implementation(project(":firebase-components"))
+  implementation("com.google.firebase:firebase-common:20.4.2")
+  implementation("com.google.firebase:firebase-components:17.1.5")
 }
 
 ```

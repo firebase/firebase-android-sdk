@@ -22,10 +22,12 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
@@ -94,6 +96,8 @@ public class CrashlyticsCore {
 
   private final CrashlyticsNativeComponent nativeComponent;
 
+  private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
+
   // region Constructors
 
   public CrashlyticsCore(
@@ -105,7 +109,8 @@ public class CrashlyticsCore {
       AnalyticsEventLogger analyticsEventLogger,
       FileStore fileStore,
       ExecutorService crashHandlerExecutor,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
+      RemoteConfigDeferredProxy remoteConfigDeferredProxy) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.context = app.getApplicationContext();
@@ -117,6 +122,7 @@ public class CrashlyticsCore {
     this.fileStore = fileStore;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
     this.sessionsSubscriber = sessionsSubscriber;
+    this.remoteConfigDeferredProxy = remoteConfigDeferredProxy;
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
@@ -150,6 +156,8 @@ public class CrashlyticsCore {
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(
               MAX_STACK_SIZE, new RemoveRepeatsStrategy(NUM_STACK_REPETITIONS_ALLOWED));
+
+      remoteConfigDeferredProxy.setupListener(userMetadata);
 
       final SessionReportingCoordinator sessionReportingCoordinator =
           SessionReportingCoordinator.create(
@@ -213,6 +221,7 @@ public class CrashlyticsCore {
   }
 
   /** Performs background initialization asynchronously on the background worker's thread. */
+  @CanIgnoreReturnValue
   public Task<Void> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
     return Utils.callTask(
         crashHandlerExecutor,
@@ -225,6 +234,7 @@ public class CrashlyticsCore {
   }
 
   /** Performs background initialization synchronously on the calling thread. */
+  @CanIgnoreReturnValue
   private Task<Void> doBackgroundInitialization(SettingsProvider settingsProvider) {
     // create the marker for this run
     markInitializationStarted();

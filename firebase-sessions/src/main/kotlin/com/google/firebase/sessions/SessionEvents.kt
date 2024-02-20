@@ -32,16 +32,13 @@ internal object SessionEvents {
       .ignoreNullValues(true)
       .build()
 
-  /**
-   * Construct a Session Start event.
-   *
-   * Some mutable fields, e.g. firebaseInstallationId, get populated later.
-   */
-  fun startSession(
+  /** Construct a Session Start event. */
+  fun buildSession(
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
     subscribers: Map<SessionSubscriber.Name, SessionSubscriber> = emptyMap(),
+    firebaseInstallationId: String = "",
   ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
@@ -56,8 +53,9 @@ internal object SessionEvents {
             crashlytics = toDataCollectionState(subscribers[SessionSubscriber.Name.CRASHLYTICS]),
             sessionSamplingRate = sessionsSettings.samplingRate,
           ),
+          firebaseInstallationId,
         ),
-      applicationInfo = getApplicationInfo(firebaseApp)
+      applicationInfo = getApplicationInfo(firebaseApp),
     )
 
   fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {
@@ -84,6 +82,8 @@ internal object SessionEvents {
           versionName = packageInfo.versionName ?: buildVersion,
           appBuildVersion = buildVersion,
           deviceManufacturer = Build.MANUFACTURER,
+          ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext),
+          ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
         )
     )
   }

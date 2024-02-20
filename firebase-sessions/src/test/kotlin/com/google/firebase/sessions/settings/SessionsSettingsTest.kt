@@ -22,6 +22,7 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.concurrent.TestOnlyExecutors
+import com.google.firebase.sessions.SessionDataStoreConfigs
 import com.google.firebase.sessions.SessionEvents
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
@@ -224,6 +225,11 @@ class SessionsSettingsTest {
 
       remoteSettings.clearCachedSettings()
     }
+
+  @Test
+  fun sessionSettings_dataStorePreferencesNameIsFilenameSafe() {
+    assertThat(SessionDataStoreConfigs.SESSIONS_CONFIG_NAME).matches("^[a-zA-Z0-9_=]+\$")
+  }
 
   @After
   fun cleanUp() {

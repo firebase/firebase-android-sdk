@@ -25,6 +25,7 @@ import com.google.firebase.encoders.processor.getters.AnnotationDescriptor;
 import com.google.firebase.encoders.processor.getters.AnnotationProperty;
 import com.google.firebase.encoders.processor.getters.Getter;
 import com.google.firebase.encoders.processor.getters.GetterFactory;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -108,6 +109,10 @@ public class EncodableProcessor extends AbstractProcessor {
     // before and after 9. See https://github.com/google/dagger/pull/882
     TypeSpec.Builder encoderBuilder =
         TypeSpec.classBuilder(className)
+            .addAnnotation(
+                AnnotationSpec.builder(SuppressWarnings.class)
+                    .addMember("value", "\"KotlinInternal\"")
+                    .build())
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addSuperinterface(configurator)
             .addField(

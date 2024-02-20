@@ -1,5 +1,42 @@
 # Unreleased
 
+
+# 17.1.2
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
+
+# 17.1.1
+* [fixed] Fixed a bug causing internal tests to depend directly on `firebase-common`.
+* [fixed] Fixed client-side throttling in Play Integrity flows.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
+
+# 17.1.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-appcheck-ktx`
+  to `com.google.firebase:firebase-appcheck` under the `com.google.firebase.appcheck` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-appcheck-ktx` have been added to
+  `com.google.firebase:firebase-appcheck` under the `com.google.firebase.appcheck` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-appcheck-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
+
 # 17.0.1
 * [changed] Internal updates to allow Firebase SDKs to obtain limited-use tokens.
 
@@ -27,7 +64,6 @@ updates.
   (GitHub [#4431](//github.com/firebase/firebase-android-sdk/issues/4431){: .external}
   and
   [#4449](//github.com/firebase/firebase-android-sdk/issues/4449){: .external})
-
 * [changed] Moved Task continuations off the main thread.
   (GitHub [#4453](//github.com/firebase/firebase-android-sdk/issues/4453){: .external})
 
@@ -62,7 +98,6 @@ additional updates:
 # 16.0.0
 * [changed] [app_check] has exited beta and is now generally available for
   use.
-
 * [feature] Added support for
   [Play Integrity](https://developer.android.com/google/play/integrity) as an
   attestation provider.
@@ -77,7 +112,6 @@ additional updates:
 # 16.0.0-beta04
 * [changed] Improved error handling logic by minimizing the amount of requests
   that are unlikely to succeed.
-
 * [fixed] Fixed heartbeat reporting.
 
 # 16.0.0-beta03

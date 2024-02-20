@@ -16,9 +16,12 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicMarkableReference;
@@ -35,13 +38,17 @@ public class UserMetadata {
   public static final String KEYDATA_FILENAME = "keys";
   public static final String INTERNAL_KEYDATA_FILENAME = "internal-keys";
 
+  public static final String ROLLOUTS_STATE_FILENAME = "rollouts-state";
+
   @VisibleForTesting public static final int MAX_ATTRIBUTES = 64;
   @VisibleForTesting public static final int MAX_ATTRIBUTE_SIZE = 1024;
   @VisibleForTesting public static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
+  @VisibleForTesting public static final int MAX_ROLLOUT_ASSIGNMENTS = 128;
+
   private final MetaDataStore metaDataStore;
   private final CrashlyticsBackgroundWorker backgroundWorker;
-  private final String sessionIdentifier;
+  private String sessionIdentifier;
 
   // The following references contain a marker bit, which is true if the data maintained in the
   // associated reference has been serialized since the last time it was updated.
@@ -50,6 +57,10 @@ public class UserMetadata {
   // as atomic APIs.
   private final SerializeableKeysMap customKeys = new SerializeableKeysMap(false);
   private final SerializeableKeysMap internalKeys = new SerializeableKeysMap(true);
+
+  private final RolloutAssignmentList rolloutsState =
+      new RolloutAssignmentList(MAX_ROLLOUT_ASSIGNMENTS);
+
   private final AtomicMarkableReference<String> userId = new AtomicMarkableReference<>(null, false);
 
   @Nullable
@@ -66,7 +77,7 @@ public class UserMetadata {
     metadata.customKeys.map.getReference().setKeys(store.readKeyData(sessionId, false));
     metadata.internalKeys.map.getReference().setKeys(store.readKeyData(sessionId, true));
     metadata.userId.set(store.readUserId(sessionId), false);
-
+    metadata.rolloutsState.updateRolloutAssignmentList(store.readRolloutsState(sessionId));
     return metadata;
   }
 
@@ -75,6 +86,29 @@ public class UserMetadata {
     this.sessionIdentifier = sessionIdentifier;
     this.metaDataStore = new MetaDataStore(fileStore);
     this.backgroundWorker = backgroundWorker;
+  }
+
+  /**
+   * Refresh the userMetadata to reflect the status of the new session. This API is mainly for
+   * on-demand fatal feature since we need to close and update to a new session. UserMetadata also
+   * need to make this update instead of updating session id, we also need to manually writing the
+   * into persistence for the new session.
+   */
+  public void setNewSession(String sessionId) {
+    synchronized (sessionIdentifier) {
+      sessionIdentifier = sessionId;
+      Map<String, String> keyData = customKeys.getKeys();
+      List<RolloutAssignment> rolloutAssignments = rolloutsState.getRolloutAssignmentList();
+      if (getUserId() != null) {
+        metaDataStore.writeUserData(sessionId, getUserId());
+      }
+      if (!keyData.isEmpty()) {
+        metaDataStore.writeKeyData(sessionId, keyData);
+      }
+      if (!rolloutAssignments.isEmpty()) {
+        metaDataStore.writeRolloutState(sessionId, rolloutAssignments);
+      }
+    }
   }
 
   @Nullable
@@ -137,6 +171,30 @@ public class UserMetadata {
    */
   public boolean setInternalKey(String key, String value) {
     return internalKeys.setKey(key, value);
+  }
+
+  public List<CrashlyticsReport.Session.Event.RolloutAssignment> getRolloutsState() {
+    return rolloutsState.getReportRolloutsState();
+  }
+
+  /**
+   * Update RolloutsState in memory and persistence. Return True if update successfully, false
+   * otherwise
+   */
+  @CanIgnoreReturnValue
+  public boolean updateRolloutsState(List<RolloutAssignment> rolloutAssignments) {
+    synchronized (rolloutsState) {
+      if (!rolloutsState.updateRolloutAssignmentList(rolloutAssignments)) {
+        return false;
+      }
+      List<RolloutAssignment> updatedRolloutAssignments = rolloutsState.getRolloutAssignmentList();
+      backgroundWorker.submit(
+          () -> {
+            metaDataStore.writeRolloutState(sessionIdentifier, updatedRolloutAssignments);
+            return null;
+          });
+      return true;
+    }
   }
 
   /**

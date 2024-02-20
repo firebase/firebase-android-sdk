@@ -262,7 +262,7 @@ public class AsyncQueue {
               if (t == null && r instanceof Future<?>) {
                 Future<?> future = (Future<?>) r;
                 try {
-                  // Not all Futures will be done, e.g. when used with scheduledAtFixedRate
+                  // Not all Futures will be done, for example when used with scheduledAtFixedRate.
                   if (future.isDone()) {
                     future.get();
                   }

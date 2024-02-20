@@ -1,7 +1,41 @@
 # Unreleased
 
+
+# 16.0.0-beta12
+* [unchanged] Updated to accommodate the release of the updated
+  [appdistro] library.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appdistribution-api` library. The Kotlin extensions library has no additional
+updates.
+
+# 16.0.0-beta11
+* [changed] Added Kotlin extensions (KTX) APIs from
+  `com.google.firebase:firebase-appdistribution-api-ktx`
+  to `com.google.firebase:firebase-appdistribution-api` under the
+  `com.google.firebase.appdistribution` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-appdistribution-api-ktx` have been
+  added to
+  `com.google.firebase:firebase-appdistribution-api` under the
+  `com.google.firebase.appdistribution` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-appdistribution-api-ktx`
+  are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details,
+  see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appdistribution-api` library. The Kotlin extensions library has no additional
+updates.
+
 # 16.0.0-beta09
 * [feature] Improved development mode to allow all API calls to be made without having to sign in.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -12,6 +46,7 @@ additional updates.
 * [fixed] Fixed an issue where a crash happened whenever a feedback
   notification was shown on devices running Android 4.4 and lower.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-appdistribution-api` library. The Kotlin extensions library has no
@@ -20,6 +55,7 @@ additional updates.
 # 16.0.0-beta07
 * [feature] Added support for testers to attach JPEG screenshots to their
   feedback.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated

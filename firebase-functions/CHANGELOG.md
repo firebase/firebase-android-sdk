@@ -1,5 +1,23 @@
 # Unreleased
 
+
+# 20.4.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-functions-ktx`
+  to `com.google.firebase:firebase-functions` under the `com.google.firebase.functions` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-functions-ktx` have been added to
+  `com.google.firebase:firebase-functions` under the `com.google.firebase.functions` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-functions-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.3.1
 * [changed] Added support for App Check limited-use tokens in HTTPS Callable Functions.
 
@@ -20,7 +38,6 @@ updates.
 
 # 20.2.2
 * [changed] Moved Task continuations off the main thread.
-
 * [changed] Internal infrastructure improvements.
 
 
@@ -124,7 +141,6 @@ updates.
 * [feature] Added support for connecting to the Firebase Emulator Suite via
   a new method,
   [`FirebaseFunctions#UseEmulator()`](/docs/reference/android/com/google/firebase/functions/FirebaseFunctions#useEmulator(java.lang.String,%20int)).
-
 * [deprecated] Deprecated the `useFunctionsEmulator(String)` method.
 
 
@@ -135,7 +151,6 @@ updates.
 
 # 19.0.2
 * [changed] Internal changes to ensure functionality alignment with other SDK releases.
-
 
 
 ## Kotlin
@@ -170,7 +185,6 @@ updates.
 # 16.3.0
 * [changed] Changed the default timeout for callable functions to 70 seconds
   ([#2329](//github.com/firebase/firebase-android-sdk/pull/224)).
-
 * [feature] Added
   [`setTimeout`](/docs/reference/android/com/google/firebase/functions/HttpsCallableReference)
   and
@@ -181,7 +195,6 @@ updates.
 # 16.1.0
 * [feature] `FirebaseFunctions.getInstance()` now allows passing in an
 optional region to override the default "us-central1".
-
 * [feature] New `useFunctionsEmulator` method allows testing against a local
 instance of the [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
 

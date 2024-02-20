@@ -26,7 +26,6 @@ import java.lang.annotation.RetentionPolicy;
 public class RetryManager {
 
   @VisibleForTesting static final int BAD_REQUEST_ERROR_CODE = 400;
-  @VisibleForTesting static final int FORBIDDEN_ERROR_CODE = 403;
   @VisibleForTesting static final int NOT_FOUND_ERROR_CODE = 404;
   @VisibleForTesting static final long MAX_EXP_BACKOFF_MILLIS = 4 * 60 * 60 * 1000; // 4 hours
   @VisibleForTesting static final long ONE_DAY_MILLIS = 24 * 60 * 60 * 1000; // 24 hours
@@ -91,9 +90,7 @@ public class RetryManager {
 
   @BackoffStrategyType
   private static int getBackoffStrategyByErrorCode(int errorCode) {
-    if (errorCode == BAD_REQUEST_ERROR_CODE
-        || errorCode == FORBIDDEN_ERROR_CODE
-        || errorCode == NOT_FOUND_ERROR_CODE) {
+    if (errorCode == BAD_REQUEST_ERROR_CODE || errorCode == NOT_FOUND_ERROR_CODE) {
       return ONE_DAY;
     }
     return EXPONENTIAL;

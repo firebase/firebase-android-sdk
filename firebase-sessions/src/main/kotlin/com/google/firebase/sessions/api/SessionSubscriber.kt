@@ -34,5 +34,5 @@ interface SessionSubscriber {
 
   val isDataCollectionEnabled: Boolean
 
-  val sessionSubscriberName: SessionSubscriber.Name
+  val sessionSubscriberName: Name
 }

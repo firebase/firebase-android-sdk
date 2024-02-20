@@ -14,12 +14,12 @@
 
 plugins {
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 firebaseLibrary {
     libraryGroup "installations"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
@@ -42,16 +42,15 @@ android {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-
-    implementation 'com.google.firebase:firebase-common:20.3.1'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation project(':firebase-installations')
-    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
-
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
+    api(project(":firebase-installations"))
+    api("com.google.firebase:firebase-installations-interop:17.1.1")
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

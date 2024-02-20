@@ -1,4 +1,22 @@
 # Unreleased
+* [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5706)
+
+# 20.3.0
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-database-ktx`
+  to `com.google.firebase:firebase-database` under the `com.google.firebase.database` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+* [deprecated] All the APIs from `com.google.firebase:firebase-database-ktx` have been added to
+  `com.google.firebase:firebase-database` under the `com.google.firebase.database` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-database-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-database` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.2.2
 * [changed] Internal changes to ensure alignment with other SDK releases.
@@ -28,6 +46,7 @@ updates.
   [`Query.values<T>()`](/docs/reference/kotlin/com/google/firebase/database/ktx/package-summary#values)
   Kotlin Flows to listen for realtime updates and convert its values to a
   specific type.
+
 # 20.1.0
 * [unchanged] Updated to accommodate the release of the updated
 [database] Kotlin extensions library.
@@ -45,7 +64,6 @@ The Kotlin extensions library transitively includes the updated
   `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
-
 * [feature] Added
   [`Query.snapshots`](/docs/reference/kotlin/com/google/firebase/database/ktx/package-summary#snapshots)
   and
@@ -55,7 +73,6 @@ The Kotlin extensions library transitively includes the updated
 # 20.0.6
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
-
 * [fixed] Fixed issue where `Query.get()` was propagating events to
   listeners on unrelated queries.
 
@@ -66,7 +83,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.5
-* [ fixed ] `Query.get` no longer throws "Client is offline" exception when local
+* [fixed] `Query.get` no longer throws "Client is offline" exception when local
   value is not available. Instead, it waits for a backend connection.
 
 
@@ -120,9 +137,7 @@ updates.
 
 # 20.0.0
 * [feature] Added abuse reduction features.
-
 * [changed] Internal changes to support dynamic feature modules.
-
 * [changed] Internal infrastructure improvements.
 
 
