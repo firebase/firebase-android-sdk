@@ -1128,9 +1128,9 @@ public class Query {
   /**
    * Starts listening to this query with the given options.
    *
-   * @param options Sets snapshot listen options, including whether metadata-only changes should
-   *     trigger snapshot events, the source that listens to, the executor to use to call the
-   *     listener, or the activity to scope the listener to.
+   * @param options Sets snapshot listener options, including whether metadata-only changes should
+   *     trigger snapshot events, the source to listen to, the executor to use to call the listener,
+   *     or the activity to scope the listener to.
    * @param listener The event listener that will be called with the snapshots.
    * @return A registration object that can be used to remove the listener.
    */

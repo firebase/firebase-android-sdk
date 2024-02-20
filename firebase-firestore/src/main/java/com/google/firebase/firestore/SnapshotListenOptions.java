@@ -47,7 +47,7 @@ public final class SnapshotListenOptions {
   /**
    * Returns the setting for whether metadata-only changes should trigger snapshot events.
    *
-   * @return The setting for whether metadata-only changes should trigger snapshot events.
+   * @return The setting object for metadata-only changes.
    */
   @NonNull
   public MetadataChanges getMetadataChanges() {

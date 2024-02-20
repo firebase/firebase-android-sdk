@@ -20,16 +20,16 @@ package com.google.firebase.firestore;
  */
 public enum ListenSource {
   /**
-   * The default behavior. The listener attempts to raise initial snapshot from cache and retrieve
-   * up-to-date snapshots from the Firestore server. Snapshots will be raised on local mutations and
-   * server side updates.
+   * The default behavior. The listener attempts to return initial snapshot from cache and retrieve
+   * up-to-date snapshots from the Firestore server. Snapshot events will be triggered on local
+   * mutations and server side updates.
    */
   DEFAULT,
 
   /**
-   * The listener retrieves data and listen to updates from the local Firestore cache only. If cache
-   * is empty, an empty snapshot will be raised. Snapshots will be raised on cache updates, like
-   * local mutations or load bundles.
+   * The listener retrieves data and listens to updates from the local Firestore cache only. If the
+   * cache is empty, an empty snapshot will be returned. Snapshot events will be triggered on cache
+   * updates, like local mutations or load bundles.
    *
    * <p>Note that the data might be stale if the cache hasn't synchronized with recent server-side
    * changes.
