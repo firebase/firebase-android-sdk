@@ -24,9 +24,9 @@ func LoadOperationTemplate() (*template.Template, error) {
 		"kotlinTypeFromGraphQLType": kotlinTypeFromGraphQLType,
 		"isScalarType":              isScalarType,
 		"flattenedVariablesFor":     flattenedVariablesFor,
-		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig":     createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig,
-		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType": createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType,
-		"pickedFieldsForVariableDefinition":                                     pickedFieldsForVariableDefinition,
+		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig":      createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig,
+		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndField": createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndField,
+		"pickedFieldsForVariableDefinition":                                      pickedFieldsForVariableDefinition,
 	}
 
 	return template.New(templateName).Funcs(funcMap).Parse(operationTemplate)
@@ -186,15 +186,18 @@ func createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig(config Re
 	}
 }
 
-func createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType(arg convenienceFunctionVariablesArgumentsRecursiveArg, typeNode *ast.Type) convenienceFunctionVariablesArgumentsRecursiveArg {
-	typeInfo := arg.Schema.Types[typeNode.NamedType]
+func createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndField(arg convenienceFunctionVariablesArgumentsRecursiveArg, field fieldWithPickedSubFields) convenienceFunctionVariablesArgumentsRecursiveArg {
+	typeInfo := arg.Schema.Types[field.Field.Type.NamedType]
 
-	fields := make([]fieldWithPickedSubFields, 0, 0)
-	for _, field := range typeInfo.Fields {
-		fields = append(fields, fieldWithPickedSubFields{Field: field})
+	newFields := make([]fieldWithPickedSubFields, 0, 0)
+	for _, subField := range typeInfo.Fields {
+		_, isSubFieldPicked := field.PickedSubFields[subField.Name]
+		if isSubFieldPicked {
+			newFields = append(newFields, fieldWithPickedSubFields{Field: subField})
+		}
 	}
 
-	arg.Fields = fields
+	arg.Fields = newFields
 	return arg
 }
 

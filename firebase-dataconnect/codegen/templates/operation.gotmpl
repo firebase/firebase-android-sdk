@@ -120,7 +120,7 @@ Argument: convenienceFunctionVariablesArgumentsRecursiveArg
       {{- .Field.Name -}}
     {{- else -}}
       {{- $arg.OperationName -}}.Variables.{{- kotlinTypeFromGraphQLType .Field.Type -}}(
-        {{- template "ConvenienceFunctionVariablesArgumentsRecursive" createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType $arg .Field.Type -}}
+        {{- template "ConvenienceFunctionVariablesArgumentsRecursive" createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndField $arg . -}}
       )
     {{- end -}}
     ,
