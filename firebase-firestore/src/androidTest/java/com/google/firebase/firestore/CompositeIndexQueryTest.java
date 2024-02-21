@@ -24,12 +24,7 @@ import static com.google.firebase.firestore.Filter.lessThanOrEqualTo;
 import static com.google.firebase.firestore.Filter.notEqualTo;
 import static com.google.firebase.firestore.Filter.notInArray;
 import static com.google.firebase.firestore.Filter.or;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
@@ -40,7 +35,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.Query.Direction;
@@ -265,7 +259,7 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(
+        testHelper.withTestDocs(
             map(
                 "doc1", map("key", "a", "sort", 0, "v", 0),
                 "doc2", map("key", "b", "sort", 3, "v", 1),
@@ -274,7 +268,8 @@ public class CompositeIndexQueryTest {
 
     QuerySnapshot snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereNotEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .whereGreaterThan("v", 2)
@@ -282,19 +277,21 @@ public class CompositeIndexQueryTest {
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc3");
 
     // Duplicate inequality fields
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereNotEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .whereGreaterThan("sort", 1)
                 .get());
-     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc4");
+    testHelper.assertSnapshotResultIdsMatch(snapshot, "doc4");
 
     // With multiple IN
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThanOrEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .whereIn("v", asList(2, 3, 4))
@@ -305,17 +302,19 @@ public class CompositeIndexQueryTest {
     // With NOT-IN
     snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThanOrEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .whereNotIn("v", asList(2, 4, 5))
                 .get());
-    testHelper.assertSnapshotResultIdsMatch(snapshot, "doc1","doc3");
+    testHelper.assertSnapshotResultIdsMatch(snapshot, "doc1", "doc3");
 
     // With orderby
     snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThanOrEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .orderBy("v", Direction.DESCENDING)
@@ -325,7 +324,8 @@ public class CompositeIndexQueryTest {
     // With limit
     snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThanOrEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .orderBy("v", Direction.DESCENDING)
@@ -336,7 +336,8 @@ public class CompositeIndexQueryTest {
     // With limitToLast
     snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThanOrEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .orderBy("v", Direction.DESCENDING)
@@ -351,7 +352,7 @@ public class CompositeIndexQueryTest {
 
     CollectionReference collection =
         testHelper.withTestDocs(
-          map(
+            map(
                 "doc1", map("key", "a", "sort", 0, "v", 0),
                 "doc2", map("key", "b", "sort", Double.NaN, "v", 1),
                 "doc3", map("key", "c", "sort", null, "v", 3),
@@ -360,13 +361,18 @@ public class CompositeIndexQueryTest {
                 "doc6", map("key", "f", "sort", 1, "v", 1)));
 
     QuerySnapshot snapshot =
-        waitFor(testHelper.query(collection).whereNotEqualTo("key", "a").whereLessThanOrEqualTo("sort", 2).get());
+        waitFor(
+            testHelper
+                .query(collection)
+                .whereNotEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .get());
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc5", "doc6");
-
 
     snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereNotEqualTo("key", "a")
                 .whereLessThanOrEqualTo("sort", 2)
                 .whereLessThanOrEqualTo("v", 1)
@@ -379,7 +385,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1", map("key", "a", "sort", 0, "v", asList(0)),
                 "doc2", map("key", "b", "sort", 1, "v", asList(0, 1, 3)),
                 "doc3", map("key", "c", "sort", 1, "v", emptyList()),
@@ -390,16 +397,18 @@ public class CompositeIndexQueryTest {
 
     QuerySnapshot snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereNotEqualTo("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .whereArrayContains("v", 0)
                 .get());
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc2");
 
-   snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereNotEqualTo("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .whereArrayContainsAny("v", asList(0, 1))
@@ -426,7 +435,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1", nestedObject(400),
                 "doc2", nestedObject(200),
                 "doc3", nestedObject(100),
@@ -434,7 +444,8 @@ public class CompositeIndexQueryTest {
 
     QuerySnapshot snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereLessThanOrEqualTo("metadata.createdAt", 500)
                 .whereGreaterThan("metadata.createdAt", 100)
                 .whereNotEqualTo("name", "room 200")
@@ -442,9 +453,10 @@ public class CompositeIndexQueryTest {
                 .get());
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc4", "doc1");
 
-   snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThanOrEqualTo("field", "field 100")
                 .whereNotEqualTo(FieldPath.of("field.dot"), 300)
                 .whereLessThan("field\\slash", 400)
@@ -458,7 +470,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1",
                 map("key", "a", "sort", 0, "v", 5),
                 "doc2",
@@ -474,7 +487,8 @@ public class CompositeIndexQueryTest {
 
     QuerySnapshot snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .where(
                     or(
                         and(equalTo("key", "b"), lessThanOrEqualTo("sort", 2)),
@@ -483,9 +497,10 @@ public class CompositeIndexQueryTest {
     // Implicitly ordered by: 'key' asc, 'sort' asc, 'v' asc, __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc1", "doc6", "doc5", "doc4");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .where(
                     or(
                         and(equalTo("key", "b"), lessThanOrEqualTo("sort", 2)),
@@ -496,9 +511,10 @@ public class CompositeIndexQueryTest {
     // Ordered by: 'sort' desc, 'key' asc, 'v' asc, __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc5", "doc4", "doc1", "doc6");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .where(
                     and(
                         or(
@@ -517,7 +533,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1", map("key", "a", "sort", 0, "v", 5),
                 "doc2", map("key", "aa", "sort", 4, "v", 4),
                 "doc3", map("key", "b", "sort", 3, "v", 3),
@@ -527,7 +544,8 @@ public class CompositeIndexQueryTest {
 
     QuerySnapshot snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereNotEqualTo("key", "a")
                 .whereGreaterThan("sort", 1)
                 .whereIn("v", asList(1, 2, 3, 4))
@@ -535,9 +553,10 @@ public class CompositeIndexQueryTest {
     // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc2", "doc4", "doc5", "doc3");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("sort", 1)
                 .whereNotEqualTo("key", "a")
                 .whereIn("v", asList(1, 2, 3, 4))
@@ -551,7 +570,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1",
                 map("key", "a", "sort", 5, "v", 0),
                 "doc2",
@@ -567,7 +587,8 @@ public class CompositeIndexQueryTest {
 
     QuerySnapshot snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .orderBy("v")
@@ -575,9 +596,10 @@ public class CompositeIndexQueryTest {
     // Ordered by: 'v' asc, 'key' asc, 'sort' asc, __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc2", "doc4", "doc3", "doc5");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .orderBy("v")
@@ -586,9 +608,10 @@ public class CompositeIndexQueryTest {
     // Ordered by: 'v asc, 'sort' asc, 'key' asc,  __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc2", "doc5", "doc4", "doc3");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .orderBy("v", Direction.DESCENDING)
@@ -597,9 +620,10 @@ public class CompositeIndexQueryTest {
     // Ordered by: 'v' desc, 'key' desc, 'sort' desc, __name__ desc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc5", "doc3", "doc4", "doc2");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .orderBy("v", Direction.DESCENDING)
@@ -614,7 +638,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1", map("key", "a", "sort", 5, "v", 0),
                 "doc2", map("key", "aa", "sort", 4, "v", 0),
                 "doc3", map("key", "b", "sort", 3, "v", 1),
@@ -623,7 +648,8 @@ public class CompositeIndexQueryTest {
 
     AggregateQuerySnapshot snapshot1 =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .orderBy("v")
@@ -633,7 +659,8 @@ public class CompositeIndexQueryTest {
 
     AggregateQuerySnapshot snapshot2 =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("key", "a")
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .whereNotEqualTo("v", 0)
@@ -650,7 +677,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1", map("key", "a", "sort", 5),
                 "doc2", map("key", "aa", "sort", 4),
                 "doc3", map("key", "b", "sort", 3),
@@ -659,7 +687,8 @@ public class CompositeIndexQueryTest {
 
     QuerySnapshot snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereGreaterThan("sort", 1)
                 .whereNotEqualTo("key", "a")
                 .whereLessThan(FieldPath.documentId(), "doc5")
@@ -668,9 +697,10 @@ public class CompositeIndexQueryTest {
     // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc2", "doc4", "doc3");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereLessThan(FieldPath.documentId(), "doc5")
                 .whereGreaterThan("sort", 1)
                 .whereNotEqualTo("key", "a")
@@ -679,9 +709,10 @@ public class CompositeIndexQueryTest {
     // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot, "doc2", "doc4", "doc3");
 
-     snapshot =
+    snapshot =
         waitFor(
-          testHelper.query(collection)
+            testHelper
+                .query(collection)
                 .whereLessThan(FieldPath.documentId(), "doc5")
                 .whereGreaterThan("sort", 1)
                 .whereNotEqualTo("key", "a")
@@ -696,13 +727,15 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1", map("key", "a", "sort", 1),
                 "doc2", map("key", "aa", "sort", 4),
                 "doc3", map("key", "b", "sort", 3),
                 "doc4", map("key", "b", "sort", 2)));
 
-    Query query = testHelper.query(collection).whereNotEqualTo("key", "a").whereLessThanOrEqualTo("sort", 3);
+    Query query =
+        testHelper.query(collection).whereNotEqualTo("key", "a").whereLessThanOrEqualTo("sort", 3);
 
     // populate the cache.
     QuerySnapshot snapshot1 = waitFor(query.get());
@@ -716,7 +749,6 @@ public class CompositeIndexQueryTest {
     assertTrue(snapshot2.getMetadata().isFromCache());
     // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
     testHelper.assertSnapshotResultIdsMatch(snapshot2, "doc4", "doc3");
-
   }
 
   @Test
@@ -724,7 +756,8 @@ public class CompositeIndexQueryTest {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection =
-    testHelper.withTestDocs(            map(
+        testHelper.withTestDocs(
+            map(
                 "doc1",
                 map("a", 1, "b", 0),
                 "doc2",
@@ -746,12 +779,14 @@ public class CompositeIndexQueryTest {
 
     // explicit AND: a < 3 && b not-in [2, 3]
     // Implicitly ordered by: a asc, b asc, __name__ asc
-    Query query3 = testHelper.query(collection).where(and(lessThan("a", 3), notInArray("b", asList(2, 3))));
+    Query query3 =
+        testHelper.query(collection).where(and(lessThan("a", 3), notInArray("b", asList(2, 3))));
     testHelper.assertOnlineAndOfflineResultsMatch(query3, "doc1", "doc5", "doc2");
 
     // a <3 && b != 0, ordered by: b desc, a desc, __name__ desc
     Query query4 =
-    testHelper.query(collection)
+        testHelper
+            .query(collection)
             .whereLessThan("a", 3)
             .whereNotEqualTo("b", 0)
             .orderBy("b", Direction.DESCENDING)
@@ -770,7 +805,8 @@ public class CompositeIndexQueryTest {
     CollectionReference collection = testHelper.withTestCollection();
 
     // Implicitly ordered by:  __name__ asc, 'key' asc,
-    Query query = testHelper.query(collection).whereNotEqualTo("key", 42).orderBy(FieldPath.documentId());
+    Query query =
+        testHelper.query(collection).whereNotEqualTo("key", 42).orderBy(FieldPath.documentId());
     Exception e = waitForException(query.get());
     FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
     assertTrue(
@@ -786,7 +822,10 @@ public class CompositeIndexQueryTest {
     CollectionReference collection = testHelper.withTestCollection();
 
     Query query =
-    testHelper.query(collection).whereNotEqualTo("key", 42).whereEqualTo(FieldPath.documentId(), "doc1");
+        testHelper
+            .query(collection)
+            .whereNotEqualTo("key", 42)
+            .whereEqualTo(FieldPath.documentId(), "doc1");
     Exception e = waitForException(query.get());
     FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
     assertTrue(
