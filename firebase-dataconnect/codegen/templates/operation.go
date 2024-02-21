@@ -20,8 +20,9 @@ func LoadOperationTemplate() (*template.Template, error) {
 	funcMap := template.FuncMap{
 		"kotlinTypeFromGraphQLType": kotlinTypeFromGraphQLType,
 		"isScalarType":              isScalarType,
-		"hasNonScalarVariable":      hasNonScalarVariable,
 		"flattenedVariablesFor":     flattenedVariablesFor,
+		"createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig":     createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig,
+		"createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType": createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType,
 	}
 
 	return template.New(templateName).Funcs(funcMap).Parse(operationTemplate)
@@ -110,15 +111,6 @@ func isScalarTypeName(typeName string) bool {
 	}
 }
 
-func hasNonScalarVariable(operation *ast.OperationDefinition) bool {
-	for _, variableDefinition := range operation.VariableDefinitions {
-		if !isScalarType(variableDefinition.Type) {
-			return true
-		}
-	}
-	return false
-}
-
 func flattenedVariablesFor(operation *ast.OperationDefinition, schema *ast.Schema) []*ast.VariableDefinition {
 	flattenedVariables := make([]*ast.VariableDefinition, 0, 0)
 
@@ -149,4 +141,37 @@ func flattenedVariablesForType(typeNode *ast.Type, schema *ast.Schema) []*ast.Va
 	}
 
 	return flattenedVariables
+}
+
+type mutationConvenienceFunctionVariablesArgumentsRecursiveArg struct {
+	OperationName string
+	Schema        *ast.Schema
+	Fields        []*ast.FieldDefinition
+}
+
+func createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig(config RenderOperationTemplateConfig) mutationConvenienceFunctionVariablesArgumentsRecursiveArg {
+	return mutationConvenienceFunctionVariablesArgumentsRecursiveArg{
+		OperationName: config.Operation.Name,
+		Schema:        config.Schema,
+		Fields:        fieldDefinitionsFromVariableDefinitions(config.Operation.VariableDefinitions),
+	}
+}
+
+func createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType(arg mutationConvenienceFunctionVariablesArgumentsRecursiveArg, typeNode *ast.Type) mutationConvenienceFunctionVariablesArgumentsRecursiveArg {
+	typeInfo := arg.Schema.Types[typeNode.NamedType]
+	arg.Fields = typeInfo.Fields
+	return arg
+}
+
+func fieldDefinitionsFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition) []*ast.FieldDefinition {
+	fieldDefinitions := make([]*ast.FieldDefinition, 0, len(variableDefinitions))
+	for _, variableDefinition := range variableDefinitions {
+		fieldDefinitions = append(fieldDefinitions, &ast.FieldDefinition{
+			Name:       variableDefinition.Variable,
+			Type:       variableDefinition.Type,
+			Directives: variableDefinition.Directives,
+			Position:   variableDefinition.Position,
+		})
+	}
+	return fieldDefinitions
 }

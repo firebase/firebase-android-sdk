@@ -52,9 +52,9 @@ Argument: RenderOperationTemplateConfig
 suspend fun MutationRef<{{ .Operation.Name }}.Variables, Unit>.execute(
   {{- template "MutationConvenienceFunctionParameters" . -}}
 )
-  = execute({{ .Operation.Name }}.Variables(
-  {{- template "MutationConvenienceFunctionVariablesConstruction" . -}}
-))
+  = execute(
+  {{- template "MutationConvenienceFunctionVariablesArguments" . -}}
+)
 {{- end -}}
 
 {{- /***************************************************************************
@@ -72,8 +72,31 @@ Emits the code to create the Variables object from the arguments to a
 convenience function for the graphql operation.
 Argument: RenderOperationTemplateConfig
 *************************************************************************/ -}}
-{{- define "MutationConvenienceFunctionVariablesConstruction" -}}
-zzyzx
+{{- define "MutationConvenienceFunctionVariablesArguments" -}}
+  {{ .Operation.Name }}.Variables(
+    {{- template "MutationConvenienceFunctionVariablesArgumentsRecursive" createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig . -}}
+  )
+{{- end -}}
+
+{{- /***************************************************************************
+Helper MutationConvenienceFunctionVariablesArguments that emits the arguments
+and calls itself recursively.
+Argument: mutationConvenienceFunctionVariablesArgumentsRecursiveArg
+*************************************************************************/ -}}
+{{- define "MutationConvenienceFunctionVariablesArgumentsRecursive" -}}
+  {{- $arg := . -}}
+  {{- range .Fields -}}
+    {{- .Name -}}
+    =
+    {{- if isScalarType .Type -}}
+      {{- .Name -}}
+    {{- else -}}
+      {{- $arg.OperationName -}}.Variables.{{- kotlinTypeFromGraphQLType .Type -}}(
+        {{- template "MutationConvenienceFunctionVariablesArgumentsRecursive" createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType $arg .Type -}}
+      )
+    {{- end -}}
+    ,
+  {{- end -}}
 {{- end -}}
 
 package {{ .KotlinPackage }}
@@ -89,6 +112,6 @@ object {{ .Operation.Name }} {
 
 }
 
-{{ if and (gt (len .Operation.VariableDefinitions) 0) (hasNonScalarVariable .Operation) -}}
+{{ if gt (len .Operation.VariableDefinitions) 0 -}}
 {{ template "MutationConvenienceFunctions" . }}
 {{- end }}
