@@ -91,7 +91,11 @@ Argument: RenderOperationTemplateConfig
 *************************************************************************/ -}}
 {{- define "ConvenienceFunctionParameters" -}}
   {{- range flattenedVariablesFor .Operation .Schema -}}
-  {{ .Variable }}: {{ kotlinTypeFromGraphQLType .Type }},
+    {{ .Variable }}: {{ kotlinTypeFromGraphQLType .Type }}
+    {{- if not .Type.NonNull -}}
+      = null
+    {{- end -}}
+    ,
   {{- end -}}
 {{- end -}}
 
