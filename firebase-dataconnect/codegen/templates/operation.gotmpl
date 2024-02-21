@@ -114,13 +114,13 @@ Argument: convenienceFunctionVariablesArgumentsRecursiveArg
 {{- define "ConvenienceFunctionVariablesArgumentsRecursive" -}}
   {{- $arg := . -}}
   {{- range .Fields -}}
-    {{- .Name -}}
+    {{- .Field.Name -}}
     =
-    {{- if isScalarType .Type -}}
-      {{- .Name -}}
+    {{- if isScalarType .Field.Type -}}
+      {{- .Field.Name -}}
     {{- else -}}
-      {{- $arg.OperationName -}}.Variables.{{- kotlinTypeFromGraphQLType .Type -}}(
-        {{- template "ConvenienceFunctionVariablesArgumentsRecursive" createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType $arg .Type -}}
+      {{- $arg.OperationName -}}.Variables.{{- kotlinTypeFromGraphQLType .Field.Type -}}(
+        {{- template "ConvenienceFunctionVariablesArgumentsRecursive" createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType $arg .Field.Type -}}
       )
     {{- end -}}
     ,

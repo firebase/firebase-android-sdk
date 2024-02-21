@@ -156,37 +156,55 @@ func flattenedVariablesForType(typeNode *ast.Type, schema *ast.Schema) []*ast.Va
 	return flattenedVariables
 }
 
+type fieldWithPickedSubFields struct {
+	Field           *ast.FieldDefinition
+	PickedSubFields map[string]*ast.FieldDefinition
+}
+
 type convenienceFunctionVariablesArgumentsRecursiveArg struct {
 	OperationName string
 	Schema        *ast.Schema
-	Fields        []*ast.FieldDefinition
+	Fields        []fieldWithPickedSubFields
 }
 
 func createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig(config RenderOperationTemplateConfig) convenienceFunctionVariablesArgumentsRecursiveArg {
+	fields := make([]fieldWithPickedSubFields, 0, 0)
+
+	for _, variableDefinition := range config.Operation.VariableDefinitions {
+		fieldDefinition := fieldDefinitionFromVariableDefinition(variableDefinition)
+		pickedSubFields := fieldDefinitionByFieldNameMapFromFieldDefinitions(pickedFieldsForVariableDefinition(variableDefinition))
+		fields = append(fields, fieldWithPickedSubFields{
+			Field:           fieldDefinition,
+			PickedSubFields: pickedSubFields,
+		})
+	}
+
 	return convenienceFunctionVariablesArgumentsRecursiveArg{
 		OperationName: config.Operation.Name,
 		Schema:        config.Schema,
-		Fields:        fieldDefinitionsFromVariableDefinitions(config.Operation.VariableDefinitions),
+		Fields:        fields,
 	}
 }
 
 func createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType(arg convenienceFunctionVariablesArgumentsRecursiveArg, typeNode *ast.Type) convenienceFunctionVariablesArgumentsRecursiveArg {
 	typeInfo := arg.Schema.Types[typeNode.NamedType]
-	arg.Fields = typeInfo.Fields
+
+	fields := make([]fieldWithPickedSubFields, 0, 0)
+	for _, field := range typeInfo.Fields {
+		fields = append(fields, fieldWithPickedSubFields{Field: field})
+	}
+
+	arg.Fields = fields
 	return arg
 }
 
-func fieldDefinitionsFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition) []*ast.FieldDefinition {
-	fieldDefinitions := make([]*ast.FieldDefinition, 0, len(variableDefinitions))
-	for _, variableDefinition := range variableDefinitions {
-		fieldDefinitions = append(fieldDefinitions, &ast.FieldDefinition{
-			Name:       variableDefinition.Variable,
-			Type:       variableDefinition.Type,
-			Directives: variableDefinition.Directives,
-			Position:   variableDefinition.Position,
-		})
+func fieldDefinitionFromVariableDefinition(variableDefinition *ast.VariableDefinition) *ast.FieldDefinition {
+	return &ast.FieldDefinition{
+		Name:       variableDefinition.Variable,
+		Type:       variableDefinition.Type,
+		Directives: variableDefinition.Directives,
+		Position:   variableDefinition.Position,
 	}
-	return fieldDefinitions
 }
 
 func pickedFieldsForVariableDefinition(variableDefinition *ast.VariableDefinition) []*ast.FieldDefinition {
