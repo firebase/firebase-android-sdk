@@ -121,8 +121,17 @@ func flattenedVariablesFor(operation *ast.OperationDefinition, schema *ast.Schem
 	for _, variableDefinition := range operation.VariableDefinitions {
 		if isScalarType(variableDefinition.Type) {
 			flattenedVariables = append(flattenedVariables, variableDefinition)
-		} else {
-			flattenedVariables = append(flattenedVariables, flattenedVariablesForType(variableDefinition.Type, schema)...)
+			continue
+		}
+
+		childFlattenedVariables := flattenedVariablesForType(variableDefinition.Type, schema)
+		pickedFieldDefinitions := pickedFieldsForVariableDefinition(variableDefinition)
+		pickedFieldNames := fieldDefinitionByFieldNameMapFromFieldDefinitions(pickedFieldDefinitions)
+		for _, childFlattenedVariable := range childFlattenedVariables {
+			_, isChildFlattenedVariablePicked := pickedFieldNames[childFlattenedVariable.Variable]
+			if isChildFlattenedVariablePicked {
+				flattenedVariables = append(flattenedVariables, childFlattenedVariable)
+			}
 		}
 	}
 
@@ -212,6 +221,14 @@ func pickDirectiveForVariableDefinition(variableDefinition *ast.VariableDefiniti
 		}
 	}
 	return nil
+}
+
+func fieldDefinitionByFieldNameMapFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) map[string]*ast.FieldDefinition {
+	fieldDefinitionByFieldName := make(map[string]*ast.FieldDefinition)
+	for _, fieldDefinition := range fieldDefinitions {
+		fieldDefinitionByFieldName[fieldDefinition.Name] = fieldDefinition
+	}
+	return fieldDefinitionByFieldName
 }
 
 func fail(a ...any) (any, error) {
