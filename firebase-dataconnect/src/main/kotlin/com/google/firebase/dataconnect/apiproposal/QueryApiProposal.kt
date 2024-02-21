@@ -40,10 +40,10 @@ class FirebaseDataConnect internal constructor() : AutoCloseable {
   override fun toString(): String = TODO()
 
   companion object {
-    fun getInstance(app : FirebaseApp, connectorConfig : ConnectorConfig) : FirebaseDataConnect = TODO()
+    fun getInstance(app : FirebaseApp, config : ConnectorConfig) : FirebaseDataConnect = TODO()
 
     // Future Add On
-    fun getInstance(app : FirebaseApp, connectorConfig : ConnectorConfig, setting : DataConnectSetting) : FirebaseDataConnect = TODO()
+    fun getInstance(app : FirebaseApp, config : ConnectorConfig, setting : DataConnectSetting) : FirebaseDataConnect = TODO()
 
     var logLevel : LoggerLevel
       get() = TODO()
@@ -57,7 +57,7 @@ class FirebaseDataConnect internal constructor() : AutoCloseable {
 
 class PostConnector internal constructor () {
   companion object {
-    fun getConfig(location: String = "default.location", service: String = "default.service"): ConnectorConfig = TODO()
+    var CONFIG : ConnectorConfig = TODO()
   }
 }
 
@@ -71,16 +71,14 @@ fun thirdPartyApp() {
 
   val app = FirebaseApp.getInstance()
 
-  val config = PostConnector.getConfig()
-  val configOverrideLocation = PostConnector.getConfig(location = "new.location")
-  val configOverrideAllVariables = PostConnector.getConfig(location = "new.location", service = "new.service")
+  val config = PostConnector.CONFIG
 
   val dataConnect = FirebaseDataConnect.getInstance(app, config)
 
   dataConnect.useEmulator("10.0.2.2", 9000)
 
   val settingFuture = DataConnectSetting()
-  val dataConnectFuture = FirebaseDataConnect.getInstance(app, PostConnector.getConfig(), settingFuture)
+  val dataConnectFuture = FirebaseDataConnect.getInstance(app, config, settingFuture)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
