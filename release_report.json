@@ -107,40 +107,6 @@
             }
         ],
         "firebase-firestore/ktx": [
-        ],
-        "appcheck/firebase-appcheck": [
-        ],
-        "appcheck/firebase-appcheck-debug": [
-            {
-                "commitId": "e69040707eaf1fab00561739bfa3d3e7ca93edb0",
-                "prId": "5686",
-                "author": "Rodrigo Lazo",
-                "message": "Add missing changelog entries for m143 (#5686)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e69040707eaf1fab00561739bfa3d3e7ca93edb0",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5686"
-            }
-        ],
-        "appcheck/firebase-appcheck-debug-testing": [
-            {
-                "commitId": "e69040707eaf1fab00561739bfa3d3e7ca93edb0",
-                "prId": "5686",
-                "author": "Rodrigo Lazo",
-                "message": "Add missing changelog entries for m143 (#5686)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e69040707eaf1fab00561739bfa3d3e7ca93edb0",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5686"
-            }
-        ],
-        "appcheck/firebase-appcheck-playintegrity": [
-            {
-                "commitId": "e69040707eaf1fab00561739bfa3d3e7ca93edb0",
-                "prId": "5686",
-                "author": "Rodrigo Lazo",
-                "message": "Add missing changelog entries for m143 (#5686)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e69040707eaf1fab00561739bfa3d3e7ca93edb0",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5686"
-            }
-        ],
-        "appcheck/firebase-appcheck/ktx": [
         ]
     },
     "changedLibrariesWithNoChangelog": [
