@@ -26,6 +26,7 @@ func LoadOperationTemplate() (*template.Template, error) {
 		"flattenedVariablesFor":     flattenedVariablesFor,
 		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig":     createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig,
 		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType": createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType,
+		"pickedFieldsForVariableDefinition":                                     pickedFieldsForVariableDefinition,
 	}
 
 	return template.New(templateName).Funcs(funcMap).Parse(operationTemplate)
@@ -177,6 +178,40 @@ func fieldDefinitionsFromVariableDefinitions(variableDefinitions []*ast.Variable
 		})
 	}
 	return fieldDefinitions
+}
+
+func pickedFieldsForVariableDefinition(variableDefinition *ast.VariableDefinition) []*ast.FieldDefinition {
+	pickDirective := pickDirectiveForVariableDefinition(variableDefinition)
+	if pickDirective == nil {
+		return variableDefinition.Definition.Fields
+	}
+
+	pickedFields := make(map[string]*ast.ChildValue)
+	for _, pickDirectiveArgument := range pickDirective.Arguments {
+		if pickDirectiveArgument.Name == "fields" {
+			for _, pickDirectiveArgumentChildValue := range pickDirectiveArgument.Value.Children {
+				pickedFields[pickDirectiveArgumentChildValue.Value.Raw] = pickDirectiveArgumentChildValue
+			}
+		}
+	}
+
+	fieldDefinitions := make([]*ast.FieldDefinition, 0, 0)
+	for _, field := range variableDefinition.Definition.Fields {
+		if _, isFieldPicked := pickedFields[field.Name]; isFieldPicked {
+			fieldDefinitions = append(fieldDefinitions, field)
+		}
+	}
+
+	return fieldDefinitions
+}
+
+func pickDirectiveForVariableDefinition(variableDefinition *ast.VariableDefinition) *ast.Directive {
+	for _, directive := range variableDefinition.Directives {
+		if directive.Name == "pick" {
+			return directive
+		}
+	}
+	return nil
 }
 
 func fail(a ...any) (any, error) {

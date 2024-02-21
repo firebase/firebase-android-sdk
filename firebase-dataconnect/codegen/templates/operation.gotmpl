@@ -28,7 +28,7 @@ Argument: []*VariableDefinition The list of operation's variables.
   {{- range . -}}
     {{- if isScalarType .Type }}{{ continue }}{{ end -}}
     @Serializable data class {{ .Type.Name }}(
-      {{- template "VariablesClassNestedClassConstructorParameters" .Definition.Fields -}}
+      {{- template "VariablesClassNestedClassConstructorParameters" (pickedFieldsForVariableDefinition .) -}}
     )
   {{- end -}}
 {{- end -}}
