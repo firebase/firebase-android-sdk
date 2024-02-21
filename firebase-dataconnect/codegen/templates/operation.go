@@ -3,6 +3,8 @@ package templates
 import (
 	"bytes"
 	_ "embed"
+	"errors"
+	"fmt"
 	"github.com/vektah/gqlparser/v2/ast"
 	"log"
 	"os"
@@ -18,11 +20,12 @@ func LoadOperationTemplate() (*template.Template, error) {
 	log.Println("Loading Go template:", templateName)
 
 	funcMap := template.FuncMap{
+		"fail":                      fail,
 		"kotlinTypeFromGraphQLType": kotlinTypeFromGraphQLType,
 		"isScalarType":              isScalarType,
 		"flattenedVariablesFor":     flattenedVariablesFor,
-		"createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig":     createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig,
-		"createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType": createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType,
+		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig":     createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig,
+		"createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType": createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType,
 	}
 
 	return template.New(templateName).Funcs(funcMap).Parse(operationTemplate)
@@ -143,21 +146,21 @@ func flattenedVariablesForType(typeNode *ast.Type, schema *ast.Schema) []*ast.Va
 	return flattenedVariables
 }
 
-type mutationConvenienceFunctionVariablesArgumentsRecursiveArg struct {
+type convenienceFunctionVariablesArgumentsRecursiveArg struct {
 	OperationName string
 	Schema        *ast.Schema
 	Fields        []*ast.FieldDefinition
 }
 
-func createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig(config RenderOperationTemplateConfig) mutationConvenienceFunctionVariablesArgumentsRecursiveArg {
-	return mutationConvenienceFunctionVariablesArgumentsRecursiveArg{
+func createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig(config RenderOperationTemplateConfig) convenienceFunctionVariablesArgumentsRecursiveArg {
+	return convenienceFunctionVariablesArgumentsRecursiveArg{
 		OperationName: config.Operation.Name,
 		Schema:        config.Schema,
 		Fields:        fieldDefinitionsFromVariableDefinitions(config.Operation.VariableDefinitions),
 	}
 }
 
-func createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType(arg mutationConvenienceFunctionVariablesArgumentsRecursiveArg, typeNode *ast.Type) mutationConvenienceFunctionVariablesArgumentsRecursiveArg {
+func createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType(arg convenienceFunctionVariablesArgumentsRecursiveArg, typeNode *ast.Type) convenienceFunctionVariablesArgumentsRecursiveArg {
 	typeInfo := arg.Schema.Types[typeNode.NamedType]
 	arg.Fields = typeInfo.Fields
 	return arg
@@ -174,4 +177,8 @@ func fieldDefinitionsFromVariableDefinitions(variableDefinitions []*ast.Variable
 		})
 	}
 	return fieldDefinitions
+}
+
+func fail(a ...any) (any, error) {
+	return 42, errors.New(fmt.Sprint(a...))
 }

@@ -45,15 +45,43 @@ Argument: []*FieldDefinition The fields for the type being emitted.
 {{- end -}}
 
 {{- /***************************************************************************
-Emits the convenience functions for working with the graphql mutation.
+Emits the convenience function and typealias definitions for working with a
+graphql query.
 Argument: RenderOperationTemplateConfig
 *************************************************************************/ -}}
-{{- define "MutationConvenienceFunctions" -}}
-suspend fun MutationRef<{{ .Operation.Name }}.Variables, Unit>.execute(
-  {{- template "MutationConvenienceFunctionParameters" . -}}
+{{- define "QueryConvenienceDefinitions" -}}
+typealias {{ .Operation.Name }}QueryRef = QueryRef<{{ .Operation.Name }}.Variables, Unit>
+
+typealias {{ .Operation.Name }}QuerySubscription = QuerySubscription<{{ .Operation.Name }}.Variables, Unit>
+
+suspend fun QueryRef<{{ .Operation.Name }}.Variables, Unit>.execute(
+  {{- template "ConvenienceFunctionParameters" . -}}
 )
   = execute(
-  {{- template "MutationConvenienceFunctionVariablesArguments" . -}}
+  {{- template "ConvenienceFunctionVariablesArguments" . -}}
+)
+
+fun QueryRef<{{ .Operation.Name }}.Variables, Unit>.subscribe(
+  {{- template "ConvenienceFunctionParameters" . -}}
+)
+  = subscribe(
+  {{- template "ConvenienceFunctionVariablesArguments" . -}}
+)
+{{- end -}}
+
+{{- /***************************************************************************
+Emits the convenience function and typealias definitions for working with a
+graphql mutation.
+Argument: RenderOperationTemplateConfig
+*************************************************************************/ -}}
+{{- define "MutationConvenienceDefinitions" -}}
+typealias {{ .Operation.Name }}MutationRef = MutationRef<{{ .Operation.Name }}.Variables, Unit>
+
+suspend fun MutationRef<{{ .Operation.Name }}.Variables, Unit>.execute(
+  {{- template "ConvenienceFunctionParameters" . -}}
+)
+  = execute(
+  {{- template "ConvenienceFunctionVariablesArguments" . -}}
 )
 {{- end -}}
 
@@ -61,7 +89,7 @@ suspend fun MutationRef<{{ .Operation.Name }}.Variables, Unit>.execute(
 Emits the parameter list for a convenience function for the graphql operation.
 Argument: RenderOperationTemplateConfig
 *************************************************************************/ -}}
-{{- define "MutationConvenienceFunctionParameters" -}}
+{{- define "ConvenienceFunctionParameters" -}}
   {{- range flattenedVariablesFor .Operation .Schema -}}
   {{ .Variable }}: {{ kotlinTypeFromGraphQLType .Type }},
   {{- end -}}
@@ -72,18 +100,18 @@ Emits the code to create the Variables object from the arguments to a
 convenience function for the graphql operation.
 Argument: RenderOperationTemplateConfig
 *************************************************************************/ -}}
-{{- define "MutationConvenienceFunctionVariablesArguments" -}}
+{{- define "ConvenienceFunctionVariablesArguments" -}}
   {{ .Operation.Name }}.Variables(
-    {{- template "MutationConvenienceFunctionVariablesArgumentsRecursive" createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig . -}}
+    {{- template "ConvenienceFunctionVariablesArgumentsRecursive" createConvenienceFunctionVariablesArgumentsRecursiveArgFromConfig . -}}
   )
 {{- end -}}
 
 {{- /***************************************************************************
-Helper MutationConvenienceFunctionVariablesArguments that emits the arguments
+Helper ConvenienceFunctionVariablesArguments that emits the arguments
 and calls itself recursively.
-Argument: mutationConvenienceFunctionVariablesArgumentsRecursiveArg
+Argument: convenienceFunctionVariablesArgumentsRecursiveArg
 *************************************************************************/ -}}
-{{- define "MutationConvenienceFunctionVariablesArgumentsRecursive" -}}
+{{- define "ConvenienceFunctionVariablesArgumentsRecursive" -}}
   {{- $arg := . -}}
   {{- range .Fields -}}
     {{- .Name -}}
@@ -92,7 +120,7 @@ Argument: mutationConvenienceFunctionVariablesArgumentsRecursiveArg
       {{- .Name -}}
     {{- else -}}
       {{- $arg.OperationName -}}.Variables.{{- kotlinTypeFromGraphQLType .Type -}}(
-        {{- template "MutationConvenienceFunctionVariablesArgumentsRecursive" createMutationConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType $arg .Type -}}
+        {{- template "ConvenienceFunctionVariablesArgumentsRecursive" createConvenienceFunctionVariablesArgumentsRecursiveArgFromArgAndType $arg .Type -}}
       )
     {{- end -}}
     ,
@@ -113,5 +141,11 @@ object {{ .Operation.Name }} {
 }
 
 {{ if gt (len .Operation.VariableDefinitions) 0 -}}
-{{ template "MutationConvenienceFunctions" . }}
+{{- if eq .Operation.Operation "mutation" -}}
+{{ template "MutationConvenienceDefinitions" . }}
+{{- else if eq .Operation.Operation "query" -}}
+{{ template "QueryConvenienceDefinitions" . }}
+{{- else -}}
+{{ fail "unsupported value for .Operation.Operation: " .Operation.Operation }}
+{{- end }}
 {{- end }}
