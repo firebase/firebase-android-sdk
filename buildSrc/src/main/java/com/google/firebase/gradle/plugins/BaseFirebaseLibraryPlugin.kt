@@ -31,6 +31,7 @@ import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
 import org.w3c.dom.Element
 
@@ -44,6 +45,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
       changelogFile.set(changelog)
       releaseNotesFile.set(releaseNotes)
+      skipMissingEntries.set(project.provideProperty("skipEmptyChangelog"))
     }
 
   protected fun kotlinModuleName(project: Project): String {

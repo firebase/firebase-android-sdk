@@ -20,6 +20,7 @@ plugins {
 firebaseLibrary {
     libraryGroup "messaging"
     publishJavadoc = false
+    publishReleaseNotes = false
     publishSources = true
 }
 

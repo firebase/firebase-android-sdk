@@ -18,6 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "appdistribution"
     publishJavadoc = false
 }
 

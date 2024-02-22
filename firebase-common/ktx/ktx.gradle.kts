@@ -20,6 +20,7 @@ plugins {
 firebaseLibrary {
     libraryGroup("common")
     publishJavadoc = false
+    publishReleaseNotes = false
 }
 
 android {
