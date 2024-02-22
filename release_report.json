@@ -1,0 +1,114 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "c00b760b7a42632172126523fd4610e2714cf1b1",
+                "prId": "5721",
+                "author": "Dana Silver",
+                "message": "Add changelog entry for closing real-time background connections. (#5721)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c00b760b7a42632172126523fd4610e2714cf1b1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5721"
+            },
+            {
+                "commitId": "46cccc9f459d76a12dba1b570ffe9b2f3c9f4a4d",
+                "prId": "5688",
+                "author": "Dana Silver",
+                "message": "Disconnect from RC real-time server when app is backgrounded. (#5688)\n\nStore the Realtime client's `HttpUrlConnection` reference on the class\r\ninstance so it can used by another client instance method\r\n(`closeRealtimeHttpStream`) to disconnect when the app is backgrounded.\r\n\r\nThe rest of the changes are follow on work to handle network errors\r\nthrown when `HttpUrlConnection#disconnect` is called. Since\r\nHttpUrlConnection enforces a [strict\r\nlifecycle](https://android.googlesource.com/platform/external/okhttp/+/602d5e4/okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpConnection.java#43)\r\nand this code (1) interacts with the connection in several\r\nmethods/classes and (2) holds open the connection for a long time, it's\r\nlikely randomly disconnecting when backgrounded will occur at an\r\ninopportune lifecycle state.\r\n\r\nThis change inserts a few conditionals to ensure we only call once-only\r\nnetwork methods once, and error handling to catch expected errors when\r\nwe disconnect intentionally.\r\n\r\nGenerally, the code could be refactored to consolidate network handling\r\ninto one class, which would simplify the state that needs to be passed\r\naround and places errors must be handled.\r\n\r\n---------\r\n\r\nCo-authored-by: qdpham <qdpham@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46cccc9f459d76a12dba1b570ffe9b2f3c9f4a4d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5688"
+            },
+            {
+                "commitId": "11409488e5ab15ecc5113d3bc481fbc3ff34d35a",
+                "prId": "5710",
+                "author": "Dana Silver",
+                "message": "Get parameter value for rollout without side effects. (#5710)\n\nThe `getString(String parameterKey)` method calls listeners as a\r\nside-effect, which isn't the behavior we want when `activate()` is\r\ncalled and Rollouts are published.\r\n\r\nThis duplicates the `getString` method without the side-effects (as well\r\nas a helper method to access the cache). Alternatively we could\r\nduplicate this method _within_ `ConfigGetParameterHandler`, but it'd\r\nhave to be `public` which implies other callers should use it (they\r\nshouldn't - there's no other use case besides Rollouts).\r\n\r\nGoogle internal: b/324275156",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/11409488e5ab15ecc5113d3bc481fbc3ff34d35a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5710"
+            },
+            {
+                "commitId": "3c6f03562d2e9c39894b0a8ce872b6b897fd646a",
+                "prId": "5695",
+                "author": "themiswang",
+                "message": "fix config test app (#5695)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3c6f03562d2e9c39894b0a8ce872b6b897fd646a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5695"
+            },
+            {
+                "commitId": "a06ab5a68dc3a72c148c4038857547deb178f419",
+                "prId": "5692",
+                "author": "Dana Silver",
+                "message": "Add RealtimeFragment to RC test app. (#5692)\n\nMerging an old branch from Realtime development since it's helpful to\r\ntest realtime functionality today.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a06ab5a68dc3a72c148c4038857547deb178f419",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5692"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-database": [
+            {
+                "commitId": "833a1cc5140db9976b309b4adac289735460a38c",
+                "prId": "5706",
+                "author": "cherylEnkidu",
+                "message": "Fixed the missing handling setter annotations bug (#5706)\n\nRestore PR: https://github.com/firebase/firebase-android-sdk/pull/5626\r\n\r\nThe majority of the code in this PR was contributed by\r\n[vladd-g](https://github.com/vladd-g)\r\n\r\nFor more context, please refer to the linked PR.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/833a1cc5140db9976b309b4adac289735460a38c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5706"
+            },
+            {
+                "commitId": "a4ca0cb64935fad668eae6532049072b8884a0db",
+                "prId": "5704",
+                "author": "cherylEnkidu",
+                "message": "Revert \"Handle bridge methods while mapping\" (#5704)\n\nThis PR breaks some tests, need to be re-evaluated before merging in.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a4ca0cb64935fad668eae6532049072b8884a0db",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5704"
+            },
+            {
+                "commitId": "5ef5cdda14666df3f6727719f4d3344c8286ef32",
+                "prId": "5626",
+                "author": "vladd-g",
+                "message": "Firestore/Database: Handle bridge methods while mapping (#5626)\n\nThis PR was inspired by [this\r\nquestion](https://stackoverflow.com/questions/77739613/kotlin-multiple-setters-getters-generics/).\r\nThe `@Exclude` annotation has not been propagated to Kotlin's\r\ncorresponding bridge methods. Additionally, there is no straightforward\r\nway to eliminate their 'get-' and 'set-' prefixes, as `@JvmName` is not\r\npropagated to them either.\r\n\r\nIt seemed possible to solve this issue by redesigning the models.\r\nHowever, including bridge methods in the exceptions list – alongside\r\nother checks nearby – anyway seems to be a viable solution.\r\n\r\n---------\r\n\r\nCo-authored-by: cherylEnkidu <cheryllin@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5ef5cdda14666df3f6727719f4d3344c8286ef32",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5626"
+            }
+        ],
+        "firebase-database/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "833a1cc5140db9976b309b4adac289735460a38c",
+                "prId": "5706",
+                "author": "cherylEnkidu",
+                "message": "Fixed the missing handling setter annotations bug (#5706)\n\nRestore PR: https://github.com/firebase/firebase-android-sdk/pull/5626\r\n\r\nThe majority of the code in this PR was contributed by\r\n[vladd-g](https://github.com/vladd-g)\r\n\r\nFor more context, please refer to the linked PR.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/833a1cc5140db9976b309b4adac289735460a38c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5706"
+            },
+            {
+                "commitId": "6a97c30624c4354c86d11a7b1512d964a2bee56c",
+                "prId": "5707",
+                "author": "cherylEnkidu",
+                "message": "Fix falsely removed changelog (#5707)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6a97c30624c4354c86d11a7b1512d964a2bee56c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5707"
+            },
+            {
+                "commitId": "a4ca0cb64935fad668eae6532049072b8884a0db",
+                "prId": "5704",
+                "author": "cherylEnkidu",
+                "message": "Revert \"Handle bridge methods while mapping\" (#5704)\n\nThis PR breaks some tests, need to be re-evaluated before merging in.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a4ca0cb64935fad668eae6532049072b8884a0db",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5704"
+            },
+            {
+                "commitId": "5ef5cdda14666df3f6727719f4d3344c8286ef32",
+                "prId": "5626",
+                "author": "vladd-g",
+                "message": "Firestore/Database: Handle bridge methods while mapping (#5626)\n\nThis PR was inspired by [this\r\nquestion](https://stackoverflow.com/questions/77739613/kotlin-multiple-setters-getters-generics/).\r\nThe `@Exclude` annotation has not been propagated to Kotlin's\r\ncorresponding bridge methods. Additionally, there is no straightforward\r\nway to eliminate their 'get-' and 'set-' prefixes, as `@JvmName` is not\r\npropagated to them either.\r\n\r\nIt seemed possible to solve this issue by redesigning the models.\r\nHowever, including bridge methods in the exceptions list – alongside\r\nother checks nearby – anyway seems to be a viable solution.\r\n\r\n---------\r\n\r\nCo-authored-by: cherylEnkidu <cheryllin@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5ef5cdda14666df3f6727719f4d3344c8286ef32",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5626"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+    ]
+}
