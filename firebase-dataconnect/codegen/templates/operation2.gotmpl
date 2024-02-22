@@ -76,10 +76,17 @@ Argument Type: operationTemplateData
 *************************************************************************/ -}}
 {{- define "QueryConvenienceDefinitions" -}}
 typealias {{ .OperationName }}QueryRef = QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
+typealias {{ .OperationName }}QuerySubscription = QuerySubscription<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
 
 suspend fun QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.execute(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 ) = execute(
+{{- .OperationName }}.{{ .Variables.Name }}(
+{{- template "KotlinFunctionArguments" .ConvenienceFunctionForwardedArguments -}}))
+
+fun QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.subscribe(
+{{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
+) = subscribe(
 {{- .OperationName }}.{{ .Variables.Name }}(
 {{- template "KotlinFunctionArguments" .ConvenienceFunctionForwardedArguments -}}))
 {{- end -}}
