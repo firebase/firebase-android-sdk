@@ -54,6 +54,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private Boolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -99,6 +100,7 @@ public class ConfigAutoFetch {
   }
 
   // Check connection and establish InputStream
+  // TODO: Refactor connection management so it's handled by ConfigRealtimeHttpClient.
   @VisibleForTesting
   public void listenForNotifications() {
     if (httpURLConnection == null) {
@@ -110,11 +112,21 @@ public class ConfigAutoFetch {
       handleNotifications(inputStream);
       inputStream.close();
     } catch (IOException ex) {
-      // Stream was interrupted due to a transient issue and the system will retry the connection.
-      Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      // If the real-time connection is at an unexpected lifecycle state when the app is
+      // backgrounded, it's expected closing the InputStream will throw an exception.
+      // Moving network management to a single place should remove the need for this check.
+      // See above todo.
+      if (!isInBackground) {
+        // Otherwise, the real-time server connection was closed due to a transient issue.
+        Log.d(TAG, "Real-time connection was closed due to an exception.", ex);
+      }
     } finally {
       httpURLConnection.disconnect();
     }
+  }
+
+  public void setInBackground(Boolean inBackground) {
+    isInBackground = inBackground;
   }
 
   // Auto-fetch new config and execute callbacks on each new message

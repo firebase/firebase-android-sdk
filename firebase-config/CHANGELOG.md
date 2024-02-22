@@ -1,4 +1,8 @@
 # Unreleased
+* [fixed] Fixed an issue that could cause [remote_config] personalizations to be logged early in
+  specific cases.
+* [fixed] Fixed an issue where the connection to the real-time Remote Config backend could remain
+  open in the background.
 
 
 # 21.6.1
