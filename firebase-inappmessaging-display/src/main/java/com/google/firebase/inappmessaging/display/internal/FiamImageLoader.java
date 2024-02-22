@@ -97,6 +97,11 @@ public class FiamImageLoader {
       return this;
     }
 
+    public FiamImageRequestCreator addErrorListener(GlideErrorListener glideErrorListener) {
+      requestBuilder.addListener(glideErrorListener);
+      return this;
+    }
+
     public FiamImageRequestCreator tag(Class c) {
       tag = c.getSimpleName();
       checkAndTag();
