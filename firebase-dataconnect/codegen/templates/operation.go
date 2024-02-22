@@ -18,7 +18,6 @@ var operationTemplate string
 func LoadOperationTemplate() (*template.Template, error) {
 	templateName := "operation2.gotmpl"
 	log.Println("Loading Go template:", templateName)
-
 	return template.New(templateName).Funcs(makeOperationFuncMap()).Parse(operationTemplate)
 }
 
@@ -75,11 +74,23 @@ type operationTemplateData struct {
 type kotlinClass struct {
 	Name                  string
 	ConstructorParameters []kotlinFunctionParameter
+	SecondaryConstructors []kotlinSecondaryConstructor
 	NestedClasses         []kotlinClass
 }
 
+type kotlinSecondaryConstructor struct {
+	Parameters                  []kotlinFunctionParameter
+	PrimaryConstructorArguments []kotlinFunctionArgument
+}
+
 func (r kotlinClass) HasBody() bool {
-	return r.NestedClasses != nil && len(r.NestedClasses) > 0
+	if r.NestedClasses != nil && len(r.NestedClasses) > 0 {
+		return true
+	}
+	if r.SecondaryConstructors != nil && len(r.SecondaryConstructors) > 0 {
+		return true
+	}
+	return false
 }
 
 type kotlinFunctionParameter struct {
@@ -140,10 +151,16 @@ func kotlinClassForVariableDefinitions(variableDefinitions []*ast.VariableDefini
 		return nil, err
 	}
 
+	secondaryConstructors, err := variablesClassSecondaryConstructorsFromVariableDefinitions(variableDefinitions, schema)
+	if err != nil {
+		return nil, err
+	}
+
 	return &kotlinClass{
 		Name:                  "Variables",
 		ConstructorParameters: variablesClassConstructorParametersFromVariableDefinitions(variableDefinitions),
 		NestedClasses:         nestedClasses,
+		SecondaryConstructors: secondaryConstructors,
 	}, nil
 }
 
@@ -217,6 +234,35 @@ func variablesClassNestedClassesFromVariableDefinitions(variableDefinitions []*a
 	}
 
 	return nestedClasses, nil
+}
+
+func variablesClassSecondaryConstructorsFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinSecondaryConstructor, error) {
+	nonScalarVariableCount := 0
+	for _, variableDefinition := range variableDefinitions {
+		if !isScalarType(variableDefinition.Type) {
+			nonScalarVariableCount++
+		}
+	}
+	if nonScalarVariableCount == 0 {
+		return nil, nil
+	}
+
+	parameters, err := convenienceFunctionParametersFromVariableDefinitions(variableDefinitions, schema)
+	if err != nil {
+		return nil, err
+	}
+
+	primaryConstructorArguments, err := convenienceFunctionForwardedArgumentsFromVariableDefinitions(variableDefinitions, "", schema)
+	if err != nil {
+		return nil, err
+	}
+
+	return []kotlinSecondaryConstructor{
+		{
+			Parameters:                  parameters,
+			PrimaryConstructorArguments: primaryConstructorArguments,
+		},
+	}, nil
 }
 
 func constructorParametersFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) []kotlinFunctionParameter {

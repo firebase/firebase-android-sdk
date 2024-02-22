@@ -5,6 +5,13 @@ Argument type: kotlinClass
 {{- define "KotlinDataClass" -}}
 @Serializable data class {{ .Name }}({{ template "KotlinDataClassConstructorParameters" .ConstructorParameters }})
 {{- if .HasBody }} {
+{{- range .SecondaryConstructors }}
+constructor(
+  {{- template "KotlinFunctionParameters" .Parameters -}}
+) : this(
+  {{- template "KotlinFunctionArguments" .PrimaryConstructorArguments -}}
+)
+{{- end }}
 {{- range .NestedClasses }}
 {{ template "KotlinDataClass" . }}
 {{- end }}
@@ -53,6 +60,18 @@ Argument type: []kotlinFunctionArgument
 {{- end -}}
 
 {{- /***************************************************************************
+Emits the argument list of a Kotlin function call where each parameter is simply
+passed on verbatim in the form name1=name1, name2=name2, etc.
+Argument type: []kotlinFunctionParameter
+*************************************************************************/ -}}
+{{- define "KotlinFunctionForwardedArguments" -}}
+    {{- range . -}}
+        {{ .Name }}={{ .Name }}
+        {{- if not .IsLast }}, {{ end -}}
+    {{- end -}}
+{{- end -}}
+
+{{- /***************************************************************************
 Emits the convenience function and typealias definitions for working with a
 graphql mutation.
 Argument Type: operationTemplateData
@@ -65,7 +84,7 @@ suspend fun MutationRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.execut
 )
   = execute(
     {{- .OperationName }}.{{ .Variables.Name }}(
-    {{- template "KotlinFunctionArguments" .ConvenienceFunctionForwardedArguments -}}
+    {{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}
     ))
 {{- end -}}
 
@@ -82,13 +101,13 @@ suspend fun QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.execute(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 ) = execute(
 {{- .OperationName }}.{{ .Variables.Name }}(
-{{- template "KotlinFunctionArguments" .ConvenienceFunctionForwardedArguments -}}))
+{{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}))
 
 fun QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.subscribe(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 ) = subscribe(
 {{- .OperationName }}.{{ .Variables.Name }}(
-{{- template "KotlinFunctionArguments" .ConvenienceFunctionForwardedArguments -}}))
+{{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}))
 {{- end -}}
 
 {{- /******* BEGIN MAIN TEMPLATE ***********************************************/ -}}
