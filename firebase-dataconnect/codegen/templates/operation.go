@@ -64,10 +64,11 @@ func RenderOperationTemplate(
 }
 
 type operationTemplateData struct {
-	KotlinPackage string
-	OperationName string
-	OperationType string
-	Variables     *kotlinClass
+	KotlinPackage                 string
+	OperationName                 string
+	OperationType                 string
+	Variables                     *kotlinClass
+	ConvenienceFunctionParameters []kotlinFunctionParameter
 }
 
 type kotlinClass struct {
@@ -92,11 +93,17 @@ func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperati
 		return operationTemplateData{}, err
 	}
 
+	convenienceFunctionParameters, err := convenienceFunctionParametersFromVariableDefinitions(config.Operation.VariableDefinitions, config.Schema)
+	if err != nil {
+		return operationTemplateData{}, err
+	}
+
 	return operationTemplateData{
-		KotlinPackage: config.KotlinPackage,
-		OperationName: config.Operation.Name,
-		OperationType: string(config.Operation.Operation),
-		Variables:     variables,
+		KotlinPackage:                 config.KotlinPackage,
+		OperationName:                 config.Operation.Name,
+		OperationType:                 string(config.Operation.Operation),
+		Variables:                     variables,
+		ConvenienceFunctionParameters: convenienceFunctionParameters,
 	}, nil
 }
 
@@ -194,6 +201,66 @@ func constructorParametersFromFieldDefinitions(fieldDefinitions []*ast.FieldDefi
 		})
 	}
 	return kotlinFunctionParameters
+}
+
+func convenienceFunctionParametersFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinFunctionParameter, error) {
+	kotlinFunctionParameters := make([]kotlinFunctionParameter, 0, 0)
+	for _, variableDefinition := range variableDefinitions {
+		if isScalarType(variableDefinition.Type) {
+			kotlinFunctionParameters = append(kotlinFunctionParameters, kotlinFunctionParameter{
+				Name:       variableDefinition.Variable,
+				KotlinType: kotlinTypeFromTypeNode(variableDefinition.Type),
+				IsLast:     false,
+			})
+		} else {
+			variableTypeName := variableDefinition.Type.NamedType
+			variableTypeInfo := schema.Types[variableTypeName]
+			if variableTypeInfo == nil {
+				return nil, errors.New("schema.Types does not include entry for type: " + variableTypeName)
+			}
+			childFunctionParameters, err := convenienceFunctionParametersFromFieldDefinitions(variableTypeInfo.Fields, schema)
+			if err != nil {
+				return nil, err
+			}
+			kotlinFunctionParameters = append(kotlinFunctionParameters, childFunctionParameters...)
+		}
+	}
+
+	for i := range kotlinFunctionParameters {
+		kotlinFunctionParameters[i].IsLast = i+1 == len(kotlinFunctionParameters)
+	}
+
+	return kotlinFunctionParameters, nil
+}
+
+func convenienceFunctionParametersFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition, schema *ast.Schema) ([]kotlinFunctionParameter, error) {
+	kotlinFunctionParameters := make([]kotlinFunctionParameter, 0, 0)
+	for _, fieldDefinition := range fieldDefinitions {
+		if isScalarType(fieldDefinition.Type) {
+			kotlinFunctionParameters = append(kotlinFunctionParameters, kotlinFunctionParameter{
+				Name:       fieldDefinition.Name,
+				KotlinType: kotlinTypeFromTypeNode(fieldDefinition.Type),
+				IsLast:     false,
+			})
+		} else {
+			fieldTypeName := fieldDefinition.Type.NamedType
+			fieldTypeInfo := schema.Types[fieldTypeName]
+			if fieldTypeInfo == nil {
+				return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
+			}
+			childFunctionParameters, err := convenienceFunctionParametersFromFieldDefinitions(fieldTypeInfo.Fields, schema)
+			if err != nil {
+				return nil, err
+			}
+			kotlinFunctionParameters = append(kotlinFunctionParameters, childFunctionParameters...)
+		}
+	}
+
+	for i := range kotlinFunctionParameters {
+		kotlinFunctionParameters[i].IsLast = i+1 == len(kotlinFunctionParameters)
+	}
+
+	return kotlinFunctionParameters, nil
 }
 
 func kotlinTypeFromTypeNode(node *ast.Type) string {
