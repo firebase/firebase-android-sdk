@@ -43,7 +43,7 @@ import org.gradle.api.tasks.TaskAction
  *
  * @property changesByLibraryName contains libs which have opted into the release, and their changes
  * @property changedLibrariesWithNoChangelog contains libs not opted into the release, despite
- * having changes
+ *   having changes
  */
 @Serializable
 data class ReleaseReport(
@@ -61,14 +61,13 @@ data class ReleaseReport(
   override fun toString() =
     """
       |# Release Report
-      |${
-        changesByLibraryName.entries.joinToString("\n") {
-            """
+      |${changesByLibraryName.entries.joinToString("\n") 
+      """
       |## ${it.key}
       
       |${it.value.joinToString("\n") { it.toString() }}
       """.trimMargin()
-        }
+      }
     }
       |
       |## SDKs with changes, but no changelogs
@@ -185,8 +184,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       .setListMode(ListBranchCommand.ListMode.REMOTE)
       .call()
       .firstOrNull { it.name == "refs/remotes/origin/releases/$branchName" }
-      ?.objectId
-      ?: throw RuntimeException("Could not find branch named $branchName")
+      ?.objectId ?: throw RuntimeException("Could not find branch named $branchName")
 
   private fun getChangedLibraries(
     repo: Git,
@@ -270,7 +268,6 @@ abstract class ReleaseReportGenerator : DefaultTask() {
   @TaskAction
   @Throws(Exception::class)
   fun generateReleaseReport() {
-    val rootDir = project.rootDir
 
     val releaseReport =
       ReleaseReport.fromFile(
@@ -281,5 +278,4 @@ abstract class ReleaseReportGenerator : DefaultTask() {
   }
 }
 
-fun RegularFileProperty.asFileIfExistsOrNull(): File? =
-  if (isPresent && asFile.get().exists()) asFile.get() else null
+fun RegularFileProperty.asFileIfExistsOrNull(): File? = orNull?.asFile?.takeIf { it.exists() }

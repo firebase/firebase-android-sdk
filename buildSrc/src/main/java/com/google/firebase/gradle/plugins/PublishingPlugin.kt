@@ -61,6 +61,7 @@ import org.gradle.kotlin.dsl.register
  * - [BUILD_BOM_ZIP_TASK] -> Creates a zip file of the contents of [GENERATE_BOM_TASK]
  * [registerGenerateBomTask]
  * - [RELEASE_GENEATOR_TASK][registerGenerateReleaseConfigFilesTask]
+ * - [RELEASE_REPORT_GENERATOR_TASK][registerGenerateReleaseReportFilesTask]
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
  * - [PUBLISH_ALL_TO_BUILD_TASK][registerPublishAllToBuildDir]
@@ -82,6 +83,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       val releasingProjects = releasingFirebaseLibraries.map { it.project }
 
       val generateBom = registerGenerateBomTask(project)
+      val validatePomForRelease = registerValidatePomForReleaseTask(project, releasingProjects)
       val checkHeadDependencies =
         registerCheckHeadDependenciesTask(project, releasingFirebaseLibraries)
       val validateProjectsToPublish =
@@ -104,7 +106,6 @@ abstract class PublishingPlugin : Plugin<Project> {
         )
       val releaseReportTask = registerGenerateReleaseReportFilesTask(project)
 
-      registerValidatePomForReleaseTask(project, releasingProjects)
       registerGenerateReleaseConfigFilesTask(project, libraryGroups, releaseReportTask)
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
       registerSemverCheckForReleaseTask(project, releasingProjects)
