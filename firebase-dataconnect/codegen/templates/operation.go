@@ -177,6 +177,7 @@ func variablesClassNestedClassesFromVariableDefinitions(variableDefinitions []*a
 		}
 
 		typeInfoWithUnpickedFieldsDeleted := &ast.Definition{}
+		*typeInfoWithUnpickedFieldsDeleted = *typeInfo
 		typeInfoWithUnpickedFieldsDeleted.Fields = deleteUnpickedFields(typeInfoWithUnpickedFieldsDeleted.Fields, variableDefinition)
 
 		nestedTypeDefinitionByName[typeName] = typeInfoWithUnpickedFieldsDeleted
@@ -245,7 +246,10 @@ func convenienceFunctionParametersFromVariableDefinitions(variableDefinitions []
 			if variableTypeInfo == nil {
 				return nil, errors.New("schema.Types does not include entry for type: " + variableTypeName)
 			}
-			childFunctionParameters, err := convenienceFunctionParametersFromFieldDefinitions(variableTypeInfo.Fields, schema)
+
+			pickedFields := deleteUnpickedFields(variableTypeInfo.Fields, variableDefinition)
+
+			childFunctionParameters, err := convenienceFunctionParametersFromFieldDefinitions(pickedFields, schema)
 			if err != nil {
 				return nil, err
 			}
@@ -304,7 +308,10 @@ func convenienceFunctionForwardedArgumentsFromVariableDefinitions(variableDefini
 			if variableTypeInfo == nil {
 				return nil, errors.New("schema.Types does not include entry for type: " + variableTypeName)
 			}
-			childFunctionArguments, err := convenienceFunctionForwardedArgumentsFromFieldDefinitions(variableTypeInfo.Fields, functionNamePrefix, schema)
+
+			pickedFields := deleteUnpickedFields(variableTypeInfo.Fields, variableDefinition)
+
+			childFunctionArguments, err := convenienceFunctionForwardedArgumentsFromFieldDefinitions(pickedFields, functionNamePrefix, schema)
 			if err != nil {
 				return nil, err
 			}
