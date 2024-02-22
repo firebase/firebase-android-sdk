@@ -35,10 +35,13 @@ func RenderOperationTemplate(
 
 	log.Println("Generating:", outputFile)
 
-	templateData := operationTemplateDataFromRenderOperationTemplateConfig(config)
+	templateData, err := operationTemplateDataFromRenderOperationTemplateConfig(config)
+	if err != nil {
+		return err
+	}
 
 	var outputBuffer bytes.Buffer
-	err := tmpl.Execute(&outputBuffer, templateData)
+	err = tmpl.Execute(&outputBuffer, templateData)
 	if err != nil {
 		return err
 	}
@@ -69,8 +72,11 @@ type operationTemplateData struct {
 type kotlinClass struct {
 	Name                  string
 	ConstructorParameters []kotlinFunctionParameter
-	HasBody               bool
 	NestedClasses         []kotlinClass
+}
+
+func (r kotlinClass) HasBody() bool {
+	return r.NestedClasses != nil && len(r.NestedClasses) > 0
 }
 
 type kotlinFunctionParameter struct {
@@ -79,24 +85,34 @@ type kotlinFunctionParameter struct {
 	IsLast     bool
 }
 
-func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperationTemplateConfig) operationTemplateData {
+func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperationTemplateConfig) (operationTemplateData, error) {
+	variables, err := kotlinClassForVariableDefinitions(config.Operation.VariableDefinitions, config.Schema)
+	if err != nil {
+		return operationTemplateData{}, err
+	}
+
 	return operationTemplateData{
 		KotlinPackage: config.KotlinPackage,
 		OperationName: config.Operation.Name,
-		Variables:     kotlinClassForVariableDefinitions(config.Operation.VariableDefinitions),
-	}
+		Variables:     variables,
+	}, nil
 }
 
-func kotlinClassForVariableDefinitions(variableDefinitions []*ast.VariableDefinition) *kotlinClass {
+func kotlinClassForVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) (*kotlinClass, error) {
 	if variableDefinitions == nil || len(variableDefinitions) == 0 {
-		return nil
+		return nil, nil
+	}
+
+	nestedClasses, err := variablesClassNestedClassesFromVariableDefinitions(variableDefinitions, schema)
+	if err != nil {
+		return nil, err
 	}
 
 	return &kotlinClass{
 		Name:                  "Variables",
 		ConstructorParameters: variablesClassConstructorParametersFromVariableDefinitions(variableDefinitions),
-		HasBody:               false,
-	}
+		NestedClasses:         nestedClasses,
+	}, nil
 }
 
 func variablesClassConstructorParametersFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition) []kotlinFunctionParameter {
@@ -106,6 +122,57 @@ func variablesClassConstructorParametersFromVariableDefinitions(variableDefiniti
 			Name:       variableDefinition.Variable,
 			KotlinType: kotlinTypeFromTypeNode(variableDefinition.Type),
 			IsLast:     i+1 == len(variableDefinitions),
+		})
+	}
+	return kotlinFunctionParameters
+}
+
+func variablesClassNestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinClass, error) {
+	nestedTypeNames := make([]string, 0, 0)
+	nestedTypeDefinitionByName := make(map[string]*ast.Definition)
+
+	for _, variableDefinition := range variableDefinitions {
+		if isScalarType(variableDefinition.Type) {
+			continue
+		}
+
+		typeName := variableDefinition.Type.NamedType
+		nestedTypeNames = append(nestedTypeNames, typeName)
+
+		typeInfo := schema.Types[typeName]
+		if typeInfo == nil {
+			return nil, errors.New("schema.Types does not include entry for type: " + typeName)
+		}
+		nestedTypeDefinitionByName[typeName] = typeInfo
+	}
+
+	nestedClasses := make([]kotlinClass, 0, 0)
+
+	for len(nestedTypeNames) > 0 {
+		typeName := nestedTypeNames[0]
+		nestedTypeNames = nestedTypeNames[1:]
+		typeDefinition := nestedTypeDefinitionByName[typeName]
+		if typeDefinition == nil {
+			continue
+		}
+
+		nestedClasses = append(nestedClasses, kotlinClass{
+			Name:                  typeName,
+			ConstructorParameters: constructorParametersFromFieldDefinitions(typeDefinition.Fields),
+			NestedClasses:         nil,
+		})
+	}
+
+	return nestedClasses, nil
+}
+
+func constructorParametersFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) []kotlinFunctionParameter {
+	kotlinFunctionParameters := make([]kotlinFunctionParameter, 0, 0)
+	for i, fieldDefinition := range fieldDefinitions {
+		kotlinFunctionParameters = append(kotlinFunctionParameters, kotlinFunctionParameter{
+			Name:       fieldDefinition.Name,
+			KotlinType: kotlinTypeFromTypeNode(fieldDefinition.Type),
+			IsLast:     i+1 == len(fieldDefinitions),
 		})
 	}
 	return kotlinFunctionParameters
