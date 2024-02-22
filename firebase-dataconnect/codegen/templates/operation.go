@@ -175,7 +175,11 @@ func variablesClassNestedClassesFromVariableDefinitions(variableDefinitions []*a
 		if typeInfo == nil {
 			return nil, errors.New("schema.Types does not include entry for type: " + typeName)
 		}
-		nestedTypeDefinitionByName[typeName] = typeInfo
+
+		typeInfoWithUnpickedFieldsDeleted := &ast.Definition{}
+		typeInfoWithUnpickedFieldsDeleted.Fields = deleteUnpickedFields(typeInfoWithUnpickedFieldsDeleted.Fields, variableDefinition)
+
+		nestedTypeDefinitionByName[typeName] = typeInfoWithUnpickedFieldsDeleted
 	}
 
 	nestedClasses := make([]kotlinClass, 0, 0)
@@ -358,6 +362,62 @@ func convenienceFunctionForwardedArgumentsFromFieldDefinitions(fieldDefinitions 
 	}
 
 	return kotlinFunctionArguments, nil
+}
+
+func deleteUnpickedFields(fieldDefinitions []*ast.FieldDefinition, variableDefinition *ast.VariableDefinition) []*ast.FieldDefinition {
+	pickedFieldsList := pickedFieldsForVariableDefinition(variableDefinition)
+	pickedFieldNames := fieldNameSetFromFieldDefinitions(pickedFieldsList)
+
+	pickedFields := make([]*ast.FieldDefinition, 0, 0)
+	for _, fieldDefinition := range fieldDefinitions {
+		_, isFieldPicked := pickedFieldNames[fieldDefinition.Name]
+		if isFieldPicked {
+			pickedFields = append(pickedFields, fieldDefinition)
+		}
+	}
+	return pickedFields
+}
+
+func pickedFieldsForVariableDefinition(variableDefinition *ast.VariableDefinition) []*ast.FieldDefinition {
+	pickDirective := pickDirectiveForVariableDefinition(variableDefinition)
+	if pickDirective == nil {
+		return variableDefinition.Definition.Fields
+	}
+
+	pickedFields := make(map[string]*ast.ChildValue)
+	for _, pickDirectiveArgument := range pickDirective.Arguments {
+		if pickDirectiveArgument.Name == "fields" {
+			for _, pickDirectiveArgumentChildValue := range pickDirectiveArgument.Value.Children {
+				pickedFields[pickDirectiveArgumentChildValue.Value.Raw] = pickDirectiveArgumentChildValue
+			}
+		}
+	}
+
+	fieldDefinitions := make([]*ast.FieldDefinition, 0, 0)
+	for _, field := range variableDefinition.Definition.Fields {
+		if _, isFieldPicked := pickedFields[field.Name]; isFieldPicked {
+			fieldDefinitions = append(fieldDefinitions, field)
+		}
+	}
+
+	return fieldDefinitions
+}
+
+func pickDirectiveForVariableDefinition(variableDefinition *ast.VariableDefinition) *ast.Directive {
+	for _, directive := range variableDefinition.Directives {
+		if directive.Name == "pick" {
+			return directive
+		}
+	}
+	return nil
+}
+
+func fieldNameSetFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) map[string]*any {
+	fieldNameSet := make(map[string]*any)
+	for _, fieldDefinition := range fieldDefinitions {
+		fieldNameSet[fieldDefinition.Name] = nil
+	}
+	return fieldNameSet
 }
 
 func kotlinTypeFromTypeNode(node *ast.Type) string {
