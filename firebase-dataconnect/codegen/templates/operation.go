@@ -152,14 +152,30 @@ func variablesClassNestedClassesFromVariableDefinitions(variableDefinitions []*a
 		typeName := nestedTypeNames[0]
 		nestedTypeNames = nestedTypeNames[1:]
 		typeDefinition := nestedTypeDefinitionByName[typeName]
-		if typeDefinition == nil {
-			continue
+
+		for _, fieldDefinition := range typeDefinition.Fields {
+			if isScalarType(fieldDefinition.Type) {
+				continue
+			}
+
+			fieldTypeName := fieldDefinition.Type.NamedType
+			_, nestedTypeDefinitionExists := nestedTypeDefinitionByName[fieldTypeName]
+			if nestedTypeDefinitionExists {
+				continue
+			}
+
+			nestedTypeNames = append(nestedTypeNames, fieldTypeName)
+
+			fieldTypeInfo := schema.Types[fieldTypeName]
+			if fieldTypeInfo == nil {
+				return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
+			}
+			nestedTypeDefinitionByName[fieldTypeName] = fieldTypeInfo
 		}
 
 		nestedClasses = append(nestedClasses, kotlinClass{
 			Name:                  typeName,
 			ConstructorParameters: constructorParametersFromFieldDefinitions(typeDefinition.Fields),
-			NestedClasses:         nil,
 		})
 	}
 

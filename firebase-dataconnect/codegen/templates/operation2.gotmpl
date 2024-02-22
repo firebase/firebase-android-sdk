@@ -7,7 +7,7 @@ Argument type: kotlinClass
 {{- if .HasBody }} {
 {{- range .NestedClasses }}
 {{ template "KotlinDataClass" . }}
-{{- end -}}
+{{- end }}
 }
 {{- end -}}
 {{- end -}}
@@ -23,14 +23,6 @@ Argument type: []kotlinFunctionParameter
     {{- end -}}
 {{- end -}}
 
-{{- /***************************************************************************
-Emits the nested class definitions that should be nested inside the "Variables"
-data class definition for the graphql operation.
-Argument: operationTemplateData The "data" object given to Template.Execute().
-*************************************************************************/ -}}
-{{- define "VariablesClassNestedClassDefinitions" -}}
-{{- end -}}
-
 {{- /******* BEGIN MAIN TEMPLATE ***********************************************/ -}}
 
 package {{ .KotlinPackage }}
@@ -40,6 +32,8 @@ import kotlinx.serialization.Serializable
 
 object {{ .OperationName }} {
 
-{{ if ne .Variables nil }}{{ template "KotlinDataClass" .Variables }}{{ end }}
+{{ if ne .Variables nil -}}
+{{ template "KotlinDataClass" .Variables }}
+{{ end }}
 
 }
