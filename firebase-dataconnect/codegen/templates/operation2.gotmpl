@@ -35,6 +35,24 @@ Argument type: []kotlinFunctionParameter
 {{- end -}}
 
 {{- /***************************************************************************
+Emits the argument list of a Kotlin function call.
+Argument type: []kotlinFunctionArgument
+*************************************************************************/ -}}
+{{- define "KotlinFunctionArguments" -}}
+    {{- range . -}}
+        {{ .Name }}=
+        {{- if eq .Expression nil -}}
+            {{ .Name }}
+        {{- else -}}
+            {{ .Expression.FunctionName }}(
+                {{- template "KotlinFunctionArguments" .Expression.Arguments -}}
+            )
+        {{- end -}}
+        {{- if not .IsLast }}, {{ end -}}
+    {{- end -}}
+{{- end -}}
+
+{{- /***************************************************************************
 Emits the convenience function and typealias definitions for working with a
 graphql mutation.
 Argument Type: operationTemplateData
@@ -43,8 +61,12 @@ Argument Type: operationTemplateData
 typealias {{ .OperationName }}MutationRef = MutationRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
 
 suspend fun MutationRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.execute(
-{{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
-) = execute()
+    {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
+)
+  = execute(
+    {{- .OperationName }}.{{ .Variables.Name }}(
+    {{- template "KotlinFunctionArguments" .ConvenienceFunctionForwardedArguments -}}
+    ))
 {{- end -}}
 
 {{- /***************************************************************************
@@ -57,7 +79,9 @@ typealias {{ .OperationName }}QueryRef = QueryRef<{{ .OperationName }}.{{ .Varia
 
 suspend fun QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.execute(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
-) = execute()
+) = execute(
+{{- .OperationName }}.{{ .Variables.Name }}(
+{{- template "KotlinFunctionArguments" .ConvenienceFunctionForwardedArguments -}}))
 {{- end -}}
 
 {{- /******* BEGIN MAIN TEMPLATE ***********************************************/ -}}
