@@ -1,8 +1,6 @@
 package templates
 
 import (
-	"errors"
-	"fmt"
 	"github.com/vektah/gqlparser/v2/ast"
 	"text/template"
 )
@@ -14,7 +12,7 @@ func makeOperationFuncMap() template.FuncMap {
 		"fail":                              fail,
 		"flattenedVariablesFor":             flattenedVariablesFor,
 		"isScalarType":                      isScalarType,
-		"kotlinTypeFromGraphQLType":         kotlinTypeFromGraphQLType,
+		"kotlinTypeFromGraphQLType":         kotlinTypeFromTypeNode,
 		"pickedFieldsForVariableDefinition": pickedFieldsForVariableDefinition,
 	}
 }
@@ -71,10 +69,6 @@ func fieldDefinitionFromVariableDefinition(variableDefinition *ast.VariableDefin
 		Directives: variableDefinition.Directives,
 		Position:   variableDefinition.Position,
 	}
-}
-
-func fail(a ...any) (any, error) {
-	return 42, errors.New(fmt.Sprint(a...))
 }
 
 func flattenedVariablesFor(operation *ast.OperationDefinition, schema *ast.Schema) []*ast.VariableDefinition {
@@ -134,33 +128,6 @@ func isScalarTypeName(typeName string) bool {
 		return true
 	} else {
 		return false
-	}
-}
-
-func kotlinTypeFromGraphQLType(node *ast.Type) string {
-	var suffix string
-	if node.NonNull {
-		suffix = ""
-	} else {
-		suffix = "?"
-	}
-
-	return kotlinTypeNameFromGraphQLTypeName(node.NamedType) + suffix
-}
-
-func kotlinTypeNameFromGraphQLTypeName(graphQLTypeName string) string {
-	if graphQLTypeName == "Int" {
-		return "Int"
-	} else if graphQLTypeName == "Float" {
-		return "Float"
-	} else if graphQLTypeName == "String" {
-		return "String"
-	} else if graphQLTypeName == "Boolean" {
-		return "Boolean"
-	} else if graphQLTypeName == "ID" {
-		return "String"
-	} else {
-		return graphQLTypeName
 	}
 }
 

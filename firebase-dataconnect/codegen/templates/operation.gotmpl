@@ -1,6 +1,6 @@
 {{- /***************************************************************************
 Emits the "Variables" data class definition for the graphql operation.
-Argument: []*VariableDefinition The list of operation's variables.
+Argument: operationTemplateData
 *************************************************************************/ -}}
 {{- define "VariablesClass" -}}
 @Serializable data class Variables({{ template "VariablesClassConstructorParameters" . }}) {
@@ -136,10 +136,10 @@ package {{ .KotlinPackage }}
 import com.google.firebase.dataconnect.*
 import kotlinx.serialization.Serializable
 
-object {{ .Operation.Name }} {
+object {{ .OperationName }} {
 
-{{ if (gt (len .Operation.VariableDefinitions) 0) -}}
-{{ template "VariablesClass" .Operation.VariableDefinitions }}
+{{ if .HasVariables -}}
+{{ template "VariablesClass" . }}
 {{- end }}
 
 }

@@ -1,0 +1,45 @@
+{{- /***************************************************************************
+Emits a Kotlin data class.
+Argument type: kotlinClass
+*************************************************************************/ -}}
+{{- define "KotlinDataClass" -}}
+@Serializable data class {{ .Name }}({{ template "ConstructorParameters" .ConstructorParameters }})
+{{- if .HasBody }} {
+{{- range .NestedClasses }}
+{{ template "KotlinDataClass" . }}
+{{- end -}}
+}
+{{- end -}}
+{{- end -}}
+
+{{- /***************************************************************************
+Emits the parameter list of a Kotlin function.
+Argument type: []kotlinFunctionParameter
+*************************************************************************/ -}}
+{{- define "ConstructorParameters" -}}
+    {{- range . -}}
+        val {{ .Name }}: {{ .KotlinType }}
+        {{- if not .IsLast }}, {{ end -}}
+    {{- end -}}
+{{- end -}}
+
+{{- /***************************************************************************
+Emits the nested class definitions that should be nested inside the "Variables"
+data class definition for the graphql operation.
+Argument: operationTemplateData The "data" object given to Template.Execute().
+*************************************************************************/ -}}
+{{- define "VariablesClassNestedClassDefinitions" -}}
+{{- end -}}
+
+{{- /******* BEGIN MAIN TEMPLATE ***********************************************/ -}}
+
+package {{ .KotlinPackage }}
+
+import com.google.firebase.dataconnect.*
+import kotlinx.serialization.Serializable
+
+object {{ .OperationName }} {
+
+{{ if ne .Variables nil }}{{ template "KotlinDataClass" .Variables }}{{ end }}
+
+}
