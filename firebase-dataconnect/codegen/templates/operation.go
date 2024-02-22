@@ -66,6 +66,7 @@ func RenderOperationTemplate(
 type operationTemplateData struct {
 	KotlinPackage string
 	OperationName string
+	OperationType string
 	Variables     *kotlinClass
 }
 
@@ -94,6 +95,7 @@ func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperati
 	return operationTemplateData{
 		KotlinPackage: config.KotlinPackage,
 		OperationName: config.Operation.Name,
+		OperationType: string(config.Operation.Operation),
 		Variables:     variables,
 	}, nil
 }

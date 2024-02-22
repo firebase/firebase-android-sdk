@@ -23,6 +23,24 @@ Argument type: []kotlinFunctionParameter
     {{- end -}}
 {{- end -}}
 
+{{- /***************************************************************************
+Emits the convenience function and typealias definitions for working with a
+graphql mutation.
+Argument Type: operationTemplateData
+*************************************************************************/ -}}
+{{- define "MutationConvenienceDefinitions" -}}
+    typealias {{ .OperationName }}MutationRef = MutationRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
+{{- end -}}
+
+{{- /***************************************************************************
+Emits the convenience function and typealias definitions for working with a
+graphql query.
+Argument Type: operationTemplateData
+*************************************************************************/ -}}
+{{- define "QueryConvenienceDefinitions" -}}
+    typealias {{ .OperationName }}QueryRef = QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
+{{- end -}}
+
 {{- /******* BEGIN MAIN TEMPLATE ***********************************************/ -}}
 
 package {{ .KotlinPackage }}
@@ -37,3 +55,13 @@ object {{ .OperationName }} {
 {{ end }}
 
 }
+
+{{ if ne .Variables nil -}}
+{{- if eq .OperationType "mutation" -}}
+{{ template "MutationConvenienceDefinitions" . }}
+{{- else if eq .OperationType "query" -}}
+{{ template "QueryConvenienceDefinitions" . }}
+{{- else -}}
+{{ fail "unsupported value for .OperationType: " .OperationType }}
+{{- end }}
+{{- end }}
