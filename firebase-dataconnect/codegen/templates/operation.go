@@ -12,13 +12,14 @@ import (
 	"text/template"
 )
 
-//go:embed operation2.gotmpl
+//go:embed operation.gotmpl
 var operationTemplate string
 
 func LoadOperationTemplate() (*template.Template, error) {
-	templateName := "operation2.gotmpl"
+	templateName := "operation.gotmpl"
 	log.Println("Loading Go template:", templateName)
-	return template.New(templateName).Funcs(makeOperationFuncMap()).Parse(operationTemplate)
+	funcMap := template.FuncMap{"fail": fail}
+	return template.New(templateName).Funcs(funcMap).Parse(operationTemplate)
 }
 
 type RenderOperationTemplateConfig struct {
@@ -497,6 +498,26 @@ func kotlinTypeNameFromGraphQLTypeName(graphQLTypeName string) string {
 		return "String"
 	} else {
 		return graphQLTypeName
+	}
+}
+
+func isScalarType(node *ast.Type) bool {
+	return isScalarTypeName(node.NamedType)
+}
+
+func isScalarTypeName(typeName string) bool {
+	if typeName == "Int" {
+		return true
+	} else if typeName == "Float" {
+		return true
+	} else if typeName == "String" {
+		return true
+	} else if typeName == "Boolean" {
+		return true
+	} else if typeName == "ID" {
+		return true
+	} else {
+		return false
 	}
 }
 
