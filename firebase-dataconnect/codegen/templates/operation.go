@@ -117,7 +117,7 @@ type kotlinFunctionCall struct {
 func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperationTemplateConfig) (operationTemplateData, error) {
 	operationName := config.Operation.Name
 
-	variables, err := kotlinClassForVariableDefinitions(config.Operation.VariableDefinitions, config.Schema)
+	variables, err := kotlinClassForVariableDefinitions("Variables", true, config.Operation.VariableDefinitions, config.Schema)
 	if err != nil {
 		return operationTemplateData{}, err
 	}
@@ -165,7 +165,7 @@ func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperati
 	return templateData, nil
 }
 
-func kotlinClassForVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) (*kotlinClass, error) {
+func kotlinClassForVariableDefinitions(kotlinClassName string, includeConvenienceFunctions bool, variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) (*kotlinClass, error) {
 	if variableDefinitions == nil || len(variableDefinitions) == 0 {
 		return nil, nil
 	}
@@ -175,13 +175,18 @@ func kotlinClassForVariableDefinitions(variableDefinitions []*ast.VariableDefini
 		return nil, err
 	}
 
-	secondaryConstructors, err := secondaryConstructorsFromVariableDefinitions(variableDefinitions, schema)
-	if err != nil {
-		return nil, err
+	var secondaryConstructors []kotlinSecondaryConstructor
+	if !includeConvenienceFunctions {
+		secondaryConstructors = nil
+	} else {
+		secondaryConstructors, err = secondaryConstructorsFromVariableDefinitions(variableDefinitions, schema)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &kotlinClass{
-		Name:                  "Variables",
+		Name:                  kotlinClassName,
 		ConstructorParameters: variablesClassConstructorParametersFromVariableDefinitions(variableDefinitions),
 		NestedClasses:         nestedClasses,
 		SecondaryConstructors: secondaryConstructors,
@@ -489,6 +494,27 @@ func pickDirectiveForVariableDefinition(variableDefinition *ast.VariableDefiniti
 	return nil
 }
 
+func fieldsSelectedBySelectionSet(fieldDefinitions []*ast.FieldDefinition, selectionSet []ast.Selection) []*ast.FieldDefinition {
+	if selectionSet == nil || len(selectionSet) == 0 {
+		return fieldDefinitions
+	}
+
+	selectedFieldNames := make(map[string]any)
+	for _, selection := range selectionSet {
+		selectedFieldName := fieldFromSelection(selection).Name
+		selectedFieldNames[selectedFieldName] = nil
+	}
+
+	selectedFields := make([]*ast.FieldDefinition, 0, 0)
+	for _, fieldDefinition := range fieldDefinitions {
+		if _, isFieldSelected := selectedFieldNames[fieldDefinition.Name]; isFieldSelected {
+			selectedFields = append(selectedFields, fieldDefinition)
+		}
+	}
+
+	return selectedFields
+}
+
 func fieldNameSetFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) map[string]*any {
 	fieldNameSet := make(map[string]*any)
 	for _, fieldDefinition := range fieldDefinitions {
@@ -498,21 +524,35 @@ func fieldNameSetFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) m
 }
 
 func kotlinClassForSelectionSet(selectionSet []ast.Selection, schema *ast.Schema) (*kotlinClass, error) {
+	if selectionSet == nil || len(selectionSet) == 0 {
+		return nil, nil
+	}
+
 	fields := make([]*ast.Field, 0, 0)
 	for _, selection := range selectionSet {
 		fields = append(fields, fieldFromSelection(selection))
 	}
 
-	return &kotlinClass{
-		Name: "Data",
-		ConstructorParameters: []kotlinFunctionParameter{
-			{
-				Name:       "replaceMeZzyzx",
-				KotlinType: "String",
-				IsLast:     true,
-			},
-		},
-	}, nil
+	variableDefinitions := make([]*ast.VariableDefinition, 0, 0)
+	for _, field := range fields {
+		fieldTypeName := field.Definition.Type.NamedType
+		fieldTypeInfo := schema.Types[fieldTypeName]
+		if fieldTypeInfo == nil {
+			return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
+		}
+
+		fieldTypeInfoWithOnlySelectedFields := &ast.Definition{}
+		*fieldTypeInfoWithOnlySelectedFields = *fieldTypeInfo
+		fieldTypeInfoWithOnlySelectedFields.Fields = fieldsSelectedBySelectionSet(fieldTypeInfoWithOnlySelectedFields.Fields, field.SelectionSet)
+
+		variableDefinitions = append(variableDefinitions, &ast.VariableDefinition{
+			Variable:   field.Name,
+			Type:       field.Definition.Type,
+			Definition: fieldTypeInfoWithOnlySelectedFields,
+		})
+	}
+
+	return kotlinClassForVariableDefinitions("Data", false, variableDefinitions, schema)
 }
 
 func kotlinTypeFromTypeNode(node *ast.Type) string {

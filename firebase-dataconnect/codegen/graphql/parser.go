@@ -164,7 +164,7 @@ func createSingularQueryField(definition *ast.Definition) *ast.FieldDefinition {
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name),
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen"},
+		Type:      &ast.Type{NamedType: definition.Name, NonNull: true},
 	}
 }
 
@@ -174,7 +174,9 @@ func createPluralQueryField(definition *ast.Definition) *ast.FieldDefinition {
 	return &ast.FieldDefinition{
 		Name:      pluralize.NewClient().Plural(strings.ToLower(definition.Name)),
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen"},
+		// TODO: Use the type on the next line once lists are supported.
+		//Type:      &ast.Type{Elem: &ast.Type{NamedType: definition.Name, NonNull: true}, NonNull: true},
+		Type: &ast.Type{NamedType: definition.Name, NonNull: true},
 	}
 }
 
