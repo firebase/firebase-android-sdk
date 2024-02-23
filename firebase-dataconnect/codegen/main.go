@@ -21,19 +21,25 @@ func main() {
 		os.Exit(2)
 	}
 
-	graphQLSchema, err := graphql.LoadSchemaFile(parsedArgs.SchemaFile)
+	schema, err := graphql.LoadSchemaFile(parsedArgs.SchemaFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	graphQLOperations, err := graphql.LoadOperationsFile(parsedArgs.OperationsFile, graphQLSchema)
-	if err != nil {
-		log.Fatal(err)
+	queryDocuments := make([]*ast.QueryDocument, 0, 0)
+	for _, operationsFile := range parsedArgs.OperationsFiles {
+		queryDocument, err := graphql.LoadOperationsFile(operationsFile, schema)
+		if err != nil {
+			log.Fatal(err)
+		}
+		queryDocuments = append(queryDocuments, queryDocument)
 	}
 
-	err = generateOperationKotlinFiles(graphQLOperations.Operations, graphQLSchema, parsedArgs)
-	if err != nil {
-		log.Fatal(err)
+	for _, queryDocument := range queryDocuments {
+		err = generateOperationKotlinFiles(queryDocument.Operations, schema, parsedArgs)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 

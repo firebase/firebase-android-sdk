@@ -8,10 +8,10 @@ import (
 )
 
 type ParsedArguments struct {
-	DestDir        string
-	SchemaFile     string
-	OperationsFile string
-	ConnectorName  string
+	DestDir         string
+	SchemaFile      string
+	OperationsFiles []string
+	ConnectorName   string
 }
 
 func Parse() (*ParsedArguments, error) {
@@ -36,19 +36,17 @@ func Parse() (*ParsedArguments, error) {
 	if flagSet.NArg() == 0 {
 		return nil, errors.New("no graphql schema file specified")
 	} else if flagSet.NArg() == 1 {
-		return nil, errors.New("no graphql operations file specified")
-	} else if flagSet.NArg() > 2 {
-		return nil, errors.New("unexpected argument: " + flagSet.Args()[3])
+		return nil, errors.New("no graphql operations files specified")
 	}
 
 	schemaFile := flagSet.Args()[0]
-	operationsFile := flagSet.Args()[1]
+	operationsFiles := flagSet.Args()[1:]
 
 	parsedArguments := &ParsedArguments{
-		DestDir:        *destDir,
-		SchemaFile:     schemaFile,
-		OperationsFile: operationsFile,
-		ConnectorName:  connectorNameFrom(connectorName, operationsFile),
+		DestDir:         *destDir,
+		SchemaFile:      schemaFile,
+		OperationsFiles: operationsFiles,
+		ConnectorName:   connectorNameFrom(connectorName, operationsFiles[0]),
 	}
 
 	return parsedArguments, nil
