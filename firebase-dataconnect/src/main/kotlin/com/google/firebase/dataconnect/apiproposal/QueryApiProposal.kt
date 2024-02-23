@@ -2,6 +2,7 @@ package com.google.firebase.dataconnect.apiproposal
 
 import android.app.Activity
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -15,10 +16,17 @@ class ConnectorConfig constructor(
   val connector: String,
   val location: String,
   val service: String
-)
+) {
+
+  override fun equals(other: Any?): Boolean = TODO()
+
+  override fun hashCode() : Int = TODO()
+
+  override fun toString() : String = TODO()
+}
 
 class DataConnectSettings constructor(
-  val host : String = DEFAULT_HOST,
+  val host : String = "dataconnect.googleapis.com",
   val sslEnabled : Boolean = true
 ) {
   override fun equals(other: Any?): Boolean = TODO()
@@ -26,10 +34,6 @@ class DataConnectSettings constructor(
   override fun hashCode() : Int = TODO()
 
   override fun toString() : String = TODO()
-
-  companion object {
-    val DEFAULT_HOST : String = "dataconnect.googleapis.com"
-  }
 }
 
 enum class LoggerLevel {
@@ -37,16 +41,40 @@ enum class LoggerLevel {
 }
 
 class FirebaseDataConnect internal constructor() : AutoCloseable {
-  fun useEmulator(host : String = "10.0.2.2",  port : Int = 9399) : Unit = TODO()
+
+  val app : FirebaseApp
+    get() = TODO()
+
+  val config : ConnectorConfig
+    get() = TODO()
+
+  val settings: DataConnectSettings
+    get() = TODO()
+
+  fun useEmulator(host : String = "10.0.2.2",  port : Int = 9510) : Unit = TODO()
 
   override fun close() = TODO()
 
   override fun toString(): String = TODO()
 
   companion object {
-    fun getInstance(app : FirebaseApp = FirebaseApp.getInstance(),
-                    config : ConnectorConfig,
-                    settings : DataConnectSettings = DataConnectSettings()) : FirebaseDataConnect = TODO()
+    // Creates an instance with the default settings and caches it, if there is not a
+    // cached instance for the given app/config pair.
+    fun getInstance(
+      app: FirebaseApp = FirebaseApp.getInstance(),
+      config: ConnectorConfig
+    ): FirebaseDataConnect = TODO()
+
+    // Throws if there is a cached instance for the given app/config pair AND
+    // that instance has different settings that the provided settings, compared
+    // using DataConnectSettings.equals() method. Otherwise, creates and caches
+    // the instance if there is no cached instance.
+    fun getInstance(
+      app: FirebaseApp = FirebaseApp.getInstance(),
+      config: ConnectorConfig,
+      settings: DataConnectSettings
+    ): FirebaseDataConnect = TODO()
+
 
     var logLevel : LoggerLevel
       get() = TODO()
