@@ -118,24 +118,24 @@ type kotlinFunctionCall struct {
 func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperationTemplateConfig) (operationTemplateData, error) {
 	operationName := config.Operation.Name
 
-	variables, err := kotlinClassForVariableDefinitions("Variables", true, config.Operation.VariableDefinitions, config.Schema)
+	variables, err := kotlinClassForVariableDefinitions(operationName+"Variables", true, config.Operation.VariableDefinitions, config.Schema)
 	if err != nil {
 		return operationTemplateData{}, err
 	}
 
 	variablesKotlinType := "Unit"
 	if variables != nil {
-		variablesKotlinType = operationName + "." + variables.Name
+		variablesKotlinType = variables.Name
 	}
 
-	response, err := kotlinClassForSelectionSet(config.Operation.SelectionSet, config.Schema)
+	response, err := kotlinClassForSelectionSet(operationName+"Data", config.Operation.SelectionSet, config.Schema)
 	if err != nil {
 		return operationTemplateData{}, err
 	}
 
 	responseKotlinType := "Unit"
 	if response != nil {
-		responseKotlinType = operationName + "." + response.Name
+		responseKotlinType = response.Name
 	}
 
 	templateData := operationTemplateData{
@@ -534,7 +534,7 @@ func fieldNameSetFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) m
 	return fieldNameSet
 }
 
-func kotlinClassForSelectionSet(selectionSet []ast.Selection, schema *ast.Schema) (*kotlinClass, error) {
+func kotlinClassForSelectionSet(kotlinClassName string, selectionSet []ast.Selection, schema *ast.Schema) (*kotlinClass, error) {
 	if selectionSet == nil || len(selectionSet) == 0 {
 		return nil, nil
 	}
@@ -568,7 +568,7 @@ func kotlinClassForSelectionSet(selectionSet []ast.Selection, schema *ast.Schema
 		})
 	}
 
-	return kotlinClassForVariableDefinitions("Data", false, variableDefinitions, schema)
+	return kotlinClassForVariableDefinitions(kotlinClassName, false, variableDefinitions, schema)
 }
 
 func kotlinTypeFromTypeNode(node *ast.Type) string {

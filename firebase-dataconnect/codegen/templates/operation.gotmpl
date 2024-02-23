@@ -80,12 +80,10 @@ Argument Type: operationTemplateData
 typealias {{ .OperationName }}MutationRef = MutationRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>
 
 suspend fun MutationRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>.execute(
-    {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
-)
-  = execute(
-    {{- .OperationName }}.{{ .Variables.Name }}(
-    {{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}
-    ))
+{{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
+) = execute(
+{{ .Variables.Name }}(
+{{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}))
 {{- end -}}
 
 {{- /***************************************************************************
@@ -100,13 +98,13 @@ typealias {{ .OperationName }}QuerySubscription = QuerySubscription<{{ .Variable
 suspend fun QueryRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>.execute(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 ) = execute(
-{{- .OperationName }}.{{ .Variables.Name }}(
+{{ .Variables.Name }}(
 {{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}))
 
 fun QueryRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>.subscribe(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 ) = subscribe(
-{{- .OperationName }}.{{ .Variables.Name }}(
+{{ .Variables.Name }}(
 {{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}))
 {{- end -}}
 
@@ -117,8 +115,6 @@ package {{ .KotlinPackage }}
 import com.google.firebase.dataconnect.*
 import kotlinx.serialization.Serializable
 
-object {{ .OperationName }} {
-
 {{ if ne .Variables nil -}}
 {{ template "KotlinDataClass" .Variables }}
 {{ end }}
@@ -126,8 +122,6 @@ object {{ .OperationName }} {
 {{ if ne .Response nil -}}
 {{ template "KotlinDataClass" .Response }}
 {{ end }}
-
-}
 
 {{ if ne .Variables nil -}}
 {{- if eq .OperationType "mutation" -}}
