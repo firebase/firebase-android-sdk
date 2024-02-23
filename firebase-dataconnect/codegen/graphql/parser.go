@@ -95,7 +95,7 @@ func createInsertMutationField(definition *ast.Definition, synthesizedDefinition
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_insert",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen", NonNull: false},
+		Type:      &ast.Type{NamedType: "String", NonNull: true},
 	}
 }
 
@@ -115,7 +115,7 @@ func createDeleteMutationField(definition *ast.Definition) *ast.FieldDefinition 
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_delete",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen", NonNull: false},
+		Type:      &ast.Type{NamedType: "String", NonNull: false},
 	}
 }
 
@@ -140,7 +140,7 @@ func createUpdateMutationField(definition *ast.Definition, synthesizedDefinition
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_update",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "pseudo_name_should_never_be_seen", NonNull: false},
+		Type:      &ast.Type{NamedType: "String", NonNull: true},
 	}
 }
 

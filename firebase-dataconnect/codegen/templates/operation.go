@@ -68,6 +68,9 @@ type operationTemplateData struct {
 	OperationName                         string
 	OperationType                         string
 	Variables                             *kotlinClass
+	VariablesKotlinType                   string
+	Response                              *kotlinClass
+	ResponseKotlinType                    string
 	ConvenienceFunctionParameters         []kotlinFunctionParameter
 	ConvenienceFunctionForwardedArguments []kotlinFunctionArgument
 }
@@ -112,16 +115,36 @@ type kotlinFunctionCall struct {
 }
 
 func operationTemplateDataFromRenderOperationTemplateConfig(config RenderOperationTemplateConfig) (operationTemplateData, error) {
+	operationName := config.Operation.Name
+
 	variables, err := kotlinClassForVariableDefinitions(config.Operation.VariableDefinitions, config.Schema)
 	if err != nil {
 		return operationTemplateData{}, err
 	}
 
+	variablesKotlinType := "Unit"
+	if variables != nil {
+		variablesKotlinType = operationName + "." + variables.Name
+	}
+
+	response, err := kotlinClassForSelectionSet(config.Operation.SelectionSet, config.Schema)
+	if err != nil {
+		return operationTemplateData{}, err
+	}
+
+	responseKotlinType := "Unit"
+	if response != nil {
+		responseKotlinType = operationName + "." + response.Name
+	}
+
 	templateData := operationTemplateData{
-		KotlinPackage: config.KotlinPackage,
-		OperationName: config.Operation.Name,
-		OperationType: string(config.Operation.Operation),
-		Variables:     variables,
+		KotlinPackage:       config.KotlinPackage,
+		OperationName:       operationName,
+		OperationType:       string(config.Operation.Operation),
+		Variables:           variables,
+		VariablesKotlinType: variablesKotlinType,
+		Response:            response,
+		ResponseKotlinType:  responseKotlinType,
 	}
 
 	if variables != nil {
@@ -147,12 +170,12 @@ func kotlinClassForVariableDefinitions(variableDefinitions []*ast.VariableDefini
 		return nil, nil
 	}
 
-	nestedClasses, err := variablesClassNestedClassesFromVariableDefinitions(variableDefinitions, schema)
+	nestedClasses, err := nestedClassesFromVariableDefinitions(variableDefinitions, schema)
 	if err != nil {
 		return nil, err
 	}
 
-	secondaryConstructors, err := variablesClassSecondaryConstructorsFromVariableDefinitions(variableDefinitions, schema)
+	secondaryConstructors, err := secondaryConstructorsFromVariableDefinitions(variableDefinitions, schema)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +200,7 @@ func variablesClassConstructorParametersFromVariableDefinitions(variableDefiniti
 	return kotlinFunctionParameters
 }
 
-func variablesClassNestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinClass, error) {
+func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinClass, error) {
 	nestedTypeNames := make([]string, 0, 0)
 	nestedTypeDefinitionByName := make(map[string]*ast.Definition)
 
@@ -237,7 +260,7 @@ func variablesClassNestedClassesFromVariableDefinitions(variableDefinitions []*a
 	return nestedClasses, nil
 }
 
-func variablesClassSecondaryConstructorsFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinSecondaryConstructor, error) {
+func secondaryConstructorsFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinSecondaryConstructor, error) {
 	nonScalarVariableCount := 0
 	for _, variableDefinition := range variableDefinitions {
 		if !isScalarType(variableDefinition.Type) {
@@ -474,6 +497,24 @@ func fieldNameSetFromFieldDefinitions(fieldDefinitions []*ast.FieldDefinition) m
 	return fieldNameSet
 }
 
+func kotlinClassForSelectionSet(selectionSet []ast.Selection, schema *ast.Schema) (*kotlinClass, error) {
+	fields := make([]*ast.Field, 0, 0)
+	for _, selection := range selectionSet {
+		fields = append(fields, fieldFromSelection(selection))
+	}
+
+	return &kotlinClass{
+		Name: "Data",
+		ConstructorParameters: []kotlinFunctionParameter{
+			{
+				Name:       "replaceMeZzyzx",
+				KotlinType: "String",
+				IsLast:     true,
+			},
+		},
+	}, nil
+}
+
 func kotlinTypeFromTypeNode(node *ast.Type) string {
 	var suffix string
 	if node.NonNull {
@@ -518,6 +559,16 @@ func isScalarTypeName(typeName string) bool {
 		return true
 	} else {
 		return false
+	}
+}
+
+func fieldFromSelection(selection ast.Selection) *ast.Field {
+	// only fields right now and not fragments - so can safely cast
+	switch field := selection.(type) {
+	case *ast.Field:
+		return field
+	default:
+		panic("Unsupported ast.Selection type")
 	}
 }
 

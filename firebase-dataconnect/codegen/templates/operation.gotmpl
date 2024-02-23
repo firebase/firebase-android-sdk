@@ -77,9 +77,9 @@ graphql mutation.
 Argument Type: operationTemplateData
 *************************************************************************/ -}}
 {{- define "MutationConvenienceDefinitions" -}}
-typealias {{ .OperationName }}MutationRef = MutationRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
+typealias {{ .OperationName }}MutationRef = MutationRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>
 
-suspend fun MutationRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.execute(
+suspend fun MutationRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>.execute(
     {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 )
   = execute(
@@ -94,16 +94,16 @@ graphql query.
 Argument Type: operationTemplateData
 *************************************************************************/ -}}
 {{- define "QueryConvenienceDefinitions" -}}
-typealias {{ .OperationName }}QueryRef = QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
-typealias {{ .OperationName }}QuerySubscription = QuerySubscription<{{ .OperationName }}.{{ .Variables.Name }}, Unit>
+typealias {{ .OperationName }}QueryRef = QueryRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>
+typealias {{ .OperationName }}QuerySubscription = QuerySubscription<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>
 
-suspend fun QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.execute(
+suspend fun QueryRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>.execute(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 ) = execute(
 {{- .OperationName }}.{{ .Variables.Name }}(
 {{- template "KotlinFunctionForwardedArguments" .ConvenienceFunctionParameters -}}))
 
-fun QueryRef<{{ .OperationName }}.{{ .Variables.Name }}, Unit>.subscribe(
+fun QueryRef<{{ .VariablesKotlinType }}, {{ .ResponseKotlinType }}>.subscribe(
 {{- template "KotlinFunctionParameters" .ConvenienceFunctionParameters -}}
 ) = subscribe(
 {{- .OperationName }}.{{ .Variables.Name }}(
@@ -121,6 +121,10 @@ object {{ .OperationName }} {
 
 {{ if ne .Variables nil -}}
 {{ template "KotlinDataClass" .Variables }}
+{{ end }}
+
+{{ if ne .Response nil -}}
+{{ template "KotlinDataClass" .Response }}
 {{ end }}
 
 }
