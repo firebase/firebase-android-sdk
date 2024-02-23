@@ -213,5 +213,29 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{: \\.external\\})?",
         RegexOption.MULTILINE
       )
+
+    /**
+     * Regex for non link brackets in change messages.
+     *
+     * The regex can be described as such:
+     * - Look for non newline characters surrounded by brackets
+     * - The brackets should not be followed by a `(`
+     *
+     * For example:
+     * ```markdown
+     * We fixed [release_config] and added some
+     * other cool stuff: [#5678](//github.com/firebase-firebase-android-sdk/issues/number)
+     * ```
+     *
+     * Will match the following:
+     * ```kotlin
+     * [
+     *   "[release_config]"
+     * ]
+     * ```
+     *
+     * @see [Change.toReleaseNote]
+     */
+    private val NON_LINK_BRACKETS_REGEX = Regex("\\[(.+?)](?!\\()", RegexOption.MULTILINE)
   }
 }
