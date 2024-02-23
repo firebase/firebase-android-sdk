@@ -162,10 +162,12 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     if (message.isBlank()) throw RuntimeException("A changelog entry message can not be blank.")
 
     val fixedMessage =
-      LINK_REGEX.replace(message) {
-        val id = it.firstCapturedValue
-        "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
-      }
+      message
+        .replace(LINK_REGEX) {
+          val id = it.firstCapturedValue
+          "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
+        }
+        .replace(NON_LINK_BRACKETS_REGEX) { it.firstCapturedValue }
 
     return "* {{${type.name.toLowerCase()}}} $fixedMessage"
   }
