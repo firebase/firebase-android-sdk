@@ -174,9 +174,7 @@ func createPluralQueryField(definition *ast.Definition) *ast.FieldDefinition {
 	return &ast.FieldDefinition{
 		Name:      pluralize.NewClient().Plural(strings.ToLower(definition.Name)),
 		Arguments: arguments,
-		// TODO: Use the type on the next line once lists are supported.
-		//Type:      &ast.Type{Elem: &ast.Type{NamedType: definition.Name, NonNull: true}, NonNull: true},
-		Type: &ast.Type{NamedType: definition.Name, NonNull: true},
+		Type:      &ast.Type{Elem: &ast.Type{NamedType: definition.Name, NonNull: true}, NonNull: true},
 	}
 }
 

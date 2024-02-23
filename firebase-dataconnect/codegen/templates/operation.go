@@ -214,19 +214,23 @@ func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDef
 			continue
 		}
 
-		typeName := variableDefinition.Type.NamedType
-		nestedTypeNames = append(nestedTypeNames, typeName)
+		leafType := variableDefinition.Type
+		for leafType.Elem != nil {
+			leafType = leafType.Elem
+		}
+		leafTypeName := leafType.NamedType
+		nestedTypeNames = append(nestedTypeNames, leafTypeName)
 
-		typeInfo := schema.Types[typeName]
+		typeInfo := schema.Types[leafTypeName]
 		if typeInfo == nil {
-			return nil, errors.New("schema.Types does not include entry for type: " + typeName)
+			return nil, errors.New("schema.Types does not include entry for type: " + leafTypeName)
 		}
 
 		typeInfoWithUnpickedFieldsDeleted := &ast.Definition{}
 		*typeInfoWithUnpickedFieldsDeleted = *typeInfo
 		typeInfoWithUnpickedFieldsDeleted.Fields = deleteUnpickedFields(typeInfoWithUnpickedFieldsDeleted.Fields, variableDefinition)
 
-		nestedTypeDefinitionByName[typeName] = typeInfoWithUnpickedFieldsDeleted
+		nestedTypeDefinitionByName[leafTypeName] = typeInfoWithUnpickedFieldsDeleted
 	}
 
 	nestedClasses := make([]kotlinClass, 0, 0)
@@ -535,7 +539,12 @@ func kotlinClassForSelectionSet(selectionSet []ast.Selection, schema *ast.Schema
 
 	variableDefinitions := make([]*ast.VariableDefinition, 0, 0)
 	for _, field := range fields {
-		fieldTypeName := field.Definition.Type.NamedType
+		fieldLeafElementType := field.Definition.Type
+		for fieldLeafElementType.Elem != nil {
+			fieldLeafElementType = fieldLeafElementType.Elem
+		}
+
+		fieldTypeName := fieldLeafElementType.NamedType
 		fieldTypeInfo := schema.Types[fieldTypeName]
 		if fieldTypeInfo == nil {
 			return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
@@ -556,14 +565,18 @@ func kotlinClassForSelectionSet(selectionSet []ast.Selection, schema *ast.Schema
 }
 
 func kotlinTypeFromTypeNode(node *ast.Type) string {
-	var suffix string
+	var nullabilitySuffix string
 	if node.NonNull {
-		suffix = ""
+		nullabilitySuffix = ""
 	} else {
-		suffix = "?"
+		nullabilitySuffix = "?"
 	}
 
-	return kotlinTypeNameFromGraphQLTypeName(node.NamedType) + suffix
+	if node.Elem != nil {
+		return "List<" + kotlinTypeFromTypeNode(node.Elem) + ">" + nullabilitySuffix
+	}
+
+	return kotlinTypeNameFromGraphQLTypeName(node.NamedType) + nullabilitySuffix
 }
 
 func kotlinTypeNameFromGraphQLTypeName(graphQLTypeName string) string {
