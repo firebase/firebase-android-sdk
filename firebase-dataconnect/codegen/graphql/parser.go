@@ -79,6 +79,22 @@ func addSynthesizedInputTypesAndFields(schema *ast.Schema) {
 			schema.Query.Fields = append(schema.Query.Fields, queryField)
 		}
 	}
+
+	schema.Types["sdk:MutationRef.InsertData"] = &ast.Definition{
+		Kind:    ast.Scalar,
+		Name:    "sdk:MutationRef.InsertData",
+		BuiltIn: true,
+	}
+	schema.Types["sdk:MutationRef.UpdateData"] = &ast.Definition{
+		Kind:    ast.Scalar,
+		Name:    "sdk:MutationRef.UpdateData",
+		BuiltIn: true,
+	}
+	schema.Types["sdk:MutationRef.DeleteData"] = &ast.Definition{
+		Kind:    ast.Scalar,
+		Name:    "sdk:MutationRef.DeleteData",
+		BuiltIn: true,
+	}
 }
 
 func createInsertMutationField(definition *ast.Definition, synthesizedDefinition *ast.Definition) *ast.FieldDefinition {
@@ -95,7 +111,7 @@ func createInsertMutationField(definition *ast.Definition, synthesizedDefinition
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_insert",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "String", NonNull: true},
+		Type:      &ast.Type{NamedType: "sdk:MutationRef.InsertData", NonNull: true},
 	}
 }
 
@@ -115,7 +131,7 @@ func createDeleteMutationField(definition *ast.Definition) *ast.FieldDefinition 
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_delete",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "String", NonNull: false},
+		Type:      &ast.Type{NamedType: "sdk:MutationRef.DeleteData", NonNull: false},
 	}
 }
 
@@ -140,7 +156,7 @@ func createUpdateMutationField(definition *ast.Definition, synthesizedDefinition
 	return &ast.FieldDefinition{
 		Name:      strings.ToLower(definition.Name) + "_update",
 		Arguments: arguments,
-		Type:      &ast.Type{NamedType: "String", NonNull: true},
+		Type:      &ast.Type{NamedType: "sdk:MutationRef.UpdateData", NonNull: true},
 	}
 }
 

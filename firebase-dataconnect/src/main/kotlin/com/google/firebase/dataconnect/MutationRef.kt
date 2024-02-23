@@ -14,6 +14,7 @@
 package com.google.firebase.dataconnect
 
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 
 class MutationRef<VariablesType, DataType>
@@ -52,4 +53,10 @@ internal constructor(
       variablesSerializer = newVariablesSerializer,
       dataDeserializer = dataDeserializer
     )
+
+  @Serializable data class InsertData(val id: String)
+
+  @Serializable data class DeleteData(val id: String)
+
+  @Serializable data class UpdateData(val id: String)
 }

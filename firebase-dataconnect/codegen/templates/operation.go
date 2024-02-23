@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 	"text/template"
 )
 
@@ -208,6 +209,7 @@ func variablesClassConstructorParametersFromVariableDefinitions(variableDefiniti
 func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDefinition, schema *ast.Schema) ([]kotlinClass, error) {
 	nestedTypeNames := make([]string, 0, 0)
 	nestedTypeDefinitionByName := make(map[string]*ast.Definition)
+	variableDefinitionByNestedTypeName := make(map[string]*ast.VariableDefinition)
 
 	for _, variableDefinition := range variableDefinitions {
 		if isScalarType(variableDefinition.Type) {
@@ -219,18 +221,22 @@ func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDef
 			leafType = leafType.Elem
 		}
 		leafTypeName := leafType.NamedType
-		nestedTypeNames = append(nestedTypeNames, leafTypeName)
 
 		typeInfo := schema.Types[leafTypeName]
 		if typeInfo == nil {
-			return nil, errors.New("schema.Types does not include entry for type: " + leafTypeName)
+			return nil, errors.New("schema.Types is missing nested type defined by variable \"" + variableDefinition.Variable + "\": " + leafTypeName)
+		}
+		if typeInfo.BuiltIn {
+			continue
 		}
 
 		typeInfoWithUnpickedFieldsDeleted := &ast.Definition{}
 		*typeInfoWithUnpickedFieldsDeleted = *typeInfo
 		typeInfoWithUnpickedFieldsDeleted.Fields = deleteUnpickedFields(typeInfoWithUnpickedFieldsDeleted.Fields, variableDefinition)
 
+		nestedTypeNames = append(nestedTypeNames, leafTypeName)
 		nestedTypeDefinitionByName[leafTypeName] = typeInfoWithUnpickedFieldsDeleted
+		variableDefinitionByNestedTypeName[leafTypeName] = variableDefinition
 	}
 
 	nestedClasses := make([]kotlinClass, 0, 0)
@@ -239,6 +245,7 @@ func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDef
 		typeName := nestedTypeNames[0]
 		nestedTypeNames = nestedTypeNames[1:]
 		typeDefinition := nestedTypeDefinitionByName[typeName]
+		associatedVariableDefinition := variableDefinitionByNestedTypeName[typeName]
 
 		for _, fieldDefinition := range typeDefinition.Fields {
 			if isScalarType(fieldDefinition.Type) {
@@ -255,7 +262,7 @@ func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDef
 
 			fieldTypeInfo := schema.Types[fieldTypeName]
 			if fieldTypeInfo == nil {
-				return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
+				return nil, errors.New("schema.Types is missing type defined by variable \"" + associatedVariableDefinition.Variable + "\": " + fieldTypeName)
 			}
 			nestedTypeDefinitionByName[fieldTypeName] = fieldTypeInfo
 		}
@@ -323,7 +330,7 @@ func convenienceFunctionParametersFromVariableDefinitions(variableDefinitions []
 			variableTypeName := variableDefinition.Type.NamedType
 			variableTypeInfo := schema.Types[variableTypeName]
 			if variableTypeInfo == nil {
-				return nil, errors.New("schema.Types does not include entry for type: " + variableTypeName)
+				return nil, errors.New("schema.Types is missing type defined by variable \"" + variableDefinition.Variable + "\": " + variableTypeName)
 			}
 
 			pickedFields := deleteUnpickedFields(variableTypeInfo.Fields, variableDefinition)
@@ -356,7 +363,7 @@ func convenienceFunctionParametersFromFieldDefinitions(fieldDefinitions []*ast.F
 			fieldTypeName := fieldDefinition.Type.NamedType
 			fieldTypeInfo := schema.Types[fieldTypeName]
 			if fieldTypeInfo == nil {
-				return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
+				return nil, errors.New("schema.Types is missing type defined by field \"" + fieldDefinition.Name + "\": " + fieldTypeName)
 			}
 			childFunctionParameters, err := convenienceFunctionParametersFromFieldDefinitions(fieldTypeInfo.Fields, schema)
 			if err != nil {
@@ -385,7 +392,7 @@ func convenienceFunctionForwardedArgumentsFromVariableDefinitions(variableDefini
 			variableTypeName := variableDefinition.Type.NamedType
 			variableTypeInfo := schema.Types[variableTypeName]
 			if variableTypeInfo == nil {
-				return nil, errors.New("schema.Types does not include entry for type: " + variableTypeName)
+				return nil, errors.New("schema.Types is missing type defined by variable \"" + variableDefinition.Variable + "\": " + variableTypeName)
 			}
 
 			pickedFields := deleteUnpickedFields(variableTypeInfo.Fields, variableDefinition)
@@ -425,7 +432,7 @@ func convenienceFunctionForwardedArgumentsFromFieldDefinitions(fieldDefinitions 
 			fieldTypeName := fieldDefinition.Type.NamedType
 			fieldTypeInfo := schema.Types[fieldTypeName]
 			if fieldTypeInfo == nil {
-				return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
+				return nil, errors.New("schema.Types is missing type defined by field \"" + fieldDefinition.Name + "\": " + fieldTypeName)
 			}
 			childFunctionArguments, err := convenienceFunctionForwardedArgumentsFromFieldDefinitions(fieldTypeInfo.Fields, functionNamePrefix, schema)
 			if err != nil {
@@ -547,7 +554,7 @@ func kotlinClassForSelectionSet(selectionSet []ast.Selection, schema *ast.Schema
 		fieldTypeName := fieldLeafElementType.NamedType
 		fieldTypeInfo := schema.Types[fieldTypeName]
 		if fieldTypeInfo == nil {
-			return nil, errors.New("schema.Types does not include entry for type: " + fieldTypeName)
+			return nil, errors.New("schema.Types is missing type defined by field selection \"" + field.Name + "\": " + fieldTypeName)
 		}
 
 		fieldTypeInfoWithOnlySelectedFields := &ast.Definition{}
@@ -590,6 +597,8 @@ func kotlinTypeNameFromGraphQLTypeName(graphQLTypeName string) string {
 		return "Boolean"
 	} else if graphQLTypeName == "ID" {
 		return "String"
+	} else if strings.HasPrefix(graphQLTypeName, "sdk:") {
+		return graphQLTypeName[4:]
 	} else {
 		return graphQLTypeName
 	}
