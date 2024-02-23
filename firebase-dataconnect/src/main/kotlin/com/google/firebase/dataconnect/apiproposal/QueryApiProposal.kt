@@ -6,9 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CORE SDK INIT
@@ -19,125 +17,40 @@ class ConnectorConfig constructor(
   val service: String
 )
 
-class DataConnectSetting internal constructor()
+class DataConnectSettings constructor(
+  val host : String = DEFAULT_HOST,
+  val sslEnabled : Boolean = true
+) {
+  override fun equals(other: Any?): Boolean = TODO()
+
+  override fun hashCode() : Int = TODO()
+
+  override fun toString() : String = TODO()
+
+  companion object {
+    val DEFAULT_HOST : String = "dataconnect.googleapis.com"
+  }
+}
 
 enum class LoggerLevel {
   DEBUG, WARN, NONE
 }
 
 class FirebaseDataConnect internal constructor() : AutoCloseable {
-
-  class Queries internal constructor() {
-    val dataConnect: FirebaseDataConnect
-      get() = TODO()
-  }
-  val queries: Queries = TODO()
-
-  fun useEmulator(host : String,  port : Int) : Unit = TODO()
+  fun useEmulator(host : String = "10.0.2.2",  port : Int = 9399) : Unit = TODO()
 
   override fun close() = TODO()
 
   override fun toString(): String = TODO()
 
   companion object {
-    fun getInstance(app : FirebaseApp, config : ConnectorConfig) : FirebaseDataConnect = TODO()
-
-    // Future Add On
-    fun getInstance(app : FirebaseApp, config : ConnectorConfig, setting : DataConnectSetting) : FirebaseDataConnect = TODO()
+    fun getInstance(app : FirebaseApp = FirebaseApp.getInstance(),
+                    config : ConnectorConfig,
+                    settings : DataConnectSettings = DataConnectSettings()) : FirebaseDataConnect = TODO()
 
     var logLevel : LoggerLevel
       get() = TODO()
       set(level : LoggerLevel) = TODO()
-  }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// GEN SDK INIT
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-class PostConnector internal constructor () {
-  companion object {
-    var CONFIG : ConnectorConfig = TODO()
-  }
-}
-
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Third Party Examples
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-fun thirdPartyApp() {
-  FirebaseDataConnect.logLevel = LoggerLevel.DEBUG
-
-  val app = FirebaseApp.getInstance()
-
-  val config = PostConnector.CONFIG
-
-  val dataConnect = FirebaseDataConnect.getInstance(app, config)
-
-  dataConnect.useEmulator("10.0.2.2", 9000)
-
-  val settingFuture = DataConnectSetting()
-  val dataConnectFuture = FirebaseDataConnect.getInstance(app, config, settingFuture)
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// CORE SDK Query
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-fun <VariablesType, DataType> FirebaseDataConnect.query(
-  operationName: String,
-  operationSet: String,
-  revision: String,
-  variablesSerializer: SerializationStrategy<VariablesType>,
-  dataDeserializer: DeserializationStrategy<DataType>
-): QueryRef<VariablesType, DataType> = TODO()
-
-inline fun <reified VariablesType, reified DataType> FirebaseDataConnect.query(
-  operationName: String,
-  operationSet: String,
-  revision: String
-): QueryRef<VariablesType, DataType> = TODO()
-
-open class DataConnectException internal constructor() : Exception()
-
-open class NetworkTransportException internal constructor() : DataConnectException()
-
-open class GraphQLException internal constructor() : DataConnectException() {
-  val errors: List<String>
-    get() = TODO()
-}
-
-class DataConnectResult<VariablesType, DataType> private constructor() {
-  val variables: VariablesType
-    get() = TODO()
-  val data: DataType?
-    get() = TODO()
-  val errors: List<DataConnectError>
-    get() = TODO()
-
-  override fun hashCode() = TODO()
-  override fun equals(other: Any?) = TODO()
-  override fun toString() = TODO()
-}
-
-// See https://spec.graphql.org/October2021/#sec-Errors
-class DataConnectError private constructor() {
-  val message: String
-    get() = TODO()
-  val path: List<PathSegment>
-    get() = TODO()
-  val extensions: Map<String, Any?>
-    get() = TODO()
-
-  override fun hashCode() = TODO()
-  override fun equals(other: Any?) = TODO()
-  override fun toString(): String = TODO()
-
-  sealed interface PathSegment {
-    @JvmInline value class Field(val field: String) : PathSegment
-    @JvmInline value class ListIndex(val index: Int) : PathSegment
   }
 }
 
@@ -164,7 +77,7 @@ class QuerySubscription<VariablesType, DataType> internal constructor() {
   // Alternative considered: add `lastResult`. The problem is, what do we do with this value if the
   // variables are changed via a call to update()? Do we clear it? Or do we leave it there even
   // though it came from a request with potentially-different variables?
-  val lastResult: Message<VariablesType, DataType>?
+  val lastResult: DataConnectResult<VariablesType, DataType>?
     get() = TODO()
 
   // Alternative considered: Return `Deferred<Result<T>>` so that customer knows when the reload
@@ -175,14 +88,73 @@ class QuerySubscription<VariablesType, DataType> internal constructor() {
   // some previous call to reload() by some other unrelated operation.
   fun reload(): Unit = TODO()
 
-  val flow: Flow<Message<VariablesType, DataType>> = TODO()
+  val flow: Flow<DataConnectResult<VariablesType, DataType>> = TODO()
+}
 
-  class Message<VariablesType, DataType>(val variables: VariablesType, val data: Result<DataType>)
+open class DataConnectException internal constructor() : Exception()
+
+open class NetworkTransportException internal constructor(
+  val errorMessage : String
+) : DataConnectException()
+
+open class GraphQLException internal constructor(
+  val errorMessages : List<String>
+) : DataConnectException()
+
+class DataConnectResult<VariablesType, DataType> internal constructor(
+  val variables: VariablesType,
+  val data: DataType
+) {
+  override fun hashCode(): Int = TODO()
+  override fun equals(other: Any?): Boolean = TODO()
+  override fun toString(): String = TODO()
+}
+
+// See https://spec.graphql.org/October2021/#sec-Errors
+// Future Add-ons
+class DataConnectError private constructor() {
+  val message: String
+    get() = TODO()
+  val path: List<PathSegment>
+    get() = TODO()
+  val extensions: Map<String, Any?>
+    get() = TODO()
+
+  override fun hashCode() = TODO()
+  override fun equals(other: Any?) = TODO()
+  override fun toString(): String = TODO()
+
+  sealed interface PathSegment {
+    @JvmInline value class Field(val field: String) : PathSegment
+    @JvmInline value class ListIndex(val index: Int) : PathSegment
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// GENERATED SDK
+// GEN SDK INIT
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class PostConnector internal constructor () {
+  val getPost : QueryRef<GetPostQuery.Variables, GetPostQuery.Data> = TODO()
+  companion object {
+    val CONFIG : ConnectorConfig = TODO()
+  }
+}
+
+val FirebaseDataConnect.postConnector: PostConnector
+  get() = TODO()
+
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(
+  id: String
+): GetPostQuery.Data = TODO()
+
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(
+  id: String
+): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data> = TODO()
+
+typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Data>
+
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>
 
 class GetPostQuery private constructor() {
 
@@ -199,20 +171,26 @@ class GetPostQuery private constructor() {
   }
 }
 
-val FirebaseDataConnect.Queries.getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Data>
-  get() = TODO()
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Third Party Examples
+////////////////////////////////////////////////////////////////////////////////////////////////////
+suspend fun thirdPartyApp() {
+  FirebaseDataConnect.logLevel = LoggerLevel.DEBUG
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(
-  id: String
-): GetPostQuery.Data = TODO()
+  val app = FirebaseApp.getInstance()
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(
-  id: String
-): QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data> = TODO()
+  val config = PostConnector.CONFIG
 
-typealias GetPostQueryRef = QueryRef<GetPostQuery.Variables, GetPostQuery.Data>
+  val settings = DataConnectSettings(sslEnabled = false)
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>
+  val dataConnect = FirebaseDataConnect.getInstance(app, config)
+  val dataConnectWithSetting = FirebaseDataConnect.getInstance(app, config, settings)
+
+  dataConnect.useEmulator("10.0.2.2", 9000)
+
+  var getPostRef = dataConnect.postConnector.getPost.execute(id = "id")
+  var queryRef12 = dataConnect.postConnector.getPost.execute(GetPostQuery.Variables(id = "id"))
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CUSTOMER CODE
@@ -228,15 +206,11 @@ private class MainActivity : Activity() {
   fun onLiveUpdateButtonClick() {
     if (querySubscription == null) {
       querySubscription =
-        dataConnect.queries.getPost.subscribe(id = getIdFromTextView()).also {
+        dataConnect.postConnector.getPost.subscribe(id = getIdFromTextView()).also {
           querySubscriptionFlow =
             activityCoroutineScope.launch {
               it.flow.collect {
-                if (it.data.isSuccess) {
-                  showPostContent(it.variables.id, it.data.getOrThrow())
-                } else {
-                  showError(it.variables.id, it.data.exceptionOrNull()!!)
-                }
+                showPostContent(it.variables.id, it.data)
               }
             }
         }
@@ -251,7 +225,7 @@ private class MainActivity : Activity() {
     activityCoroutineScope.launch {
       val id = getIdFromTextView()
       try {
-        showPostContent(id, dataConnect.queries.getPost.execute(id = id))
+        showPostContent(id, dataConnect.postConnector.getPost.execute(id = id))
       } catch (e: Exception) {
         showError(id, e)
       }
