@@ -30,55 +30,79 @@ func LoadSchemaFile(file string) (*ast.Schema, error) {
 		return nil, err
 	}
 
-	addSynthesizedInputTypesAndFields(graphqlSchema)
+	addSynthesizedTypesAndFields(graphqlSchema)
 
 	return graphqlSchema, nil
 }
 
-func addSynthesizedInputTypesAndFields(schema *ast.Schema) {
-	typesRequiringSynthesizedTypesAndFields := make([]*ast.Definition, 0, 0)
-	for _, typeInfo := range schema.Types {
-		if !typeInfo.BuiltIn {
-			typesRequiringSynthesizedTypesAndFields = append(typesRequiringSynthesizedTypesAndFields, typeInfo)
+func nonBuiltInTypesFromSchema(schema *ast.Schema) []*ast.Definition {
+	nonBuiltInTypes := make([]*ast.Definition, 0, 0)
+	for _, typeDefinition := range schema.Types {
+		if !typeDefinition.BuiltIn {
+			nonBuiltInTypes = append(nonBuiltInTypes, typeDefinition)
 		}
 	}
+	return nonBuiltInTypes
+}
 
-	synthesizedInputTypes := make([]*ast.Definition, 0, 0)
-	for _, typeInfo := range typesRequiringSynthesizedTypesAndFields {
+type synthesizedInputTypeInfo struct {
+	originalType *ast.Definition
+	inputType    *ast.Definition
+}
+
+func addSynthesizedInputTypesToSchema(schema *ast.Schema) []synthesizedInputTypeInfo {
+	nonBuiltInTypes := nonBuiltInTypesFromSchema(schema)
+
+	synthesizedInputTypes := make([]synthesizedInputTypeInfo, 0, 0)
+	for _, typeDefinition := range nonBuiltInTypes {
 		synthesizedInputType := new(ast.Definition)
-		*synthesizedInputType = *typeInfo
-		synthesizedInputType.Name = typeInfo.Name + "_Data"
+		*synthesizedInputType = *typeDefinition
+		synthesizedInputType.Name = typeDefinition.Name + "_Data"
 		synthesizedInputType.Kind = ast.InputObject
-		synthesizedInputTypes = append(synthesizedInputTypes, synthesizedInputType)
 
 		log.Println("Adding input type to schema:", synthesizedInputType.Name)
 		schema.Types[synthesizedInputType.Name] = synthesizedInputType
+
+		synthesizedInputTypes = append(synthesizedInputTypes, synthesizedInputTypeInfo{
+			originalType: typeDefinition,
+			inputType:    synthesizedInputType,
+		})
 	}
 
-	for i, typeInfo := range typesRequiringSynthesizedTypesAndFields {
-		synthesizedTypeInfo := synthesizedInputTypes[i]
+	return synthesizedInputTypes
+}
 
+func addMutationFieldsForSynthesizedInputTypesToSchema(schema *ast.Schema, synthesizedInputTypes []synthesizedInputTypeInfo) {
+	for _, synthesizedInputType := range synthesizedInputTypes {
 		mutationFields := make([]*ast.FieldDefinition, 0, 0)
-		mutationFields = append(mutationFields, createInsertMutationField(typeInfo, synthesizedTypeInfo))
-		mutationFields = append(mutationFields, createDeleteMutationField(typeInfo))
-		mutationFields = append(mutationFields, createUpdateMutationField(typeInfo, synthesizedTypeInfo))
+		mutationFields = append(mutationFields, createInsertMutationField(synthesizedInputType))
+		mutationFields = append(mutationFields, createDeleteMutationField(synthesizedInputType))
+		mutationFields = append(mutationFields, createUpdateMutationField(synthesizedInputType))
 
 		for _, mutationField := range mutationFields {
 			log.Println("Adding mutation field to schema:", mutationField.Name)
 			schema.Mutation.Fields = append(schema.Mutation.Fields, mutationField)
 		}
 	}
+}
 
-	for _, typeInfo := range typesRequiringSynthesizedTypesAndFields {
+func addQueryFieldsForSynthesizedInputTypesToSchema(schema *ast.Schema, synthesizedInputTypes []synthesizedInputTypeInfo) {
+	for _, synthesizedInputType := range synthesizedInputTypes {
 		queryFields := make([]*ast.FieldDefinition, 0, 0)
-		queryFields = append(queryFields, createSingularQueryField(typeInfo))
-		queryFields = append(queryFields, createPluralQueryField(typeInfo))
+		queryFields = append(queryFields, createSingularQueryField(synthesizedInputType.originalType))
+		queryFields = append(queryFields, createPluralQueryField(synthesizedInputType.originalType))
 
 		for _, queryField := range queryFields {
 			log.Println("Adding query field to schema:", queryField.Name)
 			schema.Query.Fields = append(schema.Query.Fields, queryField)
 		}
 	}
+}
+
+func addSynthesizedTypesAndFields(schema *ast.Schema) {
+	synthesizedInputTypes := addSynthesizedInputTypesToSchema(schema)
+	addMutationFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
+	addQueryFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
 
 	schema.Types["sdk:MutationRef.InsertData"] = &ast.Definition{
 		Kind:    ast.Scalar,
@@ -97,25 +121,25 @@ func addSynthesizedInputTypesAndFields(schema *ast.Schema) {
 	}
 }
 
-func createInsertMutationField(definition *ast.Definition, synthesizedDefinition *ast.Definition) *ast.FieldDefinition {
+func createInsertMutationField(synthesizedInputType synthesizedInputTypeInfo) *ast.FieldDefinition {
 	arguments := []*ast.ArgumentDefinition{
 		&ast.ArgumentDefinition{
 			Name: "data",
 			Type: &ast.Type{
-				NamedType: synthesizedDefinition.Name,
+				NamedType: synthesizedInputType.inputType.Name,
 				NonNull:   false,
 			},
 		},
 	}
 
 	return &ast.FieldDefinition{
-		Name:      strings.ToLower(definition.Name) + "_insert",
+		Name:      strings.ToLower(synthesizedInputType.originalType.Name) + "_insert",
 		Arguments: arguments,
 		Type:      &ast.Type{NamedType: "sdk:MutationRef.InsertData", NonNull: true},
 	}
 }
 
-func createDeleteMutationField(definition *ast.Definition) *ast.FieldDefinition {
+func createDeleteMutationField(synthesizedInputType synthesizedInputTypeInfo) *ast.FieldDefinition {
 	arguments := []*ast.ArgumentDefinition{
 		&ast.ArgumentDefinition{
 			Name: "id",
@@ -129,13 +153,13 @@ func createDeleteMutationField(definition *ast.Definition) *ast.FieldDefinition 
 	}
 
 	return &ast.FieldDefinition{
-		Name:      strings.ToLower(definition.Name) + "_delete",
+		Name:      strings.ToLower(synthesizedInputType.originalType.Name) + "_delete",
 		Arguments: arguments,
 		Type:      &ast.Type{NamedType: "sdk:MutationRef.DeleteData", NonNull: false},
 	}
 }
 
-func createUpdateMutationField(definition *ast.Definition, synthesizedDefinition *ast.Definition) *ast.FieldDefinition {
+func createUpdateMutationField(synthesizedInputType synthesizedInputTypeInfo) *ast.FieldDefinition {
 	arguments := []*ast.ArgumentDefinition{
 		&ast.ArgumentDefinition{
 			Name: "id",
@@ -147,14 +171,14 @@ func createUpdateMutationField(definition *ast.Definition, synthesizedDefinition
 		&ast.ArgumentDefinition{
 			Name: "data",
 			Type: &ast.Type{
-				NamedType: synthesizedDefinition.Name,
+				NamedType: synthesizedInputType.inputType.Name,
 				NonNull:   false,
 			},
 		},
 	}
 
 	return &ast.FieldDefinition{
-		Name:      strings.ToLower(definition.Name) + "_update",
+		Name:      strings.ToLower(synthesizedInputType.originalType.Name) + "_update",
 		Arguments: arguments,
 		Type:      &ast.Type{NamedType: "sdk:MutationRef.UpdateData", NonNull: true},
 	}
