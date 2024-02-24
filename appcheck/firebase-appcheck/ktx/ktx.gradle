@@ -21,6 +21,7 @@ firebaseLibrary {
     libraryGroup "appcheck"
     testLab.enabled = true
     publishJavadoc = false
+    publishReleaseNotes = false
     publishSources = true
 }
 

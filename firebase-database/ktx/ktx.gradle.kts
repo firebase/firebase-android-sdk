@@ -23,6 +23,7 @@ group = "com.google.firebase"
 firebaseLibrary {
   libraryGroup("database")
   publishJavadoc = false
+  publishReleaseNotes = false
   publishSources = true
 }
 

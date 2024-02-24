@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed FirebaseInAppMessagingDisplayErrorListener not being called
+  (GitHub [#5644](//github.com/firebase/firebase-android-sdk/issues/5644))
 
 # 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-inappmessaging-display-ktx`
