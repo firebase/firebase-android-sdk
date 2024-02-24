@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"errors"
 	pluralize "github.com/gertd/go-pluralize"
 	"github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -30,16 +31,27 @@ func LoadSchemaFile(file string) (*ast.Schema, error) {
 		return nil, err
 	}
 
-	addSynthesizedTypesAndFields(graphqlSchema)
+	err = addSynthesizedTypesAndFields(graphqlSchema)
+	if err != nil {
+		return nil, err
+	}
 
 	return graphqlSchema, nil
 }
 
-func addSynthesizedTypesAndFields(schema *ast.Schema) {
+func addSynthesizedTypesAndFields(schema *ast.Schema) error {
+	addSyntheticTypesForSdkTypesToSchema(schema)
+
+	err := addQueryRelationFieldsToSchema(schema)
+	if err != nil {
+		return err
+	}
+
 	synthesizedInputTypes := addSynthesizedInputTypesToSchema(schema)
 	addMutationFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
 	addQueryFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
-	addSyntheticTypesForSdkTypesToSchema(schema)
+
+	return nil
 }
 
 func nonBuiltInTypesFromSchema(schema *ast.Schema) []*ast.Definition {
@@ -219,6 +231,37 @@ func createPluralQueryField(definition *ast.Definition) *ast.FieldDefinition {
 		Arguments: arguments,
 		Type:      &ast.Type{Elem: &ast.Type{NamedType: definition.Name, NonNull: true}, NonNull: true},
 	}
+}
+
+func addQueryRelationFieldsToSchema(schema *ast.Schema) error {
+	nonBuiltInTypes := nonBuiltInTypesFromSchema(schema)
+
+	for _, typeDefinition := range nonBuiltInTypes {
+		for _, fieldDefinition := range typeDefinition.Fields {
+			if fieldDefinition.Type.Elem != nil {
+				continue // TODO: support lists
+			}
+
+			fieldType := schema.Types[fieldDefinition.Type.NamedType]
+			if fieldType == nil {
+				return errors.New("schema.Types is missing type defined by field \"" + fieldDefinition.Name + "\"")
+			}
+
+			if fieldType.BuiltIn {
+				continue
+			}
+
+			queryFieldName := pluralize.NewClient().Plural(strings.ToLower(typeDefinition.Name)) +
+				"_as_" + strings.ToLower(fieldType.Name)
+			log.Println("Adding query field to schema:", queryFieldName)
+			schema.Query.Fields = append(schema.Query.Fields, &ast.FieldDefinition{
+				Name: queryFieldName,
+				Type: fieldDefinition.Type,
+			})
+		}
+	}
+
+	return nil
 }
 
 func LoadOperationsFile(file string, schema *ast.Schema) (*ast.QueryDocument, error) {
