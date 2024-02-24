@@ -35,6 +35,13 @@ func LoadSchemaFile(file string) (*ast.Schema, error) {
 	return graphqlSchema, nil
 }
 
+func addSynthesizedTypesAndFields(schema *ast.Schema) {
+	synthesizedInputTypes := addSynthesizedInputTypesToSchema(schema)
+	addMutationFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
+	addQueryFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
+	addSyntheticTypesForSdkTypesToSchema(schema)
+}
+
 func nonBuiltInTypesFromSchema(schema *ast.Schema) []*ast.Definition {
 	nonBuiltInTypes := make([]*ast.Definition, 0, 0)
 	for _, typeDefinition := range schema.Types {
@@ -99,11 +106,7 @@ func addQueryFieldsForSynthesizedInputTypesToSchema(schema *ast.Schema, synthesi
 	}
 }
 
-func addSynthesizedTypesAndFields(schema *ast.Schema) {
-	synthesizedInputTypes := addSynthesizedInputTypesToSchema(schema)
-	addMutationFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
-	addQueryFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
-
+func addSyntheticTypesForSdkTypesToSchema(schema *ast.Schema) {
 	schema.Types["sdk:MutationRef.InsertData"] = &ast.Definition{
 		Kind:    ast.Scalar,
 		Name:    "sdk:MutationRef.InsertData",
