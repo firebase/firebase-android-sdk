@@ -39,7 +39,7 @@ object GetPostQuery {
   data class Data(val post: Post?) {
     @Serializable
     data class Post(val content: String, val comments: List<Comment>) {
-      @Serializable data class Comment(val id: String, val content: String)
+      @Serializable data class Comment(val id: String?, val content: String)
     }
   }
 }
@@ -48,9 +48,11 @@ typealias GetPostQueryRef = QuerySubscription<GetPostQuery.Variables, GetPostQue
 
 typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(id: String) = execute(variablesFor(id = id))
+suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(id: String) =
+  execute(variablesFor(id = id))
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(id: String) = subscribe(variablesFor(id = id))
+fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(id: String) =
+  subscribe(variablesFor(id = id))
 
 suspend fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>.update(
   block: GetPostQuery.Variables.Builder.() -> Unit

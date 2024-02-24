@@ -58,6 +58,19 @@ class PostsOperationSet(
   // expected, since the cache key of query results includes the serializer references, compared
   // using referential equality. If [serializer()] was documented to guarantee that it always
   // returns the same instance, then this singleton-ness would not be necessary.
+  val createComment: MutationRef<CreateCommentMutation.Variables, Unit> by lazy {
+    dataConnect.mutation(
+      operationName = "createComment",
+      variablesSerializer = serializer(),
+      dataDeserializer = serializer()
+    )
+  }
+
+  // Use `lazy` to ensure that there is only one instance of the [QueryRef] so that the serializer
+  // instances encapsulated therein are also singletons. This ensures that query caching works as
+  // expected, since the cache key of query results includes the serializer references, compared
+  // using referential equality. If [serializer()] was documented to guarantee that it always
+  // returns the same instance, then this singleton-ness would not be necessary.
   val getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Data> by lazy {
     dataConnect.query(
       operationName = "getPost",

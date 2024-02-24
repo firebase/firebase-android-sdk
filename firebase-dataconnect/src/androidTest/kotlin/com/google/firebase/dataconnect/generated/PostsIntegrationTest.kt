@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -47,6 +48,33 @@ class PostsIntegrationTest {
   }
 
   @Test
+  fun createCommentShouldAddACommentToThePost() = runTest {
+    val postId = Random.nextAlphanumericString()
+    val postContent = Random.Default.nextLong().absoluteValue.toString(30)
+    posts.createPost.execute(id = postId, content = postContent)
+
+    val comment1Content = Random.Default.nextLong().absoluteValue.toString(30)
+    posts.createComment.execute(content = comment1Content, postId = postId)
+
+    val comment2Content = Random.Default.nextLong().absoluteValue.toString(30)
+    posts.createComment.execute(content = comment2Content, postId = postId)
+
+    val queryResponse = posts.getPost.execute(id = postId)
+    assertWithMessage("queryResponse")
+      .that(queryResponse.data.post)
+      .isEqualTo(
+        GetPostQuery.Data.Post(
+          content = postContent,
+          comments =
+            listOf(
+              GetPostQuery.Data.Post.Comment(id = null, content = comment1Content),
+              GetPostQuery.Data.Post.Comment(id = null, content = comment2Content),
+            )
+        )
+      )
+  }
+
+  @Test
   fun getPostWithNonExistingId() = runTest {
     val queryResponse = posts.getPost.execute(id = Random.nextAlphanumericString())
     assertWithMessage("queryResponse").that(queryResponse.data.post).isNull()
@@ -55,7 +83,7 @@ class PostsIntegrationTest {
   @Test
   fun createPostThenGetPost() = runTest {
     val postId = Random.nextAlphanumericString()
-    val postContent = Random.Default.nextLong().toString(30)
+    val postContent = Random.Default.nextLong().absoluteValue.toString(30)
 
     posts.createPost.execute(id = postId, content = postContent)
 

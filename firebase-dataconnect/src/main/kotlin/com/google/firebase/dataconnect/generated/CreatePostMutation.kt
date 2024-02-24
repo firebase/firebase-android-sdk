@@ -16,7 +16,7 @@ package com.google.firebase.dataconnect.generated
 import com.google.firebase.dataconnect.MutationRef
 import kotlinx.serialization.Serializable
 
-  object CreatePostMutation {
+object CreatePostMutation {
 
   @Serializable
   data class Variables(val data: PostData) {
