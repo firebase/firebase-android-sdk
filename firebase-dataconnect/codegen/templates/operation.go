@@ -216,11 +216,7 @@ func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDef
 			continue
 		}
 
-		leafType := variableDefinition.Type
-		for leafType.Elem != nil {
-			leafType = leafType.Elem
-		}
-		leafTypeName := leafType.NamedType
+		leafTypeName := namedTypeOfInnermostElemOfType(variableDefinition.Type).NamedType
 
 		typeInfo := schema.Types[leafTypeName]
 		if typeInfo == nil {
@@ -252,7 +248,7 @@ func nestedClassesFromVariableDefinitions(variableDefinitions []*ast.VariableDef
 				continue
 			}
 
-			fieldTypeName := fieldDefinition.Type.NamedType
+			fieldTypeName := namedTypeOfInnermostElemOfType(fieldDefinition.Type).NamedType
 			_, nestedTypeDefinitionExists := nestedTypeDefinitionByName[fieldTypeName]
 			if nestedTypeDefinitionExists {
 				continue
@@ -632,6 +628,13 @@ func fieldFromSelection(selection ast.Selection) *ast.Field {
 	default:
 		panic("Unsupported ast.Selection type")
 	}
+}
+
+func namedTypeOfInnermostElemOfType(typeNode *ast.Type) *ast.Type {
+	for typeNode.Elem != nil {
+		typeNode = typeNode.Elem
+	}
+	return typeNode
 }
 
 func fail(a ...any) (any, error) {

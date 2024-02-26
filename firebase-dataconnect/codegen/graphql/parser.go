@@ -40,14 +40,17 @@ func LoadSchemaFile(file string) (*ast.Schema, error) {
 }
 
 func addSynthesizedTypesAndFields(schema *ast.Schema) error {
+	originalNonBuiltInTypes := nonBuiltInTypesFromSchema(schema)
+	originalNonBuiltInTypeNames := namesFromDefinitions(originalNonBuiltInTypes)
+
 	addSyntheticTypesForSdkTypesToSchema(schema)
 
-	err := addQueryRelationFieldsToSchema(schema)
+	err := addQueryRelationFieldsToSchemaForTypes(schema, originalNonBuiltInTypeNames)
 	if err != nil {
 		return err
 	}
 
-	synthesizedInputTypes := addSynthesizedInputTypesToSchema(schema)
+	synthesizedInputTypes := addSynthesizedInputTypesToSchemaForTypes(schema, originalNonBuiltInTypes)
 	addMutationFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
 	addQueryFieldsForSynthesizedInputTypesToSchema(schema, synthesizedInputTypes)
 
@@ -64,16 +67,22 @@ func nonBuiltInTypesFromSchema(schema *ast.Schema) []*ast.Definition {
 	return nonBuiltInTypes
 }
 
+func namesFromDefinitions(definitions []*ast.Definition) []string {
+	names := make([]string, 0, len(definitions))
+	for _, definition := range definitions {
+		names = append(names, definition.Name)
+	}
+	return names
+}
+
 type synthesizedInputTypeInfo struct {
 	originalType *ast.Definition
 	inputType    *ast.Definition
 }
 
-func addSynthesizedInputTypesToSchema(schema *ast.Schema) []synthesizedInputTypeInfo {
-	nonBuiltInTypes := nonBuiltInTypesFromSchema(schema)
-
+func addSynthesizedInputTypesToSchemaForTypes(schema *ast.Schema, typeDefinitions []*ast.Definition) []synthesizedInputTypeInfo {
 	synthesizedInputTypes := make([]synthesizedInputTypeInfo, 0, 0)
-	for _, typeDefinition := range nonBuiltInTypes {
+	for _, typeDefinition := range typeDefinitions {
 		synthesizedInputType := new(ast.Definition)
 		*synthesizedInputType = *typeDefinition
 		synthesizedInputType.Name = typeDefinition.Name + "_Data"
@@ -233,10 +242,19 @@ func createPluralQueryField(definition *ast.Definition) *ast.FieldDefinition {
 	}
 }
 
-func addQueryRelationFieldsToSchema(schema *ast.Schema) error {
-	nonBuiltInTypes := nonBuiltInTypesFromSchema(schema)
+func addQueryRelationFieldsToSchemaForTypes(schema *ast.Schema, typeNamesToUpdate []string) error {
+	type DefinitionFieldDefinitionPair struct {
+		definition      *ast.Definition
+		fieldDefinition *ast.FieldDefinition
+	}
+	queryRelationFields := make([]DefinitionFieldDefinitionPair, 0, 0)
 
-	for _, typeDefinition := range nonBuiltInTypes {
+	for _, typeNameToUpdate := range typeNamesToUpdate {
+		typeDefinition := schema.Types[typeNameToUpdate]
+		if typeDefinition == nil {
+			return errors.New("schema.Types is missing type specified in typeNamesToUpdate argument: \"" + typeNameToUpdate + "\"")
+		}
+
 		for _, fieldDefinition := range typeDefinition.Fields {
 			if fieldDefinition.Type.Elem != nil {
 				continue // TODO: support lists
@@ -244,7 +262,7 @@ func addQueryRelationFieldsToSchema(schema *ast.Schema) error {
 
 			fieldType := schema.Types[fieldDefinition.Type.NamedType]
 			if fieldType == nil {
-				return errors.New("schema.Types is missing type defined by field \"" + fieldDefinition.Name + "\"")
+				return errors.New("schema.Types is missing type defined by field of type \"" + typeDefinition.Name + "\": \"" + fieldDefinition.Name + "\"")
 			}
 
 			if fieldType.BuiltIn {
@@ -253,12 +271,28 @@ func addQueryRelationFieldsToSchema(schema *ast.Schema) error {
 
 			queryFieldName := pluralize.NewClient().Plural(strings.ToLower(typeDefinition.Name)) +
 				"_as_" + strings.ToLower(fieldType.Name)
-			log.Println("Adding query field to schema:", queryFieldName)
-			schema.Query.Fields = append(schema.Query.Fields, &ast.FieldDefinition{
-				Name: queryFieldName,
-				Type: fieldDefinition.Type,
+			queryRelationFields = append(queryRelationFields, DefinitionFieldDefinitionPair{
+				definition: fieldType,
+				fieldDefinition: &ast.FieldDefinition{
+					Name: queryFieldName,
+					Type: &ast.Type{
+						Elem: &ast.Type{
+							NamedType: typeDefinition.Name,
+							NonNull:   true,
+						},
+						NonNull: true,
+					},
+				},
 			})
 		}
+
+	}
+
+	// Add the fields after processing all of the given types to avoid generating fields for the
+	// generated fields themselves.
+	for _, queryRelationField := range queryRelationFields {
+		log.Println("Adding query field to type \"" + queryRelationField.definition.Name + "\": " + queryRelationField.fieldDefinition.Name)
+		queryRelationField.definition.Fields = append(queryRelationField.definition.Fields, queryRelationField.fieldDefinition)
 	}
 
 	return nil

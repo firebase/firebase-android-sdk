@@ -5,11 +5,9 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class deletePersonVariables(val id: String)
 
-
 @Serializable data class deletePersonData(val person_delete: MutationRef.DeleteData?)
-
 
 typealias deletePersonMutationRef = MutationRef<deletePersonVariables, deletePersonData>
 
-suspend fun MutationRef<deletePersonVariables, deletePersonData>.execute(id: String) = execute(
-deletePersonVariables(id=id))
+suspend fun MutationRef<deletePersonVariables, deletePersonData>.execute(id: String) =
+  execute(deletePersonVariables(id = id))

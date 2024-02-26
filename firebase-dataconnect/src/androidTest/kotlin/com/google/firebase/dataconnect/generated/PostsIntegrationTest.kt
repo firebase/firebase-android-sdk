@@ -19,7 +19,9 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
+import com.google.firebase.dataconnect.connectors.Posts.execute
 import com.google.firebase.dataconnect.nextAlphanumericString
+import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import kotlin.math.absoluteValue
@@ -27,6 +29,7 @@ import kotlin.random.Random
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
+import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -69,6 +72,38 @@ class PostsIntegrationTest {
             listOf(
               GetPostQuery.Data.Post.Comment(id = null, content = comment1Content),
               GetPostQuery.Data.Post.Comment(id = null, content = comment2Content),
+            )
+        )
+      )
+
+    val query2 =
+      posts.dataConnect.query<
+        com.google.firebase.dataconnect.connectors.Posts.getPostVariables,
+        com.google.firebase.dataconnect.connectors.Posts.getPostData
+      >(
+        "getPost",
+        serializer(),
+        serializer()
+      )
+    val query2Response = query2.execute(postId)
+    assertWithMessage("query2Response")
+      .that(query2Response.data)
+      .isEqualTo(
+        com.google.firebase.dataconnect.connectors.Posts.getPostData(
+          post =
+            com.google.firebase.dataconnect.connectors.Posts.getPostData.Post(
+              content = postContent,
+              comments =
+                listOf(
+                  com.google.firebase.dataconnect.connectors.Posts.getPostData.Comment(
+                    id = null,
+                    content = comment1Content
+                  ),
+                  com.google.firebase.dataconnect.connectors.Posts.getPostData.Comment(
+                    id = null,
+                    content = comment2Content
+                  ),
+                )
             )
         )
       )
