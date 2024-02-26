@@ -20,6 +20,7 @@ plugins {
 firebaseLibrary {
     libraryGroup "perf"
     publishJavadoc = false
+    publishReleaseNotes = false
     publishSources = true
 }
 

@@ -1,5 +1,15 @@
 # Unreleased
 
+
+# 23.4.1
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
+
 # 24.0.0
 * [changed] Called messageHandled() after a message has been handled to indicate
   that the message has been handled successfully.
