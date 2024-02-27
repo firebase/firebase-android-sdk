@@ -1,5 +1,6 @@
 # Unreleased
-* [fixed] Fixed `ExceptionInInitializerError` where the `url.openStream()` causes a crash if FirebasePerf is not yet initialized.
+* [fixed] Fixed `ExceptionInInitializerError` where the `url.openStream()` causes a crash if 
+  FirebasePerf is not yet initialized.
 
 # 20.5.1
 * [changed] Make Fireperf generate its own session Id.
