@@ -17,6 +17,7 @@ plugins { id("firebase-library") }
 firebaseLibrary {
   publishSources = true
   publishJavadoc = false
+  publishReleaseNotes = false
 }
 
 android {

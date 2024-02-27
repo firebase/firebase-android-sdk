@@ -19,6 +19,7 @@ plugins {
 firebaseLibrary {
     publishSources = true
     publishJavadoc = false
+    publishReleaseNotes = false
 }
 
 java {
