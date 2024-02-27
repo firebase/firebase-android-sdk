@@ -51,6 +51,7 @@ protobuf {
 
 firebaseLibrary {
     publishJavadoc = false
+    publishReleaseNotes = false
     testLab {
         enabled = true
 

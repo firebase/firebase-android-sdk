@@ -23,6 +23,7 @@ firebaseLibrary {
     libraryGroup "firestore"
     publishSources = true
     publishJavadoc = false
+    publishReleaseNotes = false
 }
 
 android {
