@@ -31,7 +31,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.tasks.await
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -88,7 +87,7 @@ internal class RemoteSettings(
             removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
           "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
           "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
-          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
+          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion,
         )
 
       Log.d(TAG, "Fetching settings from server.")
@@ -139,7 +138,7 @@ internal class RemoteSettings(
         onFailure = { msg ->
           // Network request failed here.
           Log.e(TAG, "Error failing to fetch the remote configs: $msg")
-        }
+        },
       )
     }
   }
