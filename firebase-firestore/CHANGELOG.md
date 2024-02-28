@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 24.10.3
 * [fixed] Fixed the missing handling setter annotations bug introduced by [#5626](//github.com/firebase/firebase-android-sdk/pull/5626). [#5706](//github.com/firebase/firebase-android-sdk/pull/5706)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.10.2
 * [changed] Internal test improvements.
@@ -890,3 +899,4 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
+
