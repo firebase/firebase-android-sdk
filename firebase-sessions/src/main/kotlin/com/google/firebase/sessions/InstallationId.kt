@@ -25,16 +25,25 @@ internal class InstallationId private constructor(val fid: String, val authToken
   companion object {
     private const val TAG = "InstallationId"
 
-    suspend fun create(firebaseInstallations: FirebaseInstallationsApi) =
-      try {
-        // Fetch the auth token first, so the fid will be validated.
-        val authToken = firebaseInstallations.getToken(false).await().token
-        val fid = firebaseInstallations.id.await()
-        InstallationId(fid, authToken)
-      } catch (ex: Exception) {
-        Log.w(TAG, "Error getting Firebase installation id or authentication token.", ex)
-        // If there are any failures, the fid is not validated. So return empty values for both.
-        InstallationId(fid = "", authToken = "")
-      }
+    suspend fun create(firebaseInstallations: FirebaseInstallationsApi): InstallationId {
+      // Fetch the auth token first, so the fid will be validated.
+      val authToken =
+        try {
+          firebaseInstallations.getToken(false).await().token
+        } catch (ex: Exception) {
+          Log.w(TAG, "Error getting authentication token.", ex)
+          // If there are any failures, return an empty value.
+          ""
+        }
+      val fid =
+        try {
+          firebaseInstallations.id.await()
+        } catch (ex: Exception) {
+          Log.w(TAG, "Error getting Firebase installation id .", ex)
+          ""
+        }
+
+      return InstallationId(fid, authToken)
+    }
   }
 }
