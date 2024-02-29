@@ -29,6 +29,7 @@ public abstract class TransportContext {
   public abstract String getBackendName();
 
   @Nullable
+  @SuppressWarnings("mutable")
   public abstract byte[] getExtras();
 
   /**
