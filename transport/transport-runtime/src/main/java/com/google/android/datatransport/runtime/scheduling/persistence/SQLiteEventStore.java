@@ -136,6 +136,7 @@ public class SQLiteEventStore
               values.put("inline", inline);
               values.put("payload", inline ? payloadBytes : new byte[0]);
               values.put("product_id", event.getProductId());
+              values.put("zwieback_cookie_override", event.getCookieOverride());
               long newEventId = db.insert("events", null, values);
               if (!inline) {
                 int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
@@ -450,6 +451,7 @@ public class SQLiteEventStore
               "code",
               "inline",
               "product_id",
+                    "zwieback_cookie_override",
             },
             "context_id = ?",
             new String[] {contextId.toString()},

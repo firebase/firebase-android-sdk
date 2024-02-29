@@ -298,8 +298,10 @@ final class CctTransportBackend implements TransportBackend {
                   .setProductIdOrigin(ComplianceData.ProductIdOrigin.EVENT_OVERRIDE)
                   .build());
         }
+        if (eventInternal.getCookieOverride() != null) {
+          event.setZwiebackCookieOverride(eventInternal.getCookieOverride());
+        }
         // TODO(rlazo): read actual values for these
-        event.setZwiebackCookieOverride("myoverridecookie");
         event.setExperimentIds(
             ExperimentIds.builder()
                 .setClearBlob("clearblob".getBytes(StandardCharsets.UTF_8))

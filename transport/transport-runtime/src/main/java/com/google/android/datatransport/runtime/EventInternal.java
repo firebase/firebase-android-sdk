@@ -38,6 +38,9 @@ public abstract class EventInternal {
 
   public abstract long getUptimeMillis();
 
+  @Nullable
+  public abstract String getCookieOverride();
+
   protected abstract Map<String, String> getAutoMetadata();
 
   @Nullable
@@ -97,6 +100,8 @@ public abstract class EventInternal {
     protected abstract Builder setAutoMetadata(Map<String, String> metadata);
 
     public abstract Builder setProductId(Integer value);
+
+    public abstract Builder setCookieOverride(String value);
 
     protected abstract Map<String, String> getAutoMetadata();
 
