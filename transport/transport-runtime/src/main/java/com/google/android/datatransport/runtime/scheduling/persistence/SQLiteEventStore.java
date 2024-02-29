@@ -451,7 +451,7 @@ public class SQLiteEventStore
               "code",
               "inline",
               "product_id",
-                    "zwieback_cookie_override",
+              "zwieback_cookie_override",
             },
             "context_id = ?",
             new String[] {contextId.toString()},
