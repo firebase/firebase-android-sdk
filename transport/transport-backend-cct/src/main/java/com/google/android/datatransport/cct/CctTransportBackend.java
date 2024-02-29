@@ -30,6 +30,7 @@ import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.android.datatransport.cct.internal.ClientInfo;
 import com.google.android.datatransport.cct.internal.ComplianceData;
+import com.google.android.datatransport.cct.internal.ExperimentIds;
 import com.google.android.datatransport.cct.internal.ExternalPRequestContext;
 import com.google.android.datatransport.cct.internal.ExternalPrivacyContext;
 import com.google.android.datatransport.cct.internal.LogEvent;
@@ -59,6 +60,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -296,6 +298,12 @@ final class CctTransportBackend implements TransportBackend {
                   .setProductIdOrigin(ComplianceData.ProductIdOrigin.EVENT_OVERRIDE)
                   .build());
         }
+        // TODO(rlazo): read actual values for these
+        event.setZwiebackCookieOverride("myoverridecookie");
+        event.setExperimentIds(
+            ExperimentIds.builder()
+                .setClearBlob("clearblob".getBytes(StandardCharsets.UTF_8))
+                .build());
         logEvents.add(event.build());
       }
       requestBuilder.setLogEvents(logEvents);
