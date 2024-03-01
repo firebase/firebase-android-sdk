@@ -14,49 +14,44 @@
 package com.google.firebase.dataconnect
 
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 
-public class MutationRef<VariablesType, DataType>
+public class Query<Response, Variables>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
-  variablesSerializer: SerializationStrategy<VariablesType>,
-  dataDeserializer: DeserializationStrategy<DataType>
+  responseDeserializer: DeserializationStrategy<Response>,
+  variablesSerializer: SerializationStrategy<Variables>,
 ) :
-  BaseRef<VariablesType, DataType>(
+  Reference<Response, Variables>(
     dataConnect = dataConnect,
     operationName = operationName,
+    responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
-    dataDeserializer = dataDeserializer,
   ) {
-  override suspend fun execute(
-    variables: VariablesType
-  ): DataConnectResult<VariablesType, DataType> = dataConnect.executeMutation(this, variables)
+  override suspend fun execute(variables: Variables): DataConnectResult<Response, Variables> =
+    dataConnect.lazyQueryManager.get().execute(this, variables)
 
-  public fun <NewDataType> withDataDeserializer(
-    newDataDeserializer: DeserializationStrategy<NewDataType>
-  ): MutationRef<VariablesType, NewDataType> =
-    MutationRef(
+  public fun subscribe(variables: Variables): QuerySubscription<Response, Variables> =
+    QuerySubscription(this, variables)
+
+  public fun <NewResponse> withResponseDeserializer(
+    newResponseDeserializer: DeserializationStrategy<NewResponse>
+  ): Query<NewResponse, Variables> =
+    Query(
       dataConnect = dataConnect,
       operationName = operationName,
+      responseDeserializer = newResponseDeserializer,
       variablesSerializer = variablesSerializer,
-      dataDeserializer = newDataDeserializer
     )
 
-  public fun <NewVariablesType> withVariablesSerializer(
-    newVariablesSerializer: SerializationStrategy<NewVariablesType>
-  ): MutationRef<NewVariablesType, DataType> =
-    MutationRef(
+  public fun <NewVariables> withVariablesSerializer(
+    newVariablesSerializer: SerializationStrategy<NewVariables>
+  ): Query<Response, NewVariables> =
+    Query(
       dataConnect = dataConnect,
       operationName = operationName,
+      responseDeserializer = responseDeserializer,
       variablesSerializer = newVariablesSerializer,
-      dataDeserializer = dataDeserializer
     )
-
-  @Serializable public data class InsertData(val id: String)
-
-  @Serializable public data class DeleteData(val id: String)
-
-  @Serializable public data class UpdateData(val id: String)
 }

@@ -13,51 +13,46 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
-import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.Mutation
 import kotlinx.serialization.Serializable
 
-object CreatePostMutation {
+@Serializable
+data class CreatePostVariables(val data: PostData) {
+
+  val builder
+    get() = Builder(data = data)
+
+  fun build(block: Builder.() -> Unit): CreatePostVariables = builder.apply(block).build()
+
+  @DslMarker annotation class VariablesDsl
+
+  @VariablesDsl
+  class Builder(var data: PostData) {
+    fun build() = CreatePostVariables(data = data)
+    fun data(id: String, content: String) {
+      data = PostData(id = id, content = content)
+    }
+    fun data(block: PostData.Builder.() -> Unit) {
+      data = data.build(block)
+    }
+  }
 
   @Serializable
-  data class Variables(val data: PostData) {
-
+  data class PostData(val id: String, val content: String) {
     val builder
-      get() = Builder(data = data)
+      get() = Builder(id = id, content = content)
 
-    fun build(block: Builder.() -> Unit): Variables = builder.apply(block).build()
-
-    @DslMarker annotation class VariablesDsl
+    fun build(block: Builder.() -> Unit): PostData = builder.apply(block).build()
 
     @VariablesDsl
-    class Builder(var data: PostData) {
-      fun build() = Variables(data = data)
-      fun data(id: String, content: String) {
-        data = PostData(id = id, content = content)
-      }
-      fun data(block: PostData.Builder.() -> Unit) {
-        data = data.build(block)
-      }
-    }
-
-    @Serializable
-    data class PostData(val id: String, val content: String) {
-      val builder
-        get() = Builder(id = id, content = content)
-
-      fun build(block: Builder.() -> Unit): PostData = builder.apply(block).build()
-
-      @VariablesDsl
-      class Builder(var id: String, var content: String) {
-        fun build() = PostData(id = id, content = content)
-      }
+    class Builder(var id: String, var content: String) {
+      fun build() = PostData(id = id, content = content)
     }
   }
 }
 
-suspend fun MutationRef<CreatePostMutation.Variables, Unit>.execute(id: String, content: String) =
+suspend fun Mutation<Unit, CreatePostVariables>.execute(id: String, content: String) =
   execute(variablesFor(id = id, content = content))
 
 private fun variablesFor(id: String, content: String) =
-  CreatePostMutation.Variables(
-    data = CreatePostMutation.Variables.PostData(id = id, content = content)
-  )
+  CreatePostVariables(data = CreatePostVariables.PostData(id = id, content = content))

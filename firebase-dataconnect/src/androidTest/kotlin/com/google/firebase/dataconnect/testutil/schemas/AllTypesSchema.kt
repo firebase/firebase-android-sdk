@@ -15,7 +15,7 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.Query
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
@@ -60,23 +60,23 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   val createPrimitive =
     dataConnect.mutation(
       operationName = "createPrimitive",
+      responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreatePrimitiveMutation.Variables>(),
-      dataDeserializer = serializer<Unit>()
     )
 
   object GetPrimitiveQuery {
+    @Serializable data class Response(val primitive: PrimitiveData?)
+
     @Serializable data class Variables(val id: String)
 
-    @Serializable data class Data(val primitive: PrimitiveData?)
-
-    suspend fun QueryRef<Variables, Data>.execute(id: String) = execute(Variables(id = id))
+    suspend fun Query<Response, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
   val getPrimitive =
     dataConnect.query(
       operationName = "getPrimitive",
+      responseDeserializer = serializer<GetPrimitiveQuery.Response>(),
       variablesSerializer = serializer<GetPrimitiveQuery.Variables>(),
-      dataDeserializer = serializer<GetPrimitiveQuery.Data>()
     )
 
   @Serializable
@@ -107,36 +107,36 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   val createPrimitiveList =
     dataConnect.mutation(
       operationName = "createPrimitiveList",
+      responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreatePrimitiveListMutation.Variables>(),
-      dataDeserializer = serializer<Unit>()
     )
 
   object GetPrimitiveListQuery {
+    @Serializable data class Response(val primitiveList: PrimitiveListData?)
+
     @Serializable data class Variables(val id: String)
 
-    @Serializable data class Data(val primitiveList: PrimitiveListData?)
-
-    suspend fun QueryRef<Variables, Data>.execute(id: String) = execute(Variables(id = id))
+    suspend fun Query<Response, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
   val getPrimitiveList =
     dataConnect.query(
       operationName = "getPrimitiveList",
+      responseDeserializer = serializer<GetPrimitiveListQuery.Response>(),
       variablesSerializer = serializer<GetPrimitiveListQuery.Variables>(),
-      dataDeserializer = serializer<GetPrimitiveListQuery.Data>()
     )
 
   object GetAllPrimitiveListsQuery {
-    @Serializable data class Data(val primitiveLists: List<PrimitiveListData>)
+    @Serializable data class Response(val primitiveLists: List<PrimitiveListData>)
 
-    suspend fun QueryRef<Unit, Data>.execute() = execute(Unit)
+    suspend fun Query<Response, Unit>.execute() = execute(Unit)
   }
 
   val getAllPrimitiveLists =
     dataConnect.query(
       operationName = "getAllPrimitiveLists",
+      responseDeserializer = serializer<GetAllPrimitiveListsQuery.Response>(),
       variablesSerializer = serializer<Unit>(),
-      dataDeserializer = serializer<GetAllPrimitiveListsQuery.Data>()
     )
 
   object CreateFarmerMutation {
@@ -153,8 +153,8 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   val createFarmer =
     dataConnect.mutation(
       operationName = "createFarmer",
+      responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreateFarmerMutation.Variables>(),
-      dataDeserializer = serializer<Unit>()
     )
 
   suspend fun createFarmer(id: String, name: String, parentId: String?) =
@@ -173,8 +173,8 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   val createFarm =
     dataConnect.mutation(
       operationName = "createFarm",
+      responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreateFarmMutation.Variables>(),
-      dataDeserializer = serializer<Unit>()
     )
 
   suspend fun createFarm(id: String, name: String, farmerId: String?) =
@@ -200,8 +200,8 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   val createAnimal =
     dataConnect.mutation(
       operationName = "createAnimal",
+      responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreateAnimalMutation.Variables>(),
-      dataDeserializer = serializer<Unit>()
     )
 
   suspend fun createAnimal(id: String, farmId: String, name: String, species: String, age: Int?) =
@@ -218,9 +218,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   object GetFarmQuery {
-    @Serializable data class Variables(val id: String)
-
-    @Serializable data class Data(val farm: Farm?)
+    @Serializable data class Response(val farm: Farm?)
 
     @Serializable
     data class Farm(
@@ -237,14 +235,16 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     @Serializable
     data class Animal(val id: String, val name: String, val species: String, val age: Int?)
 
-    suspend fun QueryRef<Variables, Data>.execute(id: String) = execute(Variables(id = id))
+    @Serializable data class Variables(val id: String)
+
+    suspend fun Query<Response, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
   val getFarm =
     dataConnect.query(
       operationName = "getFarm",
+      responseDeserializer = serializer<GetFarmQuery.Response>(),
       variablesSerializer = serializer<GetFarmQuery.Variables>(),
-      dataDeserializer = serializer<GetFarmQuery.Data>()
     )
 
   suspend fun getFarm(id: String) = getFarm.execute(GetFarmQuery.Variables(id = id))

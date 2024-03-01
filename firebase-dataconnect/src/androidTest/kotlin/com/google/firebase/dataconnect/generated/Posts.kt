@@ -16,8 +16,8 @@ package com.google.firebase.dataconnect.generated
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.Mutation
+import com.google.firebase.dataconnect.Query
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import kotlinx.serialization.serializer
@@ -45,11 +45,11 @@ class PostsOperationSet(
   // expected, since the cache key of query results includes the serializer references, compared
   // using referential equality. If [serializer()] was documented to guarantee that it always
   // returns the same instance, then this singleton-ness would not be necessary.
-  val createPost: MutationRef<CreatePostMutation.Variables, Unit> by lazy {
+  val createPost: Mutation<Unit, CreatePostVariables> by lazy {
     dataConnect.mutation(
       operationName = "createPost",
+      responseDeserializer = serializer(),
       variablesSerializer = serializer(),
-      dataDeserializer = serializer()
     )
   }
 
@@ -58,11 +58,11 @@ class PostsOperationSet(
   // expected, since the cache key of query results includes the serializer references, compared
   // using referential equality. If [serializer()] was documented to guarantee that it always
   // returns the same instance, then this singleton-ness would not be necessary.
-  val createComment: MutationRef<CreateCommentMutation.Variables, Unit> by lazy {
+  val createComment: Mutation<Unit, CreateCommentVariables> by lazy {
     dataConnect.mutation(
       operationName = "createComment",
+      responseDeserializer = serializer(),
       variablesSerializer = serializer(),
-      dataDeserializer = serializer()
     )
   }
 
@@ -71,11 +71,11 @@ class PostsOperationSet(
   // expected, since the cache key of query results includes the serializer references, compared
   // using referential equality. If [serializer()] was documented to guarantee that it always
   // returns the same instance, then this singleton-ness would not be necessary.
-  val getPost: QueryRef<GetPostQuery.Variables, GetPostQuery.Data> by lazy {
+  val getPost: Query<GetPostResponse, GetPostVariables> by lazy {
     dataConnect.query(
       operationName = "getPost",
+      responseDeserializer = serializer(),
       variablesSerializer = serializer(),
-      dataDeserializer = serializer()
     )
   }
 }

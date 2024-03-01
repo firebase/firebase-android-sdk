@@ -16,44 +16,39 @@ package com.google.firebase.dataconnect
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-public class QueryRef<VariablesType, DataType>
+public class Mutation<Response, Variables>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
-  variablesSerializer: SerializationStrategy<VariablesType>,
-  dataDeserializer: DeserializationStrategy<DataType>
+  responseDeserializer: DeserializationStrategy<Response>,
+  variablesSerializer: SerializationStrategy<Variables>,
 ) :
-  BaseRef<VariablesType, DataType>(
+  Reference<Response, Variables>(
     dataConnect = dataConnect,
     operationName = operationName,
+    responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
-    dataDeserializer = dataDeserializer,
   ) {
-  override suspend fun execute(
-    variables: VariablesType
-  ): DataConnectResult<VariablesType, DataType> =
-    dataConnect.lazyQueryManager.get().execute(this, variables)
+  override suspend fun execute(variables: Variables): DataConnectResult<Response, Variables> =
+    dataConnect.executeMutation(this, variables)
 
-  public fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> =
-    QuerySubscription(this, variables)
-
-  public fun <NewDataType> withDataDeserializer(
-    newDataDeserializer: DeserializationStrategy<NewDataType>
-  ): QueryRef<VariablesType, NewDataType> =
-    QueryRef(
+  public fun <NewResponse> withResponseDeserializer(
+    newResponseDeserializer: DeserializationStrategy<NewResponse>
+  ): Mutation<NewResponse, Variables> =
+    Mutation(
       dataConnect = dataConnect,
       operationName = operationName,
+      responseDeserializer = newResponseDeserializer,
       variablesSerializer = variablesSerializer,
-      dataDeserializer = newDataDeserializer
     )
 
-  public fun <NewVariablesType> withVariablesSerializer(
-    newVariablesSerializer: SerializationStrategy<NewVariablesType>
-  ): QueryRef<NewVariablesType, DataType> =
-    QueryRef(
+  public fun <NewVariables> withVariablesSerializer(
+    newVariablesSerializer: SerializationStrategy<NewVariables>
+  ): Mutation<Response, NewVariables> =
+    Mutation(
       dataConnect = dataConnect,
       operationName = operationName,
+      responseDeserializer = responseDeserializer,
       variablesSerializer = newVariablesSerializer,
-      dataDeserializer = dataDeserializer
     )
 }

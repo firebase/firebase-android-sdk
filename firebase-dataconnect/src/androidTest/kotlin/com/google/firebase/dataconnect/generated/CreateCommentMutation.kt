@@ -13,22 +13,17 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
-import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.Mutation
 import kotlinx.serialization.Serializable
 
-object CreateCommentMutation {
-
-  @Serializable
-  data class Variables(val data: CommentData) {
-    constructor(
-      content: String,
-      postId: String
-    ) : this(data = CommentData(content = content, postId = postId))
-    @Serializable data class CommentData(val content: String, val postId: String)
-  }
+@Serializable
+data class CreateCommentVariables(val data: CommentData) {
+  constructor(
+    content: String,
+    postId: String
+  ) : this(data = CommentData(content = content, postId = postId))
+  @Serializable data class CommentData(val content: String, val postId: String)
 }
 
-suspend fun MutationRef<CreateCommentMutation.Variables, Unit>.execute(
-  content: String,
-  postId: String
-) = execute(CreateCommentMutation.Variables(content = content, postId = postId))
+suspend fun Mutation<Unit, CreateCommentVariables>.execute(content: String, postId: String) =
+  execute(CreateCommentVariables(content = content, postId = postId))

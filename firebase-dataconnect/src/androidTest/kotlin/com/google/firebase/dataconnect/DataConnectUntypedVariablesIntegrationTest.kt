@@ -49,15 +49,15 @@ class DataConnectUntypedVariablesIntegrationTest {
     assertThat(result.variables).isEqualTo(DataConnectUntypedVariables())
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetAllPeopleQuery.Data(
+        PersonSchema.GetAllPeopleQuery.Response(
           people =
             listOf(
-              PersonSchema.GetAllPeopleQuery.Data.Person(
+              PersonSchema.GetAllPeopleQuery.Response.Person(
                 id = "Person1Id",
                 name = "Person1Name",
                 age = 42
               ),
-              PersonSchema.GetAllPeopleQuery.Data.Person(
+              PersonSchema.GetAllPeopleQuery.Response.Person(
                 id = "Person2Id",
                 name = "Person2Name",
                 age = 43
@@ -79,8 +79,8 @@ class DataConnectUntypedVariablesIntegrationTest {
     assertThat(result.variables).isEqualTo(DataConnectUntypedVariables("id" to "Person2Id"))
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetPersonQuery.Data(
-          person = PersonSchema.GetPersonQuery.Data.Person(name = "Person2Name", age = 43)
+        PersonSchema.GetPersonQuery.Response(
+          person = PersonSchema.GetPersonQuery.Response.Person(name = "Person2Name", age = 43)
         )
       )
   }
@@ -95,8 +95,8 @@ class DataConnectUntypedVariablesIntegrationTest {
     val result = personSchema.getPerson.execute(id = "DefaultId")
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetPersonQuery.Data(
-          PersonSchema.GetPersonQuery.Data.Person(name = "DefaultName", age = 42)
+        PersonSchema.GetPersonQuery.Response(
+          PersonSchema.GetPersonQuery.Response.Person(name = "DefaultName", age = 42)
         )
       )
   }
@@ -114,8 +114,8 @@ class DataConnectUntypedVariablesIntegrationTest {
     val result = personSchema.getPerson.execute(id = "PersonId")
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetPersonQuery.Data(
-          PersonSchema.GetPersonQuery.Data.Person(name = "TestPersonName", age = 42)
+        PersonSchema.GetPersonQuery.Response(
+          PersonSchema.GetPersonQuery.Response.Person(name = "TestPersonName", age = 42)
         )
       )
   }

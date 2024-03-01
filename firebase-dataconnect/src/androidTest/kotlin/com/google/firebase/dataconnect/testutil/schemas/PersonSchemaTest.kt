@@ -6,7 +6,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.DeletePersonMutation.execute
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Data.Person
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Response.Person
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute

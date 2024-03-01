@@ -13,31 +13,31 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-public class DataConnectResult<VariablesType, DataType>
+public class DataConnectResult<Response, Variables>
 private constructor(
-  private val impl: Impl<VariablesType, DataType>,
+  private val impl: Impl<Response, Variables>,
   internal val sequenceNumber: Long
 ) {
 
   internal constructor(
-    variables: VariablesType,
-    data: DataType,
+    data: Response,
+    variables: Variables,
     sequenceNumber: Long,
-  ) : this(Impl(variables = variables, data = data), sequenceNumber)
+  ) : this(Impl(data = data, variables = variables), sequenceNumber)
 
-  public val variables: VariablesType
-    get() = impl.variables
-  public val data: DataType
+  public val data: Response
     get() = impl.data
+  public val variables: Variables
+    get() = impl.variables
 
   override fun hashCode(): Int = impl.hashCode()
   override fun equals(other: Any?): Boolean =
     (other as? DataConnectResult<*, *>)?.let { it.impl == impl } ?: false
-  override fun toString(): String = "DataConnectResult(variables=$variables, data=$data)"
+  override fun toString(): String = "DataConnectResult(data=$data, variables=$variables)"
 
-  private data class Impl<VariablesType, DataType>(
-    val variables: VariablesType,
-    val data: DataType,
+  private data class Impl<Response, Variables>(
+    val data: Response,
+    val variables: Variables,
   )
 }
 

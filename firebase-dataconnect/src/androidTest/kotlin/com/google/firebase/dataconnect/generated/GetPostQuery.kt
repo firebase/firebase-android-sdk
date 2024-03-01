@@ -13,49 +13,46 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
-import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.Query
 import com.google.firebase.dataconnect.QuerySubscription
 import kotlinx.serialization.Serializable
 
-object GetPostQuery {
-
+@Serializable
+data class GetPostResponse(val post: Post?) {
   @Serializable
-  data class Variables(val id: String) {
-
-    val builder
-      get() = Builder(id = id)
-
-    fun build(block: Builder.() -> Unit): Variables = builder.apply(block).build()
-
-    @DslMarker annotation class VariablesDsl
-
-    @VariablesDsl
-    class Builder(var id: String) {
-      fun build() = Variables(id = id)
-    }
-  }
-
-  @Serializable
-  data class Data(val post: Post?) {
-    @Serializable
-    data class Post(val content: String, val comments: List<Comment>) {
-      @Serializable data class Comment(val id: String?, val content: String)
-    }
+  data class Post(val content: String, val comments: List<Comment>) {
+    @Serializable data class Comment(val id: String?, val content: String)
   }
 }
 
-typealias GetPostQueryRef = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>
+@Serializable
+data class GetPostVariables(val id: String) {
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>
+  val builder
+    get() = Builder(id = id)
 
-suspend fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.execute(id: String) =
+  fun build(block: Builder.() -> Unit): GetPostVariables = builder.apply(block).build()
+
+  @DslMarker annotation class VariablesDsl
+
+  @VariablesDsl
+  class Builder(var id: String) {
+    fun build() = GetPostVariables(id = id)
+  }
+}
+
+typealias GetPostQuery = QuerySubscription<GetPostResponse, GetPostVariables>
+
+typealias GetPostQuerySubscription = QuerySubscription<GetPostResponse, GetPostVariables>
+
+suspend fun Query<GetPostResponse, GetPostVariables>.execute(id: String) =
   execute(variablesFor(id = id))
 
-fun QueryRef<GetPostQuery.Variables, GetPostQuery.Data>.subscribe(id: String) =
+fun Query<GetPostResponse, GetPostVariables>.subscribe(id: String) =
   subscribe(variablesFor(id = id))
 
-suspend fun QuerySubscription<GetPostQuery.Variables, GetPostQuery.Data>.update(
-  block: GetPostQuery.Variables.Builder.() -> Unit
+suspend fun QuerySubscription<GetPostResponse, GetPostVariables>.update(
+  block: GetPostVariables.Builder.() -> Unit
 ) = update(variables.build(block))
 
-private fun variablesFor(id: String) = GetPostQuery.Variables(id = id)
+private fun variablesFor(id: String) = GetPostVariables(id = id)

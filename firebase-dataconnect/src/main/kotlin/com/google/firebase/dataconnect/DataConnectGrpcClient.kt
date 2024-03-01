@@ -229,27 +229,27 @@ internal fun GraphqlError.toDataConnectError() =
   DataConnectError(message = message, path = path.toPathSegment(), extensions = emptyMap())
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
-  dataDeserializer: DeserializationStrategy<T>
+  responseDeserializer: DeserializationStrategy<T>
 ): DataConnectGrpcClient.DeserialzedOperationResult<T> {
-  val deserializedData: T =
-    if (dataDeserializer === DataConnectUntypedData) {
+  val deserializedResponse: T =
+    if (responseDeserializer === DataConnectUntypedResponse) {
       @Suppress("UNCHECKED_CAST")
-      DataConnectUntypedData(data?.toMap(), errors) as T
+      DataConnectUntypedResponse(data?.toMap(), errors) as T
     } else if (data === null) {
       // TODO: include the variables and error list in the thrown exception
       throw DataConnectException("no data included in result: errors=$errors")
     } else if (errors.isNotEmpty()) {
       throw DataConnectException("operation failed: errors=$errors")
     } else {
-      decodeFromStruct(dataDeserializer, data)
+      decodeFromStruct(responseDeserializer, data)
     }
 
   return DataConnectGrpcClient.DeserialzedOperationResult(
-    data = deserializedData,
+    data = deserializedResponse,
     sequenceNumber = sequenceNumber,
   )
 }
 
-internal fun <V, D> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectResult(
+internal fun <D, V> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectResult(
   variables: V
-) = DataConnectResult(variables = variables, data = data, sequenceNumber = sequenceNumber)
+) = DataConnectResult(data = data, variables = variables, sequenceNumber = sequenceNumber)

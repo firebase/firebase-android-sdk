@@ -24,7 +24,7 @@ import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetAllPri
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveListQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Data.Person
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Response.Person
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
@@ -37,7 +37,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class QueryRefIntegrationTest {
+class QueryIntegrationTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
@@ -319,7 +319,7 @@ class QueryRefIntegrationTest {
   @Test
   fun executeShouldSupportMassiveConcurrency() =
     runTest(timeout = 60.seconds) {
-      val queryRef = personSchema.getPerson
+      val query = personSchema.getPerson
 
       val deferreds = buildList {
         repeat(25_000) {
@@ -327,7 +327,7 @@ class QueryRefIntegrationTest {
           // will be at least 2 threads used to run the coroutines (as documented by
           // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
           // that this test is indeed testing "massive concurrency".
-          add(backgroundScope.async(Dispatchers.Default) { queryRef.execute(id = "foo") })
+          add(backgroundScope.async(Dispatchers.Default) { query.execute(id = "foo") })
         }
       }
 

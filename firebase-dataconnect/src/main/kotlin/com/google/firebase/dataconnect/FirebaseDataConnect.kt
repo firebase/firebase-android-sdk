@@ -98,11 +98,11 @@ internal constructor(
       )
     }
 
-  internal suspend fun <V, D> executeMutation(ref: MutationRef<V, D>, variables: V) =
-    executeMutation(ref, variables, requestId = Random.nextAlphanumericString())
+  internal suspend fun <R, V> executeMutation(mutation: Mutation<R, V>, variables: V) =
+    executeMutation(mutation, variables, requestId = Random.nextAlphanumericString())
 
-  private suspend fun <V, D> executeMutation(
-    ref: MutationRef<V, D>,
+  private suspend fun <R, V> executeMutation(
+    mutation: Mutation<R, V>,
     variables: V,
     requestId: String
   ) =
@@ -111,15 +111,17 @@ internal constructor(
       .executeMutation(
         requestId = requestId,
         sequenceNumber = nextSequenceNumber(),
-        operationName = ref.operationName,
+        operationName = mutation.operationName,
         variables =
-          if (ref.variablesSerializer === DataConnectUntypedVariables.Serializer)
+          if (mutation.variablesSerializer === DataConnectUntypedVariables.Serializer)
             (variables as DataConnectUntypedVariables).variables.toStructProto()
           else {
-            encodeToStruct(ref.variablesSerializer, variables)
+            encodeToStruct(mutation.variablesSerializer, variables)
           }
       )
-      .runCatching { withContext(blockingDispatcher) { deserialize(ref.dataDeserializer) } }
+      .runCatching {
+        withContext(blockingDispatcher) { deserialize(mutation.responseDeserializer) }
+      }
       .onFailure {
         logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
       }
@@ -238,28 +240,28 @@ internal constructor(
   }
 }
 
-public fun <VariablesType, DataType> FirebaseDataConnect.query(
+public fun <Response, Variables> FirebaseDataConnect.query(
   operationName: String,
-  variablesSerializer: SerializationStrategy<VariablesType>,
-  dataDeserializer: DeserializationStrategy<DataType>
-): QueryRef<VariablesType, DataType> =
-  QueryRef(
+  responseDeserializer: DeserializationStrategy<Response>,
+  variablesSerializer: SerializationStrategy<Variables>,
+): Query<Response, Variables> =
+  Query(
     dataConnect = this,
     operationName = operationName,
+    responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
-    dataDeserializer = dataDeserializer
   )
 
-public fun <VariablesType, DataType> FirebaseDataConnect.mutation(
+public fun <Response, Variables> FirebaseDataConnect.mutation(
   operationName: String,
-  variablesSerializer: SerializationStrategy<VariablesType>,
-  dataDeserializer: DeserializationStrategy<DataType>
-): MutationRef<VariablesType, DataType> =
-  MutationRef(
+  responseDeserializer: DeserializationStrategy<Response>,
+  variablesSerializer: SerializationStrategy<Variables>,
+): Mutation<Response, Variables> =
+  Mutation(
     dataConnect = this,
     operationName = operationName,
+    responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
-    dataDeserializer = dataDeserializer
   )
 
 public open class DataConnectException

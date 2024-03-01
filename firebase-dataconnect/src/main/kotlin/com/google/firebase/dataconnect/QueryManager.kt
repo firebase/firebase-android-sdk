@@ -43,21 +43,21 @@ internal class QueryManager(
       parentLogger = logger
     )
 
-  suspend fun <V, D> execute(ref: QueryRef<V, D>, variables: V): DataConnectResult<V, D> =
+  suspend fun <R, V> execute(query: Query<R, V>, variables: V): DataConnectResult<R, V> =
     liveQueries
-      .withLiveQuery(ref, variables) { it.execute(ref.dataDeserializer) }
+      .withLiveQuery(query, variables) { it.execute(query.responseDeserializer) }
       .toDataConnectResult(variables)
 
-  suspend fun <V, D> onResult(
-    ref: QueryRef<V, D>,
+  suspend fun <R, V> onResult(
+    query: Query<R, V>,
     variables: V,
     sinceSequenceNumber: Long?,
     executeQuery: Boolean,
-    callback: suspend (DataConnectResult<V, D>) -> Unit,
+    callback: suspend (DataConnectResult<R, V>) -> Unit,
   ): Nothing =
-    liveQueries.withLiveQuery(ref, variables) { liveQuery ->
+    liveQueries.withLiveQuery(query, variables) { liveQuery ->
       liveQuery.onResult(
-        ref.dataDeserializer,
+        query.responseDeserializer,
         sinceSequenceNumber = sinceSequenceNumber,
         executeQuery = executeQuery
       ) {
@@ -88,32 +88,34 @@ private class LiveQuery(
         CoroutineName("LiveQuery[$operationName ${variables.toCompactString()}]")
     )
 
-  // The `dataDeserializers` list may be safely read concurrently from multiple threads, as it uses
+  // The `responseDeserializers` list may be safely read concurrently from multiple threads, as it
+  // uses
   // a `CopyOnWriteArrayList` that is completely thread-safe. Any mutating operations must be
-  // performed while the `dataDeserializersWriteMutex` mutex is locked, so that
+  // performed while the `responseDeserializersWriteMutex` mutex is locked, so that
   // read-write-modify operations can be done atomically.
-  private val dataDeserializersWriteMutex = Mutex()
-  private val dataDeserializers = CopyOnWriteArrayList<RegisteredDataDeserialzer<*>>()
+  private val responseDeserializersWriteMutex = Mutex()
+  private val responseDeserializers = CopyOnWriteArrayList<RegisteredResponseDeserialzer<*>>()
   private data class Update(
     val requestId: String,
     val sequenceNumber: Long,
     val result: Result<OperationResult>
   )
-  // Also, `initialDataDeserializerUpdate` must only be accessed while `dataDeserializersWriteMutex`
+  // Also, `initialResponseDeserializerUpdate` must only be accessed while
+  // `responseDeserializersWriteMutex`
   // is held.
-  private val initialDataDeserializerUpdate =
+  private val initialResponseDeserializerUpdate =
     MutableStateFlow<NullableReference<Update>>(NullableReference(null))
 
   private val jobMutex = Mutex()
   private var job: Job? = null
 
   suspend fun <T> execute(
-    dataDeserializer: DeserializationStrategy<T>
+    responseDeserializer: DeserializationStrategy<T>
   ): DeserialzedOperationResult<T> {
-    // Register the data deserialzier _before_ waiting for the current job to complete. This
+    // Register the response deserialzier _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
-    val registeredDataDeserializer = registerDataDeserializer(dataDeserializer)
+    val registeredResponseDeserializer = registerResponseDeserializer(responseDeserializer)
 
     // Wait for the current job to complete (if any), and ignore its result. Waiting avoids running
     // multiple queries in parallel, which would not scale.
@@ -136,20 +138,20 @@ private class LiveQuery(
 
     newJob.join()
 
-    return registeredDataDeserializer.getLatestUpdate()!!.getOrThrow()
+    return registeredResponseDeserializer.getLatestUpdate()!!.getOrThrow()
   }
 
   suspend fun <T> onResult(
-    dataDeserializer: DeserializationStrategy<T>,
+    responseDeserializer: DeserializationStrategy<T>,
     sinceSequenceNumber: Long?,
     executeQuery: Boolean,
     callback: suspend (DeserialzedOperationResult<T>) -> Unit,
   ): Nothing {
-    val registeredDataDeserializer = registerDataDeserializer(dataDeserializer)
+    val registeredResponseDeserializer = registerResponseDeserializer(responseDeserializer)
 
     // Immediately deliver the most recent update to the callback, so the collector has some data
     // to work with while waiting for the network requests to complete.
-    val cachedUpdate = registeredDataDeserializer.getLatestSuccessfulUpdate()
+    val cachedUpdate = registeredResponseDeserializer.getLatestSuccessfulUpdate()
     val effectiveSinceSequenceNumber =
       if (cachedUpdate === null) {
         sinceSequenceNumber
@@ -166,10 +168,10 @@ private class LiveQuery(
     // get invoked with cached results first (if any), then updated results after the query
     // executes.
     if (executeQuery) {
-      coroutineScope.launch { runCatching { execute(dataDeserializer) } }
+      coroutineScope.launch { runCatching { execute(responseDeserializer) } }
     }
 
-    registeredDataDeserializer.onSuccessfulUpdate(
+    registeredResponseDeserializer.onSuccessfulUpdate(
       sinceSequenceNumber = effectiveSinceSequenceNumber
     ) {
       callback(it)
@@ -191,52 +193,55 @@ private class LiveQuery(
         )
       }
 
-    // Normally, setting the value of `initialDataDeserializerUpdate` would be done in a compare-
+    // Normally, setting the value of `initialResponseDeserializerUpdate` would be done in a
+    // compare-
     // and-swap ("CAS") loop to avoid clobbering a newer update with an older one; however, since
-    // all writes _must_ be done by a coroutine with `dataDeserializersWriteMutex` locked, the CAS
+    // all writes _must_ be done by a coroutine with `responseDeserializersWriteMutex` locked, the
+    // CAS
     // loop isn't necessary and its value can just be set directly.
-    dataDeserializersWriteMutex.withLock {
-      initialDataDeserializerUpdate.value.ref.let { oldUpdate ->
+    responseDeserializersWriteMutex.withLock {
+      initialResponseDeserializerUpdate.value.ref.let { oldUpdate ->
         if (oldUpdate === null || oldUpdate.sequenceNumber < sequenceNumber) {
-          initialDataDeserializerUpdate.value =
+          initialResponseDeserializerUpdate.value =
             NullableReference(Update(requestId, sequenceNumber, executeQueryResult))
         }
       }
     }
 
-    dataDeserializers.iterator().forEach {
+    responseDeserializers.iterator().forEach {
       it.update(requestId, sequenceNumber, executeQueryResult)
     }
   }
 
   @Suppress("UNCHECKED_CAST")
-  private suspend fun <T> registerDataDeserializer(
-    dataDeserializer: DeserializationStrategy<T>
-  ): RegisteredDataDeserialzer<T> =
+  private suspend fun <T> registerResponseDeserializer(
+    responseDeserializer: DeserializationStrategy<T>
+  ): RegisteredResponseDeserialzer<T> =
     // First, check if the deserializer is already registered and, if it is, just return it.
     // Otherwise, lock the "write" mutex and register it. We still have to check again if it is
     // already registered because another thread could have concurrently registered it since we last
     // checked above.
-    dataDeserializers
-      .firstOrNull { it.dataDeserializer === dataDeserializer }
-      ?.let { it as RegisteredDataDeserialzer<T> }
-      ?: dataDeserializersWriteMutex.withLock {
-        dataDeserializers
-          .firstOrNull { it.dataDeserializer === dataDeserializer }
-          ?.let { it as RegisteredDataDeserialzer<T> }
+    responseDeserializers
+      .firstOrNull { it.responseDeserializer === responseDeserializer }
+      ?.let { it as RegisteredResponseDeserialzer<T> }
+      ?: responseDeserializersWriteMutex.withLock {
+        responseDeserializers
+          .firstOrNull { it.responseDeserializer === responseDeserializer }
+          ?.let { it as RegisteredResponseDeserialzer<T> }
           ?: Random.nextAlphanumericString().let { registrationId ->
             logger.debug {
-              "Registering data deserializer $dataDeserializer with registrationId=$registrationId"
+              "Registering response deserializer $responseDeserializer " +
+                "with registrationId=$registrationId"
             }
-            RegisteredDataDeserialzer(
+            RegisteredResponseDeserialzer(
                 registrationId = registrationId,
-                dataDeserializer = dataDeserializer,
+                responseDeserializer = responseDeserializer,
                 blockingDispatcher = blockingDispatcher,
                 parentLogger = logger
               )
               .also {
-                dataDeserializers.add(it)
-                initialDataDeserializerUpdate.value.ref?.run {
+                responseDeserializers.add(it)
+                initialResponseDeserializerUpdate.value.ref?.run {
                   it.update(requestId, sequenceNumber, result)
                 }
               }
@@ -251,14 +256,14 @@ private class LiveQuery(
   }
 }
 
-private class RegisteredDataDeserialzer<T>(
+private class RegisteredResponseDeserialzer<T>(
   registrationId: String,
-  val dataDeserializer: DeserializationStrategy<T>,
+  val responseDeserializer: DeserializationStrategy<T>,
   private val blockingDispatcher: CoroutineDispatcher,
   parentLogger: Logger
 ) {
   private val logger =
-    Logger("RegisteredDataDeserialzer").apply {
+    Logger("RegisteredResponseDeserialzer").apply {
       debug { "Created by ${parentLogger.nameWithId} " + "with registrationId=$registrationId" }
     }
 
@@ -344,7 +349,7 @@ private class RegisteredDataDeserialzer<T>(
     result: Result<OperationResult>
   ): SuspendingLazy<Result<DeserialzedOperationResult<T>>> = SuspendingLazy {
     result
-      .mapCatching { withContext(blockingDispatcher) { it.deserialize(dataDeserializer) } }
+      .mapCatching { withContext(blockingDispatcher) { it.deserialize(responseDeserializer) } }
       .onFailure {
         // If the overall result was successful then the failure _must_ have occurred during
         // deserialization. Log the deserialization failure so it doesn't go unnoticed.
@@ -389,12 +394,12 @@ private class LiveQueries(
   private val referenceCountedLiveQueryByKey =
     mutableMapOf<LiveQuery.Key, ReferenceCounted<LiveQuery>>()
 
-  suspend fun <V, D, R> withLiveQuery(
-    ref: QueryRef<V, D>,
+  suspend fun <T, V, R> withLiveQuery(
+    query: Query<R, V>,
     variables: V,
-    block: suspend (LiveQuery) -> R
-  ): R {
-    val liveQuery = mutex.withLock { acquireLiveQuery(ref, variables) }
+    block: suspend (LiveQuery) -> T
+  ): T {
+    val liveQuery = mutex.withLock { acquireLiveQuery(query, variables) }
 
     return try {
       block(liveQuery)
@@ -404,15 +409,15 @@ private class LiveQueries(
   }
 
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
-  private fun <V, D> acquireLiveQuery(ref: QueryRef<V, D>, variables: V): LiveQuery {
+  private fun <R, V> acquireLiveQuery(query: Query<R, V>, variables: V): LiveQuery {
     val variablesStruct =
-      if (ref.variablesSerializer === DataConnectUntypedVariables.Serializer) {
+      if (query.variablesSerializer === DataConnectUntypedVariables.Serializer) {
         (variables as DataConnectUntypedVariables).variables.toStructProto()
       } else {
-        encodeToStruct(ref.variablesSerializer, variables)
+        encodeToStruct(query.variablesSerializer, variables)
       }
     val variablesHash = variablesStruct.calculateSha512().toAlphaNumericString()
-    val key = LiveQuery.Key(operationName = ref.operationName, variablesHash = variablesHash)
+    val key = LiveQuery.Key(operationName = query.operationName, variablesHash = variablesHash)
 
     val referenceCountedLiveQuery =
       referenceCountedLiveQueryByKey.getOrPut(key) {
@@ -420,7 +425,7 @@ private class LiveQueries(
           LiveQuery(
             key = key,
             grpcClient = grpcClient,
-            operationName = ref.operationName,
+            operationName = query.operationName,
             variables = variablesStruct,
             coroutineScope = coroutineScope,
             blockingDispatcher = blockingDispatcher,

@@ -63,12 +63,12 @@ class PostsIntegrationTest {
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
       .isEqualTo(
-        GetPostQuery.Data.Post(
+        GetPostResponse.Post(
           content = postContent,
           comments =
             listOf(
-              GetPostQuery.Data.Post.Comment(id = null, content = comment1Content),
-              GetPostQuery.Data.Post.Comment(id = null, content = comment2Content),
+              GetPostResponse.Post.Comment(id = null, content = comment1Content),
+              GetPostResponse.Post.Comment(id = null, content = comment2Content),
             )
         )
       )
@@ -90,7 +90,7 @@ class PostsIntegrationTest {
     val queryResponse = posts.getPost.execute(id = postId)
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
-      .isEqualTo(GetPostQuery.Data.Post(content = postContent, comments = emptyList()))
+      .isEqualTo(GetPostResponse.Post(content = postContent, comments = emptyList()))
   }
 
   @Test

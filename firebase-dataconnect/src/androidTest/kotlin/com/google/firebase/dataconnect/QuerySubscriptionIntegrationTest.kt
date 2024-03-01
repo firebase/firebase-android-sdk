@@ -327,7 +327,7 @@ class QuerySubscriptionIntegrationTest {
     schema.createPerson.execute(id = "TestId", name = "Name1")
     val testIdVariables = GetPersonQuery.Variables("TestId")
 
-    val noName2Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName2>())
+    val noName2Query = schema.getPerson.withResponseDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
       val querySubscription = noName2Query.subscribe(testIdVariables)
@@ -349,8 +349,8 @@ class QuerySubscriptionIntegrationTest {
     schema.createPerson.execute(id = "TestId", name = "Name0")
     val testIdVariables = GetPersonQuery.Variables("TestId")
 
-    val noName1Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName1>())
-    val noName2Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName2>())
+    val noName1Query = schema.getPerson.withResponseDeserializer(serializer<GetPersonDataNoName1>())
+    val noName2Query = schema.getPerson.withResponseDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
       val flow1 = noName1Query.subscribe(testIdVariables).resultFlow.testIn(backgroundScope)
@@ -381,9 +381,12 @@ class QuerySubscriptionIntegrationTest {
   fun collect_gets_notified_of_previous_cached_success_even_if_most_recent_fails() = runTest {
     schema.createPerson.execute(id = "TestId", name = "OriginalName")
     val testIdVariables = GetPersonQuery.Variables("TestId")
-    keepCacheAlive(schema.getPerson.withDataDeserializer(DataConnectUntypedData), testIdVariables)
+    keepCacheAlive(
+      schema.getPerson.withResponseDeserializer(DataConnectUntypedResponse),
+      testIdVariables
+    )
 
-    val noName1Query = schema.getPerson.withDataDeserializer(serializer<GetPersonDataNoName1>())
+    val noName1Query = schema.getPerson.withResponseDeserializer(serializer<GetPersonDataNoName1>())
     noName1Query.execute(testIdVariables)
 
     schema.updatePerson.execute(id = "TestId", name = "Name1")
@@ -400,7 +403,10 @@ class QuerySubscriptionIntegrationTest {
   fun collect_gets_cached_result_even_if_new_data_deserializer() = runTest {
     schema.createPerson.execute(id = "TestId", name = "OriginalName")
     val testIdVariables = GetPersonQuery.Variables("TestId")
-    keepCacheAlive(schema.getPerson.withDataDeserializer(DataConnectUntypedData), testIdVariables)
+    keepCacheAlive(
+      schema.getPerson.withResponseDeserializer(DataConnectUntypedResponse),
+      testIdVariables
+    )
 
     schema.updatePerson.execute(id = "TestId", name = "UltimateName")
 
@@ -465,7 +471,7 @@ class QuerySubscriptionIntegrationTest {
    * variables. Suspends until the first result has been collected. This effectively ensures that
    * the cache for the query with the given variables never gets garbage collected.
    */
-  private suspend fun <V> TestScope.keepCacheAlive(query: QueryRef<V, *>, variables: V) {
+  private suspend fun <V> TestScope.keepCacheAlive(query: Query<*, V>, variables: V) {
     val cachePrimed = MutableStateFlow(false)
     backgroundScope.launch {
       query.subscribe(variables).resultFlow.onEach { cachePrimed.value = true }.collect()
