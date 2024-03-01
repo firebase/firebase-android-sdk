@@ -7,8 +7,7 @@ import org.junit.Test
 
 private val SAMPLE_SERVICE_ID = "SampleServiceId"
 private val SAMPLE_LOCATION = "SampleLocation"
-private val SAMPLE_OPERATION_SET = "SampleOperationSet"
-private val SAMPLE_REVISION = "SampleRevision"
+private val SAMPLE_CONNECTOR = "SampleConnector"
 
 class FirebaseDataConnectServiceConfigTest {
 
@@ -19,8 +18,7 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = serviceId,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig.serviceId).isSameInstanceAs(serviceId)
   }
@@ -32,47 +30,27 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = location,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig.location).isSameInstanceAs(location)
   }
 
   @Test
-  fun `'operationSet' property should be the same object given to the constructor`() {
-    val operationSet = "Test Operation Set"
+  fun `'connector' property should be the same object given to the constructor`() {
+    val connector = "Test Connector"
     val serviceConfig =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = operationSet,
-        revision = SAMPLE_REVISION
+        connector = connector,
       )
-    assertThat(serviceConfig.operationSet).isSameInstanceAs(operationSet)
-  }
-
-  @Test
-  fun `'revision' property should be the same object given to the constructor`() {
-    val revision = "Test Revision"
-    val serviceConfig =
-      ServiceConfig(
-        serviceId = SAMPLE_SERVICE_ID,
-        location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = revision
-      )
-    assertThat(serviceConfig.revision).isSameInstanceAs(revision)
+    assertThat(serviceConfig.connector).isSameInstanceAs(connector)
   }
 
   @Test
   fun `toString() returns a string that incorporates all property values`() {
     val serviceConfig =
-      ServiceConfig(
-        serviceId = "MyServiceId",
-        location = "MyLocation",
-        operationSet = "MyOperationSet",
-        revision = "MyRevision"
-      )
+      ServiceConfig(serviceId = "MyServiceId", location = "MyLocation", connector = "MyConnector")
 
     val toStringResult = serviceConfig.toString()
 
@@ -80,8 +58,7 @@ class FirebaseDataConnectServiceConfigTest {
     assertThat(toStringResult).endsWith(")")
     assertThat(toStringResult).containsWithNonAdjacentText("serviceId=MyServiceId")
     assertThat(toStringResult).containsWithNonAdjacentText("location=MyLocation")
-    assertThat(toStringResult).containsWithNonAdjacentText("operationSet=MyOperationSet")
-    assertThat(toStringResult).containsWithNonAdjacentText("revision=MyRevision")
+    assertThat(toStringResult).containsWithNonAdjacentText("connector=MyConnector")
   }
 
   @Test
@@ -90,8 +67,7 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig.equals(serviceConfig)).isTrue()
   }
@@ -102,15 +78,13 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig1.equals(serviceConfig2)).isTrue()
   }
@@ -121,8 +95,7 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig.equals(null)).isFalse()
   }
@@ -133,8 +106,7 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig.equals(listOf("foo"))).isFalse()
   }
@@ -145,15 +117,13 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = "foo",
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = "bar",
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig1.equals(serviceConfig2)).isFalse()
   }
@@ -164,53 +134,30 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = "foo",
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = "bar",
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig1.equals(serviceConfig2)).isFalse()
   }
 
   @Test
-  fun `equals() should return false when only 'operationSet' differs`() {
+  fun `equals() should return false when only 'connector' differs`() {
     val serviceConfig1 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = "foo",
-        revision = SAMPLE_REVISION
+        connector = "foo",
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = "bar",
-        revision = SAMPLE_REVISION
-      )
-    assertThat(serviceConfig1.equals(serviceConfig2)).isFalse()
-  }
-
-  @Test
-  fun `equals() should return false when only 'revision' differs`() {
-    val serviceConfig1 =
-      ServiceConfig(
-        serviceId = SAMPLE_SERVICE_ID,
-        location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = "foo"
-      )
-    val serviceConfig2 =
-      ServiceConfig(
-        serviceId = SAMPLE_SERVICE_ID,
-        location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = "bar"
+        connector = "bar",
       )
     assertThat(serviceConfig1.equals(serviceConfig2)).isFalse()
   }
@@ -221,8 +168,7 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     val hashCode = serviceConfig.hashCode()
     assertThat(serviceConfig.hashCode()).isEqualTo(hashCode)
@@ -236,15 +182,13 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig1.hashCode()).isEqualTo(serviceConfig2.hashCode())
   }
@@ -255,15 +199,13 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = "foo",
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = "bar",
         location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig1.hashCode()).isNotEqualTo(serviceConfig2.hashCode())
   }
@@ -274,53 +216,30 @@ class FirebaseDataConnectServiceConfigTest {
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = "foo",
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = "bar",
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = SAMPLE_REVISION
+        connector = SAMPLE_CONNECTOR,
       )
     assertThat(serviceConfig1.hashCode()).isNotEqualTo(serviceConfig2.hashCode())
   }
 
   @Test
-  fun `hashCode() should return a different value when only 'operationSet' differs`() {
+  fun `hashCode() should return a different value when only 'connector' differs`() {
     val serviceConfig1 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = "foo",
-        revision = SAMPLE_REVISION
+        connector = "foo",
       )
     val serviceConfig2 =
       ServiceConfig(
         serviceId = SAMPLE_SERVICE_ID,
         location = SAMPLE_LOCATION,
-        operationSet = "bar",
-        revision = SAMPLE_REVISION
-      )
-    assertThat(serviceConfig1.hashCode()).isNotEqualTo(serviceConfig2.hashCode())
-  }
-
-  @Test
-  fun `hashCode() should return a different value when only 'revision' differs`() {
-    val serviceConfig1 =
-      ServiceConfig(
-        serviceId = SAMPLE_SERVICE_ID,
-        location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = "foo"
-      )
-    val serviceConfig2 =
-      ServiceConfig(
-        serviceId = SAMPLE_SERVICE_ID,
-        location = SAMPLE_LOCATION,
-        operationSet = SAMPLE_OPERATION_SET,
-        revision = "bar"
+        connector = "bar",
       )
     assertThat(serviceConfig1.hashCode()).isNotEqualTo(serviceConfig2.hashCode())
   }
