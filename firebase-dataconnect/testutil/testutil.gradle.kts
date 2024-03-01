@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 // Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,29 +15,14 @@
 // limitations under the License.
 
 plugins {
-  id("android-library")
-  id("kotlin-android")
+  kotlin("jvm")
 }
 
-android {
-  val targetSdkVersion: Int by rootProject
-
-  namespace = "com.google.firebase.dataconnect.testutil"
-  compileSdk = 33
-  defaultConfig {
-    minSdk = 21
-    targetSdk = targetSdkVersion
-    multiDexEnabled = true
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-  }
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-  }
-  kotlinOptions { jvmTarget = "1.8" }
+tasks.withType<KotlinCompile> {
+  kotlinOptions.jvmTarget = "1.8"
 }
 
 dependencies {
-  api(libs.kotlinx.coroutines.core)
-  api(libs.truth)
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.truth)
 }
