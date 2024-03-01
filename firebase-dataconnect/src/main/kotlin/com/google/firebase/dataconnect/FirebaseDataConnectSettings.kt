@@ -13,18 +13,18 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-class FirebaseDataConnectSettings private constructor(private val values: SettingsValues) {
+public class FirebaseDataConnectSettings private constructor(private val values: SettingsValues) {
 
-  val hostName: String
+  public val hostName: String
     get() = values.hostName
 
-  val port: Int
+  public val port: Int
     get() = values.port
 
-  val sslEnabled: Boolean
+  public val sslEnabled: Boolean
     get() = values.sslEnabled
 
-  fun copy(
+  public fun copy(
     hostName: String = this.hostName,
     port: Int = this.port,
     sslEnabled: Boolean = this.sslEnabled
@@ -33,23 +33,23 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
       SettingsValues(hostName = hostName, port = port, sslEnabled = sslEnabled)
     )
 
-  companion object {
-    val defaults: FirebaseDataConnectSettings
+  public companion object {
+    public val defaults: FirebaseDataConnectSettings
       get() =
         FirebaseDataConnectSettings(
           SettingsValues(hostName = "firestore.googleapis.com", port = 443, sslEnabled = true)
         )
 
-    val emulator: FirebaseDataConnectSettings
+    public val emulator: FirebaseDataConnectSettings
       get() = defaults.copy(hostName = "10.0.2.2", port = 9510, sslEnabled = false)
   }
 
   override fun equals(other: Any?): Boolean =
     (other as? FirebaseDataConnectSettings)?.let { it.values == values } ?: false
 
-  override fun hashCode() = values.hashCode()
+  override fun hashCode(): Int = values.hashCode()
 
-  override fun toString() =
+  override fun toString(): String =
     "FirebaseDataConnectSettings(" +
       "hostName=$hostName, " +
       "port=$port, " +

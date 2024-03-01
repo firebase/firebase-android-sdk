@@ -17,20 +17,24 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Encoder
 
-class DataConnectUntypedVariables constructor(val variables: Map<String, Any?>) {
-  constructor(vararg pairs: Pair<String, Any?>) : this(mapOf(*pairs))
-  constructor(builderAction: MutableMap<String, Any?>.() -> Unit) : this(buildMap(builderAction))
+public class DataConnectUntypedVariables
+public constructor(public val variables: Map<String, Any?>) {
+  public constructor(vararg pairs: Pair<String, Any?>) : this(mapOf(*pairs))
+  public constructor(
+    builderAction: MutableMap<String, Any?>.() -> Unit
+  ) : this(buildMap(builderAction))
 
-  override fun equals(other: Any?) =
+  override fun equals(other: Any?): Boolean =
     (other as? DataConnectUntypedVariables)?.let { it.variables == variables } ?: false
-  override fun hashCode() = variables.hashCode()
-  override fun toString() = variables.toString()
+  override fun hashCode(): Int = variables.hashCode()
+  override fun toString(): String = variables.toString()
 
-  companion object Serializer : SerializationStrategy<DataConnectUntypedVariables> {
+  public companion object Serializer : SerializationStrategy<DataConnectUntypedVariables> {
     override val descriptor: SerialDescriptor
       get() = unsupported()
 
-    override fun serialize(encoder: Encoder, value: DataConnectUntypedVariables) = unsupported()
+    override fun serialize(encoder: Encoder, value: DataConnectUntypedVariables): Nothing =
+      unsupported()
 
     private fun unsupported(): Nothing =
       throw UnsupportedOperationException(

@@ -16,7 +16,7 @@ package com.google.firebase.dataconnect
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-class QueryRef<VariablesType, DataType>
+public class QueryRef<VariablesType, DataType>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
@@ -34,10 +34,10 @@ internal constructor(
   ): DataConnectResult<VariablesType, DataType> =
     dataConnect.lazyQueryManager.get().execute(this, variables)
 
-  fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> =
+  public fun subscribe(variables: VariablesType): QuerySubscription<VariablesType, DataType> =
     QuerySubscription(this, variables)
 
-  fun <NewDataType> withDataDeserializer(
+  public fun <NewDataType> withDataDeserializer(
     newDataDeserializer: DeserializationStrategy<NewDataType>
   ): QueryRef<VariablesType, NewDataType> =
     QueryRef(
@@ -47,7 +47,7 @@ internal constructor(
       dataDeserializer = newDataDeserializer
     )
 
-  fun <NewVariablesType> withVariablesSerializer(
+  public fun <NewVariablesType> withVariablesSerializer(
     newVariablesSerializer: SerializationStrategy<NewVariablesType>
   ): QueryRef<NewVariablesType, DataType> =
     QueryRef(

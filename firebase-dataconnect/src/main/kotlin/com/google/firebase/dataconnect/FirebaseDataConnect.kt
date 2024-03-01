@@ -29,16 +29,16 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-class FirebaseDataConnect
+public class FirebaseDataConnect
 internal constructor(
   private val context: Context,
-  val app: FirebaseApp,
+  public val app: FirebaseApp,
   private val projectId: String,
-  val serviceConfig: ServiceConfig,
+  public val serviceConfig: ServiceConfig,
   internal val blockingExecutor: Executor,
   internal val nonBlockingExecutor: Executor,
   private val creator: FirebaseDataConnectFactory,
-  val settings: FirebaseDataConnectSettings,
+  public val settings: FirebaseDataConnectSettings,
 ) : AutoCloseable {
 
   private val logger =
@@ -152,7 +152,8 @@ internal constructor(
     @OptIn(DelicateCoroutinesApi::class) GlobalScope.launch { doClose() }
   }
 
-  suspend fun awaitClose(): Unit = closeResult.filterNotNull().first().getOrThrow()
+  // TODO: Delete this function and the properties that it uses since it does not have a use case.
+  internal suspend fun awaitClose(): Unit = closeResult.filterNotNull().first().getOrThrow()
 
   private val closingMutex = Mutex()
 
@@ -174,7 +175,7 @@ internal constructor(
     }
   }
 
-  override fun toString() =
+  override fun toString(): String =
     "FirebaseDataConnect{" +
       "app=${app.name}, projectId=$projectId, " +
       "location=${serviceConfig.location}, " +
@@ -182,30 +183,30 @@ internal constructor(
       "connector=${serviceConfig.connector}" +
       "}"
 
-  class ServiceConfig(serviceId: String, location: String, connector: String) {
+  public class ServiceConfig(serviceId: String, location: String, connector: String) {
     private val impl = Impl(serviceId = serviceId, location = location, connector = connector)
 
-    val serviceId: String
+    public val serviceId: String
       get() = impl.serviceId
-    val location: String
+    public val location: String
       get() = impl.location
-    val connector: String
+    public val connector: String
       get() = impl.connector
 
     private data class Impl(val serviceId: String, val location: String, val connector: String)
 
-    override fun equals(other: Any?) =
+    override fun equals(other: Any?): Boolean =
       (other as? ServiceConfig)?.let { other.impl == impl } ?: false
 
-    override fun hashCode() = impl.hashCode()
+    override fun hashCode(): Int = impl.hashCode()
 
-    override fun toString() =
+    override fun toString(): String =
       "ServiceConfig(serviceId=$serviceId, location=$location, connector=$connector)"
   }
 
-  companion object {
+  public companion object {
     @SuppressLint("FirebaseUseExplicitDependencies")
-    fun getInstance(
+    public fun getInstance(
       app: FirebaseApp,
       serviceConfig: ServiceConfig,
       settings: FirebaseDataConnectSettings? = null,
@@ -214,7 +215,7 @@ internal constructor(
         get(serviceConfig = serviceConfig, settings = settings)
       }
 
-    fun getInstance(
+    public fun getInstance(
       serviceConfig: ServiceConfig,
       settings: FirebaseDataConnectSettings? = null
     ): FirebaseDataConnect =
@@ -237,7 +238,7 @@ internal constructor(
   }
 }
 
-fun <VariablesType, DataType> FirebaseDataConnect.query(
+public fun <VariablesType, DataType> FirebaseDataConnect.query(
   operationName: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
   dataDeserializer: DeserializationStrategy<DataType>
@@ -249,7 +250,7 @@ fun <VariablesType, DataType> FirebaseDataConnect.query(
     dataDeserializer = dataDeserializer
   )
 
-fun <VariablesType, DataType> FirebaseDataConnect.mutation(
+public fun <VariablesType, DataType> FirebaseDataConnect.mutation(
   operationName: String,
   variablesSerializer: SerializationStrategy<VariablesType>,
   dataDeserializer: DeserializationStrategy<DataType>
@@ -261,11 +262,12 @@ fun <VariablesType, DataType> FirebaseDataConnect.mutation(
     dataDeserializer = dataDeserializer
   )
 
-open class DataConnectException internal constructor(message: String, cause: Throwable? = null) :
-  Exception(message, cause)
+public open class DataConnectException
+internal constructor(message: String, cause: Throwable? = null) : Exception(message, cause)
 
-open class NetworkTransportException internal constructor(message: String, cause: Throwable) :
-  DataConnectException(message, cause)
+public open class NetworkTransportException
+internal constructor(message: String, cause: Throwable) : DataConnectException(message, cause)
 
-open class GraphQLException internal constructor(message: String, val errors: List<String>) :
+public open class GraphQLException
+internal constructor(message: String, public val errors: List<String>) :
   DataConnectException(message)

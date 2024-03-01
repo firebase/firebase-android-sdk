@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import org.jetbrains.dokka.gradle.DokkaTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   id("firebase-library")
@@ -119,7 +120,7 @@ dependencies {
   androidTestImplementation(libs.turbine)
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
+tasks.withType<KotlinCompile>().all {
   kotlinOptions {
     freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
   }
@@ -130,4 +131,18 @@ apply(from = "../gradle/googleServices.gradle")
 
 tasks.withType<DokkaTask>().configureEach {
   moduleName.set("firebase-dataconnect")
+}
+
+// Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
+// classes, methods, or properties have implicit `public` visibility. This check helps
+// avoid  accidentally leaking elements into the public API, requiring that any public
+// element be explicitly declared as `public`.
+// https://github.com/Kotlin/KEEP/blob/master/proposals/explicit-api-mode.md
+// https://chao2zhang.medium.com/explicit-api-mode-for-kotlin-on-android-b8264fdd76d1
+tasks.withType<KotlinCompile>().all {
+  if (!name.contains("test", ignoreCase = true)) {
+    if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
+      kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
+    }
+  }
 }

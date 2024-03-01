@@ -16,19 +16,19 @@ package com.google.firebase.dataconnect
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-class QuerySubscription<VariablesType, DataType>
+public class QuerySubscription<VariablesType, DataType>
 internal constructor(
   internal val query: QueryRef<VariablesType, DataType>,
   variables: VariablesType
 ) {
   private val _variables = MutableStateFlow(variables)
-  val variables: VariablesType by _variables::value
+  public val variables: VariablesType by _variables::value
 
   private val _lastResult = MutableStateFlow<DataConnectResult<VariablesType, DataType>?>(null)
-  val lastResult: DataConnectResult<VariablesType, DataType>? by _lastResult::value
+  public val lastResult: DataConnectResult<VariablesType, DataType>? by _lastResult::value
 
   // Each collection of this flow triggers an implicit `reload()`.
-  val resultFlow: Flow<DataConnectResult<VariablesType, DataType>> = channelFlow {
+  public val resultFlow: Flow<DataConnectResult<VariablesType, DataType>> = channelFlow {
     val cachedResult = lastResult?.also { send(it) }
 
     var collectJob: Job? = null
@@ -60,13 +60,13 @@ internal constructor(
     }
   }
 
-  suspend fun reload() {
+  public suspend fun reload() {
     val queryManager = query.dataConnect.lazyQueryManager.get()
     val result = queryManager.execute(query, variables)
     updateLastResult(result)
   }
 
-  suspend fun update(variables: VariablesType) {
+  public suspend fun update(variables: VariablesType) {
     _variables.value = variables
     reload()
   }

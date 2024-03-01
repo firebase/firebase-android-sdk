@@ -13,7 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-class DataConnectResult<VariablesType, DataType>
+public class DataConnectResult<VariablesType, DataType>
 private constructor(
   private val impl: Impl<VariablesType, DataType>,
   internal val sequenceNumber: Long
@@ -25,15 +25,15 @@ private constructor(
     sequenceNumber: Long,
   ) : this(Impl(variables = variables, data = data), sequenceNumber)
 
-  val variables: VariablesType
+  public val variables: VariablesType
     get() = impl.variables
-  val data: DataType
+  public val data: DataType
     get() = impl.data
 
-  override fun hashCode() = impl.hashCode()
-  override fun equals(other: Any?) =
+  override fun hashCode(): Int = impl.hashCode()
+  override fun equals(other: Any?): Boolean =
     (other as? DataConnectResult<*, *>)?.let { it.impl == impl } ?: false
-  override fun toString() = "DataConnectResult(variables=$variables, data=$data)"
+  override fun toString(): String = "DataConnectResult(variables=$variables, data=$data)"
 
   private data class Impl<VariablesType, DataType>(
     val variables: VariablesType,
@@ -42,7 +42,7 @@ private constructor(
 }
 
 // See https://spec.graphql.org/draft/#sec-Errors
-class DataConnectError private constructor(private val impl: Impl) {
+public class DataConnectError private constructor(private val impl: Impl) {
 
   internal constructor(
     message: String,
@@ -50,15 +50,16 @@ class DataConnectError private constructor(private val impl: Impl) {
     extensions: Map<String, Any?>
   ) : this(Impl(message = message, path = path, extensions = extensions))
 
-  val message: String
+  public val message: String
     get() = impl.message
-  val path: List<PathSegment>
+  public val path: List<PathSegment>
     get() = impl.path
-  val extensions: Map<String, Any?>
+  public val extensions: Map<String, Any?>
     get() = impl.extensions
 
-  override fun hashCode() = impl.hashCode()
-  override fun equals(other: Any?) = (other as? DataConnectError)?.let { it.impl == impl } ?: false
+  override fun hashCode(): Int = impl.hashCode()
+  override fun equals(other: Any?): Boolean =
+    (other as? DataConnectError)?.let { it.impl == impl } ?: false
 
   override fun toString(): String {
     val sb = StringBuilder()
@@ -98,15 +99,15 @@ class DataConnectError private constructor(private val impl: Impl) {
     return sb.toString()
   }
 
-  sealed interface PathSegment {
+  public sealed interface PathSegment {
     @JvmInline
-    value class Field(val field: String) : PathSegment {
-      override fun toString() = field
+    public value class Field(public val field: String) : PathSegment {
+      override fun toString(): String = field
     }
 
     @JvmInline
-    value class ListIndex(val index: Int) : PathSegment {
-      override fun toString() = index.toString()
+    public value class ListIndex(public val index: Int) : PathSegment {
+      override fun toString(): String = index.toString()
     }
   }
 

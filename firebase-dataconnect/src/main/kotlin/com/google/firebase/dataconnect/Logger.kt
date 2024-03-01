@@ -16,14 +16,14 @@ package com.google.firebase.dataconnect
 import android.util.Log
 import kotlin.random.Random
 
-enum class LogLevel {
+public enum class LogLevel {
   DEBUG,
   INFO,
   WARNING,
   ERROR,
 }
 
-@Volatile var logLevel: LogLevel = LogLevel.INFO
+@Volatile public var logLevel: LogLevel = LogLevel.INFO
 
 internal interface Logger {
   val name: String

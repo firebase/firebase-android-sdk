@@ -17,7 +17,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 
-class MutationRef<VariablesType, DataType>
+public class MutationRef<VariablesType, DataType>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
@@ -34,7 +34,7 @@ internal constructor(
     variables: VariablesType
   ): DataConnectResult<VariablesType, DataType> = dataConnect.executeMutation(this, variables)
 
-  fun <NewDataType> withDataDeserializer(
+  public fun <NewDataType> withDataDeserializer(
     newDataDeserializer: DeserializationStrategy<NewDataType>
   ): MutationRef<VariablesType, NewDataType> =
     MutationRef(
@@ -44,7 +44,7 @@ internal constructor(
       dataDeserializer = newDataDeserializer
     )
 
-  fun <NewVariablesType> withVariablesSerializer(
+  public fun <NewVariablesType> withVariablesSerializer(
     newVariablesSerializer: SerializationStrategy<NewVariablesType>
   ): MutationRef<NewVariablesType, DataType> =
     MutationRef(
@@ -54,9 +54,9 @@ internal constructor(
       dataDeserializer = dataDeserializer
     )
 
-  @Serializable data class InsertData(val id: String)
+  @Serializable public data class InsertData(val id: String)
 
-  @Serializable data class DeleteData(val id: String)
+  @Serializable public data class DeleteData(val id: String)
 
-  @Serializable data class UpdateData(val id: String)
+  @Serializable public data class UpdateData(val id: String)
 }
