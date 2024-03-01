@@ -71,7 +71,7 @@ dependencies {
 
     testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")
-    testImplementation("com.google.truth:truth:1.3.0")
+    testImplementation("com.google.truth:truth:1.4.2")
     testImplementation("commons-io:commons-io:2.15.1")
 }
 
