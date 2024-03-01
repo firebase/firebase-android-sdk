@@ -23,12 +23,23 @@ import com.google.firebase.installations.InstallationTokenResult
 import com.google.firebase.installations.internal.FidListener
 import com.google.firebase.installations.internal.FidListenerHandle
 
-/** Fake [FirebaseInstallationsApi] that implements [getId] and always returns the given [fid]. */
-internal class FakeFirebaseInstallations(private val fid: String = "") : FirebaseInstallationsApi {
+/**
+ * Fake [FirebaseInstallationsApi] that implements always returns the given [fid] and [authToken].
+ */
+internal class FakeFirebaseInstallations(
+  private val fid: String = "",
+  private val authToken: String = "",
+) : FirebaseInstallationsApi {
   override fun getId(): Task<String> = Tasks.forResult(fid)
 
   override fun getToken(forceRefresh: Boolean): Task<InstallationTokenResult> =
-    throw NotImplementedError("getToken not faked.")
+    Tasks.forResult(
+      InstallationTokenResult.builder()
+        .setToken(authToken)
+        .setTokenCreationTimestamp(0)
+        .setTokenExpirationTimestamp(0)
+        .build()
+    )
 
   override fun delete(): Task<Void> = throw NotImplementedError("delete not faked.")
 

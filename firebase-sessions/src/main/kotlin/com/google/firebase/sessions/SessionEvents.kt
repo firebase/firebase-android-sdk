@@ -39,6 +39,7 @@ internal object SessionEvents {
     sessionsSettings: SessionsSettings,
     subscribers: Map<SessionSubscriber.Name, SessionSubscriber> = emptyMap(),
     firebaseInstallationId: String = "",
+    firebaseAuthenticationToken: String = "",
   ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
@@ -54,6 +55,7 @@ internal object SessionEvents {
             sessionSamplingRate = sessionsSettings.samplingRate,
           ),
           firebaseInstallationId,
+          firebaseAuthenticationToken,
         ),
       applicationInfo = getApplicationInfo(firebaseApp),
     )
@@ -84,7 +86,7 @@ internal object SessionEvents {
           deviceManufacturer = Build.MANUFACTURER,
           ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext),
           ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
-        )
+        ),
     )
   }
 
