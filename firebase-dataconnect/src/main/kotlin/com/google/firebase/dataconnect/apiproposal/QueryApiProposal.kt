@@ -109,7 +109,7 @@ abstract class Reference<Response, Variables> internal constructor() {
     val dataConnect: FirebaseDataConnect
         get() = TODO()
 
-    val variables: Variables
+    val variables: Variables = TODO()
     abstract suspend fun execute(variables: Variables): DataConnectResult<Response, Variables>
 }
 
