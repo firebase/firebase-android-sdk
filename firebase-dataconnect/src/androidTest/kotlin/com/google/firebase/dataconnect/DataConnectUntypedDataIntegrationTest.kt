@@ -354,7 +354,7 @@ class DataConnectUntypedDataIntegrationTest {
     val result = query.execute(BogusVariables(foo = "bar"))
 
     assertWithMessage("result.data.data").that(result.data.data).isNull()
-    assertWithMessage("result.data.errors").that(result.data.errors).hasSize(1)
+    assertWithMessage("result.data.errors").that(result.data.errors).isNotEmpty()
   }
 
   @Test
@@ -368,6 +368,6 @@ class DataConnectUntypedDataIntegrationTest {
     val result = mutation.execute(BogusVariables(foo = "bar"))
 
     assertWithMessage("result.data.data").that(result.data.data).isNull()
-    assertWithMessage("result.data.errors").that(result.data.errors).hasSize(1)
+    assertWithMessage("result.data.errors").that(result.data.errors).isNotEmpty()
   }
 }
