@@ -34,7 +34,7 @@ internal constructor(
   private val context: Context,
   public val app: FirebaseApp,
   private val projectId: String,
-  public val serviceConfig: ServiceConfig,
+  public val config: ConnectorConfig,
   internal val blockingExecutor: Executor,
   internal val nonBlockingExecutor: Executor,
   private val creator: FirebaseDataConnectFactory,
@@ -46,7 +46,7 @@ internal constructor(
       debug {
         "New instance created with " +
           "app=${app.name}, projectId=$projectId, " +
-          "serviceConfig=$serviceConfig, settings=$settings"
+          "config=$config, settings=$settings"
       }
     }
 
@@ -75,9 +75,9 @@ internal constructor(
       DataConnectGrpcClient(
         context = context,
         projectId = projectId,
-        serviceId = serviceConfig.serviceId,
-        location = serviceConfig.location,
-        connector = serviceConfig.connector,
+        connector = config.connector,
+        location = config.location,
+        service = config.service,
         hostName = settings.hostName,
         port = settings.port,
         sslEnabled = settings.sslEnabled,
@@ -178,50 +178,23 @@ internal constructor(
   }
 
   override fun toString(): String =
-    "FirebaseDataConnect{" +
-      "app=${app.name}, projectId=$projectId, " +
-      "location=${serviceConfig.location}, " +
-      "serviceId=${serviceConfig.serviceId}, " +
-      "connector=${serviceConfig.connector}" +
-      "}"
-
-  public class ServiceConfig(serviceId: String, location: String, connector: String) {
-    private val impl = Impl(serviceId = serviceId, location = location, connector = connector)
-
-    public val serviceId: String
-      get() = impl.serviceId
-    public val location: String
-      get() = impl.location
-    public val connector: String
-      get() = impl.connector
-
-    private data class Impl(val serviceId: String, val location: String, val connector: String)
-
-    override fun equals(other: Any?): Boolean =
-      (other as? ServiceConfig)?.let { other.impl == impl } ?: false
-
-    override fun hashCode(): Int = impl.hashCode()
-
-    override fun toString(): String =
-      "ServiceConfig(serviceId=$serviceId, location=$location, connector=$connector)"
-  }
+    "FirebaseDataConnect(app=${app.name}, projectId=$projectId, config=$config, settings=$settings)"
 
   public companion object {
     @SuppressLint("FirebaseUseExplicitDependencies")
     public fun getInstance(
       app: FirebaseApp,
-      serviceConfig: ServiceConfig,
+      config: ConnectorConfig,
       settings: FirebaseDataConnectSettings? = null,
     ): FirebaseDataConnect =
       app.get(FirebaseDataConnectFactory::class.java).run {
-        get(serviceConfig = serviceConfig, settings = settings)
+        get(config = config, settings = settings)
       }
 
     public fun getInstance(
-      serviceConfig: ServiceConfig,
+      config: ConnectorConfig,
       settings: FirebaseDataConnectSettings? = null
-    ): FirebaseDataConnect =
-      getInstance(app = Firebase.app, serviceConfig = serviceConfig, settings = settings)
+    ): FirebaseDataConnect = getInstance(app = Firebase.app, config = config, settings = settings)
 
     private fun MutableStateFlow<Result<Unit>?>.clearResultUnlessSuccess() {
       while (true) {
@@ -263,6 +236,34 @@ public fun <Response, Variables> FirebaseDataConnect.mutation(
     responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
   )
+
+public class ConnectorConfig(connector: String, location: String, service: String) {
+  private val impl = Impl(connector = connector, location = location, service = service)
+
+  public fun copy(
+    connector: String = this.connector,
+    location: String = this.location,
+    service: String = this.service
+  ): ConnectorConfig =
+    ConnectorConfig(connector = connector, location = location, service = service)
+
+  public val connector: String
+    get() = impl.connector
+  public val location: String
+    get() = impl.location
+  public val service: String
+    get() = impl.service
+
+  private data class Impl(val connector: String, val location: String, val service: String)
+
+  override fun equals(other: Any?): Boolean =
+    (other as? ConnectorConfig)?.let { other.impl == impl } ?: false
+
+  override fun hashCode(): Int = impl.hashCode()
+
+  override fun toString(): String =
+    "ConnectorConfig(connector=$connector, location=$location, service=$service)"
+}
 
 public open class DataConnectException
 internal constructor(message: String, cause: Throwable? = null) : Exception(message, cause)

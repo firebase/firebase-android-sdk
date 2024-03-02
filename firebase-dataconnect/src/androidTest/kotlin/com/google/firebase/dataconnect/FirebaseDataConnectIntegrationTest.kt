@@ -20,7 +20,6 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.dataconnect.FirebaseDataConnect.ServiceConfig
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
@@ -87,10 +86,10 @@ class FirebaseDataConnectIntegrationTest {
   }
 
   @Test
-  fun getInstance_should_return_distinct_instances_for_distinct_serviceIds() {
+  fun getInstance_should_return_distinct_instances_for_distinct_services() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.withServiceId("foo")
-    val serviceConfig2 = serviceConfig1.withServiceId("bar")
+    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.copy(service = "foo")
+    val serviceConfig2 = serviceConfig1.copy(service = "bar")
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig1)
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig2)
     assertThat(instance1).isNotSameInstanceAs(instance2)
@@ -99,8 +98,8 @@ class FirebaseDataConnectIntegrationTest {
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_locations() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.withLocation("foo")
-    val serviceConfig2 = serviceConfig1.withLocation("bar")
+    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.copy(location = "foo")
+    val serviceConfig2 = serviceConfig1.copy(location = "bar")
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig1)
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig2)
     assertThat(instance1).isNotSameInstanceAs(instance2)
@@ -109,8 +108,8 @@ class FirebaseDataConnectIntegrationTest {
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_connectors() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.withConnector("foo")
-    val serviceConfig2 = serviceConfig1.withConnector("bar")
+    val serviceConfig1 = SAMPLE_SERVICE_CONFIG1.copy(connector = "foo")
+    val serviceConfig2 = serviceConfig1.copy(connector = "bar")
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig1)
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, serviceConfig2)
     assertThat(instance1).isNotSameInstanceAs(instance2)
@@ -232,18 +231,18 @@ class FirebaseDataConnectIntegrationTest {
   }
 
   @Test
-  fun getInstance_should_return_new_instance_if_settings_and_serviceId_are_both_different() {
+  fun getInstance_should_return_new_instance_if_settings_and_service_are_both_different() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
     val instance1 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withServiceId("foo"),
+        SAMPLE_SERVICE_CONFIG1.copy(service = "foo"),
         FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
       )
     val instance2 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withServiceId("bar"),
+        SAMPLE_SERVICE_CONFIG1.copy(service = "bar"),
         FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
       )
 
@@ -260,13 +259,13 @@ class FirebaseDataConnectIntegrationTest {
     val instance1 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withLocation("foo"),
+        SAMPLE_SERVICE_CONFIG1.copy(location = "foo"),
         FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
       )
     val instance2 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
-        SAMPLE_SERVICE_CONFIG1.withLocation("bar"),
+        SAMPLE_SERVICE_CONFIG1.copy(location = "bar"),
         FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
       )
 
@@ -337,10 +336,10 @@ class FirebaseDataConnectIntegrationTest {
     val instance =
       FirebaseDataConnect.getInstance(
         app = app,
-        ServiceConfig(
-          serviceId = "TestServiceId",
+        ConnectorConfig(
+          connector = "TestConnector",
           location = "TestLocation",
-          connector = "TestConnector"
+          service = "TestService",
         )
       )
 
@@ -348,47 +347,38 @@ class FirebaseDataConnectIntegrationTest {
 
     assertThat(toStringResult).containsWithNonAdjacentText("app=${app.name}")
     assertThat(toStringResult).containsWithNonAdjacentText("projectId=${app.options.projectId}")
-    assertThat(toStringResult).containsWithNonAdjacentText("serviceId=TestServiceId")
-    assertThat(toStringResult).containsWithNonAdjacentText("location=TestLocation")
     assertThat(toStringResult).containsWithNonAdjacentText("connector=TestConnector")
+    assertThat(toStringResult).containsWithNonAdjacentText("location=TestLocation")
+    assertThat(toStringResult).containsWithNonAdjacentText("service=TestService")
   }
 }
 
-private val SAMPLE_SERVICE_ID1 = "SampleServiceId1"
+private val SAMPLE_SERVICE1 = "SampleService1"
 private val SAMPLE_LOCATION1 = "SampleLocation1"
 private val SAMPLE_CONNECTOR1 = "SampleConnector1"
 private val SAMPLE_SERVICE_CONFIG1 =
-  ServiceConfig(
-    serviceId = SAMPLE_SERVICE_ID1,
+  ConnectorConfig(
+    connector = SAMPLE_CONNECTOR1,
     location = SAMPLE_LOCATION1,
-    connector = SAMPLE_CONNECTOR1
+    service = SAMPLE_SERVICE1,
   )
 
-private val SAMPLE_SERVICE_ID2 = "SampleServiceId2"
+private val SAMPLE_SERVICE2 = "SampleService2"
 private val SAMPLE_LOCATION2 = "SampleLocation2"
 private val SAMPLE_CONNECTOR2 = "SampleConnector2"
 private val SAMPLE_SERVICE_CONFIG2 =
-  ServiceConfig(
-    serviceId = SAMPLE_SERVICE_ID2,
+  ConnectorConfig(
+    connector = SAMPLE_CONNECTOR2,
     location = SAMPLE_LOCATION2,
-    connector = SAMPLE_CONNECTOR2
+    service = SAMPLE_SERVICE2,
   )
 
-private val SAMPLE_SERVICE_ID3 = "SampleServiceId3"
+private val SAMPLE_SERVICE3 = "SampleService3"
 private val SAMPLE_LOCATION3 = "SampleLocation3"
 private val SAMPLE_CONNECTOR3 = "SampleConnector3"
 private val SAMPLE_SERVICE_CONFIG3 =
-  ServiceConfig(
-    serviceId = SAMPLE_SERVICE_ID3,
+  ConnectorConfig(
+    connector = SAMPLE_CONNECTOR3,
     location = SAMPLE_LOCATION3,
-    connector = SAMPLE_CONNECTOR3
+    service = SAMPLE_SERVICE3,
   )
-
-private fun ServiceConfig.withServiceId(newServiceId: String) =
-  ServiceConfig(serviceId = newServiceId, location = location, connector = connector)
-
-private fun ServiceConfig.withLocation(newLocation: String) =
-  ServiceConfig(serviceId = serviceId, location = newLocation, connector = connector)
-
-private fun ServiceConfig.withConnector(newConnector: String) =
-  ServiceConfig(serviceId = serviceId, location = location, connector = newConnector)

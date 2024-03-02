@@ -14,6 +14,7 @@
 package com.google.firebase.dataconnect.generated
 
 import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 import com.google.firebase.dataconnect.Mutation
@@ -24,7 +25,7 @@ import kotlinx.serialization.serializer
 
 class PostsOperationSet(
   app: FirebaseApp,
-  serviceId: String,
+  service: String,
   location: String,
   settings: FirebaseDataConnectSettings,
 ) {
@@ -32,10 +33,10 @@ class PostsOperationSet(
   val dataConnect: FirebaseDataConnect =
     FirebaseDataConnect.getInstance(
       app,
-      FirebaseDataConnect.ServiceConfig(
-        serviceId = serviceId,
+      ConnectorConfig(
+        connector = "crud",
         location = location,
-        connector = "crud"
+        service = service,
       ),
       settings
     )

@@ -26,7 +26,7 @@ import kotlinx.serialization.serializer
 class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
   init {
-    dataConnect.serviceConfig.connector.let {
+    dataConnect.config.connector.let {
       require(it == CONNECTOR) {
         "The given FirebaseDataConnect has operationSet=$it, but expected $CONNECTOR"
       }

@@ -14,6 +14,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 import com.google.firebase.dataconnect.nextAlphanumericString
@@ -35,19 +36,19 @@ class TestDataConnectFactory :
   val allTypesSchema: AllTypesSchema by lazy { runBlocking { installAllTypesSchema() } }
 
   fun newInstance(
-    serviceId: String? = null,
+    service: String? = null,
     location: String? = null,
     connector: String? = null
   ): FirebaseDataConnect =
-    newInstance(Params(serviceId = serviceId, location = location, connector = connector))
+    newInstance(Params(service = service, location = location, connector = connector))
 
   override fun createInstance(params: Params?): FirebaseDataConnect {
     val instanceId = Random.nextAlphanumericString()
     val serviceConfig =
-      FirebaseDataConnect.ServiceConfig(
-        serviceId = params?.serviceId ?: "TestService$instanceId",
+      ConnectorConfig(
+        connector = params?.connector ?: "TestConnector$instanceId",
         location = params?.location ?: "TestLocation$instanceId",
-        connector = params?.connector ?: "TestConnector$instanceId"
+        service = params?.service ?: "TestService$instanceId",
       )
     return FirebaseDataConnect.getInstance(serviceConfig, FirebaseDataConnectSettings.emulator)
   }
@@ -57,8 +58,8 @@ class TestDataConnectFactory :
   }
 
   data class Params(
+    val connector: String? = null,
     val location: String? = null,
-    val serviceId: String? = null,
-    val connector: String? = null
+    val service: String? = null,
   )
 }

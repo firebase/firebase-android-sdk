@@ -2,6 +2,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectFactory
 import com.google.firebase.dataconnect.FirebaseDataConnectSettings
@@ -15,11 +16,11 @@ fun FirebaseDataConnect.Companion.newTestInstance() =
     context = RuntimeEnvironment.getApplication(),
     app = mock(FirebaseApp::class.java),
     projectId = Random.nextAlphanumericString(),
-    serviceConfig =
-      FirebaseDataConnect.ServiceConfig(
-        serviceId = "ServiceId" + Random.nextAlphanumericString(),
+    config =
+      ConnectorConfig(
+        connector = "Connector" + Random.nextAlphanumericString(),
         location = "Location" + Random.nextAlphanumericString(),
-        connector = "Connector" + Random.nextAlphanumericString()
+        service = "Service" + Random.nextAlphanumericString(),
       ),
     blockingExecutor = MoreExecutors.directExecutor(),
     nonBlockingExecutor = MoreExecutors.directExecutor(),

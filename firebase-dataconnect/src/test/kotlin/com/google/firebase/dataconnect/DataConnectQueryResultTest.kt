@@ -478,11 +478,11 @@ class DataConnectQueryResultTest {
       context = context,
       app = firebaseApp,
       projectId = Random.nextAlphanumericString(),
-      serviceConfig =
-        FirebaseDataConnect.ServiceConfig(
-          serviceId = "ServiceId" + Random.nextAlphanumericString(),
+      config =
+        ConnectorConfig(
+          connector = "Connector" + Random.nextAlphanumericString(),
           location = "Location" + Random.nextAlphanumericString(),
-          connector = "Connector" + Random.nextAlphanumericString()
+          service = "Service" + Random.nextAlphanumericString(),
         ),
       blockingExecutor = blockingExecutor,
       nonBlockingExecutor = nonBlockingExecutor,

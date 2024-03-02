@@ -34,14 +34,11 @@ internal class FirebaseDataConnectFactory(
   private val instances = mutableMapOf<FirebaseDataConnectInstanceKey, FirebaseDataConnect>()
   private var closed = false
 
-  fun get(
-    serviceConfig: FirebaseDataConnect.ServiceConfig,
-    settings: FirebaseDataConnectSettings?
-  ): FirebaseDataConnect {
+  fun get(config: ConnectorConfig, settings: FirebaseDataConnectSettings?): FirebaseDataConnect {
     val key =
-      serviceConfig.run {
+      config.run {
         FirebaseDataConnectInstanceKey(
-          serviceId = serviceId,
+          service = service,
           location = location,
           connector = connector
         )
@@ -58,21 +55,21 @@ internal class FirebaseDataConnectFactory(
         return cachedInstance
       }
 
-      val newInstance = FirebaseDataConnect.newInstance(serviceConfig, settings)
+      val newInstance = FirebaseDataConnect.newInstance(config, settings)
       instances[key] = newInstance
       return newInstance
     }
   }
 
   private fun FirebaseDataConnect.Companion.newInstance(
-    serviceConfig: FirebaseDataConnect.ServiceConfig,
+    config: ConnectorConfig,
     settings: FirebaseDataConnectSettings?
   ) =
     FirebaseDataConnect(
       context = context,
       app = firebaseApp,
       projectId = firebaseApp.options.projectId ?: "<unspecified project ID>",
-      serviceConfig = serviceConfig,
+      config = config,
       blockingExecutor = blockingExecutor,
       nonBlockingExecutor = nonBlockingExecutor,
       creator = this@FirebaseDataConnectFactory,
@@ -118,11 +115,11 @@ internal class FirebaseDataConnectFactory(
 }
 
 private data class FirebaseDataConnectInstanceKey(
-  val serviceId: String,
-  val location: String,
   val connector: String,
+  val location: String,
+  val service: String,
 ) {
-  override fun toString() = "serviceId=$serviceId, location=$location, connector=$connector"
+  override fun toString() = "service=$service, location=$location, connector=$connector"
 }
 
 private fun throwIfIncompatible(
@@ -130,7 +127,7 @@ private fun throwIfIncompatible(
   instance: FirebaseDataConnect,
   settings: FirebaseDataConnectSettings?
 ) {
-  val keyStr = key.run { "serviceId=$serviceId, location=$location, connector=$connector" }
+  val keyStr = key.run { "service=$service, location=$location, connector=$connector" }
   if (settings !== null && instance.settings != settings) {
     throw IllegalArgumentException(
       "The settings of the FirebaseDataConnect instance with [$keyStr] is " +

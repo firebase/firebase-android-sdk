@@ -40,7 +40,7 @@ class PostsIntegrationTest {
   private val posts: PostsOperationSet by lazy {
     PostsOperationSet(
         app = Firebase.app,
-        serviceId = "local",
+        service = "local",
         location = Random.nextAlphanumericString(),
         settings = FirebaseDataConnectSettings.emulator
       )

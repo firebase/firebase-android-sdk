@@ -35,9 +35,9 @@ import kotlinx.serialization.DeserializationStrategy
 internal class DataConnectGrpcClient(
   context: Context,
   projectId: String,
-  serviceId: String,
-  location: String,
   connector: String,
+  location: String,
+  service: String,
   hostName: String,
   port: Int,
   sslEnabled: Boolean,
@@ -48,7 +48,7 @@ internal class DataConnectGrpcClient(
     Logger("DataConnectGrpcClient").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
   private val requestName =
-    "projects/$projectId/locations/$location/services/$serviceId/connectors/$connector"
+    "projects/$projectId/locations/$location/services/$service/connectors/$connector"
 
   private val closedMutex = Mutex()
   private var closed = false
