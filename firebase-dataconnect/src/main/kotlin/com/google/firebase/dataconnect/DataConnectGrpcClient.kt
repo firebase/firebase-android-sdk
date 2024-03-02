@@ -38,8 +38,7 @@ internal class DataConnectGrpcClient(
   connector: String,
   location: String,
   service: String,
-  hostName: String,
-  port: Int,
+  host: String,
   sslEnabled: Boolean,
   private val blockingExecutor: Executor,
   parentLogger: Logger,
@@ -74,7 +73,7 @@ internal class DataConnectGrpcClient(
       }
 
       val channel =
-        ManagedChannelBuilder.forAddress(hostName, port).let {
+        ManagedChannelBuilder.forTarget(host).let {
           if (!sslEnabled) {
             it.usePlaintext()
           }

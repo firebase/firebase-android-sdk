@@ -4,10 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import org.junit.Test
 
-private val SAMPLE_CONNECTOR = "SampleConnector"
-private val SAMPLE_LOCATION = "SampleLocation"
-private val SAMPLE_SERVICE = "SampleService"
-
 class ConnectorConfigTest {
 
   private val sampleConfig =
@@ -214,5 +210,11 @@ class ConnectorConfigTest {
     assertThat(config2.connector).isSameInstanceAs(newConnector)
     assertThat(config2.location).isSameInstanceAs(newLocation)
     assertThat(config2.service).isSameInstanceAs(newService)
+  }
+
+  companion object {
+    const val SAMPLE_CONNECTOR = "SampleConnector"
+    const val SAMPLE_LOCATION = "SampleLocation"
+    const val SAMPLE_SERVICE = "SampleService"
   }
 }

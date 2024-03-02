@@ -34,7 +34,7 @@ internal class FirebaseDataConnectFactory(
   private val instances = mutableMapOf<FirebaseDataConnectInstanceKey, FirebaseDataConnect>()
   private var closed = false
 
-  fun get(config: ConnectorConfig, settings: FirebaseDataConnectSettings?): FirebaseDataConnect {
+  fun get(config: ConnectorConfig, settings: DataConnectSettings?): FirebaseDataConnect {
     val key =
       config.run {
         FirebaseDataConnectInstanceKey(
@@ -63,7 +63,7 @@ internal class FirebaseDataConnectFactory(
 
   private fun FirebaseDataConnect.Companion.newInstance(
     config: ConnectorConfig,
-    settings: FirebaseDataConnectSettings?
+    settings: DataConnectSettings?
   ) =
     FirebaseDataConnect(
       context = context,
@@ -73,7 +73,7 @@ internal class FirebaseDataConnectFactory(
       blockingExecutor = blockingExecutor,
       nonBlockingExecutor = nonBlockingExecutor,
       creator = this@FirebaseDataConnectFactory,
-      settings = settings ?: FirebaseDataConnectSettings.defaults,
+      settings = settings ?: DataConnectSettings(),
     )
 
   fun remove(instance: FirebaseDataConnect) {
@@ -125,7 +125,7 @@ private data class FirebaseDataConnectInstanceKey(
 private fun throwIfIncompatible(
   key: FirebaseDataConnectInstanceKey,
   instance: FirebaseDataConnect,
-  settings: FirebaseDataConnectSettings?
+  settings: DataConnectSettings?
 ) {
   val keyStr = key.run { "service=$service, location=$location, connector=$connector" }
   if (settings !== null && instance.settings != settings) {

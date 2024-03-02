@@ -15,8 +15,8 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.Companion.installAllTypesSchema
@@ -50,7 +50,10 @@ class TestDataConnectFactory :
         location = params?.location ?: "TestLocation$instanceId",
         service = params?.service ?: "TestService$instanceId",
       )
-    return FirebaseDataConnect.getInstance(serviceConfig, FirebaseDataConnectSettings.emulator)
+    return FirebaseDataConnect.getInstance(
+      serviceConfig,
+      DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
+    )
   }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {

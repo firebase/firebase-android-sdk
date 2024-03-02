@@ -24,10 +24,8 @@ suspend fun FirebaseDataConnect.installEmulatorSchema(
   schema: EmulatorSchemaInfo,
   operationSets: Map<String, EmulatorSchemaInfo>
 ) {
-  val (hostName, port) = settings.run { Pair(hostName, port) }
-
   val grpcChannel =
-    ManagedChannelBuilder.forAddress(hostName, port).let {
+    ManagedChannelBuilder.forTarget(settings.host).let {
       it.usePlaintext()
       it.executor(Dispatchers.IO.asExecutor())
       AndroidChannelBuilder.usingBuilder(it).context(Firebase.app.applicationContext).build()

@@ -493,8 +493,7 @@ class DataConnectQueryResultTest {
           blockingExecutor = blockingExecutor,
           nonBlockingExecutor = nonBlockingExecutor,
         ),
-      settings =
-        FirebaseDataConnectSettings.defaults.copy(hostName = Random.nextAlphanumericString())
+      settings = DataConnectSettings(host = Random.nextAlphanumericString())
     )
   }
 }

@@ -18,7 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.app
-import com.google.firebase.dataconnect.FirebaseDataConnectSettings
+import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
@@ -42,7 +42,7 @@ class PostsIntegrationTest {
         app = Firebase.app,
         service = "local",
         location = Random.nextAlphanumericString(),
-        settings = FirebaseDataConnectSettings.emulator
+        settings = DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
       )
       .also { dataConnectFactory.adoptInstance(it.dataConnect) }
   }

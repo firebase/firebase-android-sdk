@@ -38,7 +38,7 @@ internal constructor(
   internal val blockingExecutor: Executor,
   internal val nonBlockingExecutor: Executor,
   private val creator: FirebaseDataConnectFactory,
-  public val settings: FirebaseDataConnectSettings,
+  public val settings: DataConnectSettings,
 ) : AutoCloseable {
 
   private val logger =
@@ -78,8 +78,7 @@ internal constructor(
         connector = config.connector,
         location = config.location,
         service = config.service,
-        hostName = settings.hostName,
-        port = settings.port,
+        host = settings.host,
         sslEnabled = settings.sslEnabled,
         blockingExecutor = blockingExecutor,
         parentLogger = logger,
@@ -185,7 +184,7 @@ internal constructor(
     public fun getInstance(
       app: FirebaseApp,
       config: ConnectorConfig,
-      settings: FirebaseDataConnectSettings? = null,
+      settings: DataConnectSettings? = null,
     ): FirebaseDataConnect =
       app.get(FirebaseDataConnectFactory::class.java).run {
         get(config = config, settings = settings)
@@ -193,7 +192,7 @@ internal constructor(
 
     public fun getInstance(
       config: ConnectorConfig,
-      settings: FirebaseDataConnectSettings? = null
+      settings: DataConnectSettings? = null
     ): FirebaseDataConnect = getInstance(app = Firebase.app, config = config, settings = settings)
 
     private fun MutableStateFlow<Result<Unit>?>.clearResultUnlessSuccess() {
@@ -256,13 +255,37 @@ public class ConnectorConfig(connector: String, location: String, service: Strin
 
   private data class Impl(val connector: String, val location: String, val service: String)
 
-  override fun equals(other: Any?): Boolean =
-    (other as? ConnectorConfig)?.let { other.impl == impl } ?: false
+  override fun equals(other: Any?): Boolean = (other is ConnectorConfig) && other.impl == impl
 
   override fun hashCode(): Int = impl.hashCode()
 
   override fun toString(): String =
     "ConnectorConfig(connector=$connector, location=$location, service=$service)"
+}
+
+public class DataConnectSettings(
+  host: String = "dataconnect.googleapis.com",
+  sslEnabled: Boolean = true
+) {
+  private val impl = Impl(host = host, sslEnabled = sslEnabled)
+
+  public fun copy(
+    host: String = this.host,
+    sslEnabled: Boolean = this.sslEnabled
+  ): DataConnectSettings = DataConnectSettings(host = host, sslEnabled = sslEnabled)
+
+  public val host: String
+    get() = impl.host
+  public val sslEnabled: Boolean
+    get() = impl.sslEnabled
+
+  private data class Impl(val host: String, val sslEnabled: Boolean)
+
+  override fun equals(other: Any?): Boolean = (other is DataConnectSettings) && other.impl == impl
+
+  override fun hashCode(): Int = impl.hashCode()
+
+  override fun toString(): String = "DataConnectSettings(host=$host, sslEnabled=$sslEnabled)"
 }
 
 public open class DataConnectException

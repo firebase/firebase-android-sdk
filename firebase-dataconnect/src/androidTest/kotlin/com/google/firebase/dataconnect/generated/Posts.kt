@@ -15,8 +15,8 @@ package com.google.firebase.dataconnect.generated
 
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 import com.google.firebase.dataconnect.Mutation
 import com.google.firebase.dataconnect.Query
 import com.google.firebase.dataconnect.mutation
@@ -27,7 +27,7 @@ class PostsOperationSet(
   app: FirebaseApp,
   service: String,
   location: String,
-  settings: FirebaseDataConnectSettings,
+  settings: DataConnectSettings,
 ) {
 
   val dataConnect: FirebaseDataConnect =

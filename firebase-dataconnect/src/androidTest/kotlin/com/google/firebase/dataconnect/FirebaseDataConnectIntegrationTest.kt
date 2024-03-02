@@ -141,13 +141,13 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName")
+        DataConnectSettings(host = "TestHostName")
       )
     val instance2 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName")
+        DataConnectSettings(host = "TestHostName")
       )
     assertThat(instance1).isSameInstanceAs(instance2)
   }
@@ -159,7 +159,7 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName")
+        DataConnectSettings(host = "TestHostName")
       )
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_SERVICE_CONFIG1, null)
     assertThat(instance1).isSameInstanceAs(instance2)
@@ -172,14 +172,14 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
+        DataConnectSettings(host = "TestHostName1")
       )
 
     assertThrows(IllegalArgumentException::class.java) {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
+        DataConnectSettings(host = "TestHostName2")
       )
     }
 
@@ -187,7 +187,7 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
+        DataConnectSettings(host = "TestHostName1")
       )
     assertThat(instance1).isSameInstanceAs(instance2)
   }
@@ -199,14 +199,14 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
+        DataConnectSettings(host = "TestHostName")
       )
     instance1.close()
     val instance2 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
+        DataConnectSettings(host = "TestHostName2")
       )
     assertThat(instance1).isNotSameInstanceAs(instance2)
   }
@@ -219,13 +219,13 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp1,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
+        DataConnectSettings(host = "TestHostName1")
       )
     val instance2 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp2,
         SAMPLE_SERVICE_CONFIG1,
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
+        DataConnectSettings(host = "TestHostName2")
       )
     assertThat(instance1).isNotSameInstanceAs(instance2)
   }
@@ -237,20 +237,18 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1.copy(service = "foo"),
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
+        DataConnectSettings(host = "TestHostName1")
       )
     val instance2 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1.copy(service = "bar"),
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
+        DataConnectSettings(host = "TestHostName2")
       )
 
     assertThat(instance1).isNotSameInstanceAs(instance2)
-    assertThat(instance1.settings)
-      .isEqualTo(FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1"))
-    assertThat(instance2.settings)
-      .isEqualTo(FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2"))
+    assertThat(instance1.settings).isEqualTo(DataConnectSettings(host = "TestHostName1"))
+    assertThat(instance2.settings).isEqualTo(DataConnectSettings(host = "TestHostName2"))
   }
 
   @Test
@@ -260,20 +258,18 @@ class FirebaseDataConnectIntegrationTest {
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1.copy(location = "foo"),
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1")
+        DataConnectSettings(host = "TestHostName1")
       )
     val instance2 =
       FirebaseDataConnect.getInstance(
         nonDefaultApp,
         SAMPLE_SERVICE_CONFIG1.copy(location = "bar"),
-        FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2")
+        DataConnectSettings(host = "TestHostName2")
       )
 
     assertThat(instance1).isNotSameInstanceAs(instance2)
-    assertThat(instance1.settings)
-      .isEqualTo(FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName1"))
-    assertThat(instance2.settings)
-      .isEqualTo(FirebaseDataConnectSettings.defaults.copy(hostName = "TestHostName2"))
+    assertThat(instance1.settings).isEqualTo(DataConnectSettings(host = "TestHostName1"))
+    assertThat(instance2.settings).isEqualTo(DataConnectSettings(host = "TestHostName2"))
   }
 
   @Test

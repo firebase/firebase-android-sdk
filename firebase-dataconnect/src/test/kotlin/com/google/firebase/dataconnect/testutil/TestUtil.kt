@@ -3,9 +3,9 @@ package com.google.firebase.dataconnect.testutil
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectFactory
-import com.google.firebase.dataconnect.FirebaseDataConnectSettings
 import com.google.firebase.dataconnect.nextAlphanumericString
 import kotlin.random.Random
 import org.mockito.Mockito.mock
@@ -25,5 +25,5 @@ fun FirebaseDataConnect.Companion.newTestInstance() =
     blockingExecutor = MoreExecutors.directExecutor(),
     nonBlockingExecutor = MoreExecutors.directExecutor(),
     creator = mock(FirebaseDataConnectFactory::class.java),
-    settings = FirebaseDataConnectSettings.defaults.copy(hostName = Random.nextAlphanumericString())
+    settings = DataConnectSettings(host = Random.nextAlphanumericString())
   )
