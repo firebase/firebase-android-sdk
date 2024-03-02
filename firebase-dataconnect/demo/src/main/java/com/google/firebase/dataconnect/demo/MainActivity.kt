@@ -48,57 +48,56 @@ fun MessageCard(message: Message) {
     Image(
       painter = painterResource(id = R.drawable.profile_picture),
       contentDescription = "Profile picture",
-      modifier = Modifier
-        .size(40.dp)
-        .clip(CircleShape)
-        .border(1.5.dp, MaterialTheme.colorScheme.primary)
+      modifier =
+        Modifier.size(40.dp).clip(CircleShape).border(1.5.dp, MaterialTheme.colorScheme.primary)
     )
     Spacer(modifier = Modifier.width(8.dp))
     Column {
-      Text(text = message.author, color = MaterialTheme.colorScheme.secondary, style=MaterialTheme.typography.titleSmall)
+      Text(
+        text = message.author,
+        color = MaterialTheme.colorScheme.secondary,
+        style = MaterialTheme.typography.titleSmall
+      )
       Spacer(modifier = Modifier.height(4.dp))
       Surface(shape = MaterialTheme.shapes.medium, shadowElevation = 1.dp) {
-        Text(text = message.body, style=MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(all=4.dp))
+        Text(
+          text = message.body,
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.padding(all = 4.dp)
+        )
       }
     }
   }
 }
 
 @Preview(name = "Light Mode")
-@Preview(
-  uiMode = Configuration.UI_MODE_NIGHT_YES,
-  showBackground = true,
-  name = "Dark Mode"
-)
+@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true, name = "Dark Mode")
 @Composable
 fun PreviewMessageCard() {
   MaterialTheme {
-    Surface {
-      MessageCard(Message(author = "Test Author", body = "This is the body"))
-    }
+    Surface { MessageCard(Message(author = "Test Author", body = "This is the body")) }
   }
 }
 
 @Composable
 fun Conversation(messages: List<Message>) {
-  LazyColumn {
-    items(messages) {
-      MessageCard(it)
-    }
-  }
+  LazyColumn { items(messages) { MessageCard(it) } }
 }
 
 @Preview
 @Composable
 fun PreviewConversation() {
-  MaterialTheme {
-    Conversation(sampleMessages())
-  }
+  MaterialTheme { Conversation(sampleMessages()) }
 }
 
-fun sampleMessages() = listOf(
-  Message("Person1", "Hey, what's up?"),
-  Message("Person2", "Oh not much. How about you?"),
-  Message("Person1", "What Android version names do you know?"),
-  Message("Person2", "Oh man, let's see... uh, Cupcake, Donut, Eclair, " + "Froyo, Gingerbread, KitKat, Lollipop, Marshmallow, Nougat."),
-);
+fun sampleMessages() =
+  listOf(
+    Message("Person1", "Hey, what's up?"),
+    Message("Person2", "Oh not much. How about you?"),
+    Message("Person1", "What Android version names do you know?"),
+    Message(
+      "Person2",
+      "Oh man, let's see... uh, Cupcake, Donut, Eclair, " +
+        "Froyo, Gingerbread, KitKat, Lollipop, Marshmallow, Nougat."
+    ),
+  )
