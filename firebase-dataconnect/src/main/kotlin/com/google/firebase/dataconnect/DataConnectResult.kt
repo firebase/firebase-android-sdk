@@ -35,8 +35,10 @@ private constructor(
   public abstract val ref: Reference<Response, Variables>
 
   override fun hashCode(): Int = impl.hashCode()
+
   override fun equals(other: Any?): Boolean =
-    (other as? DataConnectResult<*, *>)?.let { it.impl == impl } ?: false
+    (other is DataConnectResult<*, *>) && other.impl == impl
+
   override fun toString(): String = "DataConnectResult(data=$data, variables=$variables)"
 
   private data class Impl<Response, Variables>(
@@ -105,8 +107,8 @@ internal class DataConnectError private constructor(private val impl: Impl) {
     get() = impl.extensions
 
   override fun hashCode(): Int = impl.hashCode()
-  override fun equals(other: Any?): Boolean =
-    (other as? DataConnectError)?.let { it.impl == impl } ?: false
+
+  override fun equals(other: Any?): Boolean = (other is DataConnectError) && other.impl == impl
 
   override fun toString(): String {
     val sb = StringBuilder()

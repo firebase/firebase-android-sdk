@@ -164,8 +164,7 @@ internal class SuspendingLazy<T : Any>(
 }
 
 internal class NullableReference<T>(val ref: T?) {
-  override fun equals(other: Any?) =
-    (other as? NullableReference<*>)?.let { ref == it.ref } ?: false
+  override fun equals(other: Any?) = (other is NullableReference<*>) && other.ref == ref
   override fun hashCode() = ref?.hashCode() ?: 0
   override fun toString() = ref?.toString() ?: "null"
 }

@@ -25,8 +25,10 @@ public constructor(public val variables: Map<String, Any?>) {
   ) : this(buildMap(builderAction))
 
   override fun equals(other: Any?): Boolean =
-    (other as? DataConnectUntypedVariables)?.let { it.variables == variables } ?: false
+    (other is DataConnectUntypedVariables) && other.variables == variables
+
   override fun hashCode(): Int = variables.hashCode()
+
   override fun toString(): String = variables.toString()
 
   public companion object Serializer : SerializationStrategy<DataConnectUntypedVariables> {

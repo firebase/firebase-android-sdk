@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -21,8 +22,10 @@ internal class DataConnectUntypedResponse
 internal constructor(val data: Map<String, Any?>?, val errors: List<DataConnectError>) {
 
   override fun equals(other: Any?): Boolean =
-    (other as? DataConnectUntypedResponse)?.let { it.data == data && it.errors == errors } ?: false
-  override fun hashCode(): Int = (data?.hashCode() ?: 0) + (31 * errors.hashCode())
+    (other is DataConnectUntypedResponse) && other.data == data && other.errors == errors
+
+  override fun hashCode(): Int = Objects.hash(data, errors)
+
   override fun toString(): String = "DataConnectUntypedResponse(data=$data, errors=$errors)"
 
   companion object Deserializer : DeserializationStrategy<DataConnectUntypedResponse> {
