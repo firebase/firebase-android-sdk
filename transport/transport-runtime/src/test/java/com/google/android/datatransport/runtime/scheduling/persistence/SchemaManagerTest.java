@@ -123,9 +123,9 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void upgradingV4ToV6_nonEmptyDB_isLossless() {
+  public void upgradingV4ToV7_nonEmptyDB_isLossless() {
     int oldVersion = 4;
-    int newVersion = 6;
+    int newVersion = 7;
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
     SQLiteEventStore store =
