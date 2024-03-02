@@ -105,6 +105,7 @@ dependencies {
 
   testCompileOnly(libs.protobuf.java)
   testImplementation(project(":firebase-dataconnect:testutil"))
+  testImplementation(libs.mockito.core)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
   testImplementation(libs.truth.liteproto.extension)

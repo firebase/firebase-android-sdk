@@ -43,17 +43,17 @@ internal class QueryManager(
       parentLogger = logger
     )
 
-  suspend fun <R, V> execute(query: Query<R, V>, variables: V): DataConnectResult<R, V> =
+  suspend fun <R, V> execute(query: Query<R, V>, variables: V): DataConnectQueryResult<R, V> =
     liveQueries
       .withLiveQuery(query, variables) { it.execute(query.responseDeserializer) }
-      .toDataConnectResult(variables)
+      .toDataConnectQueryResult(query, variables)
 
   suspend fun <R, V> onResult(
     query: Query<R, V>,
     variables: V,
     sinceSequenceNumber: Long?,
     executeQuery: Boolean,
-    callback: suspend (DataConnectResult<R, V>) -> Unit,
+    callback: suspend (DataConnectQueryResult<R, V>) -> Unit,
   ): Nothing =
     liveQueries.withLiveQuery(query, variables) { liveQuery ->
       liveQuery.onResult(
@@ -61,7 +61,7 @@ internal class QueryManager(
         sinceSequenceNumber = sinceSequenceNumber,
         executeQuery = executeQuery
       ) {
-        callback(it.toDataConnectResult(variables))
+        callback(it.toDataConnectQueryResult(query, variables))
       }
     }
 }

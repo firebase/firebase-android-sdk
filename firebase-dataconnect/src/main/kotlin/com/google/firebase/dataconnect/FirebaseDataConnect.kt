@@ -126,7 +126,7 @@ internal constructor(
         logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
       }
       .getOrThrow()
-      .toDataConnectResult(variables)
+      .toDataConnectMutationResult(mutation, variables)
 
   private val closeResult = MutableStateFlow<Result<Unit>?>(null)
 
@@ -266,10 +266,3 @@ public fun <Response, Variables> FirebaseDataConnect.mutation(
 
 public open class DataConnectException
 internal constructor(message: String, cause: Throwable? = null) : Exception(message, cause)
-
-public open class NetworkTransportException
-internal constructor(message: String, cause: Throwable) : DataConnectException(message, cause)
-
-public open class GraphQLException
-internal constructor(message: String, public val errors: List<String>) :
-  DataConnectException(message)

@@ -13,22 +13,26 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-public class DataConnectResult<Response, Variables>
+import java.util.Objects
+
+public sealed class DataConnectResult<Response, Variables>
 private constructor(
   private val impl: Impl<Response, Variables>,
   internal val sequenceNumber: Long
 ) {
-
-  internal constructor(
+  protected constructor(
     data: Response,
     variables: Variables,
+    ref: Reference<Response, Variables>,
     sequenceNumber: Long,
-  ) : this(Impl(data = data, variables = variables), sequenceNumber)
+  ) : this(Impl(data = data, variables = variables, ref = ref), sequenceNumber)
 
   public val data: Response
     get() = impl.data
   public val variables: Variables
     get() = impl.variables
+
+  public abstract val ref: Reference<Response, Variables>
 
   override fun hashCode(): Int = impl.hashCode()
   override fun equals(other: Any?): Boolean =
@@ -38,11 +42,54 @@ private constructor(
   private data class Impl<Response, Variables>(
     val data: Response,
     val variables: Variables,
+    val ref: Reference<Response, Variables>
   )
 }
 
+public class DataConnectQueryResult<Response, Variables>
+internal constructor(
+  data: Response,
+  variables: Variables,
+  query: Query<Response, Variables>,
+  sequenceNumber: Long
+) :
+  DataConnectResult<Response, Variables>(
+    data = data,
+    variables = variables,
+    ref = query,
+    sequenceNumber = sequenceNumber
+  ) {
+  override val ref: Query<Response, Variables> = query
+
+  override fun hashCode(): Int = Objects.hash("Query", super.hashCode())
+  override fun equals(other: Any?): Boolean =
+    (other is DataConnectQueryResult<*, *>) && super.equals(other)
+  override fun toString(): String = "DataConnectQueryResult(data=$data, variables=$variables)"
+}
+
+public class DataConnectMutationResult<Response, Variables>
+internal constructor(
+  data: Response,
+  variables: Variables,
+  mutation: Mutation<Response, Variables>,
+  sequenceNumber: Long
+) :
+  DataConnectResult<Response, Variables>(
+    data = data,
+    variables = variables,
+    ref = mutation,
+    sequenceNumber = sequenceNumber
+  ) {
+  override val ref: Mutation<Response, Variables> = mutation
+
+  override fun hashCode(): Int = Objects.hash("Mutation", super.hashCode())
+  override fun equals(other: Any?): Boolean =
+    (other is DataConnectMutationResult<*, *>) && super.equals(other)
+  override fun toString(): String = "DataConnectMutationResult(data=$data, variables=$variables)"
+}
+
 // See https://spec.graphql.org/draft/#sec-Errors
-public class DataConnectError private constructor(private val impl: Impl) {
+internal class DataConnectError private constructor(private val impl: Impl) {
 
   internal constructor(
     message: String,
@@ -50,11 +97,11 @@ public class DataConnectError private constructor(private val impl: Impl) {
     extensions: Map<String, Any?>
   ) : this(Impl(message = message, path = path, extensions = extensions))
 
-  public val message: String
+  val message: String
     get() = impl.message
-  public val path: List<PathSegment>
+  val path: List<PathSegment>
     get() = impl.path
-  public val extensions: Map<String, Any?>
+  val extensions: Map<String, Any?>
     get() = impl.extensions
 
   override fun hashCode(): Int = impl.hashCode()
@@ -99,14 +146,14 @@ public class DataConnectError private constructor(private val impl: Impl) {
     return sb.toString()
   }
 
-  public sealed interface PathSegment {
+  sealed interface PathSegment {
     @JvmInline
-    public value class Field(public val field: String) : PathSegment {
+    value class Field(val field: String) : PathSegment {
       override fun toString(): String = field
     }
 
     @JvmInline
-    public value class ListIndex(public val index: Int) : PathSegment {
+    value class ListIndex(val index: Int) : PathSegment {
       override fun toString(): String = index.toString()
     }
   }

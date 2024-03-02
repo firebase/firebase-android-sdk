@@ -17,18 +17,15 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 
-public class DataConnectUntypedResponse
-internal constructor(
-  public val data: Map<String, Any?>?,
-  public val errors: List<DataConnectError>
-) {
+internal class DataConnectUntypedResponse
+internal constructor(val data: Map<String, Any?>?, val errors: List<DataConnectError>) {
 
   override fun equals(other: Any?): Boolean =
     (other as? DataConnectUntypedResponse)?.let { it.data == data && it.errors == errors } ?: false
   override fun hashCode(): Int = (data?.hashCode() ?: 0) + (31 * errors.hashCode())
   override fun toString(): String = "DataConnectUntypedResponse(data=$data, errors=$errors)"
 
-  public companion object Deserializer : DeserializationStrategy<DataConnectUntypedResponse> {
+  companion object Deserializer : DeserializationStrategy<DataConnectUntypedResponse> {
     override val descriptor: SerialDescriptor
       get() = unsupported()
 

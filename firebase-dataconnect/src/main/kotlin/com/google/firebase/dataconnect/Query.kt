@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
@@ -29,11 +30,23 @@ internal constructor(
     responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
   ) {
-  override suspend fun execute(variables: Variables): DataConnectResult<Response, Variables> =
+  override suspend fun execute(variables: Variables): DataConnectQueryResult<Response, Variables> =
     dataConnect.lazyQueryManager.get().execute(this, variables)
 
   public fun subscribe(variables: Variables): QuerySubscription<Response, Variables> =
     QuerySubscription(this, variables)
+
+  override fun hashCode(): Int = Objects.hash("Query", super.hashCode())
+
+  override fun equals(other: Any?): Boolean = (other is Query<*, *>) && super.equals(other)
+
+  override fun toString(): String =
+    "Query(" +
+      "dataConnect=$dataConnect, " +
+      "operationName=$operationName, " +
+      "responseDeserializer=$responseDeserializer, " +
+      "variablesSerializer=$variablesSerializer" +
+      ")"
 
   public fun <NewResponse> withResponseDeserializer(
     newResponseDeserializer: DeserializationStrategy<NewResponse>

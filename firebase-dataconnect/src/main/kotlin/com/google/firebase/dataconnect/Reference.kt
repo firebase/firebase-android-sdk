@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
@@ -24,4 +25,24 @@ internal constructor(
   internal val variablesSerializer: SerializationStrategy<Variables>,
 ) {
   public abstract suspend fun execute(variables: Variables): DataConnectResult<Response, Variables>
+
+  override fun hashCode(): Int =
+    Objects.hash(dataConnect, operationName, responseDeserializer, variablesSerializer)
+
+  override fun equals(other: Any?): Boolean =
+    (other as? Reference<*, *>)?.let {
+      it.dataConnect == dataConnect &&
+        it.operationName == operationName &&
+        it.responseDeserializer == responseDeserializer &&
+        it.variablesSerializer == variablesSerializer
+    }
+      ?: false
+
+  override fun toString(): String =
+    "Reference(" +
+      "dataConnect=$dataConnect, " +
+      "operationName=$operationName, " +
+      "responseDeserializer=$responseDeserializer, " +
+      "variablesSerializer=$variablesSerializer" +
+      ")"
 }

@@ -21,8 +21,8 @@ internal constructor(internal val query: Query<Response, Variables>, variables: 
   private val _variables = MutableStateFlow(variables)
   public val variables: Variables by _variables::value
 
-  private val _lastResult = MutableStateFlow<DataConnectResult<Response, Variables>?>(null)
-  public val lastResult: DataConnectResult<Response, Variables>? by _lastResult::value
+  private val _lastResult = MutableStateFlow<DataConnectQueryResult<Response, Variables>?>(null)
+  public val lastResult: DataConnectQueryResult<Response, Variables>? by _lastResult::value
 
   // Each collection of this flow triggers an implicit `reload()`.
   public val resultFlow: Flow<DataConnectResult<Response, Variables>> = channelFlow {
@@ -68,7 +68,7 @@ internal constructor(internal val query: Query<Response, Variables>, variables: 
     reload()
   }
 
-  private fun updateLastResult(newLastResult: DataConnectResult<Response, Variables>) {
+  private fun updateLastResult(newLastResult: DataConnectQueryResult<Response, Variables>) {
     // Update the last result in a compare-and-swap loop so that there is no possibility of
     // clobbering a newer result with an older result, compared using their sequence numbers.
     while (true) {
