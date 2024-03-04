@@ -66,3 +66,6 @@ internal constructor(
       variablesSerializer = newVariablesSerializer,
     )
 }
+
+public suspend fun <Response> Mutation<Response, Unit>.execute():
+  DataConnectMutationResult<Response, Unit> = execute(Unit)

@@ -68,3 +68,6 @@ internal constructor(
       variablesSerializer = newVariablesSerializer,
     )
 }
+
+public suspend fun <Response> Query<Response, Unit>.execute():
+  DataConnectQueryResult<Response, Unit> = execute(Unit)
