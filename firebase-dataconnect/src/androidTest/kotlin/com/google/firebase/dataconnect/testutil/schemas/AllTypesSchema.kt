@@ -15,7 +15,7 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.Query
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
@@ -69,7 +69,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
     @Serializable data class Variables(val id: String)
 
-    suspend fun Query<Response, Variables>.execute(id: String) = execute(Variables(id = id))
+    suspend fun QueryRef<Response, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
   val getPrimitive =
@@ -116,7 +116,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
     @Serializable data class Variables(val id: String)
 
-    suspend fun Query<Response, Variables>.execute(id: String) = execute(Variables(id = id))
+    suspend fun QueryRef<Response, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
   val getPrimitiveList =
@@ -128,8 +128,6 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
   object GetAllPrimitiveListsQuery {
     @Serializable data class Response(val primitiveLists: List<PrimitiveListData>)
-
-    suspend fun Query<Response, Unit>.execute() = execute(Unit)
   }
 
   val getAllPrimitiveLists =
@@ -237,7 +235,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
     @Serializable data class Variables(val id: String)
 
-    suspend fun Query<Response, Variables>.execute(id: String) = execute(Variables(id = id))
+    suspend fun QueryRef<Response, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
   val getFarm =

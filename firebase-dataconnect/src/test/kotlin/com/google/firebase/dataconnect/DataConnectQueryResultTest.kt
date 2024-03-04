@@ -18,30 +18,30 @@ import org.robolectric.RuntimeEnvironment
 @RunWith(RobolectricTestRunner::class)
 class DataConnectQueryResultTest {
 
-  lateinit var sampleQuery: Query<TestData?, TestVariables>
-  lateinit var sampleQuery1: Query<TestData?, TestVariables>
-  lateinit var sampleQuery2: Query<TestData?, TestVariables>
+  lateinit var sampleQuery: QueryRef<TestData?, TestVariables>
+  lateinit var sampleQuery1: QueryRef<TestData?, TestVariables>
+  lateinit var sampleQuery2: QueryRef<TestData?, TestVariables>
 
   @Before
   fun prepareSampleQueries() {
     val context: Context = RuntimeEnvironment.getApplication()
 
     sampleQuery =
-      Query(
+      QueryRef(
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "TestOperation",
         responseDeserializer = serializer(),
         variablesSerializer = serializer()
       )
     sampleQuery1 =
-      Query(
+      QueryRef(
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "TestOperation",
         responseDeserializer = serializer(),
         variablesSerializer = serializer()
       )
     sampleQuery2 =
-      Query(
+      QueryRef(
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "TestOperation",
         responseDeserializer = serializer(),

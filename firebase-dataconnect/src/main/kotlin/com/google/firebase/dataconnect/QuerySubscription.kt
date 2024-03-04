@@ -17,7 +17,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 public class QuerySubscription<Response, Variables>
-internal constructor(internal val query: Query<Response, Variables>, variables: Variables) {
+internal constructor(internal val query: QueryRef<Response, Variables>, variables: Variables) {
   private val _variables = MutableStateFlow(variables)
   public val variables: Variables by _variables::value
 

@@ -20,12 +20,10 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetAllPrimitiveListsQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveListQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Response.Person
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import kotlin.time.Duration.Companion.seconds

@@ -13,7 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
-import com.google.firebase.dataconnect.Query
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QuerySubscription
 import kotlinx.serialization.Serializable
 
@@ -45,10 +45,10 @@ typealias GetPostQuery = QuerySubscription<GetPostResponse, GetPostVariables>
 
 typealias GetPostQuerySubscription = QuerySubscription<GetPostResponse, GetPostVariables>
 
-suspend fun Query<GetPostResponse, GetPostVariables>.execute(id: String) =
+suspend fun QueryRef<GetPostResponse, GetPostVariables>.execute(id: String) =
   execute(variablesFor(id = id))
 
-fun Query<GetPostResponse, GetPostVariables>.subscribe(id: String) =
+fun QueryRef<GetPostResponse, GetPostVariables>.subscribe(id: String) =
   subscribe(variablesFor(id = id))
 
 suspend fun QuerySubscription<GetPostResponse, GetPostVariables>.update(

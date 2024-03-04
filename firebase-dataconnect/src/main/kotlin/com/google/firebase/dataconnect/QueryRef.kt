@@ -17,29 +17,31 @@ import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-public class Mutation<Response, Variables>
+public class QueryRef<Response, Variables>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   responseDeserializer: DeserializationStrategy<Response>,
   variablesSerializer: SerializationStrategy<Variables>,
 ) :
-  Reference<Response, Variables>(
+  OperationRef<Response, Variables>(
     dataConnect = dataConnect,
     operationName = operationName,
     responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
   ) {
-  override suspend fun execute(
-    variables: Variables
-  ): DataConnectMutationResult<Response, Variables> = dataConnect.executeMutation(this, variables)
+  override suspend fun execute(variables: Variables): DataConnectQueryResult<Response, Variables> =
+    dataConnect.lazyQueryManager.get().execute(this, variables)
 
-  override fun hashCode(): Int = Objects.hash("Mutation", super.hashCode())
+  public fun subscribe(variables: Variables): QuerySubscription<Response, Variables> =
+    QuerySubscription(this, variables)
 
-  override fun equals(other: Any?): Boolean = (other is Mutation<*, *>) && super.equals(other)
+  override fun hashCode(): Int = Objects.hash("Query", super.hashCode())
+
+  override fun equals(other: Any?): Boolean = (other is QueryRef<*, *>) && super.equals(other)
 
   override fun toString(): String =
-    "Mutation(" +
+    "Query(" +
       "dataConnect=$dataConnect, " +
       "operationName=$operationName, " +
       "responseDeserializer=$responseDeserializer, " +
@@ -48,8 +50,8 @@ internal constructor(
 
   public fun <NewResponse> withResponseDeserializer(
     newResponseDeserializer: DeserializationStrategy<NewResponse>
-  ): Mutation<NewResponse, Variables> =
-    Mutation(
+  ): QueryRef<NewResponse, Variables> =
+    QueryRef(
       dataConnect = dataConnect,
       operationName = operationName,
       responseDeserializer = newResponseDeserializer,
@@ -58,8 +60,8 @@ internal constructor(
 
   public fun <NewVariables> withVariablesSerializer(
     newVariablesSerializer: SerializationStrategy<NewVariables>
-  ): Mutation<Response, NewVariables> =
-    Mutation(
+  ): QueryRef<Response, NewVariables> =
+    QueryRef(
       dataConnect = dataConnect,
       operationName = operationName,
       responseDeserializer = responseDeserializer,
@@ -67,5 +69,8 @@ internal constructor(
     )
 }
 
-public suspend fun <Response> Mutation<Response, Unit>.execute():
-  DataConnectMutationResult<Response, Unit> = execute(Unit)
+public suspend fun <Response> QueryRef<Response, Unit>.execute():
+  DataConnectQueryResult<Response, Unit> = execute(Unit)
+
+public fun <Response> QueryRef<Response, Unit>.subscribe(): QuerySubscription<Response, Unit> =
+  subscribe(Unit)

@@ -15,8 +15,8 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.Mutation
-import com.google.firebase.dataconnect.Query
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
@@ -39,10 +39,6 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.installEmulatorSchema("testing_graphql_schemas/person")
   }
 
-  object CreateDefaultPersonMutation {
-    suspend fun Mutation<Unit, Unit>.execute() = execute(Unit)
-  }
-
   val createDefaultPerson =
     dataConnect.mutation(
       operationName = "createDefaultPerson",
@@ -54,7 +50,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
     @Serializable data class Variables(val data: PersonData)
 
-    suspend fun Mutation<Unit, Variables>.execute(id: String, name: String, age: Int? = null) =
+    suspend fun MutationRef<Unit, Variables>.execute(id: String, name: String, age: Int? = null) =
       execute(Variables(PersonData(id = id, name = name, age = age)))
   }
 
@@ -69,7 +65,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     @Serializable data class PersonData(val name: String? = null, val age: Int? = null)
     @Serializable data class Variables(val id: String, val data: PersonData)
 
-    suspend fun Mutation<Unit, Variables>.execute(
+    suspend fun MutationRef<Unit, Variables>.execute(
       id: String,
       name: String? = null,
       age: Int? = null
@@ -86,7 +82,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   object DeletePersonMutation {
     @Serializable data class Variables(val id: String)
 
-    suspend fun Mutation<Unit, Variables>.execute(id: String) = execute(Variables(id = id))
+    suspend fun MutationRef<Unit, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
   val deletePerson =
@@ -104,9 +100,9 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
     @Serializable data class Variables(val id: String)
 
-    suspend fun Query<Response, Variables>.execute(id: String) = execute(Variables(id = id))
+    suspend fun QueryRef<Response, Variables>.execute(id: String) = execute(Variables(id = id))
 
-    fun Query<Response, Variables>.subscribe(id: String) = subscribe(Variables(id = id))
+    fun QueryRef<Response, Variables>.subscribe(id: String) = subscribe(Variables(id = id))
 
     suspend fun QuerySubscription<Response, Variables>.update(id: String) =
       update(Variables(id = id))
@@ -124,10 +120,6 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     data class Response(val people: List<Person>) {
       @Serializable data class Person(val id: String, val name: String, val age: Int?)
     }
-
-    suspend fun Query<Response, Unit>.execute() = execute(Unit)
-
-    fun Query<Response, Unit>.subscribe() = subscribe(Unit)
   }
 
   val getAllPeople =

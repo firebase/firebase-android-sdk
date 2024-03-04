@@ -19,7 +19,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreateDefaultPersonMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
 import kotlinx.coroutines.*

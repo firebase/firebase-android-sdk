@@ -13,7 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
-import com.google.firebase.dataconnect.Mutation
+import com.google.firebase.dataconnect.MutationRef
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -51,7 +51,7 @@ data class CreatePostVariables(val data: PostData) {
   }
 }
 
-suspend fun Mutation<Unit, CreatePostVariables>.execute(id: String, content: String) =
+suspend fun MutationRef<Unit, CreatePostVariables>.execute(id: String, content: String) =
   execute(variablesFor(id = id, content = content))
 
 private fun variablesFor(id: String, content: String) =

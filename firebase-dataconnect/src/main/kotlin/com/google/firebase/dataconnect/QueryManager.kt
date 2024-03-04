@@ -43,13 +43,13 @@ internal class QueryManager(
       parentLogger = logger
     )
 
-  suspend fun <R, V> execute(query: Query<R, V>, variables: V): DataConnectQueryResult<R, V> =
+  suspend fun <R, V> execute(query: QueryRef<R, V>, variables: V): DataConnectQueryResult<R, V> =
     liveQueries
       .withLiveQuery(query, variables) { it.execute(query.responseDeserializer) }
       .toDataConnectQueryResult(query, variables)
 
   suspend fun <R, V> onResult(
-    query: Query<R, V>,
+    query: QueryRef<R, V>,
     variables: V,
     sinceSequenceNumber: Long?,
     executeQuery: Boolean,
@@ -395,7 +395,7 @@ private class LiveQueries(
     mutableMapOf<LiveQuery.Key, ReferenceCounted<LiveQuery>>()
 
   suspend fun <T, V, R> withLiveQuery(
-    query: Query<R, V>,
+    query: QueryRef<R, V>,
     variables: V,
     block: suspend (LiveQuery) -> T
   ): T {
@@ -409,7 +409,7 @@ private class LiveQueries(
   }
 
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
-  private fun <R, V> acquireLiveQuery(query: Query<R, V>, variables: V): LiveQuery {
+  private fun <R, V> acquireLiveQuery(query: QueryRef<R, V>, variables: V): LiveQuery {
     val variablesStruct =
       if (query.variablesSerializer === DataConnectUntypedVariables.Serializer) {
         (variables as DataConnectUntypedVariables).variables.toStructProto()

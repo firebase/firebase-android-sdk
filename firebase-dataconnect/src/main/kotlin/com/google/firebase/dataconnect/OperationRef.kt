@@ -17,7 +17,7 @@ import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-public abstract class Reference<Response, Variables>
+public abstract class OperationRef<Response, Variables>
 internal constructor(
   public val dataConnect: FirebaseDataConnect,
   internal val operationName: String,
@@ -30,7 +30,7 @@ internal constructor(
     Objects.hash(dataConnect, operationName, responseDeserializer, variablesSerializer)
 
   override fun equals(other: Any?): Boolean =
-    (other as? Reference<*, *>)?.let {
+    (other as? OperationRef<*, *>)?.let {
       it.dataConnect == dataConnect &&
         it.operationName == operationName &&
         it.responseDeserializer == responseDeserializer &&
@@ -39,7 +39,7 @@ internal constructor(
       ?: false
 
   override fun toString(): String =
-    "Reference(" +
+    "OperationRef(" +
       "dataConnect=$dataConnect, " +
       "operationName=$operationName, " +
       "responseDeserializer=$responseDeserializer, " +

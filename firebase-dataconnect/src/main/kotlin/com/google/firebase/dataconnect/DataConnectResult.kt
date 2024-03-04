@@ -23,7 +23,7 @@ private constructor(
   protected constructor(
     data: Response,
     variables: Variables,
-    ref: Reference<Response, Variables>,
+    ref: OperationRef<Response, Variables>,
     sequenceNumber: Long,
   ) : this(Impl(data = data, variables = variables, ref = ref), sequenceNumber)
 
@@ -32,7 +32,7 @@ private constructor(
   public val variables: Variables
     get() = impl.variables
 
-  public abstract val ref: Reference<Response, Variables>
+  public abstract val ref: OperationRef<Response, Variables>
 
   override fun hashCode(): Int = impl.hashCode()
 
@@ -44,7 +44,7 @@ private constructor(
   private data class Impl<Response, Variables>(
     val data: Response,
     val variables: Variables,
-    val ref: Reference<Response, Variables>
+    val ref: OperationRef<Response, Variables>
   )
 }
 
@@ -52,7 +52,7 @@ public class DataConnectQueryResult<Response, Variables>
 internal constructor(
   data: Response,
   variables: Variables,
-  query: Query<Response, Variables>,
+  query: QueryRef<Response, Variables>,
   sequenceNumber: Long
 ) :
   DataConnectResult<Response, Variables>(
@@ -61,7 +61,7 @@ internal constructor(
     ref = query,
     sequenceNumber = sequenceNumber
   ) {
-  override val ref: Query<Response, Variables> = query
+  override val ref: QueryRef<Response, Variables> = query
 
   override fun hashCode(): Int = Objects.hash("Query", super.hashCode())
   override fun equals(other: Any?): Boolean =
@@ -73,7 +73,7 @@ public class DataConnectMutationResult<Response, Variables>
 internal constructor(
   data: Response,
   variables: Variables,
-  mutation: Mutation<Response, Variables>,
+  mutation: MutationRef<Response, Variables>,
   sequenceNumber: Long
 ) :
   DataConnectResult<Response, Variables>(
@@ -82,7 +82,7 @@ internal constructor(
     ref = mutation,
     sequenceNumber = sequenceNumber
   ) {
-  override val ref: Mutation<Response, Variables> = mutation
+  override val ref: MutationRef<Response, Variables> = mutation
 
   override fun hashCode(): Int = Objects.hash("Mutation", super.hashCode())
   override fun equals(other: Any?): Boolean =

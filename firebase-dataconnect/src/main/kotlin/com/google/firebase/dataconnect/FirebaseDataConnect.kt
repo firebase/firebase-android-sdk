@@ -116,7 +116,7 @@ internal constructor(
       )
     }
 
-  internal suspend fun <R, V> executeMutation(mutation: Mutation<R, V>, variables: V) =
+  internal suspend fun <R, V> executeMutation(mutation: MutationRef<R, V>, variables: V) =
     executeMutation(mutation, variables, requestId = Random.nextAlphanumericString())
 
   public fun useEmulator(host: String = "10.0.2.2", port: Int = 9510): Unit = runBlocking {
@@ -131,7 +131,7 @@ internal constructor(
   }
 
   private suspend fun <R, V> executeMutation(
-    mutation: Mutation<R, V>,
+    mutation: MutationRef<R, V>,
     variables: V,
     requestId: String
   ) =
@@ -254,8 +254,8 @@ public fun <Response, Variables> FirebaseDataConnect.query(
   operationName: String,
   responseDeserializer: DeserializationStrategy<Response>,
   variablesSerializer: SerializationStrategy<Variables>,
-): Query<Response, Variables> =
-  Query(
+): QueryRef<Response, Variables> =
+  QueryRef(
     dataConnect = this,
     operationName = operationName,
     responseDeserializer = responseDeserializer,
@@ -266,8 +266,8 @@ public fun <Response, Variables> FirebaseDataConnect.mutation(
   operationName: String,
   responseDeserializer: DeserializationStrategy<Response>,
   variablesSerializer: SerializationStrategy<Variables>,
-): Mutation<Response, Variables> =
-  Mutation(
+): MutationRef<Response, Variables> =
+  MutationRef(
     dataConnect = this,
     operationName = operationName,
     responseDeserializer = responseDeserializer,

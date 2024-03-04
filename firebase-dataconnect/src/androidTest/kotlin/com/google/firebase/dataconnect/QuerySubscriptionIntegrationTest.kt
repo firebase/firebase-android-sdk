@@ -471,7 +471,7 @@ class QuerySubscriptionIntegrationTest {
    * variables. Suspends until the first result has been collected. This effectively ensures that
    * the cache for the query with the given variables never gets garbage collected.
    */
-  private suspend fun <V> TestScope.keepCacheAlive(query: Query<*, V>, variables: V) {
+  private suspend fun <V> TestScope.keepCacheAlive(query: QueryRef<*, V>, variables: V) {
     val cachePrimed = MutableStateFlow(false)
     backgroundScope.launch {
       query.subscribe(variables).resultFlow.onEach { cachePrimed.value = true }.collect()

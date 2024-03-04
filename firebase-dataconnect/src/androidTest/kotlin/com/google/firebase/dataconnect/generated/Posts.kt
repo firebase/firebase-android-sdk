@@ -17,8 +17,8 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.Mutation
-import com.google.firebase.dataconnect.Query
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import kotlinx.serialization.serializer
@@ -46,7 +46,7 @@ class PostsOperationSet(
   // expected, since the cache key of query results includes the serializer references, compared
   // using referential equality. If [serializer()] was documented to guarantee that it always
   // returns the same instance, then this singleton-ness would not be necessary.
-  val createPost: Mutation<Unit, CreatePostVariables> by lazy {
+  val createPost: MutationRef<Unit, CreatePostVariables> by lazy {
     dataConnect.mutation(
       operationName = "createPost",
       responseDeserializer = serializer(),
@@ -59,7 +59,7 @@ class PostsOperationSet(
   // expected, since the cache key of query results includes the serializer references, compared
   // using referential equality. If [serializer()] was documented to guarantee that it always
   // returns the same instance, then this singleton-ness would not be necessary.
-  val createComment: Mutation<Unit, CreateCommentVariables> by lazy {
+  val createComment: MutationRef<Unit, CreateCommentVariables> by lazy {
     dataConnect.mutation(
       operationName = "createComment",
       responseDeserializer = serializer(),
@@ -72,7 +72,7 @@ class PostsOperationSet(
   // expected, since the cache key of query results includes the serializer references, compared
   // using referential equality. If [serializer()] was documented to guarantee that it always
   // returns the same instance, then this singleton-ness would not be necessary.
-  val getPost: Query<GetPostResponse, GetPostVariables> by lazy {
+  val getPost: QueryRef<GetPostResponse, GetPostVariables> by lazy {
     dataConnect.query(
       operationName = "getPost",
       responseDeserializer = serializer(),
