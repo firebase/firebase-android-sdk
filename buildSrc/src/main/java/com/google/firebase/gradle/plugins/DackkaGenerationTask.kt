@@ -153,7 +153,6 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
                       "docRootPath" to "/docs/reference/",
                       "javaDocsPath" to "android",
                       "kotlinDocsPath" to "kotlin",
-                      "packagePrefixToRemoveInToc" to "com.google",
                       "projectPath" to "client/${clientName.get()}",
                       "includedHeadTagsPathJava" to
                         "docs/reference/android/_reference-head-tags.html",

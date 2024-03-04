@@ -23,6 +23,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import com.google.firebase.sessions.InstallationId
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -30,7 +31,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.tasks.await
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -73,8 +73,8 @@ internal class RemoteSettings(
       }
 
       // Get the installations ID before making a remote config fetch.
-      val installationId = firebaseInstallationsApi.id.await()
-      if (installationId == null) {
+      val installationId = InstallationId.create(firebaseInstallationsApi).fid
+      if (installationId == "") {
         Log.w(TAG, "Error getting Firebase Installation ID. Skipping this Session Event.")
         return
       }
@@ -87,7 +87,7 @@ internal class RemoteSettings(
             removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
           "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
           "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
-          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
+          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion,
         )
 
       Log.d(TAG, "Fetching settings from server.")
@@ -138,7 +138,7 @@ internal class RemoteSettings(
         onFailure = { msg ->
           // Network request failed here.
           Log.e(TAG, "Error failing to fetch the remote configs: $msg")
-        }
+        },
       )
     }
   }
