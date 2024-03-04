@@ -260,7 +260,6 @@ message QosTiersOverride {
 }
 
 message ExperimentIds {
-    // TODO(rlazo): CHANGE THIS
     bytes clear_blob = 1;
 
     bytes encrypted_blob = 2;
