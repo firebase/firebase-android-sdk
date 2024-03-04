@@ -349,7 +349,6 @@ public final class FirebaseRemoteConfigTest {
             listeners,
             mockRetryListener,
             scheduledExecutorService);
-    configAutoFetch.setInBackground(false);
     realtimeMetadataClient =
         new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
@@ -1305,7 +1304,9 @@ public final class FirebaseRemoteConfigTest {
     doReturn(Tasks.forResult(mockHttpURLConnection))
         .when(configRealtimeHttpClientSpy)
         .createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(301);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1324,7 +1325,9 @@ public final class FirebaseRemoteConfigTest {
         .createRealtimeConnection();
     doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1341,7 +1344,9 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1358,7 +1363,9 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
     int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStreams();
 
@@ -1375,7 +1382,9 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
     Date backoffDate = configRealtimeHttpClientSpy.getBackoffEndTime();
 
@@ -1394,7 +1403,9 @@ public final class FirebaseRemoteConfigTest {
         .createRealtimeConnection();
     doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStreams();
 
@@ -1413,7 +1424,9 @@ public final class FirebaseRemoteConfigTest {
         .createRealtimeConnection();
     doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     Date backoffDate = configRealtimeHttpClientSpy.getBackoffEndTime();
 
@@ -1429,7 +1442,9 @@ public final class FirebaseRemoteConfigTest {
     doReturn(Tasks.forResult(mockHttpURLConnection))
         .when(configRealtimeHttpClientSpy)
         .createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getErrorStream())
         .thenReturn(
             new ByteArrayInputStream(FORBIDDEN_ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8)));
@@ -1450,7 +1465,9 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     flushScheduledTasks();
@@ -1517,29 +1534,9 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-
     configAutoFetch.listenForNotifications();
 
     verify(mockHttpURLConnection).disconnect();
-  }
-
-  @Test
-  public void realtime_stream_listen_backgrounded_disconnects() throws Exception {
-    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpURLConnection.getInputStream())
-        .thenReturn(
-            new ByteArrayInputStream(
-                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 } }"
-                    .getBytes(StandardCharsets.UTF_8)));
-    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
-            ConfigFetchHandler.FetchType.REALTIME, 1))
-        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-
-    configAutoFetch.listenForNotifications();
-    frc.setConfigUpdateBackgroundState(true);
-
-    verify(mockHttpURLConnection, times(1)).disconnect();
   }
 
   @Test
