@@ -28,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
+import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.serializer
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -346,6 +348,32 @@ class FirebaseDataConnectIntegrationTest {
     assertThat(toStringResult).containsWithNonAdjacentText("connector=TestConnector")
     assertThat(toStringResult).containsWithNonAdjacentText("location=TestLocation")
     assertThat(toStringResult).containsWithNonAdjacentText("service=TestService")
+  }
+
+  @Test
+  fun useEmulator_should_set_the_emulator_host() = runTest {
+    val app = firebaseAppFactory.newInstance()
+    val config = ConnectorConfig(connector = "crud", location = "TestLocation", service = "local")
+    val settings = DataConnectSettings(host = "host_from_settings")
+    val dataConnect = FirebaseDataConnect.getInstance(app, config, settings)
+
+    dataConnect.useEmulator()
+
+    // Verify that we can successfully execute a query; if the emulator settings did _not_ get used
+    // then the query execution will fail with an exception, which will fail this test case.
+    dataConnect.query("listPosts", DataConnectUntypedResponse, serializer<Unit>()).execute(Unit)
+  }
+
+  @Test
+  fun useEmulator_should_throw_if_invoked_too_late() = runTest {
+    val app = firebaseAppFactory.newInstance()
+    val config = ConnectorConfig(connector = "crud", location = "TestLocation", service = "local")
+    val settings = DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
+    val dataConnect = FirebaseDataConnect.getInstance(app, config, settings)
+    dataConnect.query("listPosts", DataConnectUntypedResponse, serializer<Unit>()).execute(Unit)
+
+    val exception = assertThrows(IllegalStateException::class.java) { dataConnect.useEmulator() }
+    assertThat(exception).hasMessageThat().ignoringCase().contains("already been initialized")
   }
 }
 

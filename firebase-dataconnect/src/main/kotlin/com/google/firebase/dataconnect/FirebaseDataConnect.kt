@@ -63,8 +63,11 @@ internal constructor(
   private val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
   private val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
 
-  // Protects `closed`, `grpcClient`, and `queryManager`.
+  // Protects `closed`, `grpcClient`, `emulatorSettings`, and `queryManager`.
   private val mutex = Mutex()
+
+  // All accesses to this variable _must_ have locked `mutex`.
+  private var emulatorSettings: EmulatedServiceSettings? = null
 
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
@@ -72,14 +75,30 @@ internal constructor(
   private val lazyGrpcClient =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+
+      val hostAndPortFromSettings = Pair(settings.host, settings.sslEnabled)
+      val hostAndPortFromEmulatorSettings = emulatorSettings?.run { Pair("$host:$port", false) }
+      val (host, sslEnabled) =
+        if (hostAndPortFromEmulatorSettings == null) {
+          hostAndPortFromSettings
+        } else {
+          if (!settings.isDefaultHost()) {
+            logger.warn(
+              "Host has been set in DataConnectSettings and useEmulator, " +
+                "emulator host will be used."
+            )
+          }
+          hostAndPortFromEmulatorSettings
+        }
+
       DataConnectGrpcClient(
         context = context,
         projectId = projectId,
         connector = config.connector,
         location = config.location,
         service = config.service,
-        host = settings.host,
-        sslEnabled = settings.sslEnabled,
+        host = host,
+        sslEnabled = sslEnabled,
         blockingExecutor = blockingExecutor,
         parentLogger = logger,
       )
@@ -99,6 +118,17 @@ internal constructor(
 
   internal suspend fun <R, V> executeMutation(mutation: Mutation<R, V>, variables: V) =
     executeMutation(mutation, variables, requestId = Random.nextAlphanumericString())
+
+  public fun useEmulator(host: String = "10.0.2.2", port: Int = 9510): Unit = runBlocking {
+    mutex.withLock {
+      if (lazyGrpcClient.initializedValueOrNull != null) {
+        throw IllegalStateException(
+          "Cannot call useEmulator() after instance has already been initialized."
+        )
+      }
+      emulatorSettings = EmulatedServiceSettings(host = host, port = port)
+    }
+  }
 
   private suspend fun <R, V> executeMutation(
     mutation: Mutation<R, V>,
@@ -178,6 +208,8 @@ internal constructor(
 
   override fun toString(): String =
     "FirebaseDataConnect(app=${app.name}, projectId=$projectId, config=$config, settings=$settings)"
+
+  private data class EmulatedServiceSettings(val host: String, val port: Int)
 
   public companion object {
     @SuppressLint("FirebaseUseExplicitDependencies")
@@ -287,6 +319,8 @@ public class DataConnectSettings(
 
   override fun toString(): String = "DataConnectSettings(host=$host, sslEnabled=$sslEnabled)"
 }
+
+internal fun DataConnectSettings.isDefaultHost() = host == DataConnectSettings().host
 
 public open class DataConnectException
 internal constructor(message: String, cause: Throwable? = null) : Exception(message, cause)
