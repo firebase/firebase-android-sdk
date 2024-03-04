@@ -60,7 +60,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -301,11 +300,16 @@ final class CctTransportBackend implements TransportBackend {
         if (eventInternal.getCookieOverride() != null) {
           event.setZwiebackCookieOverride(eventInternal.getCookieOverride());
         }
-        // TODO(rlazo): read actual values for these
-        event.setExperimentIds(
-            ExperimentIds.builder()
-                .setClearBlob("clearblob".getBytes(StandardCharsets.UTF_8))
-                .build());
+
+        if (eventInternal.getExperimentIdsClear() != null
+            || eventInternal.getExperimentIdsEncrypted() != null) {
+          event.setExperimentIds(
+              ExperimentIds.builder()
+                  .setClearBlob(eventInternal.getExperimentIdsClear())
+                  .setEncryptedBlob(eventInternal.getExperimentIdsEncrypted())
+                  .build());
+        }
+
         logEvents.add(event.build());
       }
       requestBuilder.setLogEvents(logEvents);

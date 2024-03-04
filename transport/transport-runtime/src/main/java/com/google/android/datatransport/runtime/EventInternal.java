@@ -38,13 +38,21 @@ public abstract class EventInternal {
 
   public abstract long getUptimeMillis();
 
-  @Nullable
-  public abstract String getCookieOverride();
-
   protected abstract Map<String, String> getAutoMetadata();
 
   @Nullable
   public abstract Integer getProductId();
+
+  @Nullable
+  public abstract String getCookieOverride();
+
+  @Nullable
+  @SuppressWarnings("mutable")
+  public abstract byte[] getExperimentIdsClear();
+
+  @Nullable
+  @SuppressWarnings("mutable")
+  public abstract byte[] getExperimentIdsEncrypted();
 
   public final Map<String, String> getMetadata() {
     return Collections.unmodifiableMap(getAutoMetadata());
@@ -75,6 +83,9 @@ public abstract class EventInternal {
         .setTransportName(getTransportName())
         .setCode(getCode())
         .setProductId(getProductId())
+        .setCookieOverride(getCookieOverride())
+        .setExperimentIdsClear(getExperimentIdsClear())
+        .setExperimentIdsEncrypted(getExperimentIdsEncrypted())
         .setEncodedPayload(getEncodedPayload())
         .setEventMillis(getEventMillis())
         .setUptimeMillis(getUptimeMillis())
@@ -102,6 +113,10 @@ public abstract class EventInternal {
     public abstract Builder setProductId(Integer value);
 
     public abstract Builder setCookieOverride(String value);
+
+    public abstract Builder setExperimentIdsClear(byte[] value);
+
+    public abstract Builder setExperimentIdsEncrypted(byte[] value);
 
     protected abstract Map<String, String> getAutoMetadata();
 
