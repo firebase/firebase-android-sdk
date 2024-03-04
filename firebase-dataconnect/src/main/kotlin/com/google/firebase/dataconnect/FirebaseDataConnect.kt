@@ -227,6 +227,12 @@ internal constructor(
       settings: DataConnectSettings? = null
     ): FirebaseDataConnect = getInstance(app = Firebase.app, config = config, settings = settings)
 
+    public var logLevel: LogLevel
+      get() = com.google.firebase.dataconnect.logLevel
+      set(newLogLevel) {
+        com.google.firebase.dataconnect.logLevel = newLogLevel
+      }
+
     private fun MutableStateFlow<Result<Unit>?>.clearResultUnlessSuccess() {
       while (true) {
         val oldValue = value

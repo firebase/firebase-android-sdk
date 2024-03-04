@@ -18,12 +18,11 @@ import kotlin.random.Random
 
 public enum class LogLevel {
   DEBUG,
-  INFO,
-  WARNING,
-  ERROR,
+  WARN,
+  NONE,
 }
 
-@Volatile public var logLevel: LogLevel = LogLevel.INFO
+@Volatile internal var logLevel: LogLevel = LogLevel.WARN
 
 internal interface Logger {
   val name: String
@@ -41,20 +40,12 @@ internal fun Logger.debug(message: String) {
   if (logLevel <= LogLevel.DEBUG) log(null, LogLevel.DEBUG, message)
 }
 
-internal inline fun Logger.info(message: () -> Any?) {
-  if (logLevel <= LogLevel.INFO) info("${message()}")
-}
-
-internal fun Logger.info(message: String) {
-  if (logLevel <= LogLevel.INFO) log(null, LogLevel.INFO, message)
-}
-
 internal inline fun Logger.warn(message: () -> Any?) {
-  if (logLevel <= LogLevel.WARNING) warn("${message()}")
+  if (logLevel <= LogLevel.WARN) warn("${message()}")
 }
 
 internal inline fun Logger.warn(exception: Throwable?, message: () -> Any?) {
-  if (logLevel <= LogLevel.WARNING) warn(exception, "${message()}")
+  if (logLevel <= LogLevel.WARN) warn(exception, "${message()}")
 }
 
 internal fun Logger.warn(message: String) {
@@ -62,15 +53,7 @@ internal fun Logger.warn(message: String) {
 }
 
 internal fun Logger.warn(exception: Throwable?, message: String) {
-  if (logLevel <= LogLevel.WARNING) log(exception, LogLevel.WARNING, message)
-}
-
-internal fun Logger.error(message: String) {
-  error(null, message)
-}
-
-internal fun Logger.error(exception: Throwable?, message: String) {
-  log(exception, LogLevel.ERROR, message)
+  if (logLevel <= LogLevel.WARN) log(exception, LogLevel.WARN, message)
 }
 
 internal fun Logger(name: String): Logger = LoggerImpl(name)
@@ -88,9 +71,8 @@ private class LoggerImpl(override val name: String) : Logger {
     val fullMessage = "$nameWithId $message"
     when (level) {
       LogLevel.DEBUG -> Log.d(LOG_TAG, fullMessage, exception)
-      LogLevel.INFO -> Log.i(LOG_TAG, fullMessage, exception)
-      LogLevel.WARNING -> Log.w(LOG_TAG, fullMessage, exception)
-      LogLevel.ERROR -> Log.e(LOG_TAG, fullMessage, exception)
+      LogLevel.WARN -> Log.w(LOG_TAG, fullMessage, exception)
+      LogLevel.NONE -> {}
     }
   }
 }
