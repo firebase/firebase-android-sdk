@@ -13,8 +13,11 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.dataconnect.DataConnectMutationResult
 import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.mutation
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 
 @Serializable
 data class CreatePostVariables(val data: PostData) {
@@ -51,8 +54,28 @@ data class CreatePostVariables(val data: PostData) {
   }
 }
 
-suspend fun MutationRef<Unit, CreatePostVariables>.execute(id: String, content: String) =
-  execute(variablesFor(id = id, content = content))
+fun PostsOperationSet.Mutations.createPost(
+  variables: CreatePostVariables
+): MutationRef<Unit, CreatePostVariables> =
+  operationSet.dataConnect.mutation(
+    operationName = "createPost",
+    variables = variables,
+    responseDeserializer = serializer(),
+    variablesSerializer = serializer()
+  )
 
-private fun variablesFor(id: String, content: String) =
-  CreatePostVariables(data = CreatePostVariables.PostData(id = id, content = content))
+fun PostsOperationSet.Mutations.createPost(
+  id: String,
+  content: String
+): MutationRef<Unit, CreatePostVariables> =
+  createPost(CreatePostVariables(data = CreatePostVariables.PostData(id = id, content = content)))
+
+suspend fun PostsOperationSet.createPost(
+  variables: CreatePostVariables
+): DataConnectMutationResult<Unit, CreatePostVariables> = mutations.createPost(variables).execute()
+
+suspend fun PostsOperationSet.createPost(
+  id: String,
+  content: String
+): DataConnectMutationResult<Unit, CreatePostVariables> =
+  mutations.createPost(id = id, content = content).execute()

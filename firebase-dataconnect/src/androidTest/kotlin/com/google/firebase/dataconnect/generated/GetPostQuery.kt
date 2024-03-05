@@ -13,9 +13,12 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.dataconnect.DataConnectQueryResult
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QuerySubscription
+import com.google.firebase.dataconnect.query
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 
 @Serializable
 data class GetPostResponse(val post: Post?) {
@@ -41,18 +44,33 @@ data class GetPostVariables(val id: String) {
   }
 }
 
-typealias GetPostQuery = QuerySubscription<GetPostResponse, GetPostVariables>
+fun PostsOperationSet.Queries.getPost(
+  variables: GetPostVariables
+): QueryRef<GetPostResponse, GetPostVariables> =
+  operationSet.dataConnect.query(
+    operationName = "getPost",
+    variables = variables,
+    responseDeserializer = serializer(),
+    variablesSerializer = serializer()
+  )
 
-typealias GetPostQuerySubscription = QuerySubscription<GetPostResponse, GetPostVariables>
+fun PostsOperationSet.Queries.getPost(id: String): QueryRef<GetPostResponse, GetPostVariables> =
+  getPost(GetPostVariables(id = id))
 
-suspend fun QueryRef<GetPostResponse, GetPostVariables>.execute(id: String) =
-  execute(variablesFor(id = id))
+suspend fun PostsOperationSet.getPost(
+  variables: GetPostVariables
+): DataConnectQueryResult<GetPostResponse, GetPostVariables> = queries.getPost(variables).execute()
 
-fun QueryRef<GetPostResponse, GetPostVariables>.subscribe(id: String) =
-  subscribe(variablesFor(id = id))
+suspend fun PostsOperationSet.getPost(
+  id: String
+): DataConnectQueryResult<GetPostResponse, GetPostVariables> = queries.getPost(id = id).execute()
 
-suspend fun QuerySubscription<GetPostResponse, GetPostVariables>.update(
-  block: GetPostVariables.Builder.() -> Unit
-) = update(variables.build(block))
+fun PostsOperationSet.Subscriptions.getPost(
+  variables: GetPostVariables
+): QuerySubscription<GetPostResponse, GetPostVariables> =
+  operationSet.queries.getPost(variables).subscribe()
 
-private fun variablesFor(id: String) = GetPostVariables(id = id)
+fun PostsOperationSet.Subscriptions.getPost(
+  id: String
+): QuerySubscription<GetPostResponse, GetPostVariables> =
+  operationSet.queries.getPost(id = id).subscribe()

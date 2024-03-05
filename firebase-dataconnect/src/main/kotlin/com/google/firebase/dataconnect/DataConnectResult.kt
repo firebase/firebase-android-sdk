@@ -16,78 +16,39 @@ package com.google.firebase.dataconnect
 import java.util.Objects
 
 public sealed class DataConnectResult<Response, Variables>
-private constructor(
-  private val impl: Impl<Response, Variables>,
-  internal val sequenceNumber: Long
-) {
-  protected constructor(
-    data: Response,
-    variables: Variables,
-    ref: OperationRef<Response, Variables>,
-    sequenceNumber: Long,
-  ) : this(Impl(data = data, variables = variables, ref = ref), sequenceNumber)
-
-  public val data: Response
-    get() = impl.data
-  public val variables: Variables
-    get() = impl.variables
-
+protected constructor(public val data: Response, internal val sequenceNumber: Long) {
   public abstract val ref: OperationRef<Response, Variables>
-
-  override fun hashCode(): Int = impl.hashCode()
-
-  override fun equals(other: Any?): Boolean =
-    (other is DataConnectResult<*, *>) && other.impl == impl
-
-  override fun toString(): String = "DataConnectResult(data=$data, variables=$variables)"
-
-  private data class Impl<Response, Variables>(
-    val data: Response,
-    val variables: Variables,
-    val ref: OperationRef<Response, Variables>
-  )
 }
 
 public class DataConnectQueryResult<Response, Variables>
-internal constructor(
-  data: Response,
-  variables: Variables,
-  query: QueryRef<Response, Variables>,
-  sequenceNumber: Long
-) :
-  DataConnectResult<Response, Variables>(
-    data = data,
-    variables = variables,
-    ref = query,
-    sequenceNumber = sequenceNumber
-  ) {
+internal constructor(data: Response, query: QueryRef<Response, Variables>, sequenceNumber: Long) :
+  DataConnectResult<Response, Variables>(data = data, sequenceNumber = sequenceNumber) {
+
   override val ref: QueryRef<Response, Variables> = query
 
-  override fun hashCode(): Int = Objects.hash("Query", super.hashCode())
+  override fun hashCode(): Int = Objects.hash("Query", data, ref)
+
   override fun equals(other: Any?): Boolean =
-    (other is DataConnectQueryResult<*, *>) && super.equals(other)
-  override fun toString(): String = "DataConnectQueryResult(data=$data, variables=$variables)"
+    other is DataConnectQueryResult<*, *> && other.data == data && other.ref == ref
+
+  override fun toString(): String = "DataConnectQueryResult(data=$data, query=$ref)"
 }
 
 public class DataConnectMutationResult<Response, Variables>
 internal constructor(
   data: Response,
-  variables: Variables,
   mutation: MutationRef<Response, Variables>,
   sequenceNumber: Long
-) :
-  DataConnectResult<Response, Variables>(
-    data = data,
-    variables = variables,
-    ref = mutation,
-    sequenceNumber = sequenceNumber
-  ) {
+) : DataConnectResult<Response, Variables>(data = data, sequenceNumber = sequenceNumber) {
+
   override val ref: MutationRef<Response, Variables> = mutation
 
-  override fun hashCode(): Int = Objects.hash("Mutation", super.hashCode())
+  override fun hashCode(): Int = Objects.hash("Mutation", data, ref)
+
   override fun equals(other: Any?): Boolean =
-    (other is DataConnectMutationResult<*, *>) && super.equals(other)
-  override fun toString(): String = "DataConnectMutationResult(data=$data, variables=$variables)"
+    other is DataConnectMutationResult<*, *> && other.data == data && other.ref == ref
+
+  override fun toString(): String = "DataConnectMutationResult(data=$data, mutation=$ref)"
 }
 
 // See https://spec.graphql.org/draft/#sec-Errors

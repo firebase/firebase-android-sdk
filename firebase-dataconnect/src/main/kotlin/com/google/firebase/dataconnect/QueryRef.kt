@@ -21,20 +21,21 @@ public class QueryRef<Response, Variables>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
+  variables: Variables,
   responseDeserializer: DeserializationStrategy<Response>,
   variablesSerializer: SerializationStrategy<Variables>,
 ) :
   OperationRef<Response, Variables>(
     dataConnect = dataConnect,
     operationName = operationName,
+    variables = variables,
     responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
   ) {
-  override suspend fun execute(variables: Variables): DataConnectQueryResult<Response, Variables> =
-    dataConnect.lazyQueryManager.get().execute(this, variables)
+  override suspend fun execute(): DataConnectQueryResult<Response, Variables> =
+    dataConnect.lazyQueryManager.get().execute(this)
 
-  public fun subscribe(variables: Variables): QuerySubscription<Response, Variables> =
-    QuerySubscription(this, variables)
+  public fun subscribe(): QuerySubscription<Response, Variables> = QuerySubscription(this)
 
   override fun hashCode(): Int = Objects.hash("Query", super.hashCode())
 
@@ -44,33 +45,64 @@ internal constructor(
     "Query(" +
       "dataConnect=$dataConnect, " +
       "operationName=$operationName, " +
+      "variables=$variables, " +
       "responseDeserializer=$responseDeserializer, " +
       "variablesSerializer=$variablesSerializer" +
       ")"
-
-  public fun <NewResponse> withResponseDeserializer(
-    newResponseDeserializer: DeserializationStrategy<NewResponse>
-  ): QueryRef<NewResponse, Variables> =
-    QueryRef(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      responseDeserializer = newResponseDeserializer,
-      variablesSerializer = variablesSerializer,
-    )
-
-  public fun <NewVariables> withVariablesSerializer(
-    newVariablesSerializer: SerializationStrategy<NewVariables>
-  ): QueryRef<Response, NewVariables> =
-    QueryRef(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      responseDeserializer = responseDeserializer,
-      variablesSerializer = newVariablesSerializer,
-    )
 }
 
-public suspend fun <Response> QueryRef<Response, Unit>.execute():
-  DataConnectQueryResult<Response, Unit> = execute(Unit)
+internal fun <NewResponse, Variables> QueryRef<*, Variables>.withResponseDeserializer(
+  deserializer: DeserializationStrategy<NewResponse>
+): QueryRef<NewResponse, Variables> =
+  QueryRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = deserializer,
+    variablesSerializer = variablesSerializer
+  )
 
-public fun <Response> QueryRef<Response, Unit>.subscribe(): QuerySubscription<Response, Unit> =
-  subscribe(Unit)
+internal fun <Response, Variables> QueryRef<Response, Variables>.withVariablesSerializer(
+  serializer: SerializationStrategy<Variables>
+): QueryRef<Response, Variables> =
+  QueryRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = serializer
+  )
+
+internal fun <Response, Variables> QueryRef<Response, Variables>.withVariables(
+  variables: Variables
+): QueryRef<Response, Variables> =
+  QueryRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = variablesSerializer
+  )
+
+internal fun <Response, NewVariables> QueryRef<Response, *>.withVariables(
+  variables: NewVariables,
+  serializer: SerializationStrategy<NewVariables>
+): QueryRef<Response, NewVariables> =
+  QueryRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = serializer
+  )
+
+internal fun <Response> QueryRef<Response, *>.withVariables(
+  variables: DataConnectUntypedVariables
+): MutationRef<Response, DataConnectUntypedVariables> =
+  MutationRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = DataConnectUntypedVariables
+  )

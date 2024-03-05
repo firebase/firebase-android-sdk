@@ -28,6 +28,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.serializer
 
 public class FirebaseDataConnect
 internal constructor(
@@ -116,8 +117,8 @@ internal constructor(
       )
     }
 
-  internal suspend fun <R, V> executeMutation(mutation: MutationRef<R, V>, variables: V) =
-    executeMutation(mutation, variables, requestId = Random.nextAlphanumericString())
+  internal suspend fun <R, V> executeMutation(mutation: MutationRef<R, V>) =
+    executeMutation(mutation, requestId = Random.nextAlphanumericString())
 
   public fun useEmulator(host: String = "10.0.2.2", port: Int = 9510): Unit = runBlocking {
     mutex.withLock {
@@ -130,11 +131,7 @@ internal constructor(
     }
   }
 
-  private suspend fun <R, V> executeMutation(
-    mutation: MutationRef<R, V>,
-    variables: V,
-    requestId: String
-  ) =
+  private suspend fun <R, V> executeMutation(mutation: MutationRef<R, V>, requestId: String) =
     lazyGrpcClient
       .get()
       .executeMutation(
@@ -143,9 +140,9 @@ internal constructor(
         operationName = mutation.operationName,
         variables =
           if (mutation.variablesSerializer === DataConnectUntypedVariables.Serializer)
-            (variables as DataConnectUntypedVariables).variables.toStructProto()
+            (mutation.variables as DataConnectUntypedVariables).variables.toStructProto()
           else {
-            encodeToStruct(mutation.variablesSerializer, variables)
+            encodeToStruct(mutation.variablesSerializer, mutation.variables)
           }
       )
       .runCatching {
@@ -155,7 +152,7 @@ internal constructor(
         logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
       }
       .getOrThrow()
-      .toDataConnectMutationResult(mutation, variables)
+      .toDataConnectMutationResult(mutation)
 
   private val closeResult = MutableStateFlow<Result<Unit>?>(null)
 
@@ -252,26 +249,52 @@ internal constructor(
 
 public fun <Response, Variables> FirebaseDataConnect.query(
   operationName: String,
+  variables: Variables,
   responseDeserializer: DeserializationStrategy<Response>,
   variablesSerializer: SerializationStrategy<Variables>,
 ): QueryRef<Response, Variables> =
   QueryRef(
     dataConnect = this,
     operationName = operationName,
+    variables = variables,
     responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
   )
 
+public fun <Response> FirebaseDataConnect.query(
+  operationName: String,
+  responseDeserializer: DeserializationStrategy<Response>
+): QueryRef<Response, Unit> =
+  query(
+    operationName = operationName,
+    variables = Unit,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = serializer()
+  )
+
 public fun <Response, Variables> FirebaseDataConnect.mutation(
   operationName: String,
+  variables: Variables,
   responseDeserializer: DeserializationStrategy<Response>,
   variablesSerializer: SerializationStrategy<Variables>,
 ): MutationRef<Response, Variables> =
   MutationRef(
     dataConnect = this,
     operationName = operationName,
+    variables = variables,
     responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
+  )
+
+public fun <Response> FirebaseDataConnect.mutation(
+  operationName: String,
+  responseDeserializer: DeserializationStrategy<Response>
+): MutationRef<Response, Unit> =
+  mutation(
+    operationName = operationName,
+    variables = Unit,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = serializer()
   )
 
 public class ConnectorConfig(connector: String, location: String, service: String) {

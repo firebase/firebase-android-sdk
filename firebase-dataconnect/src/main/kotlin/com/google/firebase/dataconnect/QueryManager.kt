@@ -43,25 +43,24 @@ internal class QueryManager(
       parentLogger = logger
     )
 
-  suspend fun <R, V> execute(query: QueryRef<R, V>, variables: V): DataConnectQueryResult<R, V> =
+  suspend fun <R, V> execute(query: QueryRef<R, V>): DataConnectQueryResult<R, V> =
     liveQueries
-      .withLiveQuery(query, variables) { it.execute(query.responseDeserializer) }
-      .toDataConnectQueryResult(query, variables)
+      .withLiveQuery(query) { it.execute(query.responseDeserializer) }
+      .toDataConnectQueryResult(query)
 
   suspend fun <R, V> onResult(
     query: QueryRef<R, V>,
-    variables: V,
     sinceSequenceNumber: Long?,
     executeQuery: Boolean,
     callback: suspend (DataConnectQueryResult<R, V>) -> Unit,
   ): Nothing =
-    liveQueries.withLiveQuery(query, variables) { liveQuery ->
+    liveQueries.withLiveQuery(query) { liveQuery ->
       liveQuery.onResult(
         query.responseDeserializer,
         sinceSequenceNumber = sinceSequenceNumber,
         executeQuery = executeQuery
       ) {
-        callback(it.toDataConnectQueryResult(query, variables))
+        callback(it.toDataConnectQueryResult(query))
       }
     }
 }
@@ -394,12 +393,8 @@ private class LiveQueries(
   private val referenceCountedLiveQueryByKey =
     mutableMapOf<LiveQuery.Key, ReferenceCounted<LiveQuery>>()
 
-  suspend fun <T, V, R> withLiveQuery(
-    query: QueryRef<R, V>,
-    variables: V,
-    block: suspend (LiveQuery) -> T
-  ): T {
-    val liveQuery = mutex.withLock { acquireLiveQuery(query, variables) }
+  suspend fun <T, V, R> withLiveQuery(query: QueryRef<R, V>, block: suspend (LiveQuery) -> T): T {
+    val liveQuery = mutex.withLock { acquireLiveQuery(query) }
 
     return try {
       block(liveQuery)
@@ -409,12 +404,12 @@ private class LiveQueries(
   }
 
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
-  private fun <R, V> acquireLiveQuery(query: QueryRef<R, V>, variables: V): LiveQuery {
+  private fun <R, V> acquireLiveQuery(query: QueryRef<R, V>): LiveQuery {
     val variablesStruct =
       if (query.variablesSerializer === DataConnectUntypedVariables.Serializer) {
-        (variables as DataConnectUntypedVariables).variables.toStructProto()
+        (query.variables as DataConnectUntypedVariables).variables.toStructProto()
       } else {
-        encodeToStruct(query.variablesSerializer, variables)
+        encodeToStruct(query.variablesSerializer, query.variables)
       }
     val variablesHash = variablesStruct.calculateSha512().toAlphaNumericString()
     val key = LiveQuery.Key(operationName = query.operationName, variablesHash = variablesHash)

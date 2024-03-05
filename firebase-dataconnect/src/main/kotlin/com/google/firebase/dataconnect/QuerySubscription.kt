@@ -17,9 +17,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 public class QuerySubscription<Response, Variables>
-internal constructor(internal val query: QueryRef<Response, Variables>, variables: Variables) {
-  private val _variables = MutableStateFlow(variables)
-  public val variables: Variables by _variables::value
+internal constructor(query: QueryRef<Response, Variables>) {
+  private val _query = MutableStateFlow(query)
+  public val query: QueryRef<Response, Variables> by _query::value
 
   private val _lastResult = MutableStateFlow<DataConnectQueryResult<Response, Variables>?>(null)
   public val lastResult: DataConnectQueryResult<Response, Variables>? by _lastResult::value
@@ -29,7 +29,7 @@ internal constructor(internal val query: QueryRef<Response, Variables>, variable
     val cachedResult = lastResult?.also { send(it) }
 
     var collectJob: Job? = null
-    _variables.collect { variables ->
+    _query.collect { query ->
       // We only need to execute the query upon initially collecting the flow. Subsequent changes to
       // the variables automatically get a call to reload() by update().
       val shouldExecuteQuery =
@@ -46,7 +46,6 @@ internal constructor(internal val query: QueryRef<Response, Variables>, variable
         val queryManager = query.dataConnect.lazyQueryManager.get()
         queryManager.onResult(
           query,
-          variables,
           sinceSequenceNumber = cachedResult?.sequenceNumber,
           executeQuery = shouldExecuteQuery
         ) {
@@ -59,12 +58,12 @@ internal constructor(internal val query: QueryRef<Response, Variables>, variable
 
   public suspend fun reload() {
     val queryManager = query.dataConnect.lazyQueryManager.get()
-    val result = queryManager.execute(query, variables)
+    val result = queryManager.execute(query)
     updateLastResult(result)
   }
 
   public suspend fun update(variables: Variables) {
-    _variables.value = variables
+    _query.value = _query.value.withVariables(variables)
     reload()
   }
 

@@ -250,23 +250,9 @@ internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
 }
 
 internal fun <D, V> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectMutationResult(
-  mutation: MutationRef<D, V>,
-  variables: V
-) =
-  DataConnectMutationResult(
-    data = data,
-    variables = variables,
-    mutation = mutation,
-    sequenceNumber = sequenceNumber
-  )
+  mutation: MutationRef<D, V>
+) = DataConnectMutationResult(data = data, mutation = mutation, sequenceNumber = sequenceNumber)
 
 internal fun <D, V> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectQueryResult(
-  query: QueryRef<D, V>,
-  variables: V
-) =
-  DataConnectQueryResult(
-    data = data,
-    variables = variables,
-    query = query,
-    sequenceNumber = sequenceNumber
-  )
+  query: QueryRef<D, V>
+) = DataConnectQueryResult(data = data, query = query, sequenceNumber = sequenceNumber)

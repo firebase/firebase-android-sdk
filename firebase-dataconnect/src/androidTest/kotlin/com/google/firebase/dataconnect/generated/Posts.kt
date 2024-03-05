@@ -17,66 +17,34 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.mutation
-import com.google.firebase.dataconnect.query
-import kotlinx.serialization.serializer
 
-class PostsOperationSet(
-  app: FirebaseApp,
-  service: String,
-  location: String,
-  settings: DataConnectSettings,
-) {
+class PostsOperationSet(val dataConnect: FirebaseDataConnect) {
 
-  val dataConnect: FirebaseDataConnect =
-    FirebaseDataConnect.getInstance(
-      app,
-      ConnectorConfig(
-        connector = "crud",
-        location = location,
-        service = service,
-      ),
-      settings
-    )
+  class Mutations internal constructor(val operationSet: PostsOperationSet)
 
-  // Use `lazy` to ensure that there is only one instance of the [QueryRef] so that the serializer
-  // instances encapsulated therein are also singletons. This ensures that query caching works as
-  // expected, since the cache key of query results includes the serializer references, compared
-  // using referential equality. If [serializer()] was documented to guarantee that it always
-  // returns the same instance, then this singleton-ness would not be necessary.
-  val createPost: MutationRef<Unit, CreatePostVariables> by lazy {
-    dataConnect.mutation(
-      operationName = "createPost",
-      responseDeserializer = serializer(),
-      variablesSerializer = serializer(),
-    )
-  }
+  val mutations = Mutations(this)
 
-  // Use `lazy` to ensure that there is only one instance of the [QueryRef] so that the serializer
-  // instances encapsulated therein are also singletons. This ensures that query caching works as
-  // expected, since the cache key of query results includes the serializer references, compared
-  // using referential equality. If [serializer()] was documented to guarantee that it always
-  // returns the same instance, then this singleton-ness would not be necessary.
-  val createComment: MutationRef<Unit, CreateCommentVariables> by lazy {
-    dataConnect.mutation(
-      operationName = "createComment",
-      responseDeserializer = serializer(),
-      variablesSerializer = serializer(),
-    )
-  }
+  class Queries internal constructor(val operationSet: PostsOperationSet)
 
-  // Use `lazy` to ensure that there is only one instance of the [QueryRef] so that the serializer
-  // instances encapsulated therein are also singletons. This ensures that query caching works as
-  // expected, since the cache key of query results includes the serializer references, compared
-  // using referential equality. If [serializer()] was documented to guarantee that it always
-  // returns the same instance, then this singleton-ness would not be necessary.
-  val getPost: QueryRef<GetPostResponse, GetPostVariables> by lazy {
-    dataConnect.query(
-      operationName = "getPost",
-      responseDeserializer = serializer(),
-      variablesSerializer = serializer(),
-    )
+  val queries = Queries(this)
+
+  class Subscriptions internal constructor(val operationSet: PostsOperationSet)
+
+  val subscriptions = Subscriptions(this)
+
+  companion object {
+    val config = ConnectorConfig(connector = "crud", location = "foo", service = "local")
+
+    val instance
+      get() = PostsOperationSet(FirebaseDataConnect.Companion.getInstance(config))
+
+    fun getInstance(app: FirebaseApp) =
+      PostsOperationSet(FirebaseDataConnect.Companion.getInstance(app, config))
+
+    fun getInstance(settings: DataConnectSettings) =
+      PostsOperationSet(FirebaseDataConnect.Companion.getInstance(config, settings))
+
+    fun getInstance(app: FirebaseApp, settings: DataConnectSettings) =
+      PostsOperationSet(FirebaseDataConnect.Companion.getInstance(app, config, settings))
   }
 }

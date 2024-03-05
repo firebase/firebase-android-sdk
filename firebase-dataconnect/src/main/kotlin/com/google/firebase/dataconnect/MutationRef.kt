@@ -21,18 +21,19 @@ public class MutationRef<Response, Variables>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
+  variables: Variables,
   responseDeserializer: DeserializationStrategy<Response>,
   variablesSerializer: SerializationStrategy<Variables>,
 ) :
   OperationRef<Response, Variables>(
     dataConnect = dataConnect,
     operationName = operationName,
+    variables = variables,
     responseDeserializer = responseDeserializer,
     variablesSerializer = variablesSerializer,
   ) {
-  override suspend fun execute(
-    variables: Variables
-  ): DataConnectMutationResult<Response, Variables> = dataConnect.executeMutation(this, variables)
+  override suspend fun execute(): DataConnectMutationResult<Response, Variables> =
+    dataConnect.executeMutation(this)
 
   override fun hashCode(): Int = Objects.hash("Mutation", super.hashCode())
 
@@ -42,30 +43,64 @@ internal constructor(
     "MutationRef(" +
       "dataConnect=$dataConnect, " +
       "operationName=$operationName, " +
+      "variables=$variables, " +
       "responseDeserializer=$responseDeserializer, " +
       "variablesSerializer=$variablesSerializer" +
       ")"
-
-  public fun <NewResponse> withResponseDeserializer(
-    newResponseDeserializer: DeserializationStrategy<NewResponse>
-  ): MutationRef<NewResponse, Variables> =
-    MutationRef(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      responseDeserializer = newResponseDeserializer,
-      variablesSerializer = variablesSerializer,
-    )
-
-  public fun <NewVariables> withVariablesSerializer(
-    newVariablesSerializer: SerializationStrategy<NewVariables>
-  ): MutationRef<Response, NewVariables> =
-    MutationRef(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      responseDeserializer = responseDeserializer,
-      variablesSerializer = newVariablesSerializer,
-    )
 }
 
-public suspend fun <Response> MutationRef<Response, Unit>.execute():
-  DataConnectMutationResult<Response, Unit> = execute(Unit)
+internal fun <NewResponse, Variables> MutationRef<*, Variables>.withResponseDeserializer(
+  deserializer: DeserializationStrategy<NewResponse>
+): MutationRef<NewResponse, Variables> =
+  MutationRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = deserializer,
+    variablesSerializer = variablesSerializer
+  )
+
+internal fun <Response, Variables> MutationRef<Response, Variables>.withVariablesSerializer(
+  serializer: SerializationStrategy<Variables>
+): MutationRef<Response, Variables> =
+  MutationRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = serializer
+  )
+
+internal fun <Response, Variables> MutationRef<Response, Variables>.withVariables(
+  variables: Variables
+): MutationRef<Response, Variables> =
+  MutationRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = variablesSerializer
+  )
+
+internal fun <Response, NewVariables> MutationRef<Response, *>.withVariables(
+  variables: NewVariables,
+  serializer: SerializationStrategy<NewVariables>
+): MutationRef<Response, NewVariables> =
+  MutationRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = serializer
+  )
+
+internal fun <Response> MutationRef<Response, *>.withVariables(
+  variables: DataConnectUntypedVariables
+): MutationRef<Response, DataConnectUntypedVariables> =
+  MutationRef(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    variables = variables,
+    responseDeserializer = responseDeserializer,
+    variablesSerializer = DataConnectUntypedVariables
+  )

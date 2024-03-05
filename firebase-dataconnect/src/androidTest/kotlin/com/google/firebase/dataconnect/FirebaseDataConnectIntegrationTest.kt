@@ -28,8 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
-import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.serializer
+import kotlinx.coroutines.test.*
 import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
@@ -361,7 +360,7 @@ class FirebaseDataConnectIntegrationTest {
 
     // Verify that we can successfully execute a query; if the emulator settings did _not_ get used
     // then the query execution will fail with an exception, which will fail this test case.
-    dataConnect.query("listPosts", DataConnectUntypedResponse, serializer<Unit>()).execute(Unit)
+    dataConnect.query("listPosts", DataConnectUntypedResponse).execute()
   }
 
   @Test
@@ -370,7 +369,7 @@ class FirebaseDataConnectIntegrationTest {
     val config = ConnectorConfig(connector = "crud", location = "TestLocation", service = "local")
     val settings = DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
     val dataConnect = FirebaseDataConnect.getInstance(app, config, settings)
-    dataConnect.query("listPosts", DataConnectUntypedResponse, serializer<Unit>()).execute(Unit)
+    dataConnect.query("listPosts", DataConnectUntypedResponse).execute()
 
     val exception = assertThrows(IllegalStateException::class.java) { dataConnect.useEmulator() }
     assertThat(exception).hasMessageThat().ignoringCase().contains("already been initialized")

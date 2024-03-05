@@ -1,5 +1,6 @@
 package com.google.firebase.dataconnect.testutil
 
+import android.content.Context
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
@@ -11,10 +12,15 @@ import kotlin.random.Random
 import org.mockito.Mockito.mock
 import org.robolectric.RuntimeEnvironment
 
-fun FirebaseDataConnect.Companion.newTestInstance() =
-  FirebaseDataConnect(
-    context = RuntimeEnvironment.getApplication(),
-    app = mock(FirebaseApp::class.java),
+fun FirebaseDataConnect.Companion.newTestInstance(): FirebaseDataConnect {
+  val context: Context = RuntimeEnvironment.getApplication()
+  val firebaseApp = mock(FirebaseApp::class.java)
+  val blockingExecutor = MoreExecutors.directExecutor()
+  val nonBlockingExecutor = MoreExecutors.directExecutor()
+
+  return FirebaseDataConnect(
+    context = context,
+    app = firebaseApp,
     projectId = Random.nextAlphanumericString(),
     config =
       ConnectorConfig(
@@ -22,8 +28,15 @@ fun FirebaseDataConnect.Companion.newTestInstance() =
         location = "Location" + Random.nextAlphanumericString(),
         service = "Service" + Random.nextAlphanumericString(),
       ),
-    blockingExecutor = MoreExecutors.directExecutor(),
-    nonBlockingExecutor = MoreExecutors.directExecutor(),
-    creator = mock(FirebaseDataConnectFactory::class.java),
+    blockingExecutor = blockingExecutor,
+    nonBlockingExecutor = nonBlockingExecutor,
+    creator =
+      FirebaseDataConnectFactory(
+        context = context,
+        firebaseApp = firebaseApp,
+        blockingExecutor = blockingExecutor,
+        nonBlockingExecutor = nonBlockingExecutor,
+      ),
     settings = DataConnectSettings(host = Random.nextAlphanumericString())
   )
+}

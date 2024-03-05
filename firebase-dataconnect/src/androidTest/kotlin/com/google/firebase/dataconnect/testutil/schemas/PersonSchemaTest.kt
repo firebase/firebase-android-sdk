@@ -2,14 +2,9 @@ package com.google.firebase.dataconnect.testutil.schemas
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.execute
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.DeletePersonMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Response.Person
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
 import org.junit.Rule
@@ -27,9 +22,9 @@ class PersonSchemaTest {
 
   @Test
   fun createPersonShouldCreateTheSpecifiedPerson() = runTest {
-    schema.createPerson.execute(id = "1234", name = "TestName", age = 42)
+    schema.createPerson(id = "1234", name = "TestName", age = 42).execute()
 
-    val result = schema.getPerson.execute(id = "1234")
+    val result = schema.getPerson(id = "1234").execute()
 
     assertThat(result.data.person).isNotNull()
     val person = result.data.person!!
@@ -39,34 +34,34 @@ class PersonSchemaTest {
 
   @Test
   fun deletePersonShouldDeleteTheSpecifiedPerson() = runTest {
-    schema.createPerson.execute(id = "1234", name = "TestName", age = 42)
-    assertThat(schema.getPerson.execute(id = "1234").data.person).isNotNull()
+    schema.createPerson(id = "1234", name = "TestName", age = 42).execute()
+    assertThat(schema.getPerson(id = "1234").execute().data.person).isNotNull()
 
-    schema.deletePerson.execute(id = "1234")
+    schema.deletePerson(id = "1234").execute()
 
-    assertThat(schema.getPerson.execute(id = "1234").data.person).isNull()
+    assertThat(schema.getPerson(id = "1234").execute().data.person).isNull()
   }
 
   @Test
   fun updatePersonShouldUpdateTheSpecifiedPerson() = runTest {
-    schema.createPerson.execute(id = "1234", name = "TestName0", age = 42)
+    schema.createPerson(id = "1234", name = "TestName0", age = 42).execute()
 
-    schema.updatePerson.execute(id = "1234", name = "TestName99", age = 999)
+    schema.updatePerson(id = "1234", name = "TestName99", age = 999).execute()
 
-    val result = schema.getPerson.execute(id = "1234")
+    val result = schema.getPerson(id = "1234").execute()
     assertThat(result.data.person?.name).isEqualTo("TestName99")
     assertThat(result.data.person?.age).isEqualTo(999)
   }
 
   @Test
   fun getPersonShouldReturnThePersonWithTheSpecifiedId() = runTest {
-    schema.createPerson.execute(id = "111", name = "Name111", age = 111)
-    schema.createPerson.execute(id = "222", name = "Name222", age = 222)
-    schema.createPerson.execute(id = "333", name = "Name333", age = null)
+    schema.createPerson(id = "111", name = "Name111", age = 111).execute()
+    schema.createPerson(id = "222", name = "Name222", age = 222).execute()
+    schema.createPerson(id = "333", name = "Name333", age = null).execute()
 
-    val result1 = schema.getPerson.execute(id = "111")
-    val result2 = schema.getPerson.execute(id = "222")
-    val result3 = schema.getPerson.execute(id = "333")
+    val result1 = schema.getPerson(id = "111").execute()
+    val result2 = schema.getPerson(id = "222").execute()
+    val result3 = schema.getPerson(id = "333").execute()
 
     assertThat(result1.data.person).isNotNull()
     val person1 = result1.data.person!!
@@ -86,9 +81,9 @@ class PersonSchemaTest {
 
   @Test
   fun getPersonShouldReturnNullPersonIfThePersonDoesNotExist() = runTest {
-    schema.createPerson.execute(id = "111", name = "Name111", age = 111)
+    schema.createPerson(id = "111", name = "Name111", age = 111).execute()
 
-    val result = schema.getPerson.execute(id = "IdOfPersonThatDoesNotExit")
+    val result = schema.getPerson(id = "IdOfPersonThatDoesNotExit").execute()
 
     assertThat(result.data.person).isNull()
   }
@@ -100,9 +95,9 @@ class PersonSchemaTest {
 
   @Test
   fun getAllPeopleShouldReturnAllPeopleInTheDatabase() = runTest {
-    schema.createPerson.execute(id = "111", name = "Name111", age = 111)
-    schema.createPerson.execute(id = "222", name = "Name222", age = 222)
-    schema.createPerson.execute(id = "333", name = "Name333", age = null)
+    schema.createPerson(id = "111", name = "Name111", age = 111).execute()
+    schema.createPerson(id = "222", name = "Name222", age = 222).execute()
+    schema.createPerson(id = "333", name = "Name333", age = null).execute()
 
     val result = schema.getAllPeople.execute()
 

@@ -23,7 +23,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,25 +38,30 @@ class DataConnectUntypedResponseIntegrationTest {
 
   @Test
   fun primitiveTypes() = runTest {
-    allTypesSchema.createPrimitive.execute(
-      AllTypesSchema.CreatePrimitiveMutation.Variables(
-        AllTypesSchema.PrimitiveData(
-          id = "abc123",
-          idFieldNullable = "xyz",
-          intField = 42,
-          intFieldNullable = 43,
-          floatField = 99.0,
-          floatFieldNullable = 100.0,
-          booleanField = false,
-          booleanFieldNullable = true,
-          stringField = "TestStringValue",
-          stringFieldNullable = "TestStringNullableValue",
+    allTypesSchema
+      .createPrimitive(
+        AllTypesSchema.CreatePrimitiveMutation.Variables(
+          AllTypesSchema.PrimitiveData(
+            id = "abc123",
+            idFieldNullable = "xyz",
+            intField = 42,
+            intFieldNullable = 43,
+            floatField = 99.0,
+            floatFieldNullable = 100.0,
+            booleanField = false,
+            booleanFieldNullable = true,
+            stringField = "TestStringValue",
+            stringFieldNullable = "TestStringNullableValue",
+          )
         )
       )
-    )
-    val query = allTypesSchema.getPrimitive.withResponseDeserializer(DataConnectUntypedResponse)
+      .execute()
+    val query =
+      allTypesSchema
+        .getPrimitive(id = "abc123")
+        .withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = query.execute(AllTypesSchema.GetPrimitiveQuery.Variables(id = "abc123"))
+    val result = query.execute()
 
     assertWithMessage("errors").that(result.data.errors).isEmpty()
     assertWithMessage("data").that(result.data.data).isNotNull()
@@ -82,25 +86,30 @@ class DataConnectUntypedResponseIntegrationTest {
 
   @Test
   fun nullPrimitiveTypes() = runTest {
-    allTypesSchema.createPrimitive.execute(
-      AllTypesSchema.CreatePrimitiveMutation.Variables(
-        AllTypesSchema.PrimitiveData(
-          id = "abc123",
-          idFieldNullable = null,
-          intField = 42,
-          intFieldNullable = null,
-          floatField = 99.0,
-          floatFieldNullable = null,
-          booleanField = false,
-          booleanFieldNullable = null,
-          stringField = "TestStringValue",
-          stringFieldNullable = null,
+    allTypesSchema
+      .createPrimitive(
+        AllTypesSchema.CreatePrimitiveMutation.Variables(
+          AllTypesSchema.PrimitiveData(
+            id = "abc123",
+            idFieldNullable = null,
+            intField = 42,
+            intFieldNullable = null,
+            floatField = 99.0,
+            floatFieldNullable = null,
+            booleanField = false,
+            booleanFieldNullable = null,
+            stringField = "TestStringValue",
+            stringFieldNullable = null,
+          )
         )
       )
-    )
-    val query = allTypesSchema.getPrimitive.withResponseDeserializer(DataConnectUntypedResponse)
+      .execute()
+    val query =
+      allTypesSchema
+        .getPrimitive(id = "abc123")
+        .withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = query.execute(AllTypesSchema.GetPrimitiveQuery.Variables(id = "abc123"))
+    val result = query.execute()
 
     assertWithMessage("errors").that(result.data.errors).isEmpty()
     assertWithMessage("data").that(result.data.data).isNotNull()
@@ -125,30 +134,35 @@ class DataConnectUntypedResponseIntegrationTest {
 
   @Test
   fun listsOfPrimitiveTypes() = runTest {
-    allTypesSchema.createPrimitiveList.execute(
-      AllTypesSchema.CreatePrimitiveListMutation.Variables(
-        AllTypesSchema.PrimitiveListData(
-          id = "abc123",
-          idListNullable = listOf("aaa", "bbb"),
-          idListOfNullable = listOf("ccc", "ddd"),
-          intList = listOf(42, 43, 44),
-          intListNullable = listOf(45, 46),
-          intListOfNullable = listOf(47, 48),
-          floatList = listOf(12.3, 45.6, 78.9),
-          floatListNullable = listOf(98.7, 65.4),
-          floatListOfNullable = listOf(100.1, 100.2),
-          booleanList = listOf(true, false, true, false),
-          booleanListNullable = listOf(false, true, false, true),
-          booleanListOfNullable = listOf(false, false, true, true),
-          stringList = listOf("xxx", "yyy", "zzz"),
-          stringListNullable = listOf("qqq", "rrr"),
-          stringListOfNullable = listOf("sss", "ttt"),
+    allTypesSchema
+      .createPrimitiveList(
+        AllTypesSchema.CreatePrimitiveListMutation.Variables(
+          AllTypesSchema.PrimitiveListData(
+            id = "abc123",
+            idListNullable = listOf("aaa", "bbb"),
+            idListOfNullable = listOf("ccc", "ddd"),
+            intList = listOf(42, 43, 44),
+            intListNullable = listOf(45, 46),
+            intListOfNullable = listOf(47, 48),
+            floatList = listOf(12.3, 45.6, 78.9),
+            floatListNullable = listOf(98.7, 65.4),
+            floatListOfNullable = listOf(100.1, 100.2),
+            booleanList = listOf(true, false, true, false),
+            booleanListNullable = listOf(false, true, false, true),
+            booleanListOfNullable = listOf(false, false, true, true),
+            stringList = listOf("xxx", "yyy", "zzz"),
+            stringListNullable = listOf("qqq", "rrr"),
+            stringListOfNullable = listOf("sss", "ttt"),
+          )
         )
       )
-    )
-    val query = allTypesSchema.getPrimitiveList.withResponseDeserializer(DataConnectUntypedResponse)
+      .execute()
+    val query =
+      allTypesSchema
+        .getPrimitiveList(id = "abc123")
+        .withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = query.execute(AllTypesSchema.GetPrimitiveListQuery.Variables(id = "abc123"))
+    val result = query.execute()
 
     assertWithMessage("errors").that(result.data.errors).isEmpty()
     assertWithMessage("data").that(result.data.data).isNotNull()
@@ -178,30 +192,35 @@ class DataConnectUntypedResponseIntegrationTest {
 
   @Test
   fun nullListsOfPrimitiveTypes() = runTest {
-    allTypesSchema.createPrimitiveList.execute(
-      AllTypesSchema.CreatePrimitiveListMutation.Variables(
-        AllTypesSchema.PrimitiveListData(
-          id = "abc123",
-          idListNullable = null,
-          idListOfNullable = listOf("ccc", "ddd"),
-          intList = listOf(42, 43, 44),
-          intListNullable = null,
-          intListOfNullable = listOf(47, 48),
-          floatList = listOf(12.3, 45.6, 78.9),
-          floatListNullable = null,
-          floatListOfNullable = listOf(100.1, 100.2),
-          booleanList = listOf(true, false, true, false),
-          booleanListNullable = null,
-          booleanListOfNullable = listOf(false, false, true, true),
-          stringList = listOf("xxx", "yyy", "zzz"),
-          stringListNullable = null,
-          stringListOfNullable = listOf("sss", "ttt"),
+    allTypesSchema
+      .createPrimitiveList(
+        AllTypesSchema.CreatePrimitiveListMutation.Variables(
+          AllTypesSchema.PrimitiveListData(
+            id = "abc123",
+            idListNullable = null,
+            idListOfNullable = listOf("ccc", "ddd"),
+            intList = listOf(42, 43, 44),
+            intListNullable = null,
+            intListOfNullable = listOf(47, 48),
+            floatList = listOf(12.3, 45.6, 78.9),
+            floatListNullable = null,
+            floatListOfNullable = listOf(100.1, 100.2),
+            booleanList = listOf(true, false, true, false),
+            booleanListNullable = null,
+            booleanListOfNullable = listOf(false, false, true, true),
+            stringList = listOf("xxx", "yyy", "zzz"),
+            stringListNullable = null,
+            stringListOfNullable = listOf("sss", "ttt"),
+          )
         )
       )
-    )
-    val query = allTypesSchema.getPrimitiveList.withResponseDeserializer(DataConnectUntypedResponse)
+      .execute()
+    val query =
+      allTypesSchema
+        .getPrimitiveList(id = "abc123")
+        .withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = query.execute(AllTypesSchema.GetPrimitiveListQuery.Variables(id = "abc123"))
+    val result = query.execute()
 
     assertWithMessage("errors").that(result.data.errors).isEmpty()
     assertWithMessage("data").that(result.data.data).isNotNull()
@@ -231,28 +250,39 @@ class DataConnectUntypedResponseIntegrationTest {
 
   @Test
   fun nestedStructs() = runTest {
-    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null)
-    allTypesSchema.createFarmer(id = "Farmer2Id", name = "Farmer2Name", parentId = "Farmer1Id")
-    allTypesSchema.createFarmer(id = "Farmer3Id", name = "Farmer3Name", parentId = "Farmer2Id")
-    allTypesSchema.createFarmer(id = "Farmer4Id", name = "Farmer4Name", parentId = "Farmer3Id")
-    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer4Id")
-    allTypesSchema.createAnimal(
-      id = "Animal1Id",
-      farmId = "FarmId",
-      name = "Animal1Name",
-      species = "Animal1Species",
-      age = 1
-    )
-    allTypesSchema.createAnimal(
-      id = "Animal2Id",
-      farmId = "FarmId",
-      name = "Animal2Name",
-      species = "Animal2Species",
-      age = null
-    )
-    val query = allTypesSchema.getFarm.withResponseDeserializer(DataConnectUntypedResponse)
+    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null).execute()
+    allTypesSchema
+      .createFarmer(id = "Farmer2Id", name = "Farmer2Name", parentId = "Farmer1Id")
+      .execute()
+    allTypesSchema
+      .createFarmer(id = "Farmer3Id", name = "Farmer3Name", parentId = "Farmer2Id")
+      .execute()
+    allTypesSchema
+      .createFarmer(id = "Farmer4Id", name = "Farmer4Name", parentId = "Farmer3Id")
+      .execute()
+    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer4Id").execute()
+    allTypesSchema
+      .createAnimal(
+        id = "Animal1Id",
+        farmId = "FarmId",
+        name = "Animal1Name",
+        species = "Animal1Species",
+        age = 1
+      )
+      .execute()
+    allTypesSchema
+      .createAnimal(
+        id = "Animal2Id",
+        farmId = "FarmId",
+        name = "Animal2Name",
+        species = "Animal2Species",
+        age = null
+      )
+      .execute()
+    val query =
+      allTypesSchema.getFarm(id = "FarmId").withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = query.execute(AllTypesSchema.GetFarmQuery.Variables(id = "FarmId"))
+    val result = query.execute()
 
     assertWithMessage("errors").that(result.data.errors).isEmpty()
     assertWithMessage("data").that(result.data.data).isNotNull()
@@ -313,11 +343,12 @@ class DataConnectUntypedResponseIntegrationTest {
 
   @Test
   fun nestedNullStructs() = runTest {
-    allTypesSchema.createFarmer(id = "FarmerId", name = "FarmerName", parentId = null)
-    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "FarmerId")
-    val query = allTypesSchema.getFarm.withResponseDeserializer(DataConnectUntypedResponse)
+    allTypesSchema.createFarmer(id = "FarmerId", name = "FarmerName", parentId = null).execute()
+    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "FarmerId").execute()
+    val query =
+      allTypesSchema.getFarm(id = "FarmId").withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = query.execute(AllTypesSchema.GetFarmQuery.Variables(id = "FarmId"))
+    val result = query.execute()
 
     assertWithMessage("errors").that(result.data.errors).isEmpty()
     assertWithMessage("data").that(result.data.data).isNotNull()
@@ -347,11 +378,12 @@ class DataConnectUntypedResponseIntegrationTest {
   fun queryErrorsReturnedByServerArePutInTheErrorsListInsteadOfThrowingAnException() = runTest {
     @Serializable data class BogusVariables(val foo: String)
     val query =
-      allTypesSchema.getPrimitive
-        .withVariablesSerializer(serializer<BogusVariables>())
+      allTypesSchema
+        .getPrimitive("foo")
+        .withVariables(BogusVariables(foo = "bar"))
         .withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = query.execute(BogusVariables(foo = "bar"))
+    val result = query.execute()
 
     assertWithMessage("result.data.data").that(result.data.data).isNull()
     assertWithMessage("result.data.errors").that(result.data.errors).isNotEmpty()
@@ -361,11 +393,12 @@ class DataConnectUntypedResponseIntegrationTest {
   fun mutationErrorsReturnedByServerArePutInTheErrorsListInsteadOfThrowingAnException() = runTest {
     @Serializable data class BogusVariables(val foo: String)
     val mutation =
-      allTypesSchema.createAnimal
-        .withVariablesSerializer(serializer<BogusVariables>())
+      allTypesSchema
+        .createAnimal("", "", "", "", 42)
+        .withVariables(BogusVariables(foo = "bar"))
         .withResponseDeserializer(DataConnectUntypedResponse)
 
-    val result = mutation.execute(BogusVariables(foo = "bar"))
+    val result = mutation.execute()
 
     assertWithMessage("result.data.data").that(result.data.data).isNull()
     assertWithMessage("result.data.errors").that(result.data.errors).isNotEmpty()

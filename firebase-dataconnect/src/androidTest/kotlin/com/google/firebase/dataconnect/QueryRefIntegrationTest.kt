@@ -20,12 +20,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveListQuery.execute
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.GetPrimitiveQuery.execute
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.CreatePersonMutation.execute
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Response.Person
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery.execute
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.UpdatePersonMutation.execute
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -35,7 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class QueryIntegrationTest {
+class QueryRefIntegrationTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
@@ -47,11 +42,11 @@ class QueryIntegrationTest {
 
   @Test
   fun executeWithASingleResultReturnsTheCorrectResult() = runTest {
-    personSchema.createPerson.execute(id = "TestId1", name = "TestName1", age = 42)
-    personSchema.createPerson.execute(id = "TestId2", name = "TestName2", age = 43)
-    personSchema.createPerson.execute(id = "TestId3", name = "TestName3", age = 44)
+    personSchema.createPerson(id = "TestId1", name = "TestName1", age = 42).execute()
+    personSchema.createPerson(id = "TestId2", name = "TestName2", age = 43).execute()
+    personSchema.createPerson(id = "TestId3", name = "TestName3", age = 44).execute()
 
-    val result = personSchema.getPerson.execute(id = "TestId2")
+    val result = personSchema.getPerson(id = "TestId2").execute()
 
     assertThat(result.data.person?.name).isEqualTo("TestName2")
     assertThat(result.data.person?.age).isEqualTo(43)
@@ -59,10 +54,10 @@ class QueryIntegrationTest {
 
   @Test
   fun executeWithASingleResultReturnsTheUpdatedResult() = runTest {
-    personSchema.createPerson.execute(id = "TestId", name = "TestName", age = 42)
-    personSchema.updatePerson.execute(id = "TestId", name = "NewTestName", age = 99)
+    personSchema.createPerson(id = "TestId", name = "TestName", age = 42).execute()
+    personSchema.updatePerson(id = "TestId", name = "NewTestName", age = 99).execute()
 
-    val result = personSchema.getPerson.execute(id = "TestId")
+    val result = personSchema.getPerson(id = "TestId").execute()
 
     assertThat(result.data.person?.name).isEqualTo("NewTestName")
     assertThat(result.data.person?.age).isEqualTo(99)
@@ -70,18 +65,18 @@ class QueryIntegrationTest {
 
   @Test
   fun executeWithASingleResultReturnsNullIfNotFound() = runTest {
-    personSchema.createPerson.execute(id = "TestId", name = "TestName", age = 42)
+    personSchema.createPerson(id = "TestId", name = "TestName", age = 42).execute()
 
-    val result = personSchema.getPerson.execute(id = "NotTheTestId")
+    val result = personSchema.getPerson(id = "NotTheTestId").execute()
 
     assertThat(result.data.person).isNull()
   }
 
   @Test
   fun executeWithAListResultReturnsAllResults() = runTest {
-    personSchema.createPerson.execute(id = "TestId1", name = "TestName1", age = 42)
-    personSchema.createPerson.execute(id = "TestId2", name = "TestName2", age = 43)
-    personSchema.createPerson.execute(id = "TestId3", name = "TestName3", age = 44)
+    personSchema.createPerson(id = "TestId1", name = "TestName1", age = 42).execute()
+    personSchema.createPerson(id = "TestId2", name = "TestName2", age = 43).execute()
+    personSchema.createPerson(id = "TestId3", name = "TestName3", age = 44).execute()
 
     val result = personSchema.getAllPeople.execute()
 
@@ -95,24 +90,26 @@ class QueryIntegrationTest {
 
   @Test
   fun executeWithAllPrimitiveGraphQLTypesInDataNoneNull() = runTest {
-    allTypesSchema.createPrimitive.execute(
-      AllTypesSchema.CreatePrimitiveMutation.Variables(
-        AllTypesSchema.PrimitiveData(
-          id = "TestId",
-          idFieldNullable = "TestNullableId",
-          intField = 42,
-          intFieldNullable = 43,
-          floatField = 123.45,
-          floatFieldNullable = 678.91,
-          booleanField = true,
-          booleanFieldNullable = false,
-          stringField = "TestString",
-          stringFieldNullable = "TestNullableString"
+    allTypesSchema
+      .createPrimitive(
+        AllTypesSchema.CreatePrimitiveMutation.Variables(
+          AllTypesSchema.PrimitiveData(
+            id = "TestId",
+            idFieldNullable = "TestNullableId",
+            intField = 42,
+            intFieldNullable = 43,
+            floatField = 123.45,
+            floatFieldNullable = 678.91,
+            booleanField = true,
+            booleanFieldNullable = false,
+            stringField = "TestString",
+            stringFieldNullable = "TestNullableString"
+          )
         )
       )
-    )
+      .execute()
 
-    val result = allTypesSchema.getPrimitive.execute(id = "TestId")
+    val result = allTypesSchema.getPrimitive(id = "TestId").execute()
 
     val primitive = result.data.primitive ?: error("result.data.primitive is null")
     assertThat(primitive.id).isEqualTo("TestId")
@@ -129,24 +126,26 @@ class QueryIntegrationTest {
 
   @Test
   fun executeWithAllPrimitiveGraphQLTypesInDataNullablesAreNull() = runTest {
-    allTypesSchema.createPrimitive.execute(
-      AllTypesSchema.CreatePrimitiveMutation.Variables(
-        AllTypesSchema.PrimitiveData(
-          id = "TestId",
-          idFieldNullable = null,
-          intField = 42,
-          intFieldNullable = null,
-          floatField = 123.45,
-          floatFieldNullable = null,
-          booleanField = true,
-          booleanFieldNullable = null,
-          stringField = "TestString",
-          stringFieldNullable = null
+    allTypesSchema
+      .createPrimitive(
+        AllTypesSchema.CreatePrimitiveMutation.Variables(
+          AllTypesSchema.PrimitiveData(
+            id = "TestId",
+            idFieldNullable = null,
+            intField = 42,
+            intFieldNullable = null,
+            floatField = 123.45,
+            floatFieldNullable = null,
+            booleanField = true,
+            booleanFieldNullable = null,
+            stringField = "TestString",
+            stringFieldNullable = null
+          )
         )
       )
-    )
+      .execute()
 
-    val result = allTypesSchema.getPrimitive.execute(id = "TestId")
+    val result = allTypesSchema.getPrimitive(id = "TestId").execute()
 
     val primitive = result.data.primitive ?: error("result.data.primitive is null")
     assertThat(primitive.idFieldNullable).isNull()
@@ -159,31 +158,33 @@ class QueryIntegrationTest {
   @Test
   fun executeWithAllListOfPrimitiveGraphQLTypesInData() = runTest {
     // NOTE: `null` list elements (a.k.a. "sparse arrays") are not supported: b/300331607
-    allTypesSchema.createPrimitiveList.execute(
-      AllTypesSchema.CreatePrimitiveListMutation.Variables(
-        AllTypesSchema.PrimitiveListData(
-          id = "TestId",
-          idListNullable = listOf("aaa", "bbb"),
-          idListOfNullable = listOf("ccc", "ddd"),
-          intList = listOf(42, 43, 44),
-          intListNullable = listOf(45, 46),
-          intListOfNullable = listOf(47, 48),
-          floatList = listOf(12.3, 45.6, 78.9),
-          floatListNullable = listOf(98.7, 65.4),
-          floatListOfNullable = listOf(100.1, 100.2),
-          booleanList = listOf(true, false, true, false),
-          booleanListNullable = listOf(false, true, false, true),
-          booleanListOfNullable = listOf(false, false, true, true),
-          stringList = listOf("xxx", "yyy", "zzz"),
-          stringListNullable = listOf("qqq", "rrr"),
-          stringListOfNullable = listOf("sss", "ttt"),
+    allTypesSchema
+      .createPrimitiveList(
+        AllTypesSchema.CreatePrimitiveListMutation.Variables(
+          AllTypesSchema.PrimitiveListData(
+            id = "TestId",
+            idListNullable = listOf("aaa", "bbb"),
+            idListOfNullable = listOf("ccc", "ddd"),
+            intList = listOf(42, 43, 44),
+            intListNullable = listOf(45, 46),
+            intListOfNullable = listOf(47, 48),
+            floatList = listOf(12.3, 45.6, 78.9),
+            floatListNullable = listOf(98.7, 65.4),
+            floatListOfNullable = listOf(100.1, 100.2),
+            booleanList = listOf(true, false, true, false),
+            booleanListNullable = listOf(false, true, false, true),
+            booleanListOfNullable = listOf(false, false, true, true),
+            stringList = listOf("xxx", "yyy", "zzz"),
+            stringListNullable = listOf("qqq", "rrr"),
+            stringListOfNullable = listOf("sss", "ttt"),
+          )
         )
       )
-    )
+      .execute()
 
     allTypesSchema.getAllPrimitiveLists.execute()
 
-    val result = allTypesSchema.getPrimitiveList.execute(id = "TestId")
+    val result = allTypesSchema.getPrimitiveList(id = "TestId").execute()
 
     val primitive = result.data.primitiveList ?: error("result.data.primitiveList is null")
     assertThat(primitive.id).isEqualTo("TestId")
@@ -205,41 +206,55 @@ class QueryIntegrationTest {
 
   @Test
   fun executeWithNestedTypesInData() = runTest {
-    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null)
-    allTypesSchema.createFarmer(id = "Farmer2Id", name = "Farmer2Name", parentId = "Farmer1Id")
-    allTypesSchema.createFarmer(id = "Farmer3Id", name = "Farmer3Name", parentId = "Farmer2Id")
-    allTypesSchema.createFarmer(id = "Farmer4Id", name = "Farmer4Name", parentId = "Farmer3Id")
-    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer4Id")
-    allTypesSchema.createAnimal(
-      id = "Animal1Id",
-      farmId = "FarmId",
-      name = "Animal1Name",
-      species = "Animal1Species",
-      age = 1
-    )
-    allTypesSchema.createAnimal(
-      id = "Animal2Id",
-      farmId = "FarmId",
-      name = "Animal2Name",
-      species = "Animal2Species",
-      age = 2
-    )
-    allTypesSchema.createAnimal(
-      id = "Animal3Id",
-      farmId = "FarmId",
-      name = "Animal3Name",
-      species = "Animal3Species",
-      age = 3
-    )
-    allTypesSchema.createAnimal(
-      id = "Animal4Id",
-      farmId = "FarmId",
-      name = "Animal4Name",
-      species = "Animal4Species",
-      age = null
-    )
+    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null).execute()
+    allTypesSchema
+      .createFarmer(id = "Farmer2Id", name = "Farmer2Name", parentId = "Farmer1Id")
+      .execute()
+    allTypesSchema
+      .createFarmer(id = "Farmer3Id", name = "Farmer3Name", parentId = "Farmer2Id")
+      .execute()
+    allTypesSchema
+      .createFarmer(id = "Farmer4Id", name = "Farmer4Name", parentId = "Farmer3Id")
+      .execute()
+    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer4Id").execute()
+    allTypesSchema
+      .createAnimal(
+        id = "Animal1Id",
+        farmId = "FarmId",
+        name = "Animal1Name",
+        species = "Animal1Species",
+        age = 1
+      )
+      .execute()
+    allTypesSchema
+      .createAnimal(
+        id = "Animal2Id",
+        farmId = "FarmId",
+        name = "Animal2Name",
+        species = "Animal2Species",
+        age = 2
+      )
+      .execute()
+    allTypesSchema
+      .createAnimal(
+        id = "Animal3Id",
+        farmId = "FarmId",
+        name = "Animal3Name",
+        species = "Animal3Species",
+        age = 3
+      )
+      .execute()
+    allTypesSchema
+      .createAnimal(
+        id = "Animal4Id",
+        farmId = "FarmId",
+        name = "Animal4Name",
+        species = "Animal4Species",
+        age = null
+      )
+      .execute()
 
-    val result = allTypesSchema.getFarm("FarmId")
+    val result = allTypesSchema.getFarm("FarmId").execute()
 
     assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
     val farm = result.data.farm!!
@@ -291,10 +306,10 @@ class QueryIntegrationTest {
 
   @Test
   fun executeWithNestedNullTypesInData() = runTest {
-    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null)
-    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer1Id")
+    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null).execute()
+    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer1Id").execute()
 
-    val result = allTypesSchema.getFarm("FarmId")
+    val result = allTypesSchema.getFarm("FarmId").execute()
 
     assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
     result.data.farm!!.apply {
@@ -308,7 +323,7 @@ class QueryIntegrationTest {
   fun executeShouldThrowIfDataConnectInstanceIsClosed() = runTest {
     personSchema.dataConnect.close()
 
-    val result = personSchema.getPerson.runCatching { execute(id = "foo") }
+    val result = personSchema.getPerson(id = "foo").runCatching { execute() }
 
     assertWithMessage("result=${result.getOrNull()}").that(result.isFailure).isTrue()
     assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
@@ -317,7 +332,7 @@ class QueryIntegrationTest {
   @Test
   fun executeShouldSupportMassiveConcurrency() =
     runTest(timeout = 60.seconds) {
-      val query = personSchema.getPerson
+      val query = personSchema.getPerson(id = "foo")
 
       val deferreds = buildList {
         repeat(25_000) {
@@ -325,7 +340,7 @@ class QueryIntegrationTest {
           // will be at least 2 threads used to run the coroutines (as documented by
           // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
           // that this test is indeed testing "massive concurrency".
-          add(backgroundScope.async(Dispatchers.Default) { query.execute(id = "foo") })
+          add(backgroundScope.async(Dispatchers.Default) { query.execute() })
         }
       }
 

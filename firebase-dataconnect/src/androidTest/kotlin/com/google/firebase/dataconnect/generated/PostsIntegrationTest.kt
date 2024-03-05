@@ -16,12 +16,10 @@ package com.google.firebase.dataconnect.generated
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertWithMessage
-import com.google.firebase.Firebase
-import com.google.firebase.app
-import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 import kotlinx.coroutines.*
@@ -35,31 +33,29 @@ import org.junit.runner.RunWith
 class PostsIntegrationTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+  @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
   private val posts: PostsOperationSet by lazy {
-    PostsOperationSet(
-        app = Firebase.app,
-        service = "local",
-        location = Random.nextAlphanumericString(),
-        settings = DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
-      )
-      .also { dataConnectFactory.adoptInstance(it.dataConnect) }
+    PostsOperationSet.getInstance(firebaseAppFactory.newInstance()).apply {
+      dataConnect.useEmulator()
+      dataConnectFactory.adoptInstance(dataConnect)
+    }
   }
 
   @Test
   fun createCommentShouldAddACommentToThePost() = runTest {
     val postId = Random.nextAlphanumericString()
     val postContent = Random.Default.nextLong().absoluteValue.toString(30)
-    posts.createPost.execute(id = postId, content = postContent)
+    posts.createPost(id = postId, content = postContent)
 
     val comment1Content = Random.Default.nextLong().absoluteValue.toString(30)
-    posts.createComment.execute(content = comment1Content, postId = postId)
+    posts.createComment(content = comment1Content, postId = postId)
 
     val comment2Content = Random.Default.nextLong().absoluteValue.toString(30)
-    posts.createComment.execute(content = comment2Content, postId = postId)
+    posts.createComment(content = comment2Content, postId = postId)
 
-    val queryResponse = posts.getPost.execute(id = postId)
+    val queryResponse = posts.getPost(id = postId)
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
       .isEqualTo(
@@ -76,7 +72,7 @@ class PostsIntegrationTest {
 
   @Test
   fun getPostWithNonExistingId() = runTest {
-    val queryResponse = posts.getPost.execute(id = Random.nextAlphanumericString())
+    val queryResponse = posts.getPost(id = Random.nextAlphanumericString())
     assertWithMessage("queryResponse").that(queryResponse.data.post).isNull()
   }
 
@@ -85,9 +81,9 @@ class PostsIntegrationTest {
     val postId = Random.nextAlphanumericString()
     val postContent = Random.Default.nextLong().absoluteValue.toString(30)
 
-    posts.createPost.execute(id = postId, content = postContent)
+    posts.createPost(id = postId, content = postContent)
 
-    val queryResponse = posts.getPost.execute(id = postId)
+    val queryResponse = posts.getPost(id = postId)
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
       .isEqualTo(GetPostResponse.Post(content = postContent, comments = emptyList()))
@@ -100,10 +96,10 @@ class PostsIntegrationTest {
     val postId2 = Random.nextAlphanumericString()
     val postContent2 = Random.nextAlphanumericString()
 
-    posts.createPost.execute(id = postId1, content = postContent1)
-    posts.createPost.execute(id = postId2, content = postContent2)
+    posts.createPost(id = postId1, content = postContent1)
+    posts.createPost(id = postId2, content = postContent2)
 
-    val querySubscription = posts.getPost.subscribe(id = postId1)
+    val querySubscription = posts.subscriptions.getPost(id = postId1)
     assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
     val result1 = querySubscription.resultFlow.first()
@@ -115,7 +111,7 @@ class PostsIntegrationTest {
 
     val flow2Job = backgroundScope.async { querySubscription.resultFlow.take(2).toList() }
 
-    querySubscription.update { id = postId2 }
+    querySubscription.update(GetPostVariables(id = postId2))
 
     val results2 = flow2Job.await()
     assertWithMessage("results2.size").that(results2.size).isEqualTo(2)

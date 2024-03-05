@@ -15,9 +15,6 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.QuerySubscription
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
@@ -39,58 +36,67 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.installEmulatorSchema("testing_graphql_schemas/person")
   }
 
-  val createDefaultPerson =
-    dataConnect.mutation(
-      operationName = "createDefaultPerson",
-      responseDeserializer = serializer<Unit>(),
-      variablesSerializer = serializer<Unit>(),
-    )
+  val createDefaultPerson
+    get() =
+      dataConnect.mutation(
+        operationName = "createDefaultPerson",
+        responseDeserializer = serializer<Unit>()
+      )
 
   object CreatePersonMutation {
     @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
     @Serializable data class Variables(val data: PersonData)
-
-    suspend fun MutationRef<Unit, Variables>.execute(id: String, name: String, age: Int? = null) =
-      execute(Variables(PersonData(id = id, name = name, age = age)))
   }
 
-  val createPerson =
+  fun createPerson(variables: CreatePersonMutation.Variables) =
     dataConnect.mutation(
       operationName = "createPerson",
+      variables = variables,
       responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreatePersonMutation.Variables>(),
+    )
+
+  fun createPerson(id: String, name: String, age: Int? = null) =
+    createPerson(
+      CreatePersonMutation.Variables(
+        CreatePersonMutation.PersonData(id = id, name = name, age = age)
+      )
     )
 
   object UpdatePersonMutation {
     @Serializable data class PersonData(val name: String? = null, val age: Int? = null)
     @Serializable data class Variables(val id: String, val data: PersonData)
-
-    suspend fun MutationRef<Unit, Variables>.execute(
-      id: String,
-      name: String? = null,
-      age: Int? = null
-    ) = execute(Variables(id = id, data = PersonData(name = name, age = age)))
   }
 
-  val updatePerson =
+  fun updatePerson(variables: UpdatePersonMutation.Variables) =
     dataConnect.mutation(
       operationName = "updatePerson",
+      variables = variables,
       responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<UpdatePersonMutation.Variables>(),
     )
 
+  fun updatePerson(id: String, name: String? = null, age: Int? = null) =
+    updatePerson(
+      UpdatePersonMutation.Variables(
+        id = id,
+        data = UpdatePersonMutation.PersonData(name = name, age = age)
+      )
+    )
+
   object DeletePersonMutation {
     @Serializable data class Variables(val id: String)
-
-    suspend fun MutationRef<Unit, Variables>.execute(id: String) = execute(Variables(id = id))
   }
 
-  val deletePerson =
+  fun deletePerson(variables: DeletePersonMutation.Variables) =
     dataConnect.mutation(
       operationName = "deletePerson",
+      variables = variables,
       responseDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<DeletePersonMutation.Variables>(),
     )
+
+  fun deletePerson(id: String) = deletePerson(DeletePersonMutation.Variables(id = id))
 
   object GetPersonQuery {
     @Serializable
@@ -99,21 +105,17 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     }
 
     @Serializable data class Variables(val id: String)
-
-    suspend fun QueryRef<Response, Variables>.execute(id: String) = execute(Variables(id = id))
-
-    fun QueryRef<Response, Variables>.subscribe(id: String) = subscribe(Variables(id = id))
-
-    suspend fun QuerySubscription<Response, Variables>.update(id: String) =
-      update(Variables(id = id))
   }
 
-  val getPerson =
+  fun getPerson(variables: GetPersonQuery.Variables) =
     dataConnect.query(
       operationName = "getPerson",
+      variables = variables,
       responseDeserializer = serializer<GetPersonQuery.Response>(),
       variablesSerializer = serializer<GetPersonQuery.Variables>(),
     )
+
+  fun getPerson(id: String) = getPerson(GetPersonQuery.Variables(id = id))
 
   object GetAllPeopleQuery {
     @Serializable
@@ -122,12 +124,12 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     }
   }
 
-  val getAllPeople =
-    dataConnect.query(
-      operationName = "getAllPeople",
-      responseDeserializer = serializer<GetAllPeopleQuery.Response>(),
-      variablesSerializer = serializer<Unit>(),
-    )
+  val getAllPeople
+    get() =
+      dataConnect.query(
+        operationName = "getAllPeople",
+        responseDeserializer = serializer<GetAllPeopleQuery.Response>()
+      )
 
   companion object {
     const val CONNECTOR = "ops"
