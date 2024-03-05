@@ -173,7 +173,7 @@ public class TransportRuntime implements TransportInternal {
         builder.setCookieOverride(eventContext.getCookieOverride());
       }
       if (eventContext.getExperimentIdsClear() != null) {
-        builder.setExperimentIdsEncrypted(eventContext.getExperimentIdsClear());
+        builder.setExperimentIdsClear(eventContext.getExperimentIdsClear());
       }
       if (eventContext.getExperimentIdsEncrypted() != null) {
         builder.setExperimentIdsEncrypted(eventContext.getExperimentIdsEncrypted());
