@@ -27,7 +27,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
   init {
     dataConnect.config.connector.let {
       require(it == CONNECTOR) {
-        "The given FirebaseDataConnect has operationSet=$it, but expected $CONNECTOR"
+        "The given FirebaseDataConnect has connector=$it, but expected $CONNECTOR"
       }
     }
   }

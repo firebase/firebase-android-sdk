@@ -36,8 +36,8 @@ class PostsIntegrationTest {
   @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val posts: PostsOperationSet by lazy {
-    PostsOperationSet.getInstance(firebaseAppFactory.newInstance()).apply {
+  private val posts: PostsConnector by lazy {
+    PostsConnector.getInstance(firebaseAppFactory.newInstance()).apply {
       dataConnect.useEmulator()
       dataConnectFactory.adoptInstance(dataConnect)
     }

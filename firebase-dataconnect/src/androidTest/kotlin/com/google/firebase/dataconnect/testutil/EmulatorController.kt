@@ -22,7 +22,7 @@ data class EmulatorSchemaInfo(val filePath: String, val contents: String)
 
 suspend fun FirebaseDataConnect.installEmulatorSchema(
   schema: EmulatorSchemaInfo,
-  operationSets: Map<String, EmulatorSchemaInfo>
+  connectorByName: Map<String, EmulatorSchemaInfo>
 ) {
   val grpcChannel =
     ManagedChannelBuilder.forTarget(settings.host).let {
@@ -36,7 +36,7 @@ suspend fun FirebaseDataConnect.installEmulatorSchema(
       EmulatorServiceCoroutineStub(grpcChannel),
       serviceId = config.service,
       schema = schema,
-      operationSets = operationSets
+      connectorByName = connectorByName,
     )
   } finally {
     grpcChannel.shutdown()
@@ -59,9 +59,9 @@ suspend fun FirebaseDataConnect.installEmulatorSchema(assetDir: String) {
   val loadedAssets =
     loadAssets(assets, assetDir) { it.endsWith(".gql") && it != schemaFileName }.toList()
 
-  val operationSets = buildMap {
+  val connectorByName = buildMap {
     loadedAssets.forEach {
-      val operationSetName =
+      val connectorName =
         it.filePath.run {
           val startIndex =
             it.filePath.lastIndexOf('/').let { lastSlashIndex ->
@@ -69,11 +69,11 @@ suspend fun FirebaseDataConnect.installEmulatorSchema(assetDir: String) {
             }
           substring(startIndex, length - 4)
         }
-      put(operationSetName, EmulatorSchemaInfo(filePath = it.filePath, contents = it.contents))
+      put(connectorName, EmulatorSchemaInfo(filePath = it.filePath, contents = it.contents))
     }
   }
 
-  installEmulatorSchema(schema = schema, operationSets = operationSets)
+  installEmulatorSchema(schema = schema, connectorByName = connectorByName)
 }
 
 private fun loadAssets(assets: AssetManager, dirPath: String, filter: (String) -> Boolean) = flow {
@@ -102,7 +102,7 @@ private suspend fun setupSchema(
   grpcStub: EmulatorServiceCoroutineStub,
   serviceId: String,
   schema: EmulatorSchemaInfo,
-  operationSets: Map<String, EmulatorSchemaInfo>
+  connectorByName: Map<String, EmulatorSchemaInfo>
 ) {
   grpcStub.setupSchema(
     setupSchemaRequest {
@@ -115,9 +115,9 @@ private suspend fun setupSchema(
           }
         )
       }
-      operationSets.forEach { (operationSetName, emulatorSchemaInfo) ->
+      connectorByName.forEach { (connectorName, emulatorSchemaInfo) ->
         this.operationSets.put(
-          operationSetName,
+          connectorName,
           source {
             this.files.add(
               file {

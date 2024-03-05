@@ -18,17 +18,17 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 
-class PostsOperationSet(val dataConnect: FirebaseDataConnect) {
+class PostsConnector(val dataConnect: FirebaseDataConnect) {
 
-  class Mutations internal constructor(val operationSet: PostsOperationSet)
+  class Mutations internal constructor(val connector: PostsConnector)
 
   val mutations = Mutations(this)
 
-  class Queries internal constructor(val operationSet: PostsOperationSet)
+  class Queries internal constructor(val connector: PostsConnector)
 
   val queries = Queries(this)
 
-  class Subscriptions internal constructor(val operationSet: PostsOperationSet)
+  class Subscriptions internal constructor(val connector: PostsConnector)
 
   val subscriptions = Subscriptions(this)
 
@@ -36,15 +36,15 @@ class PostsOperationSet(val dataConnect: FirebaseDataConnect) {
     val config = ConnectorConfig(connector = "crud", location = "foo", service = "local")
 
     val instance
-      get() = PostsOperationSet(FirebaseDataConnect.Companion.getInstance(config))
+      get() = PostsConnector(FirebaseDataConnect.Companion.getInstance(config))
 
     fun getInstance(app: FirebaseApp) =
-      PostsOperationSet(FirebaseDataConnect.Companion.getInstance(app, config))
+      PostsConnector(FirebaseDataConnect.Companion.getInstance(app, config))
 
     fun getInstance(settings: DataConnectSettings) =
-      PostsOperationSet(FirebaseDataConnect.Companion.getInstance(config, settings))
+      PostsConnector(FirebaseDataConnect.Companion.getInstance(config, settings))
 
     fun getInstance(app: FirebaseApp, settings: DataConnectSettings) =
-      PostsOperationSet(FirebaseDataConnect.Companion.getInstance(app, config, settings))
+      PostsConnector(FirebaseDataConnect.Companion.getInstance(app, config, settings))
   }
 }

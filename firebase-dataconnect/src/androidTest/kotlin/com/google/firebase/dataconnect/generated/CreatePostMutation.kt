@@ -54,27 +54,27 @@ data class CreatePostVariables(val data: PostData) {
   }
 }
 
-fun PostsOperationSet.Mutations.createPost(
+fun PostsConnector.Mutations.createPost(
   variables: CreatePostVariables
 ): MutationRef<Unit, CreatePostVariables> =
-  operationSet.dataConnect.mutation(
+  connector.dataConnect.mutation(
     operationName = "createPost",
     variables = variables,
     responseDeserializer = serializer(),
     variablesSerializer = serializer()
   )
 
-fun PostsOperationSet.Mutations.createPost(
+fun PostsConnector.Mutations.createPost(
   id: String,
   content: String
 ): MutationRef<Unit, CreatePostVariables> =
   createPost(CreatePostVariables(data = CreatePostVariables.PostData(id = id, content = content)))
 
-suspend fun PostsOperationSet.createPost(
+suspend fun PostsConnector.createPost(
   variables: CreatePostVariables
 ): DataConnectMutationResult<Unit, CreatePostVariables> = mutations.createPost(variables).execute()
 
-suspend fun PostsOperationSet.createPost(
+suspend fun PostsConnector.createPost(
   id: String,
   content: String
 ): DataConnectMutationResult<Unit, CreatePostVariables> =

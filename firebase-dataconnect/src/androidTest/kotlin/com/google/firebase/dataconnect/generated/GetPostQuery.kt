@@ -44,33 +44,33 @@ data class GetPostVariables(val id: String) {
   }
 }
 
-fun PostsOperationSet.Queries.getPost(
+fun PostsConnector.Queries.getPost(
   variables: GetPostVariables
 ): QueryRef<GetPostResponse, GetPostVariables> =
-  operationSet.dataConnect.query(
+  connector.dataConnect.query(
     operationName = "getPost",
     variables = variables,
     responseDeserializer = serializer(),
     variablesSerializer = serializer()
   )
 
-fun PostsOperationSet.Queries.getPost(id: String): QueryRef<GetPostResponse, GetPostVariables> =
+fun PostsConnector.Queries.getPost(id: String): QueryRef<GetPostResponse, GetPostVariables> =
   getPost(GetPostVariables(id = id))
 
-suspend fun PostsOperationSet.getPost(
+suspend fun PostsConnector.getPost(
   variables: GetPostVariables
 ): DataConnectQueryResult<GetPostResponse, GetPostVariables> = queries.getPost(variables).execute()
 
-suspend fun PostsOperationSet.getPost(
+suspend fun PostsConnector.getPost(
   id: String
 ): DataConnectQueryResult<GetPostResponse, GetPostVariables> = queries.getPost(id = id).execute()
 
-fun PostsOperationSet.Subscriptions.getPost(
+fun PostsConnector.Subscriptions.getPost(
   variables: GetPostVariables
 ): QuerySubscription<GetPostResponse, GetPostVariables> =
-  operationSet.queries.getPost(variables).subscribe()
+  connector.queries.getPost(variables).subscribe()
 
-fun PostsOperationSet.Subscriptions.getPost(
+fun PostsConnector.Subscriptions.getPost(
   id: String
 ): QuerySubscription<GetPostResponse, GetPostVariables> =
-  operationSet.queries.getPost(id = id).subscribe()
+  connector.queries.getPost(id = id).subscribe()

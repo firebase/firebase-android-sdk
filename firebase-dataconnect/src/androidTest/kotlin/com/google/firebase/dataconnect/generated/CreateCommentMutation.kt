@@ -24,17 +24,17 @@ data class CreateCommentVariables(val data: CommentData) {
   @Serializable data class CommentData(val content: String, val postId: String)
 }
 
-fun PostsOperationSet.Mutations.createComment(
+fun PostsConnector.Mutations.createComment(
   variables: CreateCommentVariables
 ): MutationRef<Unit, CreateCommentVariables> =
-  operationSet.dataConnect.mutation(
+  connector.dataConnect.mutation(
     operationName = "createComment",
     variables = variables,
     responseDeserializer = serializer(),
     variablesSerializer = serializer()
   )
 
-fun PostsOperationSet.Mutations.createComment(
+fun PostsConnector.Mutations.createComment(
   content: String,
   postId: String
 ): MutationRef<Unit, CreateCommentVariables> =
@@ -44,12 +44,12 @@ fun PostsOperationSet.Mutations.createComment(
     )
   )
 
-suspend fun PostsOperationSet.createComment(
+suspend fun PostsConnector.createComment(
   variables: CreateCommentVariables
 ): DataConnectMutationResult<Unit, CreateCommentVariables> =
   mutations.createComment(variables).execute()
 
-suspend fun PostsOperationSet.createComment(
+suspend fun PostsConnector.createComment(
   content: String,
   postId: String
 ): DataConnectMutationResult<Unit, CreateCommentVariables> =
