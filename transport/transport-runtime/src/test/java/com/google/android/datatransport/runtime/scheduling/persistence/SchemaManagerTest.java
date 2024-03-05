@@ -134,7 +134,7 @@ public class SchemaManagerTest {
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
 
-    // Upgrade to V6
+    // Upgrade to V7
     schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
     assertThat(store.loadBatch(CONTEXT1)).containsExactly(event1);
 

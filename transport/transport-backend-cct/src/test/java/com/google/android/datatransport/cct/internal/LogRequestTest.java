@@ -197,6 +197,7 @@ public class LogRequestTest {
             .setExperimentIds(
                 ExperimentIds.builder()
                     .setClearBlob("blob".getBytes(StandardCharsets.UTF_8))
+                    .setEncryptedBlob("encrypted blob".getBytes(StandardCharsets.UTF_8))
                     .build())
             .setNetworkConnectionInfo(
                 NetworkConnectionInfo.builder()
@@ -256,7 +257,8 @@ public class LogRequestTest {
                             .setExperimentIds(
                                 com.google.android.datatransport.cct.proto.ExperimentIds
                                     .newBuilder()
-                                    .setClearBlob(ByteString.copyFromUtf8("blob")))
+                                    .setClearBlob(ByteString.copyFromUtf8("blob"))
+                                    .setEncryptedBlob(ByteString.copyFromUtf8("encrypted blob")))
                             .setNetworkConnectionInfo(
                                 com.google.android.datatransport.cct.proto.NetworkConnectionInfo
                                     .newBuilder()

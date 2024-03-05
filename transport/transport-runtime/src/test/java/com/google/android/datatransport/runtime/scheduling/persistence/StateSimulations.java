@@ -365,14 +365,14 @@ class StateSimulations {
       assertThat(metadataId).isNotEqualTo(-1);
 
       ContentValues metrics = new ContentValues();
-      metrics.put("log_source", "source2");
+      metrics.put("log_source", "source3");
       metrics.put("reason", LogEventDropped.Reason.CACHE_FULL.getNumber());
       metrics.put("events_dropped_count", 20);
       long recordId = db.insert("log_event_dropped", null, metrics);
       assertThat(recordId).isNotEqualTo(-1);
 
       ContentValues globalState = new ContentValues();
-      globalState.put("last_metrics_upload_ms", 1411);
+      globalState.put("last_metrics_upload_ms", 1511);
       long stateId = db.insert("global_log_event_state", null, globalState);
       assertThat(stateId).isNotEqualTo(-1);
     }
