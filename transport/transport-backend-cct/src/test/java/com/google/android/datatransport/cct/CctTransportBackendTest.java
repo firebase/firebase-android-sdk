@@ -85,6 +85,16 @@ public class CctTransportBackendTest {
   private CctTransportBackend BACKEND =
       new CctTransportBackend(ApplicationProvider.getApplicationContext(), wallClock, uptimeClock);
 
+  private static final String COOKIE_OVERRIDE = "zwieback_cookie_override";
+  private ByteString EXPERIMENT_IDS_CLEAR =
+      ByteString.copyFrom("experiment ids clear".getBytes(Charset.defaultCharset()));
+
+  private String EXPERIMENT_IDS_CLEAR_BYTE64 = "ZXhwZXJpbWVudCBpZHMgY2xlYXI=";
+  private ByteString EXPERIMENT_IDS_ENCRYPTED =
+      ByteString.copyFrom("experiment ids encrypted".getBytes(Charset.defaultCharset()));
+
+  private String EXPERIMENT_IDS_ENCRYPTED_BYTE64 = "ZXhwZXJpbWVudCBpZHMgZW5jcnlwdGVk";
+
   @Rule public WireMockRule wireMockRule = new WireMockRule(8999);
 
   private BackendRequest getCCTBackendRequest() {
@@ -113,6 +123,9 @@ public class CctTransportBackendTest {
                                 JSON_ENCODING, JSON_PAYLOAD.getBytes(Charset.defaultCharset())))
                         .setCode(CODE)
                         .setProductId(PRODUCT_ID)
+                        .setCookieOverride(COOKIE_OVERRIDE)
+                        .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR.toByteArray())
+                        .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED.toByteArray())
                         .build())))
         .setExtras(destination.getExtras())
         .build();
@@ -195,6 +208,21 @@ public class CctTransportBackendTest {
                     String.format(
                         "$[?(@.logRequest[0].logEvent[1].complianceData.privacyContext.prequest.originAssociatedProductId == %s)]",
                         PRODUCT_ID)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].zwiebackCookieOverride == \"%s\")]",
+                        COOKIE_OVERRIDE)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].experimentIds.clearBlob == \"%s\")]",
+                        EXPERIMENT_IDS_CLEAR_BYTE64)))
+            .withRequestBody(
+                matchingJsonPath(
+                    String.format(
+                        "$[?(@.logRequest[0].logEvent[1].experimentIds.encryptedBlob == \"%s\")]",
+                        EXPERIMENT_IDS_ENCRYPTED_BYTE64)))
             .withRequestBody(
                 matchingJsonPath(
                     String.format(
