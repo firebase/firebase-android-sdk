@@ -143,11 +143,9 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATE_TO_V7 =
       db -> {
-        db.execSQL(DROP_LOG_EVENT_DROPPED_SQL);
-        db.execSQL(DROP_GLOBAL_LOG_EVENT_STATE_SQL);
-        db.execSQL(CREATE_LOG_EVENT_DROPPED_TABLE);
-        db.execSQL(CREATE_GLOBAL_LOG_EVENT_STATE_TABLE);
         db.execSQL("ALTER TABLE events ADD COLUMN zwieback_cookie_override TEXT");
+        db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_clear_blob BLOB");
+        db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_encrypted_blob BLOB");
       };
 
   private static final List<Migration> INCREMENTAL_MIGRATIONS =

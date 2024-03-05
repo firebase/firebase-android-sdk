@@ -137,6 +137,8 @@ public class SQLiteEventStore
               values.put("payload", inline ? payloadBytes : new byte[0]);
               values.put("product_id", event.getProductId());
               values.put("zwieback_cookie_override", event.getCookieOverride());
+              values.put("experiment_ids_clear_blob", event.getExperimentIdsClear());
+              values.put("experiment_ids_encrypted_blob", event.getExperimentIdsEncrypted());
               long newEventId = db.insert("events", null, values);
               if (!inline) {
                 int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
@@ -452,6 +454,8 @@ public class SQLiteEventStore
               "inline",
               "product_id",
               "zwieback_cookie_override",
+              "experiment_ids_clear_blob",
+              "experiment_ids_encrypted_blob",
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -480,6 +484,15 @@ public class SQLiteEventStore
             }
             if (!cursor.isNull(8)) {
               event.setProductId(cursor.getInt(8));
+            }
+            if (!cursor.isNull(9)) {
+              event.setCookieOverride(cursor.getString(9));
+            }
+            if (!cursor.isNull(10)) {
+              event.setExperimentIdsClear(cursor.getBlob(10));
+            }
+            if (!cursor.isNull(11)) {
+              event.setExperimentIdsEncrypted(cursor.getBlob(11));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }
