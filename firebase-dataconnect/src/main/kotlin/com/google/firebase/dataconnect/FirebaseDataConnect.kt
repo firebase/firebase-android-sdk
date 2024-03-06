@@ -30,6 +30,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
+import java.util.Objects
 
 public class FirebaseDataConnect
 internal constructor(
@@ -203,6 +204,12 @@ internal constructor(
           .onFailure { logger.warn(it) { "Closing failed" } }
     }
   }
+
+  // The generated SDK relies on equals() and hashCode() using object identity.
+  // Although you get this for free by just calling the methods of the superclass, be explicit
+  // to ensure that nobody changes these implementations in the future.
+  override fun equals(other: Any?): Boolean = other === this
+  override fun hashCode(): Int = System.identityHashCode(this)
 
   override fun toString(): String =
     "FirebaseDataConnect(app=${app.name}, projectId=$projectId, config=$config, settings=$settings)"

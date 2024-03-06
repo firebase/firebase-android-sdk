@@ -17,6 +17,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import java.util.WeakHashMap
 
 public class PostsConnector(public val dataConnect: FirebaseDataConnect) {
 
@@ -37,15 +38,24 @@ public class PostsConnector(public val dataConnect: FirebaseDataConnect) {
       ConnectorConfig(connector = "crud", location = "foo", service = "local")
 
     public val instance: PostsConnector
-      get() = PostsConnector(FirebaseDataConnect.getInstance(config))
+      get() = getInstance(FirebaseDataConnect.getInstance(config))
 
     public fun getInstance(app: FirebaseApp): PostsConnector =
-      PostsConnector(FirebaseDataConnect.getInstance(app, config))
+      getInstance(FirebaseDataConnect.getInstance(app, config))
 
     public fun getInstance(settings: DataConnectSettings): PostsConnector =
-      PostsConnector(FirebaseDataConnect.getInstance(config, settings))
+      getInstance(FirebaseDataConnect.getInstance(config, settings))
 
     public fun getInstance(app: FirebaseApp, settings: DataConnectSettings): PostsConnector =
-      PostsConnector(FirebaseDataConnect.getInstance(app, config, settings))
+      getInstance(FirebaseDataConnect.getInstance(app, config, settings))
+
+    private fun getInstance(dataConnect: FirebaseDataConnect): PostsConnector =
+      synchronized(instances) {
+        instances.getOrPut(dataConnect) {
+          PostsConnector(dataConnect)
+        }
+      }
+
+    private val instances = WeakHashMap<FirebaseDataConnect, PostsConnector>()
   }
 }

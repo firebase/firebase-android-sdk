@@ -42,6 +42,17 @@ dependencies {
   api(project(":firebase-dataconnect"))
   api(libs.kotlinx.coroutines.core)
   api(libs.kotlinx.serialization.core)
+
+  androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
+  androidTestImplementation(project(":firebase-dataconnect:testutil"))
+  androidTestImplementation(libs.androidx.test.core)
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.rules)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.kotlin.coroutines.test)
+  androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.truth.liteproto.extension)
+  androidTestImplementation(libs.turbine)
 }
 
 tasks.withType<KotlinCompile>().all {
