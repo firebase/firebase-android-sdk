@@ -1,6 +1,6 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,14 +15,39 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 // limitations under the License.
 
 plugins {
-  kotlin("jvm")
+  id("firebase-library")
+  id("kotlin-android")
 }
 
-tasks.withType<KotlinCompile> {
-  kotlinOptions.jvmTarget = "1.8"
+android {
+  val targetSdkVersion: Int by rootProject
+
+  namespace = "com.google.firebase.dataconnect.testutil"
+  compileSdk = 33
+  defaultConfig {
+    minSdk = 21
+    targetSdk = targetSdkVersion
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+  kotlinOptions { jvmTarget = "1.8" }
 }
 
 dependencies {
-  implementation(libs.kotlinx.coroutines.core)
+  api(project(":firebase-dataconnect"))
+  api(libs.kotlinx.coroutines.core)
+  api(libs.kotlinx.serialization.core)
+
+  implementation(libs.mockito.core)
+  implementation(libs.robolectric)
   implementation(libs.truth)
+}
+
+tasks.withType<KotlinCompile>().all {
+  kotlinOptions {
+    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
+  }
 }

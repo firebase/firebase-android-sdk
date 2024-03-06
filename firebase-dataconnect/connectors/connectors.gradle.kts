@@ -1,4 +1,3 @@
-import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 // Copyright 2024 Google LLC
@@ -42,6 +41,12 @@ dependencies {
   api(project(":firebase-dataconnect"))
   api(libs.kotlinx.coroutines.core)
   api(libs.kotlinx.serialization.core)
+
+  testImplementation(project(":firebase-dataconnect:testutil"))
+  testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))

@@ -21,10 +21,10 @@ import kotlinx.serialization.serializer
 public abstract class OperationRef<Response, Variables>
 internal constructor(
   public val dataConnect: FirebaseDataConnect,
-  internal val operationName: String,
+  public val operationName: String,
   public val variables: Variables,
-  internal val responseDeserializer: DeserializationStrategy<Response>,
-  internal val variablesSerializer: SerializationStrategy<Variables>,
+  public val responseDeserializer: DeserializationStrategy<Response>,
+  public val variablesSerializer: SerializationStrategy<Variables>,
 ) {
   public abstract suspend fun execute(): DataConnectResult<Response, Variables>
 
