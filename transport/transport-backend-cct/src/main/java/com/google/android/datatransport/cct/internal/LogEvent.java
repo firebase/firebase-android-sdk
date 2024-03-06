@@ -44,6 +44,12 @@ public abstract class LogEvent {
   @Nullable
   public abstract NetworkConnectionInfo getNetworkConnectionInfo();
 
+  @Nullable
+  public abstract ExperimentIds getExperimentIds();
+
+  @Nullable
+  public abstract String getZwiebackCookieOverride();
+
   @NonNull
   public static Builder protoBuilder(@NonNull byte[] sourceExtension) {
     return builder().setSourceExtension(sourceExtension);
@@ -83,6 +89,12 @@ public abstract class LogEvent {
 
     @NonNull
     public abstract Builder setNetworkConnectionInfo(@Nullable NetworkConnectionInfo value);
+
+    @NonNull
+    public abstract Builder setExperimentIds(@Nullable ExperimentIds value);
+
+    @NonNull
+    public abstract Builder setZwiebackCookieOverride(@Nullable String value);
 
     @NonNull
     public abstract LogEvent build();
