@@ -37,12 +37,12 @@ internal constructor(
 
   public fun subscribe(): QuerySubscription<Response, Variables> = QuerySubscription(this)
 
-  override fun hashCode(): Int = Objects.hash("Query", super.hashCode())
+  override fun hashCode(): Int = Objects.hash("QueryRef", super.hashCode())
 
   override fun equals(other: Any?): Boolean = (other is QueryRef<*, *>) && super.equals(other)
 
   override fun toString(): String =
-    "Query(" +
+    "QueryRef(" +
       "dataConnect=$dataConnect, " +
       "operationName=$operationName, " +
       "variables=$variables, " +

@@ -35,7 +35,7 @@ internal constructor(
   override suspend fun execute(): DataConnectMutationResult<Response, Variables> =
     dataConnect.executeMutation(this)
 
-  override fun hashCode(): Int = Objects.hash("Mutation", super.hashCode())
+  override fun hashCode(): Int = Objects.hash("MutationRef", super.hashCode())
 
   override fun equals(other: Any?): Boolean = (other is MutationRef<*, *>) && super.equals(other)
 
