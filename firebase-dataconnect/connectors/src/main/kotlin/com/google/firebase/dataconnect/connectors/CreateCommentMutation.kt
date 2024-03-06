@@ -20,11 +20,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 @Serializable
-data class CreateCommentVariables(val data: CommentData) {
-  @Serializable data class CommentData(val content: String, val postId: String)
+public data class CreateCommentVariables(val data: CommentData) {
+  @Serializable public data class CommentData(val content: String, val postId: String)
 }
 
-fun PostsConnector.Mutations.createComment(
+public fun PostsConnector.Mutations.createComment(
   variables: CreateCommentVariables
 ): MutationRef<Unit, CreateCommentVariables> =
   connector.dataConnect.mutation(
@@ -34,7 +34,7 @@ fun PostsConnector.Mutations.createComment(
     variablesSerializer = serializer()
   )
 
-fun PostsConnector.Mutations.createComment(
+public fun PostsConnector.Mutations.createComment(
   content: String,
   postId: String
 ): MutationRef<Unit, CreateCommentVariables> =
@@ -44,12 +44,7 @@ fun PostsConnector.Mutations.createComment(
     )
   )
 
-suspend fun PostsConnector.createComment(
-  variables: CreateCommentVariables
-): DataConnectMutationResult<Unit, CreateCommentVariables> =
-  mutations.createComment(variables).execute()
-
-suspend fun PostsConnector.createComment(
+public suspend fun PostsConnector.createComment(
   content: String,
   postId: String
 ): DataConnectMutationResult<Unit, CreateCommentVariables> =

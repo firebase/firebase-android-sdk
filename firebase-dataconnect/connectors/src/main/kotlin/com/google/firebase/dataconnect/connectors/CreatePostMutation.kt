@@ -20,41 +20,11 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 @Serializable
-data class CreatePostVariables(val data: PostData) {
-
-  val builder
-    get() = Builder(data = data)
-
-  fun build(block: Builder.() -> Unit): CreatePostVariables = builder.apply(block).build()
-
-  @DslMarker annotation class VariablesDsl
-
-  @VariablesDsl
-  class Builder(var data: PostData) {
-    fun build() = CreatePostVariables(data = data)
-    fun data(id: String, content: String) {
-      data = PostData(id = id, content = content)
-    }
-    fun data(block: PostData.Builder.() -> Unit) {
-      data = data.build(block)
-    }
-  }
-
-  @Serializable
-  data class PostData(val id: String, val content: String) {
-    val builder
-      get() = Builder(id = id, content = content)
-
-    fun build(block: Builder.() -> Unit): PostData = builder.apply(block).build()
-
-    @VariablesDsl
-    class Builder(var id: String, var content: String) {
-      fun build() = PostData(id = id, content = content)
-    }
-  }
+public data class CreatePostVariables(val data: PostData) {
+  @Serializable public data class PostData(val id: String, val content: String)
 }
 
-fun PostsConnector.Mutations.createPost(
+public fun PostsConnector.Mutations.createPost(
   variables: CreatePostVariables
 ): MutationRef<Unit, CreatePostVariables> =
   connector.dataConnect.mutation(
@@ -64,17 +34,13 @@ fun PostsConnector.Mutations.createPost(
     variablesSerializer = serializer()
   )
 
-fun PostsConnector.Mutations.createPost(
+public fun PostsConnector.Mutations.createPost(
   id: String,
   content: String
 ): MutationRef<Unit, CreatePostVariables> =
   createPost(CreatePostVariables(data = CreatePostVariables.PostData(id = id, content = content)))
 
-suspend fun PostsConnector.createPost(
-  variables: CreatePostVariables
-): DataConnectMutationResult<Unit, CreatePostVariables> = mutations.createPost(variables).execute()
-
-suspend fun PostsConnector.createPost(
+public suspend fun PostsConnector.createPost(
   id: String,
   content: String
 ): DataConnectMutationResult<Unit, CreatePostVariables> =

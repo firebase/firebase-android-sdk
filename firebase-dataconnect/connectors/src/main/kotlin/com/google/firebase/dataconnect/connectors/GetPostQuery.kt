@@ -21,30 +21,16 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 @Serializable
-data class GetPostResponse(val post: Post?) {
+public data class GetPostResponse(val post: Post?) {
   @Serializable
-  data class Post(val content: String, val comments: List<Comment>) {
-    @Serializable data class Comment(val id: String?, val content: String)
+  public data class Post(val content: String, val comments: List<Comment>) {
+    @Serializable public data class Comment(val id: String?, val content: String)
   }
 }
 
-@Serializable
-data class GetPostVariables(val id: String) {
+@Serializable public data class GetPostVariables(val id: String)
 
-  val builder
-    get() = Builder(id = id)
-
-  fun build(block: Builder.() -> Unit): GetPostVariables = builder.apply(block).build()
-
-  @DslMarker annotation class VariablesDsl
-
-  @VariablesDsl
-  class Builder(var id: String) {
-    fun build() = GetPostVariables(id = id)
-  }
-}
-
-fun PostsConnector.Queries.getPost(
+public fun PostsConnector.Queries.getPost(
   variables: GetPostVariables
 ): QueryRef<GetPostResponse, GetPostVariables> =
   connector.dataConnect.query(
@@ -54,23 +40,14 @@ fun PostsConnector.Queries.getPost(
     variablesSerializer = serializer()
   )
 
-fun PostsConnector.Queries.getPost(id: String): QueryRef<GetPostResponse, GetPostVariables> =
+public fun PostsConnector.Queries.getPost(id: String): QueryRef<GetPostResponse, GetPostVariables> =
   getPost(GetPostVariables(id = id))
 
-suspend fun PostsConnector.getPost(
-  variables: GetPostVariables
-): DataConnectQueryResult<GetPostResponse, GetPostVariables> = queries.getPost(variables).execute()
-
-suspend fun PostsConnector.getPost(
+public suspend fun PostsConnector.getPost(
   id: String
 ): DataConnectQueryResult<GetPostResponse, GetPostVariables> = queries.getPost(id = id).execute()
 
-fun PostsConnector.Subscriptions.getPost(
-  variables: GetPostVariables
-): QuerySubscription<GetPostResponse, GetPostVariables> =
-  connector.queries.getPost(variables).subscribe()
-
-fun PostsConnector.Subscriptions.getPost(
+public fun PostsConnector.Subscriptions.getPost(
   id: String
 ): QuerySubscription<GetPostResponse, GetPostVariables> =
   connector.queries.getPost(id = id).subscribe()

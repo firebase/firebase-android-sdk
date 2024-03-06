@@ -18,33 +18,34 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 
-class PostsConnector(val dataConnect: FirebaseDataConnect) {
+public class PostsConnector(public val dataConnect: FirebaseDataConnect) {
 
-  class Mutations internal constructor(val connector: PostsConnector)
+  public class Mutations internal constructor(public val connector: PostsConnector)
 
-  val mutations = Mutations(this)
+  public val mutations: Mutations = Mutations(this)
 
-  class Queries internal constructor(val connector: PostsConnector)
+  public class Queries internal constructor(public val connector: PostsConnector)
 
-  val queries = Queries(this)
+  public val queries: Queries = Queries(this)
 
-  class Subscriptions internal constructor(val connector: PostsConnector)
+  public class Subscriptions internal constructor(public val connector: PostsConnector)
 
-  val subscriptions = Subscriptions(this)
+  public val subscriptions: Subscriptions = Subscriptions(this)
 
-  companion object {
-    val config = ConnectorConfig(connector = "crud", location = "foo", service = "local")
+  public companion object {
+    public val config: ConnectorConfig =
+      ConnectorConfig(connector = "crud", location = "foo", service = "local")
 
-    val instance
-      get() = PostsConnector(FirebaseDataConnect.Companion.getInstance(config))
+    public val instance: PostsConnector
+      get() = PostsConnector(FirebaseDataConnect.getInstance(config))
 
-    fun getInstance(app: FirebaseApp) =
-      PostsConnector(FirebaseDataConnect.Companion.getInstance(app, config))
+    public fun getInstance(app: FirebaseApp): PostsConnector =
+      PostsConnector(FirebaseDataConnect.getInstance(app, config))
 
-    fun getInstance(settings: DataConnectSettings) =
-      PostsConnector(FirebaseDataConnect.Companion.getInstance(config, settings))
+    public fun getInstance(settings: DataConnectSettings): PostsConnector =
+      PostsConnector(FirebaseDataConnect.getInstance(config, settings))
 
-    fun getInstance(app: FirebaseApp, settings: DataConnectSettings) =
-      PostsConnector(FirebaseDataConnect.Companion.getInstance(app, config, settings))
+    public fun getInstance(app: FirebaseApp, settings: DataConnectSettings): PostsConnector =
+      PostsConnector(FirebaseDataConnect.getInstance(app, config, settings))
   }
 }
