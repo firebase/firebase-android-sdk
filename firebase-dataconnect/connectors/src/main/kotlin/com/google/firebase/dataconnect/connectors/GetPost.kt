@@ -18,14 +18,16 @@ import com.google.firebase.dataconnect.DataConnectQueryResult
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.query
 import kotlinx.coroutines.flow.*
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 
 public class GetPost internal constructor(public val connector: PostsConnector) {
 
   public fun ref(variables: Variables): QueryRef<Response, Variables> =
     connector.dataConnect.query(
-      operationName = "getPost",
+      operationName = operationName,
       variables = variables,
       responseDeserializer = responseDeserializer,
       variablesSerializer = variablesSerializer,
@@ -48,9 +50,10 @@ public class GetPost internal constructor(public val connector: PostsConnector) 
     val exception: DataConnectException?
   )
 
-  private companion object {
-    val responseDeserializer = serializer<Response>()
-    val variablesSerializer = serializer<Variables>()
+  public companion object {
+    public const val operationName: String = "getPost"
+    public val responseDeserializer: DeserializationStrategy<Response> = serializer<Response>()
+    public val variablesSerializer: SerializationStrategy<Variables> = serializer<Variables>()
   }
 }
 

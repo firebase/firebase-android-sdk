@@ -16,14 +16,16 @@ package com.google.firebase.dataconnect.connectors
 import com.google.firebase.dataconnect.DataConnectMutationResult
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.mutation
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 
 public class CreatePost internal constructor(public val connector: PostsConnector) {
 
   public fun ref(variables: Variables): MutationRef<Unit, Variables> =
     connector.dataConnect.mutation(
-      operationName = "createPost",
+      operationName = operationName,
       variables = variables,
       responseDeserializer = responseDeserializer,
       variablesSerializer = variablesSerializer,
@@ -37,9 +39,10 @@ public class CreatePost internal constructor(public val connector: PostsConnecto
     @Serializable public data class PostData(val id: String, val content: String)
   }
 
-  private companion object {
-    val responseDeserializer = serializer<Unit>()
-    val variablesSerializer = serializer<Variables>()
+  public companion object {
+    public const val operationName: String = "createPost"
+    public val responseDeserializer: DeserializationStrategy<Unit> = serializer<Unit>()
+    public val variablesSerializer: SerializationStrategy<Variables> = serializer<Variables>()
   }
 }
 
