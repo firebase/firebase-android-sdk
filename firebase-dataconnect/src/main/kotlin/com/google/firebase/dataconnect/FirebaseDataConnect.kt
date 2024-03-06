@@ -30,7 +30,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
-import java.util.Objects
 
 public class FirebaseDataConnect
 internal constructor(

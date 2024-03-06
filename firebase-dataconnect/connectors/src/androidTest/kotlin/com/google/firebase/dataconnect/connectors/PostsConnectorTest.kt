@@ -20,7 +20,6 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
 import com.google.firebase.util.nextAlphanumericString
-import kotlin.math.absoluteValue
 import kotlin.random.Random
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -45,26 +44,26 @@ class PostsConnectorTest {
 
   @Test
   fun createCommentShouldAddACommentToThePost() = runTest {
-    val postId = Random.nextAlphanumericString()
-    val postContent = Random.Default.nextLong().absoluteValue.toString(30)
+    val postId = randomPostId()
+    val postContent = randomPostContent()
     posts.createPost(id = postId, content = postContent)
 
-    val comment1Content = Random.Default.nextLong().absoluteValue.toString(30)
+    val comment1Content = randomPostContent()
     posts.createComment(content = comment1Content, postId = postId)
 
-    val comment2Content = Random.Default.nextLong().absoluteValue.toString(30)
+    val comment2Content = randomPostContent()
     posts.createComment(content = comment2Content, postId = postId)
 
     val queryResponse = posts.getPost(id = postId)
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
       .isEqualTo(
-        GetPostResponse.Post(
+        GetPost.Response.Post(
           content = postContent,
           comments =
             listOf(
-              GetPostResponse.Post.Comment(id = null, content = comment1Content),
-              GetPostResponse.Post.Comment(id = null, content = comment2Content),
+              GetPost.Response.Post.Comment(id = null, content = comment1Content),
+              GetPost.Response.Post.Comment(id = null, content = comment2Content),
             )
         )
       )
@@ -72,34 +71,34 @@ class PostsConnectorTest {
 
   @Test
   fun getPostWithNonExistingId() = runTest {
-    val queryResponse = posts.getPost(id = Random.nextAlphanumericString())
+    val queryResponse = posts.getPost(id = randomPostId())
     assertWithMessage("queryResponse").that(queryResponse.data.post).isNull()
   }
 
   @Test
   fun createPostThenGetPost() = runTest {
-    val postId = Random.nextAlphanumericString()
-    val postContent = Random.Default.nextLong().absoluteValue.toString(30)
+    val postId = randomPostId()
+    val postContent = randomPostContent()
 
     posts.createPost(id = postId, content = postContent)
 
     val queryResponse = posts.getPost(id = postId)
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
-      .isEqualTo(GetPostResponse.Post(content = postContent, comments = emptyList()))
+      .isEqualTo(GetPost.Response.Post(content = postContent, comments = emptyList()))
   }
 
   @Test
   fun subscribe() = runTest {
-    val postId1 = Random.nextAlphanumericString()
-    val postContent1 = Random.nextAlphanumericString()
-    val postId2 = Random.nextAlphanumericString()
-    val postContent2 = Random.nextAlphanumericString()
+    val postId1 = randomPostId()
+    val postContent1 = randomPostContent()
+    val postId2 = randomPostId()
+    val postContent2 = randomPostContent()
 
     posts.createPost(id = postId1, content = postContent1)
     posts.createPost(id = postId2, content = postContent2)
 
-    val querySubscription = posts.subscriptions.getPost(id = postId1)
+    val querySubscription = posts.getPost.subscribe(id = postId1)
     assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
     val result1 = querySubscription.resultFlow.first()
@@ -111,7 +110,7 @@ class PostsConnectorTest {
 
     val flow2Job = backgroundScope.async { querySubscription.resultFlow.take(2).toList() }
 
-    querySubscription.update(GetPostVariables(id = postId2))
+    querySubscription.update(GetPost.Variables(id = postId2))
 
     val results2 = flow2Job.await()
     assertWithMessage("results2.size").that(results2.size).isEqualTo(2)
@@ -123,5 +122,10 @@ class PostsConnectorTest {
       .isEqualTo(postContent2)
 
     assertWithMessage("lastResult 2").that(querySubscription.lastResult).isEqualTo(results2[1])
+  }
+
+  private companion object {
+    fun randomPostId() = "PostId_" + Random.nextAlphanumericString(length = 10)
+    fun randomPostContent() = "PostContent_" + Random.nextAlphanumericString(length = 40)
   }
 }

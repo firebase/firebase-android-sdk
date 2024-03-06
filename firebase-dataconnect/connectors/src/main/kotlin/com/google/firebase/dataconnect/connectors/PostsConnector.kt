@@ -19,19 +19,11 @@ import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import java.util.WeakHashMap
 
-public class PostsConnector(public val dataConnect: FirebaseDataConnect) {
+public class PostsConnector private constructor(public val dataConnect: FirebaseDataConnect) {
 
-  public class Mutations internal constructor(public val connector: PostsConnector)
-
-  public val mutations: Mutations = Mutations(this)
-
-  public class Queries internal constructor(public val connector: PostsConnector)
-
-  public val queries: Queries = Queries(this)
-
-  public class Subscriptions internal constructor(public val connector: PostsConnector)
-
-  public val subscriptions: Subscriptions = Subscriptions(this)
+  public val getPost: GetPost by lazy { GetPost(this) }
+  public val createPost: CreatePost by lazy { CreatePost(this) }
+  public val createComment: CreateComment by lazy { CreateComment(this) }
 
   public companion object {
     public val config: ConnectorConfig =
@@ -50,11 +42,7 @@ public class PostsConnector(public val dataConnect: FirebaseDataConnect) {
       getInstance(FirebaseDataConnect.getInstance(app, config, settings))
 
     private fun getInstance(dataConnect: FirebaseDataConnect): PostsConnector =
-      synchronized(instances) {
-        instances.getOrPut(dataConnect) {
-          PostsConnector(dataConnect)
-        }
-      }
+      synchronized(instances) { instances.getOrPut(dataConnect) { PostsConnector(dataConnect) } }
 
     private val instances = WeakHashMap<FirebaseDataConnect, PostsConnector>()
   }

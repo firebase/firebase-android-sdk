@@ -19,33 +19,32 @@ import com.google.firebase.dataconnect.mutation
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
-@Serializable
-public data class CreateCommentVariables(val data: CommentData) {
-  @Serializable public data class CommentData(val content: String, val postId: String)
-}
+public class CreateComment internal constructor(public val connector: PostsConnector) {
 
-public fun PostsConnector.Mutations.createComment(
-  variables: CreateCommentVariables
-): MutationRef<Unit, CreateCommentVariables> =
-  connector.dataConnect.mutation(
-    operationName = "createComment",
-    variables = variables,
-    responseDeserializer = serializer(),
-    variablesSerializer = serializer()
-  )
-
-public fun PostsConnector.Mutations.createComment(
-  content: String,
-  postId: String
-): MutationRef<Unit, CreateCommentVariables> =
-  createComment(
-    CreateCommentVariables(
-      data = CreateCommentVariables.CommentData(content = content, postId = postId)
+  public fun ref(variables: Variables): MutationRef<Unit, Variables> =
+    connector.dataConnect.mutation(
+      operationName = "createComment",
+      variables = variables,
+      responseDeserializer = responseDeserializer,
+      variablesSerializer = variablesSerializer,
     )
-  )
+
+  public fun ref(content: String, postId: String): MutationRef<Unit, Variables> =
+    ref(Variables(data = Variables.CommentData(content = content, postId = postId)))
+
+  @Serializable
+  public data class Variables(val data: CommentData) {
+    @Serializable public data class CommentData(val content: String, val postId: String)
+  }
+
+  private companion object {
+    val responseDeserializer = serializer<Unit>()
+    val variablesSerializer = serializer<Variables>()
+  }
+}
 
 public suspend fun PostsConnector.createComment(
   content: String,
   postId: String
-): DataConnectMutationResult<Unit, CreateCommentVariables> =
-  mutations.createComment(content = content, postId = postId).execute()
+): DataConnectMutationResult<Unit, CreateComment.Variables> =
+  createComment.ref(content = content, postId = postId).execute()

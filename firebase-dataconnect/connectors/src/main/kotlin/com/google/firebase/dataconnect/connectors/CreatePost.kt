@@ -19,29 +19,32 @@ import com.google.firebase.dataconnect.mutation
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
-@Serializable
-public data class CreatePostVariables(val data: PostData) {
-  @Serializable public data class PostData(val id: String, val content: String)
+public class CreatePost internal constructor(public val connector: PostsConnector) {
+
+  public fun ref(variables: Variables): MutationRef<Unit, Variables> =
+    connector.dataConnect.mutation(
+      operationName = "createPost",
+      variables = variables,
+      responseDeserializer = responseDeserializer,
+      variablesSerializer = variablesSerializer,
+    )
+
+  public fun ref(id: String, content: String): MutationRef<Unit, Variables> =
+    ref(Variables(data = Variables.PostData(id = id, content = content)))
+
+  @Serializable
+  public data class Variables(val data: PostData) {
+    @Serializable public data class PostData(val id: String, val content: String)
+  }
+
+  private companion object {
+    val responseDeserializer = serializer<Unit>()
+    val variablesSerializer = serializer<Variables>()
+  }
 }
-
-public fun PostsConnector.Mutations.createPost(
-  variables: CreatePostVariables
-): MutationRef<Unit, CreatePostVariables> =
-  connector.dataConnect.mutation(
-    operationName = "createPost",
-    variables = variables,
-    responseDeserializer = serializer(),
-    variablesSerializer = serializer()
-  )
-
-public fun PostsConnector.Mutations.createPost(
-  id: String,
-  content: String
-): MutationRef<Unit, CreatePostVariables> =
-  createPost(CreatePostVariables(data = CreatePostVariables.PostData(id = id, content = content)))
 
 public suspend fun PostsConnector.createPost(
   id: String,
   content: String
-): DataConnectMutationResult<Unit, CreatePostVariables> =
-  mutations.createPost(id = id, content = content).execute()
+): DataConnectMutationResult<Unit, CreatePost.Variables> =
+  createPost.ref(id = id, content = content).execute()

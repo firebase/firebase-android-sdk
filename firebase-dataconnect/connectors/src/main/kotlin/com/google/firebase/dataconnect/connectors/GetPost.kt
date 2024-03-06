@@ -20,34 +20,37 @@ import com.google.firebase.dataconnect.query
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
-@Serializable
-public data class GetPostResponse(val post: Post?) {
+public class GetPost internal constructor(public val connector: PostsConnector) {
+
+  public fun ref(variables: Variables): QueryRef<Response, Variables> =
+    connector.dataConnect.query(
+      operationName = "getPost",
+      variables = variables,
+      responseDeserializer = responseDeserializer,
+      variablesSerializer = variablesSerializer,
+    )
+
+  public fun ref(id: String): QueryRef<Response, Variables> = ref(Variables(id = id))
+
   @Serializable
-  public data class Post(val content: String, val comments: List<Comment>) {
-    @Serializable public data class Comment(val id: String?, val content: String)
+  public data class Response(val post: Post?) {
+    @Serializable
+    public data class Post(val content: String, val comments: List<Comment>) {
+      @Serializable public data class Comment(val id: String?, val content: String)
+    }
+  }
+
+  @Serializable public data class Variables(val id: String)
+
+  private companion object {
+    val responseDeserializer = serializer<Response>()
+    val variablesSerializer = serializer<Variables>()
   }
 }
 
-@Serializable public data class GetPostVariables(val id: String)
-
-public fun PostsConnector.Queries.getPost(
-  variables: GetPostVariables
-): QueryRef<GetPostResponse, GetPostVariables> =
-  connector.dataConnect.query(
-    operationName = "getPost",
-    variables = variables,
-    responseDeserializer = serializer(),
-    variablesSerializer = serializer()
-  )
-
-public fun PostsConnector.Queries.getPost(id: String): QueryRef<GetPostResponse, GetPostVariables> =
-  getPost(GetPostVariables(id = id))
-
 public suspend fun PostsConnector.getPost(
   id: String
-): DataConnectQueryResult<GetPostResponse, GetPostVariables> = queries.getPost(id = id).execute()
+): DataConnectQueryResult<GetPost.Response, GetPost.Variables> = getPost.ref(id = id).execute()
 
-public fun PostsConnector.Subscriptions.getPost(
-  id: String
-): QuerySubscription<GetPostResponse, GetPostVariables> =
-  connector.queries.getPost(id = id).subscribe()
+public fun GetPost.subscribe(id: String): QuerySubscription<GetPost.Response, GetPost.Variables> =
+  ref(id = id).subscribe()
