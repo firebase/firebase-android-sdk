@@ -346,7 +346,7 @@ class StateSimulations {
       values.put("payload_encoding", "encoding");
       values.put("inline", true);
       values.put("product_id", 42);
-      values.put("zwieback_cookie_override", "cookie_override");
+      values.put("pseudonymous_id", "pseudonymous id");
       long newEventId = db.insert("events", null, values);
       assertThat(newEventId).isNotEqualTo(-1);
 

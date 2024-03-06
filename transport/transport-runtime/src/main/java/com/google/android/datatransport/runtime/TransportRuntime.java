@@ -169,8 +169,8 @@ public class TransportRuntime implements TransportInternal {
     }
     if (request.getEvent().getEventContext() != null) {
       EventContext eventContext = request.getEvent().getEventContext();
-      if (eventContext.getCookieOverride() != null) {
-        builder.setCookieOverride(eventContext.getCookieOverride());
+      if (eventContext.getPseudonymousId() != null) {
+        builder.setPseudonymousId(eventContext.getPseudonymousId());
       }
       if (eventContext.getExperimentIdsClear() != null) {
         builder.setExperimentIdsClear(eventContext.getExperimentIdsClear());

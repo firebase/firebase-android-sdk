@@ -136,7 +136,7 @@ public class SQLiteEventStore
               values.put("inline", inline);
               values.put("payload", inline ? payloadBytes : new byte[0]);
               values.put("product_id", event.getProductId());
-              values.put("zwieback_cookie_override", event.getCookieOverride());
+              values.put("pseudonymous_id", event.getPseudonymousId());
               values.put("experiment_ids_clear_blob", event.getExperimentIdsClear());
               values.put("experiment_ids_encrypted_blob", event.getExperimentIdsEncrypted());
               long newEventId = db.insert("events", null, values);
@@ -453,7 +453,7 @@ public class SQLiteEventStore
               "code",
               "inline",
               "product_id",
-              "zwieback_cookie_override",
+              "pseudonymous_id",
               "experiment_ids_clear_blob",
               "experiment_ids_encrypted_blob",
             },
@@ -486,7 +486,7 @@ public class SQLiteEventStore
               event.setProductId(cursor.getInt(8));
             }
             if (!cursor.isNull(9)) {
-              event.setCookieOverride(cursor.getString(9));
+              event.setPseudonymousId(cursor.getString(9));
             }
             if (!cursor.isNull(10)) {
               event.setExperimentIdsClear(cursor.getBlob(10));

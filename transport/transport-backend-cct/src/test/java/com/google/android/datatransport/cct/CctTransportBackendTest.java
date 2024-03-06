@@ -85,7 +85,7 @@ public class CctTransportBackendTest {
   private CctTransportBackend BACKEND =
       new CctTransportBackend(ApplicationProvider.getApplicationContext(), wallClock, uptimeClock);
 
-  private static final String COOKIE_OVERRIDE = "zwieback_cookie_override";
+  private static final String PSEUDONYMOUS_ID = "pseudonymous Id";
   private ByteString EXPERIMENT_IDS_CLEAR =
       ByteString.copyFrom("experiment ids clear".getBytes(Charset.defaultCharset()));
 
@@ -123,7 +123,7 @@ public class CctTransportBackendTest {
                                 JSON_ENCODING, JSON_PAYLOAD.getBytes(Charset.defaultCharset())))
                         .setCode(CODE)
                         .setProductId(PRODUCT_ID)
-                        .setCookieOverride(COOKIE_OVERRIDE)
+                        .setPseudonymousId(PSEUDONYMOUS_ID)
                         .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR.toByteArray())
                         .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED.toByteArray())
                         .build())))
@@ -212,7 +212,7 @@ public class CctTransportBackendTest {
                 matchingJsonPath(
                     String.format(
                         "$[?(@.logRequest[0].logEvent[1].zwiebackCookieOverride == \"%s\")]",
-                        COOKIE_OVERRIDE)))
+                        PSEUDONYMOUS_ID)))
             .withRequestBody(
                 matchingJsonPath(
                     String.format(
