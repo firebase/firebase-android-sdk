@@ -21,7 +21,7 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class EventContext {
   @Nullable
-  public abstract String getCookieOverride();
+  public abstract String getPseudonymousId();
 
   @Nullable
   @SuppressWarnings("mutable")
@@ -38,7 +38,7 @@ public abstract class EventContext {
   @AutoValue.Builder
   public abstract static class Builder {
     @NonNull
-    public abstract Builder setCookieOverride(String value);
+    public abstract Builder setPseudonymousId(String value);
 
     @NonNull
     public abstract Builder setExperimentIdsClear(byte[] value);

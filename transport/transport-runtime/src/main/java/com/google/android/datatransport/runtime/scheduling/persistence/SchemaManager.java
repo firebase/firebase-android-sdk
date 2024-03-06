@@ -143,7 +143,7 @@ final class SchemaManager extends SQLiteOpenHelper {
 
   private static final SchemaManager.Migration MIGRATE_TO_V7 =
       db -> {
-        db.execSQL("ALTER TABLE events ADD COLUMN zwieback_cookie_override TEXT");
+        db.execSQL("ALTER TABLE events ADD COLUMN pseudonymous_id TEXT");
         db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_clear_blob BLOB");
         db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_encrypted_blob BLOB");
       };

@@ -75,7 +75,7 @@ public class TransportRuntimeTest {
           return criticalSection.execute();
         }
       };
-  private static final String COOKIE_OVERRIDE = "cookie override";
+  private static final String PSEUDONYMOUS_ID = "pseudonymous id";
   private byte[] EXPERIMENT_IDS_CLEAR = "experiment ids clear".getBytes(Charset.defaultCharset());
   private byte[] EXPERIMENT_IDS_ENCRYPTED =
       "experiment ids encrypted".getBytes(Charset.defaultCharset());
@@ -108,7 +108,7 @@ public class TransportRuntimeTest {
             "TelemetryData",
             ProductData.withProductId(TEST_PRODUCT_ID),
             EventContext.builder()
-                .setCookieOverride(COOKIE_OVERRIDE)
+                .setPseudonymousId(PSEUDONYMOUS_ID)
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .build());
@@ -158,7 +158,7 @@ public class TransportRuntimeTest {
             "TelemetryData",
             ProductData.withProductId(TEST_PRODUCT_ID),
             EventContext.builder()
-                .setCookieOverride(COOKIE_OVERRIDE)
+                .setPseudonymousId(PSEUDONYMOUS_ID)
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .build());
@@ -172,7 +172,7 @@ public class TransportRuntimeTest {
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .setCode(12)
             .setProductId(TEST_PRODUCT_ID)
-            .setCookieOverride(COOKIE_OVERRIDE)
+            .setPseudonymousId(PSEUDONYMOUS_ID)
             .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
             .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
             .build();
@@ -217,7 +217,7 @@ public class TransportRuntimeTest {
             "TelemetryData",
             ProductData.withProductId(TEST_PRODUCT_ID),
             EventContext.builder()
-                .setCookieOverride(COOKIE_OVERRIDE)
+                .setPseudonymousId(PSEUDONYMOUS_ID)
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .build());
@@ -261,7 +261,7 @@ public class TransportRuntimeTest {
             "TelemetryData",
             ProductData.withProductId(TEST_PRODUCT_ID),
             EventContext.builder()
-                .setCookieOverride(COOKIE_OVERRIDE)
+                .setPseudonymousId(PSEUDONYMOUS_ID)
                 .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
                 .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
                 .build());
@@ -275,7 +275,7 @@ public class TransportRuntimeTest {
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .setCode(12)
             .setProductId(TEST_PRODUCT_ID)
-            .setCookieOverride(COOKIE_OVERRIDE)
+            .setPseudonymousId(PSEUDONYMOUS_ID)
             .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
             .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
             .build();

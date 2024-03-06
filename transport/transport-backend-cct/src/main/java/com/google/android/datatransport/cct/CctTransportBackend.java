@@ -297,8 +297,8 @@ final class CctTransportBackend implements TransportBackend {
                   .setProductIdOrigin(ComplianceData.ProductIdOrigin.EVENT_OVERRIDE)
                   .build());
         }
-        if (eventInternal.getCookieOverride() != null) {
-          event.setZwiebackCookieOverride(eventInternal.getCookieOverride());
+        if (eventInternal.getPseudonymousId() != null) {
+          event.setZwiebackCookieOverride(eventInternal.getPseudonymousId());
         }
 
         if (eventInternal.getExperimentIdsClear() != null

@@ -44,7 +44,7 @@ public abstract class EventInternal {
   public abstract Integer getProductId();
 
   @Nullable
-  public abstract String getCookieOverride();
+  public abstract String getPseudonymousId();
 
   @Nullable
   @SuppressWarnings("mutable")
@@ -83,7 +83,7 @@ public abstract class EventInternal {
         .setTransportName(getTransportName())
         .setCode(getCode())
         .setProductId(getProductId())
-        .setCookieOverride(getCookieOverride())
+        .setPseudonymousId(getPseudonymousId())
         .setExperimentIdsClear(getExperimentIdsClear())
         .setExperimentIdsEncrypted(getExperimentIdsEncrypted())
         .setEncodedPayload(getEncodedPayload())
@@ -112,7 +112,7 @@ public abstract class EventInternal {
 
     public abstract Builder setProductId(Integer value);
 
-    public abstract Builder setCookieOverride(String value);
+    public abstract Builder setPseudonymousId(String value);
 
     public abstract Builder setExperimentIdsClear(byte[] value);
 
