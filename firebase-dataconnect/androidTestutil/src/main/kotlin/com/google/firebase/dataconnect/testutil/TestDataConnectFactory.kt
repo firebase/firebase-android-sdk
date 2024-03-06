@@ -17,13 +17,8 @@ package com.google.firebase.dataconnect.testutil
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.nextAlphanumericString
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.Companion.installAllTypesSchema
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.installPersonSchema
+import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
-import kotlinx.coroutines.runBlocking
 
 /**
  * A JUnit test rule that creates instances of [FirebaseDataConnect] for use during testing, and
@@ -31,9 +26,6 @@ import kotlinx.coroutines.runBlocking
  */
 class TestDataConnectFactory :
   FactoryTestRule<FirebaseDataConnect, TestDataConnectFactory.Params>() {
-
-  val personSchema: PersonSchema by lazy { runBlocking { installPersonSchema() } }
-  val allTypesSchema: AllTypesSchema by lazy { runBlocking { installAllTypesSchema() } }
 
   fun newInstance(
     service: String? = null,

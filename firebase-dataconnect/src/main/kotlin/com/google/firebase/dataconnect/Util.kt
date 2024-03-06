@@ -16,8 +16,6 @@ package com.google.firebase.dataconnect
 import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
-import kotlin.math.abs
-import kotlin.random.Random
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -43,39 +41,10 @@ internal fun nextSequenceNumber(): Long {
   return nextSequenceId.incrementAndGet()
 }
 
-/**
- * Generates and returns a string containing random alphanumeric characters.
- *
- * NOTE: The randomness of this function is NOT cryptographically safe. Only use the strings
- * returned from this method in contexts where security is not a concern.
- *
- * @param length the number of random characters to generate and include in the returned string; if
- * `null`, then a length of 10 is used.
- * @return a string containing the given (or default) number of random alphanumeric characters.
- */
-internal fun Random.nextAlphanumericString(length: Int? = null): String = buildString {
-  var numCharactersRemaining =
-    if (length === null) 10 else length.also { require(it >= 0) { "invalid length: $it" } }
-
-  while (numCharactersRemaining > 0) {
-    // Ignore the first character of the alphanumeric string because its distribution is not random.
-    val randomCharacters = abs(nextLong()).toAlphaNumericString()
-    val numCharactersToAppend = kotlin.math.min(numCharactersRemaining, randomCharacters.length - 1)
-    append(randomCharacters, 1, numCharactersToAppend)
-    numCharactersRemaining -= numCharactersToAppend
-  }
-}
-
 // NOTE: `ALPHANUMERIC_ALPHABET` MUST have a length of 32 (since 2^5=32). This allows encoding 5
 // bits as a single digit from this alphabet. Note that some numbers and letters were removed,
 // especially those that can look similar in different fonts, like '1', 'l', and 'i'.
 private const val ALPHANUMERIC_ALPHABET = "23456789abcdefghjkmnopqrstuvwxyz"
-
-/**
- * Converts this number to a base-36 string, which uses the 26 letters from the English alphabet and
- * the 10 numeric digits.
- */
-internal fun Long.toAlphaNumericString(): String = toString(36)
 
 /**
  * Converts this byte array to a base-36 string, which uses the 26 letters from the English alphabet

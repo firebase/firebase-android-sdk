@@ -14,6 +14,7 @@
 package com.google.firebase.dataconnect
 
 import android.util.Log
+import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 
 public enum class LogLevel {

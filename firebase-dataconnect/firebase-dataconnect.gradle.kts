@@ -110,6 +110,7 @@ dependencies {
   testImplementation(libs.truth)
   testImplementation(libs.truth.liteproto.extension)
 
+  androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))
   androidTestImplementation(libs.androidx.test.core)

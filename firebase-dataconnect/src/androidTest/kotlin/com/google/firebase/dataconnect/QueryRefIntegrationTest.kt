@@ -20,6 +20,9 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
+import com.google.firebase.dataconnect.testutil.schemas.LazyAllTypesSchema
+import com.google.firebase.dataconnect.testutil.schemas.LazyPersonSchema
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Response.Person
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
@@ -35,10 +38,8 @@ class QueryRefIntegrationTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val personSchema
-    get() = dataConnectFactory.personSchema
-  private val allTypesSchema
-    get() = dataConnectFactory.allTypesSchema
+  private val personSchema: PersonSchema by LazyPersonSchema(dataConnectFactory)
+  private val allTypesSchema: AllTypesSchema by LazyAllTypesSchema(dataConnectFactory)
 
   @Test
   fun executeWithASingleResultReturnsTheCorrectResult() = runTest {

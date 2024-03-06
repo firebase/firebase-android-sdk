@@ -19,6 +19,7 @@ import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.installEmulatorSchema
+import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -251,8 +252,14 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
   companion object {
     const val CONNECTOR = "ops"
-
-    suspend fun TestDataConnectFactory.installAllTypesSchema(): AllTypesSchema =
-      AllTypesSchema(newInstance(connector = CONNECTOR)).apply { installEmulatorSchema() }
   }
+}
+
+suspend fun TestDataConnectFactory.installAllTypesSchema() =
+  AllTypesSchema(newInstance(connector = AllTypesSchema.CONNECTOR)).apply {
+    installEmulatorSchema()
+  }
+
+fun LazyAllTypesSchema(dataConnectFactory: TestDataConnectFactory): Lazy<AllTypesSchema> = lazy {
+  runBlocking { dataConnectFactory.installAllTypesSchema() }
 }

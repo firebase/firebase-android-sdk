@@ -17,8 +17,7 @@ class PersonSchemaTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val schema
-    get() = dataConnectFactory.personSchema
+  private val schema: PersonSchema by LazyPersonSchema(dataConnectFactory)
 
   @Test
   fun createPersonShouldCreateTheSpecifiedPerson() = runTest {

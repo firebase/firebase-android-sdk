@@ -6,34 +6,14 @@ syntax = "proto3";
 
 package google.firebase.dataconnect.emulator;
 
-import "google/firebase/dataconnect/v1main/connector_service.proto";
-import "google/firebase/dataconnect/v1main/graphql_error.proto";
 import "google/protobuf/empty.proto";
 
 option java_multiple_files = true;
 
 service EmulatorService {
-  // Surfaces GQL parsing errors.
-  rpc GetCompileErrors(GetCompileErrorsRequest) returns (GetCompileErrorsResponse) {
-  }
-
   // Sets up a lightweight dummy engine instance.
   rpc SetupSchema(SetupSchemaRequest) returns (google.protobuf.Empty) {
   }
-}
-
-message GetCompileErrorsRequest {
-  // Relative path to document being compiled from the firemat.yaml location.
-  string document_path = 1;
-
-  // This is the `{service}` portion of the schema resource name of
-  // `projects/{project}/locations/{location}/services/{service}/schemas/{schema}`
-  // in production APIs. If left empty, this defaults to `local`
-  string service_id = 2;
-}
-
-message GetCompileErrorsResponse {
-  repeated GraphqlError errors = 1;
 }
 
 message SetupSchemaRequest {
@@ -48,10 +28,6 @@ message SetupSchemaRequest {
   // Mapping of operation set name to operation set source.
   map<string, Source> operation_sets = 3;
 }
-
-// The below resources should stay in line with the control plane protos found
-// here:
-// http://google3/google/firebase/dataconnect/v1main/resources.proto;l=395-416;rcl=577941647
 
 // Used to represent a set of source files.
 message Source {

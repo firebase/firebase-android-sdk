@@ -19,6 +19,7 @@ import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.installEmulatorSchema
+import kotlinx.coroutines.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -133,8 +134,12 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   companion object {
     const val CONNECTOR = "ops"
-
-    suspend fun TestDataConnectFactory.installPersonSchema(): PersonSchema =
-      PersonSchema(newInstance(connector = CONNECTOR)).apply { installEmulatorSchema() }
   }
+}
+
+suspend fun TestDataConnectFactory.installPersonSchema() =
+  PersonSchema(newInstance(connector = PersonSchema.CONNECTOR)).apply { installEmulatorSchema() }
+
+fun LazyPersonSchema(dataConnectFactory: TestDataConnectFactory): Lazy<PersonSchema> = lazy {
+  runBlocking { dataConnectFactory.installPersonSchema() }
 }

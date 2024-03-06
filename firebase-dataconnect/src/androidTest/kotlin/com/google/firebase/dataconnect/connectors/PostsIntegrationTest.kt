@@ -16,10 +16,10 @@ package com.google.firebase.dataconnect.connectors
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertWithMessage
-import com.google.firebase.dataconnect.nextAlphanumericString
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
+import com.google.firebase.util.nextAlphanumericString
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 import kotlinx.coroutines.*

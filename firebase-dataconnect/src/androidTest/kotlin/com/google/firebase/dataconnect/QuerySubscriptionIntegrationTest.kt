@@ -23,6 +23,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.schemas.LazyPersonSchema
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
 import com.google.firebase.dataconnect.testutil.skipItemsWhere
 import kotlin.time.Duration.Companion.seconds
@@ -48,8 +50,7 @@ class QuerySubscriptionIntegrationTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val schema
-    get() = dataConnectFactory.personSchema
+  private val schema: PersonSchema by LazyPersonSchema(dataConnectFactory)
 
   @Test
   fun lastResult_should_be_null_on_new_instance() {

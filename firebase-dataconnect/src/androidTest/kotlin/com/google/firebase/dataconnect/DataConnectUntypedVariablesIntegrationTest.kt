@@ -18,6 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.schemas.LazyPersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -32,8 +33,7 @@ class DataConnectUntypedVariablesIntegrationTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val personSchema
-    get() = dataConnectFactory.personSchema
+  private val personSchema: PersonSchema by LazyPersonSchema(dataConnectFactory)
 
   @Test
   fun emptyMapWorksWithQuery() = runTest {

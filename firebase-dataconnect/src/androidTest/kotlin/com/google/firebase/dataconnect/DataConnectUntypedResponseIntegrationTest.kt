@@ -19,6 +19,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
+import com.google.firebase.dataconnect.testutil.schemas.LazyAllTypesSchema
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
@@ -33,8 +34,7 @@ class DataConnectUntypedResponseIntegrationTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val allTypesSchema
-    get() = dataConnectFactory.allTypesSchema
+  private val allTypesSchema: AllTypesSchema by LazyAllTypesSchema(dataConnectFactory)
 
   @Test
   fun primitiveTypes() = runTest {

@@ -1,7 +1,7 @@
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.LogLevel
-import com.google.firebase.dataconnect.logLevel
 import org.junit.rules.ExternalResource
 
 /**
@@ -14,11 +14,11 @@ class DataConnectLogLevelRule(val logLevelDuringTest: LogLevel? = LogLevel.DEBUG
   private lateinit var logLevelBefore: LogLevel
 
   override fun before() {
-    logLevelBefore = logLevel
-    logLevelDuringTest?.also { logLevel = it }
+    logLevelBefore = FirebaseDataConnect.logLevel
+    logLevelDuringTest?.also { FirebaseDataConnect.logLevel = it }
   }
 
   override fun after() {
-    logLevel = logLevelBefore
+    FirebaseDataConnect.logLevel = logLevelBefore
   }
 }

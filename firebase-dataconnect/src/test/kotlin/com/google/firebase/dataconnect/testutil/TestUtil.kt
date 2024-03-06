@@ -7,7 +7,7 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnectFactory
-import com.google.firebase.dataconnect.nextAlphanumericString
+import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 import org.mockito.Mockito.mock
 import org.robolectric.RuntimeEnvironment

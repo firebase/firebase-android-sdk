@@ -15,6 +15,7 @@ package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.DataConnectGrpcClient.DeserialzedOperationResult
 import com.google.firebase.dataconnect.DataConnectGrpcClient.OperationResult
+import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
