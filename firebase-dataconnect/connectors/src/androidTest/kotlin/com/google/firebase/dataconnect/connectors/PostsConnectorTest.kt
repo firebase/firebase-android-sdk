@@ -98,7 +98,7 @@ class PostsConnectorTest {
     posts.createPost(id = postId1, content = postContent1)
     posts.createPost(id = postId2, content = postContent2)
 
-    val querySubscription = posts.getPost.subscribe(id = postId1)
+    val querySubscription = posts.getPost.ref(id = postId1).subscribe()
     assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
     val result1 = querySubscription.resultFlow.first()

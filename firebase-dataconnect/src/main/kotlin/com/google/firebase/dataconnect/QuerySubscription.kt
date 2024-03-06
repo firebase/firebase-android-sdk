@@ -25,7 +25,7 @@ internal constructor(query: QueryRef<Response, Variables>) {
   public val lastResult: DataConnectQueryResult<Response, Variables>? by _lastResult::value
 
   // Each collection of this flow triggers an implicit `reload()`.
-  public val resultFlow: Flow<DataConnectResult<Response, Variables>> = channelFlow {
+  public val resultFlow: Flow<DataConnectQueryResult<Response, Variables>> = channelFlow {
     val cachedResult = lastResult?.also { send(it) }
 
     var collectJob: Job? = null
@@ -55,6 +55,9 @@ internal constructor(query: QueryRef<Response, Variables>) {
       }
     }
   }
+
+  // TODO: Replace with an actual implementation.
+  public val exceptionFlow: Flow<DataConnectException?> = MutableStateFlow(null)
 
   public suspend fun reload() {
     val queryManager = query.dataConnect.lazyQueryManager.get()
