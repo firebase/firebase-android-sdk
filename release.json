@@ -2,10 +2,6 @@
     "name": "m144",
     "libraries": [
         ":firebase-config",
-        ":firebase-config:ktx",
-        ":firebase-database",
-        ":firebase-database:ktx",
-        ":firebase-firestore",
-        ":firebase-firestore:ktx"
+        ":firebase-config:ktx"
     ]
 }
