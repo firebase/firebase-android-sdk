@@ -15,7 +15,11 @@
 package com.google.firebase.dataconnect.connectors
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.firebase.Firebase
+import com.google.firebase.app
+import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
@@ -41,6 +45,185 @@ class PostsConnectorIntegrationTest {
       dataConnectFactory.adoptInstance(dataConnect)
     }
   }
+
+  @Test
+  fun instance_ShouldBeAssociatedWithTheDefaultFirebaseApp() {
+    val posts = PostsConnector.instance
+
+    assertThat(posts.dataConnect.app).isSameInstanceAs(Firebase.app)
+  }
+
+  @Test
+  fun instance_ShouldAlwaysReturnTheSameObject() {
+    val posts1 = PostsConnector.instance
+    val posts2 = PostsConnector.instance
+    val posts3 = PostsConnector.instance
+
+    assertThat(posts1).isSameInstanceAs(posts2)
+    assertThat(posts1).isSameInstanceAs(posts3)
+  }
+
+  @Test
+  fun instance_ShouldReturnANewInstanceIfTheDataConnectIsClosed() {
+    val posts1 = PostsConnector.instance
+    posts1.dataConnect.close()
+    val posts2 = PostsConnector.instance
+
+    assertThat(posts1).isNotSameInstanceAs(posts2)
+    assertThat(posts1.dataConnect).isNotSameInstanceAs(posts2.dataConnect)
+    assertThat(posts1.dataConnect.app).isSameInstanceAs(posts2.dataConnect.app)
+  }
+
+  @Test
+  fun getInstance_FirebaseApp_ShouldBeAssociatedWithTheGivenFirebaseApp() {
+    val app1 = firebaseAppFactory.newInstance()
+    val app2 = firebaseAppFactory.newInstance()
+
+    val posts1 = PostsConnector.getInstance(app1)
+    val posts2 = PostsConnector.getInstance(app2)
+
+    assertThat(posts1.dataConnect.app).isSameInstanceAs(app1)
+    assertThat(posts2.dataConnect.app).isSameInstanceAs(app2)
+  }
+
+  @Test
+  fun getInstance_FirebaseApp_ShouldAlwaysReturnTheSameObjectForAGivenFirebaseApp() {
+    val app1 = firebaseAppFactory.newInstance()
+    val app2 = firebaseAppFactory.newInstance()
+
+    val posts1 = PostsConnector.getInstance(app1)
+    val posts2 = PostsConnector.getInstance(app2)
+    val posts1b = PostsConnector.getInstance(app1)
+    val posts2b = PostsConnector.getInstance(app2)
+
+    assertThat(posts1).isSameInstanceAs(posts1b)
+    assertThat(posts2).isSameInstanceAs(posts2b)
+  }
+
+  @Test
+  fun getInstance_FirebaseApp_ShouldReturnANewInstanceIfTheDataConnectIsClosed() {
+    val app1 = firebaseAppFactory.newInstance()
+    val app2 = firebaseAppFactory.newInstance()
+
+    val posts1 = PostsConnector.getInstance(app1)
+    val posts2 = PostsConnector.getInstance(app2)
+    posts1.dataConnect.close()
+    posts2.dataConnect.close()
+    val posts1b = PostsConnector.getInstance(app1)
+    val posts2b = PostsConnector.getInstance(app2)
+
+    assertThat(posts1).isNotSameInstanceAs(posts1b)
+    assertThat(posts2).isNotSameInstanceAs(posts2b)
+    assertThat(posts1.dataConnect.app).isSameInstanceAs(app1)
+    assertThat(posts2.dataConnect.app).isSameInstanceAs(app2)
+    assertThat(posts1b.dataConnect.app).isSameInstanceAs(app1)
+    assertThat(posts2b.dataConnect.app).isSameInstanceAs(app2)
+  }
+
+  @Test
+  fun getInstance_DataConnectSettings_ShouldBeAssociatedWithTheDefaultFirebaseAppAndGivenSettings() {
+    // Clear the default `FirebaseDataConnect` instance in case it already exists with different
+    // settings, which would cause the calls to `getInstance()` below to unexpectedly throw.
+    PostsConnector.instance.dataConnect.close()
+    val settings = randomDataConnectSettings()
+
+    val posts = PostsConnector.getInstance(settings)
+
+    assertThat(posts.dataConnect.app).isSameInstanceAs(Firebase.app)
+    assertThat(posts.dataConnect.settings).isSameInstanceAs(settings)
+  }
+
+  @Test
+  fun getInstance_DataConnectSettings_ShouldAlwaysReturnTheSameObject() {
+    // Clear the default `FirebaseDataConnect` instance in case it already exists with different
+    // settings, which would cause the calls to `getInstance()` below to unexpectedly throw.
+    PostsConnector.instance.dataConnect.close()
+    val settings = randomDataConnectSettings()
+
+    val posts1 = PostsConnector.getInstance(settings)
+    val posts2 = PostsConnector.getInstance(settings)
+
+    assertThat(posts1).isSameInstanceAs(posts2)
+  }
+
+  @Test
+  fun getInstance_DataConnectSettings_ShouldReturnANewInstanceIfTheDataConnectIsClosed() {
+    // Clear the default `FirebaseDataConnect` instance in case it already exists with different
+    // settings, which would cause the calls to `getInstance()` below to unexpectedly throw.
+    PostsConnector.instance.dataConnect.close()
+    val settings = randomDataConnectSettings()
+
+    val posts1 = PostsConnector.getInstance(settings)
+    posts1.dataConnect.close()
+    val posts2 = PostsConnector.getInstance(settings)
+
+    assertThat(posts1).isNotSameInstanceAs(posts2)
+    assertThat(posts1.dataConnect.app).isSameInstanceAs(Firebase.app)
+  }
+
+
+
+
+
+
+  @Test
+  fun getInstance_FirebaseApp_DataConnectSettings_ShouldBeAssociatedWithTheGivenFirebaseApp() {
+    val app1 = firebaseAppFactory.newInstance()
+    val app2 = firebaseAppFactory.newInstance()
+    val settings1 = randomDataConnectSettings()
+    val settings2 = randomDataConnectSettings()
+
+    val posts1 = PostsConnector.getInstance(app1, settings1)
+    val posts2 = PostsConnector.getInstance(app2, settings2)
+
+    assertThat(posts1.dataConnect.app).isSameInstanceAs(app1)
+    assertThat(posts2.dataConnect.app).isSameInstanceAs(app2)
+    assertThat(posts1.dataConnect.settings).isSameInstanceAs(settings1)
+    assertThat(posts2.dataConnect.settings).isSameInstanceAs(settings2)
+  }
+
+  @Test
+  fun getInstance_FirebaseApp_DataConnectSettings_ShouldAlwaysReturnTheSameObjectForAGivenFirebaseApp() {
+    val app1 = firebaseAppFactory.newInstance()
+    val app2 = firebaseAppFactory.newInstance()
+    val settings1 = randomDataConnectSettings()
+    val settings2 = randomDataConnectSettings()
+
+    val posts1 = PostsConnector.getInstance(app1, settings1)
+    val posts2 = PostsConnector.getInstance(app2, settings2)
+    val posts1b = PostsConnector.getInstance(app1, settings1)
+    val posts2b = PostsConnector.getInstance(app2, settings2)
+
+    assertThat(posts1).isSameInstanceAs(posts1b)
+    assertThat(posts2).isSameInstanceAs(posts2b)
+    assertThat(posts1.dataConnect.settings).isSameInstanceAs(settings1)
+    assertThat(posts2.dataConnect.settings).isSameInstanceAs(settings2)
+  }
+
+  @Test
+  fun getInstance_FirebaseApp_DataConnectSettings_ShouldReturnANewInstanceIfTheDataConnectIsClosed() {
+    val app1 = firebaseAppFactory.newInstance()
+    val app2 = firebaseAppFactory.newInstance()
+    val settings1 = randomDataConnectSettings()
+    val settings2 = randomDataConnectSettings()
+
+    val posts1 = PostsConnector.getInstance(app1, settings1)
+    val posts2 = PostsConnector.getInstance(app2, settings2)
+    posts1.dataConnect.close()
+    posts2.dataConnect.close()
+    val posts1b = PostsConnector.getInstance(app1, settings1)
+    val posts2b = PostsConnector.getInstance(app2, settings2)
+
+    assertThat(posts1).isNotSameInstanceAs(posts1b)
+    assertThat(posts2).isNotSameInstanceAs(posts2b)
+    assertThat(posts1.dataConnect.app).isSameInstanceAs(app1)
+    assertThat(posts2.dataConnect.app).isSameInstanceAs(app2)
+    assertThat(posts1b.dataConnect.app).isSameInstanceAs(app1)
+    assertThat(posts2b.dataConnect.app).isSameInstanceAs(app2)
+  }
+
+
+
 
   @Test
   fun createCommentShouldAddACommentToThePost() = runTest {
@@ -127,5 +310,7 @@ class PostsConnectorIntegrationTest {
   private companion object {
     fun randomPostId() = "PostId_" + Random.nextAlphanumericString(length = 10)
     fun randomPostContent() = "PostContent_" + Random.nextAlphanumericString(length = 40)
+    fun randomHost() = "Host_" + Random.nextAlphanumericString(length = 10)
+    fun randomDataConnectSettings() = DataConnectSettings(host = randomHost())
   }
 }

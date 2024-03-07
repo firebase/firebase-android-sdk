@@ -2,10 +2,8 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.PostsConnector
-import com.google.firebase.dataconnect.connectors.getPost
 import com.google.firebase.dataconnect.testutil.newMockFirebaseApp
 import kotlinx.coroutines.test.*
-import org.bouncycastle.util.test.SimpleTest.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -13,9 +11,10 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class PostsConnectorUnitTest {
 
+  val posts by lazy { PostsConnector.getInstance(newMockFirebaseApp()) }
+
   @Test
   fun `getPost property should always return the same instance`() {
-    val posts = PostsConnector.getInstance(newMockFirebaseApp())
     val operation1 = posts.getPost
     val operation2 = posts.getPost
 
@@ -23,15 +22,7 @@ class PostsConnectorUnitTest {
   }
 
   @Test
-  fun `getPost query runs the query`() = runTest {
-    val posts = PostsConnector.getInstance(newMockFirebaseApp())
-    posts.dataConnect.useEmulator(host = "localhost")
-    posts.getPost(id = "foo")
-  }
-
-  @Test
   fun `createPost property should always return the same instance`() {
-    val posts = PostsConnector.getInstance(newMockFirebaseApp())
     val operation1 = posts.createPost
     val operation2 = posts.createPost
 
@@ -40,7 +31,6 @@ class PostsConnectorUnitTest {
 
   @Test
   fun `createComment property should always return the same instance`() {
-    val posts = PostsConnector.getInstance(newMockFirebaseApp())
     val operation1 = posts.createComment
     val operation2 = posts.createComment
 
