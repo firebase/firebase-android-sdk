@@ -1,4 +1,8 @@
 # Unreleased
+* [fixed] Fixed a bug that could cause a crash if the app was backgrounded
+  while it was listening for real-time Remote Config updates. For more information, see
+  <a href="https://github.com/firebase/firebase-android-sdk/issues/5751"
+     class="external">GitHub Issue #5751</a>.
 
 
 # 21.6.2
