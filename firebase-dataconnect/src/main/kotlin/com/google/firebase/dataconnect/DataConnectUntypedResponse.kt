@@ -18,21 +18,21 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 
-internal class DataConnectUntypedResponse
+internal class DataConnectUntypedData
 internal constructor(val data: Map<String, Any?>?, val errors: List<DataConnectError>) {
 
   override fun equals(other: Any?): Boolean =
-    (other is DataConnectUntypedResponse) && other.data == data && other.errors == errors
+    (other is DataConnectUntypedData) && other.data == data && other.errors == errors
 
   override fun hashCode(): Int = Objects.hash(data, errors)
 
-  override fun toString(): String = "DataConnectUntypedResponse(data=$data, errors=$errors)"
+  override fun toString(): String = "DataConnectUntypedData(data=$data, errors=$errors)"
 
-  companion object Deserializer : DeserializationStrategy<DataConnectUntypedResponse> {
+  companion object Deserializer : DeserializationStrategy<DataConnectUntypedData> {
     override val descriptor: SerialDescriptor
       get() = unsupported()
 
-    override fun deserialize(decoder: Decoder): DataConnectUntypedResponse = unsupported()
+    override fun deserialize(decoder: Decoder): DataConnectUntypedData = unsupported()
 
     private fun unsupported(): Nothing =
       throw UnsupportedOperationException(

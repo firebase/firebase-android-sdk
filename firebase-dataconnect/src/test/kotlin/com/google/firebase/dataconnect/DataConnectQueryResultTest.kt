@@ -25,7 +25,7 @@ class DataConnectQueryResultTest {
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "SampleQueryOperation",
         variables = TestVariables("SampleQueryVariables"),
-        responseDeserializer = serializer(),
+        dataDeserializer = serializer(),
         variablesSerializer = serializer()
       )
     sampleQuery1 =
@@ -33,7 +33,7 @@ class DataConnectQueryResultTest {
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "SampleQuery1Operation",
         variables = TestVariables("SampleQuery1Variables"),
-        responseDeserializer = serializer(),
+        dataDeserializer = serializer(),
         variablesSerializer = serializer()
       )
     sampleQuery2 =
@@ -41,7 +41,7 @@ class DataConnectQueryResultTest {
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "SampleQuery2Operation",
         variables = TestVariables("SampleQuery2Variables"),
-        responseDeserializer = serializer(),
+        dataDeserializer = serializer(),
         variablesSerializer = serializer()
       )
   }

@@ -58,12 +58,12 @@ class PostsConnectorTest {
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
       .isEqualTo(
-        GetPost.Response.Post(
+        GetPost.Data.Post(
           content = postContent,
           comments =
             listOf(
-              GetPost.Response.Post.Comment(id = null, content = comment1Content),
-              GetPost.Response.Post.Comment(id = null, content = comment2Content),
+              GetPost.Data.Post.Comment(id = null, content = comment1Content),
+              GetPost.Data.Post.Comment(id = null, content = comment2Content),
             )
         )
       )
@@ -85,7 +85,7 @@ class PostsConnectorTest {
     val queryResponse = posts.getPost(id = postId)
     assertWithMessage("queryResponse")
       .that(queryResponse.data.post)
-      .isEqualTo(GetPost.Response.Post(content = postContent, comments = emptyList()))
+      .isEqualTo(GetPost.Data.Post(content = postContent, comments = emptyList()))
   }
 
   @Test

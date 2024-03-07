@@ -98,29 +98,29 @@ fun Firebase.dataConnect(
   settings: DataConnectSettings
 ): FirebaseDataConnect = TODO()
 
-abstract class Reference<Response, Variables> internal constructor() {
+abstract class Reference<Data, Variables> internal constructor() {
   val dataConnect: FirebaseDataConnect
     get() = TODO()
 
   val variables: Variables = TODO()
-  abstract suspend fun execute(variables: Variables): DataConnectResult<Response, Variables>
+  abstract suspend fun execute(variables: Variables): DataConnectResult<Data, Variables>
 }
 
-class QueryRef<Response, Variables> internal constructor() : Reference<Response, Variables>() {
-  override suspend fun execute(variables: Variables): DataConnectQueryResult<Response, Variables> =
+class QueryRef<Data, Variables> internal constructor() : Reference<Data, Variables>() {
+  override suspend fun execute(variables: Variables): DataConnectQueryResult<Data, Variables> =
     TODO()
 
-  fun subscribe(variables: Variables): QuerySubscription<Response, Variables> = TODO()
+  fun subscribe(variables: Variables): QuerySubscription<Data, Variables> = TODO()
 }
 
-class QuerySubscription<Response, Variables> internal constructor(variables: Variables) {
-  val query: QueryRef<Response, Variables>
+class QuerySubscription<Data, Variables> internal constructor(variables: Variables) {
+  val query: QueryRef<Data, Variables>
     get() = TODO()
 
   // Alternative considered: add `lastResult`. The problem is, what do we do with this value if the
   // variables are changed via a call to update()? Do we clear it? Or do we leave it there even
   // though it came from a request with potentially-different variables?
-  val lastResult: DataConnectResult<Response, Variables>
+  val lastResult: DataConnectResult<Data, Variables>
     get() = TODO()
 
   // Alternative considered: Return `Deferred<Result<T>>` so that customer knows when the reload
@@ -131,16 +131,16 @@ class QuerySubscription<Response, Variables> internal constructor(variables: Var
   // some previous call to reload() by some other unrelated operation.
   fun reload(): Unit = TODO()
 
-  val resultFlow: Flow<DataConnectResult<Response, Variables>> = TODO()
+  val resultFlow: Flow<DataConnectResult<Data, Variables>> = TODO()
 }
 
 open class DataConnectException internal constructor(message: String) : Exception(message)
 
-sealed class DataConnectResult<Response, Variables> {
-  val data: Response
+sealed class DataConnectResult<Data, Variables> {
+  val data: Data
     get() = TODO()
 
-  open val ref: Reference<Response, Variables>
+  open val ref: Reference<Data, Variables>
     get() = TODO()
 
   override fun hashCode(): Int = TODO()
@@ -148,9 +148,9 @@ sealed class DataConnectResult<Response, Variables> {
   override fun toString(): String = TODO()
 }
 
-class DataConnectQueryResult<Response, Variables> internal constructor() :
-  DataConnectResult<Response, Variables>() {
-  override val ref: QueryRef<Response, Variables>
+class DataConnectQueryResult<Data, Variables> internal constructor() :
+  DataConnectResult<Data, Variables>() {
+  override val ref: QueryRef<Data, Variables>
     get() = TODO()
 }
 
@@ -179,7 +179,7 @@ class DataConnectError private constructor() {
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class PostConnector internal constructor() {
-  val getPost: QueryRef<GetPostQuery.Response, GetPostQuery.Variables> = TODO()
+  val getPost: QueryRef<GetPostQuery.Data, GetPostQuery.Variables> = TODO()
 
   companion object {
     val CONFIG: ConnectorConfig = TODO()
@@ -189,31 +189,30 @@ class PostConnector internal constructor() {
 val FirebaseDataConnect.postConnector: PostConnector
   get() = TODO()
 
-suspend fun QueryRef<GetPostQuery.Response, GetPostQuery.Variables>.execute(
+suspend fun QueryRef<GetPostQuery.Data, GetPostQuery.Variables>.execute(
   id: String
-): DataConnectQueryResult<GetPostQuery.Response, GetPostQuery.Variables> = TODO()
+): DataConnectQueryResult<GetPostQuery.Data, GetPostQuery.Variables> = TODO()
 
-fun QueryRef<GetPostQuery.Response, GetPostQuery.Variables>.subscribe(
+fun QueryRef<GetPostQuery.Data, GetPostQuery.Variables>.subscribe(
   id: String
-): QuerySubscription<GetPostQuery.Response, GetPostQuery.Variables> = TODO()
+): QuerySubscription<GetPostQuery.Data, GetPostQuery.Variables> = TODO()
 
-typealias GetPostQueryRef = QueryRef<GetPostQuery.Response, GetPostQuery.Variables>
+typealias GetPostQueryRef = QueryRef<GetPostQuery.Data, GetPostQuery.Variables>
 
-typealias GetPostQuerySubscription =
-  QuerySubscription<GetPostQuery.Response, GetPostQuery.Variables>
+typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Data, GetPostQuery.Variables>
 
 class GetPostQuery private constructor() {
 
   @Serializable data class Variables(val id: String)
 
-  data class Response(val post: Post) {
+  data class Data(val post: Post) {
     data class Post(val content: String, val comments: List<Comment>) {
       data class Comment(val id: String, val content: String)
     }
   }
 
   companion object {
-    fun query(dataConnect: FirebaseDataConnect): QueryRef<Response, Variables> = TODO()
+    fun query(dataConnect: FirebaseDataConnect): QueryRef<Data, Variables> = TODO()
   }
 }
 
@@ -316,5 +315,5 @@ private class MainActivity : Activity() {
 
   fun getIdFromTextView(): String = TODO()
   fun showError(postId: String, exception: Throwable): Unit = TODO()
-  fun showPostContent(postId: String, post: GetPostQuery.Response?): Unit = TODO()
+  fun showPostContent(postId: String, post: GetPostQuery.Data?): Unit = TODO()
 }

@@ -15,16 +15,16 @@ package com.google.firebase.dataconnect
 
 import java.util.Objects
 
-public sealed class DataConnectResult<Response, Variables>
-protected constructor(public val data: Response, internal val sequenceNumber: Long) {
-  public abstract val ref: OperationRef<Response, Variables>
+public sealed class DataConnectResult<Data, Variables>
+protected constructor(public val data: Data, internal val sequenceNumber: Long) {
+  public abstract val ref: OperationRef<Data, Variables>
 }
 
-public class DataConnectQueryResult<Response, Variables>
-internal constructor(data: Response, query: QueryRef<Response, Variables>, sequenceNumber: Long) :
-  DataConnectResult<Response, Variables>(data = data, sequenceNumber = sequenceNumber) {
+public class DataConnectQueryResult<Data, Variables>
+internal constructor(data: Data, query: QueryRef<Data, Variables>, sequenceNumber: Long) :
+  DataConnectResult<Data, Variables>(data = data, sequenceNumber = sequenceNumber) {
 
-  override val ref: QueryRef<Response, Variables> = query
+  override val ref: QueryRef<Data, Variables> = query
 
   override fun hashCode(): Int = Objects.hash("Query", data, ref)
 
@@ -34,14 +34,11 @@ internal constructor(data: Response, query: QueryRef<Response, Variables>, seque
   override fun toString(): String = "DataConnectQueryResult(data=$data, query=$ref)"
 }
 
-public class DataConnectMutationResult<Response, Variables>
-internal constructor(
-  data: Response,
-  mutation: MutationRef<Response, Variables>,
-  sequenceNumber: Long
-) : DataConnectResult<Response, Variables>(data = data, sequenceNumber = sequenceNumber) {
+public class DataConnectMutationResult<Data, Variables>
+internal constructor(data: Data, mutation: MutationRef<Data, Variables>, sequenceNumber: Long) :
+  DataConnectResult<Data, Variables>(data = data, sequenceNumber = sequenceNumber) {
 
-  override val ref: MutationRef<Response, Variables> = mutation
+  override val ref: MutationRef<Data, Variables> = mutation
 
   override fun hashCode(): Int = Objects.hash("Mutation", data, ref)
 

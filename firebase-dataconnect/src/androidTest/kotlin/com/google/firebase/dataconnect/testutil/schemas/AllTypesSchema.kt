@@ -61,12 +61,12 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "createPrimitive",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreatePrimitiveMutation.Variables>(),
     )
 
   object GetPrimitiveQuery {
-    @Serializable data class Response(val primitive: PrimitiveData?)
+    @Serializable data class Data(val primitive: PrimitiveData?)
     @Serializable data class Variables(val id: String)
   }
 
@@ -74,7 +74,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.query(
       operationName = "getPrimitive",
       variables = variables,
-      responseDeserializer = serializer<GetPrimitiveQuery.Response>(),
+      dataDeserializer = serializer<GetPrimitiveQuery.Data>(),
       variablesSerializer = serializer<GetPrimitiveQuery.Variables>(),
     )
 
@@ -109,12 +109,12 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "createPrimitiveList",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreatePrimitiveListMutation.Variables>(),
     )
 
   object GetPrimitiveListQuery {
-    @Serializable data class Response(val primitiveList: PrimitiveListData?)
+    @Serializable data class Data(val primitiveList: PrimitiveListData?)
     @Serializable data class Variables(val id: String)
   }
 
@@ -122,21 +122,21 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.query(
       operationName = "getPrimitiveList",
       variables = variables,
-      responseDeserializer = serializer<GetPrimitiveListQuery.Response>(),
+      dataDeserializer = serializer<GetPrimitiveListQuery.Data>(),
       variablesSerializer = serializer<GetPrimitiveListQuery.Variables>(),
     )
 
   fun getPrimitiveList(id: String) = getPrimitiveList(GetPrimitiveListQuery.Variables(id = id))
 
   object GetAllPrimitiveListsQuery {
-    @Serializable data class Response(val primitiveLists: List<PrimitiveListData>)
+    @Serializable data class Data(val primitiveLists: List<PrimitiveListData>)
   }
 
   val getAllPrimitiveLists
     get() =
       dataConnect.query(
         operationName = "getAllPrimitiveLists",
-        responseDeserializer = serializer<GetAllPrimitiveListsQuery.Response>()
+        dataDeserializer = serializer<GetAllPrimitiveListsQuery.Data>()
       )
 
   object CreateFarmerMutation {
@@ -154,7 +154,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "createFarmer",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreateFarmerMutation.Variables>(),
     )
 
@@ -174,7 +174,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "createFarm",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreateFarmMutation.Variables>(),
     )
 
@@ -202,7 +202,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "createAnimal",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreateAnimalMutation.Variables>(),
     )
 
@@ -220,7 +220,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   object GetFarmQuery {
-    @Serializable data class Response(val farm: Farm?)
+    @Serializable data class Data(val farm: Farm?)
 
     @Serializable
     data class Farm(
@@ -244,7 +244,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.query(
       operationName = "getFarm",
       variables = variables,
-      responseDeserializer = serializer<GetFarmQuery.Response>(),
+      dataDeserializer = serializer<GetFarmQuery.Data>(),
       variablesSerializer = serializer<GetFarmQuery.Variables>(),
     )
 

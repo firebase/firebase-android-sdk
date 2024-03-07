@@ -41,7 +41,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     get() =
       dataConnect.mutation(
         operationName = "createDefaultPerson",
-        responseDeserializer = serializer<Unit>()
+        dataDeserializer = serializer<Unit>()
       )
 
   object CreatePersonMutation {
@@ -53,7 +53,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "createPerson",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<CreatePersonMutation.Variables>(),
     )
 
@@ -73,7 +73,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "updatePerson",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<UpdatePersonMutation.Variables>(),
     )
 
@@ -93,7 +93,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.mutation(
       operationName = "deletePerson",
       variables = variables,
-      responseDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<Unit>(),
       variablesSerializer = serializer<DeletePersonMutation.Variables>(),
     )
 
@@ -101,7 +101,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   object GetPersonQuery {
     @Serializable
-    data class Response(val person: Person?) {
+    data class Data(val person: Person?) {
       @Serializable data class Person(val name: String, val age: Int? = null)
     }
 
@@ -112,7 +112,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     dataConnect.query(
       operationName = "getPerson",
       variables = variables,
-      responseDeserializer = serializer<GetPersonQuery.Response>(),
+      dataDeserializer = serializer<GetPersonQuery.Data>(),
       variablesSerializer = serializer<GetPersonQuery.Variables>(),
     )
 
@@ -120,7 +120,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   object GetAllPeopleQuery {
     @Serializable
-    data class Response(val people: List<Person>) {
+    data class Data(val people: List<Person>) {
       @Serializable data class Person(val id: String, val name: String, val age: Int?)
     }
   }
@@ -129,7 +129,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     get() =
       dataConnect.query(
         operationName = "getAllPeople",
-        responseDeserializer = serializer<GetAllPeopleQuery.Response>()
+        dataDeserializer = serializer<GetAllPeopleQuery.Data>()
       )
 
   companion object {

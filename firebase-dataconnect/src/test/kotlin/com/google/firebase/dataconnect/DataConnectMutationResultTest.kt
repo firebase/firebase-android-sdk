@@ -25,7 +25,7 @@ class DataConnectMutationResultTest {
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "SampleMutationOperation",
         variables = TestVariables("SampleMutationVariables"),
-        responseDeserializer = serializer(),
+        dataDeserializer = serializer(),
         variablesSerializer = serializer()
       )
     sampleMutation1 =
@@ -33,7 +33,7 @@ class DataConnectMutationResultTest {
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "SampleMutation1Operation",
         variables = TestVariables("SampleMutation1Variables"),
-        responseDeserializer = serializer(),
+        dataDeserializer = serializer(),
         variablesSerializer = serializer()
       )
     sampleMutation2 =
@@ -41,7 +41,7 @@ class DataConnectMutationResultTest {
         dataConnect = FirebaseDataConnect.newTestInstance(),
         operationName = "SampleMutation2Operation",
         variables = TestVariables("SampleMutation2Variables"),
-        responseDeserializer = serializer(),
+        dataDeserializer = serializer(),
         variablesSerializer = serializer()
       )
   }

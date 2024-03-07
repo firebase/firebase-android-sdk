@@ -17,22 +17,22 @@ import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-public class MutationRef<Response, Variables>
+public class MutationRef<Data, Variables>
 internal constructor(
   dataConnect: FirebaseDataConnect,
   operationName: String,
   variables: Variables,
-  responseDeserializer: DeserializationStrategy<Response>,
+  dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
 ) :
-  OperationRef<Response, Variables>(
+  OperationRef<Data, Variables>(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = responseDeserializer,
+    dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
   ) {
-  override suspend fun execute(): DataConnectMutationResult<Response, Variables> =
+  override suspend fun execute(): DataConnectMutationResult<Data, Variables> =
     dataConnect.executeMutation(this)
 
   override fun hashCode(): Int = Objects.hash("MutationRef", super.hashCode())
@@ -44,63 +44,63 @@ internal constructor(
       "dataConnect=$dataConnect, " +
       "operationName=$operationName, " +
       "variables=$variables, " +
-      "responseDeserializer=$responseDeserializer, " +
+      "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer" +
       ")"
 }
 
-internal fun <NewResponse, Variables> MutationRef<*, Variables>.withResponseDeserializer(
-  deserializer: DeserializationStrategy<NewResponse>
-): MutationRef<NewResponse, Variables> =
+internal fun <NewData, Variables> MutationRef<*, Variables>.withDataDeserializer(
+  deserializer: DeserializationStrategy<NewData>
+): MutationRef<NewData, Variables> =
   MutationRef(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = deserializer,
+    dataDeserializer = deserializer,
     variablesSerializer = variablesSerializer
   )
 
-internal fun <Response, Variables> MutationRef<Response, Variables>.withVariablesSerializer(
+internal fun <Data, Variables> MutationRef<Data, Variables>.withVariablesSerializer(
   serializer: SerializationStrategy<Variables>
-): MutationRef<Response, Variables> =
+): MutationRef<Data, Variables> =
   MutationRef(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = responseDeserializer,
+    dataDeserializer = dataDeserializer,
     variablesSerializer = serializer
   )
 
-internal fun <Response, Variables> MutationRef<Response, Variables>.withVariables(
+internal fun <Data, Variables> MutationRef<Data, Variables>.withVariables(
   variables: Variables
-): MutationRef<Response, Variables> =
+): MutationRef<Data, Variables> =
   MutationRef(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = responseDeserializer,
+    dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer
   )
 
-internal fun <Response, NewVariables> MutationRef<Response, *>.withVariables(
+internal fun <Data, NewVariables> MutationRef<Data, *>.withVariables(
   variables: NewVariables,
   serializer: SerializationStrategy<NewVariables>
-): MutationRef<Response, NewVariables> =
+): MutationRef<Data, NewVariables> =
   MutationRef(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = responseDeserializer,
+    dataDeserializer = dataDeserializer,
     variablesSerializer = serializer
   )
 
-internal fun <Response> MutationRef<Response, *>.withVariables(
+internal fun <Data> MutationRef<Data, *>.withVariables(
   variables: DataConnectUntypedVariables
-): MutationRef<Response, DataConnectUntypedVariables> =
+): MutationRef<Data, DataConnectUntypedVariables> =
   MutationRef(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = responseDeserializer,
+    dataDeserializer = dataDeserializer,
     variablesSerializer = DataConnectUntypedVariables
   )

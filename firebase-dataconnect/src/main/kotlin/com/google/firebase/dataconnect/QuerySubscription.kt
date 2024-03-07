@@ -16,16 +16,16 @@ package com.google.firebase.dataconnect
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
-public class QuerySubscription<Response, Variables>
-internal constructor(query: QueryRef<Response, Variables>) {
+public class QuerySubscription<Data, Variables>
+internal constructor(query: QueryRef<Data, Variables>) {
   private val _query = MutableStateFlow(query)
-  public val query: QueryRef<Response, Variables> by _query::value
+  public val query: QueryRef<Data, Variables> by _query::value
 
-  private val _lastResult = MutableStateFlow<DataConnectQueryResult<Response, Variables>?>(null)
-  public val lastResult: DataConnectQueryResult<Response, Variables>? by _lastResult::value
+  private val _lastResult = MutableStateFlow<DataConnectQueryResult<Data, Variables>?>(null)
+  public val lastResult: DataConnectQueryResult<Data, Variables>? by _lastResult::value
 
   // Each collection of this flow triggers an implicit `reload()`.
-  public val resultFlow: Flow<DataConnectQueryResult<Response, Variables>> = channelFlow {
+  public val resultFlow: Flow<DataConnectQueryResult<Data, Variables>> = channelFlow {
     val cachedResult = lastResult?.also { send(it) }
 
     var collectJob: Job? = null
@@ -70,7 +70,7 @@ internal constructor(query: QueryRef<Response, Variables>) {
     reload()
   }
 
-  private fun updateLastResult(newLastResult: DataConnectQueryResult<Response, Variables>) {
+  private fun updateLastResult(newLastResult: DataConnectQueryResult<Data, Variables>) {
     // Update the last result in a compare-and-swap loop so that there is no possibility of
     // clobbering a newer result with an older result, compared using their sequence numbers.
     while (true) {

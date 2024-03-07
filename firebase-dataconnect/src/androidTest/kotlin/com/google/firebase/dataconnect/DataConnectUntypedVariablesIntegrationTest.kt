@@ -46,15 +46,15 @@ class DataConnectUntypedVariablesIntegrationTest {
     assertThat(result.ref).isSameInstanceAs(query)
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetAllPeopleQuery.Response(
+        PersonSchema.GetAllPeopleQuery.Data(
           people =
             listOf(
-              PersonSchema.GetAllPeopleQuery.Response.Person(
+              PersonSchema.GetAllPeopleQuery.Data.Person(
                 id = "Person1Id",
                 name = "Person1Name",
                 age = 42
               ),
-              PersonSchema.GetAllPeopleQuery.Response.Person(
+              PersonSchema.GetAllPeopleQuery.Data.Person(
                 id = "Person2Id",
                 name = "Person2Name",
                 age = 43
@@ -77,8 +77,8 @@ class DataConnectUntypedVariablesIntegrationTest {
     assertThat(result.ref).isSameInstanceAs(query)
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetPersonQuery.Response(
-          person = PersonSchema.GetPersonQuery.Response.Person(name = "Person2Name", age = 43)
+        PersonSchema.GetPersonQuery.Data(
+          person = PersonSchema.GetPersonQuery.Data.Person(name = "Person2Name", age = 43)
         )
       )
   }
@@ -92,8 +92,8 @@ class DataConnectUntypedVariablesIntegrationTest {
     val result = personSchema.getPerson(id = "DefaultId").execute()
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetPersonQuery.Response(
-          PersonSchema.GetPersonQuery.Response.Person(name = "DefaultName", age = 42)
+        PersonSchema.GetPersonQuery.Data(
+          PersonSchema.GetPersonQuery.Data.Person(name = "DefaultName", age = 42)
         )
       )
   }
@@ -116,8 +116,8 @@ class DataConnectUntypedVariablesIntegrationTest {
     val result = personSchema.getPerson(id = "PersonId").execute()
     assertThat(result.data)
       .isEqualTo(
-        PersonSchema.GetPersonQuery.Response(
-          PersonSchema.GetPersonQuery.Response.Person(name = "TestPersonName", age = 42)
+        PersonSchema.GetPersonQuery.Data(
+          PersonSchema.GetPersonQuery.Data.Person(name = "TestPersonName", age = 42)
         )
       )
   }

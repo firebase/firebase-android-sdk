@@ -18,25 +18,25 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 
-public abstract class OperationRef<Response, Variables>
+public abstract class OperationRef<Data, Variables>
 internal constructor(
   public val dataConnect: FirebaseDataConnect,
   public val operationName: String,
   public val variables: Variables,
-  public val responseDeserializer: DeserializationStrategy<Response>,
+  public val dataDeserializer: DeserializationStrategy<Data>,
   public val variablesSerializer: SerializationStrategy<Variables>,
 ) {
-  public abstract suspend fun execute(): DataConnectResult<Response, Variables>
+  public abstract suspend fun execute(): DataConnectResult<Data, Variables>
 
   override fun hashCode(): Int =
-    Objects.hash(dataConnect, operationName, variables, responseDeserializer, variablesSerializer)
+    Objects.hash(dataConnect, operationName, variables, dataDeserializer, variablesSerializer)
 
   override fun equals(other: Any?): Boolean =
     (other as? OperationRef<*, *>)?.let {
       it.dataConnect == dataConnect &&
         it.operationName == operationName &&
         it.variables == variables &&
-        it.responseDeserializer == responseDeserializer &&
+        it.dataDeserializer == dataDeserializer &&
         it.variablesSerializer == variablesSerializer
     }
       ?: false
@@ -46,29 +46,29 @@ internal constructor(
       "dataConnect=$dataConnect, " +
       "operationName=$operationName, " +
       "variables=$variables, " +
-      "responseDeserializer=$responseDeserializer, " +
+      "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer" +
       ")"
 }
 
-internal inline fun <Response, reified NewVariables> MutationRef<Response, *>.withVariables(
+internal inline fun <Data, reified NewVariables> MutationRef<Data, *>.withVariables(
   variables: NewVariables
-): MutationRef<Response, NewVariables> =
+): MutationRef<Data, NewVariables> =
   MutationRef(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = responseDeserializer,
+    dataDeserializer = dataDeserializer,
     variablesSerializer = serializer()
   )
 
-internal inline fun <Response, reified NewVariables> QueryRef<Response, *>.withVariables(
+internal inline fun <Data, reified NewVariables> QueryRef<Data, *>.withVariables(
   variables: NewVariables
-): QueryRef<Response, NewVariables> =
+): QueryRef<Data, NewVariables> =
   QueryRef(
     dataConnect = dataConnect,
     operationName = operationName,
     variables = variables,
-    responseDeserializer = responseDeserializer,
+    dataDeserializer = dataDeserializer,
     variablesSerializer = serializer()
   )

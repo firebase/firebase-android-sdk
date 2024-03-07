@@ -25,18 +25,18 @@ import kotlinx.serialization.serializer
 
 public class GetPost internal constructor(public val connector: PostsConnector) {
 
-  public fun ref(variables: Variables): QueryRef<Response, Variables> =
+  public fun ref(variables: Variables): QueryRef<Data, Variables> =
     connector.dataConnect.query(
       operationName = operationName,
       variables = variables,
-      responseDeserializer = responseDeserializer,
+      dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
     )
 
-  public fun ref(id: String): QueryRef<Response, Variables> = ref(Variables(id = id))
+  public fun ref(id: String): QueryRef<Data, Variables> = ref(Variables(id = id))
 
   @Serializable
-  public data class Response(val post: Post?) {
+  public data class Data(val post: Post?) {
     @Serializable
     public data class Post(val content: String, val comments: List<Comment>) {
       @Serializable public data class Comment(val id: String?, val content: String)
@@ -46,20 +46,20 @@ public class GetPost internal constructor(public val connector: PostsConnector) 
   @Serializable public data class Variables(val id: String)
 
   public data class FlowResult(
-    val result: DataConnectQueryResult<Response, Variables>,
+    val result: DataConnectQueryResult<Data, Variables>,
     val exception: DataConnectException?
   )
 
   public companion object {
     public const val operationName: String = "getPost"
-    public val responseDeserializer: DeserializationStrategy<Response> = serializer<Response>()
+    public val dataDeserializer: DeserializationStrategy<Data> = serializer<Data>()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer<Variables>()
   }
 }
 
 public suspend fun PostsConnector.getPost(
   id: String
-): DataConnectQueryResult<GetPost.Response, GetPost.Variables> = getPost.ref(id = id).execute()
+): DataConnectQueryResult<GetPost.Data, GetPost.Variables> = getPost.ref(id = id).execute()
 
 public fun GetPost.flow(id: String): Flow<GetPost.FlowResult> =
   ref(id = id).subscribe().let { querySubscription ->

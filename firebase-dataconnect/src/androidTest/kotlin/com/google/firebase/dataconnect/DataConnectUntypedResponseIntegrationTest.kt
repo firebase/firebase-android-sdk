@@ -29,7 +29,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class DataConnectUntypedResponseIntegrationTest {
+class DataConnectUntypedDataIntegrationTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
@@ -57,9 +57,7 @@ class DataConnectUntypedResponseIntegrationTest {
       )
       .execute()
     val query =
-      allTypesSchema
-        .getPrimitive(id = "abc123")
-        .withResponseDeserializer(DataConnectUntypedResponse)
+      allTypesSchema.getPrimitive(id = "abc123").withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -105,9 +103,7 @@ class DataConnectUntypedResponseIntegrationTest {
       )
       .execute()
     val query =
-      allTypesSchema
-        .getPrimitive(id = "abc123")
-        .withResponseDeserializer(DataConnectUntypedResponse)
+      allTypesSchema.getPrimitive(id = "abc123").withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -158,9 +154,7 @@ class DataConnectUntypedResponseIntegrationTest {
       )
       .execute()
     val query =
-      allTypesSchema
-        .getPrimitiveList(id = "abc123")
-        .withResponseDeserializer(DataConnectUntypedResponse)
+      allTypesSchema.getPrimitiveList(id = "abc123").withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -216,9 +210,7 @@ class DataConnectUntypedResponseIntegrationTest {
       )
       .execute()
     val query =
-      allTypesSchema
-        .getPrimitiveList(id = "abc123")
-        .withResponseDeserializer(DataConnectUntypedResponse)
+      allTypesSchema.getPrimitiveList(id = "abc123").withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -279,8 +271,7 @@ class DataConnectUntypedResponseIntegrationTest {
         age = null
       )
       .execute()
-    val query =
-      allTypesSchema.getFarm(id = "FarmId").withResponseDeserializer(DataConnectUntypedResponse)
+    val query = allTypesSchema.getFarm(id = "FarmId").withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -345,8 +336,7 @@ class DataConnectUntypedResponseIntegrationTest {
   fun nestedNullStructs() = runTest {
     allTypesSchema.createFarmer(id = "FarmerId", name = "FarmerName", parentId = null).execute()
     allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "FarmerId").execute()
-    val query =
-      allTypesSchema.getFarm(id = "FarmId").withResponseDeserializer(DataConnectUntypedResponse)
+    val query = allTypesSchema.getFarm(id = "FarmId").withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -381,7 +371,7 @@ class DataConnectUntypedResponseIntegrationTest {
       allTypesSchema
         .getPrimitive("foo")
         .withVariables(BogusVariables(foo = "bar"))
-        .withResponseDeserializer(DataConnectUntypedResponse)
+        .withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -396,7 +386,7 @@ class DataConnectUntypedResponseIntegrationTest {
       allTypesSchema
         .createAnimal("", "", "", "", 42)
         .withVariables(BogusVariables(foo = "bar"))
-        .withResponseDeserializer(DataConnectUntypedResponse)
+        .withDataDeserializer(DataConnectUntypedData)
 
     val result = mutation.execute()
 

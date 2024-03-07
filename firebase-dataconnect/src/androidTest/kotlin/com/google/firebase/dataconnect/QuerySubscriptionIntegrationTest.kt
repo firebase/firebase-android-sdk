@@ -323,7 +323,7 @@ class QuerySubscriptionIntegrationTest {
   fun collect_does_not_get_an_update_on_errors() = runTest {
     schema.createPerson(id = "TestId", name = "Name1").execute()
     val query = schema.getPerson("TestId")
-    val noName2Query = query.withResponseDeserializer(serializer<GetPersonDataNoName2>())
+    val noName2Query = query.withDataDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
       val querySubscription = noName2Query.subscribe()
@@ -345,9 +345,9 @@ class QuerySubscriptionIntegrationTest {
     schema.createPerson(id = "TestId", name = "Name0").execute()
 
     val noName1Query =
-      schema.getPerson("TestId").withResponseDeserializer(serializer<GetPersonDataNoName1>())
+      schema.getPerson("TestId").withDataDeserializer(serializer<GetPersonDataNoName1>())
     val noName2Query =
-      schema.getPerson("TestId").withResponseDeserializer(serializer<GetPersonDataNoName2>())
+      schema.getPerson("TestId").withDataDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
       val flow1 = noName1Query.subscribe().resultFlow.testIn(backgroundScope)
@@ -377,10 +377,10 @@ class QuerySubscriptionIntegrationTest {
   @Test
   fun collect_gets_notified_of_previous_cached_success_even_if_most_recent_fails() = runTest {
     schema.createPerson(id = "TestId", name = "OriginalName").execute()
-    keepCacheAlive(schema.getPerson("TestId").withResponseDeserializer(DataConnectUntypedResponse))
+    keepCacheAlive(schema.getPerson("TestId").withDataDeserializer(DataConnectUntypedData))
 
     val noName1Query =
-      schema.getPerson("TestId").withResponseDeserializer(serializer<GetPersonDataNoName1>())
+      schema.getPerson("TestId").withDataDeserializer(serializer<GetPersonDataNoName1>())
     noName1Query.execute()
 
     schema.updatePerson(id = "TestId", name = "Name1").execute()
@@ -396,7 +396,7 @@ class QuerySubscriptionIntegrationTest {
   @Test
   fun collect_gets_cached_result_even_if_new_data_deserializer() = runTest {
     schema.createPerson(id = "TestId", name = "OriginalName").execute()
-    keepCacheAlive(schema.getPerson("TestId").withResponseDeserializer(DataConnectUntypedResponse))
+    keepCacheAlive(schema.getPerson("TestId").withDataDeserializer(DataConnectUntypedData))
 
     schema.updatePerson(id = "TestId", name = "UltimateName").execute()
 
@@ -427,7 +427,7 @@ class QuerySubscriptionIntegrationTest {
   /**
    * A "data" type suitable for the [GetPersonQuery] whose deserialization fails if the name happens
    * to be "Name1". This behavior is useful when testing the caching behavior when one deserializer
-   * successfully decodes a response but another one does not. See [GetPersonDataNoName2].
+   * successfully decodes the data but another one does not. See [GetPersonDataNoName2].
    */
   @Serializable
   private data class GetPersonDataNoName1(val person: Person?) {
@@ -443,7 +443,7 @@ class QuerySubscriptionIntegrationTest {
   /**
    * A "data" type suitable for the [GetPersonQuery] whose deserialization fails if the name happens
    * to be "Name2". This behavior is useful when testing the caching behavior when one deserializer
-   * successfully decodes a response but another one does not. See [GetPersonDataNoName1].
+   * successfully decodes the data but another one does not. See [GetPersonDataNoName1].
    */
   @Serializable
   private data class GetPersonDataNoName2(val person: Person?) {

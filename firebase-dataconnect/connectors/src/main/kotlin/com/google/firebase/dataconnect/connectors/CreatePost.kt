@@ -27,7 +27,7 @@ public class CreatePost internal constructor(public val connector: PostsConnecto
     connector.dataConnect.mutation(
       operationName = operationName,
       variables = variables,
-      responseDeserializer = responseDeserializer,
+      dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
     )
 
@@ -41,7 +41,7 @@ public class CreatePost internal constructor(public val connector: PostsConnecto
 
   public companion object {
     public const val operationName: String = "createPost"
-    public val responseDeserializer: DeserializationStrategy<Unit> = serializer<Unit>()
+    public val dataDeserializer: DeserializationStrategy<Unit> = serializer<Unit>()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer<Variables>()
   }
 }

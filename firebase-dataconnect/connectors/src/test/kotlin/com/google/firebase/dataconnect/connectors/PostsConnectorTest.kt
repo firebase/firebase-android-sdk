@@ -25,10 +25,9 @@ class PostsConnectorTest {
   @Test
   fun `getPost query runs the query`() = runTest {
     val posts = PostsConnector.getInstance(newMockFirebaseApp())
-    posts.dataConnect.useEmulator(host="localhost")
-    posts.getPost(id="foo")
+    posts.dataConnect.useEmulator(host = "localhost")
+    posts.getPost(id = "foo")
   }
-
 
   @Test
   fun `createPost property should always return the same instance`() {
@@ -47,5 +46,4 @@ class PostsConnectorTest {
 
     assertThat(operation1).isSameInstanceAs(operation2)
   }
-
 }

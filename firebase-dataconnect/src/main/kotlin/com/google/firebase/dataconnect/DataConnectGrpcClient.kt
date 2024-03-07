@@ -228,19 +228,19 @@ internal fun GraphqlError.toDataConnectError() =
   DataConnectError(message = message, path = path.toPathSegment(), extensions = emptyMap())
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
-  responseDeserializer: DeserializationStrategy<T>
+  dataDeserializer: DeserializationStrategy<T>
 ): DataConnectGrpcClient.DeserialzedOperationResult<T> {
   val deserializedResponse: T =
-    if (responseDeserializer === DataConnectUntypedResponse) {
+    if (dataDeserializer === DataConnectUntypedData) {
       @Suppress("UNCHECKED_CAST")
-      DataConnectUntypedResponse(data?.toMap(), errors) as T
+      DataConnectUntypedData(data?.toMap(), errors) as T
     } else if (data === null) {
       // TODO: include the variables and error list in the thrown exception
       throw DataConnectException("no data included in result: errors=$errors")
     } else if (errors.isNotEmpty()) {
       throw DataConnectException("operation failed: errors=$errors")
     } else {
-      decodeFromStruct(responseDeserializer, data)
+      decodeFromStruct(dataDeserializer, data)
     }
 
   return DataConnectGrpcClient.DeserialzedOperationResult(
