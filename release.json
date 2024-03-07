@@ -1,0 +1,7 @@
+{
+    "name": "m144_1",
+    "libraries": [
+        ":firebase-config",
+        ":firebase-config:ktx"
+    ]
+}

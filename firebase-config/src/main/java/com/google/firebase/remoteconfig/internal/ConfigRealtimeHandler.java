@@ -94,9 +94,6 @@ public class ConfigRealtimeHandler {
     configRealtimeHttpClient.setRealtimeBackgroundState(isInBackground);
     if (!isInBackground) {
       beginRealtime();
-    } else {
-      // If we're in the background, close the client's real-time server connection.
-      configRealtimeHttpClient.closeRealtimeHttpStream();
     }
   }
 

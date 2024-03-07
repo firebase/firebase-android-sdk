@@ -1,4 +1,11 @@
 # Unreleased
+* [fixed] Fixed a bug that could cause a crash if the app was backgrounded
+  while it was listening for real-time Remote Config updates. For more information, see
+  <a href="https://github.com/firebase/firebase-android-sdk/issues/5751"
+     class="external">GitHub Issue #5751</a>.
+
+
+# 21.6.2
 * [fixed] Fixed an issue that could cause [remote_config] personalizations to be logged early in
   specific cases.
 * [fixed] Fixed an issue where the connection to the real-time Remote Config backend could remain

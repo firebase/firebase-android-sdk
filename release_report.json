@@ -1,0 +1,10 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+        ],
+        "firebase-config/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+    ]
+}
