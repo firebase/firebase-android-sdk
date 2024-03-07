@@ -4,7 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import org.junit.Test
 
-class DataConnectSettingsTest {
+class DataConnectSettingsUnitTest {
 
   @Test
   fun `default constructor arguments are correct`() {

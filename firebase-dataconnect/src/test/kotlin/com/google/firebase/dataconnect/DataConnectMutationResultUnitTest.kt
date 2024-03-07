@@ -12,7 +12,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 @Suppress("ReplaceCallWithBinaryOperator")
-class DataConnectMutationResultTest {
+class DataConnectMutationResultUnitTest {
 
   private lateinit var sampleMutation: MutationRef<TestData?, TestVariables>
   private lateinit var sampleMutation1: MutationRef<TestData?, TestVariables>

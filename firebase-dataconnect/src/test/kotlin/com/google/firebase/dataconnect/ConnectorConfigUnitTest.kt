@@ -4,7 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import org.junit.Test
 
-class ConnectorConfigTest {
+class ConnectorConfigUnitTest {
 
   private val sampleConfig =
     ConnectorConfig(

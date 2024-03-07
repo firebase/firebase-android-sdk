@@ -12,7 +12,7 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 @Suppress("ReplaceCallWithBinaryOperator")
-class DataConnectQueryResultTest {
+class DataConnectQueryResultUnitTest {
 
   private lateinit var sampleQuery: QueryRef<TestData?, TestVariables>
   private lateinit var sampleQuery1: QueryRef<TestData?, TestVariables>

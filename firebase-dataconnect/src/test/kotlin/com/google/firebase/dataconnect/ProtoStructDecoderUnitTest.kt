@@ -28,7 +28,7 @@ import kotlinx.serialization.SerializationException
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
-class ProtoStructDecoderTest {
+class ProtoStructDecoderUnitTest {
 
   @Test
   fun `decodeFromStruct() can encode and decode a complex object A`() {

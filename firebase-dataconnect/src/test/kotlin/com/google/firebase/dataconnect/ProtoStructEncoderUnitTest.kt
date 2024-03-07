@@ -30,7 +30,7 @@ import kotlinx.serialization.serializer
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
-class ProtoStructEncoderTest {
+class ProtoStructEncoderUnitTest {
 
   @Test
   fun `encodeToStruct() should throw if a NUMBER_VALUE is produced`() {

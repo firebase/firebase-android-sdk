@@ -5,7 +5,7 @@ import com.google.firebase.dataconnect.DataConnectError.PathSegment
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import org.junit.Test
 
-class DataConnectErrorTest {
+class DataConnectErrorUnitTest {
 
   @Test
   fun `message should be the same object given to the constructor`() {

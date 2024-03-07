@@ -4,7 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.DataConnectError.PathSegment
 import org.junit.Test
 
-class PathSegmentFieldTest {
+class PathSegmentFieldUnitTest {
 
   @Test
   fun `field should equal the value given to the constructor`() {
