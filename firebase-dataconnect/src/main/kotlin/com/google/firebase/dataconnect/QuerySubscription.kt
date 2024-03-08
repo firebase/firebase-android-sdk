@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import java.util.Objects
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
@@ -82,5 +83,64 @@ internal constructor(query: QueryRef<Data, Variables>) {
         return
       }
     }
+  }
+
+  override fun equals(other: Any?): Boolean = other === this
+
+  override fun hashCode(): Int = System.identityHashCode(this)
+
+  override fun toString(): String = "QuerySubscription(query=$query)"
+
+  private data class State<Data, Variables>(
+    val query: QueryRef<Data, Variables>,
+    val lastResult: QuerySubscriptionResult<Data, Variables>?,
+    val lastSuccessfulResult: DataConnectQueryResult<Data, Variables>?,
+  )
+}
+
+public sealed class QuerySubscriptionResult<Data, Variables>
+protected constructor(public val subscription: QuerySubscription<Data, Variables>) {
+
+  // Implement `equals()` to simply use object identity of the `QuerySubscription`.
+  // Since `QuerySubscription` is stateful, it has no meaningful concept of "equality" so
+  // `QuerySubscriptionResult` just uses object identity to determine equality. That is, two
+  // `QuerySubscriptionResult` objects that are identical, except were produced by different
+  // `QuerySubscription` objects, are considered to be unequal.
+  override fun equals(other: Any?): Boolean =
+    other is QuerySubscriptionResult<*, *> && other.subscription === subscription
+
+  override fun hashCode(): Int =
+    Objects.hash("QuerySubscriptionResult", System.identityHashCode(subscription))
+
+  override fun toString(): String = "QuerySubscriptionResult(subscription=$subscription)"
+
+  public class Success<Data, Variables>
+  internal constructor(
+    subscription: QuerySubscription<Data, Variables>,
+    public val result: DataConnectQueryResult<Data, Variables>
+  ) : QuerySubscriptionResult<Data, Variables>(subscription) {
+
+    override fun equals(other: Any?): Boolean =
+      other is Success<*, *> && super.equals(other) && other.result == result
+
+    override fun hashCode(): Int = Objects.hash("Success", super.hashCode(), result)
+
+    override fun toString(): String =
+      "QuerySubscriptionResult.Success(result=$result, subscription=$subscription)"
+  }
+
+  public class Failure<Data, Variables>
+  internal constructor(
+    subscription: QuerySubscription<Data, Variables>,
+    public val exception: DataConnectException
+  ) : QuerySubscriptionResult<Data, Variables>(subscription) {
+
+    override fun equals(other: Any?): Boolean =
+      other is Failure<*, *> && super.equals(other) && other.exception == exception
+
+    override fun hashCode(): Int = Objects.hash("Failure", super.hashCode(), exception)
+
+    override fun toString(): String =
+      "QuerySubscriptionResult.Failure(exception=$exception, subscription=$subscription)"
   }
 }
