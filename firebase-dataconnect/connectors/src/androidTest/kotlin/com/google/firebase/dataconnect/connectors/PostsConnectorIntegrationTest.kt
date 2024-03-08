@@ -161,11 +161,6 @@ class PostsConnectorIntegrationTest {
     assertThat(posts1.dataConnect.app).isSameInstanceAs(Firebase.app)
   }
 
-
-
-
-
-
   @Test
   fun getInstance_FirebaseApp_DataConnectSettings_ShouldBeAssociatedWithTheGivenFirebaseApp() {
     val app1 = firebaseAppFactory.newInstance()
@@ -221,9 +216,6 @@ class PostsConnectorIntegrationTest {
     assertThat(posts1b.dataConnect.app).isSameInstanceAs(app1)
     assertThat(posts2b.dataConnect.app).isSameInstanceAs(app2)
   }
-
-
-
 
   @Test
   fun createCommentShouldAddACommentToThePost() = runTest {
