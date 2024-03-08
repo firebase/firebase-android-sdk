@@ -81,7 +81,8 @@ class SessionEventEncoderTest {
                 "crashlytics":2,
                 "sessionSamplingRate":1.0
               },
-              "firebaseInstallationId":""
+              "firebaseInstallationId":"",
+              "firebaseAuthenticationToken":""
             },
             "applicationInfo":{
               "appId":"1:12345:android:app",
@@ -128,6 +129,9 @@ class SessionEventEncoderTest {
             firstSessionId = "",
             sessionIndex = 0,
             eventTimestampUs = 0,
+            dataCollectionStatus = DataCollectionStatus(),
+            firebaseInstallationId = "",
+            firebaseAuthenticationToken = "",
           ),
         applicationInfo =
           ApplicationInfo(
@@ -164,7 +168,8 @@ class SessionEventEncoderTest {
                 "crashlytics":1,
                 "sessionSamplingRate":1.0
               },
-              "firebaseInstallationId":""
+              "firebaseInstallationId":"",
+              "firebaseAuthenticationToken":""
             },
             "applicationInfo":{
               "appId":"",
@@ -201,7 +206,7 @@ class SessionEventEncoderTest {
           EventType.SESSION_START,
           EventType.EVENT_TYPE_UNKNOWN,
           EventType.SESSION_START,
-          EventType.SESSION_START
+          EventType.SESSION_START,
         )
       )
 

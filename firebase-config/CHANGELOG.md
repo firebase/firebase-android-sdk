@@ -1,9 +1,21 @@
 # Unreleased
+* [fixed] Fixed a bug that could cause a crash if the app was backgrounded
+  while it was listening for real-time Remote Config updates. For more information, see
+  <a href="https://github.com/firebase/firebase-android-sdk/issues/5751"
+     class="external">GitHub Issue #5751</a>.
+
+
+# 21.6.2
 * [fixed] Fixed an issue that could cause [remote_config] personalizations to be logged early in
   specific cases.
 * [fixed] Fixed an issue where the connection to the real-time Remote Config backend could remain
   open in the background.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.6.1
 * [changed] Bump internal dependencies.
