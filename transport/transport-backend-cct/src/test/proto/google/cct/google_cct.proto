@@ -26,8 +26,6 @@ message LogEvent {
 
     int64 event_uptime_ms = 17;
 
-    string zwieback_cookie_override = 28;
-
     ExperimentIds experiment_ids = 16;
 
     oneof ext {
