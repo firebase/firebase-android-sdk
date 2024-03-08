@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-mutation createPrimitive($data: Primitive_Data! @pick(fields: ["id", "idFieldNullable", "intField", "intFieldNullable", "floatField", "floatFieldNullable", "booleanField", "booleanFieldNullable", "stringField", "stringFieldNullable"])) @auth(is: PUBLIC) {
+mutation createPrimitive($data: Primitive_Data! @pick(fields: ["id", "idFieldNullable", "intField", "intFieldNullable", "floatField", "floatFieldNullable", "booleanField", "booleanFieldNullable", "stringField", "stringFieldNullable"])) @auth(level: PUBLIC) {
   primitive_insert(data: $data)
 }
 
-query getPrimitive($id: ID!) @auth(is: PUBLIC) {
+query getPrimitive($id: UUID!) @auth(level: PUBLIC) {
   primitive(id: $id) {
     id
     idFieldNullable
@@ -31,11 +31,11 @@ query getPrimitive($id: ID!) @auth(is: PUBLIC) {
   }
 }
 
-mutation createPrimitiveList($data: PrimitiveList_Data! @pick(fields: ["id", "idListNullable", "idListOfNullable", "intList", "intListNullable", "intListOfNullable", "floatList", "floatListNullable", "floatListOfNullable", "booleanList", "booleanListNullable", "booleanListOfNullable", "stringList", "stringListNullable", "stringListOfNullable"])) @auth(is: PUBLIC) {
+mutation createPrimitiveList($data: PrimitiveList_Data! @pick(fields: ["id", "idListNullable", "idListOfNullable", "intList", "intListNullable", "intListOfNullable", "floatList", "floatListNullable", "floatListOfNullable", "booleanList", "booleanListNullable", "booleanListOfNullable", "stringList", "stringListNullable", "stringListOfNullable"])) @auth(level: PUBLIC) {
   primitiveList_insert(data: $data)
 }
 
-query getPrimitiveList($id: ID!) @auth(is: PUBLIC) {
+query getPrimitiveList($id: UUID!) @auth(level: PUBLIC) {
   primitiveList(id: $id) {
     id
     idListNullable
@@ -55,7 +55,7 @@ query getPrimitiveList($id: ID!) @auth(is: PUBLIC) {
   }
 }
 
-query getAllPrimitiveLists @auth(is: PUBLIC) {
+query getAllPrimitiveLists @auth(level: PUBLIC) {
   primitiveLists {
     id
     idListNullable
@@ -75,19 +75,19 @@ query getAllPrimitiveLists @auth(is: PUBLIC) {
   }
 }
 
-mutation createFarmer($data: Farmer_Data! @pick(fields: ["id", "name", "parentId"])) @auth(is: PUBLIC) {
+mutation createFarmer($data: Farmer_Data! @pick(fields: ["id", "name", "parentId"])) @auth(level: PUBLIC) {
   farmer_insert(data: $data)
 }
 
-mutation createAnimal($data: Animal_Data! @pick(fields: ["id", "farmId", "name", "species", "age"])) @auth(is: PUBLIC) {
+mutation createAnimal($data: Animal_Data! @pick(fields: ["id", "farmId", "name", "species", "age"])) @auth(level: PUBLIC) {
   animal_insert(data: $data)
 }
 
-mutation createFarm($data: Farm_Data! @pick(fields: ["id", "name", "farmerId"])) @auth(is: PUBLIC) {
+mutation createFarm($data: Farm_Data! @pick(fields: ["id", "name", "farmerId"])) @auth(level: PUBLIC) {
   farm_insert(data: $data)
 }
 
-query getFarm($id: ID!) @auth(is: PUBLIC) {
+query getFarm($id: UUID!) @auth(level: PUBLIC) {
   farm(id: $id) {
     id
     name
@@ -100,7 +100,7 @@ query getFarm($id: ID!) @auth(is: PUBLIC) {
         parentId
       }
     }
-    animals: animals_as_farm {
+    animals: animals_on_farm {
       id
       name
       species

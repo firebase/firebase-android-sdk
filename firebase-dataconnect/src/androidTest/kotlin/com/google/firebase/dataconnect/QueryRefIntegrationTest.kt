@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.testutil.schemas.LazyAllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.LazyPersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetAllPeopleQuery.Data.Person
+import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -95,8 +96,8 @@ class QueryRefIntegrationTest {
       .createPrimitive(
         AllTypesSchema.CreatePrimitiveMutation.Variables(
           AllTypesSchema.PrimitiveData(
-            id = "TestId",
-            idFieldNullable = "TestNullableId",
+            id = "eb6e68bb-6157-4101-973f-cfc08e4b85ef",
+            idFieldNullable = "e03b3062-bf60-4428-956a-17c0bc444691",
             intField = 42,
             intFieldNullable = 43,
             floatField = 123.45,
@@ -110,11 +111,11 @@ class QueryRefIntegrationTest {
       )
       .execute()
 
-    val result = allTypesSchema.getPrimitive(id = "TestId").execute()
+    val result = allTypesSchema.getPrimitive(id = "eb6e68bb-6157-4101-973f-cfc08e4b85ef").execute()
 
     val primitive = result.data.primitive ?: error("result.data.primitive is null")
-    assertThat(primitive.id).isEqualTo("TestId")
-    assertThat(primitive.idFieldNullable).isEqualTo("TestNullableId")
+    assertThat(primitive.id).isEqualTo("eb6e68bb-6157-4101-973f-cfc08e4b85ef")
+    assertThat(primitive.idFieldNullable).isEqualTo("e03b3062-bf60-4428-956a-17c0bc444691")
     assertThat(primitive.intField).isEqualTo(42)
     assertThat(primitive.intFieldNullable).isEqualTo(43)
     assertThat(primitive.floatField).isEqualTo(123.45)
@@ -131,7 +132,7 @@ class QueryRefIntegrationTest {
       .createPrimitive(
         AllTypesSchema.CreatePrimitiveMutation.Variables(
           AllTypesSchema.PrimitiveData(
-            id = "TestId",
+            id = "05f83a17-09e3-437f-8b9a-ba8bc774a56b",
             idFieldNullable = null,
             intField = 42,
             intFieldNullable = null,
@@ -146,7 +147,7 @@ class QueryRefIntegrationTest {
       )
       .execute()
 
-    val result = allTypesSchema.getPrimitive(id = "TestId").execute()
+    val result = allTypesSchema.getPrimitive(id = "05f83a17-09e3-437f-8b9a-ba8bc774a56b").execute()
 
     val primitive = result.data.primitive ?: error("result.data.primitive is null")
     assertThat(primitive.idFieldNullable).isNull()
@@ -163,9 +164,17 @@ class QueryRefIntegrationTest {
       .createPrimitiveList(
         AllTypesSchema.CreatePrimitiveListMutation.Variables(
           AllTypesSchema.PrimitiveListData(
-            id = "TestId",
-            idListNullable = listOf("aaa", "bbb"),
-            idListOfNullable = listOf("ccc", "ddd"),
+            id = "3ecd2510-9ab6-4498-a703-78b414020cb7",
+            idListNullable =
+              listOf(
+                "1c2a5a6d-f81c-4252-ac86-383bb93d3dfb",
+                "b53f44ae-5be9-4354-b58d-10db98690954"
+              ),
+            idListOfNullable =
+              listOf(
+                "e87004fc-b45d-4b83-8ccb-3ffca5c98e8d",
+                "ad08635e-7b49-4511-9b6e-daa3b390235e"
+              ),
             intList = listOf(42, 43, 44),
             intListNullable = listOf(45, 46),
             intListOfNullable = listOf(47, 48),
@@ -185,12 +194,23 @@ class QueryRefIntegrationTest {
 
     allTypesSchema.getAllPrimitiveLists.execute()
 
-    val result = allTypesSchema.getPrimitiveList(id = "TestId").execute()
+    val result =
+      allTypesSchema.getPrimitiveList(id = "3ecd2510-9ab6-4498-a703-78b414020cb7").execute()
 
     val primitive = result.data.primitiveList ?: error("result.data.primitiveList is null")
-    assertThat(primitive.id).isEqualTo("TestId")
-    assertThat(primitive.idListNullable).containsExactly("aaa", "bbb").inOrder()
-    assertThat(primitive.idListOfNullable).containsExactly("ccc", "ddd").inOrder()
+    assertThat(primitive.id).isEqualTo("3ecd2510-9ab6-4498-a703-78b414020cb7")
+    assertThat(primitive.idListNullable)
+      .containsExactly(
+        "1c2a5a6d-f81c-4252-ac86-383bb93d3dfb",
+        "b53f44ae-5be9-4354-b58d-10db98690954"
+      )
+      .inOrder()
+    assertThat(primitive.idListOfNullable)
+      .containsExactly(
+        "e87004fc-b45d-4b83-8ccb-3ffca5c98e8d",
+        "ad08635e-7b49-4511-9b6e-daa3b390235e"
+      )
+      .inOrder()
     assertThat(primitive.intList).containsExactly(42, 43, 44).inOrder()
     assertThat(primitive.intListNullable).containsExactly(45, 46).inOrder()
     assertThat(primitive.intListOfNullable).containsExactly(47, 48).inOrder()
@@ -207,21 +227,30 @@ class QueryRefIntegrationTest {
 
   @Test
   fun executeWithNestedTypesInData() = runTest {
-    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null).execute()
+    val farmer1Id = "0032eebf-dcbb-406c-9b54-ac5a743ea26a"
+    val farmer2Id = "93e343dc-e0b2-4a38-a78a-d25e03bd9e1f"
+    val farmer3Id = "34b5c829-cf18-4e6d-9e8f-dcf585dbc0e0"
+    val farmer4Id = "355ef49d-99de-456b-a6dd-7c6a67089c3f"
+    val farmId = "f68c3f00-23e5-42a9-87f7-a5b34cf33435"
+    val animal1Id = "e70ad65e-4bc7-4e8b-8485-1178936c4795"
+    val animal2Id = "bade6865-d435-4be8-b68c-b9bd69de0b92"
+    val animal3Id = "d1c62270-3a4e-4bec-94c0-86914f319cc8"
+    val animal4Id = "c9d4ca4e-6bba-40bc-8133-32989d595937"
+    allTypesSchema.createFarmer(id = farmer1Id, name = "Farmer1Name", parentId = null).execute()
     allTypesSchema
-      .createFarmer(id = "Farmer2Id", name = "Farmer2Name", parentId = "Farmer1Id")
+      .createFarmer(id = farmer2Id, name = "Farmer2Name", parentId = farmer1Id)
       .execute()
     allTypesSchema
-      .createFarmer(id = "Farmer3Id", name = "Farmer3Name", parentId = "Farmer2Id")
+      .createFarmer(id = farmer3Id, name = "Farmer3Name", parentId = farmer2Id)
       .execute()
     allTypesSchema
-      .createFarmer(id = "Farmer4Id", name = "Farmer4Name", parentId = "Farmer3Id")
+      .createFarmer(id = farmer4Id, name = "Farmer4Name", parentId = farmer3Id)
       .execute()
-    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer4Id").execute()
+    allTypesSchema.createFarm(id = farmId, name = "TestFarm", farmerId = farmer4Id).execute()
     allTypesSchema
       .createAnimal(
-        id = "Animal1Id",
-        farmId = "FarmId",
+        id = animal1Id,
+        farmId = farmId,
         name = "Animal1Name",
         species = "Animal1Species",
         age = 1
@@ -229,8 +258,8 @@ class QueryRefIntegrationTest {
       .execute()
     allTypesSchema
       .createAnimal(
-        id = "Animal2Id",
-        farmId = "FarmId",
+        id = animal2Id,
+        farmId = farmId,
         name = "Animal2Name",
         species = "Animal2Species",
         age = 2
@@ -238,8 +267,8 @@ class QueryRefIntegrationTest {
       .execute()
     allTypesSchema
       .createAnimal(
-        id = "Animal3Id",
-        farmId = "FarmId",
+        id = animal3Id,
+        farmId = farmId,
         name = "Animal3Name",
         species = "Animal3Species",
         age = 3
@@ -247,31 +276,31 @@ class QueryRefIntegrationTest {
       .execute()
     allTypesSchema
       .createAnimal(
-        id = "Animal4Id",
-        farmId = "FarmId",
+        id = animal4Id,
+        farmId = farmId,
         name = "Animal4Name",
         species = "Animal4Species",
         age = null
       )
       .execute()
 
-    val result = allTypesSchema.getFarm("FarmId").execute()
+    val result = allTypesSchema.getFarm(farmId).execute()
 
     assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
     val farm = result.data.farm!!
-    assertThat(farm.id).isEqualTo("FarmId")
+    assertThat(farm.id).isEqualTo(farmId)
     assertThat(farm.name).isEqualTo("TestFarm")
     assertWithMessage("farm.farmer")
       .that(farm.farmer)
       .isEqualTo(
         AllTypesSchema.GetFarmQuery.Farmer(
-          id = "Farmer4Id",
+          id = farmer4Id,
           name = "Farmer4Name",
           parent =
             AllTypesSchema.GetFarmQuery.Parent(
-              id = "Farmer3Id",
+              id = farmer3Id,
               name = "Farmer3Name",
-              parentId = "Farmer2Id",
+              parentId = farmer2Id,
             )
         )
       )
@@ -279,25 +308,25 @@ class QueryRefIntegrationTest {
       .that(farm.animals)
       .containsExactly(
         AllTypesSchema.GetFarmQuery.Animal(
-          id = "Animal1Id",
+          id = animal1Id,
           name = "Animal1Name",
           species = "Animal1Species",
           age = 1
         ),
         AllTypesSchema.GetFarmQuery.Animal(
-          id = "Animal2Id",
+          id = animal2Id,
           name = "Animal2Name",
           species = "Animal2Species",
           age = 2
         ),
         AllTypesSchema.GetFarmQuery.Animal(
-          id = "Animal3Id",
+          id = animal3Id,
           name = "Animal3Name",
           species = "Animal3Species",
           age = 3
         ),
         AllTypesSchema.GetFarmQuery.Animal(
-          id = "Animal4Id",
+          id = animal4Id,
           name = "Animal4Name",
           species = "Animal4Species",
           age = null
@@ -307,14 +336,16 @@ class QueryRefIntegrationTest {
 
   @Test
   fun executeWithNestedNullTypesInData() = runTest {
-    allTypesSchema.createFarmer(id = "Farmer1Id", name = "Farmer1Name", parentId = null).execute()
-    allTypesSchema.createFarm(id = "FarmId", name = "TestFarm", farmerId = "Farmer1Id").execute()
+    val farmerId = randomId()
+    val farmId = randomId()
+    allTypesSchema.createFarmer(id = farmerId, name = "FarmerName", parentId = null).execute()
+    allTypesSchema.createFarm(id = farmId, name = "TestFarm", farmerId = farmerId).execute()
 
-    val result = allTypesSchema.getFarm("FarmId").execute()
+    val result = allTypesSchema.getFarm(farmId).execute()
 
     assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
     result.data.farm!!.apply {
-      assertThat(id).isEqualTo("FarmId")
+      assertThat(id).isEqualTo(farmId)
       assertThat(name).isEqualTo("TestFarm")
       assertWithMessage("farm.farmer.parent").that(farmer.parent).isNull()
     }
@@ -350,4 +381,8 @@ class QueryRefIntegrationTest {
         assertWithMessage("results[$index]").that(result.data.person).isNull()
       }
     }
+
+  private companion object {
+    fun randomId(): String = UUID.randomUUID().toString()
+  }
 }

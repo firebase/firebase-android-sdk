@@ -12,30 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-mutation createPerson($data: Person_Data! @pick(fields: ["id", "name", "age"])) @auth(is: PUBLIC) {
+mutation createPerson($data: Person_Data! @pick(fields: ["id", "name", "age"])) @auth(level: PUBLIC) {
   person_insert(data: $data)
 }
 
-mutation createDefaultPerson @auth(is: PUBLIC) {
+mutation createDefaultPerson @auth(level: PUBLIC) {
   person_insert(data: {id: "DefaultId", name: "DefaultName", age: 42})
 }
 
-mutation deletePerson($id: String!) @auth(is: PUBLIC) {
+mutation deletePerson($id: String!) @auth(level: PUBLIC) {
   person_delete(id: $id)
 }
 
-mutation updatePerson($id: String!, $data: Person_Data! @pick(fields: ["name", "age"])) @auth(is: PUBLIC) {
+mutation updatePerson($id: String!, $data: Person_Data! @pick(fields: ["name", "age"])) @auth(level: PUBLIC) {
   person_update(id: $id, data: $data)
 }
 
-query getPerson($id: String!) @auth(is: PUBLIC) {
+query getPerson($id: String!) @auth(level: PUBLIC) {
   person(id: $id) {
     name
     age
   }
 }
 
-query getAllPeople @auth(is: PUBLIC) {
+query getAllPeople @auth(level: PUBLIC) {
   people {
     id
     name

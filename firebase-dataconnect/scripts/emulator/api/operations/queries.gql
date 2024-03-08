@@ -1,20 +1,20 @@
-query getPost($id: String!) @auth(is: PUBLIC) {
+query getPost($id: String!) @auth(level: PUBLIC) {
 	post(id: $id) {
 		content
-		comments: comments_as_post {
+		comments: comments_on_post {
 			id
 			content
 		}
 	}
 }
-query listPosts @auth(is: PUBLIC) {
+query listPosts @auth(level: PUBLIC) {
 	posts {
 		id
 		content
 	}
 }
 
-query listPostsOnlyId @auth(is: PUBLIC) {
+query listPostsOnlyId @auth(level: PUBLIC) {
 	posts {
 		id
 	}

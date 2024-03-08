@@ -13,8 +13,8 @@
 # limitations under the License.
 
 type Primitive @table {
-  id: ID!
-  idFieldNullable: ID
+  id: UUID!
+  idFieldNullable: UUID
   intField: Int!
   intFieldNullable: Int
   floatField: Float!
@@ -26,9 +26,9 @@ type Primitive @table {
 }
 
 type PrimitiveList @table {
-  id: ID!
-  idListNullable: [ID!]
-  idListOfNullable: [ID]!
+  id: UUID!
+  idListNullable: [UUID!]
+  idListOfNullable: [UUID]!
   intList: [Int!]!
   intListNullable: [Int!]
   intListOfNullable: [Int]!
@@ -44,13 +44,13 @@ type PrimitiveList @table {
 }
 
 type Farm @table {
-  id: ID!
+  id: UUID!
   name: String!
   farmer: Farmer!
 }
 
 type Animal @table {
-  id: ID!
+  id: UUID!
   farm: Farm!
   name: String!
   species: String!
@@ -58,7 +58,7 @@ type Animal @table {
 }
 
 type Farmer @table {
-  id: ID!
+  id: UUID!
   name: String!
   parent: Farmer
 }
