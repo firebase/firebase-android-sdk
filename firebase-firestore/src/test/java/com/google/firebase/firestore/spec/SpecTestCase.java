@@ -540,7 +540,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
               ? optionsObject.getBoolean("includeDocumentMetadataChanges")
               : true;
       options.includeQueryMetadataChanges = options.includeDocumentMetadataChanges;
-      if (optionsObject.has("source") && optionsObject.getInt("source") == 1) {
+      if (optionsObject.has("source") && optionsObject.getString("source").equals("cache")) {
         options.source = ListenSource.CACHE;
       }
     } else {
