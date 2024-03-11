@@ -59,7 +59,7 @@ class SessionFirelogPublisherTest {
   fun logSession_populatesFid() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val fakeEventGDTLogger = FakeEventGDTLogger()
-    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD", "FakeAuthToken")
     val sessionsSettings =
       SessionsSettings(
         localOverrideSettings = FakeSettingsProvider(),
@@ -81,5 +81,7 @@ class SessionFirelogPublisherTest {
 
     assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
       .isEqualTo("FaKeFiD")
+    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseAuthenticationToken)
+      .isEqualTo("FakeAuthToken")
   }
 }

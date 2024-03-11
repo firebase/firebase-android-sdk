@@ -30,6 +30,7 @@ import com.google.android.datatransport.cct.internal.AndroidClientInfo;
 import com.google.android.datatransport.cct.internal.BatchedLogRequest;
 import com.google.android.datatransport.cct.internal.ClientInfo;
 import com.google.android.datatransport.cct.internal.ComplianceData;
+import com.google.android.datatransport.cct.internal.ExperimentIds;
 import com.google.android.datatransport.cct.internal.ExternalPRequestContext;
 import com.google.android.datatransport.cct.internal.ExternalPrivacyContext;
 import com.google.android.datatransport.cct.internal.LogEvent;
@@ -296,6 +297,19 @@ final class CctTransportBackend implements TransportBackend {
                   .setProductIdOrigin(ComplianceData.ProductIdOrigin.EVENT_OVERRIDE)
                   .build());
         }
+
+        if (eventInternal.getExperimentIdsClear() != null
+            || eventInternal.getExperimentIdsEncrypted() != null) {
+          ExperimentIds.Builder builder = ExperimentIds.builder();
+          if (eventInternal.getExperimentIdsClear() != null) {
+            builder.setClearBlob(eventInternal.getExperimentIdsClear());
+          }
+          if (eventInternal.getExperimentIdsEncrypted() != null) {
+            builder.setEncryptedBlob(eventInternal.getExperimentIdsEncrypted());
+          }
+          event.setExperimentIds(builder.build());
+        }
+
         logEvents.add(event.build());
       }
       requestBuilder.setLogEvents(logEvents);

@@ -26,6 +26,8 @@ message LogEvent {
 
     int64 event_uptime_ms = 17;
 
+    ExperimentIds experiment_ids = 16;
+
     oneof ext {
         bytes source_extension = 6;
 
@@ -253,6 +255,12 @@ message QosTiersOverride {
 
     // The fingerprint of the qos_tier_configuration field.
     int64 qos_tier_fingerprint = 2;
+}
+
+message ExperimentIds {
+    bytes clear_blob = 1;
+
+    bytes encrypted_blob = 2;
 }
 
 message LogResponse {

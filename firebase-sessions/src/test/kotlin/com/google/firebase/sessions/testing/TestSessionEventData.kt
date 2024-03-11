@@ -57,6 +57,7 @@ internal object TestSessionEventData {
       eventTimestampUs = TEST_SESSION_TIMESTAMP_US,
       dataCollectionStatus = TEST_DATA_COLLECTION_STATUS,
       firebaseInstallationId = "",
+      firebaseAuthenticationToken = "",
     )
 
   val TEST_PROCESS_DETAILS =
