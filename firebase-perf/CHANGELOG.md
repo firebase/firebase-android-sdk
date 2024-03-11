@@ -1,4 +1,6 @@
 # Unreleased
+* [fixed] Fixed `ExceptionInInitializerError` where the `url.openStream()` causes a crash if 
+  FirebasePerf is not yet initialized.
 
 
 # 20.5.2
