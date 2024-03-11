@@ -114,13 +114,6 @@ public class Uploader {
         });
   }
 
-  private Boolean processResponse(BackendResponse response) {
-
-      if(response.getStatus().)
-
-          return true;
-  }
-
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   @CanIgnoreReturnValue
   public BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
