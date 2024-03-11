@@ -8,7 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CORE SDK INIT
@@ -66,19 +68,23 @@ class FirebaseDataConnect internal constructor() : AutoCloseable {
   override fun toString(): String = TODO()
 
   companion object {
-    // Creates an instance with the default settings and caches it, if there is not a
-    // cached instance for the given app/config pair.
-    fun getInstance(app: FirebaseApp = Firebase.app, config: ConnectorConfig): FirebaseDataConnect =
-      TODO()
-
-    // Throws if there is a cached instance for the given app/config pair AND
-    // that instance has different settings that the provided settings, compared
-    // using DataConnectSettings.equals() method. Otherwise, creates and caches
-    // the instance if there is no cached instance.
+    // Gets the instance associated with the default FirebaseApp and the given
+    // config, creating it with the given settings if it does not already exist.
+    // If the instance *does* already exist and its settings are *not* equal to the
+    // given settings, then an exception is thrown.
     fun getInstance(
-      app: FirebaseApp = Firebase.app,
       config: ConnectorConfig,
-      settings: DataConnectSettings
+      settings: DataConnectSettings = DataConnectSettings()
+    ): FirebaseDataConnect = TODO()
+
+    // Gets the instance associated with the *given* FirebaseApp and the given
+    // config, creating it with the given settings if it does not already exist.
+    // If the instance *does* already exist and its settings are *not* equal to the
+    // given settings, then an exception is thrown.
+    fun getInstance(
+      app: FirebaseApp,
+      config: ConnectorConfig,
+      settings: DataConnectSettings = DataConnectSettings()
     ): FirebaseDataConnect = TODO()
 
     var logLevel: LoggerLevel
@@ -98,15 +104,21 @@ fun Firebase.dataConnect(
   settings: DataConnectSettings
 ): FirebaseDataConnect = TODO()
 
-abstract class Reference<Data, Variables> internal constructor() {
-  val dataConnect: FirebaseDataConnect
-    get() = TODO()
+abstract class OperationRef<Data, Variables> internal constructor() {
+  val dataConnect: FirebaseDataConnect = TODO()
+
+  val operationName: String = TODO()
 
   val variables: Variables = TODO()
+
+  val responseDeserializer: DeserializationStrategy<Data> = TODO()
+
+  val variablesSerializer: SerializationStrategy<Variables> = TODO()
+
   abstract suspend fun execute(variables: Variables): DataConnectResult<Data, Variables>
 }
 
-class QueryRef<Data, Variables> internal constructor() : Reference<Data, Variables>() {
+class QueryRef<Data, Variables> internal constructor() : OperationRef<Data, Variables>() {
   override suspend fun execute(variables: Variables): DataConnectQueryResult<Data, Variables> =
     TODO()
 
@@ -140,7 +152,7 @@ sealed class DataConnectResult<Data, Variables> {
   val data: Data
     get() = TODO()
 
-  open val ref: Reference<Data, Variables>
+  open val ref: OperationRef<Data, Variables>
     get() = TODO()
 
   override fun hashCode(): Int = TODO()
