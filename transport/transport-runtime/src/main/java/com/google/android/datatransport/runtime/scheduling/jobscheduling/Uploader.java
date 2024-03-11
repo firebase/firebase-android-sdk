@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
 
@@ -113,6 +114,13 @@ public class Uploader {
         });
   }
 
+  private Boolean processResponse(BackendResponse response) {
+
+      if(response.getStatus().)
+
+          return true;
+  }
+
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   @CanIgnoreReturnValue
   public BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
@@ -123,6 +131,8 @@ public class Uploader {
     while (guard.runCriticalSection(() -> eventStore.hasPendingEventsFor(transportContext))) {
       Iterable<PersistedEvent> persistedEvents =
           guard.runCriticalSection(() -> eventStore.loadBatch(transportContext));
+
+      List<PersistedEvent> sentEvents = new ArrayList<>();
 
       // Do not make a call to the backend if the list is empty.
       if (!persistedEvents.iterator().hasNext()) {
@@ -136,8 +146,17 @@ public class Uploader {
       } else {
         List<EventInternal> eventInternals = new ArrayList<>();
 
+        PersistedEvent oldestEvent = persistedEvents.iterator().next();
+        String targetPseudoId = oldestEvent.getEvent().getPseudonymousId();
+
         for (PersistedEvent persistedEvent : persistedEvents) {
-          eventInternals.add(persistedEvent.getEvent());
+            EventInternal event = persistedEvent.getEvent();
+            String pseudoId = event.getPseudonymousId();
+
+            if(Objects.equals(targetPseudoId, pseudoId)) {
+                eventInternals.add(event);
+                sentEvents.add(persistedEvent);
+            }
         }
 
         if (transportContext.shouldUploadClientHealthMetrics()) {
@@ -155,7 +174,7 @@ public class Uploader {
         long finalMaxNextRequestWaitMillis1 = maxNextRequestWaitMillis;
         guard.runCriticalSection(
             () -> {
-              eventStore.recordFailure(persistedEvents);
+              eventStore.recordFailure(sentEvents);
               eventStore.recordNextCallTime(
                   transportContext, clock.getTime() + finalMaxNextRequestWaitMillis1);
               return null;
@@ -165,7 +184,7 @@ public class Uploader {
       } else {
         guard.runCriticalSection(
             () -> {
-              eventStore.recordSuccess(persistedEvents);
+              eventStore.recordSuccess(sentEvents);
               return null;
             });
         if (response.getStatus() == BackendResponse.Status.OK) {
@@ -180,7 +199,7 @@ public class Uploader {
           }
         } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD) {
           Map<String, Integer> countMap = new HashMap<>();
-          for (PersistedEvent persistedEvent : persistedEvents) {
+          for (PersistedEvent persistedEvent : sentEvents) {
             String logSource = persistedEvent.getEvent().getTransportName();
             if (!countMap.containsKey(logSource)) {
               countMap.put(logSource, 1);
