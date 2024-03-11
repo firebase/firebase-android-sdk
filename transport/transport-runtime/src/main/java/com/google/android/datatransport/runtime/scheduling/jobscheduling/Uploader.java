@@ -190,6 +190,7 @@ public class Uploader {
                   return null;
                 });
           }
+          break;
         } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD) {
           Map<String, Integer> countMap = new HashMap<>();
           for (PersistedEvent persistedEvent : sentEvents) {
@@ -218,6 +219,10 @@ public class Uploader {
               transportContext, clock.getTime() + finalMaxNextRequestWaitMillis);
           return null;
         });
+
+    if(eventStore.hasPendingEventsFor(transportContext)) {
+        workScheduler.schedule(transportContext, attemptNumber, true);
+    }
     return response;
   }
 
