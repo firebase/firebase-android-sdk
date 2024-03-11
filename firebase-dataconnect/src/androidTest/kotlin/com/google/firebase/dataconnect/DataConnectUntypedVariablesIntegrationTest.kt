@@ -18,8 +18,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.LazyPersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonId
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWithHardcodedNameQuery.hardcodedPeople
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
@@ -33,44 +34,29 @@ class DataConnectUntypedVariablesIntegrationTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val personSchema: PersonSchema by LazyPersonSchema(dataConnectFactory)
+  private val personSchema by lazy { PersonSchema(dataConnectFactory) }
 
   @Test
   fun emptyMapWorksWithQuery() = runTest {
-    personSchema.createPerson(id = "Person1Id", name = "Person1Name", age = 42).execute()
-    personSchema.createPerson(id = "Person2Id", name = "Person2Name", age = 43).execute()
-    val query = personSchema.getAllPeople.withVariables(DataConnectUntypedVariables())
+    personSchema.createPeopleWithHardcodedName.execute()
+    val query = personSchema.getPeopleWithHardcodedName.withVariables(DataConnectUntypedVariables())
 
     val result = query.execute()
 
     assertThat(result.ref).isSameInstanceAs(query)
-    assertThat(result.data)
-      .isEqualTo(
-        PersonSchema.GetAllPeopleQuery.Data(
-          people =
-            listOf(
-              PersonSchema.GetAllPeopleQuery.Data.Person(
-                id = "Person1Id",
-                name = "Person1Name",
-                age = 42
-              ),
-              PersonSchema.GetAllPeopleQuery.Data.Person(
-                id = "Person2Id",
-                name = "Person2Name",
-                age = 43
-              ),
-            )
-        )
-      )
+    assertThat(result.data.people).containsExactlyElementsIn(hardcodedPeople)
   }
 
   @Test
   fun nonEmptyMapWorksWithQuery() = runTest {
-    personSchema.createPerson(id = "Person1Id", name = "Person1Name", age = 42).execute()
-    personSchema.createPerson(id = "Person2Id", name = "Person2Name", age = 43).execute()
-    personSchema.createPerson(id = "Person3Id", name = "Person3Name", age = null).execute()
+    val person1Id = randomPersonId()
+    val person2Id = randomPersonId()
+    val person3Id = randomPersonId()
+    personSchema.createPerson(id = person1Id, name = "Person1Name", age = 42).execute()
+    personSchema.createPerson(id = person2Id, name = "Person2Name", age = 43).execute()
+    personSchema.createPerson(id = person3Id, name = "Person3Name", age = null).execute()
     val query =
-      personSchema.getPerson("").withVariables(DataConnectUntypedVariables("id" to "Person2Id"))
+      personSchema.getPerson("").withVariables(DataConnectUntypedVariables("id" to person2Id))
 
     val result = query.execute()
 
@@ -87,9 +73,10 @@ class DataConnectUntypedVariablesIntegrationTest {
   fun emptyMapWorksWithMutation() = runTest {
     val mutation = personSchema.createDefaultPerson.withVariables(DataConnectUntypedVariables())
 
-    mutation.execute()
+    val mutationResult = mutation.execute()
 
-    val result = personSchema.getPerson(id = "DefaultId").execute()
+    val personId = mutationResult.data.person_insert.id
+    val result = personSchema.getPerson(id = personId).execute()
     assertThat(result.data)
       .isEqualTo(
         PersonSchema.GetPersonQuery.Data(
@@ -100,20 +87,22 @@ class DataConnectUntypedVariablesIntegrationTest {
 
   @Test
   fun nonEmptyMapWorksWithMutation() = runTest {
+    val personId = randomPersonId()
+
     val mutation =
       personSchema
         .createPerson("", "", null)
         .withVariables(
           variables =
             DataConnectUntypedVariables(
-              "data" to mapOf("id" to "PersonId", "name" to "TestPersonName", "age" to 42.0)
+              "data" to mapOf("id" to personId, "name" to "TestPersonName", "age" to 42.0)
             ),
           serializer = DataConnectUntypedVariables
         )
 
     mutation.execute()
 
-    val result = personSchema.getPerson(id = "PersonId").execute()
+    val result = personSchema.getPerson(id = personId).execute()
     assertThat(result.data)
       .isEqualTo(
         PersonSchema.GetPersonQuery.Data(

@@ -18,9 +18,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.randomId
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
-import com.google.firebase.dataconnect.testutil.schemas.LazyAllTypesSchema
-import java.util.UUID
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
@@ -35,15 +34,16 @@ class DataConnectUntypedDataIntegrationTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val allTypesSchema: AllTypesSchema by LazyAllTypesSchema(dataConnectFactory)
+  private val allTypesSchema by lazy { AllTypesSchema(dataConnectFactory) }
 
   @Test
   fun primitiveTypes() = runTest {
+    val id = randomId()
     allTypesSchema
       .createPrimitive(
         AllTypesSchema.CreatePrimitiveMutation.Variables(
           AllTypesSchema.PrimitiveData(
-            id = "51449d7a-7735-4751-bc13-4a665bc7786f",
+            id = id,
             idFieldNullable = "eebf7592-cf74-4871-8730-00a03a9af43e",
             intField = 42,
             intFieldNullable = 43,
@@ -57,10 +57,7 @@ class DataConnectUntypedDataIntegrationTest {
         )
       )
       .execute()
-    val query =
-      allTypesSchema
-        .getPrimitive(id = "51449d7a-7735-4751-bc13-4a665bc7786f")
-        .withDataDeserializer(DataConnectUntypedData)
+    val query = allTypesSchema.getPrimitive(id = id).withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -71,7 +68,7 @@ class DataConnectUntypedDataIntegrationTest {
       .that(result.data.data?.get("primitive") as Map<*, *>)
       .containsExactlyEntriesIn(
         mapOf(
-          "id" to "51449d7a-7735-4751-bc13-4a665bc7786f",
+          "id" to id,
           "idFieldNullable" to "eebf7592-cf74-4871-8730-00a03a9af43e",
           "intField" to 42.0,
           "intFieldNullable" to 43.0,
@@ -87,11 +84,12 @@ class DataConnectUntypedDataIntegrationTest {
 
   @Test
   fun nullPrimitiveTypes() = runTest {
+    val id = randomId()
     allTypesSchema
       .createPrimitive(
         AllTypesSchema.CreatePrimitiveMutation.Variables(
           AllTypesSchema.PrimitiveData(
-            id = "a6628900-3dd0-4524-9dce-b5e6361e40b6",
+            id = id,
             idFieldNullable = null,
             intField = 42,
             intFieldNullable = null,
@@ -105,10 +103,7 @@ class DataConnectUntypedDataIntegrationTest {
         )
       )
       .execute()
-    val query =
-      allTypesSchema
-        .getPrimitive(id = "a6628900-3dd0-4524-9dce-b5e6361e40b6")
-        .withDataDeserializer(DataConnectUntypedData)
+    val query = allTypesSchema.getPrimitive(id = id).withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -119,7 +114,7 @@ class DataConnectUntypedDataIntegrationTest {
       .that(result.data.data?.get("primitive") as Map<*, *>)
       .containsExactlyEntriesIn(
         mapOf(
-          "id" to "a6628900-3dd0-4524-9dce-b5e6361e40b6",
+          "id" to id,
           "idFieldNullable" to null,
           "intField" to 42.0,
           "intFieldNullable" to null,
@@ -135,11 +130,12 @@ class DataConnectUntypedDataIntegrationTest {
 
   @Test
   fun listsOfPrimitiveTypes() = runTest {
+    val id = randomId()
     allTypesSchema
       .createPrimitiveList(
         AllTypesSchema.CreatePrimitiveListMutation.Variables(
           AllTypesSchema.PrimitiveListData(
-            id = "ac4b33ea-cf3d-4057-bd07-6326b55be4c5",
+            id = id,
             idListNullable =
               listOf(
                 "257e52b0-c3bf-4414-a7fa-8824b605f134",
@@ -167,9 +163,7 @@ class DataConnectUntypedDataIntegrationTest {
       )
       .execute()
     val query =
-      allTypesSchema
-        .getPrimitiveList(id = "ac4b33ea-cf3d-4057-bd07-6326b55be4c5")
-        .withDataDeserializer(DataConnectUntypedData)
+      allTypesSchema.getPrimitiveList(id = id).withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -180,7 +174,7 @@ class DataConnectUntypedDataIntegrationTest {
       .that(result.data.data?.get("primitiveList") as Map<*, *>)
       .containsExactlyEntriesIn(
         mapOf(
-          "id" to "ac4b33ea-cf3d-4057-bd07-6326b55be4c5",
+          "id" to id,
           "idListNullable" to
             listOf("257e52b0-c3bf-4414-a7fa-8824b605f134", "33561fab-8645-464c-b818-89ce9a72f8bf"),
           "idListOfNullable" to
@@ -203,11 +197,12 @@ class DataConnectUntypedDataIntegrationTest {
 
   @Test
   fun nullListsOfPrimitiveTypes() = runTest {
+    val id = randomId()
     allTypesSchema
       .createPrimitiveList(
         AllTypesSchema.CreatePrimitiveListMutation.Variables(
           AllTypesSchema.PrimitiveListData(
-            id = "d320c31b-a127-4c7f-8ba6-3f4a6a1c6823",
+            id = id,
             idListNullable = null,
             idListOfNullable =
               listOf(
@@ -231,9 +226,7 @@ class DataConnectUntypedDataIntegrationTest {
       )
       .execute()
     val query =
-      allTypesSchema
-        .getPrimitiveList(id = "d320c31b-a127-4c7f-8ba6-3f4a6a1c6823")
-        .withDataDeserializer(DataConnectUntypedData)
+      allTypesSchema.getPrimitiveList(id = id).withDataDeserializer(DataConnectUntypedData)
 
     val result = query.execute()
 
@@ -244,7 +237,7 @@ class DataConnectUntypedDataIntegrationTest {
       .that(result.data.data?.get("primitiveList") as Map<*, *>)
       .containsExactlyEntriesIn(
         mapOf(
-          "id" to "d320c31b-a127-4c7f-8ba6-3f4a6a1c6823",
+          "id" to id,
           "idListNullable" to null,
           "idListOfNullable" to
             listOf("1a392d5a-4b42-4425-b9ad-677ac8066697", "9faab31e-a108-4b53-be69-45fc47c4f0fc"),
@@ -266,13 +259,13 @@ class DataConnectUntypedDataIntegrationTest {
 
   @Test
   fun nestedStructs() = runTest {
-    val farmer1Id = "0032eebf-dcbb-406c-9b54-ac5a743ea26a"
-    val farmer2Id = "93e343dc-e0b2-4a38-a78a-d25e03bd9e1f"
-    val farmer3Id = "34b5c829-cf18-4e6d-9e8f-dcf585dbc0e0"
-    val farmer4Id = "355ef49d-99de-456b-a6dd-7c6a67089c3f"
-    val farmId = "f68c3f00-23e5-42a9-87f7-a5b34cf33435"
-    val animal1Id = "e70ad65e-4bc7-4e8b-8485-1178936c4795"
-    val animal2Id = "bade6865-d435-4be8-b68c-b9bd69de0b92"
+    val farmer1Id = randomId()
+    val farmer2Id = randomId()
+    val farmer3Id = randomId()
+    val farmer4Id = randomId()
+    val farmId = randomId()
+    val animal1Id = randomId()
+    val animal2Id = randomId()
     allTypesSchema.createFarmer(id = farmer1Id, name = "Farmer1Name", parentId = null).execute()
     allTypesSchema
       .createFarmer(id = farmer2Id, name = "Farmer2Name", parentId = farmer1Id)
@@ -425,9 +418,5 @@ class DataConnectUntypedDataIntegrationTest {
 
     assertWithMessage("result.data.data").that(result.data.data).isNull()
     assertWithMessage("result.data.errors").that(result.data.errors).isNotEmpty()
-  }
-
-  private companion object {
-    fun randomId(): String = UUID.randomUUID().toString()
   }
 }

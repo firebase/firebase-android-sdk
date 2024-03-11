@@ -8,6 +8,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import java.util.UUID
 
 /**
  * Asserts that a string contains another string, verifying that the character immediately preceding
@@ -38,5 +39,8 @@ suspend fun delayUntil(name: String? = null, predicate: () -> Boolean) {
     }
   }
 }
+
+/** Generates and returns a random UUID in its string format. */
+fun randomId(): String = UUID.randomUUID().toString()
 
 class DelayUntilTimeoutException(message: String) : Exception(message)

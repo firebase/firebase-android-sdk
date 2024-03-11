@@ -1,0 +1,32 @@
+query getPost($id: String!) @auth(level: PUBLIC) {
+  post(id: $id) {
+    content
+    comments: comments_on_post {
+      id
+      content
+    }
+  }
+}
+query listPosts @auth(level: PUBLIC) {
+  posts {
+    id
+    content
+  }
+}
+
+query listPostsOnlyId @auth(level: PUBLIC) {
+  posts {
+    id
+  }
+}
+
+mutation createPost($data: Post_Data! @pick(fields: ["id", "content"])) @auth(level: PUBLIC) {
+  post_insert(data: $data)
+}
+mutation deletePost($id: String!) @auth(level: PUBLIC) {
+  post_delete(id: $id)
+}
+
+mutation createComment($data: Comment_Data! @pick(fields: ["id", "content", "postId"])) @auth(level: PUBLIC) {
+  comment_insert(data: $data)
+}

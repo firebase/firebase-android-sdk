@@ -1,0 +1,13 @@
+specVersion: v1alpha
+schema:
+  main:
+    source: ./schema
+    connection:
+      connectionString: postgresql://postgres:postgres@localhost:5432/emulator?sslmode=disable
+connector:
+  alltypes:
+    source: ./connectors/alltypes
+  person:
+    source: ./connectors/person
+  posts:
+    source: ./connectors/posts

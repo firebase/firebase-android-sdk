@@ -18,12 +18,16 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.installEmulatorSchema
-import kotlinx.coroutines.*
+import com.google.firebase.util.nextAlphanumericString
+import kotlin.random.Random
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 class PersonSchema(val dataConnect: FirebaseDataConnect) {
+
+  constructor(
+    dataConnectFactory: TestDataConnectFactory
+  ) : this(dataConnectFactory.newInstance(connector = PersonSchema.CONNECTOR, service = "local"))
 
   init {
     dataConnect.config.connector.let {
@@ -33,34 +37,69 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     }
   }
 
-  suspend fun installEmulatorSchema() {
-    dataConnect.installEmulatorSchema("testing_graphql_schemas/person")
+  object CreateDefaultPersonMutation {
+    @Serializable
+    data class Data(val person_insert: PersonKey) {
+      @Serializable data class PersonKey(val id: String)
+    }
   }
 
   val createDefaultPerson
     get() =
       dataConnect.mutation(
         operationName = "createDefaultPerson",
-        dataDeserializer = serializer<Unit>()
+        dataDeserializer = serializer<CreateDefaultPersonMutation.Data>()
       )
 
   object CreatePersonMutation {
-    @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
-    @Serializable data class Variables(val data: PersonData)
+    @Serializable
+    data class Data(val person_insert: PersonKey) {
+      @Serializable data class PersonKey(val id: String)
+    }
+    @Serializable
+    data class Variables(val data: PersonData) {
+      @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
+    }
   }
 
   fun createPerson(variables: CreatePersonMutation.Variables) =
     dataConnect.mutation(
       operationName = "createPerson",
       variables = variables,
-      dataDeserializer = serializer<Unit>(),
+      dataDeserializer = serializer<CreatePersonMutation.Data>(),
       variablesSerializer = serializer<CreatePersonMutation.Variables>(),
     )
 
   fun createPerson(id: String, name: String, age: Int? = null) =
     createPerson(
       CreatePersonMutation.Variables(
-        CreatePersonMutation.PersonData(id = id, name = name, age = age)
+        CreatePersonMutation.Variables.PersonData(id = id, name = name, age = age)
+      )
+    )
+
+  object CreateOrUpdatePersonMutation {
+    @Serializable
+    data class Data(val person_upsert: PersonKey) {
+      @Serializable data class PersonKey(val id: String)
+    }
+    @Serializable
+    data class Variables(val data: PersonData) {
+      @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
+    }
+  }
+
+  fun createOrUpdatePerson(variables: CreateOrUpdatePersonMutation.Variables) =
+    dataConnect.mutation(
+      operationName = "createOrUpdatePerson",
+      variables = variables,
+      dataDeserializer = serializer<CreateOrUpdatePersonMutation.Data>(),
+      variablesSerializer = serializer<CreateOrUpdatePersonMutation.Variables>(),
+    )
+
+  fun createOrUpdatePerson(id: String, name: String, age: Int? = null) =
+    createOrUpdatePerson(
+      CreateOrUpdatePersonMutation.Variables(
+        CreateOrUpdatePersonMutation.Variables.PersonData(id = id, name = name, age = age)
       )
     )
 
@@ -118,28 +157,72 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   fun getPerson(id: String) = getPerson(GetPersonQuery.Variables(id = id))
 
-  object GetAllPeopleQuery {
+  object GetPeopleByNameQuery {
     @Serializable
     data class Data(val people: List<Person>) {
-      @Serializable data class Person(val id: String, val name: String, val age: Int?)
+      @Serializable data class Person(val id: String, val age: Int? = null)
+    }
+
+    @Serializable data class Variables(val name: String)
+  }
+
+  fun getPeopleByName(variables: GetPeopleByNameQuery.Variables) =
+    dataConnect.query(
+      operationName = "getPeopleByName",
+      variables = variables,
+      dataDeserializer = serializer<GetPeopleByNameQuery.Data>(),
+      variablesSerializer = serializer<GetPeopleByNameQuery.Variables>(),
+    )
+
+  fun getPeopleByName(name: String) = getPeopleByName(GetPeopleByNameQuery.Variables(name = name))
+
+  object GetNoPeopleQuery {
+    @Serializable
+    data class Data(val people: List<Person>) {
+      @Serializable data class Person(val id: String)
     }
   }
 
-  val getAllPeople
+  val getNoPeople
     get() =
       dataConnect.query(
-        operationName = "getAllPeople",
-        dataDeserializer = serializer<GetAllPeopleQuery.Data>()
+        operationName = "getNoPeople",
+        dataDeserializer = serializer<GetNoPeopleQuery.Data>()
+      )
+
+  object GetPeopleWithHardcodedNameQuery {
+    // These values *must* match the hardcoded values in the graphql source.
+    val hardcodedPeople
+      get() =
+        listOf(
+          Data.Person(id = "HardcodedNamePerson1Id_v1", age = null),
+          Data.Person(id = "HardcodedNamePerson2Id_v1", age = 42)
+        )
+
+    @Serializable
+    data class Data(val people: List<Person>) {
+      @Serializable data class Person(val id: String, val age: Int?)
+    }
+  }
+
+  val getPeopleWithHardcodedName
+    get() =
+      dataConnect.query(
+        operationName = "getPeopleWithHardcodedName",
+        dataDeserializer = serializer<GetPeopleWithHardcodedNameQuery.Data>()
+      )
+
+  val createPeopleWithHardcodedName
+    get() =
+      dataConnect.mutation(
+        operationName = "createPeopleWithHardcodedName",
+        dataDeserializer = serializer<Unit>()
       )
 
   companion object {
-    const val CONNECTOR = "ops"
+    const val CONNECTOR = "person"
+
+    fun randomPersonId(): String = "PersonId_" + Random.nextAlphanumericString()
+    fun randomPersonName(): String = "PersonName_" + Random.nextAlphanumericString()
   }
-}
-
-suspend fun TestDataConnectFactory.installPersonSchema() =
-  PersonSchema(newInstance(connector = PersonSchema.CONNECTOR)).apply { installEmulatorSchema() }
-
-fun LazyPersonSchema(dataConnectFactory: TestDataConnectFactory): Lazy<PersonSchema> = lazy {
-  runBlocking { dataConnectFactory.installPersonSchema() }
 }

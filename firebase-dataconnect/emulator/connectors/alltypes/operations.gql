@@ -87,7 +87,7 @@ mutation createFarm($data: Farm_Data! @pick(fields: ["id", "name", "farmerId"]))
   farm_insert(data: $data)
 }
 
-query getFarm($id: UUID!) @auth(level: PUBLIC) {
+query getFarm($id: String!) @auth(level: PUBLIC) {
   farm(id: $id) {
     id
     name

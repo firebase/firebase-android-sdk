@@ -18,12 +18,16 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.mutation
 import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.installEmulatorSchema
-import kotlinx.coroutines.*
+import com.google.firebase.util.nextAlphanumericString
+import kotlin.random.Random
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
 class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
+
+  constructor(
+    dataConnectFactory: TestDataConnectFactory
+  ) : this(dataConnectFactory.newInstance(connector = CONNECTOR, service = "local"))
 
   init {
     dataConnect.config.connector.let {
@@ -31,10 +35,6 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
         "The given FirebaseDataConnect has connector=$it, but expected $CONNECTOR"
       }
     }
-  }
-
-  suspend fun installEmulatorSchema() {
-    dataConnect.installEmulatorSchema("testing_graphql_schemas/alltypes")
   }
 
   @Serializable
@@ -251,15 +251,10 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   fun getFarm(id: String) = getFarm(GetFarmQuery.Variables(id = id))
 
   companion object {
-    const val CONNECTOR = "ops"
-  }
-}
+    const val CONNECTOR = "alltypes"
 
-suspend fun TestDataConnectFactory.installAllTypesSchema() =
-  AllTypesSchema(newInstance(connector = AllTypesSchema.CONNECTOR)).apply {
-    installEmulatorSchema()
+    fun randomFarmerId() = "FarmerId_" + Random.nextAlphanumericString()
+    fun randomFarmId() = "FarmId_" + Random.nextAlphanumericString()
+    fun randomAnimalId() = "AnimalId_" + Random.nextAlphanumericString()
   }
-
-fun LazyAllTypesSchema(dataConnectFactory: TestDataConnectFactory): Lazy<AllTypesSchema> = lazy {
-  runBlocking { dataConnectFactory.installAllTypesSchema() }
 }

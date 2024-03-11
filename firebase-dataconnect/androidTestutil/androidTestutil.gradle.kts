@@ -17,7 +17,6 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   id("firebase-library")
   id("kotlin-android")
-  id("com.google.protobuf")
 }
 
 android {
@@ -37,59 +36,11 @@ android {
   kotlinOptions { jvmTarget = "1.8" }
 }
 
-protobuf {
-  protoc {
-    artifact = "${libs.protoc.get()}"
-  }
-  plugins {
-    create("java") {
-      artifact = "${libs.grpc.protoc.gen.java.get()}"
-    }
-    create("grpc") {
-      artifact = "${libs.grpc.protoc.gen.java.get()}"
-    }
-    create("grpckt") {
-      artifact = "${libs.grpc.protoc.gen.kotlin.get()}:jdk8@jar"
-    }
-  }
-  generateProtoTasks {
-    all().forEach { task ->
-      task.builtins {
-        create("kotlin") {
-          option("lite")
-        }
-      }
-      task.plugins {
-        create("java") {
-          option("lite")
-        }
-        create("grpc") {
-          option("lite")
-        }
-        create("grpckt") {
-          option("lite")
-        }
-      }
-    }
-  }
-}
-
 dependencies {
   api(project(":firebase-common"))
   api(project(":firebase-dataconnect"))
   api(project(":firebase-dataconnect:testutil"))
   api(libs.kotlinx.coroutines.core)
-
-  implementation(project(":protolite-well-known-types"))
-
-  compileOnly(libs.javax.annotation.jsr250)
-  implementation(libs.grpc.android)
-  implementation(libs.grpc.okhttp)
-  implementation(libs.grpc.protobuf.lite)
-  implementation(libs.grpc.kotlin.stub)
-  implementation(libs.grpc.stub)
-  implementation(libs.protobuf.java.lite)
-  implementation(libs.protobuf.kotlin.lite)
 
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)

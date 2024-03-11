@@ -223,11 +223,13 @@ class PostsConnectorIntegrationTest {
     val postContent = randomPostContent()
     posts.createPost(id = postId, content = postContent)
 
+    val comment1Id = randomCommentId()
     val comment1Content = randomPostContent()
-    posts.createComment(content = comment1Content, postId = postId)
+    posts.createComment(id=comment1Id, content = comment1Content, postId = postId)
 
+    val comment2Id = randomCommentId()
     val comment2Content = randomPostContent()
-    posts.createComment(content = comment2Content, postId = postId)
+    posts.createComment(id=comment2Id, content = comment2Content, postId = postId)
 
     val queryResponse = posts.getPost(id = postId)
     assertWithMessage("queryResponse")
@@ -237,8 +239,8 @@ class PostsConnectorIntegrationTest {
           content = postContent,
           comments =
             listOf(
-              GetPost.Data.Post.Comment(id = null, content = comment1Content),
-              GetPost.Data.Post.Comment(id = null, content = comment2Content),
+              GetPost.Data.Post.Comment(id = comment1Id, content = comment1Content),
+              GetPost.Data.Post.Comment(id = comment2Id, content = comment2Content),
             )
         )
       )
@@ -302,6 +304,7 @@ class PostsConnectorIntegrationTest {
   private companion object {
     fun randomPostId() = "PostId_" + Random.nextAlphanumericString(length = 10)
     fun randomPostContent() = "PostContent_" + Random.nextAlphanumericString(length = 40)
+    fun randomCommentId() = "CommentId_" + Random.nextAlphanumericString(length = 10)
     fun randomHost() = "Host_" + Random.nextAlphanumericString(length = 10)
     fun randomDataConnectSettings() = DataConnectSettings(host = randomHost())
   }

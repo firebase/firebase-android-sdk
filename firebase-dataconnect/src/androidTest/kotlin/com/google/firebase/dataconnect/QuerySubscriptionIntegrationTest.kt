@@ -23,8 +23,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.LazyPersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
+import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonId
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
 import com.google.firebase.dataconnect.testutil.skipItemsWhere
 import kotlin.time.Duration.Companion.seconds
@@ -50,7 +50,7 @@ class QuerySubscriptionIntegrationTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
 
-  private val schema: PersonSchema by LazyPersonSchema(dataConnectFactory)
+  private val schema by lazy { PersonSchema(dataConnectFactory) }
 
   @Test
   fun lastResult_should_be_null_on_new_instance() {
@@ -60,8 +60,9 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun lastResult_should_be_equal_to_the_last_collected_result() = runTest {
-    schema.createPerson(id = "TestId", name = "Name1").execute()
-    val querySubscription = schema.getPerson(id = "TestId").subscribe()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "Name1").execute()
+    val querySubscription = schema.getPerson(id = personId).subscribe()
 
     querySubscription.resultFlow.test {
       val result1A = awaitItem()
@@ -69,7 +70,7 @@ class QuerySubscriptionIntegrationTest {
       assertWithMessage("lastResult1").that(querySubscription.lastResult).isEqualTo(result1A)
     }
 
-    schema.updatePerson(id = "TestId", name = "Name2", age = 2).execute()
+    schema.updatePerson(id = personId, name = "Name2", age = 2).execute()
 
     querySubscription.resultFlow.test {
       val result1B = awaitItem()
@@ -82,13 +83,14 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun reload_should_notify_collecting_flows() = runTest {
-    schema.createPerson(id = "TestId", name = "Name1").execute()
-    val querySubscription = schema.getPerson(id = "TestId").subscribe()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "Name1").execute()
+    val querySubscription = schema.getPerson(id = personId).subscribe()
 
     querySubscription.resultFlow.test {
       assertWithMessage("result1").that(awaitItem().data.person?.name).isEqualTo("Name1")
 
-      schema.updatePerson(id = "TestId", name = "Name2").execute()
+      schema.updatePerson(id = personId, name = "Name2").execute()
       querySubscription.reload()
 
       assertWithMessage("result2").that(awaitItem().data.person?.name).isEqualTo("Name2")
@@ -97,8 +99,9 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun flow_collect_should_get_immediately_invoked_with_last_result() = runTest {
-    schema.createPerson(id = "TestId", name = "TestName").execute()
-    val querySubscription = schema.getPerson(id = "TestId").subscribe()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "TestName").execute()
+    val querySubscription = schema.getPerson(id = personId).subscribe()
 
     val result1 = querySubscription.resultFlow.first()
     assertWithMessage("result1").that(result1.data.person?.name).isEqualTo("TestName")
@@ -110,9 +113,10 @@ class QuerySubscriptionIntegrationTest {
   @Test
   fun flow_collect_should_get_immediately_invoked_with_last_result_from_other_subscribers() =
     runTest {
-      schema.createPerson(id = "TestId", name = "TestName").execute()
-      val querySubscription1 = schema.getPerson(id = "TestId").subscribe()
-      val querySubscription2 = schema.getPerson(id = "TestId").subscribe()
+      val personId = randomPersonId()
+      schema.createPerson(id = personId, name = "TestName").execute()
+      val querySubscription1 = schema.getPerson(id = personId).subscribe()
+      val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
       // Start collecting on `querySubscription1` and wait for it to get its first event.
       val subscription1ResultReceived = MutableStateFlow(false)
@@ -124,7 +128,7 @@ class QuerySubscriptionIntegrationTest {
       // With `querySubscription1` still alive, start collecting on `querySubscription2`. Expect it
       // to initially get the cached result from `querySubscription1`, followed by an updated
       // result.
-      schema.updatePerson(id = "TestId", name = "NewTestName").execute()
+      schema.updatePerson(id = personId, name = "NewTestName").execute()
       querySubscription2.resultFlow.test {
         assertWithMessage("result1").that(awaitItem().data.person?.name).isEqualTo("TestName")
         assertWithMessage("result1").that(awaitItem().data.person?.name).isEqualTo("NewTestName")
@@ -133,8 +137,9 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun slow_flows_do_not_block_fast_flows() = runTest {
-    schema.createPerson(id = "TestId", name = "Name0").execute()
-    val querySubscription = schema.getPerson(id = "TestId").subscribe()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "Name0").execute()
+    val querySubscription = schema.getPerson(id = personId).subscribe()
 
     turbineScope {
       val fastFlow = querySubscription.resultFlow.testIn(backgroundScope)
@@ -148,7 +153,7 @@ class QuerySubscriptionIntegrationTest {
       assertWithMessage("fastFlow").that(fastFlow.awaitItem().data.person?.name).isEqualTo("Name0")
 
       repeat(3) {
-        schema.updatePerson(id = "TestId", name = "NewName$it").execute()
+        schema.updatePerson(id = personId, name = "NewName$it").execute()
         querySubscription.reload()
       }
 
@@ -171,9 +176,10 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun reload_delivers_result_to_all_registered_flows_on_all_QuerySubscriptions() = runTest {
-    schema.createPerson(id = "TestId", name = "OriginalName").execute()
-    val querySubscription1 = schema.getPerson(id = "TestId").subscribe()
-    val querySubscription2 = schema.getPerson(id = "TestId").subscribe()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "OriginalName").execute()
+    val querySubscription1 = schema.getPerson(id = personId).subscribe()
+    val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
     turbineScope {
       val flow1a = querySubscription1.resultFlow.testIn(backgroundScope).apply { skipItems(1) }
@@ -182,7 +188,7 @@ class QuerySubscriptionIntegrationTest {
       flow1a.skipItems(2)
       flow1b.skipItems(1)
 
-      schema.updatePerson(id = "TestId", name = "NewName").execute()
+      schema.updatePerson(id = personId, name = "NewName").execute()
       querySubscription1.reload()
 
       assertWithMessage("flow1a").that(flow1a.awaitItem().data.person?.name).isEqualTo("NewName")
@@ -193,9 +199,10 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun queryref_execute_delivers_result_to_QuerySubscriptions() = runTest {
-    schema.createPerson(id = "TestId", name = "OriginalName").execute()
-    val querySubscription1 = schema.getPerson(id = "TestId").subscribe()
-    val querySubscription2 = schema.getPerson(id = "TestId").subscribe()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "OriginalName").execute()
+    val querySubscription1 = schema.getPerson(id = personId).subscribe()
+    val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
     turbineScope {
       val flow1a = querySubscription1.resultFlow.testIn(backgroundScope).apply { skipItems(1) }
@@ -204,8 +211,8 @@ class QuerySubscriptionIntegrationTest {
       flow1a.skipItems(2)
       flow1b.skipItems(1)
 
-      schema.updatePerson(id = "TestId", name = "NewName").execute()
-      schema.getPerson(id = "TestId").execute()
+      schema.updatePerson(id = personId, name = "NewName").execute()
+      schema.getPerson(id = personId).execute()
 
       assertWithMessage("flow1a").that(flow1a.awaitItem().data.person?.name).isEqualTo("NewName")
       assertWithMessage("flow1b").that(flow1b.awaitItem().data.person?.name).isEqualTo("NewName")
@@ -216,12 +223,13 @@ class QuerySubscriptionIntegrationTest {
   @Test
   fun reload_concurrent_invocations_get_conflated() =
     runTest(timeout = 60.seconds) {
-      schema.createPerson(id = "TestId", name = "OriginalName").execute()
-      val querySubscription = schema.getPerson(id = "TestId").subscribe()
+      val personId = randomPersonId()
+      schema.createPerson(id = personId, name = "OriginalName").execute()
+      val querySubscription = schema.getPerson(id = personId).subscribe()
 
       querySubscription.resultFlow.test {
         assertThat(awaitItem().data.person?.name).isEqualTo("OriginalName")
-        schema.updatePerson(id = "TestId", name = "NewName").execute()
+        schema.updatePerson(id = personId, name = "NewName").execute()
 
         buildList {
             repeat(25_000) {
@@ -250,10 +258,13 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun update_changes_variables_and_triggers_reload() = runTest {
-    schema.createPerson(id = "TestId1", name = "Name1").execute()
-    schema.createPerson(id = "TestId2", name = "Name2").execute()
-    schema.createPerson(id = "TestId3", name = "Name3").execute()
-    val query = schema.getPerson(id = "TestId1")
+    val person1Id = randomPersonId()
+    val person2Id = randomPersonId()
+    val person3Id = randomPersonId()
+    schema.createPerson(id = person1Id, name = "Name1").execute()
+    schema.createPerson(id = person2Id, name = "Name2").execute()
+    schema.createPerson(id = person3Id, name = "Name3").execute()
+    val query = schema.getPerson(id = person1Id)
     val querySubscription = query.subscribe()
 
     querySubscription.resultFlow.test {
@@ -261,14 +272,14 @@ class QuerySubscriptionIntegrationTest {
         assert.that(result.ref).isSameInstanceAs(query)
         assert.that(result.data.person?.name).isEqualTo("Name1")
       }
-      querySubscription.update(GetPersonQuery.Variables("TestId2"))
+      querySubscription.update(GetPersonQuery.Variables(person2Id))
       Pair(assertWithMessage("result2"), awaitItem()).let { (assert, result) ->
-        assert.that(result.ref.variables).isEqualTo(GetPersonQuery.Variables("TestId2"))
+        assert.that(result.ref.variables).isEqualTo(GetPersonQuery.Variables(person2Id))
         assert.that(result.data.person?.name).isEqualTo("Name2")
       }
-      querySubscription.update(GetPersonQuery.Variables("TestId3"))
+      querySubscription.update(GetPersonQuery.Variables(person3Id))
       Pair(assertWithMessage("result3"), awaitItem()).let { (assert, result) ->
-        assert.that(result.ref.variables).isEqualTo(GetPersonQuery.Variables("TestId3"))
+        assert.that(result.ref.variables).isEqualTo(GetPersonQuery.Variables(person3Id))
         assert.that(result.data.person?.name).isEqualTo("Name3")
       }
     }
@@ -276,8 +287,9 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun reload_updates_last_result_even_if_no_active_collectors() = runTest {
-    schema.createPerson(id = "TestId", name = "Name1").execute()
-    val querySubscription = schema.getPerson(id = "TestId").subscribe()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "Name1").execute()
+    val querySubscription = schema.getPerson(id = personId).subscribe()
 
     querySubscription.reload()
 
@@ -287,7 +299,7 @@ class QuerySubscriptionIntegrationTest {
       assert.that(lastResult!!.data.person?.name).isEqualTo("Name1")
     }
 
-    schema.updatePerson(id = "TestId", name = "Name2").execute()
+    schema.updatePerson(id = personId, name = "Name2").execute()
     querySubscription.resultFlow.test {
       // Ensure that the first result comes from cache, followed by the updated result received from
       // the server when a reload was triggered by the flow's collection.
@@ -298,11 +310,13 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun update_updates_last_result_even_if_no_active_collectors() = runTest {
-    schema.createPerson(id = "TestId1", name = "Name1").execute()
-    schema.createPerson(id = "TestId2", name = "Name2").execute()
-    val querySubscription = schema.getPerson(id = "TestId1").subscribe()
+    val person1Id = randomPersonId()
+    val person2Id = randomPersonId()
+    schema.createPerson(id = person1Id, name = "Name1").execute()
+    schema.createPerson(id = person2Id, name = "Name2").execute()
+    val querySubscription = schema.getPerson(id = person1Id).subscribe()
 
-    querySubscription.update(GetPersonQuery.Variables("TestId2"))
+    querySubscription.update(GetPersonQuery.Variables(person2Id))
 
     Pair(assertWithMessage("lastResult"), querySubscription.lastResult).let { (assert, lastResult)
       ->
@@ -310,7 +324,7 @@ class QuerySubscriptionIntegrationTest {
       assert.that(lastResult!!.data.person?.name).isEqualTo("Name2")
     }
 
-    schema.updatePerson(id = "TestId2", name = "NewName2").execute()
+    schema.updatePerson(id = person2Id, name = "NewName2").execute()
     querySubscription.resultFlow.test {
       // Ensure that the first result comes from cache, followed by the updated result received from
       // the server when a reload was triggered by the flow's collection.
@@ -321,8 +335,9 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun collect_does_not_get_an_update_on_errors() = runTest {
-    schema.createPerson(id = "TestId", name = "Name1").execute()
-    val query = schema.getPerson("TestId")
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "Name1").execute()
+    val query = schema.getPerson(personId)
     val noName2Query = query.withDataDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
@@ -330,11 +345,11 @@ class QuerySubscriptionIntegrationTest {
       val flow = querySubscription.resultFlow.testIn(backgroundScope)
       assertThat(flow.awaitItem().data.person?.name).isEqualTo("Name1")
 
-      schema.updatePerson(id = "TestId", name = "Name2").execute()
+      schema.updatePerson(id = personId, name = "Name2").execute()
       val result2 = querySubscription.runCatching { reload() }
       assertWithMessage("result2.isSuccess").that(result2.isSuccess).isFalse()
 
-      schema.updatePerson(id = "TestId", name = "Name3").execute()
+      schema.updatePerson(id = personId, name = "Name3").execute()
       querySubscription.reload()
       assertThat(flow.awaitItem().data.person?.name).isEqualTo("Name3")
     }
@@ -342,12 +357,13 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun collect_gets_notified_of_per_data_deserializer_successes() = runTest {
-    schema.createPerson(id = "TestId", name = "Name0").execute()
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "Name0").execute()
 
     val noName1Query =
-      schema.getPerson("TestId").withDataDeserializer(serializer<GetPersonDataNoName1>())
+      schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName1>())
     val noName2Query =
-      schema.getPerson("TestId").withDataDeserializer(serializer<GetPersonDataNoName2>())
+      schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName2>())
 
     turbineScope {
       val flow1 = noName1Query.subscribe().resultFlow.testIn(backgroundScope)
@@ -355,20 +371,20 @@ class QuerySubscriptionIntegrationTest {
       val flow2 = noName2Query.subscribe().resultFlow.testIn(backgroundScope)
       assertThat(flow1.awaitItem().data.person?.name).isEqualTo("Name0")
 
-      schema.updatePerson(id = "TestId", name = "Name1").execute()
-      schema.getPerson("TestId").execute()
+      schema.updatePerson(id = personId, name = "Name1").execute()
+      schema.getPerson(personId).execute()
       flow2
         .skipItemsWhere { it.data.person?.name == "Name0" }
         .let { assertThat(it.data.person?.name).isEqualTo("Name1") }
 
-      schema.updatePerson(id = "TestId", name = "Name2").execute()
-      schema.getPerson("TestId").execute()
+      schema.updatePerson(id = personId, name = "Name2").execute()
+      schema.getPerson(personId).execute()
       flow1
         .skipItemsWhere { it.data.person?.name == "Name0" }
         .let { assertThat(it.data.person?.name).isEqualTo("Name2") }
 
-      schema.updatePerson(id = "TestId", name = "Name3").execute()
-      schema.getPerson("TestId").execute()
+      schema.updatePerson(id = personId, name = "Name3").execute()
+      schema.getPerson(personId).execute()
       assertThat(flow1.awaitItem().data.person?.name).isEqualTo("Name3")
       assertThat(flow2.awaitItem().data.person?.name).isEqualTo("Name3")
     }
@@ -376,31 +392,33 @@ class QuerySubscriptionIntegrationTest {
 
   @Test
   fun collect_gets_notified_of_previous_cached_success_even_if_most_recent_fails() = runTest {
-    schema.createPerson(id = "TestId", name = "OriginalName").execute()
-    keepCacheAlive(schema.getPerson("TestId").withDataDeserializer(DataConnectUntypedData))
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "OriginalName").execute()
+    keepCacheAlive(schema.getPerson(personId).withDataDeserializer(DataConnectUntypedData))
 
     val noName1Query =
-      schema.getPerson("TestId").withDataDeserializer(serializer<GetPersonDataNoName1>())
+      schema.getPerson(personId).withDataDeserializer(serializer<GetPersonDataNoName1>())
     noName1Query.execute()
 
-    schema.updatePerson(id = "TestId", name = "Name1").execute()
+    schema.updatePerson(id = personId, name = "Name1").execute()
 
     noName1Query.subscribe().resultFlow.test {
       assertWithMessage("result1").that(awaitItem().data.person?.name).isEqualTo("OriginalName")
-      schema.updatePerson(id = "TestId", name = "UltimateName").execute()
-      schema.getPerson("TestId").execute()
+      schema.updatePerson(id = personId, name = "UltimateName").execute()
+      schema.getPerson(personId).execute()
       assertWithMessage("result2").that(awaitItem().data.person?.name).isEqualTo("UltimateName")
     }
   }
 
   @Test
   fun collect_gets_cached_result_even_if_new_data_deserializer() = runTest {
-    schema.createPerson(id = "TestId", name = "OriginalName").execute()
-    keepCacheAlive(schema.getPerson("TestId").withDataDeserializer(DataConnectUntypedData))
+    val personId = randomPersonId()
+    schema.createPerson(id = personId, name = "OriginalName").execute()
+    keepCacheAlive(schema.getPerson(personId).withDataDeserializer(DataConnectUntypedData))
 
-    schema.updatePerson(id = "TestId", name = "UltimateName").execute()
+    schema.updatePerson(id = personId, name = "UltimateName").execute()
 
-    schema.getPerson("TestId").subscribe().resultFlow.test {
+    schema.getPerson(personId).subscribe().resultFlow.test {
       assertWithMessage("result1").that(awaitItem().data.person?.name).isEqualTo("OriginalName")
       assertWithMessage("result2").that(awaitItem().data.person?.name).isEqualTo("UltimateName")
     }

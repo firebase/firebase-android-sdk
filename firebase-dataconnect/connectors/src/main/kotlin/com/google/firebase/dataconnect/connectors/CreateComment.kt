@@ -31,12 +31,12 @@ public class CreateComment internal constructor(public val connector: PostsConne
       variablesSerializer = variablesSerializer,
     )
 
-  public fun ref(content: String, postId: String): MutationRef<Unit, Variables> =
-    ref(Variables(data = Variables.CommentData(content = content, postId = postId)))
+  public fun ref(id: String, content: String, postId: String): MutationRef<Unit, Variables> =
+    ref(Variables(data = Variables.CommentData(id=id, content = content, postId = postId)))
 
   @Serializable
   public data class Variables(val data: CommentData) {
-    @Serializable public data class CommentData(val content: String, val postId: String)
+    @Serializable public data class CommentData(val id: String, val content: String, val postId: String)
   }
 
   public companion object {
@@ -47,7 +47,8 @@ public class CreateComment internal constructor(public val connector: PostsConne
 }
 
 public suspend fun PostsConnector.createComment(
+  id: String,
   content: String,
   postId: String
 ): DataConnectMutationResult<Unit, CreateComment.Variables> =
-  createComment.ref(content = content, postId = postId).execute()
+  createComment.ref(id=id, content = content, postId = postId).execute()

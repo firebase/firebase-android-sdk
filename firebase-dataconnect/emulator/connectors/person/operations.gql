@@ -17,7 +17,7 @@ mutation createPerson($data: Person_Data! @pick(fields: ["id", "name", "age"])) 
 }
 
 mutation createDefaultPerson @auth(level: PUBLIC) {
-  person_insert(data: {id: "DefaultId", name: "DefaultName", age: 42})
+  person_insert(data: {name: "DefaultName", age: 42})
 }
 
 mutation deletePerson($id: String!) @auth(level: PUBLIC) {
@@ -35,10 +35,34 @@ query getPerson($id: String!) @auth(level: PUBLIC) {
   }
 }
 
-query getAllPeople @auth(level: PUBLIC) {
-  people {
+query getNoPeople @auth(level: PUBLIC) {
+  people(where: {id: {eq: "Some ID that does not match any rows"}}) {
     id
-    name
+  }
+}
+
+query getPeopleByName($name: String!) @auth(level: PUBLIC) {
+  people(where: {name: {eq: $name}}) {
+    id
     age
   }
+}
+
+query getPeopleWithHardcodedName @auth(level: PUBLIC) {
+  people(where: {name: {eq: "HardcodedName_v1"}}) {
+    id
+    age
+  }
+}
+
+mutation createPeopleWithHardcodedName @auth(level: PUBLIC) {
+  person1: person_upsert(data: {
+    id: "HardcodedNamePerson1Id_v1",
+    name: "HardcodedName_v1"
+  })
+  person2: person_upsert(data: {
+    id: "HardcodedNamePerson2Id_v1",
+    name: "HardcodedName_v1",
+    age: 42
+  })
 }

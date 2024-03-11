@@ -1,7 +1,0 @@
-specVersion: v1alpha
-schema:
-  main:
-    source: ./api/schema
-connector:
-  crud:
-    source: ./api/operations
