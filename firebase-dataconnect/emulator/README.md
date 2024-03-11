@@ -109,6 +109,15 @@ or
 chmod a+x cli_macos
 ```
 
+#### Precompiled Emulator Binaries
+
+dconeybe maintains a directory with precompiled emulator binaries:
+
+http://x20/teams/firestore-clients/DataConnectEmulator
+
+At the time of writing, these builds incorporate the patch to remove vector
+support, as mentioned in the "Troubleshooting" section below.
+
 ## Step 2: Start Postgresql Server
 
 The Firebase Data Connect emulator requires a real Postgresql server to talk to.
