@@ -235,10 +235,13 @@ internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
       @Suppress("UNCHECKED_CAST")
       DataConnectUntypedData(data?.toMap(), errors) as T
     } else if (data === null) {
-      // TODO: include the variables and error list in the thrown exception
-      throw DataConnectException("no data included in result: errors=$errors")
+      if (errors.isNotEmpty()) {
+        throw DataConnectException("operation failed: errors=$errors")
+      } else {
+        throw DataConnectException("no data included in result")
+      }
     } else if (errors.isNotEmpty()) {
-      throw DataConnectException("operation failed: errors=$errors")
+      throw DataConnectException("operation failed: errors=$errors (data=$data)")
     } else {
       decodeFromStruct(dataDeserializer, data)
     }
