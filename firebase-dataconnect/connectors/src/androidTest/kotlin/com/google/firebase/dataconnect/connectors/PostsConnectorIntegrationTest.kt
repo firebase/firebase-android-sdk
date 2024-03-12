@@ -225,11 +225,11 @@ class PostsConnectorIntegrationTest {
 
     val comment1Id = randomCommentId()
     val comment1Content = randomPostContent()
-    posts.createComment(id=comment1Id, content = comment1Content, postId = postId)
+    posts.createComment(id = comment1Id, content = comment1Content, postId = postId)
 
     val comment2Id = randomCommentId()
     val comment2Content = randomPostContent()
-    posts.createComment(id=comment2Id, content = comment2Content, postId = postId)
+    posts.createComment(id = comment2Id, content = comment2Content, postId = postId)
 
     val queryResponse = posts.getPost(id = postId)
     assertWithMessage("queryResponse")

@@ -1,6 +1,7 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.common.truth.StringSubject
+import java.util.UUID
 import java.util.regex.Pattern
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -8,7 +9,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import java.util.UUID
 
 /**
  * Asserts that a string contains another string, verifying that the character immediately preceding
