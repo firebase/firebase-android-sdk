@@ -135,8 +135,6 @@ public class JobInfoScheduler implements WorkScheduler {
     }
     builder.setExtras(bundle);
 
-
-
     Logging.d(
         LOG_TAG,
         "Scheduling upload for context %s with jobId=%d in %dms(Backend next call timestamp %d). Attempt %d",
