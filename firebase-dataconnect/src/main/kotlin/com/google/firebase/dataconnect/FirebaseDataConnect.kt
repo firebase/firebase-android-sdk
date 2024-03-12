@@ -74,7 +74,7 @@ internal constructor(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  private val lazyGrpcClient =
+  internal val lazyGrpcClient =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
 
