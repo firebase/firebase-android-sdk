@@ -193,7 +193,7 @@ public class Uploader {
           break;
         } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD) {
           Map<String, Integer> countMap = new HashMap<>();
-          for (PersistedEvent persistedEvent : sentEvents) {
+          for (PersistedEvent sentEvent : sentEvents) {
             String logSource = persistedEvent.getEvent().getTransportName();
             if (!countMap.containsKey(logSource)) {
               countMap.put(logSource, 1);
