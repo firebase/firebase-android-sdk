@@ -220,4 +220,15 @@ public class UploaderTest {
                   return false;
                 })));
   }
+
+  @Test
+  public void upload_shouldBatchSamePseudonymousIds() {
+    // TODO()
+
+  }
+
+  @Test
+  public void upload_shouldBatchOldestEventType() {
+    // TODO()
+  }
 }

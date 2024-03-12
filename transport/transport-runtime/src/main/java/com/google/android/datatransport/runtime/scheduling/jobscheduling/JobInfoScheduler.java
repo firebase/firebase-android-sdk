@@ -115,7 +115,7 @@ public class JobInfoScheduler implements WorkScheduler {
     }
 
     long nextCallTime = eventStore.getNextCallTime(transportContext);
-    boolean hasPendingEvents = eventStore.hasPendingEventsFor(transportContext);
+    boolean hasPendingEvents = force && eventStore.hasPendingEventsFor(transportContext);
 
     // Schedule the build.
     JobInfo.Builder builder =

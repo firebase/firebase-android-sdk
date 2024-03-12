@@ -140,13 +140,13 @@ public class Uploader {
         List<EventInternal> eventInternals = new ArrayList<>();
 
         PersistedEvent oldestEvent = persistedEvents.iterator().next();
-        String targetPseudoId = oldestEvent.getEvent().getPseudonymousId();
+        String targetPseudonymousId = oldestEvent.getEvent().getPseudonymousId();
 
         for (PersistedEvent persistedEvent : persistedEvents) {
             EventInternal event = persistedEvent.getEvent();
-            String pseudoId = event.getPseudonymousId();
+            String pseudonymousId = event.getPseudonymousId();
 
-            if(Objects.equals(targetPseudoId, pseudoId)) {
+            if(Objects.equals(targetPseudonymousId, pseudonymousId)) {
                 eventInternals.add(event);
                 sentEvents.add(persistedEvent);
             }
@@ -194,7 +194,7 @@ public class Uploader {
         } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD) {
           Map<String, Integer> countMap = new HashMap<>();
           for (PersistedEvent sentEvent : sentEvents) {
-            String logSource = persistedEvent.getEvent().getTransportName();
+            String logSource = sentEvent.getEvent().getTransportName();
             if (!countMap.containsKey(logSource)) {
               countMap.put(logSource, 1);
             } else {

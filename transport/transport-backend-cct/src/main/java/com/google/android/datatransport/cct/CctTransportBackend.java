@@ -336,8 +336,8 @@ final class CctTransportBackend implements TransportBackend {
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
     connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
 
-    if(request.pseudoId != null) {
-      connection.setRequestProperty(COOKIE_HEADER_KEY, String.format("NID=%s", request.pseudoId));
+    if(request.pseudonymousId != null) {
+      connection.setRequestProperty(COOKIE_HEADER_KEY, String.format("NID=%s", request.pseudonymousId));
     }
 
     if (request.apiKey != null) {
@@ -389,21 +389,22 @@ final class CctTransportBackend implements TransportBackend {
     return input;
   }
 
-  private String findPseudoId(BackendRequest request) {
+  private @Nullable String findPseudonymousId(BackendRequest request) {
     Iterator<EventInternal> events = request.getEvents().iterator();
 
     if(!events.hasNext()) return null;
 
-    String pseudoId = events.next().getPseudonymousId();
+    String pseudonymousId = events.next().getPseudonymousId();
 
     for(EventInternal event : request.getEvents()) {
       String currentId = event.getPseudonymousId();
-      if(!Objects.equals(pseudoId, currentId)) {
-        Logging.w(LOG_TAG, "Invalid pseudo id event found: %s", currentId);
+      if(!Objects.equals(pseudonymousId, currentId)) {
+        Logging.w(LOG_TAG, "Invalid pseudonymous id event found: %s", currentId);
+        return null;
       }
     }
 
-    return pseudoId;
+    return pseudonymousId;
   }
 
   @Override
@@ -428,13 +429,13 @@ final class CctTransportBackend implements TransportBackend {
       }
     }
 
-    String pseudoId = findPseudoId(request);
+    String pseudonymousId = findPseudonymousId(request);
 
     try {
       HttpResponse response =
           retry(
               5,
-              new HttpRequest(actualEndPoint, requestBody, apiKey, pseudoId),
+              new HttpRequest(actualEndPoint, requestBody, apiKey, pseudonymousId),
               this::doSend,
               (req, resp) -> {
                 if (resp.redirectUrl != null) {
@@ -483,18 +484,18 @@ final class CctTransportBackend implements TransportBackend {
   static final class HttpRequest {
     final URL url;
     final BatchedLogRequest requestBody;
-    @Nullable final String pseudoId;
+    @Nullable final String pseudonymousId;
     @Nullable final String apiKey;
 
-    HttpRequest(URL url, BatchedLogRequest requestBody, @Nullable String apiKey, @Nullable String pseudoId) {
+    HttpRequest(URL url, BatchedLogRequest requestBody, @Nullable String apiKey, @Nullable String pseudonymousId) {
       this.url = url;
       this.requestBody = requestBody;
       this.apiKey = apiKey;
-      this.pseudoId = pseudoId;
+      this.pseudonymousId = pseudonymousId;
     }
 
     HttpRequest withUrl(URL newUrl) {
-      return new HttpRequest(newUrl, requestBody, apiKey, pseudoId);
+      return new HttpRequest(newUrl, requestBody, apiKey, pseudonymousId);
     }
   }
 }
