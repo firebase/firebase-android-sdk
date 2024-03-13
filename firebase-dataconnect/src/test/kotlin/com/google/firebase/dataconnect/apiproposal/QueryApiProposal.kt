@@ -115,17 +115,16 @@ abstract class OperationRef<Data, Variables> internal constructor() {
 
   val variablesSerializer: SerializationStrategy<Variables> = TODO()
 
-  abstract suspend fun execute(variables: Variables): DataConnectResult<Data, Variables>
+  abstract suspend fun execute(): DataConnectResult<Data, Variables>
 }
 
 class QueryRef<Data, Variables> internal constructor() : OperationRef<Data, Variables>() {
-  override suspend fun execute(variables: Variables): DataConnectQueryResult<Data, Variables> =
-    TODO()
+  override suspend fun execute(): DataConnectQueryResult<Data, Variables> = TODO()
 
-  fun subscribe(variables: Variables): QuerySubscription<Data, Variables> = TODO()
+  fun subscribe(): QuerySubscription<Data, Variables> = TODO()
 }
 
-class QuerySubscription<Data, Variables> internal constructor(variables: Variables) {
+class QuerySubscription<Data, Variables> internal constructor() {
   val query: QueryRef<Data, Variables>
     get() = TODO()
 
@@ -162,8 +161,39 @@ sealed class DataConnectResult<Data, Variables> {
 
 class DataConnectQueryResult<Data, Variables> internal constructor() :
   DataConnectResult<Data, Variables>() {
-  override val ref: QueryRef<Data, Variables>
-    get() = TODO()
+  override val ref: QueryRef<Data, Variables> = TODO()
+}
+
+sealed class QuerySubscriptionResult<Data, Variables> protected constructor() {
+  val subscription: QuerySubscription<Data, Variables> = TODO()
+
+  override fun hashCode(): Int = TODO()
+
+  override fun equals(other: Any?): Boolean = TODO()
+
+  override fun toString(): String = TODO()
+
+  class Success<Data, Variables> internal constructor() :
+    QuerySubscriptionResult<Data, Variables>() {
+    val result: DataConnectQueryResult<Data, Variables> = TODO()
+
+    override fun hashCode(): Int = TODO()
+
+    override fun equals(other: Any?): Boolean = TODO()
+
+    override fun toString(): String = TODO()
+  }
+
+  class Failure<Data, Variables> internal constructor() :
+    QuerySubscriptionResult<Data, Variables>() {
+    val exception: DataConnectException = TODO()
+
+    override fun hashCode(): Int = TODO()
+
+    override fun equals(other: Any?): Boolean = TODO()
+
+    override fun toString(): String = TODO()
+  }
 }
 
 // See https://spec.graphql.org/October2021/#sec-Errors
@@ -190,30 +220,22 @@ class DataConnectError private constructor() {
 // GEN SDK INIT
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class PostConnector internal constructor() {
-  val getPost: QueryRef<GetPostQuery.Data, GetPostQuery.Variables> = TODO()
-
+class PostsConnector {
+  val dataConnect: FirebaseDataConnect = TODO()
+  val getPost: GetPostQuery = TODO()
   companion object {
     val CONFIG: ConnectorConfig = TODO()
   }
 }
 
-val FirebaseDataConnect.postConnector: PostConnector
+val FirebaseDataConnect.PostsConnector: PostsConnector
   get() = TODO()
-
-suspend fun QueryRef<GetPostQuery.Data, GetPostQuery.Variables>.execute(
-  id: String
-): DataConnectQueryResult<GetPostQuery.Data, GetPostQuery.Variables> = TODO()
-
-fun QueryRef<GetPostQuery.Data, GetPostQuery.Variables>.subscribe(
-  id: String
-): QuerySubscription<GetPostQuery.Data, GetPostQuery.Variables> = TODO()
 
 typealias GetPostQueryRef = QueryRef<GetPostQuery.Data, GetPostQuery.Variables>
 
 typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Data, GetPostQuery.Variables>
 
-class GetPostQuery private constructor() {
+class GetPostQuery internal constructor() {
 
   @Serializable data class Variables(val id: String)
 
@@ -223,9 +245,17 @@ class GetPostQuery private constructor() {
     }
   }
 
-  companion object {
-    fun query(dataConnect: FirebaseDataConnect): QueryRef<Data, Variables> = TODO()
-  }
+  suspend fun ref(id: String): GetPostQueryRef = TODO()
+
+  suspend fun ref(variables: Variables): GetPostQueryRef = TODO()
+
+  suspend fun execute(id: String): DataConnectQueryResult<Data, Variables> = TODO()
+
+  suspend fun execute(variables: Variables): DataConnectQueryResult<Data, Variables> = TODO()
+
+  fun subscribe(id: String): GetPostQuerySubscription = TODO()
+
+  fun subscribe(variables: Variables): GetPostQuerySubscription = TODO()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -236,7 +266,7 @@ suspend fun thirdPartyAppInit() {
 
   val app = Firebase.app
 
-  val config = PostConnector.CONFIG
+  val config = PostsConnector.CONFIG
 
   val settings = DataConnectSettings(sslEnabled = false)
 
@@ -245,23 +275,23 @@ suspend fun thirdPartyAppInit() {
 
   dataConnect.useEmulator("10.0.2.2", 9000)
 
-  var getPostRef = dataConnect.postConnector.getPost.execute(id = "id")
-  var queryRef12 = dataConnect.postConnector.getPost.execute(GetPostQuery.Variables(id = "id"))
+  var getPostRef = dataConnect.PostsConnector.getPost.execute(id = "id")
+  var queryRef12 = dataConnect.PostsConnector.getPost.execute(GetPostQuery.Variables(id = "id"))
 }
 
 suspend fun thirdPartyAppQueryOne() {
-  val dataConnect = Firebase.dataConnect(PostConnector.CONFIG)
-  val postConnector = dataConnect.postConnector
+  val dataConnect = Firebase.dataConnect(PostsConnector.CONFIG)
+  val PostsConnector = dataConnect.PostsConnector
 
   // NOTE: Code below runs in a coroutine and, therefore, can invoke suspend
   // functions, like QueryRef.execute() and Flow.collect().
   try {
     // One time fetch
-    val result1 = postConnector.getPost.execute(id = "TestUniqueId1")
+    val result1 = PostsConnector.getPost.execute(id = "TestUniqueId1")
 
     // One more way to execute the query, which supports the reuse/passing of
     // Variables as a group.
-    val result2 = postConnector.getPost.execute(GetPostQuery.Variables(id = "TestUniqueId2"))
+    val result2 = PostsConnector.getPost.execute(GetPostQuery.Variables(id = "TestUniqueId2"))
 
     val postContent = result1.data.post.content
     result1.data.post.comments.forEach { println(it.content) }
@@ -271,11 +301,11 @@ suspend fun thirdPartyAppQueryOne() {
 
   // Realtime update
   val querySubscription: GetPostQuerySubscription =
-    postConnector.getPost.subscribe(id = "TestUniqueId3")
+    PostsConnector.getPost.subscribe(id = "TestUniqueId3")
 
   // Or, can specify GetPostQuery.Variables as an argument instead of the convenience overload
   // extension function that just takes an "id" argument.
-  val querySubscriptionAnother = postConnector.getPost.subscribe(GetPostQuery.Variables(id = "id"))
+  val querySubscriptionAnother = PostsConnector.getPost.subscribe(GetPostQuery.Variables(id = "id"))
 
   querySubscription.reload()
 }
@@ -294,7 +324,7 @@ private class MainActivity : Activity() {
   fun onLiveUpdateButtonClick() {
     if (querySubscription == null) {
       querySubscription =
-        dataConnect.postConnector.getPost.subscribe(id = getIdFromTextView()).also { subscriber ->
+        dataConnect.PostsConnector.getPost.subscribe(id = getIdFromTextView()).also { subscriber ->
           querySubscriptionFlow =
             activityCoroutineScope.launch {
               subscriber.resultFlow.collect {
@@ -313,7 +343,7 @@ private class MainActivity : Activity() {
     activityCoroutineScope.launch {
       val id = getIdFromTextView()
       try {
-        showPostContent(id, dataConnect.postConnector.getPost.execute(id = id).data)
+        showPostContent(id, dataConnect.PostsConnector.getPost.execute(id = id).data)
       } catch (e: Exception) {
         showError(id, e)
       }
