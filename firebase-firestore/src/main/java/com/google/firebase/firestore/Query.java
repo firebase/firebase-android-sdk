@@ -1126,6 +1126,27 @@ public class Query {
   }
 
   /**
+   * Starts listening to this query with the given options.
+   *
+   * @param options Sets snapshot listener options, including whether metadata-only changes should
+   *     trigger snapshot events, the source to listen to, the executor to use to call the listener,
+   *     or the activity to scope the listener to.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull SnapshotListenOptions options, @NonNull EventListener<QuerySnapshot> listener) {
+    checkNotNull(options, "Provided options value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        options.getExecutor(),
+        internalOptions(options.getMetadataChanges(), options.getSource()),
+        options.getActivity(),
+        listener);
+  }
+
+  /**
    * Internal helper method to create add a snapshot listener.
    *
    * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
@@ -1239,10 +1260,16 @@ public class Query {
 
   /** Converts the public API options object to the internal options object. */
   private static ListenOptions internalOptions(MetadataChanges metadataChanges) {
+    return internalOptions(metadataChanges, ListenSource.DEFAULT);
+  }
+
+  private static ListenOptions internalOptions(
+      MetadataChanges metadataChanges, ListenSource source) {
     ListenOptions internalOptions = new ListenOptions();
     internalOptions.includeDocumentMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.includeQueryMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.waitForSyncWhenOnline = false;
+    internalOptions.source = source;
     return internalOptions;
   }
 }
