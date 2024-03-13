@@ -1,0 +1,162 @@
+{
+    "changesByLibraryName": {
+        "firebase-common": [
+            {
+                "commitId": "181348967ab48c8222f9868ebb3afd09b4e3733e",
+                "prId": "5741",
+                "author": "Rodrigo Lazo",
+                "message": "Pin firebase-common dependency in components (#5741)\n\nThere's no need for common to have a project level dependency on\r\ncomponents, as they are both released separately.\r\n\r\nThis should fix issue #5732",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/181348967ab48c8222f9868ebb3afd09b4e3733e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5741"
+            }
+        ],
+        "firebase-common/ktx": [
+        ],
+        "firebase-config": [
+            {
+                "commitId": "7ea13d4bbaadddee017651ce782e5f5b85a3db78",
+                "prId": "5762",
+                "author": "Dana Silver",
+                "message": "Add Remote Config changelog for PR #5753 (#5762)\n\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7ea13d4bbaadddee017651ce782e5f5b85a3db78",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5762"
+            },
+            {
+                "commitId": "53634f5502a3d9d4695e2f16602c5b776084500a",
+                "prId": "5753",
+                "author": "Dana Silver",
+                "message": "Revert \"Disconnect from RC real-time server when app is backgrounded.\" (#5753)\n\nReverts #5688 \r\n\r\nThis reverts commit 46cccc9f459d76a12dba1b570ffe9b2f3c9f4a4d.\r\n\r\nThis was a clean revert created with `git revert\r\n46cccc9f459d76a12dba1b570ffe9b2f3c9f4a4d`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/53634f5502a3d9d4695e2f16602c5b776084500a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5753"
+            },
+            {
+                "commitId": "ec992b2230fe513f023f60186bb7b48d38d621b4",
+                "prId": "5730",
+                "author": "emilypgoogle",
+                "message": "Pin config interop (#5730)\n\nConfig team confirmed this dependency can be pinned",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ec992b2230fe513f023f60186bb7b48d38d621b4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5730"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "b77c2188e5ec7c53c2a955fc4663b301e6c98c83",
+                "prId": "5690",
+                "author": "Mila",
+                "message": "Snapshot listener source from cache (#5690)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b77c2188e5ec7c53c2a955fc4663b301e6c98c83",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5690"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "f419204d771bb5e3417d83239b92503601dbbb42",
+                "prId": "5719",
+                "author": "jadenlin-g",
+                "message": "FIAM: Fix FirebaseInAppMessagingDisplayErrorListener not being called (#5719)\n\nChanged `GlideErrorListener` to a normal class and pass a new instance\r\nof the listener into each load image request instead of being injected\r\nas a defaultRequestListener.\r\n\r\nRefactored `InAppMessage` and `FirebaseInAppMessagingDisplayCallbacks`\r\nassignment code for clarity.\r\n\r\nInternal tracking: b/321732964\r\n\r\nIssue: #5644",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f419204d771bb5e3417d83239b92503601dbbb42",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5719"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "f419204d771bb5e3417d83239b92503601dbbb42",
+                "prId": "5719",
+                "author": "jadenlin-g",
+                "message": "FIAM: Fix FirebaseInAppMessagingDisplayErrorListener not being called (#5719)\n\nChanged `GlideErrorListener` to a normal class and pass a new instance\r\nof the listener into each load image request instead of being injected\r\nas a defaultRequestListener.\r\n\r\nRefactored `InAppMessage` and `FirebaseInAppMessagingDisplayCallbacks`\r\nassignment code for clarity.\r\n\r\nInternal tracking: b/321732964\r\n\r\nIssue: #5644",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f419204d771bb5e3417d83239b92503601dbbb42",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5719"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "1a13dff2a28176ca1b72e59842c6c6b289d0aeb4",
+                "prId": "5777",
+                "author": "Matthew Robertson",
+                "message": "Handle when the session lifecycle service binding fails (#5777)\n\nPair with @PolinaGo. This fixes #5718.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1a13dff2a28176ca1b72e59842c6c6b289d0aeb4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5777"
+            },
+            {
+                "commitId": "b5f152be8c95cf0c11e8e09e8d0a423f88b2b780",
+                "prId": "5716",
+                "author": "Matthew Robertson",
+                "message": "Add auth token to sessions (#5716)\n\nThis adds the auth token to sessions, which forced the client to\r\nvalidate the fid, as well as allow us to validate it on the backend.\r\n\r\nI will make a similar change in Crashlytics in the next PR.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5f152be8c95cf0c11e8e09e8d0a423f88b2b780",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5716"
+            }
+        ],
+        "transport/transport-api": [
+            {
+                "commitId": "0fc32a45181497e5ac17faef63f0c06847863b78",
+                "prId": "5761",
+                "author": "Rodrigo Lazo",
+                "message": "Rename field for better readability (#5761)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0fc32a45181497e5ac17faef63f0c06847863b78",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5761"
+            },
+            {
+                "commitId": "32570d34698c43cce9f9ddff0845147f78162558",
+                "prId": "5758",
+                "author": "Rodrigo Lazo",
+                "message": "Add support for experimentid and cookie in transport (#5758)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/32570d34698c43cce9f9ddff0845147f78162558",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5758"
+            }
+        ],
+        "transport/transport-backend-cct": [
+            {
+                "commitId": "df84f5f5ed209aaddd5a74bf911ad15df6b8e0c5",
+                "prId": "5770",
+                "author": "Rodrigo Lazo",
+                "message": "Remove unused transport field (#5770)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/df84f5f5ed209aaddd5a74bf911ad15df6b8e0c5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5770"
+            },
+            {
+                "commitId": "0fc32a45181497e5ac17faef63f0c06847863b78",
+                "prId": "5761",
+                "author": "Rodrigo Lazo",
+                "message": "Rename field for better readability (#5761)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0fc32a45181497e5ac17faef63f0c06847863b78",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5761"
+            },
+            {
+                "commitId": "32570d34698c43cce9f9ddff0845147f78162558",
+                "prId": "5758",
+                "author": "Rodrigo Lazo",
+                "message": "Add support for experimentid and cookie in transport (#5758)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/32570d34698c43cce9f9ddff0845147f78162558",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5758"
+            }
+        ],
+        "transport/transport-runtime": [
+            {
+                "commitId": "0fc32a45181497e5ac17faef63f0c06847863b78",
+                "prId": "5761",
+                "author": "Rodrigo Lazo",
+                "message": "Rename field for better readability (#5761)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0fc32a45181497e5ac17faef63f0c06847863b78",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5761"
+            },
+            {
+                "commitId": "32570d34698c43cce9f9ddff0845147f78162558",
+                "prId": "5758",
+                "author": "Rodrigo Lazo",
+                "message": "Add support for experimentid and cookie in transport (#5758)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/32570d34698c43cce9f9ddff0845147f78162558",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5758"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+    ]
+}
