@@ -16,7 +16,7 @@ package com.google.firebase.dataconnect
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.Objects
-import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.*
 import kotlin.random.Random
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -109,62 +109,15 @@ private class ActiveQuery(
 
   val queryExecutor = QueryExecutor(dataConnect, operationName, variables)
 
-  private val mutex = Mutex()
-  private val map = mutableMapOf<Key, ReferenceCounted<TypedActiveQuery<*>>>()
+  private val typedActiveQueries = TypedActiveQueries(this, logger)
 
   suspend fun <Data> execute(
     dataDeserializer: DeserializationStrategy<Data>
   ): ActiveQueryResult<Data> {
-    val typedActiveQuery = acquireTypedActiveQuery(dataDeserializer)
-    try {
-      return typedActiveQuery.execute()
-    } finally {
-      releaseTypedActiveQuery(typedActiveQuery)
+    val key = TypedActiveQueryKey(dataDeserializer)
+    return typedActiveQueries.withAcquiredValue(key) {
+      @Suppress("UNCHECKED_CAST") (it as TypedActiveQuery<Data>).execute()
     }
-  }
-
-  private suspend fun <Data> acquireTypedActiveQuery(
-    dataDeserializer: DeserializationStrategy<Data>
-  ): TypedActiveQuery<Data> {
-    val key = Key(dataDeserializer)
-
-    val typedActiveQuery =
-      mutex
-        .withLock {
-          map
-            .getOrPut(key) {
-              ReferenceCounted(TypedActiveQuery(this, dataDeserializer, logger), refCount = 0)
-            }
-            .also { it.refCount++ }
-        }
-        .obj
-
-    check(typedActiveQuery.activeQuery === this)
-
-    @Suppress("UNCHECKED_CAST") return typedActiveQuery as TypedActiveQuery<Data>
-  }
-
-  private suspend fun releaseTypedActiveQuery(typedActiveQuery: TypedActiveQuery<*>) {
-    require(typedActiveQuery.activeQuery === this)
-
-    val key = Key(typedActiveQuery.dataDeserializer)
-
-    mutex.withLock {
-      val entry = map[key]
-      requireNotNull(entry)
-      require(entry.obj === typedActiveQuery)
-      require(entry.refCount > 0)
-      entry.refCount--
-      if (entry.refCount == 0) {
-        map.remove(key)
-      }
-    }
-  }
-
-  class Key(val dataDeserializer: DeserializationStrategy<*>) {
-    override fun equals(other: Any?) = other is Key && other.dataDeserializer === dataDeserializer
-    override fun hashCode() = System.identityHashCode(dataDeserializer)
-    override fun toString() = "ActiveQuery.Key(dataDeserializer=$dataDeserializer)"
   }
 }
 
@@ -180,6 +133,32 @@ private class TypedActiveQuery<Data>(
       is QueryExecutorResult.Failure ->
         ActiveQueryResult.Failure(activeQuery, dataDeserializer, result)
     }
+}
+
+private class TypedActiveQueryKey<Data>(val dataDeserializer: DeserializationStrategy<Data>)
+
+private class TypedActiveQueries(val activeQuery: ActiveQuery, parentLogger: Logger) :
+  ReferenceCountedSet<TypedActiveQueryKey<*>, TypedActiveQuery<*>>() {
+
+  private val logger =
+    Logger("TypedActiveQueries").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+
+  override fun valueForKey(key: TypedActiveQueryKey<*>) =
+    TypedActiveQuery(
+      activeQuery = activeQuery,
+      dataDeserializer = key.dataDeserializer,
+      logger = logger,
+    )
+
+  override fun onAllocate(entry: Entry<TypedActiveQueryKey<*>, TypedActiveQuery<*>>) {
+    logger.debug(
+      "Allocated ${entry.value.logger.nameWithId} (dataDeserializer=${entry.key.dataDeserializer})"
+    )
+  }
+
+  override fun onFree(entry: Entry<TypedActiveQueryKey<*>, TypedActiveQuery<*>>) {
+    logger.debug("Deallocated ${entry.value.logger.nameWithId}")
+  }
 }
 
 private sealed class ActiveQueryResult<Data>(
