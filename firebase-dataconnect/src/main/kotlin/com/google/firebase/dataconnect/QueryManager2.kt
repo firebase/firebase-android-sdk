@@ -135,7 +135,14 @@ private class TypedActiveQuery<Data>(
     }
 }
 
-private class TypedActiveQueryKey<Data>(val dataDeserializer: DeserializationStrategy<Data>)
+private class TypedActiveQueryKey<Data>(val dataDeserializer: DeserializationStrategy<Data>) {
+  override fun equals(other: Any?) =
+    other is TypedActiveQueryKey<*> && other.dataDeserializer === dataDeserializer
+
+  override fun hashCode() = System.identityHashCode(dataDeserializer)
+
+  override fun toString() = "TypedActiveQueryKey(dataDeserializer=$dataDeserializer)"
+}
 
 private class TypedActiveQueries(val activeQuery: ActiveQuery, parentLogger: Logger) :
   ReferenceCountedSet<TypedActiveQueryKey<*>, TypedActiveQuery<*>>() {
