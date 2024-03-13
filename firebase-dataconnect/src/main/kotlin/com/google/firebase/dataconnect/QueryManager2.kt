@@ -23,6 +23,58 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.*
 import kotlinx.serialization.DeserializationStrategy
 
+internal class QueryManager2(val dataConnect: FirebaseDataConnect) {
+
+  private val activeQueries = ActiveQueries(dataConnect)
+
+  suspend fun <Data, Variables> execute(
+    query: QueryRef<Data, Variables>
+  ): DataConnectQueryResult<Data, Variables> {
+    require(query.dataConnect === dataConnect) {
+      "The given query belongs to a different FirebaseDataConnect; " +
+        "query belongs to ${query.dataConnect}, but expected ${dataConnect}"
+    }
+
+    val key = ActiveQueryKey.forQueryRef(query)
+    val result = activeQueries.withAcquiredValue(key) { it.execute(query.dataDeserializer) }
+  }
+}
+
+private class ActiveQueryKey(val operationName: String, val variables: Struct) {
+
+  private val variablesHash: String = variables.calculateSha512().toAlphaNumericString()
+
+  override fun equals(other: Any?) =
+    other is ActiveQueryKey &&
+      other.operationName == operationName &&
+      other.variablesHash == variablesHash
+
+  override fun hashCode() = Objects.hash(operationName, variablesHash)
+
+  override fun toString() =
+    "ActiveQueryKey(" +
+      "operationName=$operationName, " +
+      "variables=${variables.toCompactString()})"
+
+  companion object {
+    fun <Data, Variables> forQueryRef(query: QueryRef<Data, Variables>): ActiveQueryKey {
+      val variablesStruct = encodeToStruct(query.variablesSerializer, query.variables)
+      return ActiveQueryKey(operationName = query.operationName, variables = variablesStruct)
+    }
+  }
+}
+
+private class ActiveQueries(val dataConnect: FirebaseDataConnect) :
+  ReferenceCountedSet<ActiveQueryKey, ActiveQuery>() {
+
+  override fun valueForKey(key: ActiveQueryKey) =
+    ActiveQuery(
+      dataConnect = dataConnect,
+      operationName = key.operationName,
+      variables = key.variables
+    )
+}
+
 private class ActiveQuery(
   val dataConnect: FirebaseDataConnect,
   val operationName: String,

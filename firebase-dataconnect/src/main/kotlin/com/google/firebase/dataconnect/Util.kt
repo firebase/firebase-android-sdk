@@ -137,3 +137,70 @@ internal class NullableReference<T>(val ref: T?) {
   override fun hashCode() = ref?.hashCode() ?: 0
   override fun toString() = ref?.toString() ?: "null"
 }
+
+internal abstract class ReferenceCountedSet<K, V> {
+
+  private val mutex = Mutex()
+  private val map = mutableMapOf<K, EntryImpl<K, V>>()
+
+  suspend fun acquire(key: K): Entry<K, V> {
+    return mutex.withLock {
+      map.getOrPut(key) { EntryImpl(this, key, valueForKey(key)) }.apply { refCount++ }
+    }
+  }
+
+  suspend fun release(entry: Entry<K, V>) {
+    require(entry is EntryImpl) {
+      "The given entry was expected to be an instance of ${EntryImpl::class.qualifiedName}, " +
+        "but was ${entry::class.qualifiedName}"
+    }
+    require(entry.set === this) {
+      "The given entry must be created by this object ($this), " +
+        "but was created by a different object (${entry.set})"
+    }
+
+    mutex.withLock {
+      val entryFromMap = map[entry.key]
+      requireNotNull(entryFromMap) { "The given entry was not found in this set" }
+      require(entryFromMap === entry) {
+        "The key from the given entry was found in this set, but it was a different object"
+      }
+      require(entry.refCount > 0) {
+        "The refCount of the given entry was expected to be strictly greater than zero, " +
+          "but was ${entry.refCount}"
+      }
+
+      entry.refCount--
+
+      if (entry.refCount == 0) {
+        map.remove(entry.key)
+      }
+    }
+  }
+
+  protected abstract fun valueForKey(key: K): V
+
+  interface Entry<K, V> {
+    val key: K
+    val value: V
+  }
+
+  private data class EntryImpl<K, V>(
+    val set: ReferenceCountedSet<K, V>,
+    override val key: K,
+    override val value: V,
+    var refCount: Int = 0,
+  ) : Entry<K, V>
+}
+
+internal suspend fun <K, V> ReferenceCountedSet<K, V>.withAcquiredValue(
+  key: K,
+  callback: suspend (V) -> Unit
+) {
+  val entry = acquire(key)
+  try {
+    callback(entry.value)
+  } finally {
+    release(entry)
+  }
+}
