@@ -812,6 +812,7 @@ public class CompositeIndexQueryTest {
     assertTrue(
         firestoreException
             .getMessage()
+            .toLowerCase()
             .contains("order by clause cannot contain more fields after the key"));
   }
 
