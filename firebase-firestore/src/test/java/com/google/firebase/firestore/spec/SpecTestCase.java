@@ -42,6 +42,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleReader;
@@ -529,6 +530,27 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     return bloomFilter.build();
   }
 
+  /** Deeply parses a JSONObject into a ListenOptions object. */
+  private ListenOptions parseListenOptions(JSONObject obj) throws JSONException {
+    ListenOptions options = new ListenOptions();
+    if (obj.has("options")) {
+      JSONObject optionsObject = obj.getJSONObject("options");
+      options.includeDocumentMetadataChanges =
+          optionsObject.has("includeDocumentMetadataChanges")
+              ? optionsObject.getBoolean("includeDocumentMetadataChanges")
+              : true;
+      options.includeQueryMetadataChanges = options.includeDocumentMetadataChanges;
+      if (optionsObject.has("source") && optionsObject.getString("source").equals("cache")) {
+        options.source = ListenSource.CACHE;
+      }
+    } else {
+      // Spec tests are default to include metadata changes.
+      options.includeDocumentMetadataChanges = true;
+      options.includeQueryMetadataChanges = true;
+    }
+    return options;
+  }
+
   //
   // Methods for doing the steps of the spec test.
   //
@@ -537,10 +559,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     FirebaseFirestore.setLoggingEnabled(true);
     int expectedId = listenSpec.getInt("targetId");
     Query query = parseQuery(listenSpec.getJSONObject("query"));
-    // TODO: Allow customizing listen options in spec tests
-    ListenOptions options = new ListenOptions();
-    options.includeDocumentMetadataChanges = true;
-    options.includeQueryMetadataChanges = true;
+    ListenOptions options = parseListenOptions(listenSpec);
+
     QueryListener listener =
         new QueryListener(
             query,
