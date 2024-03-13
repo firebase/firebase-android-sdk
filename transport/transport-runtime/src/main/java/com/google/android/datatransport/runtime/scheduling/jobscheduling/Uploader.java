@@ -17,6 +17,8 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
@@ -153,7 +155,7 @@ public class Uploader {
         }
 
         if (transportContext.shouldUploadClientHealthMetrics()) {
-          eventInternals.add(createMetricsEvent(backend));
+          eventInternals.add(createMetricsEvent(backend, targetPseudonymousId));
         }
 
         response =
@@ -227,7 +229,7 @@ public class Uploader {
   }
 
   @VisibleForTesting
-  public EventInternal createMetricsEvent(TransportBackend backend) {
+  public EventInternal createMetricsEvent(TransportBackend backend, @Nullable String pseudonymousId) {
     ClientMetrics clientMetrics =
         guard.runCriticalSection(clientHealthMetricsStore::loadClientMetrics);
     return backend.decorate(
@@ -235,6 +237,7 @@ public class Uploader {
             .setEventMillis(clock.getTime())
             .setUptimeMillis(uptimeClock.getTime())
             .setTransportName(CLIENT_HEALTH_METRICS_LOG_SOURCE)
+            .setPseudonymousId(pseudonymousId)
             .setEncodedPayload(
                 new EncodedPayload(Encoding.of("proto"), clientMetrics.toByteArray()))
             .build());

@@ -277,7 +277,7 @@ public class UploaderIntegrationTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
-    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend, null);
     transport.send(Event.ofTelemetry("TelemetryData"));
     verify(mockBackend, times(1))
         .send(
@@ -320,7 +320,7 @@ public class UploaderIntegrationTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
-    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend, null);
     transport.send(Event.ofTelemetry("TelemetryData"));
     verify(mockBackend, times(1))
         .send(
@@ -363,7 +363,7 @@ public class UploaderIntegrationTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
-    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend, null);
     transport.send(Event.ofTelemetry("TelemetryData"));
     verify(mockBackend, times(1))
         .send(
