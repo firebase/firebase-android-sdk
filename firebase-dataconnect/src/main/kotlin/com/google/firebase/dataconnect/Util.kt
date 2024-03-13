@@ -144,9 +144,16 @@ internal abstract class ReferenceCountedSet<K, V> {
   private val map = mutableMapOf<K, EntryImpl<K, V>>()
 
   suspend fun acquire(key: K): Entry<K, V> {
-    return mutex.withLock {
-      map.getOrPut(key) { EntryImpl(this, key, valueForKey(key)) }.apply { refCount++ }
+    val entry =
+      mutex.withLock {
+        map.getOrPut(key) { EntryImpl(this, key, valueForKey(key)) }.apply { refCount++ }
+      }
+
+    if (entry.refCount == 1) {
+      onAllocate(entry)
     }
+
+    return entry
   }
 
   suspend fun release(entry: Entry<K, V>) {
@@ -159,26 +166,37 @@ internal abstract class ReferenceCountedSet<K, V> {
         "but was created by a different object (${entry.set})"
     }
 
-    mutex.withLock {
-      val entryFromMap = map[entry.key]
-      requireNotNull(entryFromMap) { "The given entry was not found in this set" }
-      require(entryFromMap === entry) {
-        "The key from the given entry was found in this set, but it was a different object"
-      }
-      require(entry.refCount > 0) {
-        "The refCount of the given entry was expected to be strictly greater than zero, " +
-          "but was ${entry.refCount}"
+    val newRefCount =
+      mutex.withLock {
+        val entryFromMap = map[entry.key]
+        requireNotNull(entryFromMap) { "The given entry was not found in this set" }
+        require(entryFromMap === entry) {
+          "The key from the given entry was found in this set, but it was a different object"
+        }
+        require(entry.refCount > 0) {
+          "The refCount of the given entry was expected to be strictly greater than zero, " +
+            "but was ${entry.refCount}"
+        }
+
+        entry.refCount--
+
+        if (entry.refCount == 0) {
+          map.remove(entry.key)
+        }
+
+        entry.refCount
       }
 
-      entry.refCount--
-
-      if (entry.refCount == 0) {
-        map.remove(entry.key)
-      }
+    if (newRefCount == 0) {
+      onFree(entry)
     }
   }
 
   protected abstract fun valueForKey(key: K): V
+
+  protected open fun onAllocate(entry: Entry<K, V>) {}
+
+  protected open fun onFree(entry: Entry<K, V>) {}
 
   interface Entry<K, V> {
     val key: K
@@ -193,12 +211,12 @@ internal abstract class ReferenceCountedSet<K, V> {
   ) : Entry<K, V>
 }
 
-internal suspend fun <K, V> ReferenceCountedSet<K, V>.withAcquiredValue(
+internal suspend fun <K, V, R> ReferenceCountedSet<K, V>.withAcquiredValue(
   key: K,
-  callback: suspend (V) -> Unit
-) {
+  callback: suspend (V) -> R
+): R {
   val entry = acquire(key)
-  try {
+  return try {
     callback(entry.value)
   } finally {
     release(entry)

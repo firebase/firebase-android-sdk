@@ -25,7 +25,10 @@ import kotlinx.serialization.DeserializationStrategy
 
 internal class QueryManager2(val dataConnect: FirebaseDataConnect) {
 
-  private val activeQueries = ActiveQueries(dataConnect)
+  private val logger =
+    Logger("QueryManager2").apply { debug { "Created by ${dataConnect.logger.nameWithId}" } }
+
+  private val activeQueries = ActiveQueries(dataConnect, parentLogger = logger)
 
   suspend fun <Data, Variables> execute(
     query: QueryRef<Data, Variables>
@@ -37,6 +40,11 @@ internal class QueryManager2(val dataConnect: FirebaseDataConnect) {
 
     val key = ActiveQueryKey.forQueryRef(query)
     val result = activeQueries.withAcquiredValue(key) { it.execute(query.dataDeserializer) }
+
+    return when (result) {
+      is ActiveQueryResult.Success -> result.deserializedData().toDataConnectQueryResult(query)
+      is ActiveQueryResult.Failure -> throw result.queryExecutorResult.exception
+    }
   }
 }
 
@@ -64,22 +72,41 @@ private class ActiveQueryKey(val operationName: String, val variables: Struct) {
   }
 }
 
-private class ActiveQueries(val dataConnect: FirebaseDataConnect) :
+private class ActiveQueries(val dataConnect: FirebaseDataConnect, parentLogger: Logger) :
   ReferenceCountedSet<ActiveQueryKey, ActiveQuery>() {
+
+  private val logger =
+    Logger("ActiveQueries").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
   override fun valueForKey(key: ActiveQueryKey) =
     ActiveQuery(
       dataConnect = dataConnect,
       operationName = key.operationName,
-      variables = key.variables
+      variables = key.variables,
+      parentLogger = logger,
     )
+
+  override fun onAllocate(entry: Entry<ActiveQueryKey, ActiveQuery>) {
+    logger.debug(
+      "Allocated ${entry.value.logger.nameWithId} (" +
+        "operationName=${entry.key.operationName}, " +
+        "variables=${entry.key.variables.toCompactString()})"
+    )
+  }
+
+  override fun onFree(entry: Entry<ActiveQueryKey, ActiveQuery>) {
+    logger.debug("Deallocated ${entry.value.logger.nameWithId}")
+  }
 }
 
 private class ActiveQuery(
   val dataConnect: FirebaseDataConnect,
   val operationName: String,
-  val variables: Struct
+  val variables: Struct,
+  parentLogger: Logger
 ) {
+  val logger = Logger("ActiveQuery").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+
   val queryExecutor = QueryExecutor(dataConnect, operationName, variables)
 
   private val mutex = Mutex()
@@ -106,7 +133,7 @@ private class ActiveQuery(
         .withLock {
           map
             .getOrPut(key) {
-              ReferenceCounted(TypedActiveQuery(this, dataDeserializer), refCount = 0)
+              ReferenceCounted(TypedActiveQuery(this, dataDeserializer, logger), refCount = 0)
             }
             .also { it.refCount++ }
         }
@@ -144,11 +171,12 @@ private class ActiveQuery(
 private class TypedActiveQuery<Data>(
   val activeQuery: ActiveQuery,
   val dataDeserializer: DeserializationStrategy<Data>,
+  val logger: Logger
 ) {
   suspend fun execute(): ActiveQueryResult<Data> =
     when (val result = activeQuery.queryExecutor.execute()) {
       is QueryExecutorResult.Success ->
-        ActiveQueryResult.Success(activeQuery, dataDeserializer, result)
+        ActiveQueryResult.Success(activeQuery, dataDeserializer, result, logger)
       is QueryExecutorResult.Failure ->
         ActiveQueryResult.Failure(activeQuery, dataDeserializer, result)
     }
@@ -179,8 +207,28 @@ private sealed class ActiveQueryResult<Data>(
   class Success<Data>(
     activeQuery: ActiveQuery,
     dataDeserializer: DeserializationStrategy<Data>,
-    override val queryExecutorResult: QueryExecutorResult.Success
+    override val queryExecutorResult: QueryExecutorResult.Success,
+    logger: Logger
   ) : ActiveQueryResult<Data>(activeQuery, dataDeserializer) {
+
+    private val lazyDeserializedData =
+      SuspendingLazy(
+        coroutineContext = activeQuery.dataConnect.blockingExecutor.asCoroutineDispatcher()
+      ) {
+        queryExecutorResult.operationResult
+          .runCatching { deserialize(dataDeserializer) }
+          .onFailure {
+            logger.warn(it) {
+              "executeQuery() [rid=${queryExecutorResult.requestId}] " +
+                "decoding response data failed: $it"
+            }
+          }
+      }
+
+    suspend fun deserializedData(): DataConnectGrpcClient.DeserialzedOperationResult<Data> {
+      return lazyDeserializedData.get().getOrThrow()
+    }
+
     override fun equals(other: Any?) = other is Success<*> && super.equals(other)
     override fun hashCode() = Objects.hash("Success", super.hashCode())
     override fun toString() =

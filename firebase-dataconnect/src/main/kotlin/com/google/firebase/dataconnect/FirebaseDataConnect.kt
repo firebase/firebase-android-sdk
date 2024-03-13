@@ -43,7 +43,7 @@ internal constructor(
   public val settings: DataConnectSettings,
 ) : AutoCloseable {
 
-  private val logger =
+  internal val logger =
     Logger("FirebaseDataConnect").apply {
       debug {
         "New instance created with " +
