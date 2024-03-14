@@ -142,8 +142,16 @@ class QuerySubscription<Data, Variables> internal constructor() {
   // some previous call to reload() by some other unrelated operation.
   fun reload(): Unit = TODO()
 
-  val resultFlow: Flow<DataConnectResult<Data, Variables>> = TODO()
+  val flow: Flow<QuerySubscriptionResult<Data, Variables>> = TODO()
 }
+
+// This extension function on `FirebaseDataConnect` is the mechanism for the
+// generated SDK to create instances of `QueryRef`.
+fun <Data, Variables> FirebaseDataConnect.query(
+  operationName: String,
+  responseDeserializer: DeserializationStrategy<Data>,
+  variablesSerializer: SerializationStrategy<Variables>
+): QueryRef<Data, Variables> = TODO()
 
 open class DataConnectException internal constructor(message: String) : Exception(message)
 
@@ -161,6 +169,7 @@ sealed class DataConnectResult<Data, Variables> {
 
 class DataConnectQueryResult<Data, Variables> internal constructor() :
   DataConnectResult<Data, Variables>() {
+  // Type of `ref` is narrowed from `Reference` to `QueryRef`.
   override val ref: QueryRef<Data, Variables> = TODO()
 }
 
@@ -235,6 +244,8 @@ typealias GetPostQueryRef = QueryRef<GetPostQuery.Data, GetPostQuery.Variables>
 
 typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Data, GetPostQuery.Variables>
 
+typealias GetPostQueryResult = DataConnectQueryResult<GetPostQuery.Data, GetPostQuery.Variables>
+
 class GetPostQuery internal constructor() {
 
   @Serializable data class Variables(val id: String)
@@ -244,19 +255,15 @@ class GetPostQuery internal constructor() {
       data class Comment(val id: String, val content: String)
     }
   }
-
-  suspend fun ref(id: String): GetPostQueryRef = TODO()
-
-  suspend fun ref(variables: Variables): GetPostQueryRef = TODO()
-
-  suspend fun execute(id: String): DataConnectQueryResult<Data, Variables> = TODO()
-
-  suspend fun execute(variables: Variables): DataConnectQueryResult<Data, Variables> = TODO()
-
-  fun subscribe(id: String): GetPostQuerySubscription = TODO()
-
-  fun subscribe(variables: Variables): GetPostQuerySubscription = TODO()
 }
+
+suspend fun GetPostQuery.ref(id: String): GetPostQueryRef = TODO()
+
+suspend fun GetPostQuery.ref(variables: GetPostQuery.Variables): GetPostQueryRef = TODO()
+
+suspend fun GetPostQuery.execute(id: String): GetPostQueryResult = TODO()
+
+fun GetPostQuery.subscribe(id: String): GetPostQuerySubscription = TODO()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Third Party Examples
@@ -275,8 +282,16 @@ suspend fun thirdPartyAppInit() {
 
   dataConnect.useEmulator("10.0.2.2", 9000)
 
-  var getPostRef = dataConnect.PostsConnector.getPost.execute(id = "id")
-  var queryRef12 = dataConnect.PostsConnector.getPost.execute(GetPostQuery.Variables(id = "id"))
+  var ref: GetPostQueryRef =
+    dataConnect.PostsConnector.getPost.ref(GetPostQuery.Variables(id = "id"))
+  var anotherRef: GetPostQueryRef = dataConnect.PostsConnector.getPost.ref(id = "id")
+  var oneTimeFetch: GetPostQueryResult = ref.execute()
+  var listerner: GetPostQuerySubscription = ref.subscribe()
+
+  var anotherOneTimeFetch: GetPostQueryResult =
+    dataConnect.PostsConnector.getPost.execute(id = "id")
+  var anotherListerner: GetPostQuerySubscription =
+    dataConnect.PostsConnector.getPost.subscribe(id = "id")
 }
 
 suspend fun thirdPartyAppQueryOne() {
@@ -291,7 +306,7 @@ suspend fun thirdPartyAppQueryOne() {
 
     // One more way to execute the query, which supports the reuse/passing of
     // Variables as a group.
-    val result2 = PostsConnector.getPost.execute(GetPostQuery.Variables(id = "TestUniqueId2"))
+    val result2 = PostsConnector.getPost.ref(GetPostQuery.Variables(id = "TestUniqueId2")).execute()
 
     val postContent = result1.data.post.content
     result1.data.post.comments.forEach { println(it.content) }
@@ -305,7 +320,7 @@ suspend fun thirdPartyAppQueryOne() {
 
   // Or, can specify GetPostQuery.Variables as an argument instead of the convenience overload
   // extension function that just takes an "id" argument.
-  val querySubscriptionAnother = PostsConnector.getPost.subscribe(GetPostQuery.Variables(id = "id"))
+  val querySubscriptionAnother = PostsConnector.getPost.subscribe(id = "id")
 
   querySubscription.reload()
 }
@@ -327,8 +342,13 @@ private class MainActivity : Activity() {
         dataConnect.PostsConnector.getPost.subscribe(id = getIdFromTextView()).also { subscriber ->
           querySubscriptionFlow =
             activityCoroutineScope.launch {
-              subscriber.resultFlow.collect {
-                showPostContent(subscriber.query.variables.id, it.data)
+              subscriber.flow.collect {
+                when (it) {
+                  is QuerySubscriptionResult.Success ->
+                    showPostContent(subscriber.query.variables.id, it.result)
+                  is QuerySubscriptionResult.Failure ->
+                    showError(subscriber.query.variables.id, it.exception)
+                }
               }
             }
         }
@@ -343,7 +363,7 @@ private class MainActivity : Activity() {
     activityCoroutineScope.launch {
       val id = getIdFromTextView()
       try {
-        showPostContent(id, dataConnect.PostsConnector.getPost.execute(id = id).data)
+        showPostContent(id, dataConnect.PostsConnector.getPost.execute(id = id))
       } catch (e: Exception) {
         showError(id, e)
       }
@@ -357,5 +377,5 @@ private class MainActivity : Activity() {
 
   fun getIdFromTextView(): String = TODO()
   fun showError(postId: String, exception: Throwable): Unit = TODO()
-  fun showPostContent(postId: String, post: GetPostQuery.Data?): Unit = TODO()
+  fun showPostContent(postId: String, post: GetPostQueryResult): Unit = TODO()
 }
