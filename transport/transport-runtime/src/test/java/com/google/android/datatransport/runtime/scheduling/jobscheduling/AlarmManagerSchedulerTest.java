@@ -33,7 +33,6 @@ import android.net.Uri;
 import android.util.Base64;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.Priority;
-import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -204,9 +203,6 @@ public class AlarmManagerSchedulerTest {
     scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
 
     verify(alarmManager, times(1))
-            .set(
-                    eq(AlarmManager.ELAPSED_REALTIME),
-                    eq(INITIAL_TIMESTAMP + 1),
-                    any());
+        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + 1), any());
   }
 }

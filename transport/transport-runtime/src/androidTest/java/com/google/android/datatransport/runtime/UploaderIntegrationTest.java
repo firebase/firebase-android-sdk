@@ -96,15 +96,15 @@ public class UploaderIntegrationTest {
 
   private EventInternal makeEventWithPseudonymousId(String id) {
     return EventInternal.builder()
-            .setTransportName(testTransport)
-            .setEventMillis(1)
-            .setUptimeMillis(2)
-            .setEncodedPayload(
-                    new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
-            .addMetadata("key1", "value1")
-            .addMetadata("key2", "value2")
-            .setPseudonymousId(id)
-            .build();
+        .setTransportName(testTransport)
+        .setEventMillis(1)
+        .setUptimeMillis(2)
+        .setEncodedPayload(
+            new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
+        .addMetadata("key1", "value1")
+        .addMetadata("key2", "value2")
+        .setPseudonymousId(id)
+        .build();
   }
 
   @Test
@@ -449,12 +449,12 @@ public class UploaderIntegrationTest {
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
 
     Transport<String> transport =
-            runtime
-                    .newFactory(new TestDestination(mockBackendName, null))
-                    .getTransport(testTransport, String.class, Encoding.of("proto"), String::getBytes);
+        runtime
+            .newFactory(new TestDestination(mockBackendName, null))
+            .getTransport(testTransport, String.class, Encoding.of("proto"), String::getBytes);
 
     TransportContext TRANSPORT_CONTEXT =
-            TransportContext.builder().setBackendName(mockBackendName).build();
+        TransportContext.builder().setBackendName(mockBackendName).build();
 
     store.persist(TRANSPORT_CONTEXT, oldestEvent);
     store.persist(TRANSPORT_CONTEXT, otherEvent);
@@ -462,7 +462,7 @@ public class UploaderIntegrationTest {
 
     transport.send(Event.ofData("", event));
     verify(mockBackend, times(1))
-            .send(eq(BackendRequest.create(Arrays.asList(oldestEvent, siblingEvent))));
+        .send(eq(BackendRequest.create(Arrays.asList(oldestEvent, siblingEvent))));
   }
 
   @Test
@@ -474,23 +474,21 @@ public class UploaderIntegrationTest {
 
     String randomId = "myId";
 
-
     EventInternal targetEvent = makeEventWithPseudonymousId(null);
     EventInternal otherEvent = makeEventWithPseudonymousId(randomId);
     EventInternal siblingEvent = makeEventWithPseudonymousId(randomId);
-
 
     EventContext event = EventContext.builder().setPseudonymousId(randomId).build();
 
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
 
     Transport<String> transport =
-            runtime
-                    .newFactory(new TestDestination(mockBackendName, null))
-                    .getTransport(testTransport, String.class, Encoding.of("proto"), String::getBytes);
+        runtime
+            .newFactory(new TestDestination(mockBackendName, null))
+            .getTransport(testTransport, String.class, Encoding.of("proto"), String::getBytes);
 
     TransportContext TRANSPORT_CONTEXT =
-            TransportContext.builder().setBackendName(mockBackendName).build();
+        TransportContext.builder().setBackendName(mockBackendName).build();
 
     store.persist(TRANSPORT_CONTEXT, targetEvent);
     store.persist(TRANSPORT_CONTEXT, otherEvent);
@@ -498,6 +496,6 @@ public class UploaderIntegrationTest {
 
     transport.send(Event.ofData("", event));
     verify(mockBackend, times(1))
-            .send(eq(BackendRequest.create(Collections.singletonList(targetEvent))));
+        .send(eq(BackendRequest.create(Collections.singletonList(targetEvent))));
   }
 }

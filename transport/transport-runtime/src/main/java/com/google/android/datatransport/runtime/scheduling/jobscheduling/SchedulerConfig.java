@@ -133,7 +133,8 @@ public abstract class SchedulerConfig {
     }
   }
 
-  public long getScheduleDelay(Priority priority, long minTimestamp, int attemptNumber, boolean skipDelta) {
+  public long getScheduleDelay(
+      Priority priority, long minTimestamp, int attemptNumber, boolean skipDelta) {
     long timeDiff = minTimestamp - getClock().getTime();
     ConfigValue config = getValues().get(priority);
 
@@ -159,7 +160,11 @@ public abstract class SchedulerConfig {
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   public JobInfo.Builder configureJob(
-      JobInfo.Builder builder, Priority priority, long minimumTimestamp, int attemptNumber, boolean skipDelta) {
+      JobInfo.Builder builder,
+      Priority priority,
+      long minimumTimestamp,
+      int attemptNumber,
+      boolean skipDelta) {
     long latency = getScheduleDelay(priority, minimumTimestamp, attemptNumber, skipDelta);
     builder.setMinimumLatency(latency); // wait at least
     populateFlags(builder, getValues().get(priority).getFlags());
@@ -168,7 +173,7 @@ public abstract class SchedulerConfig {
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   public JobInfo.Builder configureJob(
-          JobInfo.Builder builder, Priority priority, long minimumTimestamp, int attemptNumber) {
+      JobInfo.Builder builder, Priority priority, long minimumTimestamp, int attemptNumber) {
     return configureJob(builder, priority, minimumTimestamp, attemptNumber, false);
   }
 

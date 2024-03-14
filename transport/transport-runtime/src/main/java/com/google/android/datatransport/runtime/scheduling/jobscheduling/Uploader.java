@@ -17,7 +17,6 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
@@ -145,13 +144,13 @@ public class Uploader {
         String targetPseudonymousId = oldestEvent.getEvent().getPseudonymousId();
 
         for (PersistedEvent persistedEvent : persistedEvents) {
-            EventInternal event = persistedEvent.getEvent();
-            String pseudonymousId = event.getPseudonymousId();
+          EventInternal event = persistedEvent.getEvent();
+          String pseudonymousId = event.getPseudonymousId();
 
-            if(Objects.equals(targetPseudonymousId, pseudonymousId)) {
-                eventInternals.add(event);
-                sentEvents.add(persistedEvent);
-            }
+          if (Objects.equals(targetPseudonymousId, pseudonymousId)) {
+            eventInternals.add(event);
+            sentEvents.add(persistedEvent);
+          }
         }
 
         if (transportContext.shouldUploadClientHealthMetrics()) {
@@ -222,14 +221,15 @@ public class Uploader {
           return null;
         });
 
-    if(eventStore.hasPendingEventsFor(transportContext)) {
-        workScheduler.schedule(transportContext, attemptNumber, true);
+    if (eventStore.hasPendingEventsFor(transportContext)) {
+      workScheduler.schedule(transportContext, attemptNumber, true);
     }
     return response;
   }
 
   @VisibleForTesting
-  public EventInternal createMetricsEvent(TransportBackend backend, @Nullable String pseudonymousId) {
+  public EventInternal createMetricsEvent(
+      TransportBackend backend, @Nullable String pseudonymousId) {
     ClientMetrics clientMetrics =
         guard.runCriticalSection(clientHealthMetricsStore::loadClientMetrics);
     return backend.decorate(

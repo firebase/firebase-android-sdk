@@ -336,8 +336,9 @@ final class CctTransportBackend implements TransportBackend {
     connection.setRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
     connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
 
-    if(request.pseudonymousId != null) {
-      connection.setRequestProperty(COOKIE_HEADER_KEY, String.format("NID=%s", request.pseudonymousId));
+    if (request.pseudonymousId != null) {
+      connection.setRequestProperty(
+          COOKIE_HEADER_KEY, String.format("NID=%s", request.pseudonymousId));
     }
 
     if (request.apiKey != null) {
@@ -392,13 +393,13 @@ final class CctTransportBackend implements TransportBackend {
   private @Nullable String findPseudonymousId(BackendRequest request) {
     Iterator<EventInternal> events = request.getEvents().iterator();
 
-    if(!events.hasNext()) return null;
+    if (!events.hasNext()) return null;
 
     String pseudonymousId = events.next().getPseudonymousId();
 
-    for(EventInternal event : request.getEvents()) {
+    for (EventInternal event : request.getEvents()) {
       String currentId = event.getPseudonymousId();
-      if(!Objects.equals(pseudonymousId, currentId)) {
+      if (!Objects.equals(pseudonymousId, currentId)) {
         Logging.w(LOG_TAG, "Invalid pseudonymous id event found: %s", currentId);
         return null;
       }
@@ -487,7 +488,11 @@ final class CctTransportBackend implements TransportBackend {
     @Nullable final String pseudonymousId;
     @Nullable final String apiKey;
 
-    HttpRequest(URL url, BatchedLogRequest requestBody, @Nullable String apiKey, @Nullable String pseudonymousId) {
+    HttpRequest(
+        URL url,
+        BatchedLogRequest requestBody,
+        @Nullable String apiKey,
+        @Nullable String pseudonymousId) {
       this.url = url;
       this.requestBody = requestBody;
       this.apiKey = apiKey;

@@ -140,7 +140,8 @@ public class JobInfoScheduler implements WorkScheduler {
         "Scheduling upload for context %s with jobId=%d in %dms(Backend next call timestamp %d). Attempt %d",
         transportContext,
         jobId,
-        config.getScheduleDelay(transportContext.getPriority(), nextCallTime, attemptNumber, hasPendingEvents),
+        config.getScheduleDelay(
+            transportContext.getPriority(), nextCallTime, attemptNumber, hasPendingEvents),
         nextCallTime,
         attemptNumber);
 

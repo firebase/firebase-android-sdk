@@ -40,7 +40,6 @@ import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryE
 import com.google.android.datatransport.runtime.scheduling.persistence.PersistedEvent;
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -117,15 +116,15 @@ public class UploaderTest {
 
   private EventInternal makeEventWithPseudonymousId(String id) {
     return EventInternal.builder()
-            .setTransportName("43")
-            .setEventMillis(1)
-            .setUptimeMillis(2)
-            .setEncodedPayload(
-                    new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
-            .addMetadata("key1", "value1")
-            .addMetadata("key2", "value2")
-            .setPseudonymousId(id)
-            .build();
+        .setTransportName("43")
+        .setEventMillis(1)
+        .setUptimeMillis(2)
+        .setEncodedPayload(
+            new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
+        .addMetadata("key1", "value1")
+        .addMetadata("key2", "value2")
+        .setPseudonymousId(id)
+        .build();
   }
 
   @Before
@@ -262,15 +261,15 @@ public class UploaderTest {
 
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(mockBackend, times(1))
-            .send(
-                    argThat(
-                            (backendRequest -> {
-                              List<EventInternal> events = StreamSupport
-                                      .stream(backendRequest.getEvents().spliterator(), false)
-                                      .collect(Collectors.toList());
+        .send(
+            argThat(
+                (backendRequest -> {
+                  List<EventInternal> events =
+                      StreamSupport.stream(backendRequest.getEvents().spliterator(), false)
+                          .collect(Collectors.toList());
 
-                              return events.equals(targetEvents);
-                            })));
+                  return events.equals(targetEvents);
+                })));
   }
 
   @Test
@@ -309,15 +308,15 @@ public class UploaderTest {
 
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(mockBackend, times(1))
-            .send(
-                    argThat(
-                            (backendRequest -> {
-                              List<EventInternal> events = StreamSupport
-                                      .stream(backendRequest.getEvents().spliterator(), false)
-                                      .collect(Collectors.toList());
+        .send(
+            argThat(
+                (backendRequest -> {
+                  List<EventInternal> events =
+                      StreamSupport.stream(backendRequest.getEvents().spliterator(), false)
+                          .collect(Collectors.toList());
 
-                              return events.equals(targetEvents);
-                            })));
+                  return events.equals(targetEvents);
+                })));
   }
 
   @Test

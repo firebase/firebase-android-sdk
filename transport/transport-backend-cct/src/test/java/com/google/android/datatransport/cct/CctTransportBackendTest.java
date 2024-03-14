@@ -749,20 +749,20 @@ public class CctTransportBackendTest {
   public void schedule_shouldAddCookieOnPseudonymousIds() {
     String pseudonymousId = "testing_world";
     BackendRequest request =
-            BackendRequest.builder()
-                    .setEvents(
-                            Collections.singletonList(
-                                    BACKEND.decorate(
-                                            EventInternal.builder()
-                                                    .setEventMillis(INITIAL_WALL_TIME)
-                                                    .setUptimeMillis(INITIAL_UPTIME)
-                                                    .setTransportName("4")
-                                                    .setEncodedPayload(
-                                                            new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
-                                                    .setPseudonymousId(pseudonymousId)
-                                                    .build())))
-                    .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
-                    .build();
+        BackendRequest.builder()
+            .setEvents(
+                Collections.singletonList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .setPseudonymousId(pseudonymousId)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
 
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(200)));
     wallClock.tick();
@@ -770,8 +770,8 @@ public class CctTransportBackendTest {
 
     BACKEND.send(request);
     verify(
-            postRequestedFor(urlEqualTo("/api"))
-                    .withHeader("Cookie", equalTo(String.format("NID=%s", pseudonymousId))));
+        postRequestedFor(urlEqualTo("/api"))
+            .withHeader("Cookie", equalTo(String.format("NID=%s", pseudonymousId))));
   }
 
   @Test
@@ -779,39 +779,37 @@ public class CctTransportBackendTest {
     String pseudonymousId = "testing_world";
     String otherPseudonymousId = "world_testing";
     BackendRequest request =
-            BackendRequest.builder()
-                    .setEvents(
-                            Arrays.asList(
-                                    BACKEND.decorate(
-                                            EventInternal.builder()
-                                                    .setEventMillis(INITIAL_WALL_TIME)
-                                                    .setUptimeMillis(INITIAL_UPTIME)
-                                                    .setTransportName("4")
-                                                    .setPseudonymousId(pseudonymousId)
-                                                    .setEncodedPayload(
-                                                            new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
-                                                    .build()),
-                                    BACKEND.decorate(
-                                            EventInternal.builder()
-                                                    .setEventMillis(INITIAL_WALL_TIME)
-                                                    .setUptimeMillis(INITIAL_UPTIME)
-                                                    .setTransportName("4")
-                                                    .setPseudonymousId(otherPseudonymousId)
-                                                    .setEncodedPayload(
-                                                            new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
-                                                    .setCode(CODE)
-                                                    .build())))
-                    .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
-                    .build();
+        BackendRequest.builder()
+            .setEvents(
+                Arrays.asList(
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPseudonymousId(pseudonymousId)
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .build()),
+                    BACKEND.decorate(
+                        EventInternal.builder()
+                            .setEventMillis(INITIAL_WALL_TIME)
+                            .setUptimeMillis(INITIAL_UPTIME)
+                            .setTransportName("4")
+                            .setPseudonymousId(otherPseudonymousId)
+                            .setEncodedPayload(
+                                new EncodedPayload(PROTOBUF_ENCODING, PAYLOAD.toByteArray()))
+                            .setCode(CODE)
+                            .build())))
+            .setExtras(new CCTDestination(TEST_ENDPOINT, null).getExtras())
+            .build();
 
     stubFor(post(urlEqualTo("/api")).willReturn(aResponse().withStatus(200)));
     wallClock.tick();
     uptimeClock.tick();
 
     BACKEND.send(request);
-    verify(
-            postRequestedFor(urlEqualTo("/api"))
-                    .withoutHeader("Cookie"));
+    verify(postRequestedFor(urlEqualTo("/api")).withoutHeader("Cookie"));
   }
 
   // When there is no active network, the ConnectivityManager returns null when
