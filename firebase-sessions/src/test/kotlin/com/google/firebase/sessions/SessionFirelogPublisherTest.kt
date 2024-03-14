@@ -109,8 +109,7 @@ class SessionFirelogPublisherTest {
 
     runCurrent()
 
-    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
-      .isEqualTo("")
+    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId).isEqualTo("")
     assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseAuthenticationToken)
       .isEqualTo("FakeAuthToken")
   }
