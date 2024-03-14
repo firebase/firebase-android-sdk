@@ -12,34 +12,6 @@
         ],
         "firebase-common/ktx": [
         ],
-        "firebase-config": [
-            {
-                "commitId": "7ea13d4bbaadddee017651ce782e5f5b85a3db78",
-                "prId": "5762",
-                "author": "Dana Silver",
-                "message": "Add Remote Config changelog for PR #5753 (#5762)\n\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7ea13d4bbaadddee017651ce782e5f5b85a3db78",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5762"
-            },
-            {
-                "commitId": "53634f5502a3d9d4695e2f16602c5b776084500a",
-                "prId": "5753",
-                "author": "Dana Silver",
-                "message": "Revert \"Disconnect from RC real-time server when app is backgrounded.\" (#5753)\n\nReverts #5688 \r\n\r\nThis reverts commit 46cccc9f459d76a12dba1b570ffe9b2f3c9f4a4d.\r\n\r\nThis was a clean revert created with `git revert\r\n46cccc9f459d76a12dba1b570ffe9b2f3c9f4a4d`.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/53634f5502a3d9d4695e2f16602c5b776084500a",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5753"
-            },
-            {
-                "commitId": "ec992b2230fe513f023f60186bb7b48d38d621b4",
-                "prId": "5730",
-                "author": "emilypgoogle",
-                "message": "Pin config interop (#5730)\n\nConfig team confirmed this dependency can be pinned",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ec992b2230fe513f023f60186bb7b48d38d621b4",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5730"
-            }
-        ],
-        "firebase-config/ktx": [
-        ],
         "firebase-firestore": [
             {
                 "commitId": "b77c2188e5ec7c53c2a955fc4663b301e6c98c83",

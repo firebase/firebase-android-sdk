@@ -3,8 +3,6 @@
     "libraries": [
         ":firebase-common",
         ":firebase-common:ktx",
-        ":firebase-config",
-        ":firebase-config:ktx",
         ":firebase-firestore",
         ":firebase-firestore:ktx",
         ":firebase-inappmessaging",

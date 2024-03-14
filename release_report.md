@@ -7,20 +7,6 @@
 ## firebase-common/ktx
       
 
-## firebase-config
-      
-* Add Remote Config changelog for PR #5753 (#5762)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5762) [commit](https://github.com/firebase/firebase-android-sdk/commit/7ea13d4bbaadddee017651ce782e5f5b85a3db78)  [Dana Silver]
-
-* Revert "Disconnect from RC real-time server when app is backgrounded." (#5753)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5753) [commit](https://github.com/firebase/firebase-android-sdk/commit/53634f5502a3d9d4695e2f16602c5b776084500a)  [Dana Silver]
-
-* Pin config interop (#5730)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5730) [commit](https://github.com/firebase/firebase-android-sdk/commit/ec992b2230fe513f023f60186bb7b48d38d621b4)  [emilypgoogle]
-
-## firebase-config/ktx
-      
-
 ## firebase-firestore
       
 * Snapshot listener source from cache (#5690)   
