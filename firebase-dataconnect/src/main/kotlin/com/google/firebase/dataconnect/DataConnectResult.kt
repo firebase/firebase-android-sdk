@@ -16,13 +16,13 @@ package com.google.firebase.dataconnect
 import java.util.Objects
 
 public sealed class DataConnectResult<Data, Variables>
-protected constructor(public val data: Data, internal val sequenceNumber: Long) {
+protected constructor(public val data: Data) {
   public abstract val ref: OperationRef<Data, Variables>
 }
 
 public class DataConnectQueryResult<Data, Variables>
-internal constructor(data: Data, query: QueryRef<Data, Variables>, sequenceNumber: Long) :
-  DataConnectResult<Data, Variables>(data = data, sequenceNumber = sequenceNumber) {
+internal constructor(data: Data, query: QueryRef<Data, Variables>) :
+  DataConnectResult<Data, Variables>(data = data) {
 
   override val ref: QueryRef<Data, Variables> = query
 
@@ -35,8 +35,8 @@ internal constructor(data: Data, query: QueryRef<Data, Variables>, sequenceNumbe
 }
 
 public class DataConnectMutationResult<Data, Variables>
-internal constructor(data: Data, mutation: MutationRef<Data, Variables>, sequenceNumber: Long) :
-  DataConnectResult<Data, Variables>(data = data, sequenceNumber = sequenceNumber) {
+internal constructor(data: Data, mutation: MutationRef<Data, Variables>) :
+  DataConnectResult<Data, Variables>(data = data) {
 
   override val ref: MutationRef<Data, Variables> = mutation
 

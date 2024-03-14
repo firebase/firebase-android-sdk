@@ -9,6 +9,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import org.junit.Assert
 
 /**
  * Asserts that a string contains another string, verifying that the character immediately preceding
@@ -44,3 +45,12 @@ suspend fun delayUntil(name: String? = null, predicate: () -> Boolean) {
 fun randomId(): String = UUID.randomUUID().toString()
 
 class DelayUntilTimeoutException(message: String) : Exception(message)
+
+/**
+ * Calls `Assert.fail()`, but also returns `Nothing` so that the Kotlin compiler can do better type
+ * deduction for code that follows this `fail()` call.
+ */
+fun fail(message: String): Nothing {
+  Assert.fail(message)
+  throw IllegalStateException("Should never get here")
+}

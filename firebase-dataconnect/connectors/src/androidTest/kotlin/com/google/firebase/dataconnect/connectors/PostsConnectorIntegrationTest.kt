@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
+import com.google.firebase.dataconnect.testutil.successOrThrow
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 import kotlinx.coroutines.*
@@ -278,9 +279,9 @@ class PostsConnectorIntegrationTest {
     val querySubscription = posts.getPost.ref(id = postId1).subscribe()
     assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
 
-    val result1 = querySubscription.resultFlow.first()
+    val result1 = querySubscription.resultFlow.first().successOrThrow()
     assertWithMessage("result1.post.content")
-      .that(result1.data.post?.content)
+      .that(result1.result.data.post?.content)
       .isEqualTo(postContent1)
 
     assertWithMessage("lastResult 1").that(querySubscription.lastResult).isEqualTo(result1)
@@ -292,10 +293,10 @@ class PostsConnectorIntegrationTest {
     val results2 = flow2Job.await()
     assertWithMessage("results2.size").that(results2.size).isEqualTo(2)
     assertWithMessage("results2[0].post.content")
-      .that(results2[0].data.post?.content)
+      .that(results2[0].successOrThrow().result.data.post?.content)
       .isEqualTo(postContent1)
     assertWithMessage("results2[1].post.content")
-      .that(results2[1].data.post?.content)
+      .that(results2[1].successOrThrow().result.data.post?.content)
       .isEqualTo(postContent2)
 
     assertWithMessage("lastResult 2").that(querySubscription.lastResult).isEqualTo(results2[1])

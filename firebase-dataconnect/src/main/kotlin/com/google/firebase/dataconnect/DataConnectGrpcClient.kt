@@ -101,14 +101,10 @@ internal class DataConnectGrpcClient(
   data class OperationResult(
     val data: Struct?,
     val errors: List<DataConnectError>,
-    val sequenceNumber: Long
   )
-
-  data class DeserialzedOperationResult<T>(val data: T, val sequenceNumber: Long)
 
   suspend fun executeQuery(
     requestId: String,
-    sequenceNumber: Long,
     operationName: String,
     variables: Struct,
   ): OperationResult {
@@ -139,14 +135,12 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() },
-      sequenceNumber = sequenceNumber,
+      errors = response.errorsList.map { it.toDataConnectError() }
     )
   }
 
   suspend fun executeMutation(
     requestId: String,
-    sequenceNumber: Long,
     operationName: String,
     variables: Struct,
   ): OperationResult {
@@ -177,8 +171,7 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toDataConnectError() },
-      sequenceNumber = sequenceNumber,
+      errors = response.errorsList.map { it.toDataConnectError() }
     )
   }
 
@@ -229,33 +222,24 @@ internal fun GraphqlError.toDataConnectError() =
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
   dataDeserializer: DeserializationStrategy<T>
-): DataConnectGrpcClient.DeserialzedOperationResult<T> {
-  val deserializedResponse: T =
-    if (dataDeserializer === DataConnectUntypedData) {
-      @Suppress("UNCHECKED_CAST")
-      DataConnectUntypedData(data?.toMap(), errors) as T
-    } else if (data === null) {
-      if (errors.isNotEmpty()) {
-        throw DataConnectException("operation failed: errors=$errors")
-      } else {
-        throw DataConnectException("no data included in result")
-      }
-    } else if (errors.isNotEmpty()) {
-      throw DataConnectException("operation failed: errors=$errors (data=$data)")
+): T =
+  if (dataDeserializer === DataConnectUntypedData) {
+    @Suppress("UNCHECKED_CAST")
+    DataConnectUntypedData(data?.toMap(), errors) as T
+  } else if (data === null) {
+    if (errors.isNotEmpty()) {
+      throw DataConnectException("operation failed: errors=$errors")
     } else {
-      decodeFromStruct(dataDeserializer, data)
+      throw DataConnectException("no data included in result")
     }
-
-  return DataConnectGrpcClient.DeserialzedOperationResult(
-    data = deserializedResponse,
-    sequenceNumber = sequenceNumber,
-  )
-}
-
-internal fun <D, V> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectMutationResult(
-  mutation: MutationRef<D, V>
-) = DataConnectMutationResult(data = data, mutation = mutation, sequenceNumber = sequenceNumber)
-
-internal fun <D, V> DataConnectGrpcClient.DeserialzedOperationResult<D>.toDataConnectQueryResult(
-  query: QueryRef<D, V>
-) = DataConnectQueryResult(data = data, query = query, sequenceNumber = sequenceNumber)
+  } else if (errors.isNotEmpty()) {
+    throw DataConnectException("operation failed: errors=$errors (data=$data)")
+  } else {
+    try {
+      decodeFromStruct(dataDeserializer, data)
+    } catch (dataConnectException: DataConnectException) {
+      throw dataConnectException
+    } catch (throwable: Throwable) {
+      throw DataConnectException("decoding response data failed: $throwable", throwable)
+    }
+  }

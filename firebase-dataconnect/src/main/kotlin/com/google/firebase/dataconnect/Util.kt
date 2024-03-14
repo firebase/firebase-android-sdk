@@ -41,6 +41,44 @@ internal fun nextSequenceNumber(): Long {
   return nextSequenceId.incrementAndGet()
 }
 
+internal data class SequencedReference<out T>(val sequenceNumber: Long, val ref: T)
+
+internal fun <T, U> SequencedReference<T>.map(block: (T) -> U): SequencedReference<U> =
+  SequencedReference(sequenceNumber, block(ref))
+
+internal fun <T, U : SequencedReference<T>?> U.newerOfThisAnd(other: U): U =
+  if (this == null && other == null) {
+    // Suppress the warning that `this` is guaranteed to be null because the `null` literal cannot
+    // be used in place of `this` because if this extension function is called on a non-nullable
+    // reference then `null` is a forbidden return value and compilation will fail.
+    @Suppress("KotlinConstantConditions") this
+  } else if (this == null) {
+    other
+  } else if (other == null) {
+    this
+  } else if (this.sequenceNumber > other.sequenceNumber) {
+    this
+  } else {
+    other
+  }
+
+internal inline fun <T : Any, reified U : T> SequencedReference<T>.asTypeOrNull():
+  SequencedReference<U>? =
+  if (ref is U) {
+    @Suppress("UNCHECKED_CAST")
+    this as SequencedReference<U>
+  } else {
+    null
+  }
+
+internal inline fun <T : Any, reified U : T> SequencedReference<T>.asTypeOrThrow():
+  SequencedReference<U> =
+  asTypeOrNull()
+    ?: throw IllegalStateException(
+      "expected ref to have type ${U::class.qualifiedName}, " +
+        "but got ${ref::class.qualifiedName} ($ref)"
+    )
+
 // NOTE: `ALPHANUMERIC_ALPHABET` MUST have a length of 32 (since 2^5=32). This allows encoding 5
 // bits as a single digit from this alphabet. Note that some numbers and letters were removed,
 // especially those that can look similar in different fonts, like '1', 'l', and 'i'.
@@ -132,7 +170,7 @@ internal class SuspendingLazy<T : Any>(
     if (value !== null) value.toString() else "SuspendingLazy value not initialized yet."
 }
 
-internal class NullableReference<T>(val ref: T?) {
+internal class NullableReference<T>(val ref: T? = null) {
   override fun equals(other: Any?) = (other is NullableReference<*>) && other.ref == ref
   override fun hashCode() = ref?.hashCode() ?: 0
   override fun toString() = ref?.toString() ?: "null"

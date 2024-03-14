@@ -22,11 +22,15 @@ internal constructor(query: QueryRef<Data, Variables>) {
   private val _query = MutableStateFlow(query)
   public val query: QueryRef<Data, Variables> by _query::value
 
-  private val _lastResult = MutableStateFlow<DataConnectQueryResult<Data, Variables>?>(null)
-  public val lastResult: DataConnectQueryResult<Data, Variables>? by _lastResult::value
+  private val _lastResult =
+    MutableStateFlow(
+      NullableReference<SequencedReference<QuerySubscriptionResult<Data, Variables>>>()
+    )
+  public val lastResult: QuerySubscriptionResult<Data, Variables>?
+    get() = _lastResult.value.ref?.ref
 
   // Each collection of this flow triggers an implicit `reload()`.
-  public val resultFlow: Flow<DataConnectQueryResult<Data, Variables>> = channelFlow {
+  public val resultFlow: Flow<QuerySubscriptionResult<Data, Variables>> = channelFlow {
     val cachedResult = lastResult?.also { send(it) }
 
     var collectJob: Job? = null
@@ -45,25 +49,22 @@ internal constructor(query: QueryRef<Data, Variables>) {
 
       collectJob = launch {
         val queryManager = query.dataConnect.lazyQueryManager.get()
-        queryManager.onResult(
-          query,
-          sinceSequenceNumber = cachedResult?.sequenceNumber,
-          executeQuery = shouldExecuteQuery
-        ) {
-          updateLastResult(it)
-          send(it)
+        queryManager.subscribe(query, executeQuery = shouldExecuteQuery) { sequencedResult ->
+          sequencedResult
+            .map { it.toQuerySubscriptionResult(query) }
+            .let {
+              send(it.ref)
+              updateLastResult(it)
+            }
         }
       }
     }
   }
 
-  // TODO: Replace with an actual implementation.
-  public val exceptionFlow: Flow<DataConnectException?> = MutableStateFlow(null)
-
   public suspend fun reload() {
-    val queryManager = query.dataConnect.lazyQueryManager.get()
-    val result = queryManager.execute(query)
-    updateLastResult(result)
+    val query = query // save query to a local variable in case it changes.
+    val result = query.dataConnect.lazyQueryManager.get().execute(query)
+    updateLastResult(result.map { it.toQuerySubscriptionResult(query) })
   }
 
   public suspend fun update(variables: Variables) {
@@ -71,15 +72,20 @@ internal constructor(query: QueryRef<Data, Variables>) {
     reload()
   }
 
-  private fun updateLastResult(newLastResult: DataConnectQueryResult<Data, Variables>) {
+  private fun updateLastResult(
+    newLastResult: SequencedReference<QuerySubscriptionResult<Data, Variables>>
+  ) {
     // Update the last result in a compare-and-swap loop so that there is no possibility of
     // clobbering a newer result with an older result, compared using their sequence numbers.
     while (true) {
       val oldLastResult = _lastResult.value
-      if (oldLastResult !== null && oldLastResult.sequenceNumber >= newLastResult.sequenceNumber) {
+      if (
+        oldLastResult.ref !== null &&
+          oldLastResult.ref.sequenceNumber >= newLastResult.sequenceNumber
+      ) {
         return
       }
-      if (_lastResult.compareAndSet(oldLastResult, newLastResult)) {
+      if (_lastResult.compareAndSet(oldLastResult, NullableReference(newLastResult))) {
         return
       }
     }
@@ -90,6 +96,18 @@ internal constructor(query: QueryRef<Data, Variables>) {
   override fun hashCode(): Int = System.identityHashCode(this)
 
   override fun toString(): String = "QuerySubscription(query=$query)"
+
+  private fun Result<Data>.toQuerySubscriptionResult(
+    query: QueryRef<Data, Variables>
+  ): QuerySubscriptionResult<Data, Variables> =
+    fold(
+      onSuccess = {
+        QuerySubscriptionResult.Success(this@QuerySubscription, DataConnectQueryResult(it, query))
+      },
+      onFailure = {
+        QuerySubscriptionResult.Failure(this@QuerySubscription, it as DataConnectException)
+      }
+    )
 
   private data class State<Data, Variables>(
     val query: QueryRef<Data, Variables>,

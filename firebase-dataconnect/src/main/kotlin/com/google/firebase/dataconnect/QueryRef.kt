@@ -33,7 +33,9 @@ internal constructor(
     variablesSerializer = variablesSerializer,
   ) {
   override suspend fun execute(): DataConnectQueryResult<Data, Variables> =
-    dataConnect.lazyQueryManager.get().execute(this)
+    dataConnect.lazyQueryManager.get().execute(this).let {
+      DataConnectQueryResult(it.ref.getOrThrow(), this)
+    }
 
   public fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscription(this)
 

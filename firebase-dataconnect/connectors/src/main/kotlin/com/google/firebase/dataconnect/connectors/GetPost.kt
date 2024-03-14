@@ -61,9 +61,4 @@ public suspend fun PostsConnector.getPost(
   id: String
 ): DataConnectQueryResult<GetPost.Data, GetPost.Variables> = getPost.ref(id = id).execute()
 
-public fun GetPost.flow(id: String): Flow<GetPost.FlowResult> =
-  ref(id = id).subscribe().let { querySubscription ->
-    querySubscription.resultFlow.combine(querySubscription.exceptionFlow) { result, exception ->
-      GetPost.FlowResult(result, exception)
-    }
-  }
+public fun GetPost.flow(id: String): Flow<GetPost.FlowResult> = TODO()

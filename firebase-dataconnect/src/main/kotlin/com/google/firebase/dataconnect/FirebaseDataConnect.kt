@@ -18,6 +18,7 @@ import android.content.Context
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.util.nextAlphanumericString
 import java.util.concurrent.Executor
 import kotlin.random.Random
@@ -109,13 +110,7 @@ internal constructor(
   internal val lazyQueryManager =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      QueryManager(
-        grpcClient = lazyGrpcClient.getLocked(),
-        coroutineScope = coroutineScope,
-        blockingDispatcher = blockingDispatcher,
-        nonBlockingDispatcher = nonBlockingDispatcher,
-        parentLogger = logger,
-      )
+      QueryManager(this)
     }
 
   internal suspend fun <R, V> executeMutation(mutation: MutationRef<R, V>) =
@@ -137,7 +132,6 @@ internal constructor(
       .get()
       .executeMutation(
         requestId = requestId,
-        sequenceNumber = nextSequenceNumber(),
         operationName = mutation.operationName,
         variables =
           if (mutation.variablesSerializer === DataConnectUntypedVariables.Serializer)
@@ -151,7 +145,7 @@ internal constructor(
         logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
       }
       .getOrThrow()
-      .toDataConnectMutationResult(mutation)
+      .let { DataConnectMutationResult(it, mutation) }
 
   private val closeResult = MutableStateFlow<Result<Unit>?>(null)
 
