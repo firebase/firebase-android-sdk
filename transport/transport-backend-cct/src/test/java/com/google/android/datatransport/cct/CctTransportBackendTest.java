@@ -223,7 +223,8 @@ public class CctTransportBackendTest {
                 matchingJsonPath(
                     String.format(
                         "$[?(@.logRequest[0].logEvent[1].sourceExtensionJsonProto3 == \"%s\")]",
-                        JSON_PAYLOAD_ESCAPED))));
+                        JSON_PAYLOAD_ESCAPED)))
+            .withoutHeader("Cookie"));
 
     assertEquals(BackendResponse.ok(3), response);
   }
