@@ -50,7 +50,7 @@ enum class LoggerLevel {
   NONE
 }
 
-class FirebaseDataConnect internal constructor() : AutoCloseable {
+interface FirebaseDataConnect : AutoCloseable {
 
   val app: FirebaseApp
     get() = TODO()
@@ -63,9 +63,9 @@ class FirebaseDataConnect internal constructor() : AutoCloseable {
 
   fun useEmulator(host: String = "10.0.2.2", port: Int = 9510): Unit = TODO()
 
-  override fun close() = TODO()
+  override fun close()
 
-  override fun toString(): String = TODO()
+  override fun toString(): String
 
   companion object {
     // Gets the instance associated with the default FirebaseApp and the given
@@ -104,35 +104,39 @@ fun Firebase.dataConnect(
   settings: DataConnectSettings
 ): FirebaseDataConnect = TODO()
 
-abstract class OperationRef<Data, Variables> internal constructor() {
-  val dataConnect: FirebaseDataConnect = TODO()
+interface OperationRef<Data, Variables> {
+  val dataConnect: FirebaseDataConnect
 
-  val operationName: String = TODO()
+  val operationName: String
 
-  val variables: Variables = TODO()
+  val variables: Variables
 
-  val responseDeserializer: DeserializationStrategy<Data> = TODO()
+  val responseDeserializer: DeserializationStrategy<Data>
 
-  val variablesSerializer: SerializationStrategy<Variables> = TODO()
+  val variablesSerializer: SerializationStrategy<Variables>
 
-  abstract suspend fun execute(): DataConnectResult<Data, Variables>
+  suspend fun execute(): DataConnectResult<Data, Variables>
+
+  override fun hashCode(): Int
+  override fun equals(other: Any?): Boolean
+  override fun toString(): String
 }
 
-class QueryRef<Data, Variables> internal constructor() : OperationRef<Data, Variables>() {
+interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
+  // Override the return type from DataConnectResult to DataConnectQueryResult,
+  // which is a subclass of DataConnectResult.
   override suspend fun execute(): DataConnectQueryResult<Data, Variables> = TODO()
 
   fun subscribe(): QuerySubscription<Data, Variables> = TODO()
 }
 
-class QuerySubscription<Data, Variables> internal constructor() {
+interface QuerySubscription<Data, Variables> {
   val query: QueryRef<Data, Variables>
-    get() = TODO()
 
   // Alternative considered: add `lastResult`. The problem is, what do we do with this value if the
   // variables are changed via a call to update()? Do we clear it? Or do we leave it there even
   // though it came from a request with potentially-different variables?
   val lastResult: DataConnectResult<Data, Variables>
-    get() = TODO()
 
   // Alternative considered: Return `Deferred<Result<T>>` so that customer knows when the reload
   // completes. For example, suppose a UI has a "Reload" button and when the customer clicks it they
@@ -140,9 +144,9 @@ class QuerySubscription<Data, Variables> internal constructor() {
   // check mark or red "X". Note that simply waiting for a result to be delivered to a Flow isn't
   // sufficient because it's not clear that the result was from the specific call to reload() or
   // some previous call to reload() by some other unrelated operation.
-  fun reload(): Unit = TODO()
+  fun reload()
 
-  val flow: Flow<QuerySubscriptionResult<Data, Variables>> = TODO()
+  val flow: Flow<QuerySubscriptionResult<Data, Variables>>
 }
 
 // This extension function on `FirebaseDataConnect` is the mechanism for the
@@ -155,22 +159,19 @@ fun <Data, Variables> FirebaseDataConnect.query(
 
 open class DataConnectException internal constructor(message: String) : Exception(message)
 
-sealed class DataConnectResult<Data, Variables> {
+interface DataConnectResult<Data, Variables> {
   val data: Data
-    get() = TODO()
 
-  open val ref: OperationRef<Data, Variables>
-    get() = TODO()
+  val ref: OperationRef<Data, Variables>
 
-  override fun hashCode(): Int = TODO()
-  override fun equals(other: Any?): Boolean = TODO()
-  override fun toString(): String = TODO()
+  override fun hashCode(): Int
+  override fun equals(other: Any?): Boolean
+  override fun toString(): String
 }
 
-class DataConnectQueryResult<Data, Variables> internal constructor() :
-  DataConnectResult<Data, Variables>() {
+interface DataConnectQueryResult<Data, Variables> : DataConnectResult<Data, Variables> {
   // Type of `ref` is narrowed from `Reference` to `QueryRef`.
-  override val ref: QueryRef<Data, Variables> = TODO()
+  override val ref: QueryRef<Data, Variables>
 }
 
 sealed class QuerySubscriptionResult<Data, Variables> protected constructor() {
@@ -226,7 +227,7 @@ class DataConnectError private constructor() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// GEN SDK INIT
+// GEN SDK
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class PostsConnector {
