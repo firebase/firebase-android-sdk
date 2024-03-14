@@ -29,6 +29,7 @@ import androidx.test.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.EventContext;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
@@ -91,6 +92,19 @@ public class UploaderIntegrationTest {
 
   private String generateBackendName() {
     return UUID.randomUUID().toString().replace("-", "");
+  }
+
+  private EventInternal makeEventWithPseudonymousId(String id) {
+    return EventInternal.builder()
+        .setTransportName(testTransport)
+        .setEventMillis(1)
+        .setUptimeMillis(2)
+        .setEncodedPayload(
+            new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
+        .addMetadata("key1", "value1")
+        .addMetadata("key2", "value2")
+        .setPseudonymousId(id)
+        .build();
   }
 
   @Test
@@ -277,7 +291,7 @@ public class UploaderIntegrationTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
-    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend, null);
     transport.send(Event.ofTelemetry("TelemetryData"));
     verify(mockBackend, times(1))
         .send(
@@ -320,7 +334,7 @@ public class UploaderIntegrationTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
-    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend, null);
     transport.send(Event.ofTelemetry("TelemetryData"));
     verify(mockBackend, times(1))
         .send(
@@ -363,7 +377,7 @@ public class UploaderIntegrationTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .build();
-    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend);
+    EventInternal metricsEvent = component.getUploader().createMetricsEvent(mockBackend, null);
     transport.send(Event.ofTelemetry("TelemetryData"));
     verify(mockBackend, times(1))
         .send(
@@ -414,5 +428,74 @@ public class UploaderIntegrationTest {
     verify(spyScheduler, times(0)).schedule(any(), eq(2));
 
     assertThat(store.loadClientMetrics().getLogSourceMetricsList()).hasSize(1);
+  }
+
+  @Test
+  public void uploader_shouldBatchSamePseudonymousIds() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    SQLiteEventStore store = component.getEventStore();
+
+    String mockBackendName = generateBackendName();
+
+    String targetId = "myId";
+    String alternativeId = "otherId";
+
+    EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal siblingEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal otherEvent = makeEventWithPseudonymousId(alternativeId);
+
+    EventContext event = EventContext.builder().setPseudonymousId(alternativeId).build();
+
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+
+    Transport<String> transport =
+        runtime
+            .newFactory(new TestDestination(mockBackendName, null))
+            .getTransport(testTransport, String.class, Encoding.of("proto"), String::getBytes);
+
+    TransportContext TRANSPORT_CONTEXT =
+        TransportContext.builder().setBackendName(mockBackendName).build();
+
+    store.persist(TRANSPORT_CONTEXT, oldestEvent);
+    store.persist(TRANSPORT_CONTEXT, otherEvent);
+    store.persist(TRANSPORT_CONTEXT, siblingEvent);
+
+    transport.send(Event.ofData("", event));
+    verify(mockBackend, times(1))
+        .send(eq(BackendRequest.create(Arrays.asList(oldestEvent, siblingEvent))));
+  }
+
+  @Test
+  public void upload_shouldBatchOldestEventType() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    SQLiteEventStore store = component.getEventStore();
+
+    String mockBackendName = generateBackendName();
+
+    String randomId = "myId";
+
+    EventInternal targetEvent = makeEventWithPseudonymousId(null);
+    EventInternal otherEvent = makeEventWithPseudonymousId(randomId);
+    EventInternal siblingEvent = makeEventWithPseudonymousId(randomId);
+
+    EventContext event = EventContext.builder().setPseudonymousId(randomId).build();
+
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+
+    Transport<String> transport =
+        runtime
+            .newFactory(new TestDestination(mockBackendName, null))
+            .getTransport(testTransport, String.class, Encoding.of("proto"), String::getBytes);
+
+    TransportContext TRANSPORT_CONTEXT =
+        TransportContext.builder().setBackendName(mockBackendName).build();
+
+    store.persist(TRANSPORT_CONTEXT, targetEvent);
+    store.persist(TRANSPORT_CONTEXT, otherEvent);
+    store.persist(TRANSPORT_CONTEXT, siblingEvent);
+
+    transport.send(Event.ofData("", event));
+    verify(mockBackend, times(1))
+        .send(eq(BackendRequest.create(Collections.singletonList(targetEvent))));
   }
 }
