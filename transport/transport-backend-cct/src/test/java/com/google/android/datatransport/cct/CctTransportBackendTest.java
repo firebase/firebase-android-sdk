@@ -211,11 +211,6 @@ public class CctTransportBackendTest {
             .withRequestBody(
                 matchingJsonPath(
                     String.format(
-                        "$[?(@.logRequest[0].logEvent[1].zwiebackCookieOverride == \"%s\")]",
-                        PSEUDONYMOUS_ID)))
-            .withRequestBody(
-                matchingJsonPath(
-                    String.format(
                         "$[?(@.logRequest[0].logEvent[1].experimentIds.clearBlob == \"%s\")]",
                         EXPERIMENT_IDS_CLEAR_BYTE64)))
             .withRequestBody(

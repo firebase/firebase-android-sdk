@@ -97,6 +97,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.SnapshotListenOptions, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.DocumentSnapshot>);
     method @NonNull public com.google.firebase.firestore.CollectionReference collection(@NonNull String);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> delete();
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.DocumentSnapshot> get();
@@ -318,6 +319,11 @@ package com.google.firebase.firestore {
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE}) public @interface IgnoreExtraProperties {
   }
 
+  public enum ListenSource {
+    enum_constant public static final com.google.firebase.firestore.ListenSource CACHE;
+    enum_constant public static final com.google.firebase.firestore.ListenSource DEFAULT;
+  }
+
   public interface ListenerRegistration {
     method public void remove();
   }
@@ -437,6 +443,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
+    method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.SnapshotListenOptions, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.AggregateQuery aggregate(@NonNull com.google.firebase.firestore.AggregateField, @NonNull com.google.firebase.firestore.AggregateField...);
     method @NonNull public com.google.firebase.firestore.AggregateQuery count();
     method @NonNull public com.google.firebase.firestore.Query endAt(@NonNull com.google.firebase.firestore.DocumentSnapshot);
@@ -508,6 +515,22 @@ package com.google.firebase.firestore {
     method @NonNull public static com.google.firebase.firestore.SetOptions mergeFieldPaths(@NonNull java.util.List<com.google.firebase.firestore.FieldPath>);
     method @NonNull public static com.google.firebase.firestore.SetOptions mergeFields(@NonNull java.util.List<java.lang.String>);
     method @NonNull public static com.google.firebase.firestore.SetOptions mergeFields(java.lang.String...);
+  }
+
+  public final class SnapshotListenOptions {
+    method @Nullable public android.app.Activity getActivity();
+    method @NonNull public java.util.concurrent.Executor getExecutor();
+    method @NonNull public com.google.firebase.firestore.MetadataChanges getMetadataChanges();
+    method @NonNull public com.google.firebase.firestore.ListenSource getSource();
+  }
+
+  public static class SnapshotListenOptions.Builder {
+    ctor public SnapshotListenOptions.Builder();
+    method @NonNull public com.google.firebase.firestore.SnapshotListenOptions build();
+    method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setActivity(@NonNull android.app.Activity);
+    method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setExecutor(@NonNull java.util.concurrent.Executor);
+    method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setMetadataChanges(@NonNull com.google.firebase.firestore.MetadataChanges);
+    method @NonNull public com.google.firebase.firestore.SnapshotListenOptions.Builder setSource(@NonNull com.google.firebase.firestore.ListenSource);
   }
 
   public class SnapshotMetadata {

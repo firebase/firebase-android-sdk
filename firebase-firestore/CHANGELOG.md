@@ -1,5 +1,5 @@
 # Unreleased
-
+* [feature] Enable snapshot listener option to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
 
 # 24.10.3
 * [fixed] Fixed the missing handling setter annotations bug introduced by [#5626](//github.com/firebase/firebase-android-sdk/pull/5626). [#5706](//github.com/firebase/firebase-android-sdk/pull/5706)
