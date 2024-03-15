@@ -61,11 +61,14 @@ interface FirebaseDataConnect : AutoCloseable {
   val settings: DataConnectSettings
     get() = TODO()
 
-  fun useEmulator(host: String = "10.0.2.2", port: Int = 9510): Unit = TODO()
+  fun useEmulator(host: String = "10.0.2.2", port: Int = 9510): Unit
 
-  override fun close()
-
-  override fun toString(): String
+  // Used for generated SDK to create instances of `QueryRef`.
+  fun <Data, Variables> query(
+    operationName: String,
+    responseDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>
+  ): QueryRef<Data, Variables>
 
   companion object {
     // Gets the instance associated with the default FirebaseApp and the given
@@ -148,14 +151,6 @@ interface QuerySubscription<Data, Variables> {
 
   val flow: Flow<QuerySubscriptionResult<Data, Variables>>
 }
-
-// This extension function on `FirebaseDataConnect` is the mechanism for the
-// generated SDK to create instances of `QueryRef`.
-fun <Data, Variables> FirebaseDataConnect.query(
-  operationName: String,
-  responseDeserializer: DeserializationStrategy<Data>,
-  variablesSerializer: SerializationStrategy<Variables>
-): QueryRef<Data, Variables> = TODO()
 
 open class DataConnectException(message: String, cause: Throwable? = null) :
   Exception(message, cause)
