@@ -23,7 +23,7 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup "crashlytics"
+  libraryGroup("crashlytics")
 
   testLab.enabled = true
   publishSources = true
