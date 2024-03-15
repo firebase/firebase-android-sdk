@@ -13,10 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.connectors
 
-import com.google.firebase.dataconnect.DataConnectException
-import com.google.firebase.dataconnect.DataConnectQueryResult
-import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.query
+import com.google.firebase.dataconnect.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
@@ -46,7 +43,7 @@ public class GetPost internal constructor(public val connector: PostsConnector) 
   @Serializable public data class Variables(val id: String)
 
   public data class FlowResult(
-    val result: DataConnectQueryResult<Data, Variables>,
+    val result: QueryResult<Data, Variables>,
     val exception: DataConnectException?
   )
 
@@ -59,6 +56,6 @@ public class GetPost internal constructor(public val connector: PostsConnector) 
 
 public suspend fun PostsConnector.getPost(
   id: String
-): DataConnectQueryResult<GetPost.Data, GetPost.Variables> = getPost.ref(id = id).execute()
+): QueryResult<GetPost.Data, GetPost.Variables> = getPost.ref(id = id).execute()
 
 public fun GetPost.flow(id: String): Flow<GetPost.FlowResult> = TODO()

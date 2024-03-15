@@ -27,7 +27,7 @@ import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonId
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
 import com.google.firebase.dataconnect.testutil.skipItemsWhere
-import com.google.firebase.dataconnect.testutil.successOrThrow
+import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -66,8 +66,10 @@ class QuerySubscriptionIntegrationTest {
     val querySubscription = schema.getPerson(id = personId).subscribe()
 
     querySubscription.resultFlow.test {
-      val result1A = awaitItem().successOrThrow()
-      assertWithMessage("result1A.name").that(result1A.result.data.person?.name).isEqualTo("Name1")
+      val result1A = awaitItem()
+      assertWithMessage("result1A.name")
+        .that(result1A.result.getOrThrow().data.person?.name)
+        .isEqualTo("Name1")
       assertWithMessage("lastResult1").that(querySubscription.lastResult).isEqualTo(result1A)
     }
 
@@ -76,8 +78,10 @@ class QuerySubscriptionIntegrationTest {
     querySubscription.resultFlow.test {
       val result1B = awaitItem()
       assertWithMessage("result1B").that(result1B).isEqualTo(querySubscription.lastResult)
-      val result2 = awaitItem().successOrThrow()
-      assertWithMessage("result2.name").that(result2.result.data.person?.name).isEqualTo("Name2")
+      val result2 = awaitItem()
+      assertWithMessage("result2.name")
+        .that(result2.result.getOrThrow().data.person?.name)
+        .isEqualTo("Name2")
       assertWithMessage("lastResult2").that(querySubscription.lastResult).isEqualTo(result2)
     }
   }
@@ -90,14 +94,14 @@ class QuerySubscriptionIntegrationTest {
 
     querySubscription.resultFlow.test {
       assertWithMessage("result1")
-        .that(awaitItem().successOrThrow().result.data.person?.name)
+        .that(awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("Name1")
 
       schema.updatePerson(id = personId, name = "Name2").execute()
       querySubscription.reload()
 
       assertWithMessage("result2")
-        .that(awaitItem().successOrThrow().result.data.person?.name)
+        .that(awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("Name2")
     }
   }
@@ -110,12 +114,12 @@ class QuerySubscriptionIntegrationTest {
 
     val result1 = querySubscription.resultFlow.first()
     assertWithMessage("result1")
-      .that(result1.successOrThrow().result.data.person?.name)
+      .that(result1.result.getOrThrow().data.person?.name)
       .isEqualTo("TestName")
 
     val result2 = querySubscription.resultFlow.first()
     assertWithMessage("result2")
-      .that(result2.successOrThrow().result.data.person?.name)
+      .that(result2.result.getOrThrow().data.person?.name)
       .isEqualTo("TestName")
   }
 
@@ -140,10 +144,10 @@ class QuerySubscriptionIntegrationTest {
       schema.updatePerson(id = personId, name = "NewTestName").execute()
       querySubscription2.resultFlow.test {
         assertWithMessage("result1")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("TestName")
         assertWithMessage("result1")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("NewTestName")
       }
     }
@@ -157,7 +161,7 @@ class QuerySubscriptionIntegrationTest {
     turbineScope {
       val fastFlow = querySubscription.resultFlow.testIn(backgroundScope)
       assertWithMessage("fastFlow")
-        .that(fastFlow.awaitItem().successOrThrow().result.data.person?.name)
+        .that(fastFlow.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("Name0")
 
       val slowFlowGate = MutableStateFlow(false)
@@ -166,7 +170,7 @@ class QuerySubscriptionIntegrationTest {
           .onEach { slowFlowGate.filter { it }.first() }
           .testIn(backgroundScope)
       assertWithMessage("fastFlow")
-        .that(fastFlow.awaitItem().successOrThrow().result.data.person?.name)
+        .that(fastFlow.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("Name0")
 
       repeat(3) {
@@ -176,32 +180,32 @@ class QuerySubscriptionIntegrationTest {
 
       fastFlow.run {
         assertWithMessage("fastFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("NewName0")
         assertWithMessage("fastFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("NewName1")
         assertWithMessage("fastFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("NewName2")
       }
 
       slowFlowGate.value = true
       slowFlow.run {
         assertWithMessage("slowFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("Name0")
         assertWithMessage("slowFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("Name0")
         assertWithMessage("slowFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("NewName0")
         assertWithMessage("slowFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("NewName1")
         assertWithMessage("slowFlow")
-          .that(awaitItem().successOrThrow().result.data.person?.name)
+          .that(awaitItem().result.getOrThrow().data.person?.name)
           .isEqualTo("NewName2")
       }
     }
@@ -225,13 +229,13 @@ class QuerySubscriptionIntegrationTest {
       querySubscription1.reload()
 
       assertWithMessage("flow1a")
-        .that(flow1a.awaitItem().successOrThrow().result.data.person?.name)
+        .that(flow1a.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("NewName")
       assertWithMessage("flow1b")
-        .that(flow1b.awaitItem().successOrThrow().result.data.person?.name)
+        .that(flow1b.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("NewName")
       assertWithMessage("flow2")
-        .that(flow2.awaitItem().successOrThrow().result.data.person?.name)
+        .that(flow2.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("NewName")
     }
   }
@@ -254,13 +258,13 @@ class QuerySubscriptionIntegrationTest {
       schema.getPerson(id = personId).execute()
 
       assertWithMessage("flow1a")
-        .that(flow1a.awaitItem().successOrThrow().result.data.person?.name)
+        .that(flow1a.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("NewName")
       assertWithMessage("flow1b")
-        .that(flow1b.awaitItem().successOrThrow().result.data.person?.name)
+        .that(flow1b.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("NewName")
       assertWithMessage("flow2")
-        .that(flow2.awaitItem().successOrThrow().result.data.person?.name)
+        .that(flow2.awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("NewName")
     }
   }
@@ -273,7 +277,7 @@ class QuerySubscriptionIntegrationTest {
       val querySubscription = schema.getPerson(id = personId).subscribe()
 
       querySubscription.resultFlow.test {
-        assertThat(awaitItem().successOrThrow().result.data.person?.name).isEqualTo("OriginalName")
+        assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("OriginalName")
         schema.updatePerson(id = personId, name = "NewName").execute()
 
         buildList {
@@ -297,7 +301,7 @@ class QuerySubscriptionIntegrationTest {
         assertWithMessage("results.size").that(results.size).isLessThan(1000)
         results.forEachIndexed { i, result ->
           assertWithMessage("results[$i]")
-            .that(result.successOrThrow().result.data.person?.name)
+            .that(result.result.getOrThrow().data.person?.name)
             .isEqualTo("NewName")
         }
       }
@@ -316,24 +320,22 @@ class QuerySubscriptionIntegrationTest {
 
     querySubscription.resultFlow.test {
       Pair(assertWithMessage("result1"), awaitItem()).let { (assert, result) ->
-        assert.that(result).isInstanceOf(QuerySubscriptionResult.Success::class.java)
-        result as QuerySubscriptionResult.Success
-        assert.that(result.result.ref).isSameInstanceAs(query)
-        assert.that(result.result.data.person?.name).isEqualTo("Name1")
+        assert.that(result.result.getOrThrow().ref).isSameInstanceAs(query)
+        assert.that(result.result.getOrThrow().data.person?.name).isEqualTo("Name1")
       }
       querySubscription.update(GetPersonQuery.Variables(person2Id))
       Pair(assertWithMessage("result2"), awaitItem()).let { (assert, result) ->
-        assert.that(result).isInstanceOf(QuerySubscriptionResult.Success::class.java)
-        result as QuerySubscriptionResult.Success
-        assert.that(result.result.ref.variables).isEqualTo(GetPersonQuery.Variables(person2Id))
-        assert.that(result.result.data.person?.name).isEqualTo("Name2")
+        assert
+          .that(result.result.getOrThrow().ref.variables)
+          .isEqualTo(GetPersonQuery.Variables(person2Id))
+        assert.that(result.result.getOrThrow().data.person?.name).isEqualTo("Name2")
       }
       querySubscription.update(GetPersonQuery.Variables(person3Id))
       Pair(assertWithMessage("result3"), awaitItem()).let { (assert, result) ->
-        assert.that(result).isInstanceOf(QuerySubscriptionResult.Success::class.java)
-        result as QuerySubscriptionResult.Success
-        assert.that(result.result.ref.variables).isEqualTo(GetPersonQuery.Variables(person3Id))
-        assert.that(result.result.data.person?.name).isEqualTo("Name3")
+        assert
+          .that(result.result.getOrThrow().ref.variables)
+          .isEqualTo(GetPersonQuery.Variables(person3Id))
+        assert.that(result.result.getOrThrow().data.person?.name).isEqualTo("Name3")
       }
     }
   }
@@ -348,17 +350,15 @@ class QuerySubscriptionIntegrationTest {
 
     Pair(assertWithMessage("lastResult"), querySubscription.lastResult).let { (assert, lastResult)
       ->
-      assert.that(lastResult).isInstanceOf(QuerySubscriptionResult.Success::class.java)
-      lastResult as QuerySubscriptionResult.Success
-      assert.that(lastResult!!.successOrThrow().result.data.person?.name).isEqualTo("Name1")
+      assert.that(lastResult!!.result.getOrThrow().data.person?.name).isEqualTo("Name1")
     }
 
     schema.updatePerson(id = personId, name = "Name2").execute()
     querySubscription.resultFlow.test {
       // Ensure that the first result comes from cache, followed by the updated result received from
       // the server when a reload was triggered by the flow's collection.
-      assertThat(awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name1")
-      assertThat(awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name2")
+      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name1")
+      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name2")
     }
   }
 
@@ -374,17 +374,15 @@ class QuerySubscriptionIntegrationTest {
 
     Pair(assertWithMessage("lastResult"), querySubscription.lastResult).let { (assert, lastResult)
       ->
-      assert.that(lastResult).isInstanceOf(QuerySubscriptionResult.Success::class.java)
-      lastResult as QuerySubscriptionResult.Success
-      assert.that(lastResult!!.successOrThrow().result.data.person?.name).isEqualTo("Name2")
+      assert.that(lastResult!!.result.getOrThrow().data.person?.name).isEqualTo("Name2")
     }
 
     schema.updatePerson(id = person2Id, name = "NewName2").execute()
     querySubscription.resultFlow.test {
       // Ensure that the first result comes from cache, followed by the updated result received from
       // the server when a reload was triggered by the flow's collection.
-      assertThat(awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name2")
-      assertThat(awaitItem().successOrThrow().result.data.person?.name).isEqualTo("NewName2")
+      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name2")
+      assertThat(awaitItem().result.getOrThrow().data.person?.name).isEqualTo("NewName2")
     }
   }
 
@@ -398,7 +396,7 @@ class QuerySubscriptionIntegrationTest {
     turbineScope {
       val querySubscription = noName2Query.subscribe()
       val flow = querySubscription.resultFlow.testIn(backgroundScope)
-      assertThat(flow.awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name1")
+      assertThat(flow.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name1")
 
       schema.updatePerson(id = personId, name = "Name2").execute()
       val result2 = querySubscription.runCatching { reload() }
@@ -406,7 +404,7 @@ class QuerySubscriptionIntegrationTest {
 
       schema.updatePerson(id = personId, name = "Name3").execute()
       querySubscription.reload()
-      assertThat(flow.awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name3")
+      assertThat(flow.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name3")
     }
   }
 
@@ -422,26 +420,26 @@ class QuerySubscriptionIntegrationTest {
 
     turbineScope {
       val flow1 = noName1Query.subscribe().resultFlow.testIn(backgroundScope)
-      assertThat(flow1.awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name0")
+      assertThat(flow1.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name0")
       val flow2 = noName2Query.subscribe().resultFlow.testIn(backgroundScope)
-      assertThat(flow1.awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name0")
+      assertThat(flow1.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name0")
 
       schema.updatePerson(id = personId, name = "Name1").execute()
       schema.getPerson(personId).execute()
       flow2
-        .skipItemsWhere { it.successOrThrow().result.data.person?.name == "Name0" }
-        .let { assertThat(it.successOrThrow().result.data.person?.name).isEqualTo("Name1") }
+        .skipItemsWhere { it.result.getOrThrow().data.person?.name == "Name0" }
+        .let { assertThat(it.result.getOrThrow().data.person?.name).isEqualTo("Name1") }
 
       schema.updatePerson(id = personId, name = "Name2").execute()
       schema.getPerson(personId).execute()
       flow1
-        .skipItemsWhere { it.successOrThrow().result.data.person?.name == "Name0" }
-        .let { assertThat(it.successOrThrow().result.data.person?.name).isEqualTo("Name2") }
+        .skipItemsWhere { it.result.getOrThrow().data.person?.name == "Name0" }
+        .let { assertThat(it.result.getOrThrow().data.person?.name).isEqualTo("Name2") }
 
       schema.updatePerson(id = personId, name = "Name3").execute()
       schema.getPerson(personId).execute()
-      assertThat(flow1.awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name3")
-      assertThat(flow2.awaitItem().successOrThrow().result.data.person?.name).isEqualTo("Name3")
+      assertThat(flow1.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name3")
+      assertThat(flow2.awaitItem().result.getOrThrow().data.person?.name).isEqualTo("Name3")
     }
   }
 
@@ -459,12 +457,12 @@ class QuerySubscriptionIntegrationTest {
 
     noName1Query.subscribe().resultFlow.test {
       assertWithMessage("result1")
-        .that(awaitItem().successOrThrow().result.data.person?.name)
+        .that(awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("OriginalName")
       schema.updatePerson(id = personId, name = "UltimateName").execute()
       schema.getPerson(personId).execute()
       assertWithMessage("result2")
-        .that(awaitItem().successOrThrow().result.data.person?.name)
+        .that(awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("UltimateName")
     }
   }
@@ -479,10 +477,10 @@ class QuerySubscriptionIntegrationTest {
 
     schema.getPerson(personId).subscribe().resultFlow.test {
       assertWithMessage("result1")
-        .that(awaitItem().successOrThrow().result.data.person?.name)
+        .that(awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("OriginalName")
       assertWithMessage("result2")
-        .that(awaitItem().successOrThrow().result.data.person?.name)
+        .that(awaitItem().result.getOrThrow().data.person?.name)
         .isEqualTo("UltimateName")
     }
   }

@@ -15,6 +15,7 @@ package com.google.firebase.dataconnect
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -65,7 +66,7 @@ internal class FirebaseDataConnectFactory(
     config: ConnectorConfig,
     settings: DataConnectSettings?
   ) =
-    FirebaseDataConnect(
+    FirebaseDataConnectImpl(
       context = context,
       app = firebaseApp,
       projectId = firebaseApp.options.projectId ?: "<unspecified project ID>",

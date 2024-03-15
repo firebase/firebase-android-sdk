@@ -1,8 +1,8 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.Logger
 import com.google.firebase.dataconnect.ReferenceCountedSet
-import com.google.firebase.dataconnect.debug
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.debug
 
 internal class TypedActiveQueries(val activeQuery: ActiveQuery, parentLogger: Logger) :
   ReferenceCountedSet<TypedActiveQueryKey<*>, TypedActiveQuery<*>>() {

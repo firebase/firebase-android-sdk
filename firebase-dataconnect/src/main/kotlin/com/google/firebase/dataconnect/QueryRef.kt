@@ -13,98 +13,12 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import java.util.Objects
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationStrategy
+public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
+  override suspend fun execute(): QueryResult<Data, Variables>
 
-public class QueryRef<Data, Variables>
-internal constructor(
-  dataConnect: FirebaseDataConnect,
-  operationName: String,
-  variables: Variables,
-  dataDeserializer: DeserializationStrategy<Data>,
-  variablesSerializer: SerializationStrategy<Variables>,
-) :
-  OperationRef<Data, Variables>(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = variablesSerializer,
-  ) {
-  override suspend fun execute(): DataConnectQueryResult<Data, Variables> =
-    dataConnect.lazyQueryManager.get().execute(this).let {
-      DataConnectQueryResult(it.ref.getOrThrow(), this)
-    }
-
-  public fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscription(this)
-
-  override fun hashCode(): Int = Objects.hash("QueryRef", super.hashCode())
-
-  override fun equals(other: Any?): Boolean = (other is QueryRef<*, *>) && super.equals(other)
-
-  override fun toString(): String =
-    "QueryRef(" +
-      "dataConnect=$dataConnect, " +
-      "operationName=$operationName, " +
-      "variables=$variables, " +
-      "dataDeserializer=$dataDeserializer, " +
-      "variablesSerializer=$variablesSerializer" +
-      ")"
+  public fun subscribe(): QuerySubscription<Data, Variables>
 }
 
-internal fun <NewData, Variables> QueryRef<*, Variables>.withDataDeserializer(
-  deserializer: DeserializationStrategy<NewData>
-): QueryRef<NewData, Variables> =
-  QueryRef(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = deserializer,
-    variablesSerializer = variablesSerializer
-  )
-
-internal fun <Data, Variables> QueryRef<Data, Variables>.withVariablesSerializer(
-  serializer: SerializationStrategy<Variables>
-): QueryRef<Data, Variables> =
-  QueryRef(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = serializer
-  )
-
-internal fun <Data, Variables> QueryRef<Data, Variables>.withVariables(
-  variables: Variables
-): QueryRef<Data, Variables> =
-  QueryRef(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = variablesSerializer
-  )
-
-internal fun <Data, NewVariables> QueryRef<Data, *>.withVariables(
-  variables: NewVariables,
-  serializer: SerializationStrategy<NewVariables>
-): QueryRef<Data, NewVariables> =
-  QueryRef(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = serializer
-  )
-
-internal fun <Data> QueryRef<Data, *>.withVariables(
-  variables: DataConnectUntypedVariables
-): MutationRef<Data, DataConnectUntypedVariables> =
-  MutationRef(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = DataConnectUntypedVariables
-  )
+public interface QueryResult<Data, Variables> : OperationResult<Data, Variables> {
+  override val ref: QueryRef<Data, Variables>
+}

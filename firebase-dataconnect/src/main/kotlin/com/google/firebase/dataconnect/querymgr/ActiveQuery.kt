@@ -1,14 +1,14 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.Logger
-import com.google.firebase.dataconnect.debug
+import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.debug
 import com.google.firebase.dataconnect.withAcquiredValue
 import com.google.protobuf.Struct
 import kotlinx.serialization.DeserializationStrategy
 
 internal class ActiveQuery(
-  val dataConnect: FirebaseDataConnect,
+  val dataConnect: FirebaseDataConnectImpl,
   val operationName: String,
   val variables: Struct,
   parentLogger: Logger

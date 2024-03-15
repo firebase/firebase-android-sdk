@@ -1,6 +1,7 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import kotlin.coroutines.coroutineContext
@@ -10,7 +11,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.*
 
 internal class QueryExecutor(
-  val dataConnect: FirebaseDataConnect,
+  val dataConnect: FirebaseDataConnectImpl,
   val operationName: String,
   val variables: Struct
 ) {

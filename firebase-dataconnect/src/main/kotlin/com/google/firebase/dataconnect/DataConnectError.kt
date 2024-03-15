@@ -13,41 +13,6 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import java.util.Objects
-
-public sealed class DataConnectResult<Data, Variables>
-protected constructor(public val data: Data) {
-  public abstract val ref: OperationRef<Data, Variables>
-}
-
-public class DataConnectQueryResult<Data, Variables>
-internal constructor(data: Data, query: QueryRef<Data, Variables>) :
-  DataConnectResult<Data, Variables>(data = data) {
-
-  override val ref: QueryRef<Data, Variables> = query
-
-  override fun hashCode(): Int = Objects.hash("Query", data, ref)
-
-  override fun equals(other: Any?): Boolean =
-    other is DataConnectQueryResult<*, *> && other.data == data && other.ref == ref
-
-  override fun toString(): String = "DataConnectQueryResult(data=$data, query=$ref)"
-}
-
-public class DataConnectMutationResult<Data, Variables>
-internal constructor(data: Data, mutation: MutationRef<Data, Variables>) :
-  DataConnectResult<Data, Variables>(data = data) {
-
-  override val ref: MutationRef<Data, Variables> = mutation
-
-  override fun hashCode(): Int = Objects.hash("Mutation", data, ref)
-
-  override fun equals(other: Any?): Boolean =
-    other is DataConnectMutationResult<*, *> && other.data == data && other.ref == ref
-
-  override fun toString(): String = "DataConnectMutationResult(data=$data, mutation=$ref)"
-}
-
 // See https://spec.graphql.org/draft/#sec-Errors
 internal class DataConnectError private constructor(private val impl: Impl) {
 

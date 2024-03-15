@@ -15,8 +15,6 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.mutation
-import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
@@ -48,7 +46,9 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     get() =
       dataConnect.mutation(
         operationName = "createDefaultPerson",
-        dataDeserializer = serializer<CreateDefaultPersonMutation.Data>()
+        variables = Unit,
+        dataDeserializer = serializer<CreateDefaultPersonMutation.Data>(),
+        variablesSerializer = serializer<Unit>()
       )
 
   object CreatePersonMutation {
@@ -187,7 +187,9 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     get() =
       dataConnect.query(
         operationName = "getNoPeople",
-        dataDeserializer = serializer<GetNoPeopleQuery.Data>()
+        variables = Unit,
+        dataDeserializer = serializer<GetNoPeopleQuery.Data>(),
+        variablesSerializer = serializer<Unit>()
       )
 
   object GetPeopleWithHardcodedNameQuery {
@@ -209,14 +211,18 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     get() =
       dataConnect.query(
         operationName = "getPeopleWithHardcodedName",
-        dataDeserializer = serializer<GetPeopleWithHardcodedNameQuery.Data>()
+        variables = Unit,
+        dataDeserializer = serializer<GetPeopleWithHardcodedNameQuery.Data>(),
+        variablesSerializer = serializer<Unit>()
       )
 
   val createPeopleWithHardcodedName
     get() =
       dataConnect.mutation(
         operationName = "createPeopleWithHardcodedName",
-        dataDeserializer = serializer<Unit>()
+        variables = Unit,
+        dataDeserializer = serializer<Unit>(),
+        variablesSerializer = serializer<Unit>()
       )
 
   companion object {

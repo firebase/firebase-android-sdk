@@ -1,12 +1,12 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.Logger
 import com.google.firebase.dataconnect.ReferenceCountedSet
-import com.google.firebase.dataconnect.debug
+import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.debug
 import com.google.firebase.dataconnect.toCompactString
 
-internal class ActiveQueries(val dataConnect: FirebaseDataConnect, parentLogger: Logger) :
+internal class ActiveQueries(val dataConnect: FirebaseDataConnectImpl, parentLogger: Logger) :
   ReferenceCountedSet<ActiveQueryKey, ActiveQuery>() {
 
   private val logger =

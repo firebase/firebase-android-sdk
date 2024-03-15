@@ -13,49 +13,29 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 
-public abstract class OperationRef<Data, Variables>
-internal constructor(
-  public val dataConnect: FirebaseDataConnect,
-  public val operationName: String,
-  public val variables: Variables,
-  public val dataDeserializer: DeserializationStrategy<Data>,
-  public val variablesSerializer: SerializationStrategy<Variables>,
-) {
-  public abstract suspend fun execute(): DataConnectResult<Data, Variables>
+public interface OperationRef<Data, Variables> {
+  public val dataConnect: FirebaseDataConnect
+  public val operationName: String
+  public val variables: Variables
+  public val dataDeserializer: DeserializationStrategy<Data>
+  public val variablesSerializer: SerializationStrategy<Variables>
 
-  override fun hashCode(): Int =
-    Objects.hash(dataConnect, operationName, variables, dataDeserializer, variablesSerializer)
+  public suspend fun execute(): OperationResult<Data, Variables>
+}
 
-  override fun equals(other: Any?): Boolean =
-    (other as? OperationRef<*, *>)?.let {
-      it.dataConnect == dataConnect &&
-        it.operationName == operationName &&
-        it.variables == variables &&
-        it.dataDeserializer == dataDeserializer &&
-        it.variablesSerializer == variablesSerializer
-    }
-      ?: false
-
-  override fun toString(): String =
-    "OperationRef(" +
-      "dataConnect=$dataConnect, " +
-      "operationName=$operationName, " +
-      "variables=$variables, " +
-      "dataDeserializer=$dataDeserializer, " +
-      "variablesSerializer=$variablesSerializer" +
-      ")"
+public interface OperationResult<Data, Variables> {
+  public val data: Data
+  public val ref: OperationRef<Data, Variables>
 }
 
 internal inline fun <Data, reified NewVariables> MutationRef<Data, *>.withVariables(
   variables: NewVariables
 ): MutationRef<Data, NewVariables> =
-  MutationRef(
-    dataConnect = dataConnect,
+  dataConnect.mutation(
     operationName = operationName,
     variables = variables,
     dataDeserializer = dataDeserializer,
@@ -65,8 +45,7 @@ internal inline fun <Data, reified NewVariables> MutationRef<Data, *>.withVariab
 internal inline fun <Data, reified NewVariables> QueryRef<Data, *>.withVariables(
   variables: NewVariables
 ): QueryRef<Data, NewVariables> =
-  QueryRef(
-    dataConnect = dataConnect,
+  dataConnect.query(
     operationName = operationName,
     variables = variables,
     dataDeserializer = dataDeserializer,

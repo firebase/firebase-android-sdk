@@ -15,8 +15,6 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.mutation
-import com.google.firebase.dataconnect.query
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
@@ -136,7 +134,9 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     get() =
       dataConnect.query(
         operationName = "getAllPrimitiveLists",
-        dataDeserializer = serializer<GetAllPrimitiveListsQuery.Data>()
+        variables = Unit,
+        dataDeserializer = serializer<GetAllPrimitiveListsQuery.Data>(),
+        variablesSerializer = serializer<Unit>()
       )
 
   object CreateFarmerMutation {

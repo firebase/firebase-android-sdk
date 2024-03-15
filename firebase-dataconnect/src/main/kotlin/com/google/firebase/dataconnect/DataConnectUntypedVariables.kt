@@ -14,33 +14,31 @@
 package com.google.firebase.dataconnect
 
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Encoder
 
-public class DataConnectUntypedVariables
-public constructor(public val variables: Map<String, Any?>) {
-  public constructor(vararg pairs: Pair<String, Any?>) : this(mapOf(*pairs))
-  public constructor(
-    builderAction: MutableMap<String, Any?>.() -> Unit
-  ) : this(buildMap(builderAction))
+internal class DataConnectUntypedVariables(val variables: Map<String, Any?>) {
 
-  override fun equals(other: Any?): Boolean =
+  constructor(vararg pairs: Pair<String, Any?>) : this(mapOf(*pairs))
+
+  constructor(builderAction: MutableMap<String, Any?>.() -> Unit) : this(buildMap(builderAction))
+
+  override fun equals(other: Any?) =
     (other is DataConnectUntypedVariables) && other.variables == variables
 
-  override fun hashCode(): Int = variables.hashCode()
+  override fun hashCode() = variables.hashCode()
 
-  override fun toString(): String = variables.toString()
+  override fun toString() = variables.toString()
 
-  public companion object Serializer : SerializationStrategy<DataConnectUntypedVariables> {
-    override val descriptor: SerialDescriptor
+  companion object Serializer : SerializationStrategy<DataConnectUntypedVariables> {
+    override val descriptor
       get() = unsupported()
 
-    override fun serialize(encoder: Encoder, value: DataConnectUntypedVariables): Nothing =
-      unsupported()
+    override fun serialize(encoder: Encoder, value: DataConnectUntypedVariables) = unsupported()
 
     private fun unsupported(): Nothing =
       throw UnsupportedOperationException(
-        "this SerializationStrategy cannot actually be used; it is merely a placeholder"
+        "The ${Serializer::class.qualifiedName} class cannot actually be used; " +
+          "it is merely a placeholder"
       )
   }
 }

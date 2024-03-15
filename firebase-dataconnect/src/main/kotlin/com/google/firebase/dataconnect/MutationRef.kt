@@ -13,72 +13,24 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
-public class MutationRef<Data, Variables>
-internal constructor(
-  dataConnect: FirebaseDataConnect,
-  operationName: String,
-  variables: Variables,
-  dataDeserializer: DeserializationStrategy<Data>,
-  variablesSerializer: SerializationStrategy<Variables>,
-) :
-  OperationRef<Data, Variables>(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = variablesSerializer,
-  ) {
-  override suspend fun execute(): DataConnectMutationResult<Data, Variables> =
-    dataConnect.executeMutation(this)
+public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
+  override suspend fun execute(): MutationResult<Data, Variables>
+}
 
-  override fun hashCode(): Int = Objects.hash("MutationRef", super.hashCode())
-
-  override fun equals(other: Any?): Boolean = (other is MutationRef<*, *>) && super.equals(other)
-
-  override fun toString(): String =
-    "MutationRef(" +
-      "dataConnect=$dataConnect, " +
-      "operationName=$operationName, " +
-      "variables=$variables, " +
-      "dataDeserializer=$dataDeserializer, " +
-      "variablesSerializer=$variablesSerializer" +
-      ")"
+public interface MutationResult<Data, Variables> : OperationResult<Data, Variables> {
+  override val ref: MutationRef<Data, Variables>
 }
 
 internal fun <NewData, Variables> MutationRef<*, Variables>.withDataDeserializer(
   deserializer: DeserializationStrategy<NewData>
 ): MutationRef<NewData, Variables> =
-  MutationRef(
-    dataConnect = dataConnect,
+  dataConnect.mutation(
     operationName = operationName,
     variables = variables,
     dataDeserializer = deserializer,
-    variablesSerializer = variablesSerializer
-  )
-
-internal fun <Data, Variables> MutationRef<Data, Variables>.withVariablesSerializer(
-  serializer: SerializationStrategy<Variables>
-): MutationRef<Data, Variables> =
-  MutationRef(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = serializer
-  )
-
-internal fun <Data, Variables> MutationRef<Data, Variables>.withVariables(
-  variables: Variables
-): MutationRef<Data, Variables> =
-  MutationRef(
-    dataConnect = dataConnect,
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer
   )
 
@@ -86,8 +38,7 @@ internal fun <Data, NewVariables> MutationRef<Data, *>.withVariables(
   variables: NewVariables,
   serializer: SerializationStrategy<NewVariables>
 ): MutationRef<Data, NewVariables> =
-  MutationRef(
-    dataConnect = dataConnect,
+  dataConnect.mutation(
     operationName = operationName,
     variables = variables,
     dataDeserializer = dataDeserializer,
@@ -97,8 +48,7 @@ internal fun <Data, NewVariables> MutationRef<Data, *>.withVariables(
 internal fun <Data> MutationRef<Data, *>.withVariables(
   variables: DataConnectUntypedVariables
 ): MutationRef<Data, DataConnectUntypedVariables> =
-  MutationRef(
-    dataConnect = dataConnect,
+  dataConnect.mutation(
     operationName = operationName,
     variables = variables,
     dataDeserializer = dataDeserializer,

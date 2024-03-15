@@ -14,9 +14,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.ConnectorConfig
-import com.google.firebase.dataconnect.DataConnectSettings
-import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.*
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 

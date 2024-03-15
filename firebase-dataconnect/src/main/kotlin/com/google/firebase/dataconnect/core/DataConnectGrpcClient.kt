@@ -11,10 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.DataConnectError
+import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.DataConnectUntypedData
+import com.google.firebase.dataconnect.SuspendingLazy
+import com.google.firebase.dataconnect.decodeFromStruct
+import com.google.firebase.dataconnect.toCompactString
+import com.google.firebase.dataconnect.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value

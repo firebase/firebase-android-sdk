@@ -14,9 +14,7 @@
 package com.google.firebase.dataconnect.connectors
 
 import com.google.firebase.FirebaseApp
-import com.google.firebase.dataconnect.ConnectorConfig
-import com.google.firebase.dataconnect.DataConnectSettings
-import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.*
 import java.util.WeakHashMap
 
 public class PostsConnector private constructor(public val dataConnect: FirebaseDataConnect) {

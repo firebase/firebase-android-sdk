@@ -1,10 +1,10 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.Logger
 import com.google.firebase.dataconnect.SequencedReference
 import com.google.firebase.dataconnect.SuspendingLazy
-import com.google.firebase.dataconnect.deserialize
-import com.google.firebase.dataconnect.warn
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.deserialize
+import com.google.firebase.dataconnect.core.warn
 import java.util.Objects
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy

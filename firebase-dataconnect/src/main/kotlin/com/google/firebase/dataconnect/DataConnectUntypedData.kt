@@ -15,28 +15,30 @@ package com.google.firebase.dataconnect
 
 import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 
-internal class DataConnectUntypedData
-internal constructor(val data: Map<String, Any?>?, val errors: List<DataConnectError>) {
+internal class DataConnectUntypedData(
+  val data: Map<String, Any?>?,
+  val errors: List<DataConnectError>
+) {
 
-  override fun equals(other: Any?): Boolean =
+  override fun equals(other: Any?) =
     (other is DataConnectUntypedData) && other.data == data && other.errors == errors
 
-  override fun hashCode(): Int = Objects.hash(data, errors)
+  override fun hashCode() = Objects.hash(data, errors)
 
-  override fun toString(): String = "DataConnectUntypedData(data=$data, errors=$errors)"
+  override fun toString() = "DataConnectUntypedData(data=$data, errors=$errors)"
 
   companion object Deserializer : DeserializationStrategy<DataConnectUntypedData> {
-    override val descriptor: SerialDescriptor
+    override val descriptor
       get() = unsupported()
 
-    override fun deserialize(decoder: Decoder): DataConnectUntypedData = unsupported()
+    override fun deserialize(decoder: Decoder) = unsupported()
 
     private fun unsupported(): Nothing =
       throw UnsupportedOperationException(
-        "this DeserializationStrategy cannot actually be used; it is merely a placeholder"
+        "The ${Deserializer::class.qualifiedName} class cannot actually be used; " +
+          "it is merely a placeholder"
       )
   }
 }

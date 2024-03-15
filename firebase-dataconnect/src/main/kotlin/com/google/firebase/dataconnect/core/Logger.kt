@@ -11,17 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.core
 
 import android.util.Log
+import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
-
-public enum class LogLevel {
-  DEBUG,
-  WARN,
-  NONE,
-}
 
 @Volatile internal var logLevel: LogLevel = LogLevel.WARN
 

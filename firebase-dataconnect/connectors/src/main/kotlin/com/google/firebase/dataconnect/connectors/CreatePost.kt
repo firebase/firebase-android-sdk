@@ -13,9 +13,7 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.connectors
 
-import com.google.firebase.dataconnect.DataConnectMutationResult
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.mutation
+import com.google.firebase.dataconnect.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
@@ -49,5 +47,4 @@ public class CreatePost internal constructor(public val connector: PostsConnecto
 public suspend fun PostsConnector.createPost(
   id: String,
   content: String
-): DataConnectMutationResult<Unit, CreatePost.Variables> =
-  createPost.ref(id = id, content = content).execute()
+): MutationResult<Unit, CreatePost.Variables> = createPost.ref(id = id, content = content).execute()

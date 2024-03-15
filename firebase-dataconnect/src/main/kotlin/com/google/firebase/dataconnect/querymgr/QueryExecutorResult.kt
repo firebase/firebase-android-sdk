@@ -1,6 +1,7 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import java.util.Objects
 
 internal sealed class QueryExecutorResult(val queryExecutor: QueryExecutor, val requestId: String) {

@@ -1,7 +1,7 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.Logger
 import com.google.firebase.dataconnect.SequencedReference
+import com.google.firebase.dataconnect.core.Logger
 import kotlinx.serialization.DeserializationStrategy
 
 internal class TypedActiveQuery<Data>(
