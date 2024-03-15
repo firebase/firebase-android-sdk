@@ -16,7 +16,6 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import static android.os.Build.VERSION_CODES.LOLLIPOP;
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.mock;
 
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
@@ -24,7 +23,9 @@ import android.content.Context;
 import android.os.PersistableBundle;
 import android.util.Base64;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -251,7 +252,17 @@ public class JobInfoSchedulerTest {
   @Test
   public void schedule_shouldExcludeThePriorityDelta_whenForcedAndPending() {
     TransportContext context = TransportContext.builder().setBackendName("backend1").build();
-    store.persist(context, mock(EventInternal.class));
+    EventInternal event =
+        EventInternal.builder()
+            .setEventMillis(1)
+            .setUptimeMillis(1)
+            .setTransportName("")
+            .setEncodedPayload(
+                new EncodedPayload(
+                    Encoding.of("proto"), "World".getBytes(Charset.defaultCharset())))
+            .build();
+
+    store.persist(context, event);
     scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
 
     assertThat(jobScheduler.getAllPendingJobs()).hasSize(1);
