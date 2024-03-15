@@ -17,6 +17,7 @@ import android.annotation.SuppressLint
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.dataconnect.core.FirebaseDataConnectFactory
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.DeserializationStrategy

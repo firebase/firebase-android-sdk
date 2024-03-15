@@ -9,7 +9,7 @@
     <application>
       <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
         <meta-data
-          android:name="com.google.firebase.components:com.google.firebase.dataconnect.FirebaseDataConnectRegistrar"
+          android:name="com.google.firebase.components:com.google.firebase.dataconnect.core.FirebaseDataConnectRegistrar"
           android:value="com.google.firebase.components.ComponentRegistrar"
           />
       </service>
