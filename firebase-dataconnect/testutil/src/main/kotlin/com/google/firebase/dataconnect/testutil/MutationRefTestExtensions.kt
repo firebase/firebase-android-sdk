@@ -1,31 +1,31 @@
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.*
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 
-fun <Data, Variables, NewData> QueryRef<Data, Variables>.withDataDeserializer(
-  newDataDeserializer: DeserializationStrategy<NewData>
-): QueryRef<NewData, Variables> =
-  dataConnect.query(
+fun <NewData, Variables> MutationRef<*, Variables>.withDataDeserializer(
+  deserializer: DeserializationStrategy<NewData>
+): MutationRef<NewData, Variables> =
+  dataConnect.mutation(
     operationName = operationName,
     variables = variables,
-    dataDeserializer = newDataDeserializer,
+    dataDeserializer = deserializer,
     variablesSerializer = variablesSerializer
   )
 
-fun <Data, NewVariables> QueryRef<Data, *>.withVariables(
+fun <Data, NewVariables> MutationRef<Data, *>.withVariables(
   variables: NewVariables,
   serializer: SerializationStrategy<NewVariables>
-): QueryRef<Data, NewVariables> =
-  dataConnect.query(
+): MutationRef<Data, NewVariables> =
+  dataConnect.mutation(
     operationName = operationName,
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = serializer
   )
 
-inline fun <Data, reified NewVariables> QueryRef<Data, *>.withVariables(
+inline fun <Data, reified NewVariables> MutationRef<Data, *>.withVariables(
   variables: NewVariables
-): QueryRef<Data, NewVariables> = withVariables(variables, serializer())
+): MutationRef<Data, NewVariables> = withVariables(variables, serializer())

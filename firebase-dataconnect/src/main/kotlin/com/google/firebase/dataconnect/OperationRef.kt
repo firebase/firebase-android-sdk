@@ -15,7 +15,6 @@ package com.google.firebase.dataconnect
 
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.serializer
 
 public interface OperationRef<Data, Variables> {
   public val dataConnect: FirebaseDataConnect
@@ -31,23 +30,3 @@ public interface OperationResult<Data, Variables> {
   public val data: Data
   public val ref: OperationRef<Data, Variables>
 }
-
-internal inline fun <Data, reified NewVariables> MutationRef<Data, *>.withVariables(
-  variables: NewVariables
-): MutationRef<Data, NewVariables> =
-  dataConnect.mutation(
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = serializer()
-  )
-
-internal inline fun <Data, reified NewVariables> QueryRef<Data, *>.withVariables(
-  variables: NewVariables
-): QueryRef<Data, NewVariables> =
-  dataConnect.query(
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = serializer()
-  )

@@ -13,9 +13,6 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationStrategy
-
 public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
   override suspend fun execute(): MutationResult<Data, Variables>
 }
@@ -23,34 +20,3 @@ public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
 public interface MutationResult<Data, Variables> : OperationResult<Data, Variables> {
   override val ref: MutationRef<Data, Variables>
 }
-
-internal fun <NewData, Variables> MutationRef<*, Variables>.withDataDeserializer(
-  deserializer: DeserializationStrategy<NewData>
-): MutationRef<NewData, Variables> =
-  dataConnect.mutation(
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = deserializer,
-    variablesSerializer = variablesSerializer
-  )
-
-internal fun <Data, NewVariables> MutationRef<Data, *>.withVariables(
-  variables: NewVariables,
-  serializer: SerializationStrategy<NewVariables>
-): MutationRef<Data, NewVariables> =
-  dataConnect.mutation(
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = serializer
-  )
-
-internal fun <Data> MutationRef<Data, *>.withVariables(
-  variables: DataConnectUntypedVariables
-): MutationRef<Data, DataConnectUntypedVariables> =
-  dataConnect.mutation(
-    operationName = operationName,
-    variables = variables,
-    dataDeserializer = dataDeserializer,
-    variablesSerializer = DataConnectUntypedVariables
-  )
