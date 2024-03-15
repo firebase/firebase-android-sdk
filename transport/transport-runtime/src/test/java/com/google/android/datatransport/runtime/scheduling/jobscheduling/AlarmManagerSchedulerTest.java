@@ -20,7 +20,6 @@ import static org.mockito.AdditionalMatchers.gt;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
@@ -32,7 +31,9 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Base64;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
+import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -199,7 +200,17 @@ public class AlarmManagerSchedulerTest {
   @Test
   public void schedule_shouldExcludeThePriorityDelta_whenForcedAndPending() {
     TransportContext context = TransportContext.builder().setBackendName("backend1").build();
-    store.persist(context, mock(EventInternal.class));
+    EventInternal event =
+        EventInternal.builder()
+            .setEventMillis(1)
+            .setUptimeMillis(1)
+            .setTransportName("")
+            .setEncodedPayload(
+                new EncodedPayload(
+                    Encoding.of("proto"), "World".getBytes(Charset.defaultCharset())))
+            .build();
+
+    store.persist(context, event);
     scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
 
     verify(alarmManager, times(1))
