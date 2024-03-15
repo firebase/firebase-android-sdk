@@ -1,10 +1,10 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.deserialize
 import com.google.firebase.dataconnect.core.warn
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SuspendingLazy
 import java.util.Objects
 import kotlinx.coroutines.*
 import kotlinx.serialization.DeserializationStrategy
@@ -83,7 +83,7 @@ internal sealed class ActiveQueryResult<Data>(
 }
 
 internal suspend fun <Data> ActiveQueryResult<Data>.toSequencedDataResult():
-    SequencedReference<Result<Data>> =
+  SequencedReference<Result<Data>> =
   SequencedReference(
     queryExecutorResult.sequenceNumber,
     when (this) {

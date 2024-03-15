@@ -14,10 +14,10 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.debug
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.withAcquiredValue
 
 internal class QueryManager(val dataConnect: FirebaseDataConnectImpl) {

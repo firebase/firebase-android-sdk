@@ -54,7 +54,7 @@ internal fun SequencedReference<QueryExecutorResult>.successOrNull():
   this.asTypeOrNull<QueryExecutorResult, QueryExecutorResult.Success>()
 
 internal fun SequencedReference<QueryExecutorResult>.successOrThrow():
-    SequencedReference<QueryExecutorResult.Success> =
+  SequencedReference<QueryExecutorResult.Success> =
   this.asTypeOrThrow<QueryExecutorResult, QueryExecutorResult.Success>()
 
 internal fun SequencedReference<QueryExecutorResult>.failureOrNull():
@@ -62,5 +62,5 @@ internal fun SequencedReference<QueryExecutorResult>.failureOrNull():
   this.asTypeOrNull<QueryExecutorResult, QueryExecutorResult.Failure>()
 
 internal fun SequencedReference<QueryExecutorResult>.failureOrThrow():
-    SequencedReference<QueryExecutorResult.Failure> =
+  SequencedReference<QueryExecutorResult.Failure> =
   this.asTypeOrThrow<QueryExecutorResult, QueryExecutorResult.Failure>()

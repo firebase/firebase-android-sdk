@@ -72,7 +72,7 @@ internal inline fun <T : Any, reified U : T> SequencedReference<T>.asTypeOrNull(
   }
 
 internal inline fun <T : Any, reified U : T> SequencedReference<T>.asTypeOrThrow():
-    SequencedReference<U> =
+  SequencedReference<U> =
   asTypeOrNull()
     ?: throw IllegalStateException(
       "expected ref to have type ${U::class.qualifiedName}, " +
