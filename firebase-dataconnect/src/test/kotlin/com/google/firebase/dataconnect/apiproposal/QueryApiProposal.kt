@@ -115,7 +115,7 @@ interface OperationRef<Data, Variables> {
 
   val variablesSerializer: SerializationStrategy<Variables>
 
-  suspend fun execute(): DataConnectResult<Data, Variables>
+  suspend fun execute(): OperationResult<Data, Variables>
 
   override fun hashCode(): Int
   override fun equals(other: Any?): Boolean
@@ -125,7 +125,7 @@ interface OperationRef<Data, Variables> {
 interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
   // Override the return type from DataConnectResult to DataConnectQueryResult,
   // which is a subclass of DataConnectResult.
-  override suspend fun execute(): DataConnectQueryResult<Data, Variables> = TODO()
+  override suspend fun execute(): QueryResult<Data, Variables> = TODO()
 
   fun subscribe(): QuerySubscription<Data, Variables> = TODO()
 }
@@ -136,7 +136,7 @@ interface QuerySubscription<Data, Variables> {
   // Alternative considered: add `lastResult`. The problem is, what do we do with this value if the
   // variables are changed via a call to update()? Do we clear it? Or do we leave it there even
   // though it came from a request with potentially-different variables?
-  val lastResult: DataConnectResult<Data, Variables>
+  val lastResult: OperationResult<Data, Variables>
 
   // Alternative considered: Return `Deferred<Result<T>>` so that customer knows when the reload
   // completes. For example, suppose a UI has a "Reload" button and when the customer clicks it they
@@ -157,9 +157,10 @@ fun <Data, Variables> FirebaseDataConnect.query(
   variablesSerializer: SerializationStrategy<Variables>
 ): QueryRef<Data, Variables> = TODO()
 
-open class DataConnectException internal constructor(message: String) : Exception(message)
+open class DataConnectException(message: String, cause: Throwable? = null) :
+  Exception(message, cause)
 
-interface DataConnectResult<Data, Variables> {
+interface OperationResult<Data, Variables> {
   val data: Data
 
   val ref: OperationRef<Data, Variables>
@@ -169,41 +170,14 @@ interface DataConnectResult<Data, Variables> {
   override fun toString(): String
 }
 
-interface DataConnectQueryResult<Data, Variables> : DataConnectResult<Data, Variables> {
+interface QueryResult<Data, Variables> : OperationResult<Data, Variables> {
   // Type of `ref` is narrowed from `Reference` to `QueryRef`.
   override val ref: QueryRef<Data, Variables>
 }
 
-sealed class QuerySubscriptionResult<Data, Variables> protected constructor() {
-  val subscription: QuerySubscription<Data, Variables> = TODO()
-
-  override fun hashCode(): Int = TODO()
-
-  override fun equals(other: Any?): Boolean = TODO()
-
-  override fun toString(): String = TODO()
-
-  class Success<Data, Variables> internal constructor() :
-    QuerySubscriptionResult<Data, Variables>() {
-    val result: DataConnectQueryResult<Data, Variables> = TODO()
-
-    override fun hashCode(): Int = TODO()
-
-    override fun equals(other: Any?): Boolean = TODO()
-
-    override fun toString(): String = TODO()
-  }
-
-  class Failure<Data, Variables> internal constructor() :
-    QuerySubscriptionResult<Data, Variables>() {
-    val exception: DataConnectException = TODO()
-
-    override fun hashCode(): Int = TODO()
-
-    override fun equals(other: Any?): Boolean = TODO()
-
-    override fun toString(): String = TODO()
-  }
+interface QuerySubscriptionResult<Data, Variables> {
+  val query: QueryRef<Data, Variables>
+  val result: Result<QueryResult<Data, Variables>>
 }
 
 // See https://spec.graphql.org/October2021/#sec-Errors
@@ -245,7 +219,7 @@ typealias GetPostQueryRef = QueryRef<GetPostQuery.Data, GetPostQuery.Variables>
 
 typealias GetPostQuerySubscription = QuerySubscription<GetPostQuery.Data, GetPostQuery.Variables>
 
-typealias GetPostQueryResult = DataConnectQueryResult<GetPostQuery.Data, GetPostQuery.Variables>
+typealias GetPostQueryResult = QueryResult<GetPostQuery.Data, GetPostQuery.Variables>
 
 class GetPostQuery internal constructor() {
 
@@ -283,15 +257,15 @@ suspend fun thirdPartyAppInit() {
 
   dataConnect.useEmulator("10.0.2.2", 9000)
 
-  var ref: GetPostQueryRef =
+  val ref: GetPostQueryRef =
     dataConnect.PostsConnector.getPost.ref(GetPostQuery.Variables(id = "id"))
-  var anotherRef: GetPostQueryRef = dataConnect.PostsConnector.getPost.ref(id = "id")
-  var oneTimeFetch: GetPostQueryResult = ref.execute()
-  var listerner: GetPostQuerySubscription = ref.subscribe()
+  val anotherRef: GetPostQueryRef = dataConnect.PostsConnector.getPost.ref(id = "id")
+  val oneTimeFetch: GetPostQueryResult = ref.execute()
+  val listerner: GetPostQuerySubscription = ref.subscribe()
 
-  var anotherOneTimeFetch: GetPostQueryResult =
+  val anotherOneTimeFetch: GetPostQueryResult =
     dataConnect.PostsConnector.getPost.execute(id = "id")
-  var anotherListerner: GetPostQuerySubscription =
+  val anotherListerner: GetPostQuerySubscription =
     dataConnect.PostsConnector.getPost.subscribe(id = "id")
 }
 
@@ -344,11 +318,11 @@ private class MainActivity : Activity() {
           querySubscriptionFlow =
             activityCoroutineScope.launch {
               subscriber.flow.collect {
-                when (it) {
-                  is QuerySubscriptionResult.Success ->
-                    showPostContent(subscriber.query.variables.id, it.result)
-                  is QuerySubscriptionResult.Failure ->
-                    showError(subscriber.query.variables.id, it.exception)
+                val result = it.result
+                if (result.isSuccess) {
+                  showPostContent(subscriber.query.variables.id, it.result.getOrNull()?.data)
+                } else if (result.isFailure) {
+                  showError(subscriber.query.variables.id, it.result.exceptionOrNull())
                 }
               }
             }
@@ -364,7 +338,7 @@ private class MainActivity : Activity() {
     activityCoroutineScope.launch {
       val id = getIdFromTextView()
       try {
-        showPostContent(id, dataConnect.PostsConnector.getPost.execute(id = id))
+        showPostContent(id, dataConnect.PostsConnector.getPost.execute(id = id).data)
       } catch (e: Exception) {
         showError(id, e)
       }
@@ -377,6 +351,6 @@ private class MainActivity : Activity() {
   }
 
   fun getIdFromTextView(): String = TODO()
-  fun showError(postId: String, exception: Throwable): Unit = TODO()
-  fun showPostContent(postId: String, post: GetPostQueryResult): Unit = TODO()
+  fun showError(postId: String, exception: Throwable?): Unit = TODO()
+  fun showPostContent(postId: String, post: GetPostQuery.Data?): Unit = TODO()
 }
