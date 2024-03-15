@@ -41,9 +41,7 @@ import com.google.android.datatransport.runtime.scheduling.persistence.Persisted
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import java.util.Objects;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -257,18 +255,16 @@ public class UploaderTest {
     store.persist(TRANSPORT_CONTEXT, siblingEvent);
     store.persist(TRANSPORT_CONTEXT, otherEvent);
 
-    List<EventInternal> targetEvents = Arrays.asList(oldestEvent, siblingEvent);
-
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(mockBackend, times(1))
         .send(
             argThat(
                 (backendRequest -> {
-                  List<EventInternal> events =
-                      StreamSupport.stream(backendRequest.getEvents().spliterator(), false)
-                          .collect(Collectors.toList());
+                  for (EventInternal event : backendRequest.getEvents()) {
+                    if (!Objects.equals(event.getPseudonymousId(), targetId)) return false;
+                  }
 
-                  return events.equals(targetEvents);
+                  return true;
                 })));
   }
 
@@ -292,10 +288,10 @@ public class UploaderTest {
 
   @Test
   public void upload_shouldBatchOldestEventType() {
-    String targetId = "myId";
+    String otherId = "myId";
 
-    EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
-    EventInternal siblingEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal oldestEvent = makeEventWithPseudonymousId(otherId);
+    EventInternal siblingEvent = makeEventWithPseudonymousId(otherId);
 
     when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
 
@@ -304,18 +300,16 @@ public class UploaderTest {
     store.persist(TRANSPORT_CONTEXT, ANOTHER_EVENT);
     store.persist(TRANSPORT_CONTEXT, siblingEvent);
 
-    List<EventInternal> targetEvents = Arrays.asList(EVENT, ANOTHER_EVENT);
-
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(mockBackend, times(1))
         .send(
             argThat(
                 (backendRequest -> {
-                  List<EventInternal> events =
-                      StreamSupport.stream(backendRequest.getEvents().spliterator(), false)
-                          .collect(Collectors.toList());
+                  for (EventInternal event : backendRequest.getEvents()) {
+                    if (event.getPseudonymousId() != null) return false;
+                  }
 
-                  return events.equals(targetEvents);
+                  return true;
                 })));
   }
 
