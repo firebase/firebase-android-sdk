@@ -1,6 +1,6 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.core.Logger
 import kotlinx.serialization.DeserializationStrategy
 

@@ -2,6 +2,9 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.newerOfThisAnd
+import com.google.firebase.dataconnect.util.nextSequenceNumber
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import kotlin.coroutines.coroutineContext

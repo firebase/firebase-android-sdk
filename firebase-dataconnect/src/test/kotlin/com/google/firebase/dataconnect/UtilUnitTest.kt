@@ -15,6 +15,7 @@
 package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.dataconnect.util.toAlphaNumericString
 import org.junit.Test
 
 class UtilUnitTest {

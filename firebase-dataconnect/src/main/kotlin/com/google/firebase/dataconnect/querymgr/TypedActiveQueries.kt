@@ -1,6 +1,6 @@
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.ReferenceCountedSet
+import com.google.firebase.dataconnect.util.ReferenceCountedSet
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.debug
 

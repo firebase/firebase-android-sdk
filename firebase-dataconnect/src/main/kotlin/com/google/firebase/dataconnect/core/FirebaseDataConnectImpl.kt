@@ -17,6 +17,7 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.util.SuspendingLazy
 import java.util.concurrent.Executor
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*

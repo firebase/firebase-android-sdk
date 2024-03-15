@@ -14,6 +14,8 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.util.encodeToStruct
+import com.google.firebase.dataconnect.util.toStructProto
 import com.google.firebase.util.nextAlphanumericString
 import java.util.Objects
 import kotlin.random.Random

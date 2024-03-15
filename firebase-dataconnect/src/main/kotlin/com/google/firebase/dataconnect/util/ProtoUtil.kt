@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.core.toDataConnectError
 import com.google.protobuf.ListValue

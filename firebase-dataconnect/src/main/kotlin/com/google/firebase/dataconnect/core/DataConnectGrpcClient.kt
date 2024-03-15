@@ -18,10 +18,10 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.DataConnectError
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
-import com.google.firebase.dataconnect.SuspendingLazy
-import com.google.firebase.dataconnect.decodeFromStruct
-import com.google.firebase.dataconnect.toCompactString
-import com.google.firebase.dataconnect.toMap
+import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.firebase.dataconnect.util.decodeFromStruct
+import com.google.firebase.dataconnect.util.toCompactString
+import com.google.firebase.dataconnect.util.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value

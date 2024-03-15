@@ -1,10 +1,10 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.calculateSha512
-import com.google.firebase.dataconnect.encodeToStruct
-import com.google.firebase.dataconnect.toAlphaNumericString
-import com.google.firebase.dataconnect.toCompactString
+import com.google.firebase.dataconnect.util.calculateSha512
+import com.google.firebase.dataconnect.util.encodeToStruct
+import com.google.firebase.dataconnect.util.toAlphaNumericString
+import com.google.firebase.dataconnect.util.toCompactString
 import com.google.protobuf.Struct
 import java.util.Objects
 

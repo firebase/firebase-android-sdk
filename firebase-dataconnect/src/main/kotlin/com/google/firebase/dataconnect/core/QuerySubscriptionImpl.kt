@@ -14,6 +14,8 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.util.NullableReference
+import com.google.firebase.dataconnect.util.SequencedReference
 import java.util.Objects
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*

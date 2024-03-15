@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalSerializationApi::class)
 
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.util
 
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct

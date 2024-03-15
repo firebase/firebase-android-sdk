@@ -2,6 +2,9 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.asTypeOrNull
+import com.google.firebase.dataconnect.util.asTypeOrThrow
 import java.util.Objects
 
 internal sealed class QueryExecutorResult(val queryExecutor: QueryExecutor, val requestId: String) {
@@ -51,7 +54,7 @@ internal fun SequencedReference<QueryExecutorResult>.successOrNull():
   this.asTypeOrNull<QueryExecutorResult, QueryExecutorResult.Success>()
 
 internal fun SequencedReference<QueryExecutorResult>.successOrThrow():
-  SequencedReference<QueryExecutorResult.Success> =
+    SequencedReference<QueryExecutorResult.Success> =
   this.asTypeOrThrow<QueryExecutorResult, QueryExecutorResult.Success>()
 
 internal fun SequencedReference<QueryExecutorResult>.failureOrNull():
@@ -59,5 +62,5 @@ internal fun SequencedReference<QueryExecutorResult>.failureOrNull():
   this.asTypeOrNull<QueryExecutorResult, QueryExecutorResult.Failure>()
 
 internal fun SequencedReference<QueryExecutorResult>.failureOrThrow():
-  SequencedReference<QueryExecutorResult.Failure> =
+    SequencedReference<QueryExecutorResult.Failure> =
   this.asTypeOrThrow<QueryExecutorResult, QueryExecutorResult.Failure>()

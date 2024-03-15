@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.util
 
 import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicLong
@@ -72,7 +72,7 @@ internal inline fun <T : Any, reified U : T> SequencedReference<T>.asTypeOrNull(
   }
 
 internal inline fun <T : Any, reified U : T> SequencedReference<T>.asTypeOrThrow():
-  SequencedReference<U> =
+    SequencedReference<U> =
   asTypeOrNull()
     ?: throw IllegalStateException(
       "expected ref to have type ${U::class.qualifiedName}, " +
