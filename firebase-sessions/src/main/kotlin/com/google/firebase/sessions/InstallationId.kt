@@ -27,7 +27,7 @@ internal class InstallationId private constructor(val fid: String, val authToken
 
     suspend fun create(firebaseInstallations: FirebaseInstallationsApi): InstallationId {
       // Fetch the auth token first, so the fid will be validated.
-      val authToken =
+      val authToken: String =
         try {
           firebaseInstallations.getToken(false).await().token
         } catch (ex: Exception) {
@@ -35,7 +35,7 @@ internal class InstallationId private constructor(val fid: String, val authToken
           // If there are any failures, return an empty value.
           ""
         }
-      val fid =
+      val fid: String =
         try {
           firebaseInstallations.id.await()
         } catch (ex: Exception) {

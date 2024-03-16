@@ -31,7 +31,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.util.Base64;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
+import com.google.android.datatransport.runtime.EncodedPayload;
+import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
@@ -158,7 +161,7 @@ public class AlarmManagerSchedulerTest {
   }
 
   @Test
-  public void schedule_whenExtrasEvailable_transmitsExtras() {
+  public void schedule_whenExtrasAvailable_transmitsExtras() {
     TransportContext transportContext =
         TransportContext.builder()
             .setBackendName("backend1")
@@ -171,7 +174,7 @@ public class AlarmManagerSchedulerTest {
   }
 
   @Test
-  public void schedule_smallWaitTImeFirstAttempt_multiplePriorities() {
+  public void schedule_smallWaitTimeFirstAttempt_multiplePriorities() {
     Intent intent1 = getIntent(TRANSPORT_CONTEXT);
     Intent intent2 = getIntent(UNMETERED_TRANSPORT_CONTEXT);
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
@@ -192,5 +195,25 @@ public class AlarmManagerSchedulerTest {
             eq(AlarmManager.ELAPSED_REALTIME),
             eq(INITIAL_TIMESTAMP + TWENTY_FOUR_HOURS),
             any()); // 2^0*DELTA
+  }
+
+  @Test
+  public void schedule_shouldExcludeThePriorityDelta_whenForcedAndPending() {
+    TransportContext context = TransportContext.builder().setBackendName("backend1").build();
+    EventInternal event =
+        EventInternal.builder()
+            .setEventMillis(1)
+            .setUptimeMillis(1)
+            .setTransportName("")
+            .setEncodedPayload(
+                new EncodedPayload(
+                    Encoding.of("proto"), "World".getBytes(Charset.defaultCharset())))
+            .build();
+
+    store.persist(context, event);
+    scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
+
+    verify(alarmManager, times(1))
+        .set(eq(AlarmManager.ELAPSED_REALTIME), eq(INITIAL_TIMESTAMP + 1), any());
   }
 }
