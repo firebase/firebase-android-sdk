@@ -114,6 +114,12 @@ public class InMemoryEventStore implements EventStore {
     return results;
   }
 
+  public void reset() {
+    store.clear();
+    backendCallTime.clear();
+    idCounter.set(0);
+  }
+
   @Override
   public int cleanUp() {
     return 0;
