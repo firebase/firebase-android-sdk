@@ -62,6 +62,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
     val query = query // save query to a local variable in case it changes.
     val sequencedResult = query.dataConnect.lazyQueryManager.get().execute(query)
     updateLastResult(QuerySubscriptionResultImpl(query, sequencedResult))
+    sequencedResult.ref.getOrThrow()
   }
 
   override suspend fun update(variables: Variables) {
