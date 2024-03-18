@@ -5,7 +5,7 @@
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5741) [commit](https://github.com/firebase/firebase-android-sdk/commit/181348967ab48c8222f9868ebb3afd09b4e3733e)  [Rodrigo Lazo]
 
 ## firebase-common/ktx
-      
+
 
 ## firebase-firestore
       
@@ -31,13 +31,25 @@
 ## firebase-inappmessaging-display/ktx
       
 
+## firebase-crashlytics
+      
+
+## firebase-crashlytics-ndk
+      
+
 ## firebase-sessions
       
+* Add sessions to crashlytics library group. (#5787)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5787) [commit](https://github.com/firebase/firebase-android-sdk/commit/e08fcee351d3a1a72a5ba231f386c191bcc8c30a)  [Rodrigo Lazo]
+
 * Handle when the session lifecycle service binding fails (#5777)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5777) [commit](https://github.com/firebase/firebase-android-sdk/commit/1a13dff2a28176ca1b72e59842c6c6b289d0aeb4)  [Matthew Robertson]
 
 * Add auth token to sessions (#5716)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5716) [commit](https://github.com/firebase/firebase-android-sdk/commit/b5f152be8c95cf0c11e8e09e8d0a423f88b2b780)  [Matthew Robertson]
+
+## firebase-crashlytics/ktx
+      
 
 ## transport/transport-api
       

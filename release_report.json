@@ -48,7 +48,19 @@
         ],
         "firebase-inappmessaging-display/ktx": [
         ],
+        "firebase-crashlytics": [
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
         "firebase-sessions": [
+            {
+                "commitId": "e08fcee351d3a1a72a5ba231f386c191bcc8c30a",
+                "prId": "5787",
+                "author": "Rodrigo Lazo",
+                "message": "Add sessions to crashlytics library group. (#5787)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e08fcee351d3a1a72a5ba231f386c191bcc8c30a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5787"
+            },
             {
                 "commitId": "1a13dff2a28176ca1b72e59842c6c6b289d0aeb4",
                 "prId": "5777",
@@ -65,6 +77,8 @@
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5f152be8c95cf0c11e8e09e8d0a423f88b2b780",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5716"
             }
+        ],
+        "firebase-crashlytics/ktx": [
         ],
         "transport/transport-api": [
             {

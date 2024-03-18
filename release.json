@@ -9,7 +9,10 @@
         ":firebase-inappmessaging-display",
         ":firebase-inappmessaging:ktx",
         ":firebase-inappmessaging-display:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
         ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
         ":transport:transport-api",
         ":transport:transport-backend-cct",
         ":transport:transport-runtime"
