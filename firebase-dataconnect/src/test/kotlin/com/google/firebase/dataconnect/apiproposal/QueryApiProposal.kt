@@ -1,3 +1,14 @@
+@file:Suppress(
+  "LocalVariableName",
+  "MemberVisibilityCanBePrivate"
+  "RedundantSuspendModifier",
+  "RemoveSetterParameterType",
+  "unused",
+  "UNUSED_PARAMETER",
+  "UnusedReceiverParameter",
+  "UNUSED_VARIABLE",
+)
+
 package com.google.firebase.dataconnect.apiproposal
 
 import android.app.Activity
@@ -15,8 +26,7 @@ import kotlinx.serialization.SerializationStrategy
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CORE SDK INIT
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-class ConnectorConfig
-constructor(val connector: String, val location: String, val service: String) {
+class ConnectorConfig(val connector: String, val location: String, val service: String) {
 
   fun copy(
     connector: String = this.connector,
@@ -31,8 +41,10 @@ constructor(val connector: String, val location: String, val service: String) {
   override fun toString(): String = TODO()
 }
 
-class DataConnectSettings
-constructor(val host: String = "dataconnect.googleapis.com", val sslEnabled: Boolean = true) {
+class DataConnectSettings(
+  val host: String = "dataconnect.googleapis.com",
+  val sslEnabled: Boolean = true
+) {
 
   fun copy(host: String = this.host, sslEnabled: Boolean = this.sslEnabled): DataConnectSettings =
     TODO()
@@ -61,7 +73,7 @@ interface FirebaseDataConnect : AutoCloseable {
   val settings: DataConnectSettings
     get() = TODO()
 
-  fun useEmulator(host: String = "10.0.2.2", port: Int = 9510): Unit
+  fun useEmulator(host: String = "10.0.2.2", port: Int = 9510)
 
   // Used for generated SDK to create instances of `QueryRef`.
   fun <Data, Variables> query(
@@ -256,11 +268,11 @@ suspend fun thirdPartyAppInit() {
     dataConnect.PostsConnector.getPost.ref(GetPostQuery.Variables(id = "id"))
   val anotherRef: GetPostQueryRef = dataConnect.PostsConnector.getPost.ref(id = "id")
   val oneTimeFetch: GetPostQueryResult = ref.execute()
-  val listerner: GetPostQuerySubscription = ref.subscribe()
+  val listener: GetPostQuerySubscription = ref.subscribe()
 
   val anotherOneTimeFetch: GetPostQueryResult =
     dataConnect.PostsConnector.getPost.execute(id = "id")
-  val anotherListerner: GetPostQuerySubscription =
+  val anotherListener: GetPostQuerySubscription =
     dataConnect.PostsConnector.getPost.subscribe(id = "id")
 }
 
