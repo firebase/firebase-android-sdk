@@ -12,6 +12,54 @@
         ],
         "firebase-common/ktx": [
         ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "05a71c9326173e6b18d2fc577c03b80f91d6dce8",
+                "prId": "5792",
+                "author": "Daymon",
+                "message": "Add missing changelog entries (#5792)\n\nPer [b/330156705](https://b.corp.google.com/issues/330156705),\r\n\r\nSessions is invoking the release of Crashlytics. As such, there needs to\r\nbe changelog entries on both Crashlytics and the NDK reflecting their\r\nrespective dependency bumps. This adds those changelogs.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/330156817](https://b.corp.google.com/issues/330156817) - Ensure\r\nthere's a project level dependency between sessions and crashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/05a71c9326173e6b18d2fc577c03b80f91d6dce8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5792"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "05a71c9326173e6b18d2fc577c03b80f91d6dce8",
+                "prId": "5792",
+                "author": "Daymon",
+                "message": "Add missing changelog entries (#5792)\n\nPer [b/330156705](https://b.corp.google.com/issues/330156705),\r\n\r\nSessions is invoking the release of Crashlytics. As such, there needs to\r\nbe changelog entries on both Crashlytics and the NDK reflecting their\r\nrespective dependency bumps. This adds those changelogs.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/330156817](https://b.corp.google.com/issues/330156817) - Ensure\r\nthere's a project level dependency between sessions and crashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/05a71c9326173e6b18d2fc577c03b80f91d6dce8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5792"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "e08fcee351d3a1a72a5ba231f386c191bcc8c30a",
+                "prId": "5787",
+                "author": "Rodrigo Lazo",
+                "message": "Add sessions to crashlytics library group. (#5787)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e08fcee351d3a1a72a5ba231f386c191bcc8c30a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5787"
+            },
+            {
+                "commitId": "1a13dff2a28176ca1b72e59842c6c6b289d0aeb4",
+                "prId": "5777",
+                "author": "Matthew Robertson",
+                "message": "Handle when the session lifecycle service binding fails (#5777)\n\nPair with @PolinaGo. This fixes #5718.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1a13dff2a28176ca1b72e59842c6c6b289d0aeb4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5777"
+            },
+            {
+                "commitId": "b5f152be8c95cf0c11e8e09e8d0a423f88b2b780",
+                "prId": "5716",
+                "author": "Matthew Robertson",
+                "message": "Add auth token to sessions (#5716)\n\nThis adds the auth token to sessions, which forced the client to\r\nvalidate the fid, as well as allow us to validate it on the backend.\r\n\r\nI will make a similar change in Crashlytics in the next PR.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5f152be8c95cf0c11e8e09e8d0a423f88b2b780",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5716"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
         "firebase-firestore": [
             {
                 "commitId": "b77c2188e5ec7c53c2a955fc4663b301e6c98c83",
@@ -47,38 +95,6 @@
         "firebase-inappmessaging/ktx": [
         ],
         "firebase-inappmessaging-display/ktx": [
-        ],
-        "firebase-crashlytics": [
-        ],
-        "firebase-crashlytics-ndk": [
-        ],
-        "firebase-sessions": [
-            {
-                "commitId": "e08fcee351d3a1a72a5ba231f386c191bcc8c30a",
-                "prId": "5787",
-                "author": "Rodrigo Lazo",
-                "message": "Add sessions to crashlytics library group. (#5787)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e08fcee351d3a1a72a5ba231f386c191bcc8c30a",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5787"
-            },
-            {
-                "commitId": "1a13dff2a28176ca1b72e59842c6c6b289d0aeb4",
-                "prId": "5777",
-                "author": "Matthew Robertson",
-                "message": "Handle when the session lifecycle service binding fails (#5777)\n\nPair with @PolinaGo. This fixes #5718.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1a13dff2a28176ca1b72e59842c6c6b289d0aeb4",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5777"
-            },
-            {
-                "commitId": "b5f152be8c95cf0c11e8e09e8d0a423f88b2b780",
-                "prId": "5716",
-                "author": "Matthew Robertson",
-                "message": "Add auth token to sessions (#5716)\n\nThis adds the auth token to sessions, which forced the client to\r\nvalidate the fid, as well as allow us to validate it on the backend.\r\n\r\nI will make a similar change in Crashlytics in the next PR.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b5f152be8c95cf0c11e8e09e8d0a423f88b2b780",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5716"
-            }
-        ],
-        "firebase-crashlytics/ktx": [
         ],
         "transport/transport-api": [
             {
