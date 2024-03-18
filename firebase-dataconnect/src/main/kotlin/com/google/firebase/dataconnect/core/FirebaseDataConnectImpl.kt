@@ -49,7 +49,7 @@ internal class FirebaseDataConnectImpl(
 ) : FirebaseDataConnectInternal {
 
   override val logger =
-    Logger("FirebaseDataConnect").apply {
+    Logger("FirebaseDataConnectImpl").apply {
       debug {
         "New instance created with " +
           "app=${app.name}, projectId=$projectId, " +
@@ -61,7 +61,7 @@ internal class FirebaseDataConnectImpl(
     CoroutineScope(
       SupervisorJob() +
         nonBlockingExecutor.asCoroutineDispatcher() +
-        CoroutineName("FirebaseDataConnect") +
+        CoroutineName(logger.nameWithId) +
         CoroutineExceptionHandler { _, throwable ->
           logger.warn(throwable) { "uncaught exception from a coroutine" }
         }
