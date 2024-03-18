@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,7 +94,7 @@ public class UploaderTest {
           .build();
   private static final int MANY_EVENT_COUNT = 1000;
 
-  private final EventStore store = spy(new InMemoryEventStore());
+  private final InMemoryEventStore store = spy(new InMemoryEventStore());
   private final EventStore mockStore = mock(EventStore.class);
   private BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private TransportBackend mockBackend = mock(TransportBackend.class);
@@ -130,6 +131,11 @@ public class UploaderTest {
   @Before
   public void setUp() {
     when(mockRegistry.get(BACKEND_NAME)).thenReturn(mockBackend);
+  }
+
+  @After
+  public void cleanUp() {
+    store.reset();
   }
 
   @Test
