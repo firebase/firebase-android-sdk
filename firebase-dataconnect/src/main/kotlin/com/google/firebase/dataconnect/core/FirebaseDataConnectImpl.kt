@@ -16,7 +16,6 @@ package com.google.firebase.dataconnect.core
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import java.util.concurrent.Executor
 import kotlinx.coroutines.*
@@ -28,13 +27,14 @@ import kotlinx.serialization.SerializationStrategy
 internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val logger: Logger
 
+  val coroutineScope: CoroutineScope
   val blockingExecutor: Executor
   val blockingDispatcher: CoroutineDispatcher
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
 
   val lazyGrpcClient: SuspendingLazy<DataConnectGrpcClient>
-  val lazyQueryManager: SuspendingLazy<QueryManager>
+  val lazyQueryManager: SuspendingLazy<OldQueryManager>
 }
 
 internal class FirebaseDataConnectImpl(
@@ -57,18 +57,18 @@ internal class FirebaseDataConnectImpl(
       }
     }
 
-  private val coroutineScope =
+  override val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
+  override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
+
+  override val coroutineScope =
     CoroutineScope(
       SupervisorJob() +
-        nonBlockingExecutor.asCoroutineDispatcher() +
+        nonBlockingDispatcher +
         CoroutineName(logger.nameWithId) +
         CoroutineExceptionHandler { _, throwable ->
           logger.warn(throwable) { "uncaught exception from a coroutine" }
         }
     )
-
-  override val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
-  override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
 
   // Protects `closed`, `grpcClient`, `emulatorSettings`, and `queryManager`.
   private val mutex = Mutex()
@@ -114,7 +114,7 @@ internal class FirebaseDataConnectImpl(
   override val lazyQueryManager =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      QueryManager(this)
+      OldQueryManager(this)
     }
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {

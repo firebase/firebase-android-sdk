@@ -20,10 +20,11 @@ import com.google.firebase.dataconnect.core.debug
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.withAcquiredValue
 
-internal class QueryManager(val dataConnect: FirebaseDataConnectImpl) {
+// TODO: Rename "NewQueryManager" to just "QueryManager" once "OldQueryManager" is deleted.
+internal class NewQueryManager(val dataConnect: FirebaseDataConnectImpl) {
 
   private val logger =
-    Logger("QueryManager").apply { debug { "Created by ${dataConnect.logger.nameWithId}" } }
+    Logger("NewQueryManager").apply { debug { "Created by ${dataConnect.logger.nameWithId}" } }
 
   private val activeQueries = ActiveQueries(dataConnect, parentLogger = logger)
 

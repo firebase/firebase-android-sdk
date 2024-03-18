@@ -46,6 +46,10 @@ internal data class SequencedReference<out T>(val sequenceNumber: Long, val ref:
 internal fun <T, U> SequencedReference<T>.map(block: (T) -> U): SequencedReference<U> =
   SequencedReference(sequenceNumber, block(ref))
 
+internal suspend fun <T, U> SequencedReference<T>.mapSuspending(
+  block: suspend (T) -> U
+): SequencedReference<U> = SequencedReference(sequenceNumber, block(ref))
+
 internal fun <T, U : SequencedReference<T>?> U.newerOfThisAnd(other: U): U =
   if (this == null && other == null) {
     // Suppress the warning that `this` is guaranteed to be null because the `null` literal cannot
