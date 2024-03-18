@@ -22,7 +22,7 @@ fun newMockFirebaseApp(
   Mockito.`when`(firebaseApp.options).thenReturn(firebaseOptions)
 
   val firebaseDataConnectFactoryClass =
-    Class.forName("com.google.firebase.dataconnect.FirebaseDataConnectFactory")
+    Class.forName("com.google.firebase.dataconnect.core.FirebaseDataConnectFactory")
   val firebaseAppGetAnswer = Answer { invocation ->
     if (invocation.arguments.singleOrNull() !== firebaseDataConnectFactoryClass) {
       throw UnsupportedOperationException("arguments not supported: ${invocation.arguments}")
