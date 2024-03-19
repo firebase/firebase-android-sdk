@@ -30,12 +30,16 @@ public class RangedFilter implements NodeFilter {
   private final Index index;
   private final NamedNode startPost;
   private final NamedNode endPost;
+  private final boolean indexStartIsInclusive;
+  private final boolean indexEndIsInclusive;
 
   public RangedFilter(QueryParams params) {
     this.indexedFilter = new IndexedFilter(params.getIndex());
     this.index = params.getIndex();
     this.startPost = getStartPost(params);
     this.endPost = getEndPost(params);
+    this.indexStartIsInclusive = params.getIndexStartIsInclusive();
+    this.indexEndIsInclusive = params.getIndexEndIsInclusive();
   }
 
   public NamedNode getStartPost() {
@@ -65,12 +69,13 @@ public class RangedFilter implements NodeFilter {
   }
 
   public boolean matches(NamedNode node) {
-    if (this.index.compare(this.getStartPost(), node) <= 0
-        && this.index.compare(node, this.getEndPost()) <= 0) {
-      return true;
-    } else {
-      return false;
-    }
+    boolean isWithinStart = indexStartIsInclusive ?
+            this.index.compare(this.getStartPost(), node) <= 0 :
+            this.index.compare(this.getStartPost(), node) < 0;
+    boolean isWithinEnd = indexEndIsInclusive ?
+            this.index.compare(this.getEndPost(), node) <= 0 :
+            this.index.compare(this.getEndPost(), node) < 0;
+    return isWithinStart && isWithinEnd;
   }
 
   @Override
