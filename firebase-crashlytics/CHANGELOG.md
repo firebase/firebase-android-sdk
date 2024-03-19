@@ -1,4 +1,5 @@
 # Unreleased
+* [feature] Updated `firebase-sessions` dependency.
 
 
 # 18.6.2

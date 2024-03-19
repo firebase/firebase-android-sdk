@@ -93,10 +93,7 @@ dependencies {
     implementation("com.google.firebase:firebase-common-ktx:20.4.2")
     implementation("com.google.firebase:firebase-components:17.1.5")
     implementation("com.google.firebase:firebase-installations:17.2.0")
-    implementation("com.google.firebase:firebase-sessions:1.2.1") {
-         exclude group: 'com.google.firebase', module: 'firebase-common'
-         exclude group: 'com.google.firebase', module: 'firebase-components'
-     }
+    implementation(project(":firebase-sessions"))
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

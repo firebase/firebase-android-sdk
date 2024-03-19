@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
@@ -43,6 +44,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
 
@@ -124,6 +126,8 @@ public class Uploader {
       Iterable<PersistedEvent> persistedEvents =
           guard.runCriticalSection(() -> eventStore.loadBatch(transportContext));
 
+      List<PersistedEvent> sentEvents = new ArrayList<>();
+
       // Do not make a call to the backend if the list is empty.
       if (!persistedEvents.iterator().hasNext()) {
         return response;
@@ -136,12 +140,21 @@ public class Uploader {
       } else {
         List<EventInternal> eventInternals = new ArrayList<>();
 
+        PersistedEvent oldestEvent = persistedEvents.iterator().next();
+        String targetPseudonymousId = oldestEvent.getEvent().getPseudonymousId();
+
         for (PersistedEvent persistedEvent : persistedEvents) {
-          eventInternals.add(persistedEvent.getEvent());
+          EventInternal event = persistedEvent.getEvent();
+          String pseudonymousId = event.getPseudonymousId();
+
+          if (Objects.equals(targetPseudonymousId, pseudonymousId)) {
+            eventInternals.add(event);
+            sentEvents.add(persistedEvent);
+          }
         }
 
         if (transportContext.shouldUploadClientHealthMetrics()) {
-          eventInternals.add(createMetricsEvent(backend));
+          eventInternals.add(createMetricsEvent(backend, targetPseudonymousId));
         }
 
         response =
@@ -155,7 +168,7 @@ public class Uploader {
         long finalMaxNextRequestWaitMillis1 = maxNextRequestWaitMillis;
         guard.runCriticalSection(
             () -> {
-              eventStore.recordFailure(persistedEvents);
+              eventStore.recordFailure(sentEvents);
               eventStore.recordNextCallTime(
                   transportContext, clock.getTime() + finalMaxNextRequestWaitMillis1);
               return null;
@@ -165,7 +178,7 @@ public class Uploader {
       } else {
         guard.runCriticalSection(
             () -> {
-              eventStore.recordSuccess(persistedEvents);
+              eventStore.recordSuccess(sentEvents);
               return null;
             });
         if (response.getStatus() == BackendResponse.Status.OK) {
@@ -178,10 +191,11 @@ public class Uploader {
                   return null;
                 });
           }
+          break;
         } else if (response.getStatus() == BackendResponse.Status.INVALID_PAYLOAD) {
           Map<String, Integer> countMap = new HashMap<>();
-          for (PersistedEvent persistedEvent : persistedEvents) {
-            String logSource = persistedEvent.getEvent().getTransportName();
+          for (PersistedEvent sentEvent : sentEvents) {
+            String logSource = sentEvent.getEvent().getTransportName();
             if (!countMap.containsKey(logSource)) {
               countMap.put(logSource, 1);
             } else {
@@ -206,11 +220,16 @@ public class Uploader {
               transportContext, clock.getTime() + finalMaxNextRequestWaitMillis);
           return null;
         });
+
+    if (eventStore.hasPendingEventsFor(transportContext)) {
+      workScheduler.schedule(transportContext, attemptNumber, true);
+    }
     return response;
   }
 
   @VisibleForTesting
-  public EventInternal createMetricsEvent(TransportBackend backend) {
+  public EventInternal createMetricsEvent(
+      TransportBackend backend, @Nullable String pseudonymousId) {
     ClientMetrics clientMetrics =
         guard.runCriticalSection(clientHealthMetricsStore::loadClientMetrics);
     return backend.decorate(
@@ -218,6 +237,7 @@ public class Uploader {
             .setEventMillis(clock.getTime())
             .setUptimeMillis(uptimeClock.getTime())
             .setTransportName(CLIENT_HEALTH_METRICS_LOG_SOURCE)
+            .setPseudonymousId(pseudonymousId)
             .setEncodedPayload(
                 new EncodedPayload(Encoding.of("proto"), clientMetrics.toByteArray()))
             .build());

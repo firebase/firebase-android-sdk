@@ -69,7 +69,7 @@ internal class SessionFirelogPublisherImpl(
             sessionSettings,
             FirebaseSessionsDependencies.getRegisteredSubscribers(),
             firebaseInstallationId = installationId.fid,
-            firebaseAuthenticationToken = installationId.authToken
+            firebaseAuthenticationToken = installationId.authToken,
           )
         )
       }
