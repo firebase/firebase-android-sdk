@@ -1,6 +1,6 @@
 @file:Suppress(
   "LocalVariableName",
-  "MemberVisibilityCanBePrivate"
+  "MemberVisibilityCanBePrivate",
   "RedundantSuspendModifier",
   "RemoveSetterParameterType",
   "unused",
