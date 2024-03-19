@@ -1,0 +1,20 @@
+{
+    "name": "m145",
+    "libraries": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
