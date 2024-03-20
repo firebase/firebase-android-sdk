@@ -260,6 +260,7 @@ public class FirebaseFunctions {
   }
 
   /** @deprecated Use {@link #useEmulator(String, int)} to connect to the emulator. */
+  @Deprecated
   public void useFunctionsEmulator(@NonNull String origin) {
     Preconditions.checkNotNull(origin, "origin cannot be null");
     urlFormat = origin + "/%2$s/%1$s/%3$s";

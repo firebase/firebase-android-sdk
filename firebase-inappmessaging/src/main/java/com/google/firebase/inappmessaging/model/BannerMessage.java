@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging.model;
 
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Map;
 import javax.annotation.Nullable;
 
@@ -148,26 +149,31 @@ public class BannerMessage extends InAppMessage {
     @Nullable Action action;
     @Nullable String backgroundHexColor;
 
+    @CanIgnoreReturnValue
     public Builder setTitle(@Nullable Text title) {
       this.title = title;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setBody(@Nullable Text body) {
       this.body = body;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setImageData(@Nullable ImageData imageData) {
       this.imageData = imageData;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setAction(@Nullable Action action) {
       this.action = action;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setBackgroundHexColor(@Nullable String backgroundHexColor) {
       this.backgroundHexColor = backgroundHexColor;
       return this;

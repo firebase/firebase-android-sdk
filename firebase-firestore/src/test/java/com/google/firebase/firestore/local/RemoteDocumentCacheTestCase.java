@@ -28,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -278,18 +279,22 @@ abstract class RemoteDocumentCacheTestCase {
     assertThat(results.values()).containsExactly(doc("a/2", 1, map("matches", false)));
   }
 
+  @CanIgnoreReturnValue
   protected MutableDocument addTestDocumentAtPath(String path) {
     return addTestDocumentAtPath(path, 42, 42);
   }
 
+  @CanIgnoreReturnValue
   protected MutableDocument addTestDocumentAtPath(DocumentKey key) {
     return addTestDocumentAtPath(key.getPath().canonicalString(), 42, 42);
   }
 
+  @CanIgnoreReturnValue
   protected MutableDocument addTestDocumentAtPath(String path, int updateTime, int readTime) {
     return addTestDocumentAtPath(path, updateTime, readTime, map("data", 2));
   }
 
+  @CanIgnoreReturnValue
   protected MutableDocument addTestDocumentAtPath(
       String path, int updateTime, int readTime, Map<String, Object> data) {
     MutableDocument doc = doc(path, updateTime, data);

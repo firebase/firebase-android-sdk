@@ -17,6 +17,7 @@ package com.google.firebase.inappmessaging.model;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Map;
 
 /** Encapsulates a Firebase In App Card Message. */
@@ -202,41 +203,49 @@ public class CardMessage extends InAppMessage {
     @Nullable Text body;
     @Nullable Action secondaryAction;
 
+    @CanIgnoreReturnValue
     public Builder setPortraitImageData(@Nullable ImageData portraitImageData) {
       this.portraitImageData = portraitImageData;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setLandscapeImageData(@Nullable ImageData landscapeImageData) {
       this.landscapeImageData = landscapeImageData;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setBackgroundHexColor(@Nullable String backgroundHexColor) {
       this.backgroundHexColor = backgroundHexColor;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setPrimaryAction(@Nullable Action primaryAction) {
       this.primaryAction = primaryAction;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setSecondaryAction(@Nullable Action secondaryAction) {
       this.secondaryAction = secondaryAction;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setTitle(@Nullable Text title) {
       this.title = title;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setBody(@Nullable Text body) {
       this.body = body;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public CardMessage build(
         CampaignMetadata campaignMetadata, @Nullable Map<String, String> data) {
       if (primaryAction == null) {
