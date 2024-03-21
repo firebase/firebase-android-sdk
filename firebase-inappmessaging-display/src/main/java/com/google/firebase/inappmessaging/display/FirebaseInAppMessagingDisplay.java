@@ -97,6 +97,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private FiamListener fiamListener;
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
+  private boolean useCustomTabs = true;
 
   @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
@@ -175,6 +176,22 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    */
   public void clearFiamListener() {
     this.fiamListener = null;
+  }
+
+  /**
+   * Gets whether the action link should be handled by opening a Custom Tab.
+   */
+  public boolean getUseCustomTabs() {
+    return useCustomTabs;
+  }
+
+  /**
+   * Sets whether the action link should be handled by opening a Custom Tab.
+   *
+   * @hide
+   */
+  public void setUseCustomTabs(boolean useCustomTabs) {
+    this.useCustomTabs = useCustomTabs;
   }
 
   /**
@@ -549,7 +566,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void launchUriIntent(Activity activity, Uri uri) {
-    if (ishttpOrHttpsUri(uri) && supportsCustomTabs(activity)) {
+    if (useCustomTabs && ishttpOrHttpsUri(uri) && supportsCustomTabs(activity)) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
