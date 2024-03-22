@@ -18,6 +18,7 @@ plugins {
 }
 
 firebaseLibrary{
+    libraryGroup("transport")
     publishJavadoc = false
     publishReleaseNotes = false
 }
