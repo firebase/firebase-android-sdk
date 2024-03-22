@@ -30,7 +30,7 @@ import java.util.concurrent.Executor;
 public final class SnapshotListenOptions {
   /** Indicates whether metadata-only changes should trigger snapshot events. */
   private final MetadataChanges metadataChanges;
-  /** Indicates the source that we listen to. */
+  /** Specifies the data source for the listener. */
   private final ListenSource source;
   /** The executor to use to call the listener. */
   private final Executor executor;
