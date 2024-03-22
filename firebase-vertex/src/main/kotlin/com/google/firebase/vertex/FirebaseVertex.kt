@@ -19,17 +19,27 @@ package com.google.firebase.vertex
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.vertex.type.GenerationConfig
 import com.google.firebase.vertex.type.RequestOptions
+import com.google.firebase.vertex.type.SafetySetting
 
 class FirebaseVertex(
   private val firebaseApp: FirebaseApp,
 ) {
 
-  fun generativeModel(modelName: String, location: String = "us-central1") =
+  fun generativeModel(
+    modelName: String,
+    location: String = "us-central1",
+    generationConfig: GenerationConfig? = null,
+    safetySettings: List<SafetySetting>? = null,
+    requestOptions: RequestOptions = RequestOptions(apiVersion = "v2beta")
+  ) =
     GenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
-      requestOptions = RequestOptions(apiVersion = "v2beta")
+      generationConfig,
+      safetySettings,
+      requestOptions
     )
 
   companion object {
