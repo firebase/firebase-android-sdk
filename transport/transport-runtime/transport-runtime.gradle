@@ -50,6 +50,7 @@ protobuf {
 }
 
 firebaseLibrary {
+    libraryGroup("transport")
     publishJavadoc = false
     publishReleaseNotes = false
     testLab {

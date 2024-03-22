@@ -23,6 +23,8 @@ plugins {
 }
 
 firebaseLibrary {
+  libraryGroup("crashlytics")
+
   testLab.enabled = true
   publishSources = true
   publishJavadoc = false
@@ -87,6 +89,7 @@ dependencies {
   testImplementation(libs.truth)
 
   androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }

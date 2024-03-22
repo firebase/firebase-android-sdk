@@ -115,9 +115,11 @@ public class AlarmManagerScheduler implements WorkScheduler {
     }
 
     long backendTime = eventStore.getNextCallTime(transportContext);
+    boolean hasPendingEvents = force && eventStore.hasPendingEventsFor(transportContext);
 
     long scheduleDelay =
-        config.getScheduleDelay(transportContext.getPriority(), backendTime, attemptNumber);
+        config.getScheduleDelay(
+            transportContext.getPriority(), backendTime, attemptNumber, hasPendingEvents);
 
     Logging.d(
         LOG_TAG,

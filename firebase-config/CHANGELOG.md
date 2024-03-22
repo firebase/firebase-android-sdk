@@ -1,5 +1,8 @@
 # Unreleased
 
+# 21.6.3
+* [fixed] Fixed a bug that could cause a crash if the app was backgrounded
+  while it was listening for real-time Remote Config updates. For more information, see #5751
 
 # 21.6.2
 * [fixed] Fixed an issue that could cause [remote_config] personalizations to be logged early in

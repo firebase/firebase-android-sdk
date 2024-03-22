@@ -23,7 +23,10 @@ import android.content.Context;
 import android.os.PersistableBundle;
 import android.util.Base64;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
+import com.google.android.datatransport.runtime.EncodedPayload;
+import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.InMemoryEventStore;
@@ -164,7 +167,7 @@ public class JobInfoSchedulerTest {
   }
 
   @Test
-  public void schedule_whenExtrasEvailable_transmitsExtras() {
+  public void schedule_whenExtrasAvailable_transmitsExtras() {
     String extras = "e1";
     TransportContext transportContext =
         TransportContext.builder()
@@ -214,7 +217,7 @@ public class JobInfoSchedulerTest {
   }
 
   @Test
-  public void schedule_smallWaitTImeFirstAttempt_multiplePriorities() {
+  public void schedule_smallWaitTimeFirstAttempt_multiplePriorities() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     scheduler.schedule(UNMETERED_TRANSPORT_CONTEXT, 1);
@@ -244,5 +247,27 @@ public class JobInfoSchedulerTest {
     assertThat(bundle2.get(JobInfoScheduler.EVENT_PRIORITY))
         .isEqualTo(PriorityMapping.toInt(Priority.VERY_LOW));
     assertThat(bundle2.get(JobInfoScheduler.ATTEMPT_NUMBER)).isEqualTo(1);
+  }
+
+  @Test
+  public void schedule_shouldExcludeThePriorityDelta_whenForcedAndPending() {
+    TransportContext context = TransportContext.builder().setBackendName("backend1").build();
+    EventInternal event =
+        EventInternal.builder()
+            .setEventMillis(1)
+            .setUptimeMillis(1)
+            .setTransportName("")
+            .setEncodedPayload(
+                new EncodedPayload(
+                    Encoding.of("proto"), "World".getBytes(Charset.defaultCharset())))
+            .build();
+
+    store.persist(context, event);
+    scheduler.schedule(TRANSPORT_CONTEXT, 1, true);
+
+    assertThat(jobScheduler.getAllPendingJobs()).hasSize(1);
+    JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
+
+    assertThat(jobInfo.getMinLatencyMillis()).isEqualTo(1);
   }
 }

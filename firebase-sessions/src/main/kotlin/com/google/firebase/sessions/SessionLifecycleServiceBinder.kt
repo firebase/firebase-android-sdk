@@ -49,11 +49,22 @@ internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: Fireba
       // This is necessary for the onBind() to be called by each process
       intent.action = android.os.Process.myPid().toString()
       intent.putExtra(SessionLifecycleService.CLIENT_CALLBACK_MESSENGER, callback)
-      appContext.bindService(
-        intent,
-        serviceConnection,
-        Context.BIND_IMPORTANT or Context.BIND_AUTO_CREATE
-      )
+
+      val isServiceBound =
+        try {
+          appContext.bindService(
+            intent,
+            serviceConnection,
+            Context.BIND_IMPORTANT or Context.BIND_AUTO_CREATE,
+          )
+        } catch (ex: SecurityException) {
+          Log.w(TAG, "Failed to bind session lifecycle service to application.", ex)
+          false
+        }
+      if (!isServiceBound) {
+        appContext.unbindService(serviceConnection)
+        Log.i(TAG, "Session lifecycle service binding failed.")
+      }
     }
   }
 
