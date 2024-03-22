@@ -55,8 +55,8 @@ android {
 }
 
 dependencies {
-    implementation "com.google.android.datatransport:transport-api:3.2.0"
-    implementation "com.google.android.datatransport:transport-runtime:3.3.0"
+    implementation project(':transport:transport-api')
+    implementation project(':transport:transport-runtime')
     implementation 'com.google.firebase:firebase-encoders:17.0.0'
     implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
     implementation 'androidx.annotation:annotation:1.1.0'
