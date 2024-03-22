@@ -39,18 +39,14 @@ import com.google.firebase.vertex.type.SafetyRating
 import com.google.firebase.vertex.type.SafetySetting
 import com.google.firebase.vertex.type.SerializationException
 import com.google.firebase.vertex.type.TextPart
+import com.google.firebase.vertex.type.UsageMetadata
 import com.google.firebase.vertex.type.content
 import java.io.ByteArrayOutputStream
 
 private const val BASE_64_FLAGS = Base64.NO_WRAP
 
-// TODO(rlazo): Add missing parameters
 internal fun RequestOptions.toInternal() =
-  com.google.ai.client.generativeai.common.RequestOptions(
-    timeout,
-    apiVersion,
-    endpoint
-  )
+  com.google.ai.client.generativeai.common.RequestOptions(timeout, apiVersion, endpoint)
 
 internal fun Content.toInternal() =
   com.google.ai.client.generativeai.common.shared.Content(
@@ -138,6 +134,9 @@ internal fun com.google.ai.client.generativeai.common.server.Candidate.toPublic(
   )
 }
 
+internal fun com.google.ai.client.generativeai.common.UsageMetadata.toPublic(): UsageMetadata =
+  UsageMetadata(promptTokenCount, candidatesTokenCount, totalTokenCount)
+
 internal fun com.google.ai.client.generativeai.common.shared.Content.toPublic(): Content =
   Content(role, parts.map { it.toPublic() })
 
@@ -224,7 +223,8 @@ internal fun com.google.ai.client.generativeai.common.GenerateContentResponse.to
   GenerateContentResponse {
   return GenerateContentResponse(
     candidates?.map { it.toPublic() }.orEmpty(),
-    promptFeedback?.toPublic()
+    promptFeedback?.toPublic(),
+    usageMetadata?.toPublic()
   )
 }
 

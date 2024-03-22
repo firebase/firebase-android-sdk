@@ -20,7 +20,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.vertex.type.RequestOptions
-import kotlin.time.Duration.Companion.seconds
 
 class FirebaseVertex(
   private val firebaseApp: FirebaseApp,
@@ -30,10 +29,7 @@ class FirebaseVertex(
     GenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
-      requestOptions =
-        RequestOptions(
-          apiVersion = "v2beta"
-        )
+      requestOptions = RequestOptions(apiVersion = "v2beta")
     )
 
   companion object {
