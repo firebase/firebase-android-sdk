@@ -105,7 +105,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-stats:17.0.2'
     implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
     implementation 'com.google.firebase:firebase-encoders:17.0.0'
-    implementation('com.google.firebase:firebase-datatransport:18.1.7') {
+    implementation(project(':firebase-datatransport')) {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
