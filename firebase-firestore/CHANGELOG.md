@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Remove possible thread safety issues for ObjectValue. [#5699](//github.com/firebase/firebase-android-sdk/pull/5699)
 
 # 24.11.0
 * [feature] Enable snapshot listener option to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
