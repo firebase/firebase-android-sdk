@@ -32,11 +32,6 @@ internal fun interface SessionLifecycleServiceBinder {
    * callback will be used to relay session updates to this client.
    */
   fun bindToService(callback: Messenger, serviceConnection: ServiceConnection)
-
-  companion object {
-    val instance: SessionLifecycleServiceBinder
-      get() = Firebase.app[SessionLifecycleServiceBinder::class.java]
-  }
 }
 
 internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: FirebaseApp) :
