@@ -21,9 +21,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Messenger
 import android.util.Log
-import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.app
 
 /** Interface for binding with the [SessionLifecycleService]. */
 internal fun interface SessionLifecycleServiceBinder {
