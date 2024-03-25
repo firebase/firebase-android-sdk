@@ -25,6 +25,7 @@ import android.graphics.Bitmap
  * * [TextPart] representing text or string based data.
  * * [ImagePart] representing image data.
  * * [BlobPart] representing MIME typed binary data.
+ * * [FileDataPart] representing cloud storage files.
  */
 interface Part
 
@@ -40,6 +41,11 @@ class ImagePart(val image: Bitmap) : Part
 /** Represents binary data with an associated MIME type sent to and received from requests. */
 class BlobPart(val mimeType: String, val blob: ByteArray) : Part
 
+/**
+ * Represents a cloud storage file with an associated MIME type sent to and received from requests.
+ */
+class FileDataPart(val mimeType: String, val fileUri: String) : Part
+
 /** @return The part as a [String] if it represents text, and null otherwise */
 fun Part.asTextOrNull(): String? = (this as? TextPart)?.text
 
@@ -48,3 +54,6 @@ fun Part.asImageOrNull(): Bitmap? = (this as? ImagePart)?.image
 
 /** @return The part as a [BlobPart] if it represents a blob, and null otherwise */
 fun Part.asBlobPartOrNull(): BlobPart? = this as? BlobPart
+
+/** @return The part as a [FileDataPart] if it represents a file, and null otherwise */
+fun Part.asFileDataPartOrNull(): FileDataPart? = this as? FileDataPart
