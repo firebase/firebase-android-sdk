@@ -26,6 +26,7 @@ import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
+import com.google.firebase.vertexai.type.FileDataPart
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
@@ -70,6 +71,10 @@ internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.
           mimeType,
           Base64.encodeToString(blob, BASE_64_FLAGS)
         )
+      )
+    is FileDataPart ->
+      com.google.ai.client.generativeai.common.shared.FileDataPart(
+        com.google.ai.client.generativeai.common.shared.FileData(mimeType, fileUri)
       )
     else ->
       throw SerializationException(
@@ -151,6 +156,8 @@ internal fun com.google.ai.client.generativeai.common.shared.Part.toPublic(): Pa
         BlobPart(inlineData.mimeType, data)
       }
     }
+    is com.google.ai.client.generativeai.common.shared.FileDataPart ->
+      FileDataPart(fileData.mimeType, fileData.fileUri)
   }
 }
 
