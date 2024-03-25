@@ -1,6 +1,14 @@
 # Unreleased
+
+
+# 18.6.3
 * [feature] Updated `firebase-sessions` dependency.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.6.2
 * [changed] Bump internal dependencies.
