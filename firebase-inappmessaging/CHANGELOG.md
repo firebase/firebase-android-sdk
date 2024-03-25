@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed Bad token exception while showing FIAM
+  (Buganizer [#330727156](b/330727156))
 
 # 20.4.1
 * [fixed] Fixed FirebaseInAppMessagingDisplayErrorListener not being called
