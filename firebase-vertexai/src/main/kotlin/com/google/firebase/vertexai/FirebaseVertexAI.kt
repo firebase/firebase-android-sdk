@@ -48,5 +48,5 @@ class FirebaseVertexAI(
   }
 }
 
-val Firebase.vertex: FirebaseVertexAI
+val Firebase.vertexAI: FirebaseVertexAI
   get() = FirebaseVertexAI.instance
