@@ -55,7 +55,7 @@ public class FiamWindowManager {
     }
 
     if (activity.isFinishing()
-            || Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed()) {
+        || Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed()) {
       Logging.loge("Activity is finishing or does not have valid window token. Cannot show FIAM.");
       return;
     }
