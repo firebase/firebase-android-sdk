@@ -151,6 +151,10 @@ internal fun com.google.ai.client.generativeai.common.shared.Part.toPublic(): Pa
         BlobPart(inlineData.mimeType, data)
       }
     }
+    else ->
+      throw SerializationException(
+        "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."
+      )
   }
 }
 
