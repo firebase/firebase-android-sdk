@@ -23,10 +23,24 @@ import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
 
+/**
+ * Entry point for all Firebase Vertex AI functionality.
+ */
 class FirebaseVertexAI(
   private val firebaseApp: FirebaseApp,
 ) {
 
+  /**
+   * A facilitator for a given multimodal model (eg; Gemini).
+   *
+   * @param modelName name of the model in the backend
+   * @param location location identifier, e.g., `us-central1`; see
+   *     [Vertex AI regions](https://cloud.google.com/vertex-ai/docs/general/locations#vertex-ai-regions)
+   * @param generationConfig configuration parameters to use for content generation
+   * @param safetySettings the safety bounds to use during alongside prompts during content
+   *   generation
+   * @param requestOptions configuration options to utilize during backend communication
+   */
   fun generativeModel(
     modelName: String,
     location: String = "us-central1",
@@ -45,8 +59,15 @@ class FirebaseVertexAI(
   companion object {
     val instance: FirebaseVertexAI
       get() = Firebase.app[FirebaseVertexAI::class.java]
+
+    fun getInstance(app: FirebaseApp): FirebaseVertexAI = app[FirebaseVertexAI::class.java]
+
   }
 }
 
+/** Returns the [FirebaseVertexAI] instance of the default [FirebaseApp]. */
 val Firebase.vertexAI: FirebaseVertexAI
   get() = FirebaseVertexAI.instance
+
+/** Returns the [FirebaseVertexAI] instance of a given [FirebaseApp]. */
+fun Firebase.vertexAI(app: FirebaseApp): FirebaseVertexAI = FirebaseVertexAI.getInstance(app)
