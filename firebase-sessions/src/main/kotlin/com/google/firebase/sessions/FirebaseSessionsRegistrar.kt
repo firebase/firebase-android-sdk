@@ -45,11 +45,13 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(sessionsSettings))
         .add(Dependency.required(backgroundDispatcher))
+        .add(Dependency.required(sessionLifecycleServiceBinder))
         .factory { container ->
           FirebaseSessions(
             container[firebaseApp],
             container[sessionsSettings],
             container[backgroundDispatcher],
+            container[sessionLifecycleServiceBinder],
           )
         }
         .eagerInDefaultApp()
@@ -97,7 +99,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .factory { container ->
           SessionDatastoreImpl(
             container[firebaseApp].applicationContext,
-            container[backgroundDispatcher]
+            container[backgroundDispatcher],
           )
         }
         .build(),
@@ -120,5 +122,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
       qualified(Blocking::class.java, CoroutineDispatcher::class.java)
     private val transportFactory = unqualified(TransportFactory::class.java)
     private val sessionsSettings = unqualified(SessionsSettings::class.java)
+    private val sessionLifecycleServiceBinder =
+      unqualified(SessionLifecycleServiceBinder::class.java)
   }
 }

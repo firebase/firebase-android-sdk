@@ -32,6 +32,7 @@ internal class FirebaseSessions(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   backgroundDispatcher: CoroutineContext,
+  lifecycleServiceBinder: SessionLifecycleServiceBinder,
 ) {
 
   init {
@@ -50,7 +51,7 @@ internal class FirebaseSessions(
             Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
           } else {
             val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
-            lifecycleClient.bindToService()
+            lifecycleClient.bindToService(lifecycleServiceBinder)
             SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
 
             firebaseApp.addLifecycleEventListener { _, _ ->
