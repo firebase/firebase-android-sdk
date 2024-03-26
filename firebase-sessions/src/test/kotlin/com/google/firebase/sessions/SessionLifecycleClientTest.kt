@@ -47,6 +47,7 @@ import org.robolectric.Shadows.shadowOf
 @RunWith(RobolectricTestRunner::class)
 internal class SessionLifecycleClientTest {
   private lateinit var fakeService: FakeSessionLifecycleServiceBinder
+  private lateinit var lifecycleServiceBinder: FakeSessionLifecycleServiceBinder
 
   @Before
   fun setUp() {
@@ -57,9 +58,10 @@ internal class SessionLifecycleClientTest {
           .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
           .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
           .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
-          .build()
+          .build(),
       )
-    fakeService = firebaseApp.get(FakeSessionLifecycleServiceBinder::class.java)
+    fakeService = firebaseApp[FakeSessionLifecycleServiceBinder::class.java]
+    lifecycleServiceBinder = firebaseApp[FakeSessionLifecycleServiceBinder::class.java]
   }
 
   @After
@@ -75,7 +77,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       waitForMessages()
       assertThat(fakeService.clientCallbacks).hasSize(1)
@@ -87,7 +89,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
       client.foregrounded()
       client.backgrounded()
 
@@ -103,7 +105,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
       client.foregrounded()
       client.backgrounded()
       client.foregrounded()
@@ -123,7 +125,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       fakeService.serviceDisconnected()
@@ -139,7 +141,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       fakeService.serviceDisconnected()
@@ -157,7 +159,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       fakeService.serviceDisconnected()
@@ -174,7 +176,7 @@ internal class SessionLifecycleClientTest {
   fun doesNotSendLifecycleEventsWithoutSubscribers() =
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       client.foregrounded()
@@ -190,7 +192,7 @@ internal class SessionLifecycleClientTest {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(collectionEnabled = false, SessionSubscriber.Name.CRASHLYTICS)
       addSubscriber(collectionEnabled = false, SessionSubscriber.Name.MATT_SAYS_HI)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       client.foregrounded()
@@ -206,7 +208,7 @@ internal class SessionLifecycleClientTest {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       addSubscriber(collectionEnabled = true, SessionSubscriber.Name.CRASHLYTICS)
       addSubscriber(collectionEnabled = false, SessionSubscriber.Name.MATT_SAYS_HI)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       client.foregrounded()
@@ -220,7 +222,7 @@ internal class SessionLifecycleClientTest {
   fun handleSessionUpdate_noSubscribers() =
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       fakeService.broadcastSession("123")
@@ -234,7 +236,7 @@ internal class SessionLifecycleClientTest {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       val crashlyticsSubscriber = addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
       val mattSaysHiSubscriber = addSubscriber(true, SessionSubscriber.Name.MATT_SAYS_HI)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       fakeService.broadcastSession("123")
@@ -250,7 +252,7 @@ internal class SessionLifecycleClientTest {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       val crashlyticsSubscriber = addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
       val mattSaysHiSubscriber = addSubscriber(false, SessionSubscriber.Name.MATT_SAYS_HI)
-      client.bindToService()
+      client.bindToService(lifecycleServiceBinder)
 
       fakeService.serviceConnected()
       fakeService.broadcastSession("123")
@@ -262,7 +264,7 @@ internal class SessionLifecycleClientTest {
 
   private fun addSubscriber(
     collectionEnabled: Boolean,
-    name: SessionSubscriber.Name
+    name: SessionSubscriber.Name,
   ): FakeSessionSubscriber {
     val fakeSubscriber = FakeSessionSubscriber(collectionEnabled, sessionSubscriberName = name)
     FirebaseSessionsDependencies.addDependency(name)
