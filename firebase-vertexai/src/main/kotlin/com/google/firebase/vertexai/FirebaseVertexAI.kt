@@ -22,6 +22,7 @@ import com.google.firebase.app
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
+import com.google.firebase.vertexai.type.Tool
 
 /**
  * Entry point for all Firebase Vertex AI functionality.
@@ -46,14 +47,16 @@ class FirebaseVertexAI(
     location: String = "us-central1",
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
-    requestOptions: RequestOptions = RequestOptions(apiVersion = "v2beta")
+    tools: List<Tool>? = null,
+    requestOptions: RequestOptions = RequestOptions(apiVersion = "v2beta"),
   ) =
     GenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
       generationConfig,
       safetySettings,
-      requestOptions
+      tools,
+      requestOptions,
     )
 
   companion object {
