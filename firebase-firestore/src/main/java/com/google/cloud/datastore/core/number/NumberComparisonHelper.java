@@ -59,9 +59,7 @@ public final class NumberComparisonHelper {
     return firestoreCompareDoubles(doubleValue, longAsDouble);
   }
 
-  /**
-   * Compares longs.
-   */
+  /** Compares longs. */
   public static int compareLongs(long leftLong, long rightLong) {
     return Long.compare(leftLong, rightLong);
   }
