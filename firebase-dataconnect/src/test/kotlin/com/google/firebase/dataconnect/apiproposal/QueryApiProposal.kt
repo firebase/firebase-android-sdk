@@ -22,16 +22,17 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.serializer
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // CORE SDK INIT
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-class ConnectorConfig(val connector: String, val location: String, val service: String) {
+class ConnectorConfig(val connector: String, val location: String, val serviceId: String) {
 
   fun copy(
     connector: String = this.connector,
     location: String = this.location,
-    service: String = this.location
+    serviceId: String = this.location
   ): ConnectorConfig = TODO()
 
   override fun equals(other: Any?): Boolean = TODO()
@@ -78,6 +79,7 @@ interface FirebaseDataConnect : AutoCloseable {
   // Used for generated SDK to create instances of `QueryRef`.
   fun <Data, Variables> query(
     operationName: String,
+    variables: Variables,
     responseDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>
   ): QueryRef<Data, Variables>
@@ -263,6 +265,14 @@ suspend fun thirdPartyAppInit() {
   val dataConnectWithSetting = FirebaseDataConnect.getInstance(app, config, settings)
 
   dataConnect.useEmulator("10.0.2.2", 9000)
+
+  val result =
+    dataConnect.query(
+      "getPost",
+      GetPostQuery.Variables(id = "id"),
+      serializer<GetPostQuery.Data>(),
+      serializer<GetPostQuery.Variables>()
+    )
 
   val ref: GetPostQueryRef =
     dataConnect.PostsConnector.getPost.ref(GetPostQuery.Variables(id = "id"))
