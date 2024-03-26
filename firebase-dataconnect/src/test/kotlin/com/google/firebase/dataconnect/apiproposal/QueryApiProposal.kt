@@ -80,7 +80,7 @@ interface FirebaseDataConnect : AutoCloseable {
   fun <Data, Variables> query(
     operationName: String,
     variables: Variables,
-    responseDeserializer: DeserializationStrategy<Data>,
+    dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>
   ): QueryRef<Data, Variables>
 
