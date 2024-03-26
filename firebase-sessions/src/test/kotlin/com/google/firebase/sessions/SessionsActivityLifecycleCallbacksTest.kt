@@ -46,6 +46,7 @@ import org.robolectric.Shadows
 @RunWith(AndroidJUnit4::class)
 internal class SessionsActivityLifecycleCallbacksTest {
   private lateinit var fakeService: FakeSessionLifecycleServiceBinder
+  private lateinit var lifecycleServiceBinder: FakeSessionLifecycleServiceBinder
   private val fakeActivity = Activity()
 
   @Before
@@ -69,9 +70,10 @@ internal class SessionsActivityLifecycleCallbacksTest {
           .setApplicationId(FakeFirebaseApp.MOCK_APP_ID)
           .setApiKey(FakeFirebaseApp.MOCK_API_KEY)
           .setProjectId(FakeFirebaseApp.MOCK_PROJECT_ID)
-          .build()
+          .build(),
       )
-    fakeService = firebaseApp.get(FakeSessionLifecycleServiceBinder::class.java)
+    fakeService = firebaseApp[FakeSessionLifecycleServiceBinder::class.java]
+    lifecycleServiceBinder = firebaseApp[FakeSessionLifecycleServiceBinder::class.java]
   }
 
   @After
@@ -91,7 +93,7 @@ internal class SessionsActivityLifecycleCallbacksTest {
       SessionsActivityLifecycleCallbacks.onActivityResumed(fakeActivity)
 
       // Settings fetched and set the lifecycle client.
-      lifecycleClient.bindToService()
+      lifecycleClient.bindToService(lifecycleServiceBinder)
       fakeService.serviceConnected()
       SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
 
@@ -106,7 +108,7 @@ internal class SessionsActivityLifecycleCallbacksTest {
       val lifecycleClient = SessionLifecycleClient(backgroundDispatcher(coroutineContext))
 
       // Set lifecycle client before any foreground happened.
-      lifecycleClient.bindToService()
+      lifecycleClient.bindToService(lifecycleServiceBinder)
       fakeService.serviceConnected()
       SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
 
