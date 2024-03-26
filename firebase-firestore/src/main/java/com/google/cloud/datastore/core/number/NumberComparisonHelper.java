@@ -60,17 +60,10 @@ public final class NumberComparisonHelper {
   }
 
   /**
-   * Compares longs. Note that we can't use Long.compare because it's only available after Android
-   * 19.
+   * Compares longs.
    */
   public static int compareLongs(long leftLong, long rightLong) {
-    if (leftLong < rightLong) {
-      return -1;
-    } else if (leftLong > rightLong) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return Long.compare(leftLong, rightLong);
   }
 
   /**
