@@ -55,7 +55,12 @@ public class StringListReader extends Reader {
 
   @Override
   public String toString() {
-    StringBuilder builder = new StringBuilder();
+    // Iterate over the strings to figure out the necessary capacity for the string builder.
+    int size = 0;
+    for (String string : this.strings) {
+      size += string.length();
+    }
+    StringBuilder builder = new StringBuilder(size);
     for (String string : this.strings) {
       builder.append(string);
     }
