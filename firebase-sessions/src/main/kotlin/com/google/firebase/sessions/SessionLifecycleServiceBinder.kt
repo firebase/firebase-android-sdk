@@ -21,9 +21,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Messenger
 import android.util.Log
-import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.app
 
 /** Interface for binding with the [SessionLifecycleService]. */
 internal fun interface SessionLifecycleServiceBinder {
@@ -32,11 +30,6 @@ internal fun interface SessionLifecycleServiceBinder {
    * callback will be used to relay session updates to this client.
    */
   fun bindToService(callback: Messenger, serviceConnection: ServiceConnection)
-
-  companion object {
-    val instance: SessionLifecycleServiceBinder
-      get() = Firebase.app[SessionLifecycleServiceBinder::class.java]
-  }
 }
 
 internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: FirebaseApp) :
