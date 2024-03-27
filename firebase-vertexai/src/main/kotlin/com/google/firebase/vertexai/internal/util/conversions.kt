@@ -20,7 +20,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.google.ai.client.generativeai.common.client.Schema
+import com.google.ai.client.generativeai.common.shared.FunctionCall
 import com.google.ai.client.generativeai.common.shared.FunctionCallPart
+import com.google.ai.client.generativeai.common.shared.FunctionResponse
 import com.google.ai.client.generativeai.common.shared.FunctionResponsePart
 import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.BlockReason
@@ -79,6 +81,20 @@ internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.
           Base64.encodeToString(blob, BASE_64_FLAGS)
         )
       )
+
+    is com.google.firebase.vertexai.type.FunctionCallPart ->
+      FunctionCallPart(
+        FunctionCall(
+          name,
+          args.orEmpty()
+        )
+      )
+
+    is com.google.firebase.vertexai.type.FunctionResponsePart ->
+      FunctionResponsePart(
+        FunctionResponse(name, response.toInternal())
+      )
+
     else ->
       throw SerializationException(
         "The given subclass of Part (${javaClass.simpleName}) is not supported in the serialization yet."
