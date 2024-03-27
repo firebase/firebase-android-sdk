@@ -26,7 +26,7 @@ internal class FirebaseDataConnectFactory(
     val key =
       config.run {
         FirebaseDataConnectInstanceKey(
-          service = service,
+          serviceId = serviceId,
           location = location,
           connector = connector
         )
@@ -105,9 +105,9 @@ internal class FirebaseDataConnectFactory(
 private data class FirebaseDataConnectInstanceKey(
   val connector: String,
   val location: String,
-  val service: String,
+  val serviceId: String,
 ) {
-  override fun toString() = "service=$service, location=$location, connector=$connector"
+  override fun toString() = "serviceId=$serviceId, location=$location, connector=$connector"
 }
 
 private fun throwIfIncompatible(
@@ -115,7 +115,7 @@ private fun throwIfIncompatible(
   instance: FirebaseDataConnect,
   settings: DataConnectSettings?
 ) {
-  val keyStr = key.run { "service=$service, location=$location, connector=$connector" }
+  val keyStr = key.run { "serviceId=$serviceId, location=$location, connector=$connector" }
   if (settings !== null && instance.settings != settings) {
     throw IllegalArgumentException(
       "The settings of the FirebaseDataConnect instance with [$keyStr] is " +

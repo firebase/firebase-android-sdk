@@ -30,18 +30,18 @@ class TestDataConnectFactory :
     location: String? = null,
     connector: String? = null
   ): FirebaseDataConnect =
-    newInstance(Params(service = service, location = location, connector = connector))
+    newInstance(Params(serviceId = service, location = location, connector = connector))
 
   override fun createInstance(params: Params?): FirebaseDataConnect {
     val instanceId = Random.nextAlphanumericString()
-    val serviceConfig =
+    val connectorConfig =
       ConnectorConfig(
         connector = params?.connector ?: "TestConnector$instanceId",
         location = params?.location ?: "TestLocation$instanceId",
-        service = params?.service ?: "TestService$instanceId",
+        serviceId = params?.serviceId ?: "TestService$instanceId",
       )
     return FirebaseDataConnect.getInstance(
-      serviceConfig,
+      connectorConfig,
       DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
     )
   }
@@ -53,6 +53,6 @@ class TestDataConnectFactory :
   data class Params(
     val connector: String? = null,
     val location: String? = null,
-    val service: String? = null,
+    val serviceId: String? = null,
   )
 }

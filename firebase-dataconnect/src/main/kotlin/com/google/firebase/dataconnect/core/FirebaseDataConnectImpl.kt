@@ -103,7 +103,7 @@ internal class FirebaseDataConnectImpl(
         projectId = projectId,
         connector = config.connector,
         location = config.location,
-        service = config.service,
+        service = config.serviceId,
         host = host,
         sslEnabled = sslEnabled,
         blockingExecutor = blockingExecutor,

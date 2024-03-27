@@ -10,7 +10,7 @@ class ConnectorConfigUnitTest {
     ConnectorConfig(
       connector = SAMPLE_CONNECTOR,
       location = SAMPLE_LOCATION,
-      service = SAMPLE_SERVICE
+      serviceId = SAMPLE_SERVICE_ID
     )
 
   @Test
@@ -20,7 +20,7 @@ class ConnectorConfigUnitTest {
       ConnectorConfig(
         connector = connector,
         location = SAMPLE_LOCATION,
-        service = SAMPLE_SERVICE,
+        serviceId = SAMPLE_SERVICE_ID,
       )
 
     assertThat(config.connector).isSameInstanceAs(connector)
@@ -33,34 +33,34 @@ class ConnectorConfigUnitTest {
       ConnectorConfig(
         connector = SAMPLE_CONNECTOR,
         location = location,
-        service = SAMPLE_SERVICE,
+        serviceId = SAMPLE_SERVICE_ID,
       )
 
     assertThat(config.location).isSameInstanceAs(location)
   }
 
   @Test
-  fun `'service' property should be the same object given to the constructor`() {
-    val service = "Test Service"
+  fun `'serviceId' property should be the same object given to the constructor`() {
+    val serviceId = "Test Service Id"
     val config =
       ConnectorConfig(
         connector = SAMPLE_CONNECTOR,
         location = SAMPLE_LOCATION,
-        service = service,
+        serviceId = serviceId,
       )
-    assertThat(config.service).isSameInstanceAs(service)
+    assertThat(config.serviceId).isSameInstanceAs(serviceId)
   }
 
   @Test
   fun `toString() returns a string that incorporates all property values`() {
     val config =
-      ConnectorConfig(connector = "MyConnector", location = "MyLocation", service = "MyService")
+      ConnectorConfig(connector = "MyConnector", location = "MyLocation", serviceId = "MyServiceId")
 
     val toStringResult = config.toString()
 
     assertThat(toStringResult).startsWith("ConnectorConfig(")
     assertThat(toStringResult).endsWith(")")
-    assertThat(toStringResult).containsWithNonAdjacentText("service=MyService")
+    assertThat(toStringResult).containsWithNonAdjacentText("serviceId=MyServiceId")
     assertThat(toStringResult).containsWithNonAdjacentText("location=MyLocation")
     assertThat(toStringResult).containsWithNonAdjacentText("connector=MyConnector")
   }
@@ -107,9 +107,9 @@ class ConnectorConfigUnitTest {
   }
 
   @Test
-  fun `equals() should return false when only 'service' differs`() {
-    val config1 = sampleConfig.copy(service = "Service1")
-    val config2 = sampleConfig.copy(service = "Service2")
+  fun `equals() should return false when only 'serviceId' differs`() {
+    val config1 = sampleConfig.copy(serviceId = "ServiceId1")
+    val config2 = sampleConfig.copy(serviceId = "ServiceId2")
 
     assertThat(config1.equals(config2)).isFalse()
   }
@@ -148,9 +148,9 @@ class ConnectorConfigUnitTest {
   }
 
   @Test
-  fun `hashCode() should return a different value when only 'service' differs`() {
-    val config1 = sampleConfig.copy(service = "Service1")
-    val config2 = sampleConfig.copy(service = "Service2")
+  fun `hashCode() should return a different value when only 'serviceId' differs`() {
+    val config1 = sampleConfig.copy(serviceId = "ServiceId1")
+    val config2 = sampleConfig.copy(serviceId = "ServiceId2")
 
     assertThat(config1.hashCode()).isNotEqualTo(config2.hashCode())
   }
@@ -162,7 +162,7 @@ class ConnectorConfigUnitTest {
     assertThat(config2).isNotSameInstanceAs(sampleConfig)
     assertThat(config2.connector).isSameInstanceAs(sampleConfig.connector)
     assertThat(config2.location).isSameInstanceAs(sampleConfig.location)
-    assertThat(config2.service).isSameInstanceAs(sampleConfig.service)
+    assertThat(config2.serviceId).isSameInstanceAs(sampleConfig.serviceId)
   }
 
   @Test
@@ -173,7 +173,7 @@ class ConnectorConfigUnitTest {
 
     assertThat(config2.connector).isSameInstanceAs(newConnector)
     assertThat(config2.location).isSameInstanceAs(sampleConfig.location)
-    assertThat(config2.service).isSameInstanceAs(sampleConfig.service)
+    assertThat(config2.serviceId).isSameInstanceAs(sampleConfig.serviceId)
   }
 
   @Test
@@ -184,37 +184,37 @@ class ConnectorConfigUnitTest {
 
     assertThat(config2.connector).isSameInstanceAs(sampleConfig.connector)
     assertThat(config2.location).isSameInstanceAs(newLocation)
-    assertThat(config2.service).isSameInstanceAs(sampleConfig.service)
+    assertThat(config2.serviceId).isSameInstanceAs(sampleConfig.serviceId)
   }
 
   @Test
-  fun `copy() should return an object with the given 'service'`() {
-    val newService = sampleConfig.service + "ZZZZ"
+  fun `copy() should return an object with the given 'serviceId'`() {
+    val newServiceId = sampleConfig.serviceId + "ZZZZ"
 
-    val config2 = sampleConfig.copy(service = newService)
+    val config2 = sampleConfig.copy(serviceId = newServiceId)
 
     assertThat(config2.connector).isSameInstanceAs(sampleConfig.connector)
     assertThat(config2.location).isSameInstanceAs(sampleConfig.location)
-    assertThat(config2.service).isSameInstanceAs(newService)
+    assertThat(config2.serviceId).isSameInstanceAs(newServiceId)
   }
 
   @Test
   fun `copy() should return an object with properties set to all given arguments`() {
     val newConnector = sampleConfig.connector + "ZZZZ"
     val newLocation = sampleConfig.location + "ZZZZ"
-    val newService = sampleConfig.service + "ZZZZ"
+    val newServiceId = sampleConfig.serviceId + "ZZZZ"
 
     val config2 =
-      sampleConfig.copy(connector = newConnector, location = newLocation, service = newService)
+      sampleConfig.copy(connector = newConnector, location = newLocation, serviceId = newServiceId)
 
     assertThat(config2.connector).isSameInstanceAs(newConnector)
     assertThat(config2.location).isSameInstanceAs(newLocation)
-    assertThat(config2.service).isSameInstanceAs(newService)
+    assertThat(config2.serviceId).isSameInstanceAs(newServiceId)
   }
 
   companion object {
     const val SAMPLE_CONNECTOR = "SampleConnector"
     const val SAMPLE_LOCATION = "SampleLocation"
-    const val SAMPLE_SERVICE = "SampleService"
+    const val SAMPLE_SERVICE_ID = "SampleServiceId"
   }
 }
