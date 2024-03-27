@@ -40,10 +40,12 @@ class TestDataConnectFactory :
         location = params?.location ?: "TestLocation$instanceId",
         serviceId = params?.serviceId ?: "TestService$instanceId",
       )
-    return FirebaseDataConnect.getInstance(
-      connectorConfig,
-      DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
-    )
+
+    val dataConnect = FirebaseDataConnect.getInstance(connectorConfig)
+
+    dataConnect.useEmulator()
+
+    return dataConnect
   }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {
