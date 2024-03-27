@@ -1,26 +1,21 @@
 package com.google.firebase.dataconnect
 
+import java.util.Objects
+
 public class DataConnectSettings(
-  host: String = "dataconnect.googleapis.com",
-  sslEnabled: Boolean = true
+  public val host: String = "dataconnect.googleapis.com",
+  public val sslEnabled: Boolean = true
 ) {
-  private val impl = Impl(host = host, sslEnabled = sslEnabled)
 
   public fun copy(
     host: String = this.host,
     sslEnabled: Boolean = this.sslEnabled
   ): DataConnectSettings = DataConnectSettings(host = host, sslEnabled = sslEnabled)
 
-  public val host: String
-    get() = impl.host
-  public val sslEnabled: Boolean
-    get() = impl.sslEnabled
+  override fun equals(other: Any?): Boolean =
+    (other is DataConnectSettings) && other.host == host && other.sslEnabled == sslEnabled
 
-  private data class Impl(val host: String, val sslEnabled: Boolean)
-
-  override fun equals(other: Any?): Boolean = (other is DataConnectSettings) && other.impl == impl
-
-  override fun hashCode(): Int = impl.hashCode()
+  override fun hashCode(): Int = Objects.hash(DataConnectSettings::class, host, sslEnabled)
 
   override fun toString(): String = "DataConnectSettings(host=$host, sslEnabled=$sslEnabled)"
 }

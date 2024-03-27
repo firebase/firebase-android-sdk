@@ -1,7 +1,12 @@
 package com.google.firebase.dataconnect
 
-public class ConnectorConfig(connector: String, location: String, serviceId: String) {
-  private val impl = Impl(connector = connector, location = location, serviceId = serviceId)
+import java.util.Objects
+
+public class ConnectorConfig(
+  public val connector: String,
+  public val location: String,
+  public val serviceId: String
+) {
 
   public fun copy(
     connector: String = this.connector,
@@ -10,18 +15,14 @@ public class ConnectorConfig(connector: String, location: String, serviceId: Str
   ): ConnectorConfig =
     ConnectorConfig(connector = connector, location = location, serviceId = serviceId)
 
-  public val connector: String
-    get() = impl.connector
-  public val location: String
-    get() = impl.location
-  public val serviceId: String
-    get() = impl.serviceId
+  override fun equals(other: Any?): Boolean =
+    (other is ConnectorConfig) &&
+      other.connector == connector &&
+      other.location == location &&
+      other.serviceId == serviceId
 
-  private data class Impl(val connector: String, val location: String, val serviceId: String)
-
-  override fun equals(other: Any?): Boolean = (other is ConnectorConfig) && other.impl == impl
-
-  override fun hashCode(): Int = impl.hashCode()
+  override fun hashCode(): Int =
+    Objects.hash(ConnectorConfig::class, connector, location, serviceId)
 
   override fun toString(): String =
     "ConnectorConfig(connector=$connector, location=$location, serviceId=$serviceId)"
