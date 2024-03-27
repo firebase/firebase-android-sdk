@@ -183,7 +183,7 @@ With the Postgresql containers running, launch the Data Connect emulator with
 this command:
 
 ```
-./cli -alsologtostderr=1 -stderrthreshold=0 dev
+./cli -alsologtostderr=1 -stderrthreshold=0 dev -local_connection_string='postgresql://postgres:postgres@localhost:5432/emulator?sslmode=disable'
 ```
 
 You will likely see some errors in the log output, but most of them can be
@@ -219,6 +219,9 @@ package by running `xcode-select --install`. If you don't have Xcode installed
 at all, download the latest version from go/xcode and install it.
 
 #### Unable to load "vector" or "google_ml_integration" pogstresql extensions.
+
+Update (Mar 12, 2024): This should be fixed by cl/615215810, removing the need
+for the workaround documented below.
 
 If you get an error like this in the Data Connect Emulator's output:
 

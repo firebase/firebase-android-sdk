@@ -76,4 +76,7 @@ To delete the postgresql database, run
 
 To delete the containers, run
   podman pod rm --force dataconnect_postgres
+
+When running the Firebase Data Connect emulator, specifying this argument to use this postgresql:
+  -local_connection_string='postgresql://postgres:postgres@localhost:5432/emulator?sslmode=disable'
 EOF

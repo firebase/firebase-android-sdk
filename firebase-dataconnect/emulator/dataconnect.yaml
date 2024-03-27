@@ -1,0 +1,14 @@
+specVersion: v1alpha
+serviceId: local
+schema:
+  source: ./schema
+  datasource:
+    postgresql:
+      database: AndroidSdkTestDatabase
+      cloudSql:
+        instanceId: AndroidSdkTestInstanceId
+connectorDirs: [
+  "./dataconnect/alltypes",
+  "./dataconnect/person",
+  "./dataconnect/posts",
+]

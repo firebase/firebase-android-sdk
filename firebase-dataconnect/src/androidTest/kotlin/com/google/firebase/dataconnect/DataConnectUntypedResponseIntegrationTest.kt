@@ -22,8 +22,6 @@ import com.google.firebase.dataconnect.testutil.randomId
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withVariables
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.Serializable
 import org.junit.Rule
@@ -43,19 +41,17 @@ class DataConnectUntypedDataIntegrationTest {
     val id = randomId()
     allTypesSchema
       .createPrimitive(
-        AllTypesSchema.CreatePrimitiveMutation.Variables(
-          AllTypesSchema.PrimitiveData(
-            id = id,
-            idFieldNullable = "eebf7592-cf74-4871-8730-00a03a9af43e",
-            intField = 42,
-            intFieldNullable = 43,
-            floatField = 99.0,
-            floatFieldNullable = 100.0,
-            booleanField = false,
-            booleanFieldNullable = true,
-            stringField = "TestStringValue",
-            stringFieldNullable = "TestStringNullableValue",
-          )
+        AllTypesSchema.PrimitiveData(
+          id = id,
+          idFieldNullable = "eebf7592-cf74-4871-8730-00a03a9af43e",
+          intField = 42,
+          intFieldNullable = 43,
+          floatField = 99.0,
+          floatFieldNullable = 100.0,
+          booleanField = false,
+          booleanFieldNullable = true,
+          stringField = "TestStringValue",
+          stringFieldNullable = "TestStringNullableValue",
         )
       )
       .execute()
@@ -89,19 +85,17 @@ class DataConnectUntypedDataIntegrationTest {
     val id = randomId()
     allTypesSchema
       .createPrimitive(
-        AllTypesSchema.CreatePrimitiveMutation.Variables(
-          AllTypesSchema.PrimitiveData(
-            id = id,
-            idFieldNullable = null,
-            intField = 42,
-            intFieldNullable = null,
-            floatField = 99.0,
-            floatFieldNullable = null,
-            booleanField = false,
-            booleanFieldNullable = null,
-            stringField = "TestStringValue",
-            stringFieldNullable = null,
-          )
+        AllTypesSchema.PrimitiveData(
+          id = id,
+          idFieldNullable = null,
+          intField = 42,
+          intFieldNullable = null,
+          floatField = 99.0,
+          floatFieldNullable = null,
+          booleanField = false,
+          booleanFieldNullable = null,
+          stringField = "TestStringValue",
+          stringFieldNullable = null,
         )
       )
       .execute()
@@ -135,32 +129,24 @@ class DataConnectUntypedDataIntegrationTest {
     val id = randomId()
     allTypesSchema
       .createPrimitiveList(
-        AllTypesSchema.CreatePrimitiveListMutation.Variables(
-          AllTypesSchema.PrimitiveListData(
-            id = id,
-            idListNullable =
-              listOf(
-                "257e52b0-c3bf-4414-a7fa-8824b605f134",
-                "33561fab-8645-464c-b818-89ce9a72f8bf"
-              ),
-            idListOfNullable =
-              listOf(
-                "517cb2d6-48f3-4be3-bb0d-8ab81e57dabc",
-                "1ebedd8f-8707-46f2-bd1b-b72c2b71b354"
-              ),
-            intList = listOf(42, 43, 44),
-            intListNullable = listOf(45, 46),
-            intListOfNullable = listOf(47, 48),
-            floatList = listOf(12.3, 45.6, 78.9),
-            floatListNullable = listOf(98.7, 65.4),
-            floatListOfNullable = listOf(100.1, 100.2),
-            booleanList = listOf(true, false, true, false),
-            booleanListNullable = listOf(false, true, false, true),
-            booleanListOfNullable = listOf(false, false, true, true),
-            stringList = listOf("xxx", "yyy", "zzz"),
-            stringListNullable = listOf("qqq", "rrr"),
-            stringListOfNullable = listOf("sss", "ttt"),
-          )
+        AllTypesSchema.PrimitiveListData(
+          id = id,
+          idListNullable =
+            listOf("257e52b0-c3bf-4414-a7fa-8824b605f134", "33561fab-8645-464c-b818-89ce9a72f8bf"),
+          idListOfNullable =
+            listOf("517cb2d6-48f3-4be3-bb0d-8ab81e57dabc", "1ebedd8f-8707-46f2-bd1b-b72c2b71b354"),
+          intList = listOf(42, 43, 44),
+          intListNullable = listOf(45, 46),
+          intListOfNullable = listOf(47, 48),
+          floatList = listOf(12.3, 45.6, 78.9),
+          floatListNullable = listOf(98.7, 65.4),
+          floatListOfNullable = listOf(100.1, 100.2),
+          booleanList = listOf(true, false, true, false),
+          booleanListNullable = listOf(false, true, false, true),
+          booleanListOfNullable = listOf(false, false, true, true),
+          stringList = listOf("xxx", "yyy", "zzz"),
+          stringListNullable = listOf("qqq", "rrr"),
+          stringListOfNullable = listOf("sss", "ttt"),
         )
       )
       .execute()
@@ -202,28 +188,23 @@ class DataConnectUntypedDataIntegrationTest {
     val id = randomId()
     allTypesSchema
       .createPrimitiveList(
-        AllTypesSchema.CreatePrimitiveListMutation.Variables(
-          AllTypesSchema.PrimitiveListData(
-            id = id,
-            idListNullable = null,
-            idListOfNullable =
-              listOf(
-                "1a392d5a-4b42-4425-b9ad-677ac8066697",
-                "9faab31e-a108-4b53-be69-45fc47c4f0fc"
-              ),
-            intList = listOf(42, 43, 44),
-            intListNullable = null,
-            intListOfNullable = listOf(47, 48),
-            floatList = listOf(12.3, 45.6, 78.9),
-            floatListNullable = null,
-            floatListOfNullable = listOf(100.1, 100.2),
-            booleanList = listOf(true, false, true, false),
-            booleanListNullable = null,
-            booleanListOfNullable = listOf(false, false, true, true),
-            stringList = listOf("xxx", "yyy", "zzz"),
-            stringListNullable = null,
-            stringListOfNullable = listOf("sss", "ttt"),
-          )
+        AllTypesSchema.PrimitiveListData(
+          id = id,
+          idListNullable = null,
+          idListOfNullable =
+            listOf("1a392d5a-4b42-4425-b9ad-677ac8066697", "9faab31e-a108-4b53-be69-45fc47c4f0fc"),
+          intList = listOf(42, 43, 44),
+          intListNullable = null,
+          intListOfNullable = listOf(47, 48),
+          floatList = listOf(12.3, 45.6, 78.9),
+          floatListNullable = null,
+          floatListOfNullable = listOf(100.1, 100.2),
+          booleanList = listOf(true, false, true, false),
+          booleanListNullable = null,
+          booleanListOfNullable = listOf(false, false, true, true),
+          stringList = listOf("xxx", "yyy", "zzz"),
+          stringListNullable = null,
+          stringListOfNullable = listOf("sss", "ttt"),
         )
       )
       .execute()

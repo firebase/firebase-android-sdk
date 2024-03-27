@@ -30,13 +30,10 @@ public class CreateComment internal constructor(public val connector: PostsConne
     )
 
   public fun ref(id: String, content: String, postId: String): MutationRef<Unit, Variables> =
-    ref(Variables(data = Variables.CommentData(id = id, content = content, postId = postId)))
+    ref(Variables(id = id, content = content, postId = postId))
 
   @Serializable
-  public data class Variables(val data: CommentData) {
-    @Serializable
-    public data class CommentData(val id: String, val content: String, val postId: String)
-  }
+  public data class Variables(val id: String, val content: String, val postId: String)
 
   public companion object {
     public const val operationName: String = "createComment"

@@ -96,7 +96,9 @@ class DataConnectUntypedVariablesIntegrationTest {
         .withVariables(
           variables =
             DataConnectUntypedVariables(
-              "data" to mapOf("id" to personId, "name" to "TestPersonName", "age" to 42.0)
+              "id" to personId,
+              "name" to "TestPersonName",
+              "age" to 42.0
             ),
           serializer = DataConnectUntypedVariables
         )

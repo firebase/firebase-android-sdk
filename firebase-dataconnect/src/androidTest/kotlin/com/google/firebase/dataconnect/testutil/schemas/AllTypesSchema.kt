@@ -51,16 +51,12 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     val stringFieldNullable: String?,
   )
 
-  object CreatePrimitiveMutation {
-    @Serializable data class Variables(val data: PrimitiveData)
-  }
-
-  fun createPrimitive(variables: CreatePrimitiveMutation.Variables) =
+  fun createPrimitive(variables: PrimitiveData) =
     dataConnect.mutation(
       operationName = "createPrimitive",
       variables = variables,
       dataDeserializer = serializer<Unit>(),
-      variablesSerializer = serializer<CreatePrimitiveMutation.Variables>(),
+      variablesSerializer = serializer<PrimitiveData>(),
     )
 
   object GetPrimitiveQuery {
@@ -99,16 +95,12 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     val stringListOfNullable: List<String?>,
   )
 
-  object CreatePrimitiveListMutation {
-    @Serializable data class Variables(val data: PrimitiveListData)
-  }
-
-  fun createPrimitiveList(variables: CreatePrimitiveListMutation.Variables) =
+  fun createPrimitiveList(variables: PrimitiveListData) =
     dataConnect.mutation(
       operationName = "createPrimitiveList",
       variables = variables,
       dataDeserializer = serializer<Unit>(),
-      variablesSerializer = serializer<CreatePrimitiveListMutation.Variables>(),
+      variablesSerializer = serializer<PrimitiveListData>(),
     )
 
   object GetPrimitiveListQuery {
@@ -140,14 +132,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
       )
 
   object CreateFarmerMutation {
-    @Serializable data class Variables(val data: Farmer)
-
-    @Serializable
-    data class Farmer(
-      val id: String,
-      val name: String,
-      val parentId: String?,
-    )
+    @Serializable data class Variables(val id: String, val name: String, val parentId: String?)
   }
 
   fun createFarmer(variables: CreateFarmerMutation.Variables) =
@@ -159,15 +144,10 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   fun createFarmer(id: String, name: String, parentId: String?) =
-    createFarmer(
-      CreateFarmerMutation.Variables(
-        CreateFarmerMutation.Farmer(id = id, name = name, parentId = parentId)
-      )
-    )
+    createFarmer(CreateFarmerMutation.Variables(id = id, name = name, parentId = parentId))
 
   object CreateFarmMutation {
-    @Serializable data class Variables(val data: Farm)
-    @Serializable data class Farm(val id: String, val name: String, val farmerId: String?)
+    @Serializable data class Variables(val id: String, val name: String, val farmerId: String?)
   }
 
   fun createFarm(variables: CreateFarmMutation.Variables) =
@@ -179,17 +159,11 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   fun createFarm(id: String, name: String, farmerId: String?) =
-    createFarm(
-      CreateFarmMutation.Variables(
-        CreateFarmMutation.Farm(id = id, name = name, farmerId = farmerId)
-      )
-    )
+    createFarm(CreateFarmMutation.Variables(id = id, name = name, farmerId = farmerId))
 
   object CreateAnimalMutation {
-    @Serializable data class Variables(val data: Animal)
-
     @Serializable
-    data class Animal(
+    data class Variables(
       val id: String,
       val farmId: String,
       val name: String,
@@ -209,13 +183,11 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
   fun createAnimal(id: String, farmId: String, name: String, species: String, age: Int?) =
     createAnimal(
       CreateAnimalMutation.Variables(
-        CreateAnimalMutation.Animal(
-          id = id,
-          farmId = farmId,
-          name = name,
-          species = species,
-          age = age
-        )
+        id = id,
+        farmId = farmId,
+        name = name,
+        species = species,
+        age = age
       )
     )
 

@@ -56,10 +56,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     data class Data(val person_insert: PersonKey) {
       @Serializable data class PersonKey(val id: String)
     }
-    @Serializable
-    data class Variables(val data: PersonData) {
-      @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
-    }
+    @Serializable data class Variables(val id: String, val name: String, val age: Int? = null)
   }
 
   fun createPerson(variables: CreatePersonMutation.Variables) =
@@ -71,21 +68,14 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   fun createPerson(id: String, name: String, age: Int? = null) =
-    createPerson(
-      CreatePersonMutation.Variables(
-        CreatePersonMutation.Variables.PersonData(id = id, name = name, age = age)
-      )
-    )
+    createPerson(CreatePersonMutation.Variables(id = id, name = name, age = age))
 
   object CreateOrUpdatePersonMutation {
     @Serializable
     data class Data(val person_upsert: PersonKey) {
       @Serializable data class PersonKey(val id: String)
     }
-    @Serializable
-    data class Variables(val data: PersonData) {
-      @Serializable data class PersonData(val id: String, val name: String, val age: Int? = null)
-    }
+    @Serializable data class Variables(val id: String, val name: String, val age: Int? = null)
   }
 
   fun createOrUpdatePerson(variables: CreateOrUpdatePersonMutation.Variables) =
@@ -97,15 +87,11 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   fun createOrUpdatePerson(id: String, name: String, age: Int? = null) =
-    createOrUpdatePerson(
-      CreateOrUpdatePersonMutation.Variables(
-        CreateOrUpdatePersonMutation.Variables.PersonData(id = id, name = name, age = age)
-      )
-    )
+    createOrUpdatePerson(CreateOrUpdatePersonMutation.Variables(id = id, name = name, age = age))
 
   object UpdatePersonMutation {
-    @Serializable data class PersonData(val name: String? = null, val age: Int? = null)
-    @Serializable data class Variables(val id: String, val data: PersonData)
+    @Serializable
+    data class Variables(val id: String, val name: String? = null, val age: Int? = null)
   }
 
   fun updatePerson(variables: UpdatePersonMutation.Variables) =
@@ -117,12 +103,7 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   fun updatePerson(id: String, name: String? = null, age: Int? = null) =
-    updatePerson(
-      UpdatePersonMutation.Variables(
-        id = id,
-        data = UpdatePersonMutation.PersonData(name = name, age = age)
-      )
-    )
+    updatePerson(UpdatePersonMutation.Variables(id = id, name = name, age = age))
 
   object DeletePersonMutation {
     @Serializable data class Variables(val id: String)

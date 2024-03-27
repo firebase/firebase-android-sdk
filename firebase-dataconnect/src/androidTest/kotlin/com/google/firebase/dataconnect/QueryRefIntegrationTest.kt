@@ -107,19 +107,17 @@ class QueryRefIntegrationTest {
     val id = randomId()
     allTypesSchema
       .createPrimitive(
-        AllTypesSchema.CreatePrimitiveMutation.Variables(
-          AllTypesSchema.PrimitiveData(
-            id = id,
-            idFieldNullable = "e03b3062-bf60-4428-956a-17c0bc444691",
-            intField = 42,
-            intFieldNullable = 43,
-            floatField = 123.45,
-            floatFieldNullable = 678.91,
-            booleanField = true,
-            booleanFieldNullable = false,
-            stringField = "TestString",
-            stringFieldNullable = "TestNullableString"
-          )
+        AllTypesSchema.PrimitiveData(
+          id = id,
+          idFieldNullable = "e03b3062-bf60-4428-956a-17c0bc444691",
+          intField = 42,
+          intFieldNullable = 43,
+          floatField = 123.45,
+          floatFieldNullable = 678.91,
+          booleanField = true,
+          booleanFieldNullable = false,
+          stringField = "TestString",
+          stringFieldNullable = "TestNullableString"
         )
       )
       .execute()
@@ -144,19 +142,17 @@ class QueryRefIntegrationTest {
     val id = randomId()
     allTypesSchema
       .createPrimitive(
-        AllTypesSchema.CreatePrimitiveMutation.Variables(
-          AllTypesSchema.PrimitiveData(
-            id = id,
-            idFieldNullable = null,
-            intField = 42,
-            intFieldNullable = null,
-            floatField = 123.45,
-            floatFieldNullable = null,
-            booleanField = true,
-            booleanFieldNullable = null,
-            stringField = "TestString",
-            stringFieldNullable = null
-          )
+        AllTypesSchema.PrimitiveData(
+          id = id,
+          idFieldNullable = null,
+          intField = 42,
+          intFieldNullable = null,
+          floatField = 123.45,
+          floatFieldNullable = null,
+          booleanField = true,
+          booleanFieldNullable = null,
+          stringField = "TestString",
+          stringFieldNullable = null
         )
       )
       .execute()
@@ -177,32 +173,24 @@ class QueryRefIntegrationTest {
     val id = randomId()
     allTypesSchema
       .createPrimitiveList(
-        AllTypesSchema.CreatePrimitiveListMutation.Variables(
-          AllTypesSchema.PrimitiveListData(
-            id = id,
-            idListNullable =
-              listOf(
-                "1c2a5a6d-f81c-4252-ac86-383bb93d3dfb",
-                "b53f44ae-5be9-4354-b58d-10db98690954"
-              ),
-            idListOfNullable =
-              listOf(
-                "e87004fc-b45d-4b83-8ccb-3ffca5c98e8d",
-                "ad08635e-7b49-4511-9b6e-daa3b390235e"
-              ),
-            intList = listOf(42, 43, 44),
-            intListNullable = listOf(45, 46),
-            intListOfNullable = listOf(47, 48),
-            floatList = listOf(12.3, 45.6, 78.9),
-            floatListNullable = listOf(98.7, 65.4),
-            floatListOfNullable = listOf(100.1, 100.2),
-            booleanList = listOf(true, false, true, false),
-            booleanListNullable = listOf(false, true, false, true),
-            booleanListOfNullable = listOf(false, false, true, true),
-            stringList = listOf("xxx", "yyy", "zzz"),
-            stringListNullable = listOf("qqq", "rrr"),
-            stringListOfNullable = listOf("sss", "ttt"),
-          )
+        AllTypesSchema.PrimitiveListData(
+          id = id,
+          idListNullable =
+            listOf("1c2a5a6d-f81c-4252-ac86-383bb93d3dfb", "b53f44ae-5be9-4354-b58d-10db98690954"),
+          idListOfNullable =
+            listOf("e87004fc-b45d-4b83-8ccb-3ffca5c98e8d", "ad08635e-7b49-4511-9b6e-daa3b390235e"),
+          intList = listOf(42, 43, 44),
+          intListNullable = listOf(45, 46),
+          intListOfNullable = listOf(47, 48),
+          floatList = listOf(12.3, 45.6, 78.9),
+          floatListNullable = listOf(98.7, 65.4),
+          floatListOfNullable = listOf(100.1, 100.2),
+          booleanList = listOf(true, false, true, false),
+          booleanListNullable = listOf(false, true, false, true),
+          booleanListOfNullable = listOf(false, false, true, true),
+          stringList = listOf("xxx", "yyy", "zzz"),
+          stringListNullable = listOf("qqq", "rrr"),
+          stringListOfNullable = listOf("sss", "ttt"),
         )
       )
       .execute()
