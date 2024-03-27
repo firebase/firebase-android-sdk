@@ -60,8 +60,8 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.7.3")
   implementation("org.reactivestreams:reactive-streams:1.0.3")
   implementation("com.google.guava:listenablefuture:1.0")
-  implementation("androidx.concurrent:concurrent-futures:1.2.0-alpha02")
-  implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0-alpha02")
+  implementation("androidx.concurrent:concurrent-futures:1.2.0-alpha03")
+  implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0-alpha03")
 
   testImplementation("io.kotest:kotest-assertions-core:5.5.5")
   testImplementation("io.kotest:kotest-assertions-core-jvm:5.5.5")
