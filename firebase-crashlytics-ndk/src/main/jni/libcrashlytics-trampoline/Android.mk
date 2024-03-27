@@ -23,7 +23,7 @@ LOCAL_CPPFLAGS := \
     -fno-unroll-loops \
     -fno-ident \
 
-LOCAL_LDFLAGS := -Wl,--gc-sections -Wl,-z,norelro
+LOCAL_LDFLAGS := -Wl,--gc-sections -Wl,-z,norelro -Wl,-z,max-page-size=16384
 LOCAL_LDLIBS := -llog
 
 LOCAL_SRC_FILES := $(LOCAL_PATH)/src/handler_trampoline.cpp

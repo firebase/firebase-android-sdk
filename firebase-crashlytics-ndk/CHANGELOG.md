@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Updated libcrashlytics to be compatible with 16K devices
 
 # 18.6.3
 * [changed] Updated `firebase-crashlytics` dependency to v18.6.3

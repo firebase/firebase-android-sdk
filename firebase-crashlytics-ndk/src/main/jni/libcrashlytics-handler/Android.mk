@@ -19,7 +19,7 @@ LOCAL_CPPFLAGS := \
     -fvisibility=hidden \
     -nostdlib++ \
 
-LOCAL_LDFLAGS := -Wl,--gc-sections -Wl,--exclude-libs,ALL -Wl,-z,norelro
+LOCAL_LDFLAGS := -Wl,--gc-sections -Wl,--exclude-libs,ALL -Wl,-z,norelro -Wl,-z,max-page-size=16384
 LOCAL_LDLIBS := -llog -lz
 
 # Include all .cpp files in /src
