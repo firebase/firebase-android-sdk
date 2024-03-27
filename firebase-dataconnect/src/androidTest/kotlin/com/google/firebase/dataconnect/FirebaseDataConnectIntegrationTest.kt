@@ -155,19 +155,6 @@ class FirebaseDataConnectIntegrationTest {
   }
 
   @Test
-  fun getInstance_should_return_the_cached_instance_if_settings_are_null() {
-    val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName")
-      )
-    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_CONNECTOR_CONFIG1, null)
-    assertThat(instance1).isSameInstanceAs(instance2)
-  }
-
-  @Test
   fun getInstance_should_throw_if_settings_compare_unequal_to_settings_of_cached_instance() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
     val instance1 =
@@ -183,6 +170,10 @@ class FirebaseDataConnectIntegrationTest {
         SAMPLE_CONNECTOR_CONFIG1,
         DataConnectSettings(host = "TestHostName2")
       )
+    }
+
+    assertThrows(IllegalArgumentException::class.java) {
+      FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_CONNECTOR_CONFIG1)
     }
 
     val instance2 =
