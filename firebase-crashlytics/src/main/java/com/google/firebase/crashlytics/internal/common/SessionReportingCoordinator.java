@@ -247,8 +247,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       return CrashlyticsReportWithSessionId.create(
           reportToSend
               .getReport()
-              .withFirebaseInstallationId(firebaseInstallationId.fid)
-              .withFirebaseAuthenticationToken(firebaseInstallationId.authToken),
+              .withFirebaseInstallationId(firebaseInstallationId.getFid())
+              .withFirebaseAuthenticationToken(firebaseInstallationId.getAuthToken()),
           reportToSend.getSessionId(),
           reportToSend.getReportFile());
     }

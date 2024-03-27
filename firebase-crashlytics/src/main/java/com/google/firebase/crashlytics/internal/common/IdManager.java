@@ -116,20 +116,20 @@ public class IdManager implements InstallIdProvider {
       FirebaseInstallationId trueFid = fetchTrueFid();
       Logger.getLogger().v("Fetched Firebase Installation ID: " + trueFid);
 
-      if (trueFid.fid == null) {
+      if (trueFid.getFid() == null) {
         // This shouldn't happen often. We will assume the cached FID is valid, if it exists.
         // Otherwise, the safest thing to do is to create a synthetic ID instead
         trueFid =
             new FirebaseInstallationId(cachedFid == null ? createSyntheticFid() : cachedFid, null);
       }
 
-      if (Objects.equals(trueFid.fid, cachedFid)) {
+      if (Objects.equals(trueFid.getFid(), cachedFid)) {
         // the current FID is the same as the cached FID, so we keep the cached Crashlytics ID
         installIds = InstallIds.create(readCachedCrashlyticsInstallId(prefs), trueFid);
       } else {
         // the current FID has changed, so we generate a new Crashlytics ID
         installIds =
-            InstallIds.create(createAndCacheCrashlyticsInstallId(trueFid.fid, prefs), trueFid);
+            InstallIds.create(createAndCacheCrashlyticsInstallId(trueFid.getFid(), prefs), trueFid);
       }
     } else { // data collection is NOT enabled; we can't use the FID
       if (isSyntheticFid(cachedFid)) {

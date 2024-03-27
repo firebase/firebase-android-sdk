@@ -16,7 +16,6 @@ package com.google.firebase.crashlytics.internal.common;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.auto.value.AutoValue;
 
 public interface InstallIdProvider {
@@ -36,7 +35,6 @@ public interface InstallIdProvider {
     public abstract String getFirebaseAuthenticationToken();
 
     /** Creates an InstallIds with just a crashlyticsInstallId, no firebaseInstallationId. */
-    @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public static InstallIds createWithoutFid(String crashlyticsInstallId) {
       return new AutoValue_InstallIdProvider_InstallIds(
           crashlyticsInstallId,
@@ -47,7 +45,9 @@ public interface InstallIdProvider {
     static InstallIds create(
         String crashlyticsInstallId, FirebaseInstallationId firebaseInstallationId) {
       return new AutoValue_InstallIdProvider_InstallIds(
-          crashlyticsInstallId, firebaseInstallationId.fid, firebaseInstallationId.authToken);
+          crashlyticsInstallId,
+          firebaseInstallationId.getFid(),
+          firebaseInstallationId.getAuthToken());
     }
   }
 }
