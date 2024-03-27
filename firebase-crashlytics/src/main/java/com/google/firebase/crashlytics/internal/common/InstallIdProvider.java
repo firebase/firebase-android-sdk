@@ -32,15 +32,22 @@ public interface InstallIdProvider {
     @Nullable
     public abstract String getFirebaseInstallationId();
 
+    @Nullable
+    public abstract String getFirebaseAuthenticationToken();
+
     /** Creates an InstallIds with just a crashlyticsInstallId, no firebaseInstallationId. */
     @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
     public static InstallIds createWithoutFid(String crashlyticsInstallId) {
-      return create(crashlyticsInstallId, /* firebaseInstallationId= */ null);
+      return new AutoValue_InstallIdProvider_InstallIds(
+          crashlyticsInstallId,
+          /* firebaseInstallationId= */ null,
+          /* firebaseAuthenticationToken= */ null);
     }
 
-    static InstallIds create(String crashlyticsInstallId, @Nullable String firebaseInstallationId) {
+    static InstallIds create(
+        String crashlyticsInstallId, FirebaseInstallationId firebaseInstallationId) {
       return new AutoValue_InstallIdProvider_InstallIds(
-          crashlyticsInstallId, firebaseInstallationId);
+          crashlyticsInstallId, firebaseInstallationId.fid, firebaseInstallationId.authToken);
     }
   }
 }
