@@ -15,12 +15,14 @@
 package com.google.firebase.functions;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import java.net.URL;
+import okhttp3.OkHttpClient;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -99,6 +101,26 @@ public class FirebaseFunctionsTest {
     FirebaseFunctions functions2 = FirebaseFunctions.getInstance(app);
 
     assertEquals(functions1.getURL("foo").toString(), functions2.getURL("foo").toString());
+  }
+
+  @Test
+  public void testSetOkHttpClient() {
+    OkHttpClient client = new OkHttpClient.Builder().build();
+    FirebaseApp app = getApp("testSetOkHttpClient");
+    FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
+
+    functions.setOkHttpClient(client);
+
+    assertEquals(client, functions.getOkHttpClient());
+  }
+
+  @Test
+  public void testSetOkHttpClient_throwNPE() {
+    FirebaseApp app = getApp("testSetOkHttpClient_throwNPE");
+    FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
+
+    //noinspection DataFlowIssue
+    assertThrows(NullPointerException.class, () -> functions.setOkHttpClient(null));
   }
 
   private FirebaseApp getApp(String name) {
