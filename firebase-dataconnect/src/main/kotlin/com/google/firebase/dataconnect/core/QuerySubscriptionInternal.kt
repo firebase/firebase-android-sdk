@@ -11,17 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.core
 
-import kotlinx.coroutines.flow.*
+import com.google.firebase.dataconnect.*
 
-public interface QuerySubscription<Data, Variables> {
-  public val query: QueryRef<Data, Variables>
+internal interface QuerySubscriptionInternal<Data, Variables> : QuerySubscription<Data, Variables> {
+  val lastResult: QuerySubscriptionResult<Data, Variables>?
 
-  public val flow: Flow<QuerySubscriptionResult<Data, Variables>>
-}
+  suspend fun reload()
 
-public interface QuerySubscriptionResult<Data, Variables> {
-  public val query: QueryRef<Data, Variables>
-  public val result: Result<QueryResult<Data, Variables>>
+  suspend fun update(variables: Variables)
 }

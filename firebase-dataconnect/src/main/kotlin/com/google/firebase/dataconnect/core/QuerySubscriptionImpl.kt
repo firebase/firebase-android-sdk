@@ -21,7 +21,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 
 internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, Variables>) :
-  QuerySubscription<Data, Variables> {
+  QuerySubscriptionInternal<Data, Variables> {
   private val _query = MutableStateFlow(query)
   override val query: QueryRefImpl<Data, Variables> by _query::value
 
@@ -30,7 +30,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
     get() = _lastResult.value.ref
 
   // Each collection of this flow triggers an implicit `reload()`.
-  override val resultFlow: Flow<QuerySubscriptionResult<Data, Variables>> = channelFlow {
+  override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = channelFlow {
     val cachedResult = lastResult?.also { send(it) }
 
     var collectJob: Job? = null

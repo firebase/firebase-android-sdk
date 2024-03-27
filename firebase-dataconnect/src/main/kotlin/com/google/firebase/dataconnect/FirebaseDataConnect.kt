@@ -51,11 +51,11 @@ public interface FirebaseDataConnect : AutoCloseable {
 public fun FirebaseDataConnect.Companion.getInstance(
   app: FirebaseApp,
   config: ConnectorConfig,
-  settings: DataConnectSettings? = null,
+  settings: DataConnectSettings = DataConnectSettings(),
 ): FirebaseDataConnect =
   app.get(FirebaseDataConnectFactory::class.java).run { get(config = config, settings = settings) }
 
 public fun FirebaseDataConnect.Companion.getInstance(
   config: ConnectorConfig,
-  settings: DataConnectSettings? = null
+  settings: DataConnectSettings = DataConnectSettings()
 ): FirebaseDataConnect = getInstance(app = Firebase.app, config = config, settings = settings)
