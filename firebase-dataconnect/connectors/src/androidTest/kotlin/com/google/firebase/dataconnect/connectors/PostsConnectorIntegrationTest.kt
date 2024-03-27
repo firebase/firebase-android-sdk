@@ -267,38 +267,16 @@ class PostsConnectorIntegrationTest {
 
   @Test
   fun subscribe() = runTest {
-    val postId1 = randomPostId()
-    val postContent1 = randomPostContent()
-    val postId2 = randomPostId()
-    val postContent2 = randomPostContent()
+    val postId = randomPostId()
+    val postContent = randomPostContent()
 
-    posts.createPost(id = postId1, content = postContent1)
-    posts.createPost(id = postId2, content = postContent2)
+    posts.createPost(id = postId, content = postContent)
 
-    val querySubscription = posts.getPost.ref(id = postId1).subscribe()
-    assertWithMessage("lastResult 0").that(querySubscription.lastResult).isNull()
-
-    val result1 = querySubscription.resultFlow.first()
+    val querySubscription = posts.getPost.ref(id = postId).subscribe()
+    val result = querySubscription.flow.first()
     assertWithMessage("result1.post.content")
-      .that(result1.result.getOrThrow().data.post?.content)
-      .isEqualTo(postContent1)
-
-    assertWithMessage("lastResult 1").that(querySubscription.lastResult).isEqualTo(result1)
-
-    val flow2Job = backgroundScope.async { querySubscription.resultFlow.take(2).toList() }
-
-    querySubscription.update(GetPost.Variables(id = postId2))
-
-    val results2 = flow2Job.await()
-    assertWithMessage("results2.size").that(results2.size).isEqualTo(2)
-    assertWithMessage("results2[0].post.content")
-      .that(results2[0].result.getOrThrow().data.post?.content)
-      .isEqualTo(postContent1)
-    assertWithMessage("results2[1].post.content")
-      .that(results2[1].result.getOrThrow().data.post?.content)
-      .isEqualTo(postContent2)
-
-    assertWithMessage("lastResult 2").that(querySubscription.lastResult).isEqualTo(results2[1])
+      .that(result.result.getOrThrow().data.post?.content)
+      .isEqualTo(postContent)
   }
 
   private companion object {
