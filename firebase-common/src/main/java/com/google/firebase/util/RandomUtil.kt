@@ -44,7 +44,7 @@ fun Random.nextAlphanumericString(length: Int? = null): String {
 
   return buildString {
     repeat(numCharactersToGenerate) {
-      append(ALPHANUMERIC_ALPHABET.random())
+      append(ALPHANUMERIC_ALPHABET.random(this@nextAlphanumericString))
     }
   }
 }
