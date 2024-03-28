@@ -1,5 +1,5 @@
 # Unreleased
-* [feature] Enable queries with range & inequality filters on multiple field. [#5729](//github.com/firebase/firebase-android-sdk/pull/5729)
+* [feature] Enable queries with range & inequality filters on multiple fields. [#5729](//github.com/firebase/firebase-android-sdk/pull/5729)
 
 # 24.11.0
 * [feature] Enable snapshot listener option to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
