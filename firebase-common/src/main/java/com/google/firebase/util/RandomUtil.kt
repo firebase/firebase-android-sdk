@@ -42,21 +42,12 @@ fun Random.nextAlphanumericString(length: Int? = null): String {
       DEFAULT_ALPHANUMERIC_STRING_LENGTH
     }
 
-  return buildString { repeat(numCharactersToGenerate) { append(nextAlphanumericChar()) } }
+  return buildString {
+    repeat(numCharactersToGenerate) {
+      append(ALPHANUMERIC_ALPHABET.random())
+    }
+  }
 }
-
-/**
- * Generates and returns a random alphanumeric character.
- *
- * The characters returned are taken from the set of characters comprising of the 10 numeric digits
- * and the 26 lowercase English characters.
- *
- * NOTE: The randomness of this function has NOT been verified to be cryptographically safe. Only
- * use the strings returned from this function in contexts where security is not a concern.
- *
- * @return a randomly-chosen alphanumeric character.
- */
-fun Random.nextAlphanumericChar(): Char = ALPHANUMERIC_ALPHABET.random()
 
 // The set of characters comprising of the 10 numeric digits and the 26 lowercase letters of the
 // English alphabet with some characters removed that can look similar in different fonts, like
