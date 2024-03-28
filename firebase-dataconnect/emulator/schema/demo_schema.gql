@@ -1,0 +1,19 @@
+type Foo @table {
+  id: String!
+  bar: String
+}
+
+type OneNonNullStringField @table {
+  id: String!
+  value: String!
+}
+
+type OneNullableStringField @table {
+  id: String!
+  value: String
+}
+
+type OneStringListField @table {
+  id: String!
+  value: [String]
+}

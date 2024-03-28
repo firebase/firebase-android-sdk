@@ -1,0 +1,23 @@
+mutation InsertOneNonNullStringField($id: String!, $value: String!) @auth(level: PUBLIC) {
+  oneNonNullStringField_insert(data: { id: $id, value: $value })
+}
+
+query GetOneNonNullStringFieldById($id: String!) @auth(level: PUBLIC) {
+  oneNonNullStringField(id: $id) { value }
+}
+
+mutation InsertOneNullableStringField($id: String!, $value: String) @auth(level: PUBLIC) {
+  oneNullableStringField_insert(data: { id: $id, value: $value })
+}
+
+query GetOneNullableStringFieldById($id: String!) @auth(level: PUBLIC) {
+  oneNullableStringField(id: $id) { value }
+}
+
+mutation InsertOneStringListField($id: String!, $value: [String!]!) @auth(level: PUBLIC) {
+  oneStringListField_insert(data: { id: $id, value: $value })
+}
+
+query GetOneStringListFieldById($id: String!) @auth(level: PUBLIC) {
+  oneStringListField(id: $id) { value }
+}

@@ -3,6 +3,8 @@ package com.google.firebase.dataconnect.testutil
 import com.google.common.truth.StringSubject
 import java.util.UUID
 import java.util.regex.Pattern
+import kotlin.reflect.KClass
+import kotlin.reflect.safeCast
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
@@ -54,3 +56,19 @@ fun fail(message: String): Nothing {
   Assert.fail(message)
   throw IllegalStateException("Should never get here")
 }
+
+/** Calls the given block and asserts that it throws the given exception. */
+inline fun <T, R, E : Any> T.assertThrows(expectedException: KClass<E>, block: T.() -> R): E =
+  runCatching { block() }
+    .fold(
+      onSuccess = {
+        fail(
+          "Expected block to throw ${expectedException.qualifiedName}, " +
+            "but it did not throw and returned: $it"
+        )
+      },
+      onFailure = {
+        expectedException.safeCast(it)
+          ?: fail("Expected block to throw ${expectedException.qualifiedName}, but it threw: $it")
+      }
+    )

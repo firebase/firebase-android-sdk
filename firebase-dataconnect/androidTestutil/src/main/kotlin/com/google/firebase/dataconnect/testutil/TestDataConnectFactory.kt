@@ -14,6 +14,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.*
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
@@ -32,6 +33,16 @@ class TestDataConnectFactory :
   ): FirebaseDataConnect =
     newInstance(Params(serviceId = service, location = location, connector = connector))
 
+  fun newInstance(firebaseApp: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =
+    newInstance(
+      Params(
+        firebaseApp = firebaseApp,
+        connector = config.connector,
+        location = config.location,
+        serviceId = config.serviceId
+      )
+    )
+
   override fun createInstance(params: Params?): FirebaseDataConnect {
     val instanceId = Random.nextAlphanumericString()
     val connectorConfig =
@@ -41,7 +52,12 @@ class TestDataConnectFactory :
         serviceId = params?.serviceId ?: "TestService$instanceId",
       )
 
-    val dataConnect = FirebaseDataConnect.getInstance(connectorConfig)
+    val dataConnect =
+      if (params?.firebaseApp == null) {
+        FirebaseDataConnect.getInstance(connectorConfig)
+      } else {
+        FirebaseDataConnect.getInstance(params.firebaseApp, connectorConfig)
+      }
 
     dataConnect.useEmulator()
 
@@ -53,6 +69,7 @@ class TestDataConnectFactory :
   }
 
   data class Params(
+    val firebaseApp: FirebaseApp? = null,
     val connector: String? = null,
     val location: String? = null,
     val serviceId: String? = null,

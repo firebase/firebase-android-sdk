@@ -19,7 +19,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.app
-import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
@@ -30,14 +30,19 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TestName
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class PostsConnectorIntegrationTest {
 
+  @get:Rule val testNameRule = TestName()
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
   @get:Rule val dataConnectFactory = TestDataConnectFactory()
+
+  private val testName
+    get() = this::class.qualifiedName + "." + testNameRule.methodName
 
   private val posts: PostsConnector by lazy {
     PostsConnector.getInstance(firebaseAppFactory.newInstance()).apply {
@@ -49,6 +54,7 @@ class PostsConnectorIntegrationTest {
   @Test
   fun instance_ShouldBeAssociatedWithTheDefaultFirebaseApp() {
     val posts = PostsConnector.instance
+    cleanupAfterTest(posts)
 
     assertThat(posts.dataConnect.app).isSameInstanceAs(Firebase.app)
   }
@@ -56,8 +62,11 @@ class PostsConnectorIntegrationTest {
   @Test
   fun instance_ShouldAlwaysReturnTheSameObject() {
     val posts1 = PostsConnector.instance
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.instance
+    cleanupAfterTest(posts2)
     val posts3 = PostsConnector.instance
+    cleanupAfterTest(posts3)
 
     assertThat(posts1).isSameInstanceAs(posts2)
     assertThat(posts1).isSameInstanceAs(posts3)
@@ -68,6 +77,7 @@ class PostsConnectorIntegrationTest {
     val posts1 = PostsConnector.instance
     posts1.dataConnect.close()
     val posts2 = PostsConnector.instance
+    cleanupAfterTest(posts2)
 
     assertThat(posts1).isNotSameInstanceAs(posts2)
     assertThat(posts1.dataConnect).isNotSameInstanceAs(posts2.dataConnect)
@@ -80,7 +90,9 @@ class PostsConnectorIntegrationTest {
     val app2 = firebaseAppFactory.newInstance()
 
     val posts1 = PostsConnector.getInstance(app1)
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.getInstance(app2)
+    cleanupAfterTest(posts2)
 
     assertThat(posts1.dataConnect.app).isSameInstanceAs(app1)
     assertThat(posts2.dataConnect.app).isSameInstanceAs(app2)
@@ -92,9 +104,13 @@ class PostsConnectorIntegrationTest {
     val app2 = firebaseAppFactory.newInstance()
 
     val posts1 = PostsConnector.getInstance(app1)
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.getInstance(app2)
+    cleanupAfterTest(posts2)
     val posts1b = PostsConnector.getInstance(app1)
+    cleanupAfterTest(posts1b)
     val posts2b = PostsConnector.getInstance(app2)
+    cleanupAfterTest(posts2b)
 
     assertThat(posts1).isSameInstanceAs(posts1b)
     assertThat(posts2).isSameInstanceAs(posts2b)
@@ -106,11 +122,15 @@ class PostsConnectorIntegrationTest {
     val app2 = firebaseAppFactory.newInstance()
 
     val posts1 = PostsConnector.getInstance(app1)
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.getInstance(app2)
+    cleanupAfterTest(posts2)
     posts1.dataConnect.close()
     posts2.dataConnect.close()
     val posts1b = PostsConnector.getInstance(app1)
+    cleanupAfterTest(posts1b)
     val posts2b = PostsConnector.getInstance(app2)
+    cleanupAfterTest(posts2b)
 
     assertThat(posts1).isNotSameInstanceAs(posts1b)
     assertThat(posts2).isNotSameInstanceAs(posts2b)
@@ -128,6 +148,7 @@ class PostsConnectorIntegrationTest {
     val settings = randomDataConnectSettings()
 
     val posts = PostsConnector.getInstance(settings)
+    cleanupAfterTest(posts)
 
     assertThat(posts.dataConnect.app).isSameInstanceAs(Firebase.app)
     assertThat(posts.dataConnect.settings).isSameInstanceAs(settings)
@@ -141,7 +162,9 @@ class PostsConnectorIntegrationTest {
     val settings = randomDataConnectSettings()
 
     val posts1 = PostsConnector.getInstance(settings)
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.getInstance(settings)
+    cleanupAfterTest(posts2)
 
     assertThat(posts1).isSameInstanceAs(posts2)
   }
@@ -154,8 +177,10 @@ class PostsConnectorIntegrationTest {
     val settings = randomDataConnectSettings()
 
     val posts1 = PostsConnector.getInstance(settings)
+    cleanupAfterTest(posts1)
     posts1.dataConnect.close()
     val posts2 = PostsConnector.getInstance(settings)
+    cleanupAfterTest(posts2)
 
     assertThat(posts1).isNotSameInstanceAs(posts2)
     assertThat(posts1.dataConnect.app).isSameInstanceAs(Firebase.app)
@@ -169,7 +194,9 @@ class PostsConnectorIntegrationTest {
     val settings2 = randomDataConnectSettings()
 
     val posts1 = PostsConnector.getInstance(app1, settings1)
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.getInstance(app2, settings2)
+    cleanupAfterTest(posts2)
 
     assertThat(posts1.dataConnect.app).isSameInstanceAs(app1)
     assertThat(posts2.dataConnect.app).isSameInstanceAs(app2)
@@ -185,9 +212,13 @@ class PostsConnectorIntegrationTest {
     val settings2 = randomDataConnectSettings()
 
     val posts1 = PostsConnector.getInstance(app1, settings1)
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.getInstance(app2, settings2)
+    cleanupAfterTest(posts2)
     val posts1b = PostsConnector.getInstance(app1, settings1)
+    cleanupAfterTest(posts1b)
     val posts2b = PostsConnector.getInstance(app2, settings2)
+    cleanupAfterTest(posts2b)
 
     assertThat(posts1).isSameInstanceAs(posts1b)
     assertThat(posts2).isSameInstanceAs(posts2b)
@@ -203,11 +234,15 @@ class PostsConnectorIntegrationTest {
     val settings2 = randomDataConnectSettings()
 
     val posts1 = PostsConnector.getInstance(app1, settings1)
+    cleanupAfterTest(posts1)
     val posts2 = PostsConnector.getInstance(app2, settings2)
+    cleanupAfterTest(posts2)
     posts1.dataConnect.close()
     posts2.dataConnect.close()
     val posts1b = PostsConnector.getInstance(app1, settings1)
+    cleanupAfterTest(posts1b)
     val posts2b = PostsConnector.getInstance(app2, settings2)
+    cleanupAfterTest(posts2b)
 
     assertThat(posts1).isNotSameInstanceAs(posts1b)
     assertThat(posts2).isNotSameInstanceAs(posts2b)
@@ -279,11 +314,25 @@ class PostsConnectorIntegrationTest {
       .isEqualTo(postContent)
   }
 
-  private companion object {
-    fun randomPostId() = "PostId_" + Random.nextAlphanumericString(length = 10)
-    fun randomPostContent() = "PostContent_" + Random.nextAlphanumericString(length = 40)
-    fun randomCommentId() = "CommentId_" + Random.nextAlphanumericString(length = 10)
-    fun randomHost() = "Host_" + Random.nextAlphanumericString(length = 10)
-    fun randomDataConnectSettings() = DataConnectSettings(host = randomHost())
+  /**
+   * Ensures that the [FirebaseDataConnect] instance encapsulated by the given [PostsConnector] is
+   * closed when this test completes. This method should be called immediately after all calls of
+   * [PostsConnector.getInstance] and [PostsConnector.instance] to ensure that the instance doesn't
+   * leak into other tests.
+   */
+  private fun cleanupAfterTest(connector: PostsConnector) {
+    dataConnectFactory.adoptInstance(connector.dataConnect)
   }
+
+  private fun randomPostId() = "PostId_${testName}_${Random.nextAlphanumericString(length = 10)}"
+
+  private fun randomPostContent() =
+    "PostContent_${testName}_${Random.nextAlphanumericString(length = 40)}"
+
+  private fun randomCommentId() =
+    "CommentId_${testName}_${Random.nextAlphanumericString(length = 10)}"
+
+  private fun randomHost() = "Host_" + testName + "_" + Random.nextAlphanumericString(length = 10)
+
+  private fun randomDataConnectSettings() = DataConnectSettings(host = randomHost())
 }
