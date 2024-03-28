@@ -57,7 +57,7 @@ internal class FirebaseSessions(
             firebaseApp.addLifecycleEventListener { _, _ ->
               Log.w(
                 TAG,
-                "FirebaseApp instance deleted. Sessions library will stop collecting data."
+                "FirebaseApp instance deleted. Sessions library will stop collecting data.",
               )
               SessionsActivityLifecycleCallbacks.lifecycleClient = null
             }
@@ -67,7 +67,7 @@ internal class FirebaseSessions(
     } else {
       Log.e(
         TAG,
-        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
+        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}.",
       )
     }
   }
