@@ -56,8 +56,7 @@ fun Random.nextAlphanumericString(length: Int? = null): String {
  *
  * @return a randomly-chosen alphanumeric character.
  */
-fun Random.nextAlphanumericChar(): Char =
-  ALPHANUMERIC_ALPHABET[nextInt(0, ALPHANUMERIC_ALPHABET.length)]
+fun Random.nextAlphanumericChar(): Char = ALPHANUMERIC_ALPHABET.random()
 
 // The set of characters comprising of the 10 numeric digits and the 26 lowercase letters of the
 // English alphabet with some characters removed that can look similar in different fonts, like
