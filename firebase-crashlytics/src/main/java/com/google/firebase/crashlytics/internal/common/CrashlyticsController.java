@@ -424,7 +424,7 @@ class CrashlyticsController {
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
-  void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
+  void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex, Map<String, String> extraInfo) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
     final long timestampMillis = System.currentTimeMillis();
@@ -442,7 +442,7 @@ class CrashlyticsController {
                 return;
               }
               reportingCoordinator.persistNonFatalEvent(
-                  ex, thread, currentSessionId, timestampSeconds);
+                  ex, thread, currentSessionId, timestampSeconds, extraInfo);
             }
           }
         });
