@@ -20,10 +20,10 @@ import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.fail
 import com.google.firebase.dataconnect.testutil.randomAlphanumericString
-import org.junit.Test
-import org.mockito.Mockito.mock
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import org.junit.Test
+import org.mockito.Mockito.mock
 
 class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase() {
 

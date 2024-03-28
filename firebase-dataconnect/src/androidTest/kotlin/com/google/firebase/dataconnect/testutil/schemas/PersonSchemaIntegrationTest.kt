@@ -1,23 +1,12 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonId
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonName
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWithHardcodedNameQuery.hardcodedPeople
-import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
-import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
-class PersonSchemaIntegrationTest {
-
-  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val schema by lazy { PersonSchema(dataConnectFactory) }
 

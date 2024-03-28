@@ -15,9 +15,9 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.util.nextAlphanumericString
-import kotlin.random.Random
+import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -208,8 +208,10 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
 
   companion object {
     const val CONNECTOR = "person"
-
-    fun randomPersonId(): String = "PersonId_" + Random.nextAlphanumericString()
-    fun randomPersonName(): String = "PersonName_" + Random.nextAlphanumericString()
   }
 }
+
+fun DataConnectIntegrationTestBase.randomPersonId() = randomAlphanumericString(prefix = "PersonId")
+
+fun DataConnectIntegrationTestBase.randomPersonName() =
+  randomAlphanumericString(prefix = "PersonName")

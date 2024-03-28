@@ -14,33 +14,23 @@
 
 package com.google.firebase.dataconnect
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.randomId
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.Companion.randomAnimalId
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.Companion.randomFarmId
-import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema.Companion.randomFarmerId
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonId
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonName
+import com.google.firebase.dataconnect.testutil.schemas.randomAnimalId
+import com.google.firebase.dataconnect.testutil.schemas.randomFarmId
+import com.google.firebase.dataconnect.testutil.schemas.randomFarmerId
+import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
+import com.google.firebase.dataconnect.testutil.schemas.randomPersonName
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
-import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
-class QueryRefIntegrationTest {
-
-  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val personSchema by lazy { PersonSchema(dataConnectFactory) }
   private val allTypesSchema by lazy { AllTypesSchema(dataConnectFactory) }

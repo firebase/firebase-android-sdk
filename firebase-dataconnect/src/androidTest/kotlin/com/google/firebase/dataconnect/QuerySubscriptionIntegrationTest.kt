@@ -16,17 +16,15 @@
 
 package com.google.firebase.dataconnect
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.core.QuerySubscriptionInternal
-import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.Companion.randomPersonId
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
+import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.skipItemsWhere
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import kotlin.time.Duration.Companion.seconds
@@ -40,15 +38,9 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
-import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
-class QuerySubscriptionIntegrationTest {
-
-  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val schema by lazy { PersonSchema(dataConnectFactory) }
 
