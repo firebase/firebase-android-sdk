@@ -27,7 +27,7 @@ import androidx.annotation.Keep;
  *       transitions
  *   <li>{@link FiamListener#onFiamClick()} is called when a message with a configured action is
  *       clicked. If the clicked message does not have a configured action, it is dismissed and
- *       {@link FiamListener#onFiamClick()} is invoked
+ *       {@link FiamListener#onFiamDismiss()} is invoked
  *   <li>Called when the message is dismissed either automatically after a timeout or by the user or
  *       when a clicked message has no associated action
  * </ul>
