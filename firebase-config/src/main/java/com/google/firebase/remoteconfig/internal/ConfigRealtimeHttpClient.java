@@ -57,6 +57,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
@@ -98,7 +99,7 @@ public class ConfigRealtimeHttpClient {
   private boolean isRealtimeDisabled;
 
   /** Flag to indicate whether or not the app is in the background or not. */
-  private boolean isInBackground;
+  private AtomicBoolean isInBackground;
 
   private final int ORIGINAL_RETRIES = 8;
   private final ScheduledExecutorService scheduledExecutorService;
@@ -144,7 +145,7 @@ public class ConfigRealtimeHttpClient {
     this.namespace = namespace;
     this.metadataClient = metadataClient;
     this.isRealtimeDisabled = false;
-    this.isInBackground = false;
+    this.isInBackground = new AtomicBoolean(false);
   }
 
   private static String extractProjectNumberFromAppId(String gmpAppId) {
@@ -286,7 +287,7 @@ public class ConfigRealtimeHttpClient {
     return !listeners.isEmpty()
         && !isHttpConnectionRunning
         && !isRealtimeDisabled
-        && !isInBackground;
+        && !isInBackground.get();
   }
 
   private String getRealtimeURL(String namespace) {
@@ -383,7 +384,7 @@ public class ConfigRealtimeHttpClient {
           },
           retryMilliseconds,
           TimeUnit.MILLISECONDS);
-    } else if (!isInBackground) {
+    } else if (!isInBackground.get()) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
               "Unable to connect to the server. Check your connection and try again.",
@@ -392,7 +393,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   void setRealtimeBackgroundState(boolean backgroundState) {
-    isInBackground = backgroundState;
+    isInBackground.set(backgroundState);
   }
 
   private synchronized void resetRetryCount() {
@@ -429,7 +430,8 @@ public class ConfigRealtimeHttpClient {
         activatedCache,
         listeners,
         retryCallback,
-        scheduledExecutorService);
+        scheduledExecutorService,
+        isInBackground);
   }
 
   // HTTP status code that the Realtime client should retry on.
