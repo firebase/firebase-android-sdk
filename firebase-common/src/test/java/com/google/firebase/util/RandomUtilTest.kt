@@ -77,25 +77,6 @@ class RandomUtilTest {
     assertWithMessage("unexpectedCharacters").that(unexpectedCharacters).isEmpty()
   }
 
-  @Test
-  fun `nextAlphanumericChar() should return only alphanumeric characters`() {
-    val generatedCharacters =
-      buildSet { repeat(10000) { add(Random.nextAlphanumericChar()) } }.toSortedSet()
-
-    val unexpectedCharacters =
-      generatedCharacters.filter { !VALID_ALPHNUMERIC_CHARACTERS.contains(it) }.toSortedSet()
-    assertWithMessage("unexpectedCharacters").that(unexpectedCharacters).isEmpty()
-  }
-
-  @Test
-  fun `nextAlphanumericChar() should return random characters`() {
-    val generatedStrings = buildList {
-      repeat(1000) { add(buildString { repeat(20) { append(Random.nextAlphanumericChar()) } }) }
-    }
-
-    assertThat(generatedStrings).containsNoDuplicates()
-  }
-
   private companion object {
     @Suppress("SpellCheckingInspection")
     const val VALID_ALPHNUMERIC_CHARACTERS = "01234567890abcdefghijklmnopqrstuvwxyz"
