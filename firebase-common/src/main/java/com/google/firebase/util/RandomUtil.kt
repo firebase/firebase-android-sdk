@@ -25,8 +25,8 @@ private const val DEFAULT_ALPHANUMERIC_STRING_LENGTH = 10
  * The characters returned are taken from the set of characters comprising of the 10 numeric digits
  * and the 26 lowercase English characters.
  *
- * NOTE: The randomness of this function is NOT cryptographically safe. Only use the strings
- * returned from this method in contexts where security is not a concern.
+ * NOTE: The randomness of this function has NOT been verified to be cryptographically safe. Only
+ * use the strings returned from this function in contexts where security is not a concern.
  *
  * @param length the number of random characters to generate and include in the returned string; if
  * `null`, then a default length of 10 is used (although this default _may_ change in the future);
@@ -51,13 +51,12 @@ fun Random.nextAlphanumericString(length: Int? = null): String {
  * The characters returned are taken from the set of characters comprising of the 10 numeric digits
  * and the 26 lowercase English characters.
  *
- * NOTE: The randomness of this function is NOT known to be cryptographically safe. Only use the
- * characters returned from this method in contexts where security is not a concern.
+ * NOTE: The randomness of this function has NOT been verified to be cryptographically safe. Only
+ * use the strings returned from this function in contexts where security is not a concern.
  *
  * @return a randomly-chosen alphanumeric character.
  */
-fun Random.nextAlphanumericChar(): Char =
-  ALPHANUMERIC_ALPHABET[nextInt(0, ALPHANUMERIC_ALPHABET.length)]
+fun Random.nextAlphanumericChar(): Char = ALPHANUMERIC_ALPHABET.random()
 
 // The set of characters comprising of the 10 numeric digits and the 26 lowercase letters of the
 // English alphabet with some characters removed that can look similar in different fonts, like
