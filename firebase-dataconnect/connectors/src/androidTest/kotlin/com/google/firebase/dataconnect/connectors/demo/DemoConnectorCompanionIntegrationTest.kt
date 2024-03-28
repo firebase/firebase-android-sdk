@@ -14,29 +14,18 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.fail
-import com.google.firebase.util.nextAlphanumericString
+import com.google.firebase.dataconnect.testutil.randomAlphanumericString
+import org.junit.Test
+import org.mockito.Mockito.mock
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import kotlin.random.Random
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TestName
-import org.junit.runner.RunWith
-import org.mockito.Mockito.mock
 
-@RunWith(AndroidJUnit4::class)
 class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase() {
-
-  @get:Rule val testNameRule = TestName()
-
-  private val testName
-    get() = this::class.qualifiedName + "." + testNameRule.methodName
 
   @Test
   fun instance_ShouldBeAssociatedWithTheDataConnectInstanceAssociatedWithTheDefaultApp() {
@@ -419,7 +408,7 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
     dataConnectFactory.adoptInstance(connector.dataConnect)
   }
 
-  private fun randomHost() = "Host_${testName}_${Random.nextAlphanumericString(length = 10)}"
+  private fun randomHost() = randomAlphanumericString(prefix = "Host")
 
   private fun randomDataConnectSettings() = DataConnectSettings(host = randomHost())
 }

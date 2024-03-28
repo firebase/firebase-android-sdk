@@ -14,35 +14,18 @@
 
 package com.google.firebase.dataconnect.connectors
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
-import com.google.firebase.util.nextAlphanumericString
-import kotlin.random.Random
-import kotlinx.coroutines.*
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.test.*
-import org.junit.Rule
 import org.junit.Test
-import org.junit.rules.TestName
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
-class PostsConnectorIntegrationTest {
-
-  @get:Rule val testNameRule = TestName()
-  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
-
-  private val testName
-    get() = this::class.qualifiedName + "." + testNameRule.methodName
+class PostsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val posts: PostsConnector by lazy {
     PostsConnector.getInstance(firebaseAppFactory.newInstance()).apply {
@@ -324,15 +307,9 @@ class PostsConnectorIntegrationTest {
     dataConnectFactory.adoptInstance(connector.dataConnect)
   }
 
-  private fun randomPostId() = "PostId_${testName}_${Random.nextAlphanumericString(length = 10)}"
-
-  private fun randomPostContent() =
-    "PostContent_${testName}_${Random.nextAlphanumericString(length = 40)}"
-
-  private fun randomCommentId() =
-    "CommentId_${testName}_${Random.nextAlphanumericString(length = 10)}"
-
-  private fun randomHost() = "Host_" + testName + "_" + Random.nextAlphanumericString(length = 10)
-
+  private fun randomPostId() = randomAlphanumericString(prefix = "PostId")
+  private fun randomPostContent() = randomAlphanumericString("PostContent")
+  private fun randomCommentId() = randomAlphanumericString("CommentId")
+  private fun randomHost() = randomAlphanumericString("Host")
   private fun randomDataConnectSettings() = DataConnectSettings(host = randomHost())
 }

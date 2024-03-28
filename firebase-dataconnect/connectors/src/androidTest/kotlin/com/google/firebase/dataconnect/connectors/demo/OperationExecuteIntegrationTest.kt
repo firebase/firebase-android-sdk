@@ -19,8 +19,7 @@ import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.connectors.demo.testutil.assertWith
 import com.google.firebase.dataconnect.testutil.assertThrows
-import com.google.firebase.util.nextAlphanumericString
-import kotlin.random.Random
+import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import kotlinx.coroutines.test.*
 import org.junit.Test
 
@@ -282,14 +281,12 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     assertThat(mutationResult.data.count).isEqualTo(5)
   }
 
-  private companion object {
-    fun randomFooId() = "FooId_" + Random.nextAlphanumericString(length = 20)
-    fun randomBar() = "Bar_" + Random.nextAlphanumericString(length = 20)
+  private fun randomFooId() = randomAlphanumericString(prefix = "FooId", numRandomChars = 20)
+  private fun randomBar() = randomAlphanumericString(prefix = "Bar", numRandomChars = 20)
 
-    suspend fun DemoConnector.insertFooWithRandomId(): String {
-      val id = randomFooId()
-      insertFoo.execute(id = id, bar = randomBar())
-      return id
-    }
+  suspend fun DemoConnector.insertFooWithRandomId(): String {
+    val id = randomFooId()
+    insertFoo.execute(id = id, bar = randomBar())
+    return id
   }
 }

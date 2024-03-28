@@ -14,20 +14,12 @@
 
 package com.google.firebase.dataconnect.connectors.demo.testutil
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.connectors.demo.DemoConnector
-import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import org.junit.Rule
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
-abstract class DemoConnectorIntegrationTestBase {
+abstract class DemoConnectorIntegrationTestBase : DataConnectIntegrationTestBase() {
 
-  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
   @get:Rule
   val demoConnectorFactory = TestDemoConnectorFactory(firebaseAppFactory, dataConnectFactory)
 

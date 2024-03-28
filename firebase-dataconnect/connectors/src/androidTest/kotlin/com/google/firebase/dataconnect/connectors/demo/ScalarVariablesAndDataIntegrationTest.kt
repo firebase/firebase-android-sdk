@@ -16,8 +16,7 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import com.google.firebase.util.nextAlphanumericString
-import kotlin.random.Random
+import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import kotlinx.coroutines.test.*
 import org.junit.Test
 
@@ -25,7 +24,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
 
   @Test
   fun mutationCorrectlySendsNonNullStringVariables() = runTest {
-    val id = Random.nextAlphanumericString()
+    val id = randomAlphanumericString()
 
     connector.insertOneNonNullStringField.execute(id = id, value = "TestString")
 
@@ -36,8 +35,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
 
   @Test
   fun mutationCorrectlySendsNullableStringVariables() = runTest {
-    val idForNonNullValue = "NonNull_" + Random.nextAlphanumericString()
-    val idForNullValue = "Null_" + Random.nextAlphanumericString()
+    val idForNonNullValue = randomAlphanumericString(prefix = "NonNull")
+    val idForNullValue = randomAlphanumericString(prefix = "Null")
 
     connector.insertOneNullableStringField.execute(id = idForNonNullValue, value = "TestString")
     connector.insertOneNullableStringField.execute(id = idForNullValue, value = null)
@@ -62,8 +61,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
 
   @Test
   fun mutationCorrectlySendsStringListVariables() = runTest {
-    val idForNonEmptyList = "NonEmpty_" + Random.nextAlphanumericString()
-    val idForEmptyList = "Empty_" + Random.nextAlphanumericString()
+    val idForNonEmptyList = randomAlphanumericString(prefix = "NonEmpty")
+    val idForEmptyList = randomAlphanumericString(prefix = "Empty")
 
     connector.insertOneStringListField.execute(id = idForNonEmptyList, value = listOf("a", "b"))
     connector.insertOneStringListField.execute(id = idForEmptyList, value = emptyList())
