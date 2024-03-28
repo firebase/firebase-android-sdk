@@ -33,6 +33,7 @@ import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
+import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.content
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -55,6 +56,7 @@ internal constructor(
   val generationConfig: GenerationConfig? = null,
   val safetySettings: List<SafetySetting>? = null,
   val requestOptions: RequestOptions = RequestOptions(),
+  val tools: List<Tool>? = null,
   private val controller: APIController
 ) {
 
@@ -64,6 +66,7 @@ internal constructor(
     apiKey: String,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
+    tools: List<Tool>? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ) : this(
     modelName,
@@ -71,6 +74,7 @@ internal constructor(
     generationConfig,
     safetySettings,
     requestOptions,
+    tools,
     APIController(apiKey, modelName, requestOptions.toInternal())
   )
 
@@ -176,7 +180,8 @@ internal constructor(
       modelName,
       prompt.map { it.toInternal() },
       safetySettings?.map { it.toInternal() },
-      generationConfig?.toInternal()
+      generationConfig?.toInternal(),
+      tools?.map { it.toInternal() },
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =

@@ -19,6 +19,11 @@ package com.google.firebase.vertexai.internal.util
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
+import com.google.ai.client.generativeai.common.client.Schema
+import com.google.ai.client.generativeai.common.shared.FunctionCall
+import com.google.ai.client.generativeai.common.shared.FunctionCallPart
+import com.google.ai.client.generativeai.common.shared.FunctionResponse
+import com.google.ai.client.generativeai.common.shared.FunctionResponsePart
 import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.BlockThreshold
@@ -27,6 +32,7 @@ import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.FunctionDeclaration
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.HarmCategory
@@ -38,10 +44,14 @@ import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetyRating
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
+import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.UsageMetadata
 import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import org.json.JSONObject
 
 private const val BASE_64_FLAGS = Base64.NO_WRAP
 
@@ -71,6 +81,20 @@ internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.
           Base64.encodeToString(blob, BASE_64_FLAGS)
         )
       )
+
+    is com.google.firebase.vertexai.type.FunctionCallPart ->
+      FunctionCallPart(
+        FunctionCall(
+          name,
+          args.orEmpty()
+        )
+      )
+
+    is com.google.firebase.vertexai.type.FunctionResponsePart ->
+      FunctionResponsePart(
+        FunctionResponse(name, response.toInternal())
+      )
+
     else ->
       throw SerializationException(
         "The given subclass of Part (${javaClass.simpleName}) is not supported in the serialization yet."
@@ -121,6 +145,33 @@ internal fun BlockThreshold.toInternal() =
       com.google.ai.client.generativeai.common.shared.HarmBlockThreshold.UNSPECIFIED
   }
 
+internal fun Tool.toInternal() =
+  com.google.ai.client.generativeai.common.client.Tool(functionDeclarations.map { it.toInternal() })
+
+internal fun FunctionDeclaration.toInternal() =
+  com.google.ai.client.generativeai.common.client.FunctionDeclaration(
+    name,
+    description,
+    Schema(
+      properties = getParameters().associate { it.name to it.toInternal() },
+      required = getParameters().map { it.name },
+      type = "OBJECT",
+    ),
+  )
+
+internal fun <T> com.google.firebase.vertexai.type.Schema<T>.toInternal(): Schema =
+  Schema(
+    type.name,
+    description,
+    format,
+    enum,
+    properties?.mapValues { it.value.toInternal() },
+    required,
+    items?.toInternal(),
+  )
+
+internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toString())
+
 internal fun com.google.ai.client.generativeai.common.server.Candidate.toPublic(): Candidate {
   val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
   val citations = citationMetadata?.citationSources?.map { it.toPublic() }.orEmpty()
@@ -151,6 +202,16 @@ internal fun com.google.ai.client.generativeai.common.shared.Part.toPublic(): Pa
         BlobPart(inlineData.mimeType, data)
       }
     }
+    is FunctionCallPart ->
+      com.google.firebase.vertexai.type.FunctionCallPart(
+        functionCall.name,
+        functionCall.args.orEmpty(),
+      )
+    is FunctionResponsePart ->
+      com.google.firebase.vertexai.type.FunctionResponsePart(
+        functionResponse.name,
+        functionResponse.response.toPublic(),
+      )
     else ->
       throw SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."
@@ -234,6 +295,8 @@ internal fun com.google.ai.client.generativeai.common.GenerateContentResponse.to
 
 internal fun com.google.ai.client.generativeai.common.CountTokensResponse.toPublic() =
   CountTokensResponse(totalTokens)
+
+internal fun JsonObject.toPublic() = JSONObject(toString())
 
 private fun encodeBitmapToBase64Png(input: Bitmap): String {
   ByteArrayOutputStream().let {

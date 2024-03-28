@@ -33,6 +33,12 @@ class GenerateContentResponse(
   /** Convenience field representing the first text part in the response, if it exists. */
   val text: String? by lazy { firstPartAs<TextPart>()?.text }
 
+  /** Convenience field representing the first text part in the response, if it exists. */
+  val functionCall: FunctionCallPart? by lazy { firstPartAs() }
+
+  /** Convenience field representing the first text part in the response, if it exists. */
+  val functionResponse: FunctionResponsePart? by lazy { firstPartAs() }
+
   private inline fun <reified T : Part> firstPartAs(): T? {
     if (candidates.isEmpty()) {
       warn("No candidates were found, but was asked to get a candidate.")

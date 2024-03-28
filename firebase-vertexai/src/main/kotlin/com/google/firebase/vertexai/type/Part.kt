@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai.type
 
 import android.graphics.Bitmap
+import org.json.JSONObject
 
 /**
  * Interface representing data sent to and received from requests.
@@ -39,6 +40,12 @@ class ImagePart(val image: Bitmap) : Part
 
 /** Represents binary data with an associated MIME type sent to and received from requests. */
 class BlobPart(val mimeType: String, val blob: ByteArray) : Part
+
+/** Represents function call name and params received from requests. */
+class FunctionCallPart(val name: String, val args: Map<String, String>) : Part
+
+/** Represents function call output to be returned to the model when it requests a function call */
+class FunctionResponsePart(val name: String, val response: JSONObject) : Part
 
 /** @return The part as a [String] if it represents text, and null otherwise */
 fun Part.asTextOrNull(): String? = (this as? TextPart)?.text

@@ -167,8 +167,8 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
   }
 
   private fun Content.assertComesFromUser() {
-    if (role != "user") {
-      throw InvalidStateException("Chat prompts should come from the 'user' role.")
+    if (role !in listOf("user", "function")) {
+      throw InvalidStateException("Chat prompts should come from the 'user' or 'function' role.")
     }
   }
 
