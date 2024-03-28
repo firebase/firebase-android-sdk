@@ -40,7 +40,7 @@ class CrashlyticsTests {
         .setApplicationId(APP_ID)
         .setApiKey(API_KEY)
         .setProjectId(PROJECT_ID)
-        .build()
+        .build(),
     )
   }
 
@@ -56,7 +56,7 @@ class CrashlyticsTests {
 
   @Test
   fun libraryRegistrationAtRuntime() {
-    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    Firebase.app.get(UserAgentPublisher::class.java)
   }
 
   companion object {
