@@ -31,3 +31,55 @@ query GetStringVariantsById($id: String!) @auth(level: PUBLIC) {
     nonEmptyList
   }
 }
+
+mutation InsertInt64Variants(
+  $id: String!,
+  $nonNullWithZeroValue: Int64!,
+  $nonNullWithPositiveValue: Int64!,
+  $nonNullWithNegativeValue: Int64!,
+  $nonNullWithMaxValue: Int64!,
+  $nonNullWithMinValue: Int64!,
+  $nullableWithNullValue: Int64,
+  $nullableWithZeroValue: Int64,
+  $nullableWithPositiveValue: Int64,
+  $nullableWithNegativeValue: Int64,
+  $nullableWithMaxValue: Int64,
+  $nullableWithMinValue: Int64,
+  $emptyList: [Int64!],
+  $nonEmptyList: [Int64!]
+) @auth(level: PUBLIC) {
+  int64Variants_insert(data: {
+    id: $id,
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    emptyList: $emptyList,
+    nonEmptyList: $nonEmptyList
+  })
+}
+
+query GetInt64VariantsById($id: String!) @auth(level: PUBLIC) {
+  int64Variants(id: $id) {
+    nonNullWithZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+    emptyList
+    nonEmptyList
+  }
+}
