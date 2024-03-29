@@ -22,19 +22,11 @@ public interface DemoConnector {
 
   public val getHardcodedFoo: GetHardcodedFooQuery
 
-  public val getOneNonNullStringFieldById: GetOneNonNullStringFieldByIdQuery
-
-  public val getOneNullableStringFieldById: GetOneNullableStringFieldByIdQuery
-
-  public val getOneStringListFieldById: GetOneStringListFieldByIdQuery
+  public val getStringVariantsById: GetStringVariantsByIdQuery
 
   public val insertFoo: InsertFooMutation
 
-  public val insertOneNonNullStringField: InsertOneNonNullStringFieldMutation
-
-  public val insertOneNullableStringField: InsertOneNullableStringFieldMutation
-
-  public val insertOneStringListField: InsertOneStringListFieldMutation
+  public val insertStringVariants: InsertStringVariantsMutation
 
   public val updateFoo: UpdateFooMutation
 
@@ -87,25 +79,13 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getHardcodedFoo by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetHardcodedFooQueryImpl(this) }
 
-  override val getOneNonNullStringFieldById by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { GetOneNonNullStringFieldByIdQueryImpl(this) }
-
-  override val getOneNullableStringFieldById by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { GetOneNullableStringFieldByIdQueryImpl(this) }
-
-  override val getOneStringListFieldById by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { GetOneStringListFieldByIdQueryImpl(this) }
+  override val getStringVariantsById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetStringVariantsByIdQueryImpl(this) }
 
   override val insertFoo by lazy(LazyThreadSafetyMode.PUBLICATION) { InsertFooMutationImpl(this) }
 
-  override val insertOneNonNullStringField by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertOneNonNullStringFieldMutationImpl(this) }
-
-  override val insertOneNullableStringField by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertOneNullableStringFieldMutationImpl(this) }
-
-  override val insertOneStringListField by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertOneStringListFieldMutationImpl(this) }
+  override val insertStringVariants by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertStringVariantsMutationImpl(this) }
 
   override val updateFoo by lazy(LazyThreadSafetyMode.PUBLICATION) { UpdateFooMutationImpl(this) }
 
@@ -142,38 +122,18 @@ private class GetHardcodedFooQueryImpl(override val connector: DemoConnectorImpl
   override fun toString() = "GetHardcodedFooQueryImpl(connector=$connector)"
 }
 
-private class GetOneNonNullStringFieldByIdQueryImpl(override val connector: DemoConnectorImpl) :
-  GetOneNonNullStringFieldByIdQuery {
-  override fun toString() = "GetOneNonNullStringFieldByIdQueryImpl(connector=$connector)"
-}
-
-private class GetOneNullableStringFieldByIdQueryImpl(override val connector: DemoConnectorImpl) :
-  GetOneNullableStringFieldByIdQuery {
-  override fun toString() = "GetOneNullableStringFieldByIdQueryImpl(connector=$connector)"
-}
-
-private class GetOneStringListFieldByIdQueryImpl(override val connector: DemoConnectorImpl) :
-  GetOneStringListFieldByIdQuery {
-  override fun toString() = "GetOneStringListFieldByIdQueryImpl(connector=$connector)"
+private class GetStringVariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetStringVariantsByIdQuery {
+  override fun toString() = "GetStringVariantsByIdQueryImpl(connector=$connector)"
 }
 
 private class InsertFooMutationImpl(override val connector: DemoConnectorImpl) : InsertFooMutation {
   override fun toString() = "InsertFooMutationImpl(connector=$connector)"
 }
 
-private class InsertOneNonNullStringFieldMutationImpl(override val connector: DemoConnectorImpl) :
-  InsertOneNonNullStringFieldMutation {
-  override fun toString() = "InsertOneNonNullStringFieldMutationImpl(connector=$connector)"
-}
-
-private class InsertOneNullableStringFieldMutationImpl(override val connector: DemoConnectorImpl) :
-  InsertOneNullableStringFieldMutation {
-  override fun toString() = "InsertOneNullableStringFieldMutationImpl(connector=$connector)"
-}
-
-private class InsertOneStringListFieldMutationImpl(override val connector: DemoConnectorImpl) :
-  InsertOneStringListFieldMutation {
-  override fun toString() = "InsertOneStringListFieldMutationImpl(connector=$connector)"
+private class InsertStringVariantsMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertStringVariantsMutation {
+  override fun toString() = "InsertStringVariantsMutationImpl(connector=$connector)"
 }
 
 private class UpdateFooMutationImpl(override val connector: DemoConnectorImpl) : UpdateFooMutation {

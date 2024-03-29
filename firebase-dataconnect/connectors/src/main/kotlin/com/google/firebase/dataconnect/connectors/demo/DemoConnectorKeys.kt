@@ -6,11 +6,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable public data class FooKey(val id: String)
 
-@Serializable public data class OneNonNullStringFieldKey(val id: String)
-
-@Serializable public data class OneNullableStringFieldKey(val id: String)
-
-@Serializable public data class OneStringListFieldKey(val id: String)
+@Serializable public data class StringVariantsKey(val id: String)
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -23,63 +23,33 @@ import org.junit.Test
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
-  fun mutationCorrectlySendsNonNullStringVariables() = runTest {
+  fun stringVariants() = runTest {
     val id = randomAlphanumericString()
 
-    connector.insertOneNonNullStringField.execute(id = id, value = "TestString")
+    connector.insertStringVariants.execute(
+      id = id,
+      nonNullWithNonEmptyValue = "some non-empty value for a *non*-nullable field",
+      nonNullWithEmptyValue = "",
+      nullableWithNullValue = null,
+      nullableWithNonNullValue = "some non-empty value for a *nullable* field",
+      nullableWithEmptyValue = "",
+      emptyList = emptyList(),
+      nonEmptyList = listOf("foo", "", "BAR")
+    )
 
-    val queryResult = connector.getOneNonNullStringFieldById.execute(id)
-
-    assertThat(queryResult.data.oneNonNullStringField?.value).isEqualTo("TestString")
-  }
-
-  @Test
-  fun mutationCorrectlySendsNullableStringVariables() = runTest {
-    val idForNonNullValue = randomAlphanumericString(prefix = "NonNull")
-    val idForNullValue = randomAlphanumericString(prefix = "Null")
-
-    connector.insertOneNullableStringField.execute(id = idForNonNullValue, value = "TestString")
-    connector.insertOneNullableStringField.execute(id = idForNullValue, value = null)
-
-    assertThat(
-        connector.getOneNullableStringFieldById
-          .execute(idForNonNullValue)
-          .data
-          .oneNullableStringField
-          ?.value
+    val queryResult = connector.getStringVariantsById.execute(id)
+    assertThat(queryResult.data.stringVariants)
+      .isEqualTo(
+        GetStringVariantsByIdQuery.Data.StringVariants(
+          nonNullWithNonEmptyValue = "some non-empty valuez for a *non*-nullable field",
+          nonNullWithEmptyValue = "",
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = "some non-empty value for a *nullable* field",
+          nullableWithEmptyValue = "",
+          emptyList = emptyList(),
+          nonEmptyList = listOf("foo", "", "BAR")
+        )
       )
-      .isEqualTo("TestString")
-    assertThat(
-        connector.getOneNullableStringFieldById
-          .execute(idForNullValue)
-          .data
-          .oneNullableStringField
-          ?.value
-      )
-      .isNull()
-  }
-
-  @Test
-  fun mutationCorrectlySendsStringListVariables() = runTest {
-    val idForNonEmptyList = randomAlphanumericString(prefix = "NonEmpty")
-    val idForEmptyList = randomAlphanumericString(prefix = "Empty")
-
-    connector.insertOneStringListField.execute(id = idForNonEmptyList, value = listOf("a", "b"))
-    connector.insertOneStringListField.execute(id = idForEmptyList, value = emptyList())
-
-    assertThat(
-        connector.getOneStringListFieldById
-          .execute(idForNonEmptyList)
-          .data
-          .oneStringListField
-          ?.value
-      )
-      .containsExactly("a", "b")
-      .inOrder()
-    assertThat(
-        connector.getOneStringListFieldById.execute(idForEmptyList).data.oneStringListField?.value
-      )
-      .isEmpty()
   }
 
   // TODO: Repeat the tests above for Int, Float, and Boolean.

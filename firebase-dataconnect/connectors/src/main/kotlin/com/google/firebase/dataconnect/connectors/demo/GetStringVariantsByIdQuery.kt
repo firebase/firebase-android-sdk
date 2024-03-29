@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 
-public interface GetOneNonNullStringFieldByIdQuery {
+public interface GetStringVariantsByIdQuery {
   public val connector: DemoConnector
 
   public fun ref(variables: Variables): QueryRef<Data, Variables> =
@@ -20,36 +20,41 @@ public interface GetOneNonNullStringFieldByIdQuery {
   @Serializable public data class Variables(val id: String)
 
   @Serializable
-  public data class Data(val oneNonNullStringField: OneNonNullStringField?) {
+  public data class Data(val stringVariants: StringVariants?) {
 
-    @Serializable public data class OneNonNullStringField(val value: String)
+    @Serializable
+    public data class StringVariants(
+      val nonNullWithNonEmptyValue: String,
+      val nonNullWithEmptyValue: String,
+      val nullableWithNullValue: String?,
+      val nullableWithNonNullValue: String?,
+      val nullableWithEmptyValue: String?,
+      val emptyList: List<String>,
+      val nonEmptyList: List<String>
+    )
   }
 
   public companion object {
-    @Suppress("ConstPropertyName")
-    public const val operationName: String = "GetOneNonNullStringFieldById"
+    @Suppress("ConstPropertyName") public const val operationName: String = "GetStringVariantsById"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetOneNonNullStringFieldByIdQuery.ref(
+public fun GetStringVariantsByIdQuery.ref(
   id: String
-): QueryRef<GetOneNonNullStringFieldByIdQuery.Data, GetOneNonNullStringFieldByIdQuery.Variables> =
-  ref(GetOneNonNullStringFieldByIdQuery.Variables(id = id))
+): QueryRef<GetStringVariantsByIdQuery.Data, GetStringVariantsByIdQuery.Variables> =
+  ref(GetStringVariantsByIdQuery.Variables(id = id))
 
-public suspend fun GetOneNonNullStringFieldByIdQuery.execute(
+public suspend fun GetStringVariantsByIdQuery.execute(
   id: String
-): QueryResult<
-  GetOneNonNullStringFieldByIdQuery.Data, GetOneNonNullStringFieldByIdQuery.Variables
-> = ref(id = id).execute()
+): QueryResult<GetStringVariantsByIdQuery.Data, GetStringVariantsByIdQuery.Variables> =
+  ref(id = id).execute()
 
-public fun GetOneNonNullStringFieldByIdQuery.flow(
+public fun GetStringVariantsByIdQuery.flow(
   id: String
 ): Flow<
-  QuerySubscriptionResult<
-    GetOneNonNullStringFieldByIdQuery.Data, GetOneNonNullStringFieldByIdQuery.Variables
-  >
+  QuerySubscriptionResult<GetStringVariantsByIdQuery.Data, GetStringVariantsByIdQuery.Variables>
 > = ref(id = id).subscribe().flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no

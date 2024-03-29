@@ -1,23 +1,33 @@
-mutation InsertOneNonNullStringField($id: String!, $value: String!) @auth(level: PUBLIC) {
-  oneNonNullStringField_insert(data: { id: $id, value: $value })
+mutation InsertStringVariants(
+  $id: String!,
+  $nonNullWithNonEmptyValue: String!,
+  $nonNullWithEmptyValue: String!,
+  $nullableWithNullValue: String,
+  $nullableWithNonNullValue: String,
+  $nullableWithEmptyValue: String,
+  $emptyList: [String!],
+  $nonEmptyList: [String!]
+) @auth(level: PUBLIC) {
+  stringVariants_insert(data: {
+    id: $id,
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+    emptyList: $emptyList,
+    nonEmptyList: $nonEmptyList
+  })
 }
 
-query GetOneNonNullStringFieldById($id: String!) @auth(level: PUBLIC) {
-  oneNonNullStringField(id: $id) { value }
-}
-
-mutation InsertOneNullableStringField($id: String!, $value: String) @auth(level: PUBLIC) {
-  oneNullableStringField_insert(data: { id: $id, value: $value })
-}
-
-query GetOneNullableStringFieldById($id: String!) @auth(level: PUBLIC) {
-  oneNullableStringField(id: $id) { value }
-}
-
-mutation InsertOneStringListField($id: String!, $value: [String!]!) @auth(level: PUBLIC) {
-  oneStringListField_insert(data: { id: $id, value: $value })
-}
-
-query GetOneStringListFieldById($id: String!) @auth(level: PUBLIC) {
-  oneStringListField(id: $id) { value }
+query GetStringVariantsById($id: String!) @auth(level: PUBLIC) {
+  stringVariants(id: $id) {
+    nonNullWithNonEmptyValue
+    nonNullWithEmptyValue
+    nullableWithNullValue
+    nullableWithNonNullValue
+    nullableWithEmptyValue
+    emptyList
+    nonEmptyList
+  }
 }

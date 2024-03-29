@@ -3,17 +3,13 @@ type Foo @table {
   bar: String
 }
 
-type OneNonNullStringField @table {
+type StringVariants @table {
   id: String!
-  value: String!
-}
-
-type OneNullableStringField @table {
-  id: String!
-  value: String
-}
-
-type OneStringListField @table {
-  id: String!
-  value: [String]
+  nonNullWithNonEmptyValue: String!
+  nonNullWithEmptyValue: String!
+  nullableWithNullValue: String
+  nullableWithNonNullValue: String
+  nullableWithEmptyValue: String
+  emptyList: [String!]
+  nonEmptyList: [String!]
 }
