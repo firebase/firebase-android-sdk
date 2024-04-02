@@ -75,7 +75,8 @@ public class MemoryComponentProvider extends ComponentProvider {
       return memorySettings.getGarbageCollectorSettings() instanceof MemoryLruGcSettings;
     }
 
-    return false;
+    // Enabled by default.
+    return true;
   }
 
   @Override
