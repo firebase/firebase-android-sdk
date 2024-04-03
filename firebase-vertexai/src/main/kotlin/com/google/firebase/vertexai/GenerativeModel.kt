@@ -75,7 +75,12 @@ internal constructor(
     safetySettings,
     requestOptions,
     tools,
-    APIController(apiKey, modelName, requestOptions.toInternal())
+    APIController(
+      apiKey,
+      modelName,
+      requestOptions.toInternal(),
+      "gl-kotlin/ fire/${BuildConfig.VERSION_NAME}"
+    )
   )
 
   /**
