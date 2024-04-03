@@ -149,7 +149,7 @@ private class LiveQuery(
   }
 
   private suspend fun doExecute() {
-    val requestId = Random.nextAlphanumericString(length = 10)
+    val requestId = "qry" + Random.nextAlphanumericString(length = 10)
     val sequenceNumber = nextSequenceNumber()
 
     val executeQueryResult =
