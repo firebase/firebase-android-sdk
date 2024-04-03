@@ -1,6 +1,6 @@
 # Unreleased
 * [fixed] Correctly declare dependency on firebase-components, issue #5732
-* [changed] Added extension method `Random.nextAlphanumericString()` ([#5818](//github.com/firebase/firebase-android-sdk/pull/5818))
+
 
 # 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-common-ktx`

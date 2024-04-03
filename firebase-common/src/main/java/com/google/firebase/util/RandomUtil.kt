@@ -32,6 +32,8 @@ private const val DEFAULT_ALPHANUMERIC_STRING_LENGTH = 10
  * `null`, then a default length of 10 is used (although this default _may_ change in the future);
  * must be greater than or equal to zero.
  * @return a string containing the given (or default) number of random alphanumeric characters.
+ *
+ * @hide
  */
 fun Random.nextAlphanumericString(length: Int? = null): String {
   val numCharactersToGenerate =
