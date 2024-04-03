@@ -31,7 +31,6 @@ import kotlin.random.Random
  * @return a string containing the given number of random alphanumeric characters.
  *
  * @hide
- *
  */
 fun Random.nextAlphanumericString(length: Int): String {
   require(length >= 0) { "invalid length: $length" }
