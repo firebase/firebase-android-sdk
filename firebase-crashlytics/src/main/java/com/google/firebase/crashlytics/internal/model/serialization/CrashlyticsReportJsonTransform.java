@@ -105,6 +105,9 @@ public class CrashlyticsReportJsonTransform {
         case "firebaseInstallationId":
           builder.setFirebaseInstallationId(jsonReader.nextString());
           break;
+        case "firebaseAuthenticationToken":
+          builder.setFirebaseAuthenticationToken(jsonReader.nextString());
+          break;
         case "appQualitySessionId":
           builder.setAppQualitySessionId(jsonReader.nextString());
           break;

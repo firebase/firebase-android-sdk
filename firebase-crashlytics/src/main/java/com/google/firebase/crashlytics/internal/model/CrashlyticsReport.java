@@ -96,6 +96,9 @@ public abstract class CrashlyticsReport {
   public abstract String getFirebaseInstallationId();
 
   @Nullable
+  public abstract String getFirebaseAuthenticationToken();
+
+  @Nullable
   public abstract String getAppQualitySessionId();
 
   @NonNull
@@ -203,6 +206,13 @@ public abstract class CrashlyticsReport {
   @NonNull
   public CrashlyticsReport withFirebaseInstallationId(@Nullable String firebaseInstallationId) {
     return toBuilder().setFirebaseInstallationId(firebaseInstallationId).build();
+  }
+
+  /** Update an existing {@link CrashlyticsReport} with the given firebaseAuthenticationToken. */
+  @NonNull
+  public CrashlyticsReport withFirebaseAuthenticationToken(
+      @Nullable String firebaseAuthenticationToken) {
+    return toBuilder().setFirebaseAuthenticationToken(firebaseAuthenticationToken).build();
   }
 
   @AutoValue
@@ -1351,6 +1361,9 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setFirebaseInstallationId(@Nullable String value);
+
+    @NonNull
+    public abstract Builder setFirebaseAuthenticationToken(@Nullable String value);
 
     @NonNull
     public abstract Builder setBuildVersion(@NonNull String value);
