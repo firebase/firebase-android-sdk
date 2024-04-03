@@ -135,7 +135,7 @@ internal fun com.google.ai.client.generativeai.common.server.Candidate.toPublic(
 }
 
 internal fun com.google.ai.client.generativeai.common.UsageMetadata.toPublic(): UsageMetadata =
-  UsageMetadata(promptTokenCount, candidatesTokenCount, totalTokenCount)
+  UsageMetadata(promptTokenCount, candidatesTokenCount ?: 0, totalTokenCount)
 
 internal fun com.google.ai.client.generativeai.common.shared.Content.toPublic(): Content =
   Content(role, parts.map { it.toPublic() })
