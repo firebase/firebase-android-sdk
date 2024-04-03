@@ -13,7 +13,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface InsertStringVariantsMutation {
+public interface InsertUuidvariantsMutation {
   public val connector: DemoConnector
 
   public fun ref(variables: Variables): MutationRef<Data, Variables> =
@@ -22,65 +22,54 @@ public interface InsertStringVariantsMutation {
   @Serializable
   public data class Variables(
     val id: String,
-    val nonNullWithNonEmptyValue: String,
-    val nonNullWithEmptyValue: String,
-    val nullableWithNullValue: String?,
-    val nullableWithNonNullValue: String?,
-    val nullableWithEmptyValue: String?,
-    val emptyList: List<String>,
-    val nonEmptyList: List<String>
+    val nonNullValue: java.util.UUID?,
+    val nullableWithNullValue: java.util.UUID,
+    val nullableWithNonNullValue: java.util.UUID?,
+    val emptyList: List<java.util.UUID>,
+    val nonEmptyList: List<java.util.UUID>
   )
 
-  @Serializable
-  public data class Data(@SerialName("stringVariants_insert") val key: StringVariantsKey)
+  @Serializable public data class Data(@SerialName("uUIDVariants_insert") val key: UuidvariantsKey)
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "InsertStringVariants"
+    @Suppress("ConstPropertyName") public const val operationName: String = "InsertUUIDVariants"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun InsertStringVariantsMutation.ref(
+public fun InsertUuidvariantsMutation.ref(
   id: String,
-  nonNullWithNonEmptyValue: String,
-  nonNullWithEmptyValue: String,
-  nullableWithNullValue: String?,
-  nullableWithNonNullValue: String?,
-  nullableWithEmptyValue: String?,
-  emptyList: List<String>,
-  nonEmptyList: List<String>
-): MutationRef<InsertStringVariantsMutation.Data, InsertStringVariantsMutation.Variables> =
+  nonNullValue: java.util.UUID?,
+  nullableWithNullValue: java.util.UUID,
+  nullableWithNonNullValue: java.util.UUID?,
+  emptyList: List<java.util.UUID>,
+  nonEmptyList: List<java.util.UUID>
+): MutationRef<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
   ref(
-    InsertStringVariantsMutation.Variables(
+    InsertUuidvariantsMutation.Variables(
       id = id,
-      nonNullWithNonEmptyValue = nonNullWithNonEmptyValue,
-      nonNullWithEmptyValue = nonNullWithEmptyValue,
+      nonNullValue = nonNullValue,
       nullableWithNullValue = nullableWithNullValue,
       nullableWithNonNullValue = nullableWithNonNullValue,
-      nullableWithEmptyValue = nullableWithEmptyValue,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )
   )
 
-public suspend fun InsertStringVariantsMutation.execute(
+public suspend fun InsertUuidvariantsMutation.execute(
   id: String,
-  nonNullWithNonEmptyValue: String,
-  nonNullWithEmptyValue: String,
-  nullableWithNullValue: String?,
-  nullableWithNonNullValue: String?,
-  nullableWithEmptyValue: String?,
-  emptyList: List<String>,
-  nonEmptyList: List<String>
-): MutationResult<InsertStringVariantsMutation.Data, InsertStringVariantsMutation.Variables> =
+  nonNullValue: java.util.UUID?,
+  nullableWithNullValue: java.util.UUID,
+  nullableWithNonNullValue: java.util.UUID?,
+  emptyList: List<java.util.UUID>,
+  nonEmptyList: List<java.util.UUID>
+): MutationResult<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
   ref(
       id = id,
-      nonNullWithNonEmptyValue = nonNullWithNonEmptyValue,
-      nonNullWithEmptyValue = nonNullWithEmptyValue,
+      nonNullValue = nonNullValue,
       nullableWithNullValue = nullableWithNullValue,
       nullableWithNonNullValue = nullableWithNonNullValue,
-      nullableWithEmptyValue = nullableWithEmptyValue,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )

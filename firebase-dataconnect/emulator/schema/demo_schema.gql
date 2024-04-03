@@ -30,3 +30,13 @@ type Int64Variants @table {
   emptyList: [Int64!]
   nonEmptyList: [Int64!]
 }
+
+type UUIDVariants @table {
+  id: String!
+  nonNullValue: UUID!
+  nullableWithNullValue: UUID
+  nullableWithNonNullValue: UUID
+  emptyList: [UUID!]
+  nonEmptyList: [UUID!]
+}
+

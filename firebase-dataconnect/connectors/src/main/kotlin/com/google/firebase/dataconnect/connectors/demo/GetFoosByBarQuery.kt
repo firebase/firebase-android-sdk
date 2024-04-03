@@ -1,14 +1,17 @@
 @file:Suppress("SpellCheckingInspection")
+@file:UseSerializers(UUIDSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.QuerySubscriptionResult
+import com.google.firebase.dataconnect.UUIDSerializer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
 public interface GetFoosByBarQuery {

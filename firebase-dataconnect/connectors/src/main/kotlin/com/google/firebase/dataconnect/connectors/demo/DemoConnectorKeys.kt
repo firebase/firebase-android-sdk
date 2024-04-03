@@ -10,6 +10,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable public data class StringVariantsKey(val id: String)
 
+@Serializable public data class UuidvariantsKey(val id: String)
+
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the
 // code generator if the file is no longer needed. If, for some reason, you do _not_ want the code

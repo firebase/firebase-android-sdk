@@ -83,3 +83,31 @@ query GetInt64VariantsById($id: String!) @auth(level: PUBLIC) {
     nonEmptyList
   }
 }
+
+mutation InsertUUIDVariants(
+  $id: String!,
+  $nonNullValue: UUID,
+  $nullableWithNullValue: UUID!,
+  $nullableWithNonNullValue: UUID,
+  $emptyList: [UUID!],
+  $nonEmptyList: [UUID!]
+) @auth(level: PUBLIC) {
+  uUIDVariants_insert(data: {
+    id: $id,
+    nonNullValue: $nonNullValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    emptyList: $emptyList,
+    nonEmptyList: $nonEmptyList
+  })
+}
+
+query GetUUIDVariantsById($id: String!) @auth(level: PUBLIC) {
+  uUIDVariants(id: $id) {
+    nonNullValue
+    nullableWithNullValue
+    nullableWithNonNullValue
+    emptyList
+    nonEmptyList
+  }
+}

@@ -14,7 +14,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetStringVariantsByIdQuery {
+public interface GetUuidvariantsByIdQuery {
   public val connector: DemoConnector
 
   public fun ref(variables: Variables): QueryRef<Data, Variables> =
@@ -23,41 +23,39 @@ public interface GetStringVariantsByIdQuery {
   @Serializable public data class Variables(val id: String)
 
   @Serializable
-  public data class Data(val stringVariants: StringVariants?) {
+  public data class Data(val uUIDVariants: Uuidvariants?) {
 
     @Serializable
-    public data class StringVariants(
-      val nonNullWithNonEmptyValue: String,
-      val nonNullWithEmptyValue: String,
-      val nullableWithNullValue: String?,
-      val nullableWithNonNullValue: String?,
-      val nullableWithEmptyValue: String?,
-      val emptyList: List<String>,
-      val nonEmptyList: List<String>
+    public data class Uuidvariants(
+      val nonNullValue: java.util.UUID,
+      val nullableWithNullValue: java.util.UUID?,
+      val nullableWithNonNullValue: java.util.UUID?,
+      val emptyList: List<java.util.UUID>,
+      val nonEmptyList: List<java.util.UUID>
     )
   }
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "GetStringVariantsById"
+    @Suppress("ConstPropertyName") public const val operationName: String = "GetUUIDVariantsById"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetStringVariantsByIdQuery.ref(
+public fun GetUuidvariantsByIdQuery.ref(
   id: String
-): QueryRef<GetStringVariantsByIdQuery.Data, GetStringVariantsByIdQuery.Variables> =
-  ref(GetStringVariantsByIdQuery.Variables(id = id))
+): QueryRef<GetUuidvariantsByIdQuery.Data, GetUuidvariantsByIdQuery.Variables> =
+  ref(GetUuidvariantsByIdQuery.Variables(id = id))
 
-public suspend fun GetStringVariantsByIdQuery.execute(
+public suspend fun GetUuidvariantsByIdQuery.execute(
   id: String
-): QueryResult<GetStringVariantsByIdQuery.Data, GetStringVariantsByIdQuery.Variables> =
+): QueryResult<GetUuidvariantsByIdQuery.Data, GetUuidvariantsByIdQuery.Variables> =
   ref(id = id).execute()
 
-public fun GetStringVariantsByIdQuery.flow(
+public fun GetUuidvariantsByIdQuery.flow(
   id: String
 ): Flow<
-  QuerySubscriptionResult<GetStringVariantsByIdQuery.Data, GetStringVariantsByIdQuery.Variables>
+  QuerySubscriptionResult<GetUuidvariantsByIdQuery.Data, GetUuidvariantsByIdQuery.Variables>
 > = ref(id = id).subscribe().flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no

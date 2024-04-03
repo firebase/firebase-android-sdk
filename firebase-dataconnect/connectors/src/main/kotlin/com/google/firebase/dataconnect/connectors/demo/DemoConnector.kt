@@ -26,11 +26,15 @@ public interface DemoConnector {
 
   public val getStringVariantsById: GetStringVariantsByIdQuery
 
+  public val getUuidvariantsById: GetUuidvariantsByIdQuery
+
   public val insertFoo: InsertFooMutation
 
   public val insertInt64variants: InsertInt64variantsMutation
 
   public val insertStringVariants: InsertStringVariantsMutation
+
+  public val insertUuidvariants: InsertUuidvariantsMutation
 
   public val updateFoo: UpdateFooMutation
 
@@ -89,6 +93,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getStringVariantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetStringVariantsByIdQueryImpl(this) }
 
+  override val getUuidvariantsById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetUuidvariantsByIdQueryImpl(this) }
+
   override val insertFoo by lazy(LazyThreadSafetyMode.PUBLICATION) { InsertFooMutationImpl(this) }
 
   override val insertInt64variants by
@@ -96,6 +103,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val insertStringVariants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertStringVariantsMutationImpl(this) }
+
+  override val insertUuidvariants by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertUuidvariantsMutationImpl(this) }
 
   override val updateFoo by lazy(LazyThreadSafetyMode.PUBLICATION) { UpdateFooMutationImpl(this) }
 
@@ -142,6 +152,11 @@ private class GetStringVariantsByIdQueryImpl(override val connector: DemoConnect
   override fun toString() = "GetStringVariantsByIdQueryImpl(connector=$connector)"
 }
 
+private class GetUuidvariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetUuidvariantsByIdQuery {
+  override fun toString() = "GetUuidvariantsByIdQueryImpl(connector=$connector)"
+}
+
 private class InsertFooMutationImpl(override val connector: DemoConnectorImpl) : InsertFooMutation {
   override fun toString() = "InsertFooMutationImpl(connector=$connector)"
 }
@@ -154,6 +169,11 @@ private class InsertInt64variantsMutationImpl(override val connector: DemoConnec
 private class InsertStringVariantsMutationImpl(override val connector: DemoConnectorImpl) :
   InsertStringVariantsMutation {
   override fun toString() = "InsertStringVariantsMutationImpl(connector=$connector)"
+}
+
+private class InsertUuidvariantsMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertUuidvariantsMutation {
+  override fun toString() = "InsertUuidvariantsMutationImpl(connector=$connector)"
 }
 
 private class UpdateFooMutationImpl(override val connector: DemoConnectorImpl) : UpdateFooMutation {

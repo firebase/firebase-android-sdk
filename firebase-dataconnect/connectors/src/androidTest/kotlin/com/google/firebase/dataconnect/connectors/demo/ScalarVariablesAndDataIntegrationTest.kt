@@ -18,7 +18,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import kotlinx.coroutines.test.*
-import org.junit.Ignore
 import org.junit.Test
 
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -54,7 +53,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test()
-  @Ignore("Un-ignore this test once the emulator fixes its handling of Int64 (b/331596857)")
   fun int64Variants() = runTest {
     val id = randomAlphanumericString()
 

@@ -1,13 +1,16 @@
 @file:Suppress("SpellCheckingInspection")
+@file:UseSerializers(UUIDSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.UUIDSerializer
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
 public interface UpdateFoosByBarMutation {
