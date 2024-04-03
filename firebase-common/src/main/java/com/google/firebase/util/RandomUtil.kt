@@ -35,11 +35,7 @@ import kotlin.random.Random
  */
 fun Random.nextAlphanumericString(length: Int): String {
   require(length >= 0) { "invalid length: $length" }
-  return buildString {
-    repeat(numCharactersToGenerate) {
-      append(ALPHANUMERIC_ALPHABET.random(this@nextAlphanumericString))
-    }
-  }
+  return (0 until length).map { ALPHANUMERIC_ALPHABET.random(this) }.joinToString(separator = "")
 }
 
 // The set of characters comprising of the 10 numeric digits and the 26 lowercase letters of the
