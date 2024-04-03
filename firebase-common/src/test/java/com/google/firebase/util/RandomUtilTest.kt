@@ -26,13 +26,6 @@ import org.junit.runner.RunWith
 class RandomUtilTest {
 
   @Test
-  fun `nextAlphanumericString() should use the correct default length`() {
-    val generatedStringWithDefaultLength = Random.nextAlphanumericString()
-
-    assertThat(generatedStringWithDefaultLength.length).isEqualTo(10)
-  }
-
-  @Test
   fun `nextAlphanumericString() should return an empty string if the given 'length' is 0`() {
     val generatedStringWithLengthOf0 = Random.nextAlphanumericString(0)
 
@@ -63,7 +56,7 @@ class RandomUtilTest {
 
   @Test
   fun `nextAlphanumericString() should return a different string each time it is invoked`() {
-    val generatedStrings = buildList { repeat(100) { add(Random.nextAlphanumericString()) } }
+    val generatedStrings = buildList { repeat(100) { add(Random.nextAlphanumericString(10)) } }
 
     assertThat(generatedStrings).containsNoDuplicates()
   }

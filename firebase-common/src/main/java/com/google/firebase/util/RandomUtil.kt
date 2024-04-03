@@ -17,8 +17,6 @@ package com.google.firebase.util
 
 import kotlin.random.Random
 
-private const val DEFAULT_ALPHANUMERIC_STRING_LENGTH = 10
-
 /**
  * Generates and returns a string containing random alphanumeric characters.
  *
@@ -28,22 +26,15 @@ private const val DEFAULT_ALPHANUMERIC_STRING_LENGTH = 10
  * NOTE: The randomness of this function has NOT been verified to be cryptographically safe. Only
  * use the strings returned from this function in contexts where security is not a concern.
  *
- * @param length the number of random characters to generate and include in the returned string; if
- * `null`, then a default length of 10 is used (although this default _may_ change in the future);
+ * @param length the number of random characters to generate and include in the returned string;
  * must be greater than or equal to zero.
- * @return a string containing the given (or default) number of random alphanumeric characters.
+ * @return a string containing the given number of random alphanumeric characters.
  *
  * @hide
+ *
  */
-fun Random.nextAlphanumericString(length: Int? = null): String {
-  val numCharactersToGenerate =
-    if (length != null) {
-      require(length >= 0) { "invalid length: $length" }
-      length
-    } else {
-      DEFAULT_ALPHANUMERIC_STRING_LENGTH
-    }
-
+fun Random.nextAlphanumericString(length: Int): String {
+  require(length >= 0) { "invalid length: $length" }
   return buildString {
     repeat(numCharactersToGenerate) {
       append(ALPHANUMERIC_ALPHABET.random(this@nextAlphanumericString))
