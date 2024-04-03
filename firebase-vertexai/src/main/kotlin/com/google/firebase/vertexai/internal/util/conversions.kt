@@ -44,8 +44,8 @@ import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetyRating
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
-import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.TextPart
+import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.UsageMetadata
 import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
@@ -81,20 +81,10 @@ internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.
           Base64.encodeToString(blob, BASE_64_FLAGS)
         )
       )
-
     is com.google.firebase.vertexai.type.FunctionCallPart ->
-      FunctionCallPart(
-        FunctionCall(
-          name,
-          args.orEmpty()
-        )
-      )
-
+      FunctionCallPart(FunctionCall(name, args.orEmpty()))
     is com.google.firebase.vertexai.type.FunctionResponsePart ->
-      FunctionResponsePart(
-        FunctionResponse(name, response.toInternal())
-      )
-
+      FunctionResponsePart(FunctionResponse(name, response.toInternal()))
     else ->
       throw SerializationException(
         "The given subclass of Part (${javaClass.simpleName}) is not supported in the serialization yet."
