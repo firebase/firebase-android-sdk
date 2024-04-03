@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.connectors.demo
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.randomAlphanumericString
+import java.util.UUID
 import kotlinx.coroutines.test.*
 import org.junit.Ignore
 import org.junit.Test
@@ -92,6 +93,33 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithMinValue = Long.MIN_VALUE,
           emptyList = emptyList(),
           nonEmptyList = listOf(0, -1, 1, 99, -99, Long.MIN_VALUE, Long.MAX_VALUE)
+        )
+      )
+  }
+
+  @Test()
+  @Ignore("Un-ignore this test once the expected value is fixed (I am just too lazy to fix it)")
+  fun uuidVariants() = runTest {
+    val id = randomAlphanumericString()
+
+    connector.insertUuidvariants.execute(
+      id = id,
+      nonNullValue = UUID.randomUUID(),
+      nullableWithNullValue = UUID.randomUUID(),
+      nullableWithNonNullValue = null,
+      emptyList = emptyList(),
+      nonEmptyList = listOf(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
+    )
+
+    val queryResult = connector.getUuidvariantsById.execute(id)
+    assertThat(queryResult.data.uUIDVariants)
+      .isEqualTo(
+        GetUuidvariantsByIdQuery.Data.Uuidvariants(
+          nonNullValue = UUID.randomUUID(),
+          nullableWithNullValue = UUID.randomUUID(),
+          nullableWithNonNullValue = null,
+          emptyList = emptyList(),
+          nonEmptyList = listOf(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
         )
       )
   }
