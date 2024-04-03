@@ -23,9 +23,6 @@ import kotlin.random.Random
  * The characters returned are taken from the set of characters comprising of the 10 numeric digits
  * and the 26 lowercase English characters.
  *
- * NOTE: The randomness of this function has NOT been verified to be cryptographically safe. Only
- * use the strings returned from this function in contexts where security is not a concern.
- *
  * @param length the number of random characters to generate and include in the returned string;
  * must be greater than or equal to zero.
  * @return a string containing the given number of random alphanumeric characters.
