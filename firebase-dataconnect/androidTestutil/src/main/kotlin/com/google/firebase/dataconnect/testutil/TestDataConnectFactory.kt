@@ -44,7 +44,7 @@ class TestDataConnectFactory :
     )
 
   override fun createInstance(params: Params?): FirebaseDataConnect {
-    val instanceId = Random.nextAlphanumericString()
+    val instanceId = Random.nextAlphanumericString(length = 10)
     val connectorConfig =
       ConnectorConfig(
         connector = params?.connector ?: "TestConnector$instanceId",

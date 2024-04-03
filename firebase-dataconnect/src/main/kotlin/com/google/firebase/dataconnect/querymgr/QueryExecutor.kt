@@ -81,7 +81,7 @@ internal class QueryExecutor(
   private suspend fun executeLocked(): SequencedReference<QueryExecutorResult> {
     val executeQueryResult =
       try {
-        val requestId = Random.nextAlphanumericString()
+        val requestId = Random.nextAlphanumericString(length = 10)
         val sequenceNumber = nextSequenceNumber()
         dataConnect.lazyGrpcClient
           .get()

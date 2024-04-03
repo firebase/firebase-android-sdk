@@ -17,7 +17,7 @@ class TestFirebaseAppFactory : FactoryTestRule<FirebaseApp, Nothing>() {
     Firebase.initialize(
       Firebase.app.applicationContext,
       Firebase.app.options,
-      "test-app-${Random.nextAlphanumericString()}"
+      "test-app-${Random.nextAlphanumericString(length=10)}"
     )
 
   override fun destroyInstance(instance: FirebaseApp) {

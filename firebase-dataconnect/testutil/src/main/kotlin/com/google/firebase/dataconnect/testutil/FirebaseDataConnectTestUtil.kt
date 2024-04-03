@@ -12,8 +12,8 @@ import org.robolectric.RuntimeEnvironment
 
 @SuppressLint("FirebaseUseExplicitDependencies")
 fun newMockFirebaseApp(
-  applicationId: String = Random.nextAlphanumericString(),
-  projectId: String = Random.nextAlphanumericString()
+  applicationId: String = Random.nextAlphanumericString(length = 10),
+  projectId: String = Random.nextAlphanumericString(length = 10)
 ): FirebaseApp {
   val firebaseApp = Mockito.mock(FirebaseApp::class.java)
 

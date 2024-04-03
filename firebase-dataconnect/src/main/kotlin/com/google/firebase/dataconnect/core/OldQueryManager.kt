@@ -149,7 +149,7 @@ private class LiveQuery(
   }
 
   private suspend fun doExecute() {
-    val requestId = Random.nextAlphanumericString()
+    val requestId = Random.nextAlphanumericString(length = 10)
     val sequenceNumber = nextSequenceNumber()
 
     val executeQueryResult =
@@ -195,7 +195,7 @@ private class LiveQuery(
         dataDeserializers
           .firstOrNull { it.dataDeserializer === dataDeserializer }
           ?.let { it as RegisteredDataDeserialzer<T> }
-          ?: Random.nextAlphanumericString().let { registrationId ->
+          ?: Random.nextAlphanumericString(length = 10).let { registrationId ->
             logger.debug {
               "Registering data deserializer $dataDeserializer " +
                 "with registrationId=$registrationId"

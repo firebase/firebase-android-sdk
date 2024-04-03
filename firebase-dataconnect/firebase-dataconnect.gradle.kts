@@ -84,6 +84,9 @@ protobuf {
 }
 
 dependencies {
+  // TODO: Change `project` dependencies to normal, versioned dependencies once firebase-common is
+  // released with RandomUtil changes from https://github.com/firebase/firebase-android-sdk/pull/5818.
+  // This should be the M147 release that is scheduled for May 02, 2024.
   api(project(":firebase-common"))
   api(project(":firebase-common:ktx"))
 

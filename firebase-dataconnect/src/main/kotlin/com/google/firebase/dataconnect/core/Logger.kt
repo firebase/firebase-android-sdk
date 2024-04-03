@@ -59,7 +59,7 @@ private const val LOG_TAG = "FirebaseDataConnect"
 private class LoggerImpl(override val name: String) : Logger {
 
   override val idz: String by
-    lazy(LazyThreadSafetyMode.PUBLICATION) { Random.nextAlphanumericString() }
+    lazy(LazyThreadSafetyMode.PUBLICATION) { Random.nextAlphanumericString(length = 10) }
 
   override val nameWithId: String by lazy(LazyThreadSafetyMode.PUBLICATION) { "$name[id=$idz]" }
 
