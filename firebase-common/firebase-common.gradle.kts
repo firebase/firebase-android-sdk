@@ -54,8 +54,8 @@ android {
 dependencies {
     api(libs.kotlin.coroutines.tasks)
 
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
+    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-annotations:16.2.0")
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.futures)
     implementation(libs.kotlin.stdlib)

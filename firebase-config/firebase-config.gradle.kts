@@ -53,21 +53,21 @@ android {
 
 dependencies {
     // Firebase
-    implementation("com.google.firebase:firebase-config-interop:16.0.1")
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation("com.google.firebase:firebase-installations-interop:17.1.0")
-    implementation("com.google.firebase:firebase-abt:21.1.1") {
+    api("com.google.firebase:firebase-config-interop:16.0.1")
+    api("com.google.firebase:firebase-annotations:16.2.0")
+    api("com.google.firebase:firebase-installations-interop:17.1.0")
+    api("com.google.firebase:firebase-abt:21.1.1") {
          exclude(group = "com.google.firebase", module = "firebase-common")
          exclude(group = "com.google.firebase", module = "firebase-components")
      }
-    implementation("com.google.firebase:firebase-measurement-connector:18.0.0") {
+    api("com.google.firebase:firebase-measurement-connector:18.0.0") {
          exclude(group = "com.google.firebase", module = "firebase-common")
          exclude(group = "com.google.firebase", module = "firebase-components")
      }
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-installations:17.2.0")
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-installations:17.2.0")
 
     // Kotlin & Android
     implementation(libs.kotlin.stdlib)

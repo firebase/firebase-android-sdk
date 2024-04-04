@@ -46,12 +46,12 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.4.2'
-    implementation 'com.google.firebase:firebase-common-ktx:20.4.2'
-    implementation 'com.google.firebase:firebase-components:17.1.5'
-    implementation project(':appcheck:firebase-appcheck')
-    implementation project(':appcheck:firebase-appcheck-debug')
-    implementation 'com.google.firebase:firebase-appcheck-interop:17.0.0'
+    api 'com.google.firebase:firebase-common:20.4.2'
+    api 'com.google.firebase:firebase-common-ktx:20.4.2'
+    api 'com.google.firebase:firebase-components:17.1.5'
+    api project(':appcheck:firebase-appcheck')
+    api project(':appcheck:firebase-appcheck-debug')
+    api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation "androidx.test:core:$androidxTestCoreVersion"
