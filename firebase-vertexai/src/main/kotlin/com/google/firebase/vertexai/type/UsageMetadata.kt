@@ -25,6 +25,6 @@ package com.google.firebase.vertexai.type
  */
 class UsageMetadata(
   val promptTokenCount: Int,
-  val candidatesTokenCount: Int,
+  val candidatesTokenCount: Int?,
   val totalTokenCount: Int
 )
