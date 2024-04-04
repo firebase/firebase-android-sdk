@@ -28,15 +28,15 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.coroutines.CoroutineContext
 
 /** Datastore for sessions information */
 internal data class FirebaseSessionsData(val sessionId: String?)
@@ -91,9 +91,15 @@ internal class SessionDatastoreImpl(
           preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
         }
       } catch (e: IOException) {
-        Log.w(TAG, "Failed to update session Id: $e", )
+        Log.w(
+          TAG,
+          "Failed to update session Id: $e",
+        )
       } catch (e: FileNotFoundException) {
-        Log.w(TAG, "Failed to update session Id: $e", )
+        Log.w(
+          TAG,
+          "Failed to update session Id: $e",
+        )
       }
     }
   }

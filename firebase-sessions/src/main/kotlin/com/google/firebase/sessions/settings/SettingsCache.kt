@@ -25,10 +25,10 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import java.io.FileNotFoundException
 import java.io.IOException
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 internal data class SessionConfigs(
   val sessionEnabled: Boolean?,
@@ -106,9 +106,15 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
         updateSessionConfigs(preferences)
       }
     } catch (e: IOException) {
-      Log.w(TAG, "Failed to remove config values: $e", )
+      Log.w(
+        TAG,
+        "Failed to remove config values: $e",
+      )
     } catch (e: FileNotFoundException) {
-      Log.w(TAG, "Failed to remove config values: $e", )
+      Log.w(
+        TAG,
+        "Failed to remove config values: $e",
+      )
     }
   }
 
