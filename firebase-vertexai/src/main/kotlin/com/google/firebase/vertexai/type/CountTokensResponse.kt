@@ -21,6 +21,8 @@ package com.google.firebase.vertexai.type
  *
  * @property totalTokens A count of the number of tokens in the input
  */
-class CountTokensResponse(val totalTokens: Int) {
+class CountTokensResponse(val totalTokens: Int, val totalBillableCharacters: Int) {
   operator fun component1() = totalTokens
+
+  operator fun component2() = totalBillableCharacters
 }
