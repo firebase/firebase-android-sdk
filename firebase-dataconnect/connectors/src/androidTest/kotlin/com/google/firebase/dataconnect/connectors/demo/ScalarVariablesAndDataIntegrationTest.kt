@@ -98,28 +98,30 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test()
-  @Ignore("Un-ignore this test once the expected value is fixed (I am just too lazy to fix it)")
   fun uuidVariants() = runTest {
     val id = randomAlphanumericString()
+    val nonNullValue = UUID.randomUUID()
+    val nullableWithNullValue = UUID.randomUUID()
+    val nonEmptyList = listOf(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
 
     connector.insertUuidvariants.execute(
       id = id,
-      nonNullValue = UUID.randomUUID(),
-      nullableWithNullValue = UUID.randomUUID(),
+      nonNullValue = nonNullValue,
+      nullableWithNullValue = nullableWithNullValue,
       nullableWithNonNullValue = null,
       emptyList = emptyList(),
-      nonEmptyList = listOf(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
+      nonEmptyList = nonEmptyList
     )
 
     val queryResult = connector.getUuidvariantsById.execute(id)
     assertThat(queryResult.data.uUIDVariants)
       .isEqualTo(
         GetUuidvariantsByIdQuery.Data.Uuidvariants(
-          nonNullValue = UUID.randomUUID(),
-          nullableWithNullValue = UUID.randomUUID(),
+          nonNullValue = nonNullValue,
+          nullableWithNullValue = nullableWithNullValue,
           nullableWithNonNullValue = null,
           emptyList = emptyList(),
-          nonEmptyList = listOf(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
+          nonEmptyList = nonEmptyList
         )
       )
   }
