@@ -9,5 +9,6 @@ exec \
   -stderrthreshold=0 \
   -log_dir=logs \
   dev \
+  --disable_sdk_generation=true \
   -local_connection_string='postgresql://postgres:postgres@localhost:5432/emulator?sslmode=disable' \
 
