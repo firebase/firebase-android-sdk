@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.dataconnect
+package com.google.firebase.dataconnect.serializers
 
 import java.util.UUID
 import kotlinx.serialization.KSerializer
@@ -21,7 +21,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
-public class UUIDSerializer : KSerializer<UUID> {
+public object UUIDSerializer : KSerializer<UUID> {
   override val descriptor: SerialDescriptor =
     PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
 
