@@ -289,7 +289,7 @@ internal fun com.google.ai.client.generativeai.common.CountTokensResponse.toPubl
   if (billableCharacters != null) {
     return CountTokensResponse(totalTokens, billableCharacters)
   }
-  throw ServerException("CountTokensResponse is missing totalBillableCharacters data")
+  throw SerializationException("CountTokensResponse is missing totalBillableCharacters")
 }
 
 
