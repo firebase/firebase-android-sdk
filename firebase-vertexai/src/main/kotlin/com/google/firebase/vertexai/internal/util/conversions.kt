@@ -44,7 +44,6 @@ import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetyRating
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
-import com.google.firebase.vertexai.type.ServerException
 import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.UsageMetadata
@@ -284,14 +283,14 @@ internal fun com.google.ai.client.generativeai.common.GenerateContentResponse.to
   )
 }
 
-internal fun com.google.ai.client.generativeai.common.CountTokensResponse.toPublic(): CountTokensResponse {
+internal fun com.google.ai.client.generativeai.common.CountTokensResponse.toPublic():
+  CountTokensResponse {
   val billableCharacters = totalBillableCharacters
   if (billableCharacters != null) {
     return CountTokensResponse(totalTokens, billableCharacters)
   }
   throw SerializationException("CountTokensResponse is missing totalBillableCharacters")
 }
-
 
 internal fun JsonObject.toPublic() = JSONObject(toString())
 
