@@ -1,5 +1,7 @@
 # Unreleased
 
+* [fixed] Crashing of datastore writes when device has full internal memory
+
 # 1.2.3
 
 * [fixed] Force validation or rotation of FIDs.

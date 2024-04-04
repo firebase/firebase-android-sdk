@@ -25,9 +25,10 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
-import java.io.IOException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import java.io.FileNotFoundException
+import java.io.IOException
 
 internal data class SessionConfigs(
   val sessionEnabled: Boolean?,
@@ -99,9 +100,15 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
 
   @VisibleForTesting
   internal suspend fun removeConfigs() {
-    dataStore.edit { preferences ->
-      preferences.clear()
-      updateSessionConfigs(preferences)
+    try {
+      dataStore.edit { preferences ->
+        preferences.clear()
+        updateSessionConfigs(preferences)
+      }
+    } catch (e: IOException) {
+      Log.w(TAG, "Failed to remove config values: $e", )
+    } catch (e: FileNotFoundException) {
+      Log.w(TAG, "Failed to remove config values: $e", )
     }
   }
 
@@ -118,6 +125,8 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
         updateSessionConfigs(preferences)
       }
     } catch (ex: IOException) {
+      Log.w(TAG, "Failed to update cache config value: $ex")
+    } catch (ex: FileNotFoundException) {
       Log.w(TAG, "Failed to update cache config value: $ex")
     }
   }
