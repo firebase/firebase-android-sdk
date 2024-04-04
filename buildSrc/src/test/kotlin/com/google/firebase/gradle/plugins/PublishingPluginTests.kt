@@ -16,7 +16,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -182,7 +181,8 @@ class PublishingPluginTests {
   fun `Publish project should correctly set dependency types`() {
     with(controller) {
       val dagger = Artifact("com.google.dagger", "dagger", "2.22", scope = "runtime")
-      val daggerAndroid = Artifact("com.google.dagger", "dagger-android-support", "2.22", Type.AAR, "compile")
+      val daggerAndroid =
+        Artifact("com.google.dagger", "dagger-android-support", "2.22", Type.AAR, "compile")
 
       val project1 = Project(name = "childProject1", version = "1.0", latestReleasedVersion = "0.8")
       val project2 =
@@ -198,7 +198,8 @@ class PublishingPluginTests {
 
       project2.pom.let {
         it.artifact.version shouldBe project2.version
-        it.dependencies shouldContainExactlyInAnyOrder listOf(project1.toArtifact(), dagger, daggerAndroid)
+        it.dependencies shouldContainExactlyInAnyOrder
+          listOf(project1.toArtifact(), dagger, daggerAndroid)
       }
     }
   }

@@ -75,7 +75,7 @@ data class Artifact(
 ) {
   val simpleDepString = "$groupId:$artifactId:$version"
 
-  val configuration = if(scope == "compile") "api" else "implementation"
+  val configuration = if (scope == "compile") "api" else "implementation"
 }
 
 data class Pom(
