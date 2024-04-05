@@ -44,6 +44,7 @@ class FirebaseVertexAI(
    * @param toolConfig the configuration that defines how the model handles the tools provided
    * @param requestOptions configuration options to utilize during backend communication
    */
+  @JvmOverloads
   fun generativeModel(
     modelName: String,
     generationConfig: GenerationConfig? = null,
@@ -64,9 +65,11 @@ class FirebaseVertexAI(
     )
 
   companion object {
+    @JvmStatic
     val instance: FirebaseVertexAI
       get() = Firebase.app[FirebaseVertexAI::class.java]
 
+    @JvmStatic
     fun getInstance(app: FirebaseApp): FirebaseVertexAI = app[FirebaseVertexAI::class.java]
 
     private val LOCATION = "us-central1"
