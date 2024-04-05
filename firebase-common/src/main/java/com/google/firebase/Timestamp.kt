@@ -40,7 +40,7 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
   val nanoseconds: Int
 
   /**
-   * Creates a new timestamp.
+   * Creates a new [Timestamp].
    *
    * @param seconds represents seconds of UTC time since Unix epoch 1970-01-01T00:00:00Z. Must be
    * from 0001-01-01T00:00:00Z to 9999-12-31T23:59:59Z inclusive.
@@ -69,7 +69,7 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
   }
 
   /**
-   * Returns a new Date corresponding to this timestamp.
+   * Returns a new [Date] corresponding to this timestamp.
    *
    * This may lose precision.
    */
