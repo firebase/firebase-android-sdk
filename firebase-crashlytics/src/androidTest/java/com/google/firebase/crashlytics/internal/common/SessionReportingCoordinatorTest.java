@@ -497,7 +497,7 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.enqueueReport(mockReport1, false)).thenReturn(successfulTask);
     when(reportSender.enqueueReport(mockReport2, false)).thenReturn(failedTask);
 
-    when(idManager.fetchTrueFid()).thenReturn("fid");
+    when(idManager.fetchTrueFid()).thenReturn(new FirebaseInstallationId("fid", "authToken"));
     reportingCoordinator.sendReports(Runnable::run);
 
     verify(reportSender).enqueueReport(mockReport1, false);
@@ -548,6 +548,7 @@ public class SessionReportingCoordinatorTest {
     when(mockSession.getIdentifier()).thenReturn(sessionId);
     when(mockReport.getSession()).thenReturn(mockSession);
     when(mockReport.withFirebaseInstallationId(anyString())).thenReturn(mockReport);
+    when(mockReport.withFirebaseAuthenticationToken(anyString())).thenReturn(mockReport);
     return mockReport;
   }
 

@@ -14,16 +14,16 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static com.google.firebase.crashlytics.internal.common.Utils.awaitEvenIfOnMainThread;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -48,7 +48,7 @@ public class IdManager implements InstallIdProvider {
   private final String appIdentifier;
 
   // The FirebaseInstallationsApi encapsulates a Firebase-wide install id
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
+  private final FirebaseInstallationsApi firebaseInstallations;
 
   private final DataCollectionArbiter dataCollectionArbiter;
 
@@ -65,7 +65,7 @@ public class IdManager implements InstallIdProvider {
   public IdManager(
       Context appContext,
       String appIdentifier,
-      FirebaseInstallationsApi firebaseInstallationsApi,
+      FirebaseInstallationsApi firebaseInstallations,
       DataCollectionArbiter dataCollectionArbiter) {
     if (appContext == null) {
       throw new IllegalArgumentException("appContext must not be null");
@@ -75,18 +75,16 @@ public class IdManager implements InstallIdProvider {
     }
     this.appContext = appContext;
     this.appIdentifier = appIdentifier;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
+    this.firebaseInstallations = firebaseInstallations;
     this.dataCollectionArbiter = dataCollectionArbiter;
 
     installerPackageNameProvider = new InstallerPackageNameProvider();
   }
 
-  /**
-   * Apply consistent formatting and stripping of special characters. Null input is allowed, will
-   * return null.
-   */
-  private static String formatId(String id) {
-    return (id == null) ? null : ID_PATTERN.matcher(id).replaceAll("").toLowerCase(Locale.US);
+  /** Apply consistent formatting and stripping of special characters. */
+  @NonNull
+  private static String formatId(@NonNull String id) {
+    return ID_PATTERN.matcher(id).replaceAll("").toLowerCase(Locale.US);
   }
 
   /**
@@ -115,21 +113,23 @@ public class IdManager implements InstallIdProvider {
     // We only look at the FID if Crashlytics data collection is enabled, since querying it can
     // result in a network call that registers the FID with Firebase.
     if (dataCollectionArbiter.isAutomaticDataCollectionEnabled()) {
-      String trueFid = fetchTrueFid();
+      FirebaseInstallationId trueFid = fetchTrueFid();
       Logger.getLogger().v("Fetched Firebase Installation ID: " + trueFid);
 
-      if (trueFid == null) {
+      if (trueFid.getFid() == null) {
         // This shouldn't happen often. We will assume the cached FID is valid, if it exists.
         // Otherwise, the safest thing to do is to create a synthetic ID instead
-        trueFid = (cachedFid == null ? createSyntheticFid() : cachedFid);
+        trueFid =
+            new FirebaseInstallationId(cachedFid == null ? createSyntheticFid() : cachedFid, null);
       }
 
-      if (trueFid.equals(cachedFid)) {
+      if (Objects.equals(trueFid.getFid(), cachedFid)) {
         // the current FID is the same as the cached FID, so we keep the cached Crashlytics ID
         installIds = InstallIds.create(readCachedCrashlyticsInstallId(prefs), trueFid);
       } else {
         // the current FID has changed, so we generate a new Crashlytics ID
-        installIds = InstallIds.create(createAndCacheCrashlyticsInstallId(trueFid, prefs), trueFid);
+        installIds =
+            InstallIds.create(createAndCacheCrashlyticsInstallId(trueFid.getFid(), prefs), trueFid);
       }
     } else { // data collection is NOT enabled; we can't use the FID
       if (isSyntheticFid(cachedFid)) {
@@ -171,19 +171,29 @@ public class IdManager implements InstallIdProvider {
     return prefs.getString(PREFKEY_INSTALLATION_UUID, null);
   }
 
-  /** Makes a blocking call to query FID. If the call fails, logs a warning and returns null. */
-  @Nullable
-  @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
-  public String fetchTrueFid() {
-    Task<String> currentFidTask = firebaseInstallationsApi.getId();
-    String currentFid = null;
+  /**
+   * Makes a blocking call to query the Firebase installation id and Firebase authentication token.
+   *
+   * <p>If either call fails for any reason, logs a warning and sets a null value for that field.
+   */
+  @NonNull
+  public FirebaseInstallationId fetchTrueFid() {
+    String fid = null;
+    String authToken = null;
 
+    // Fetch the auth token first, so the fid will be validated.
     try {
-      currentFid = Utils.awaitEvenIfOnMainThread(currentFidTask);
-    } catch (Exception e) {
-      Logger.getLogger().w("Failed to retrieve Firebase Installation ID.", e);
+      authToken = awaitEvenIfOnMainThread(firebaseInstallations.getToken(false)).getToken();
+    } catch (Exception ex) {
+      Logger.getLogger().w("Error getting Firebase authentication token.", ex);
     }
-    return currentFid;
+    try {
+      fid = awaitEvenIfOnMainThread(firebaseInstallations.getId());
+    } catch (Exception ex) {
+      Logger.getLogger().w("Error getting Firebase installation id.", ex);
+    }
+
+    return new FirebaseInstallationId(fid, authToken);
   }
 
   @NonNull
