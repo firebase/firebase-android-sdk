@@ -17,9 +17,12 @@
 package com.google.firebase.vertexai
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.google.ai.client.generativeai.common.APIController
 import com.google.ai.client.generativeai.common.CountTokensRequest
 import com.google.ai.client.generativeai.common.GenerateContentRequest
+import com.google.ai.client.generativeai.common.HeaderProvider
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.internal.util.toPublic
 import com.google.firebase.vertexai.type.Content
@@ -35,9 +38,12 @@ import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.content
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 
 /**
  * A facilitator for a given multimodal model (eg; Gemini).
@@ -61,13 +67,14 @@ internal constructor(
 ) {
 
   @JvmOverloads
-  constructor(
+  internal constructor(
     modelName: String,
     apiKey: String,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
     requestOptions: RequestOptions = RequestOptions(),
+    appCheckTokenProvider: InteropAppCheckTokenProvider? = null
   ) : this(
     modelName,
     apiKey,
@@ -79,7 +86,25 @@ internal constructor(
       apiKey,
       modelName,
       requestOptions.toInternal(),
-      "gl-kotlin/ fire/${BuildConfig.VERSION_NAME}"
+      "gl-kotlin/ fire/${BuildConfig.VERSION_NAME}",
+      object : HeaderProvider {
+        override val timeout: Duration
+          get() = 10.seconds
+
+        override suspend fun generateHeaders(): Map<String, String> {
+          if (appCheckTokenProvider == null) {
+            Log.w(TAG, "AppCheck not registered, skipping")
+            return emptyMap()
+          }
+          val token = appCheckTokenProvider.getToken(false).await()
+
+          if (token.error != null) {
+            Log.w(TAG, "Error obtaining appcheck token", token.error)
+          }
+
+          return mapOf("X-Firebase-AppCheck" to token.token)
+        }
+      }
     )
   )
 
@@ -201,5 +226,9 @@ internal constructor(
       .mapNotNull { it.finishReason }
       .firstOrNull { it != FinishReason.STOP }
       ?.let { throw ResponseStoppedException(this) }
+  }
+
+  companion object {
+    private val TAG = GenerativeModel::class.java.simpleName
   }
 }

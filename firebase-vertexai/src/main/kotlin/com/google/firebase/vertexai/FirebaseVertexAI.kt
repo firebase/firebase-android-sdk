@@ -19,6 +19,8 @@ package com.google.firebase.vertexai
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
@@ -27,6 +29,7 @@ import com.google.firebase.vertexai.type.Tool
 /** Entry point for all Firebase Vertex AI functionality. */
 class FirebaseVertexAI(
   private val firebaseApp: FirebaseApp,
+  private val appCheckProvider: Provider<InteropAppCheckTokenProvider>
 ) {
 
   /**
@@ -51,6 +54,7 @@ class FirebaseVertexAI(
       safetySettings,
       tools,
       requestOptions,
+      appCheckProvider.get()
     )
 
   companion object {

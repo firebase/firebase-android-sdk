@@ -18,6 +18,7 @@ package com.google.firebase.vertexai
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
@@ -36,9 +37,11 @@ internal class FirebaseVertexAIRegistrar : ComponentRegistrar {
       Component.builder(FirebaseVertexAI::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
+        .add(Dependency.optionalProvider(appCheckInterop))
         .factory { container ->
           FirebaseVertexAI(
             container[firebaseApp],
+            container.getProvider(appCheckInterop),
           )
         }
         .build(),
@@ -49,5 +52,6 @@ internal class FirebaseVertexAIRegistrar : ComponentRegistrar {
     private const val LIBRARY_NAME = "fire-vertex"
 
     private val firebaseApp = unqualified(FirebaseApp::class.java)
+    private val appCheckInterop = unqualified(InteropAppCheckTokenProvider::class.java)
   }
 }
