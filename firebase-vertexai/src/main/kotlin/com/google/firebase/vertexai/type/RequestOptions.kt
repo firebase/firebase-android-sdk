@@ -29,7 +29,7 @@ import kotlin.time.toDuration
  */
 class RequestOptions(val timeout: Duration) {
 
-  internal val endpoint = "https://staging-firebaseml.sandbox.googleapis.com"
+  internal val endpoint = "https://firebaseml.googleapis.com"
   internal val apiVersion = "v2beta"
 
   @JvmOverloads
