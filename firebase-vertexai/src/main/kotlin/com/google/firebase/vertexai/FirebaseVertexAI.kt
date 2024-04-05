@@ -36,26 +36,19 @@ class FirebaseVertexAI(
    * A facilitator for a given multimodal model (eg; Gemini).
    *
    * @param modelName name of the model in the backend
-   * @param location location identifier, e.g., `us-central1`; see
-   * ```
-   *     [Vertex AI regions](https://cloud.google.com/vertex-ai/docs/general/locations#vertex-ai-regions)
-   * @param generationConfig
-   * ```
-   * configuration parameters to use for content generation
    * @param safetySettings the safety bounds to use during alongside prompts during content
    * generation
    * @param requestOptions configuration options to utilize during backend communication
    */
   fun generativeModel(
     modelName: String,
-    location: String = "us-central1",
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
-    requestOptions: RequestOptions = RequestOptions(apiVersion = "v2beta"),
+    requestOptions: RequestOptions = RequestOptions(),
   ) =
     GenerativeModel(
-      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
+      "projects/${firebaseApp.options.projectId}/locations/${LOCATION}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
       generationConfig,
       safetySettings,
@@ -69,6 +62,8 @@ class FirebaseVertexAI(
       get() = Firebase.app[FirebaseVertexAI::class.java]
 
     fun getInstance(app: FirebaseApp): FirebaseVertexAI = app[FirebaseVertexAI::class.java]
+
+    private val LOCATION = "us-central1"
   }
 }
 
