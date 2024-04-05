@@ -16,6 +16,8 @@ public interface DemoConnector {
 
   public val deleteFoosByBar: DeleteFoosByBarMutation
 
+  public val getDateVariantsById: GetDateVariantsByIdQuery
+
   public val getFooById: GetFooByIdQuery
 
   public val getFoosByBar: GetFoosByBarQuery
@@ -27,6 +29,8 @@ public interface DemoConnector {
   public val getStringVariantsById: GetStringVariantsByIdQuery
 
   public val getUuidvariantsById: GetUuidvariantsByIdQuery
+
+  public val insertDateVariants: InsertDateVariantsMutation
 
   public val insertFoo: InsertFooMutation
 
@@ -79,6 +83,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val deleteFoosByBar by
     lazy(LazyThreadSafetyMode.PUBLICATION) { DeleteFoosByBarMutationImpl(this) }
 
+  override val getDateVariantsById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetDateVariantsByIdQueryImpl(this) }
+
   override val getFooById by lazy(LazyThreadSafetyMode.PUBLICATION) { GetFooByIdQueryImpl(this) }
 
   override val getFoosByBar by
@@ -95,6 +102,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val getUuidvariantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetUuidvariantsByIdQueryImpl(this) }
+
+  override val insertDateVariants by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertDateVariantsMutationImpl(this) }
 
   override val insertFoo by lazy(LazyThreadSafetyMode.PUBLICATION) { InsertFooMutationImpl(this) }
 
@@ -129,6 +139,11 @@ private class DeleteFoosByBarMutationImpl(override val connector: DemoConnectorI
   override fun toString() = "DeleteFoosByBarMutationImpl(connector=$connector)"
 }
 
+private class GetDateVariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetDateVariantsByIdQuery {
+  override fun toString() = "GetDateVariantsByIdQueryImpl(connector=$connector)"
+}
+
 private class GetFooByIdQueryImpl(override val connector: DemoConnectorImpl) : GetFooByIdQuery {
   override fun toString() = "GetFooByIdQueryImpl(connector=$connector)"
 }
@@ -155,6 +170,11 @@ private class GetStringVariantsByIdQueryImpl(override val connector: DemoConnect
 private class GetUuidvariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetUuidvariantsByIdQuery {
   override fun toString() = "GetUuidvariantsByIdQueryImpl(connector=$connector)"
+}
+
+private class InsertDateVariantsMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertDateVariantsMutation {
+  override fun toString() = "InsertDateVariantsMutationImpl(connector=$connector)"
 }
 
 private class InsertFooMutationImpl(override val connector: DemoConnectorImpl) : InsertFooMutation {

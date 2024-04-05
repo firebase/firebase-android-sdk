@@ -15,10 +15,16 @@
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.randomAlphanumericString
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.test.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 import org.junit.Ignore
 import org.junit.Test
 
@@ -54,7 +60,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       )
   }
 
-  @Test()
+  @Test
   @Ignore("Un-ignore this test once the emulator fixes its handling of Int64 (b/331596857)")
   fun int64Variants() = runTest {
     val id = randomAlphanumericString()
@@ -97,7 +103,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       )
   }
 
-  @Test()
+  @Test
   fun uuidVariants() = runTest {
     val id = randomAlphanumericString()
     val nonNullValue = UUID.randomUUID()
@@ -126,6 +132,126 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       )
   }
 
+  @Test
+  fun dateVariantsInVariables() = runTest {
+    val id = randomAlphanumericString()
+
+    connector.insertDateVariants.execute(
+      id = id,
+      nonNullValue = dateFromString("2024-04-26"),
+      nullableWithNullValue = null,
+      nullableWithNonNullValue = dateFromString("2024-05-19"),
+      minValue = dateFromString("0001-01-01"),
+      maxValue = dateFromString("9999-12-31"),
+      emptyList = emptyList(),
+      nonEmptyList = listOf("1234-05-19", "5678-12-31").map(::dateFromString)
+    )
+
+    val queryRef = connector.getDateVariantsById.ref(id).withStringData()
+    val queryResult = queryRef.execute()
+    assertThat(queryResult.data.dateVariants)
+      .isEqualTo(
+        GetDateVariantsByIdQueryStringData.DateVariants(
+          nonNullValue = "2024-04-26",
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = "2024-05-19",
+          minValue = "0001-01-01",
+          maxValue = "9999-12-31",
+          emptyList = emptyList(),
+          nonEmptyList = listOf("1234-05-19", "5678-12-31")
+        )
+      )
+  }
+
+  @Test
+  fun dateVariantsInData() = runTest {
+    val id = randomAlphanumericString()
+
+    val mutationRef =
+      connector.insertDateVariants.refWith(
+        InsertDateVariantsMutationStringVariables(
+          id = id,
+          nonNullValue = "2024-04-26",
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = "2024-05-19",
+          minValue = "0001-01-01",
+          maxValue = "9999-12-31",
+          emptyList = emptyList(),
+          nonEmptyList = listOf("1234-05-19", "5678-12-31")
+        )
+      )
+    mutationRef.execute()
+
+    val queryResult = connector.getDateVariantsById.execute(id)
+    assertThat(queryResult.data.dateVariants)
+      .isEqualTo(
+        GetDateVariantsByIdQuery.Data.DateVariants(
+          nonNullValue = dateFromString("2024-04-26"),
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = dateFromString("2024-05-19"),
+          minValue = dateFromString("0001-01-01"),
+          maxValue = dateFromString("9999-12-31"),
+          emptyList = emptyList(),
+          nonEmptyList = listOf("1234-05-19", "5678-12-31").map(::dateFromString)
+        )
+      )
+  }
+
   // TODO: Repeat the tests above for Int, Float, and Boolean.
   //  Make sure to test boundary values, like Int.MAX_VALUE, Float.NaN, true, and false.
+
+  private companion object {
+    fun dateFromString(s: String): Date = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(s)!!
+
+    fun QueryRef<*, GetDateVariantsByIdQuery.Variables>.withStringData() =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<GetDateVariantsByIdQueryStringData>(),
+        variablesSerializer
+      )
+
+    fun InsertDateVariantsMutation.refWith(variables: InsertDateVariantsMutationStringVariables) =
+      connector.dataConnect.mutation(
+        InsertDateVariantsMutation.operationName,
+        variables,
+        InsertDateVariantsMutation.dataDeserializer,
+        serializer()
+      )
+  }
+
+  /**
+   * An alternative to [InsertDateVariantsMutation.Variables] where the fields are typed as [String]
+   * instead of [Date].
+   */
+  @Serializable
+  data class InsertDateVariantsMutationStringVariables(
+    val id: String,
+    val nonNullValue: String,
+    val nullableWithNullValue: String?,
+    val nullableWithNonNullValue: String?,
+    val minValue: String,
+    val maxValue: String,
+    val emptyList: List<String>,
+    val nonEmptyList: List<String>
+  )
+
+  /**
+   * An alternative to [GetDateVariantsByIdQuery.Data] where the fields are typed as [String]
+   * instead of [Date].
+   */
+  @Serializable
+  private data class GetDateVariantsByIdQueryStringData(val dateVariants: DateVariants?) {
+
+    @Serializable
+    data class DateVariants(
+      val nonNullValue: String,
+      val nullableWithNullValue: String?,
+      val nullableWithNonNullValue: String?,
+      val minValue: String,
+      val maxValue: String,
+      val emptyList: List<String>,
+      val nonEmptyList: List<String>
+    )
+  }
 }

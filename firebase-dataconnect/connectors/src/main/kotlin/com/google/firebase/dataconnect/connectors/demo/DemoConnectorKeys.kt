@@ -4,6 +4,8 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import kotlinx.serialization.Serializable
 
+@Serializable public data class DateVariantsKey(val id: String)
+
 @Serializable public data class FooKey(val id: String)
 
 @Serializable public data class Int64variantsKey(val id: String)

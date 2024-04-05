@@ -40,3 +40,14 @@ type UUIDVariants @table {
   nonEmptyList: [UUID!]
 }
 
+type DateVariants @table {
+  id: String!
+  nonNullValue: Date!
+  nullableWithNullValue: Date
+  nullableWithNonNullValue: Date
+  minValue: Date
+  maxValue: Date
+  emptyList: [Date!]
+  nonEmptyList: [Date!]
+}
+

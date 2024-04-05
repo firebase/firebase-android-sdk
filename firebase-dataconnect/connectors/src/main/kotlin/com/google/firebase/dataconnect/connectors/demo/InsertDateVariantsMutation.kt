@@ -14,7 +14,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface InsertUuidvariantsMutation {
+public interface InsertDateVariantsMutation {
   public val connector: DemoConnector
 
   public fun ref(variables: Variables): MutationRef<Data, Variables> =
@@ -23,54 +23,64 @@ public interface InsertUuidvariantsMutation {
   @Serializable
   public data class Variables(
     val id: String,
-    val nonNullValue: java.util.UUID,
-    val nullableWithNullValue: java.util.UUID?,
-    val nullableWithNonNullValue: java.util.UUID?,
-    val emptyList: List<java.util.UUID>,
-    val nonEmptyList: List<java.util.UUID>
+    val nonNullValue: java.util.Date,
+    val nullableWithNullValue: java.util.Date?,
+    val nullableWithNonNullValue: java.util.Date?,
+    val minValue: java.util.Date,
+    val maxValue: java.util.Date,
+    val emptyList: List<java.util.Date>,
+    val nonEmptyList: List<java.util.Date>
   )
 
-  @Serializable public data class Data(@SerialName("uUIDVariants_insert") val key: UuidvariantsKey)
+  @Serializable public data class Data(@SerialName("dateVariants_insert") val key: DateVariantsKey)
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "InsertUUIDVariants"
+    @Suppress("ConstPropertyName") public const val operationName: String = "InsertDateVariants"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun InsertUuidvariantsMutation.ref(
+public fun InsertDateVariantsMutation.ref(
   id: String,
-  nonNullValue: java.util.UUID,
-  nullableWithNullValue: java.util.UUID?,
-  nullableWithNonNullValue: java.util.UUID?,
-  emptyList: List<java.util.UUID>,
-  nonEmptyList: List<java.util.UUID>
-): MutationRef<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
+  nonNullValue: java.util.Date,
+  nullableWithNullValue: java.util.Date?,
+  nullableWithNonNullValue: java.util.Date?,
+  minValue: java.util.Date,
+  maxValue: java.util.Date,
+  emptyList: List<java.util.Date>,
+  nonEmptyList: List<java.util.Date>
+): MutationRef<InsertDateVariantsMutation.Data, InsertDateVariantsMutation.Variables> =
   ref(
-    InsertUuidvariantsMutation.Variables(
+    InsertDateVariantsMutation.Variables(
       id = id,
       nonNullValue = nonNullValue,
       nullableWithNullValue = nullableWithNullValue,
       nullableWithNonNullValue = nullableWithNonNullValue,
+      minValue = minValue,
+      maxValue = maxValue,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )
   )
 
-public suspend fun InsertUuidvariantsMutation.execute(
+public suspend fun InsertDateVariantsMutation.execute(
   id: String,
-  nonNullValue: java.util.UUID,
-  nullableWithNullValue: java.util.UUID?,
-  nullableWithNonNullValue: java.util.UUID?,
-  emptyList: List<java.util.UUID>,
-  nonEmptyList: List<java.util.UUID>
-): MutationResult<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
+  nonNullValue: java.util.Date,
+  nullableWithNullValue: java.util.Date?,
+  nullableWithNonNullValue: java.util.Date?,
+  minValue: java.util.Date,
+  maxValue: java.util.Date,
+  emptyList: List<java.util.Date>,
+  nonEmptyList: List<java.util.Date>
+): MutationResult<InsertDateVariantsMutation.Data, InsertDateVariantsMutation.Variables> =
   ref(
       id = id,
       nonNullValue = nonNullValue,
       nullableWithNullValue = nullableWithNullValue,
       nullableWithNonNullValue = nullableWithNonNullValue,
+      minValue = minValue,
+      maxValue = maxValue,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )

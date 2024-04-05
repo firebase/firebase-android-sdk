@@ -86,8 +86,8 @@ query GetInt64VariantsById($id: String!) @auth(level: PUBLIC) {
 
 mutation InsertUUIDVariants(
   $id: String!,
-  $nonNullValue: UUID,
-  $nullableWithNullValue: UUID!,
+  $nonNullValue: UUID!,
+  $nullableWithNullValue: UUID,
   $nullableWithNonNullValue: UUID,
   $emptyList: [UUID!],
   $nonEmptyList: [UUID!]
@@ -107,6 +107,40 @@ query GetUUIDVariantsById($id: String!) @auth(level: PUBLIC) {
     nonNullValue
     nullableWithNullValue
     nullableWithNonNullValue
+    emptyList
+    nonEmptyList
+  }
+}
+
+mutation InsertDateVariants(
+  $id: String!,
+  $nonNullValue: Date!,
+  $nullableWithNullValue: Date,
+  $nullableWithNonNullValue: Date,
+  $minValue: Date!,
+  $maxValue: Date!,
+  $emptyList: [Date!],
+  $nonEmptyList: [Date!]
+) @auth(level: PUBLIC) {
+  dateVariants_insert(data: {
+    id: $id,
+    nonNullValue: $nonNullValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    minValue: $minValue,
+    maxValue: $maxValue,
+    emptyList: $emptyList,
+    nonEmptyList: $nonEmptyList
+  })
+}
+
+query GetDateVariantsById($id: String!) @auth(level: PUBLIC) {
+  dateVariants(id: $id) {
+    nonNullValue
+    nullableWithNullValue
+    nullableWithNonNullValue
+    minValue
+    maxValue
     emptyList
     nonEmptyList
   }
