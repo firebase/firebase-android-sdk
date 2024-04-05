@@ -21,6 +21,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.inject.Provider
+import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
