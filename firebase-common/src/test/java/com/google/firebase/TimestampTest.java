@@ -14,9 +14,10 @@
 
 package com.google.firebase;
 
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.common.testutil.Assert.assertThrows;
+
 import android.os.Parcel;
-import com.google.common.truth.Truth;
-import com.google.firebase.common.testutil.Assert;
 import java.util.Date;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,18 +32,18 @@ public class TimestampTest {
     // Very carefully construct an Date that won't lose precision with milliseconds.
     Date input = new Date(22501);
     Timestamp actual = new Timestamp(input);
-    Truth.assertThat(actual.getSeconds()).isEqualTo(22);
-    Truth.assertThat(actual.getNanoseconds()).isEqualTo(501000000);
+    assertThat(actual.getSeconds()).isEqualTo(22);
+    assertThat(actual.getNanoseconds()).isEqualTo(501000000);
     Timestamp expected = new Timestamp(22, 501000000);
-    Truth.assertThat(actual).isEqualTo(expected);
+    assertThat(actual).isEqualTo(expected);
 
     // And with a negative millis.
     input = new Date(-1250);
     actual = new Timestamp(input);
-    Truth.assertThat(actual.getSeconds()).isEqualTo(-2);
-    Truth.assertThat(actual.getNanoseconds()).isEqualTo(750000000);
+    assertThat(actual.getSeconds()).isEqualTo(-2);
+    assertThat(actual.getNanoseconds()).isEqualTo(750000000);
     expected = new Timestamp(-2, 750000000);
-    Truth.assertThat(actual).isEqualTo(expected);
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
@@ -57,19 +58,17 @@ public class TimestampTest {
       new Timestamp(12346, 0)
     };
     for (int i = 0; i < timestamps.length - 1; ++i) {
-      Truth.assertThat(timestamps[i].compareTo(timestamps[i + 1])).isEqualTo(-1);
-      Truth.assertThat(timestamps[i + 1].compareTo(timestamps[i])).isEqualTo(1);
+      assertThat(timestamps[i].compareTo(timestamps[i + 1])).isEqualTo(-1);
+      assertThat(timestamps[i + 1].compareTo(timestamps[i])).isEqualTo(1);
     }
   }
 
   @Test
   public void testRejectBadDates() {
-    Assert.assertThrows(
-        IllegalArgumentException.class, () -> new Timestamp(new Date(-70000000000000L)));
-    Assert.assertThrows(
-        IllegalArgumentException.class, () -> new Timestamp(new Date(300000000000000L)));
-    Assert.assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, -1));
-    Assert.assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, 1000000000));
+    assertThrows(IllegalArgumentException.class, () -> new Timestamp(new Date(-70000000000000L)));
+    assertThrows(IllegalArgumentException.class, () -> new Timestamp(new Date(300000000000000L)));
+    assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, -1));
+    assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, 1000000000));
   }
 
   @Test
@@ -82,7 +81,7 @@ public class TimestampTest {
     parcel.setDataPosition(0);
 
     Timestamp recreated = Timestamp.CREATOR.createFromParcel(parcel);
-    Truth.assertThat(recreated).isEqualTo(timestamp);
+    assertThat(recreated).isEqualTo(timestamp);
 
     parcel.recycle();
   }
