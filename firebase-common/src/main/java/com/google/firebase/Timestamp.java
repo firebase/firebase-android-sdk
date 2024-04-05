@@ -17,9 +17,7 @@ package com.google.firebase;
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.NonNull;
-
 import java.util.Date;
-
 import javax.annotation.Nullable;
 
 /**
@@ -150,7 +148,7 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
   }
 
   private static void validateRange(long seconds, int nanoseconds) {
-    checkArgument(nanoseconds >= 0, String.format("Timestamp nanoseconds out of range: %s", nanoseconds));
+    checkArgument(nanoseconds >= 0, "Timestamp nanoseconds out of range: %s", nanoseconds);
     checkArgument(nanoseconds < 1e9, "Timestamp nanoseconds out of range: %s", nanoseconds);
     // Midnight at the beginning of 1/1/1 is the earliest supported timestamp.
     checkArgument(seconds >= -62135596800L, "Timestamp seconds out of range: %s", seconds);
@@ -160,9 +158,9 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
 
   // TODO(Remove when migrated to Kotlin)
   public static void checkArgument(
-          boolean expression,
-          @Nullable String errorMessageTemplate,
-          @Nullable Object... errorMessageArgs) {
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object... errorMessageArgs) {
     if (!expression) {
       throw new IllegalArgumentException(String.format(errorMessageTemplate, errorMessageArgs));
     }

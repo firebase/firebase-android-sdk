@@ -15,10 +15,8 @@
 package com.google.firebase;
 
 import android.os.Parcel;
-
 import com.google.common.truth.Truth;
 import com.google.firebase.common.testutil.Assert;
-
 import java.util.Date;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -66,8 +64,10 @@ public class TimestampTest {
 
   @Test
   public void testRejectBadDates() {
-    Assert.assertThrows(IllegalArgumentException.class, () -> new Timestamp(new Date(-70000000000000L)));
-    Assert.assertThrows(IllegalArgumentException.class, () -> new Timestamp(new Date(300000000000000L)));
+    Assert.assertThrows(
+        IllegalArgumentException.class, () -> new Timestamp(new Date(-70000000000000L)));
+    Assert.assertThrows(
+        IllegalArgumentException.class, () -> new Timestamp(new Date(300000000000000L)));
     Assert.assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, -1));
     Assert.assertThrows(IllegalArgumentException.class, () -> new Timestamp(0, 1000000000));
   }
