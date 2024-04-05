@@ -96,7 +96,7 @@ internal constructor(
             Log.w(TAG, "AppCheck not registered, skipping")
             return emptyMap()
           }
-          val mutableHeaderMap: MutableMap<String, String> = mutableMapOf()
+          val mutableHeaderMap = mutableMapOf<String, String>()
 
           val token = appCheckTokenProvider.getToken(false).await()
           if (token.error != null) {
