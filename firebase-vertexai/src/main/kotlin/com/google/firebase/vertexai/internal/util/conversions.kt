@@ -32,6 +32,7 @@ import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
@@ -46,6 +47,7 @@ import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.Tool
+import com.google.firebase.vertexai.type.ToolConfig
 import com.google.firebase.vertexai.type.UsageMetadata
 import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
@@ -120,6 +122,20 @@ internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
       com.google.ai.client.generativeai.common.shared.HarmCategory.DANGEROUS_CONTENT
     HarmCategory.UNKNOWN -> com.google.ai.client.generativeai.common.shared.HarmCategory.UNKNOWN
   }
+
+internal fun ToolConfig.toInternal() =
+  com.google.ai.client.generativeai.common.client.ToolConfig(
+    com.google.ai.client.generativeai.common.client.FunctionCallingConfig(
+      when (functionCallingConfig.mode) {
+        FunctionCallingConfig.Mode.ANY ->
+          com.google.ai.client.generativeai.common.client.FunctionCallingConfig.Mode.ANY
+        FunctionCallingConfig.Mode.AUTO ->
+          com.google.ai.client.generativeai.common.client.FunctionCallingConfig.Mode.AUTO
+        FunctionCallingConfig.Mode.NONE ->
+          com.google.ai.client.generativeai.common.client.FunctionCallingConfig.Mode.NONE
+      }
+    )
+  )
 
 internal fun BlockThreshold.toInternal() =
   when (this) {

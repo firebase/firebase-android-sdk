@@ -25,6 +25,7 @@ import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
+import com.google.firebase.vertexai.type.ToolConfig
 
 /** Entry point for all Firebase Vertex AI functionality. */
 class FirebaseVertexAI(
@@ -36,8 +37,11 @@ class FirebaseVertexAI(
    * A facilitator for a given multimodal model (eg; Gemini).
    *
    * @param modelName name of the model in the backend
+   * @param generationConfig configuration parameters to use for content generation
    * @param safetySettings the safety bounds to use during alongside prompts during content
    * generation
+   * @param tools the list of tools to make available to the model
+   * @param toolConfig the configuration that defines how the model handles the tools provided
    * @param requestOptions configuration options to utilize during backend communication
    */
   fun generativeModel(
@@ -45,6 +49,7 @@ class FirebaseVertexAI(
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
+    toolConfig: ToolConfig? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ) =
     GenerativeModel(
@@ -53,6 +58,7 @@ class FirebaseVertexAI(
       generationConfig,
       safetySettings,
       tools,
+      toolConfig,
       requestOptions,
       appCheckProvider.get()
     )
