@@ -1,0 +1,152 @@
+{
+    "changesByLibraryName": {
+        "firebase-common": [
+            {
+                "commitId": "a7edffefa9cd4f45b5921db3fd2003101c38e2ef",
+                "prId": "5818",
+                "author": "Denver Coneybeare",
+                "message": "RandomUtil added to firebase-common (#5818)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a7edffefa9cd4f45b5921db3fd2003101c38e2ef",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5818"
+            }
+        ],
+        "firebase-common/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "c9fa46103ddf57c734908e831c195a8035bca764",
+                "prId": "5812",
+                "author": "Matthew Robertson",
+                "message": "Force validation or rotation of FIDs (#5812)\n\nForce validation or rotation of FIDs. This also cleans up the tests a\r\nbit more, and isolated Crashlytics integration tests from Sessions\r\ntests.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9fa46103ddf57c734908e831c195a8035bca764",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5812"
+            },
+            {
+                "commitId": "110d37e8eaec1eb15c95d7909edf910c05694b5f",
+                "prId": "5805",
+                "author": "Matthew Robertson",
+                "message": "Fix flaky test (#5805)\n\nThis fixes flaky test due to \"default firebase app not initialized\" when\r\nrunning crashlytics or sessions tests.\r\n\r\nRemoves the `instance` function from the companion object of the binder,\r\nand pass it in the FirebaseSessions ctor instead.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/110d37e8eaec1eb15c95d7909edf910c05694b5f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5805"
+            },
+            {
+                "commitId": "52c4bfc3820e1cb7e8e868a29d9f6b0f7016a06f",
+                "prId": "5792",
+                "author": "Daymon",
+                "message": "Add missing changelog entries (#5792)\n\nPer [b/330156705](https://b.corp.google.com/issues/330156705),\r\n\r\nSessions is invoking the release of Crashlytics. As such, there needs to\r\nbe changelog entries on both Crashlytics and the NDK reflecting their\r\nrespective dependency bumps. This adds those changelogs.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/330156817](https://b.corp.google.com/issues/330156817) - Ensure\r\nthere's a project level dependency between sessions and crashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/52c4bfc3820e1cb7e8e868a29d9f6b0f7016a06f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5792"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "52c4bfc3820e1cb7e8e868a29d9f6b0f7016a06f",
+                "prId": "5792",
+                "author": "Daymon",
+                "message": "Add missing changelog entries (#5792)\n\nPer [b/330156705](https://b.corp.google.com/issues/330156705),\r\n\r\nSessions is invoking the release of Crashlytics. As such, there needs to\r\nbe changelog entries on both Crashlytics and the NDK reflecting their\r\nrespective dependency bumps. This adds those changelogs.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/330156817](https://b.corp.google.com/issues/330156817) - Ensure\r\nthere's a project level dependency between sessions and crashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/52c4bfc3820e1cb7e8e868a29d9f6b0f7016a06f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5792"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "c9fa46103ddf57c734908e831c195a8035bca764",
+                "prId": "5812",
+                "author": "Matthew Robertson",
+                "message": "Force validation or rotation of FIDs (#5812)\n\nForce validation or rotation of FIDs. This also cleans up the tests a\r\nbit more, and isolated Crashlytics integration tests from Sessions\r\ntests.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9fa46103ddf57c734908e831c195a8035bca764",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5812"
+            },
+            {
+                "commitId": "110d37e8eaec1eb15c95d7909edf910c05694b5f",
+                "prId": "5805",
+                "author": "Matthew Robertson",
+                "message": "Fix flaky test (#5805)\n\nThis fixes flaky test due to \"default firebase app not initialized\" when\r\nrunning crashlytics or sessions tests.\r\n\r\nRemoves the `instance` function from the companion object of the binder,\r\nand pass it in the FirebaseSessions ctor instead.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/110d37e8eaec1eb15c95d7909edf910c05694b5f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5805"
+            },
+            {
+                "commitId": "cbcbccc8281c68d5fe3665f04819fe58d0757100",
+                "prId": "5787",
+                "author": "Rodrigo Lazo",
+                "message": "Add sessions to crashlytics library group. (#5787)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cbcbccc8281c68d5fe3665f04819fe58d0757100",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5787"
+            },
+            {
+                "commitId": "f3a6362e1059e61bd6a83f30b2e554ce1c4cff18",
+                "prId": "5784",
+                "author": "Matthew Robertson",
+                "message": "Add test cases for when fid or authToken are null (#5784)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f3a6362e1059e61bd6a83f30b2e554ce1c4cff18",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5784"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+            {
+                "commitId": "c9fa46103ddf57c734908e831c195a8035bca764",
+                "prId": "5812",
+                "author": "Matthew Robertson",
+                "message": "Force validation or rotation of FIDs (#5812)\n\nForce validation or rotation of FIDs. This also cleans up the tests a\r\nbit more, and isolated Crashlytics integration tests from Sessions\r\ntests.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c9fa46103ddf57c734908e831c195a8035bca764",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5812"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "6c3fc2279d6db18db9e68df7caaaca7f63a13fbc",
+                "prId": "5729",
+                "author": "Mila",
+                "message": "Move mieq composite index tests (#5729)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6c3fc2279d6db18db9e68df7caaaca7f63a13fbc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5729"
+            },
+            {
+                "commitId": "9e0a82e37ba3eeb96bc9f033545457093f8e3e02",
+                "prId": "5810",
+                "author": "wu-hui",
+                "message": "Use long.compare since we are on API 19 now. (#5810)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9e0a82e37ba3eeb96bc9f033545457093f8e3e02",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5810"
+            },
+            {
+                "commitId": "e40b749c75cddbd915a040f4fd277e886ada668c",
+                "prId": "5797",
+                "author": "Mila",
+                "message": "Update javadoc (#5797)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e40b749c75cddbd915a040f4fd277e886ada668c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5797"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "745367026b0ab8b46d1f77da4626cf390e10e3b2",
+                "prId": "5804",
+                "author": "Eldhose M Babu",
+                "message": "Fix: FIAM Bad token exception (b/330727156) (#5804)\n\nFix FIAM Bad token exception (b/330727156)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/745367026b0ab8b46d1f77da4626cf390e10e3b2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5804"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "745367026b0ab8b46d1f77da4626cf390e10e3b2",
+                "prId": "5804",
+                "author": "Eldhose M Babu",
+                "message": "Fix: FIAM Bad token exception (b/330727156) (#5804)\n\nFix FIAM Bad token exception (b/330727156)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/745367026b0ab8b46d1f77da4626cf390e10e3b2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5804"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
