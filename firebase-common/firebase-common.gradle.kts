@@ -83,6 +83,9 @@ dependencies {
         exclude("com.google.firebase","firebase-common")
         exclude("com.google.firebase","firebase-common-ktx")
     }
+
+    // TODO(Remove when FirbaseAppTest has been modernized to use LiveData)
+    androidTestImplementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)
