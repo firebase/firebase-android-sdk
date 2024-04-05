@@ -72,7 +72,7 @@ dependencies {
     // Kotlin & Android
     implementation(libs.kotlin.stdlib)
     implementation("androidx.annotation:annotation:1.1.0")
-    implementation("com.google.android.gms:play-services-tasks:18.0.1")
+    api("com.google.android.gms:play-services-tasks:18.0.1")
 
     // Annotations and static analysis
     annotationProcessor("com.google.auto.value:auto-value:1.6.6")

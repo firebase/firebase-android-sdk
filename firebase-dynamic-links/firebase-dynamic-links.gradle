@@ -55,7 +55,7 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.2.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    api 'com.google.android.gms:play-services-tasks:18.0.1'
     api('com.google.firebase:firebase-auth-interop:20.0.0') {
          exclude group: "com.google.firebase", module: "firebase-common"
      }

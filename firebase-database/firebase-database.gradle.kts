@@ -68,7 +68,7 @@ dependencies {
     implementation(libs.bundles.playservices)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.playservices.tasks)
+    api(libs.playservices.tasks)
 
     testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")

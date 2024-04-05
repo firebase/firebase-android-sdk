@@ -69,7 +69,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.playservices.base)
     implementation(libs.playservices.basement)
-    implementation(libs.playservices.tasks)
+    api(libs.playservices.tasks)
 
     annotationProcessor(libs.autovalue)
     annotationProcessor(libs.dagger.compiler)
