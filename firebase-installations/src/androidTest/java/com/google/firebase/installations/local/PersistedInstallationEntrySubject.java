@@ -24,7 +24,7 @@ public final class PersistedInstallationEntrySubject extends Subject {
 
   // User-defined entry point
   public static PersistedInstallationEntrySubject assertThat(
-       PersistedInstallationEntry persistedInstallationEntry) {
+      PersistedInstallationEntry persistedInstallationEntry) {
     return assertAbout(PERSISTED_INSTALLATION_ENTRY_SUBJECT_FACTORY)
         .that(persistedInstallationEntry);
   }
