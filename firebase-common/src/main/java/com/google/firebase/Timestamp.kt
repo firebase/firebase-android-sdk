@@ -75,6 +75,10 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
    */
   fun toDate(): Date = Date(seconds * 1_000 + (nanoseconds / 1_000_000))
 
+  /** Returns a new [Instant] that matches the time defined by this timestamp. */
+  @RequiresApi(Build.VERSION_CODES.O)
+  fun toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
+
   override fun compareTo(other: Timestamp): Int =
     compareValuesBy(this, other, Timestamp::seconds, Timestamp::nanoseconds)
 
