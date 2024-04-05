@@ -96,15 +96,13 @@ internal constructor(
             Log.w(TAG, "AppCheck not registered, skipping")
             return emptyMap()
           }
-          val mutableHeaderMap = mutableMapOf<String, String>()
-
           val token = appCheckTokenProvider.getToken(false).await()
+
           if (token.error != null) {
             Log.w(TAG, "Error obtaining appcheck token", token.error)
           }
-          mutableHeaderMap.put("X-Firebase-AppCheck", token.token)
 
-          return mutableHeaderMap
+          return mapOf("X-Firebase-AppCheck" to token.token)
         }
       }
     )
