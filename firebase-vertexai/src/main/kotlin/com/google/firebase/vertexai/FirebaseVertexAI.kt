@@ -42,6 +42,7 @@ class FirebaseVertexAI(
    * generation
    * @param tools the list of tools to make available to the model
    * @param toolConfig the configuration that defines how the model handles the tools provided
+   * @property systemInstruction contains a [Content] that directs the model to behave a certain way
    * @param requestOptions configuration options to utilize during backend communication
    */
   fun generativeModel(
@@ -50,6 +51,7 @@ class FirebaseVertexAI(
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
+    systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
   ) =
     GenerativeModel(
@@ -59,6 +61,7 @@ class FirebaseVertexAI(
       safetySettings,
       tools,
       toolConfig,
+      systemInstruction,
       requestOptions,
       appCheckProvider.get()
     )
