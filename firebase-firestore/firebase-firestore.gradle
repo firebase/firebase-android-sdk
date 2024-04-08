@@ -127,7 +127,7 @@ dependencies {
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
-    api("com.google.firebase:firebase-common:20.4.2")
+    api(project(":firebase-common"))
     api("com.google.firebase:firebase-common-ktx:20.4.2") {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
