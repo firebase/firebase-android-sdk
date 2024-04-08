@@ -48,9 +48,9 @@ class FirebaseVertexAI(
     modelName: String,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
+    requestOptions: RequestOptions = RequestOptions(),
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
-    requestOptions: RequestOptions = RequestOptions(),
   ) =
     GenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${LOCATION}/publishers/google/models/${modelName}",
