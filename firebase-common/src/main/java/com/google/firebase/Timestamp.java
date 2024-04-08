@@ -157,7 +157,7 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
   }
 
   // TODO(Remove when migrated to Kotlin)
-  public static void checkArgument(
+  private static void checkArgument(
       boolean expression,
       @Nullable String errorMessageTemplate,
       @Nullable Object... errorMessageArgs) {
