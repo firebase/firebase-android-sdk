@@ -32,6 +32,7 @@ internal class FirebaseSessions(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   backgroundDispatcher: CoroutineContext,
+  lifecycleServiceBinder: SessionLifecycleServiceBinder,
 ) {
 
   init {
@@ -50,13 +51,13 @@ internal class FirebaseSessions(
             Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
           } else {
             val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
-            lifecycleClient.bindToService()
+            lifecycleClient.bindToService(lifecycleServiceBinder)
             SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
 
             firebaseApp.addLifecycleEventListener { _, _ ->
               Log.w(
                 TAG,
-                "FirebaseApp instance deleted. Sessions library will stop collecting data."
+                "FirebaseApp instance deleted. Sessions library will stop collecting data.",
               )
               SessionsActivityLifecycleCallbacks.lifecycleClient = null
             }
@@ -66,7 +67,7 @@ internal class FirebaseSessions(
     } else {
       Log.e(
         TAG,
-        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
+        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}.",
       )
     }
   }

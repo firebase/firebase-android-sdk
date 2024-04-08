@@ -193,7 +193,6 @@ public class LogRequestTest {
             .setEventTimeMs(100L)
             .setEventUptimeMs(4000L)
             .setTimezoneOffsetSeconds(123)
-            .setZwiebackCookieOverride("override")
             .setExperimentIds(
                 ExperimentIds.builder()
                     .setClearBlob("blob".getBytes(StandardCharsets.UTF_8))
@@ -253,7 +252,6 @@ public class LogRequestTest {
                             .setEventUptimeMs(4000L)
                             .setEventTimeMs(100L)
                             .setTimezoneOffsetSeconds(123L)
-                            .setZwiebackCookieOverride("override")
                             .setExperimentIds(
                                 com.google.android.datatransport.cct.proto.ExperimentIds
                                     .newBuilder()

@@ -84,4 +84,63 @@ class SessionFirelogPublisherTest {
     assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseAuthenticationToken)
       .isEqualTo("FakeAuthToken")
   }
+
+  @Test
+  fun logSession_nullFid_populatesEmptyFid() = runTest {
+    val fakeFirebaseApp = FakeFirebaseApp()
+    val fakeEventGDTLogger = FakeEventGDTLogger()
+    val firebaseInstallations = FakeFirebaseInstallations(fid = null, "FakeAuthToken")
+    val sessionsSettings =
+      SessionsSettings(
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
+      )
+    val publisher =
+      SessionFirelogPublisherImpl(
+        fakeFirebaseApp.firebaseApp,
+        firebaseInstallations,
+        sessionsSettings,
+        eventGDTLogger = fakeEventGDTLogger,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      )
+
+    // Construct an event with no fid set.
+    publisher.logSession(TestSessionEventData.TEST_SESSION_DETAILS)
+
+    runCurrent()
+
+    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId).isEqualTo("")
+    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseAuthenticationToken)
+      .isEqualTo("FakeAuthToken")
+  }
+
+  @Test
+  fun logSession_nullAuthToken_populatesEmptyAuthToken() = runTest {
+    val fakeFirebaseApp = FakeFirebaseApp()
+    val fakeEventGDTLogger = FakeEventGDTLogger()
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD", authToken = null)
+    val sessionsSettings =
+      SessionsSettings(
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
+      )
+    val publisher =
+      SessionFirelogPublisherImpl(
+        fakeFirebaseApp.firebaseApp,
+        firebaseInstallations,
+        sessionsSettings,
+        eventGDTLogger = fakeEventGDTLogger,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      )
+
+    // Construct an event with no fid set.
+    publisher.logSession(TestSessionEventData.TEST_SESSION_DETAILS)
+
+    runCurrent()
+
+    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
+      .isEqualTo("FaKeFiD")
+    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseAuthenticationToken)
+      .isEqualTo("")
+  }
 }

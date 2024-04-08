@@ -23,6 +23,8 @@ plugins {
 }
 
 firebaseLibrary {
+  libraryGroup("crashlytics")
+
   testLab.enabled = true
   publishSources = true
   publishJavadoc = false
@@ -52,16 +54,16 @@ dependencies {
   api("com.google.firebase:firebase-common:20.4.2")
   api("com.google.firebase:firebase-common-ktx:20.4.2")
 
-  implementation("com.google.firebase:firebase-components:17.1.5")
-  implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
+  api("com.google.firebase:firebase-components:17.1.5")
+  api("com.google.firebase:firebase-installations-interop:17.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
   implementation("androidx.datastore:datastore-preferences:1.0.0")
   implementation("com.google.android.datatransport:transport-api:3.0.0")
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
-  implementation("com.google.firebase:firebase-encoders:17.0.0")
-  implementation("com.google.firebase:firebase-encoders-json:18.0.1")
+  api("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-encoders:17.0.0")
+  api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
 
   runtimeOnly("com.google.firebase:firebase-installations:17.2.0") {
@@ -87,6 +89,7 @@ dependencies {
   testImplementation(libs.truth)
 
   androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }

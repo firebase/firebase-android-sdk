@@ -1,5 +1,7 @@
 # Unreleased
 
+# 1.2.3
+
 * [fixed] Force validation or rotation of FIDs.
 
 # 1.2.1

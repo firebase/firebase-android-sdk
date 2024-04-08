@@ -18,9 +18,13 @@ import static com.google.firebase.crashlytics.internal.analytics.BlockingAnalyti
 import static org.junit.Assert.*;
 
 import android.os.Bundle;
+import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -38,7 +42,19 @@ public class BlockingAnalyticsEventLoggerTest {
 
   @Before
   public void setUp() throws Exception {
+    FirebaseApp.initializeApp(
+        ApplicationProvider.getApplicationContext(),
+        new FirebaseOptions.Builder()
+            .setApplicationId("1:1:android:1")
+            .setApiKey("API-KEY-API-KEY-API-KEY-API-KEY-API-KEY")
+            .setProjectId("project-id")
+            .build());
     MockitoAnnotations.initMocks(this);
+  }
+
+  @After
+  public void cleanUp() {
+    FirebaseApp.clearInstancesForTest();
   }
 
   @Test
