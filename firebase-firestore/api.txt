@@ -1,22 +1,4 @@
 // Signature format: 2.0
-package com.google.firebase {
-
-  public final class Timestamp implements java.lang.Comparable<com.google.firebase.Timestamp> android.os.Parcelable {
-    ctor public Timestamp(long, int);
-    ctor protected Timestamp(@NonNull android.os.Parcel);
-    ctor public Timestamp(@NonNull java.util.Date);
-    method public int compareTo(@NonNull com.google.firebase.Timestamp);
-    method public int describeContents();
-    method public int getNanoseconds();
-    method public long getSeconds();
-    method @NonNull public static com.google.firebase.Timestamp now();
-    method @NonNull public java.util.Date toDate();
-    method public void writeToParcel(@NonNull android.os.Parcel, int);
-    field @NonNull public static final android.os.Parcelable.Creator<com.google.firebase.Timestamp> CREATOR;
-  }
-
-}
-
 package com.google.firebase.firestore {
 
   public abstract class AggregateField {
@@ -139,8 +121,8 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.SnapshotMetadata getMetadata();
     method @NonNull public com.google.firebase.firestore.DocumentReference getReference();
     method @Nullable public String getString(@NonNull String);
-    method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String);
-    method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method @Nullable public Timestamp getTimestamp(@NonNull String);
+    method @Nullable public Timestamp getTimestamp(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method @Nullable public <T> T toObject(@NonNull Class<T>);
     method @Nullable public <T> T toObject(@NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }

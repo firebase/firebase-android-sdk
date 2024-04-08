@@ -58,6 +58,21 @@ package com.google.firebase {
     ctor public FirebaseTooManyRequestsException(@NonNull String);
   }
 
+  public final class Timestamp implements java.lang.Comparable<com.google.firebase.Timestamp> android.os.Parcelable {
+    ctor public Timestamp(long, int);
+    ctor protected Timestamp(@NonNull android.os.Parcel);
+    ctor public Timestamp(@NonNull java.util.Date);
+    method public static void checkArgument(boolean, @Nullable String, @Nullable java.lang.Object...);
+    method public int compareTo(@NonNull com.google.firebase.Timestamp);
+    method public int describeContents();
+    method public int getNanoseconds();
+    method public long getSeconds();
+    method @NonNull public static com.google.firebase.Timestamp now();
+    method @NonNull public java.util.Date toDate();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<com.google.firebase.Timestamp> CREATOR;
+  }
+
 }
 
 package com.google.firebase.ktx {
@@ -87,6 +102,13 @@ package com.google.firebase.provider {
     method public boolean onCreate();
     method @Nullable public android.database.Cursor query(@NonNull android.net.Uri, @Nullable String[], @Nullable String, @Nullable String[], @Nullable String);
     method public int update(@NonNull android.net.Uri, @Nullable android.content.ContentValues, @Nullable String, @Nullable String[]);
+  }
+
+}
+
+package com.google.firebase.util {
+
+  public final class RandomUtilKt {
   }
 
 }
