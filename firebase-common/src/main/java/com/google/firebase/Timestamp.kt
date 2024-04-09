@@ -93,13 +93,13 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     dest.writeInt(nanoseconds)
   }
 
-  companion object CREATOR : Parcelable.Creator<Timestamp> {
-    
-    override fun createFromParcel(source: Parcel): Timestamp {
-      return Timestamp(source)
-    }
-
-    override fun newArray(size: Int): Array<Timestamp?> = arrayOfNulls(size)
+  companion object {
+    @JvmField
+    val CREATOR =
+      object : Parcelable.Creator<Timestamp> {
+        override fun createFromParcel(source: Parcel): Timestamp = Timestamp(source)
+        override fun newArray(size: Int): Array<Timestamp?> = arrayOfNulls(size)
+      }
 
     private fun Date.toPreciseTime(): Pair<Long, Int> {
       val seconds = time / 1_000
