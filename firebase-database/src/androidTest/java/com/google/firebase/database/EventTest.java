@@ -282,6 +282,9 @@ public class EventTest {
     ZombieVerifier.verifyRepoZombies(refs);
 
     writer.setValue(42);
+
+    IntegrationTestHelpers.waitForRoundtrip(reader);
+    IntegrationTestHelpers.waitForRoundtrip(writer);
     assertTrue(writeHelper.waitForEvents());
     assertTrue(writeHelper2.waitForEvents());
     assertTrue(readHelper.waitForEvents());

@@ -44,6 +44,6 @@ android {
 
 dependencies {
   implementation("com.google.android.play:feature-delivery:2.0.0")
-  implementation("com.google.firebase:firebase-common:20.3.1")
-  implementation("com.google.firebase:firebase-components:17.1.0")
+  api("com.google.firebase:firebase-common:20.3.1")
+  api("com.google.firebase:firebase-components:17.1.0")
 }
