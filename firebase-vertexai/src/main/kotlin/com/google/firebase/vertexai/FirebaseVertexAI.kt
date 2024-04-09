@@ -21,6 +21,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.inject.Provider
+import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
@@ -43,6 +44,7 @@ class FirebaseVertexAI(
    * @param tools the list of tools to make available to the model
    * @param toolConfig the configuration that defines how the model handles the tools provided
    * @param requestOptions configuration options to utilize during backend communication
+   * @property systemInstruction contains a [Content] that directs the model to behave a certain way
    */
   fun generativeModel(
     modelName: String,
@@ -51,6 +53,7 @@ class FirebaseVertexAI(
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
     requestOptions: RequestOptions = RequestOptions(),
+    systemInstruction: Content? = null,
   ) =
     GenerativeModel(
       "projects/${firebaseApp.options.projectId}/locations/${LOCATION}/publishers/google/models/${modelName}",
@@ -59,6 +62,7 @@ class FirebaseVertexAI(
       safetySettings,
       tools,
       toolConfig,
+      systemInstruction,
       requestOptions,
       appCheckProvider.get()
     )
