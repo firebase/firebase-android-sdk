@@ -121,8 +121,8 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.SnapshotMetadata getMetadata();
     method @NonNull public com.google.firebase.firestore.DocumentReference getReference();
     method @Nullable public String getString(@NonNull String);
-    method @Nullable public Timestamp getTimestamp(@NonNull String);
-    method @Nullable public Timestamp getTimestamp(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String);
+    method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
     method @Nullable public <T> T toObject(@NonNull Class<T>);
     method @Nullable public <T> T toObject(@NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }
