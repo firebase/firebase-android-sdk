@@ -125,12 +125,16 @@ dependencies {
     api 'com.google.firebase:firebase-annotations:16.2.0'
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
-         exclude group: "com.google.firebase", module: "firebase-common"
-     }
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
-    api 'com.google.firebase:firebase-database-collection:18.0.1'
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+    api(project(":firebase-common"))
+    api("com.google.firebase:firebase-common-ktx:20.4.2") {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+    api("com.google.firebase:firebase-components:17.1.5") {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+    api('com.google.firebase:firebase-database-collection:18.0.1')
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
@@ -170,8 +174,8 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     androidTestImplementation("com.google.truth:truth:$googleTruthVersion") {
-         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
-     }
+        exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
+    }
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
