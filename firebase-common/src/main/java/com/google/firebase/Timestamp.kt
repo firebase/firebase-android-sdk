@@ -16,11 +16,8 @@
 
 package com.google.firebase
 
-import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
-import androidx.annotation.RequiresApi
-import java.time.Instant
 import java.util.Date
 
 /**
@@ -57,8 +54,6 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
 
   constructor(source: Parcel) : this(source.readLong(), source.readInt())
 
-  @RequiresApi(Build.VERSION_CODES.O) constructor(time: Instant) : this(time.epochSecond, time.nano)
-
   constructor(date: Date) {
     val (seconds, nanoseconds) = date.toPreciseTime()
 
@@ -74,10 +69,6 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
    * This may lose precision.
    */
   fun toDate(): Date = Date(seconds * 1_000 + (nanoseconds / 1_000_000))
-
-  /** Returns a new [Instant] that matches the time defined by this timestamp. */
-  @RequiresApi(Build.VERSION_CODES.O)
-  fun toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 
   override fun compareTo(other: Timestamp): Int =
     compareValuesBy(this, other, Timestamp::seconds, Timestamp::nanoseconds)
@@ -103,13 +94,12 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
   }
 
   companion object CREATOR : Parcelable.Creator<Timestamp> {
+    
     override fun createFromParcel(source: Parcel): Timestamp {
       return Timestamp(source)
     }
 
     override fun newArray(size: Int): Array<Timestamp?> = arrayOfNulls(size)
-
-    @JvmStatic fun now() = Timestamp(Date())
 
     private fun Date.toPreciseTime(): Pair<Long, Int> {
       val seconds = time / 1_000
