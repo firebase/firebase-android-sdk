@@ -101,6 +101,8 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
         override fun newArray(size: Int): Array<Timestamp?> = arrayOfNulls(size)
       }
 
+    @JvmStatic fun now() = Timestamp(Date())
+
     private fun Date.toPreciseTime(): Pair<Long, Int> {
       val seconds = time / 1_000
       val nanoseconds = ((time % 1_000) * 1_000_000).toInt()
