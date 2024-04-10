@@ -299,14 +299,8 @@ internal fun com.google.ai.client.generativeai.common.GenerateContentResponse.to
   )
 }
 
-internal fun com.google.ai.client.generativeai.common.CountTokensResponse.toPublic():
-  CountTokensResponse {
-  val billableCharacters = totalBillableCharacters
-  if (billableCharacters != null) {
-    return CountTokensResponse(totalTokens, billableCharacters)
-  }
-  throw SerializationException("CountTokensResponse is missing totalBillableCharacters")
-}
+internal fun com.google.ai.client.generativeai.common.CountTokensResponse.toPublic() =
+  CountTokensResponse(totalTokens, totalBillableCharacters ?: 0)
 
 internal fun JsonObject.toPublic() = JSONObject(toString())
 
