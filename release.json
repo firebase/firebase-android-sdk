@@ -1,8 +1,6 @@
 {
     "name": "m146",
     "libraries": [
-        ":firebase-common",
-        ":firebase-common:ktx",
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",

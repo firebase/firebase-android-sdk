@@ -1,17 +1,5 @@
 {
     "changesByLibraryName": {
-        "firebase-common": [
-            {
-                "commitId": "a7edffefa9cd4f45b5921db3fd2003101c38e2ef",
-                "prId": "5818",
-                "author": "Denver Coneybeare",
-                "message": "RandomUtil added to firebase-common (#5818)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a7edffefa9cd4f45b5921db3fd2003101c38e2ef",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5818"
-            }
-        ],
-        "firebase-common/ktx": [
-        ],
         "firebase-crashlytics": [
             {
                 "commitId": "c9fa46103ddf57c734908e831c195a8035bca764",
