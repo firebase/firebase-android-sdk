@@ -46,6 +46,7 @@ class FirebaseVertexAI(
    * @param requestOptions configuration options to utilize during backend communication
    * @property systemInstruction contains a [Content] that directs the model to behave a certain way
    */
+  @JvmOverloads
   fun generativeModel(
     modelName: String,
     generationConfig: GenerationConfig? = null,
@@ -68,9 +69,11 @@ class FirebaseVertexAI(
     )
 
   companion object {
+    @JvmStatic
     val instance: FirebaseVertexAI
       get() = Firebase.app[FirebaseVertexAI::class.java]
 
+    @JvmStatic
     fun getInstance(app: FirebaseApp): FirebaseVertexAI = app[FirebaseVertexAI::class.java]
 
     private val LOCATION = "us-central1"
