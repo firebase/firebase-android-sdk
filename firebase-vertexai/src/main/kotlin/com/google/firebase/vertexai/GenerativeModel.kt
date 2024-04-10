@@ -65,6 +65,7 @@ internal constructor(
   val requestOptions: RequestOptions = RequestOptions(),
   val tools: List<Tool>? = null,
   val toolConfig: ToolConfig? = null,
+  val systemInstruction: Content? = null,
   private val controller: APIController
 ) {
 
@@ -76,6 +77,7 @@ internal constructor(
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
+    systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null
   ) : this(
@@ -86,6 +88,7 @@ internal constructor(
     requestOptions,
     tools,
     toolConfig,
+    systemInstruction,
     APIController(
       apiKey,
       modelName,
@@ -216,7 +219,8 @@ internal constructor(
       safetySettings?.map { it.toInternal() },
       generationConfig?.toInternal(),
       tools?.map { it.toInternal() },
-      toolConfig?.toInternal()
+      toolConfig?.toInternal(),
+      systemInstruction?.toInternal()
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =
