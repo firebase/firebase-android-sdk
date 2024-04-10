@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.common.testutil.Assert.assertThrows;
 
 import android.os.Parcel;
-
 import java.time.Instant;
 import java.util.Date;
 import org.junit.Test;
