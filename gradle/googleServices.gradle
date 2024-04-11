@@ -61,6 +61,7 @@ task copyRootGoogleServices(type: Copy) {
 // to copy it from the root project.
 afterEvaluate {
     tasks.findByName('preBuild').dependsOn(copyRootGoogleServices)
+    tasks.findByName('ktfmtCheckMain').dependsOn(copyRootGoogleServices)
 
     if (tasks.findByName("processReleaseGoogleServices")) {
         processReleaseGoogleServices.dependsOn 'copyRootGoogleServices'
