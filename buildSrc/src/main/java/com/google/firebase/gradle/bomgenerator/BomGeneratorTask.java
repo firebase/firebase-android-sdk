@@ -153,6 +153,7 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "firebase-storage-common",
           "firebase-storage-common-license",
           "firebase-storage-license",
+          "firebase-vertexai",
           "perf-plugin",
           "play-services-ads",
           "protolite-well-known-types",
