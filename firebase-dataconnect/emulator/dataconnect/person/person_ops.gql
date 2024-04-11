@@ -73,3 +73,18 @@ mutation createPeopleWithHardcodedName @auth(level: PUBLIC) {
     age: 42
   })
 }
+
+mutation createPersonAuth($id: String, $name: String!, $age: Int) @auth(level: USER) {
+  person_insert(data: {
+    id: $id,
+    name: $name,
+    age: $age
+  })
+}
+
+query getPersonAuth($id: String!) @auth(level: USER) {
+  person(id: $id) {
+    name
+    age
+  }
+}

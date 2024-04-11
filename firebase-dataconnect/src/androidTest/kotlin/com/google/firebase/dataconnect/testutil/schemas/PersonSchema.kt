@@ -67,6 +67,25 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
       variablesSerializer = serializer<CreatePersonMutation.Variables>(),
     )
 
+  fun createPersonAuth(id: String, name: String, age: Int? = null) =
+    createPersonAuth(CreatePersonAuthMutation.Variables(id = id, name = name, age = age))
+
+  object CreatePersonAuthMutation {
+    @Serializable
+    data class Data(val person_insert: PersonKey) {
+      @Serializable data class PersonKey(val id: String)
+    }
+    @Serializable data class Variables(val id: String, val name: String, val age: Int? = null)
+  }
+
+  fun createPersonAuth(variables: CreatePersonAuthMutation.Variables) =
+    dataConnect.mutation(
+      operationName = "createPersonAuth",
+      variables = variables,
+      dataDeserializer = serializer<CreatePersonAuthMutation.Data>(),
+      variablesSerializer = serializer<CreatePersonAuthMutation.Variables>(),
+    )
+
   fun createPerson(id: String, name: String, age: Int? = null) =
     createPerson(CreatePersonMutation.Variables(id = id, name = name, age = age))
 
@@ -137,6 +156,25 @@ class PersonSchema(val dataConnect: FirebaseDataConnect) {
     )
 
   fun getPerson(id: String) = getPerson(GetPersonQuery.Variables(id = id))
+
+  object GetPersonAuthQuery {
+    @Serializable
+    data class Data(val person: Person?) {
+      @Serializable data class Person(val name: String, val age: Int? = null)
+    }
+
+    @Serializable data class Variables(val id: String)
+  }
+
+  fun getPersonAuth(variables: GetPersonAuthQuery.Variables) =
+    dataConnect.query(
+      operationName = "getPersonAuth",
+      variables = variables,
+      dataDeserializer = serializer<GetPersonAuthQuery.Data>(),
+      variablesSerializer = serializer<GetPersonAuthQuery.Variables>(),
+    )
+
+  fun getPersonAuth(id: String) = getPersonAuth(GetPersonAuthQuery.Variables(id = id))
 
   object GetPeopleByNameQuery {
     @Serializable

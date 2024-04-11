@@ -44,6 +44,7 @@ dependencies {
   implementation(libs.mockito.core)
   implementation(libs.robolectric)
   implementation(libs.truth)
+  implementation(project(":firebase-components"))
 }
 
 tasks.withType<KotlinCompile>().all {

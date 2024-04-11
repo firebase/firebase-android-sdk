@@ -2,7 +2,10 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.auth.FirebaseAuthCredentialsProvider
+import com.google.firebase.inject.Deferred
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -12,6 +15,7 @@ internal class FirebaseDataConnectFactory(
   private val firebaseApp: FirebaseApp,
   private val blockingExecutor: Executor,
   private val nonBlockingExecutor: Executor,
+  private val deferredAuthProvider: Deferred<InternalAuthProvider>
 ) {
 
   init {
@@ -60,6 +64,7 @@ internal class FirebaseDataConnectFactory(
       config = config,
       blockingExecutor = blockingExecutor,
       nonBlockingExecutor = nonBlockingExecutor,
+      authProvider = FirebaseAuthCredentialsProvider(deferredAuthProvider),
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
     )

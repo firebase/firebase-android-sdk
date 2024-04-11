@@ -44,6 +44,8 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   kotlinOptions { jvmTarget = "1.8" }
+
+  testOptions.unitTests.isReturnDefaultValues = true
 }
 
 protobuf {
@@ -96,6 +98,11 @@ dependencies {
   implementation(project(":firebase-annotations"))
   implementation(project(":firebase-components"))
   implementation(project(":protolite-well-known-types"))
+  implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+    exclude(group = "com.google.android.recaptcha", module = "recaptcha")
+  }
 
   compileOnly(libs.javax.annotation.jsr250)
   implementation(libs.grpc.android)
@@ -112,10 +119,16 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
   testImplementation(libs.truth.liteproto.extension)
+  testImplementation(libs.kotlin.coroutines.test)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))
+  androidTestImplementation("com.google.firebase:firebase-auth:20.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+    exclude(group = "com.google.android.recaptcha", module = "recaptcha")
+  }
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)

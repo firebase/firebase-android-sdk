@@ -18,6 +18,8 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.DataConnectError
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
+import com.google.firebase.dataconnect.auth.CredentialsProvider
+import com.google.firebase.dataconnect.auth.User
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.decodeFromStruct
 import com.google.firebase.dataconnect.util.toCompactString
@@ -31,6 +33,7 @@ import google.firebase.dataconnect.v1main.executeMutationRequest
 import google.firebase.dataconnect.v1main.executeQueryRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
+import io.grpc.Metadata
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
@@ -45,6 +48,7 @@ internal class DataConnectGrpcClient(
   connector: String,
   location: String,
   service: String,
+  private val authProvider: CredentialsProvider<User>,
   host: String,
   sslEnabled: Boolean,
   private val blockingExecutor: Executor,
@@ -55,6 +59,9 @@ internal class DataConnectGrpcClient(
 
   private val requestName =
     "projects/$projectId/locations/$location/services/$service/connectors/$connector"
+
+  private val AUTHORIZATION_HEADER =
+    Metadata.Key.of("X-Firebase-Auth-Token", Metadata.ASCII_STRING_MARSHALLER)
 
   private val closedMutex = Mutex()
   private var closed = false
@@ -128,7 +135,7 @@ internal class DataConnectGrpcClient(
     val response =
       lazyGrpcStub
         .get()
-        .runCatching { executeQuery(request) }
+        .runCatching { executeQuery(request, createMetadata()) }
         .onFailure {
           logger.warn(it) {
             "executeQuery() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
@@ -164,7 +171,7 @@ internal class DataConnectGrpcClient(
     val response =
       lazyGrpcStub
         .get()
-        .runCatching { executeMutation(request) }
+        .runCatching { executeMutation(request, createMetadata()) }
         .onFailure {
           logger.warn(it) {
             "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
@@ -185,6 +192,18 @@ internal class DataConnectGrpcClient(
   private val closingMutex = Mutex()
   private var awaitTerminationJob: Deferred<Unit>? = null
   private var closeCompleted = false
+
+  private suspend fun createMetadata(): Metadata {
+    val metadata = Metadata()
+    val token = authProvider.getToken()
+    if (token != null) {
+      metadata.put(AUTHORIZATION_HEADER, "Bearer $token")
+      logger.debug { "Successfully fetched auth token." }
+    } else {
+      logger.debug { "Failed to get auth token." }
+    }
+    return metadata
+  }
 
   suspend fun close() {
     closedMutex.withLock { closed = true }

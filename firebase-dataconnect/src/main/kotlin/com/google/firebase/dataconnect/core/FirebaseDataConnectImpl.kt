@@ -16,6 +16,8 @@ package com.google.firebase.dataconnect.core
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.auth.CredentialsProvider
+import com.google.firebase.dataconnect.auth.User
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import java.util.concurrent.Executor
 import kotlinx.coroutines.*
@@ -44,6 +46,7 @@ internal class FirebaseDataConnectImpl(
   override val config: ConnectorConfig,
   override val blockingExecutor: Executor,
   override val nonBlockingExecutor: Executor,
+  private val authProvider: CredentialsProvider<User>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
 ) : FirebaseDataConnectInternal {
@@ -104,6 +107,7 @@ internal class FirebaseDataConnectImpl(
         connector = config.connector,
         location = config.location,
         service = config.serviceId,
+        authProvider = authProvider,
         host = host,
         sslEnabled = sslEnabled,
         blockingExecutor = blockingExecutor,
