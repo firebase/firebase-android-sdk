@@ -31,7 +31,7 @@ autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autova
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
-errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.9.0" }
+errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.26.0" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
