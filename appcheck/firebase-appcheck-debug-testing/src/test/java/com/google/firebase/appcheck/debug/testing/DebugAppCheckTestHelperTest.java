@@ -23,7 +23,6 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
-import com.google.firebase.appcheck.safetynet.SafetyNetAppCheckProviderFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,50 +47,6 @@ public class DebugAppCheckTestHelperTest {
   }
 
   @Test
-  public void testDebugAppCheckTestHelper_withDebugProviderDefaultApp_installsDebugProvider() {
-    DefaultFirebaseAppCheck firebaseAppCheck =
-        (DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance();
-    firebaseAppCheck.installAppCheckProviderFactory(SafetyNetAppCheckProviderFactory.getInstance());
-
-    // Sanity check
-    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-        .isEqualTo(SafetyNetAppCheckProviderFactory.getInstance());
-
-    debugAppCheckTestHelper.withDebugProvider(
-        () -> {
-          assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-              .isInstanceOf(DebugAppCheckProviderFactory.class);
-        });
-
-    // Make sure the factory is reset.
-    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-        .isEqualTo(SafetyNetAppCheckProviderFactory.getInstance());
-  }
-
-  @Test
-  public void testDebugAppCheckTestHelper_withDebugProviderNamedApp_installsDebugProvider() {
-    FirebaseApp firebaseApp = FirebaseApp.getInstance(OTHER_FIREBASE_APP_NAME);
-    DefaultFirebaseAppCheck firebaseAppCheck =
-        (DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp);
-    firebaseAppCheck.installAppCheckProviderFactory(SafetyNetAppCheckProviderFactory.getInstance());
-
-    // Sanity check
-    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-        .isEqualTo(SafetyNetAppCheckProviderFactory.getInstance());
-
-    debugAppCheckTestHelper.withDebugProvider(
-        firebaseApp,
-        () -> {
-          assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-              .isInstanceOf(DebugAppCheckProviderFactory.class);
-        });
-
-    // Make sure the factory is reset.
-    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-        .isEqualTo(SafetyNetAppCheckProviderFactory.getInstance());
-  }
-
-  @Test
   public void
       testDebugAppCheckTestHelper_withDebugProvider_noPreviousProvider_installsDebugProvider() {
     DefaultFirebaseAppCheck firebaseAppCheck =
@@ -101,10 +56,8 @@ public class DebugAppCheckTestHelperTest {
     assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory()).isNull();
 
     debugAppCheckTestHelper.withDebugProvider(
-        () -> {
-          assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-              .isInstanceOf(DebugAppCheckProviderFactory.class);
-        });
+        () -> assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+            .isInstanceOf(DebugAppCheckProviderFactory.class));
 
     // Make sure the factory is reset.
     assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory()).isNull();
