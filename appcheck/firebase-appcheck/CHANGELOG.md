@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Internal support for `SafetyNet` has been dropped, as `SafetyNet` is no longer being 
+maintained.
 
 
 # 17.1.2
