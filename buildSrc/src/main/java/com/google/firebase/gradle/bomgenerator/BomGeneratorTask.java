@@ -105,7 +105,6 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "firebase-analytics-license",
           "firebase-annotations",
           "firebase-appcheck-interop",
-          "firebase-appcheck-safetynet",
           "firebase-appdistribution-gradle",
           "firebase-appindexing-license",
           "firebase-appindexing",
