@@ -267,3 +267,23 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
           files: "artifacts/**/*.xml"
+            - name: Deploy to IBM Cloud Foundry
+  # You may pin to the exact commit or the version.
+  # uses: IBM/cloudfoundry-deploy@fcb5a74cb36e7cd0bfe9f9b5d9d57aab85d00bd1
+  uses: IBM/cloudfoundry-deploy@v2.1
+  with:
+    # IBM Cloud API key
+    IBM_CLOUD_API_KEY: 
+    # IBM Cloud Foundry API endpoint
+    IBM_CLOUD_CF_API: 
+    # IBM Cloud Foundry organization name
+    IBM_CLOUD_CF_ORG: 
+    # IBM Cloud Foundry space name
+    IBM_CLOUD_CF_SPACE: 
+    # App Manifest file
+    APP_MANIFEST_FILE: # optional, default is manifest.yml
+    # App variables file
+    APP_VARS_FILE: # optional
+    # IBM Cloud Foundry resource group
+    RESOURCE_GROUP: # optional
+          
