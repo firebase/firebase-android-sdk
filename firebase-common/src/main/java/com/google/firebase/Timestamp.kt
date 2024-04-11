@@ -80,7 +80,13 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
       else -> compareTo(other) == 0
     }
 
-  override fun hashCode(): Int = 31 * seconds.hashCode() + nanoseconds
+  override fun hashCode(): Int {
+    val prime = 37
+    val initialHash = prime * seconds.toInt()
+    val withHighOrderBits = prime * initialHash + seconds.shr(32).toInt()
+
+    return prime * withHighOrderBits + nanoseconds
+  }
 
   override fun toString(): String = "Timestamp(seconds=$seconds, nanoseconds=$nanoseconds)"
 
