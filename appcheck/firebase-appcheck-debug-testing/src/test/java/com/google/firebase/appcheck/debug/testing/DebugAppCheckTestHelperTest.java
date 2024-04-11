@@ -56,8 +56,9 @@ public class DebugAppCheckTestHelperTest {
     assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory()).isNull();
 
     debugAppCheckTestHelper.withDebugProvider(
-        () -> assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
-            .isInstanceOf(DebugAppCheckProviderFactory.class));
+        () ->
+            assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+                .isInstanceOf(DebugAppCheckProviderFactory.class));
 
     // Make sure the factory is reset.
     assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory()).isNull();
