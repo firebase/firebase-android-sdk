@@ -13,7 +13,7 @@
 # limitations under the License.
 
 type Person @table {
-  id: String! @default(generate: UUID)
+  id: String! @default(expr: "uuidV4()")
   name: String!
   age: Int
 }
