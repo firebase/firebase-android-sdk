@@ -54,6 +54,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private volatile Boolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -69,6 +70,7 @@ public class ConfigAutoFetch {
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
+    this.isInBackground = false;
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -85,6 +87,10 @@ public class ConfigAutoFetch {
 
   private synchronized boolean isEventListenersEmpty() {
     return this.eventListeners.isEmpty();
+  }
+
+  public void setBackgroundState(boolean backgroundState) {
+    isInBackground = backgroundState;
   }
 
   private String parseAndValidateConfigUpdateMessage(String message) {
@@ -110,10 +116,10 @@ public class ConfigAutoFetch {
       handleNotifications(inputStream);
       inputStream.close();
     } catch (IOException ex) {
-      // Stream was interrupted due to a transient issue and the system will retry the connection.
-      Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
-    } finally {
-      httpURLConnection.disconnect();
+      if (!isInBackground) {
+        // Stream was interrupted due to a transient issue and the system will retry the connection.
+        Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      }
     }
   }
 

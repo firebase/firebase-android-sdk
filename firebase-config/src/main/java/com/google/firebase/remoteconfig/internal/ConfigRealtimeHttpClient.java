@@ -98,8 +98,10 @@ public class ConfigRealtimeHttpClient {
   private boolean isRealtimeDisabled;
 
   /** Flag to indicate whether or not the app is in the background or not. */
-  private boolean isInBackground;
-
+  private volatile Boolean isInBackground;
+  // The HttpUrlConnection and auto-fetcher for this client. Only one of each exist at a time.
+  private HttpURLConnection httpURLConnection;
+  private ConfigAutoFetch configAutoFetch;
   private final int ORIGINAL_RETRIES = 8;
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
@@ -392,11 +394,35 @@ public class ConfigRealtimeHttpClient {
   }
 
   void setRealtimeBackgroundState(boolean backgroundState) {
-    isInBackground = backgroundState;
+    synchronized (isInBackground) {
+      isInBackground = backgroundState;
+      if (configAutoFetch != null) {
+        configAutoFetch.setBackgroundState(backgroundState);
+      }
+      if (isInBackground) {
+        if (httpURLConnection != null) {
+          httpURLConnection.disconnect();
+        }
+      }
+    }
   }
 
   private synchronized void resetRetryCount() {
     httpRetriesRemaining = ORIGINAL_RETRIES;
+  }
+
+  /**
+   * The check and set http connection method are combined so that when canMakeHttpStreamConnection
+   * returns true, the same thread can mark isHttpConnectionIsRunning as true to prevent a race
+   * condition with another thread.
+   */
+  private synchronized boolean checkAndSetHttpConnectionFlagIfNotRunning() {
+    boolean canMakeConnection = canMakeHttpStreamConnection();
+    if (canMakeConnection) {
+      setIsHttpConnectionRunning(true);
+    }
+
+    return canMakeConnection;
   }
 
   private synchronized void setIsHttpConnectionRunning(boolean connectionRunning) {
@@ -469,7 +495,7 @@ public class ConfigRealtimeHttpClient {
    */
   @SuppressLint({"VisibleForTests", "DefaultLocale"})
   public void beginRealtimeHttpStream() {
-    if (!canMakeHttpStreamConnection()) {
+    if (!checkAndSetHttpConnectionFlagIfNotRunning()) {
       return;
     }
 
@@ -489,17 +515,19 @@ public class ConfigRealtimeHttpClient {
             this.scheduledExecutorService,
             (completedHttpUrlConnectionTask) -> {
               Integer responseCode = null;
-              HttpURLConnection httpURLConnection = null;
+              InputStream inputStream = null;
+              InputStream errorStream = null;
 
               try {
                 // If HTTP connection task failed throw exception to move to the catch block.
                 if (!httpURLConnectionTask.isSuccessful()) {
                   throw new IOException(httpURLConnectionTask.getException());
                 }
-                setIsHttpConnectionRunning(true);
 
                 // Get HTTP connection and check response code.
                 httpURLConnection = httpURLConnectionTask.getResult();
+                inputStream = httpURLConnection.getInputStream();
+                errorStream = httpURLConnection.getErrorStream();
                 responseCode = httpURLConnection.getResponseCode();
 
                 // If the connection returned a 200 response code, start listening for messages.
@@ -509,23 +537,36 @@ public class ConfigRealtimeHttpClient {
                   metadataClient.resetRealtimeBackoff();
 
                   // Start listening for realtime notifications.
-                  ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+                  configAutoFetch = startAutoFetch(httpURLConnection);
                   configAutoFetch.listenForNotifications();
                 }
               } catch (IOException e) {
-                // Stream could not be open due to a transient issue and the system will retry the
-                // connection
-                // without user intervention.
-                Log.d(
-                    TAG,
-                    "Exception connecting to real-time RC backend. Retrying the connection...",
-                    e);
+                if (isInBackground) {
+                  // It's possible the app was backgrounded while the connection was open, which
+                  // threw an exception trying to read the response. No real error here, so treat
+                  // this as a success, even if we haven't read a 200 response code yet.
+                  resetRetryCount();
+                } else {
+                  // If it's not in the background, there might have been a transient error so the
+                  // client will retry the connection.
+                  Log.d(
+                      TAG,
+                      "Exception connecting to real-time RC backend. Retrying the connection...",
+                      e);
+                }
               } finally {
-                closeRealtimeHttpStream(httpURLConnection);
+                if (httpURLConnection != null) {
+                  httpURLConnection.disconnect();
+                }
+                closeHttpConnectionStreams(inputStream);
+                closeHttpConnectionStreams(errorStream);
+
+                // Either way indicate the HTTP connection is closed.
                 setIsHttpConnectionRunning(false);
 
                 boolean connectionFailed =
-                    responseCode == null || isStatusCodeRetryable(responseCode);
+                    !isInBackground
+                        && (responseCode == null || isStatusCodeRetryable(responseCode));
                 if (connectionFailed) {
                   updateBackoffMetadataWithLastFailedStreamConnectionTime(
                       new Date(clock.currentTimeMillis()));
@@ -542,8 +583,7 @@ public class ConfigRealtimeHttpClient {
                           "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
                           responseCode);
                   // Return server message for when the Firebase Remote Config Realtime API is
-                  // disabled and
-                  // the server returns a 403
+                  // disabled and the server returns a 403
                   if (responseCode == 403) {
                     errorMessage =
                         parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
@@ -556,8 +596,24 @@ public class ConfigRealtimeHttpClient {
                 }
               }
 
+              // Reset parameters.
+              httpURLConnection = null;
+              configAutoFetch = null;
+
               return Tasks.forResult(null);
             });
+  }
+
+  private void closeHttpConnectionStreams(InputStream stream) {
+    if (stream == null) {
+      return;
+    }
+
+    try {
+      stream.close();
+    } catch (IOException ex) {
+      Log.d(TAG, "Exception thrown when closing connection stream. Retrying connection...", ex);
+    }
   }
 
   // Pauses Http stream listening
