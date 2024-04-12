@@ -555,13 +555,8 @@ public class ConfigRealtimeHttpClient {
                       e);
                 }
               } finally {
-                if (httpURLConnection != null) {
-                  httpURLConnection.disconnect();
-                }
-                closeHttpConnectionStreams(inputStream);
-                closeHttpConnectionStreams(errorStream);
-
-                // Either way indicate the HTTP connection is closed.
+                // Close HTTP connection and associated streams.
+                closeRealtimeHttpStream(httpURLConnection, inputStream, errorStream);
                 setIsHttpConnectionRunning(false);
 
                 boolean connectionFailed =
@@ -604,7 +599,7 @@ public class ConfigRealtimeHttpClient {
             });
   }
 
-  private void closeHttpConnectionStreams(InputStream stream) {
+  private void closeHttpConnectionInputStream(InputStream stream) {
     if (stream == null) {
       return;
     }
@@ -617,19 +612,12 @@ public class ConfigRealtimeHttpClient {
   }
 
   // Pauses Http stream listening
-  public void closeRealtimeHttpStream(HttpURLConnection httpURLConnection) {
+  public void closeRealtimeHttpStream(
+      HttpURLConnection httpURLConnection, InputStream inputStream, InputStream errorStream) {
     if (httpURLConnection != null) {
       httpURLConnection.disconnect();
-
-      // Explicitly close the input stream due to a bug in the Android okhttp implementation.
-      // See github.com/firebase/firebase-android-sdk/pull/808.
-      try {
-        httpURLConnection.getInputStream().close();
-        if (httpURLConnection.getErrorStream() != null) {
-          httpURLConnection.getErrorStream().close();
-        }
-      } catch (IOException e) {
-      }
     }
+    closeHttpConnectionInputStream(inputStream);
+    closeHttpConnectionInputStream(errorStream);
   }
 }
