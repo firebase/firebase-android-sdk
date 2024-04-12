@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -54,6 +55,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private volatile boolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -69,6 +71,7 @@ public class ConfigAutoFetch {
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
+    this.isInBackground = false;
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -85,6 +88,10 @@ public class ConfigAutoFetch {
 
   private synchronized boolean isEventListenersEmpty() {
     return this.eventListeners.isEmpty();
+  }
+
+  void setBackgroundState(boolean backgroundState) {
+    isInBackground = backgroundState;
   }
 
   private String parseAndValidateConfigUpdateMessage(String message) {
@@ -105,17 +112,32 @@ public class ConfigAutoFetch {
       return;
     }
 
+    InputStream inputStream = null;
+    InputStream errorStream = null;
     try {
-      InputStream inputStream = httpURLConnection.getInputStream();
+      inputStream = httpURLConnection.getInputStream();
+      errorStream = httpURLConnection.getErrorStream();
       handleNotifications(inputStream);
       inputStream.close();
     } catch (IOException ex) {
-      // Stream was interrupted due to a transient issue and the system will retry the connection.
-      Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      Log.i(TAG, isInBackground + "");
+      if (!isInBackground) {
+        // Stream was interrupted due to a transient issue and the system will retry the connection.
+        Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      }
+      if (errorStream != null) {
+        try {
+          errorStream.close();
+        } catch (IOException e) {}
+      }
     } finally {
-      httpURLConnection.disconnect();
+        if (inputStream != null) {
+          try {
+            inputStream.close();
+          } catch (IOException ex) {}
+        }
+      }
     }
-  }
 
   // Auto-fetch new config and execute callbacks on each new message
   private void handleNotifications(InputStream inputStream) throws IOException {

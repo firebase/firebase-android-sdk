@@ -98,7 +98,7 @@ public class ConfigRealtimeHttpClient {
   private boolean isRealtimeDisabled;
 
   /** Flag to indicate whether or not the app is in the background or not. */
-  private boolean isInBackground;
+  private volatile Boolean isInBackground;
 
   private final int ORIGINAL_RETRIES = 8;
   private final ScheduledExecutorService scheduledExecutorService;
@@ -111,7 +111,8 @@ public class ConfigRealtimeHttpClient {
   private final Random random;
   private final Clock clock;
   private final ConfigMetadataClient metadataClient;
-
+  private HttpURLConnection connection;
+  private ConfigAutoFetch autoFetch;
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
@@ -145,6 +146,8 @@ public class ConfigRealtimeHttpClient {
     this.metadataClient = metadataClient;
     this.isRealtimeDisabled = false;
     this.isInBackground = false;
+    connection = null;
+    autoFetch = null;
   }
 
   private static String extractProjectNumberFromAppId(String gmpAppId) {
@@ -392,7 +395,15 @@ public class ConfigRealtimeHttpClient {
   }
 
   void setRealtimeBackgroundState(boolean backgroundState) {
-    isInBackground = backgroundState;
+    synchronized (isInBackground) {
+      isInBackground = backgroundState;
+      if (isInBackground) {
+          if (autoFetch != null) {
+            autoFetch.setBackgroundState(backgroundState);
+          }
+          connection.disconnect();
+        }
+      }
   }
 
   private synchronized void resetRetryCount() {
@@ -500,6 +511,7 @@ public class ConfigRealtimeHttpClient {
 
                 // Get HTTP connection and check response code.
                 httpURLConnection = httpURLConnectionTask.getResult();
+                connection = httpURLConnection;
                 responseCode = httpURLConnection.getResponseCode();
 
                 // If the connection returned a 200 response code, start listening for messages.
@@ -510,18 +522,23 @@ public class ConfigRealtimeHttpClient {
 
                   // Start listening for realtime notifications.
                   ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+                  autoFetch = configAutoFetch;
                   configAutoFetch.listenForNotifications();
                 }
               } catch (IOException e) {
                 // Stream could not be open due to a transient issue and the system will retry the
                 // connection
                 // without user intervention.
-                Log.d(
-                    TAG,
-                    "Exception connecting to real-time RC backend. Retrying the connection...",
-                    e);
+                if (!isInBackground) {
+                  Log.d(
+                      TAG,
+                      "Exception connecting to real-time RC backend. Retrying the connection...",
+                      e);
+                }
               } finally {
-                closeRealtimeHttpStream(httpURLConnection);
+                if (!isInBackground) {
+                  closeRealtimeHttpStream(httpURLConnection);
+                }
                 setIsHttpConnectionRunning(false);
 
                 boolean connectionFailed =
@@ -555,6 +572,8 @@ public class ConfigRealtimeHttpClient {
                           FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
                 }
               }
+              connection = null;
+              autoFetch = null;
 
               return Tasks.forResult(null);
             });
