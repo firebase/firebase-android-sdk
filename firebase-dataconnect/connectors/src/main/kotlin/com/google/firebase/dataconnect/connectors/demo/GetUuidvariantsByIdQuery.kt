@@ -6,6 +6,7 @@ package com.google.firebase.dataconnect.connectors.demo
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.QuerySubscriptionResult
+import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import kotlinx.coroutines.flow.Flow
@@ -15,11 +16,8 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetUuidvariantsByIdQuery {
-  public val connector: DemoConnector
-
-  public fun ref(variables: Variables): QueryRef<Data, Variables> =
-    connector.dataConnect.query(operationName, variables, dataDeserializer, variablesSerializer)
+public interface GetUuidvariantsByIdQuery :
+  GeneratedQuery<DemoConnector, GetUuidvariantsByIdQuery.Data, GetUuidvariantsByIdQuery.Variables> {
 
   @Serializable public data class Variables(val id: String)
 

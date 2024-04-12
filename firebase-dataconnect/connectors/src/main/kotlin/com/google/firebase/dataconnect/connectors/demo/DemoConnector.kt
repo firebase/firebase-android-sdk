@@ -6,11 +6,12 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.generated.GeneratedConnector
 import com.google.firebase.dataconnect.getInstance
 import java.util.WeakHashMap
 
-public interface DemoConnector {
-  public val dataConnect: FirebaseDataConnect
+public interface DemoConnector : GeneratedConnector {
+  override val dataConnect: FirebaseDataConnect
 
   public val deleteFoo: DeleteFooMutation
 
@@ -131,87 +132,249 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 }
 
 private class DeleteFooMutationImpl(override val connector: DemoConnectorImpl) : DeleteFooMutation {
-  override fun toString() = "DeleteFooMutationImpl(connector=$connector)"
+  override val operationName by DeleteFooMutation.Companion::operationName
+  override val dataDeserializer by DeleteFooMutation.Companion::dataDeserializer
+  override val variablesSerializer by DeleteFooMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "DeleteFooMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class DeleteFoosByBarMutationImpl(override val connector: DemoConnectorImpl) :
   DeleteFoosByBarMutation {
-  override fun toString() = "DeleteFoosByBarMutationImpl(connector=$connector)"
+  override val operationName by DeleteFoosByBarMutation.Companion::operationName
+  override val dataDeserializer by DeleteFoosByBarMutation.Companion::dataDeserializer
+  override val variablesSerializer by DeleteFoosByBarMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "DeleteFoosByBarMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class GetDateVariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetDateVariantsByIdQuery {
-  override fun toString() = "GetDateVariantsByIdQueryImpl(connector=$connector)"
+  override val operationName by GetDateVariantsByIdQuery.Companion::operationName
+  override val dataDeserializer by GetDateVariantsByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetDateVariantsByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetDateVariantsByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class GetFooByIdQueryImpl(override val connector: DemoConnectorImpl) : GetFooByIdQuery {
-  override fun toString() = "GetFooByIdQueryImpl(connector=$connector)"
+  override val operationName by GetFooByIdQuery.Companion::operationName
+  override val dataDeserializer by GetFooByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetFooByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetFooByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class GetFoosByBarQueryImpl(override val connector: DemoConnectorImpl) : GetFoosByBarQuery {
-  override fun toString() = "GetFoosByBarQueryImpl(connector=$connector)"
+  override val operationName by GetFoosByBarQuery.Companion::operationName
+  override val dataDeserializer by GetFoosByBarQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetFoosByBarQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetFoosByBarQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class GetHardcodedFooQueryImpl(override val connector: DemoConnectorImpl) :
   GetHardcodedFooQuery {
-  override fun toString() = "GetHardcodedFooQueryImpl(connector=$connector)"
+  override val operationName by GetHardcodedFooQuery.Companion::operationName
+  override val dataDeserializer by GetHardcodedFooQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetHardcodedFooQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetHardcodedFooQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class GetInt64variantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetInt64variantsByIdQuery {
-  override fun toString() = "GetInt64variantsByIdQueryImpl(connector=$connector)"
+  override val operationName by GetInt64variantsByIdQuery.Companion::operationName
+  override val dataDeserializer by GetInt64variantsByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetInt64variantsByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetInt64variantsByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class GetStringVariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetStringVariantsByIdQuery {
-  override fun toString() = "GetStringVariantsByIdQueryImpl(connector=$connector)"
+  override val operationName by GetStringVariantsByIdQuery.Companion::operationName
+  override val dataDeserializer by GetStringVariantsByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetStringVariantsByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetStringVariantsByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class GetUuidvariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetUuidvariantsByIdQuery {
-  override fun toString() = "GetUuidvariantsByIdQueryImpl(connector=$connector)"
+  override val operationName by GetUuidvariantsByIdQuery.Companion::operationName
+  override val dataDeserializer by GetUuidvariantsByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetUuidvariantsByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetUuidvariantsByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class InsertDateVariantsMutationImpl(override val connector: DemoConnectorImpl) :
   InsertDateVariantsMutation {
-  override fun toString() = "InsertDateVariantsMutationImpl(connector=$connector)"
+  override val operationName by InsertDateVariantsMutation.Companion::operationName
+  override val dataDeserializer by InsertDateVariantsMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertDateVariantsMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertDateVariantsMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class InsertFooMutationImpl(override val connector: DemoConnectorImpl) : InsertFooMutation {
-  override fun toString() = "InsertFooMutationImpl(connector=$connector)"
+  override val operationName by InsertFooMutation.Companion::operationName
+  override val dataDeserializer by InsertFooMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertFooMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertFooMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class InsertInt64variantsMutationImpl(override val connector: DemoConnectorImpl) :
   InsertInt64variantsMutation {
-  override fun toString() = "InsertInt64variantsMutationImpl(connector=$connector)"
+  override val operationName by InsertInt64variantsMutation.Companion::operationName
+  override val dataDeserializer by InsertInt64variantsMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertInt64variantsMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertInt64variantsMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class InsertStringVariantsMutationImpl(override val connector: DemoConnectorImpl) :
   InsertStringVariantsMutation {
-  override fun toString() = "InsertStringVariantsMutationImpl(connector=$connector)"
+  override val operationName by InsertStringVariantsMutation.Companion::operationName
+  override val dataDeserializer by InsertStringVariantsMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertStringVariantsMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertStringVariantsMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class InsertUuidvariantsMutationImpl(override val connector: DemoConnectorImpl) :
   InsertUuidvariantsMutation {
-  override fun toString() = "InsertUuidvariantsMutationImpl(connector=$connector)"
+  override val operationName by InsertUuidvariantsMutation.Companion::operationName
+  override val dataDeserializer by InsertUuidvariantsMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertUuidvariantsMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertUuidvariantsMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class UpdateFooMutationImpl(override val connector: DemoConnectorImpl) : UpdateFooMutation {
-  override fun toString() = "UpdateFooMutationImpl(connector=$connector)"
+  override val operationName by UpdateFooMutation.Companion::operationName
+  override val dataDeserializer by UpdateFooMutation.Companion::dataDeserializer
+  override val variablesSerializer by UpdateFooMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "UpdateFooMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class UpdateFoosByBarMutationImpl(override val connector: DemoConnectorImpl) :
   UpdateFoosByBarMutation {
-  override fun toString() = "UpdateFoosByBarMutationImpl(connector=$connector)"
+  override val operationName by UpdateFoosByBarMutation.Companion::operationName
+  override val dataDeserializer by UpdateFoosByBarMutation.Companion::dataDeserializer
+  override val variablesSerializer by UpdateFoosByBarMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "UpdateFoosByBarMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class UpsertFooMutationImpl(override val connector: DemoConnectorImpl) : UpsertFooMutation {
-  override fun toString() = "UpsertFooMutationImpl(connector=$connector)"
+  override val operationName by UpsertFooMutation.Companion::operationName
+  override val dataDeserializer by UpsertFooMutation.Companion::dataDeserializer
+  override val variablesSerializer by UpsertFooMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "UpsertFooMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 private class UpsertHardcodedFooMutationImpl(override val connector: DemoConnectorImpl) :
   UpsertHardcodedFooMutation {
-  override fun toString() = "UpsertHardcodedFooMutationImpl(connector=$connector)"
+  override val operationName by UpsertHardcodedFooMutation.Companion::operationName
+  override val dataDeserializer by UpsertHardcodedFooMutation.Companion::dataDeserializer
+  override val variablesSerializer by UpsertHardcodedFooMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "UpsertHardcodedFooMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
 }
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no

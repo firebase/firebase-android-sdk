@@ -5,6 +5,7 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import kotlinx.serialization.DeserializationStrategy
@@ -14,11 +15,8 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface UpsertHardcodedFooMutation {
-  public val connector: DemoConnector
-
-  public fun ref(variables: Unit): MutationRef<Data, Unit> =
-    connector.dataConnect.mutation(operationName, variables, dataDeserializer, variablesSerializer)
+public interface UpsertHardcodedFooMutation :
+  GeneratedMutation<DemoConnector, UpsertHardcodedFooMutation.Data, Unit> {
 
   @Serializable public data class Data(@SerialName("foo_upsert") val key: FooKey)
 

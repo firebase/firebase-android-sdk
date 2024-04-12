@@ -1,7 +1,7 @@
 @file:Suppress("SpellCheckingInspection")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class)
 
-package com.google.firebase.dataconnect.connectors.demo
+package com.google.firebase.dataconnect.connectors.`typealias`
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
@@ -15,31 +15,28 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface UpsertFooMutation :
-  GeneratedMutation<DemoConnector, UpsertFooMutation.Data, UpsertFooMutation.Variables> {
+public interface DeleteFooMutation :
+  GeneratedMutation<KeywordsConnector, DeleteFooMutation.Data, DeleteFooMutation.Variables> {
 
-  @Serializable public data class Variables(val id: String, val bar: String?)
+  @Serializable public data class Variables(val `is`: String)
 
-  @Serializable public data class Data(@SerialName("foo_upsert") val key: FooKey)
+  @Serializable public data class Data(@SerialName("foo_delete") val key: FooKey?)
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "UpsertFoo"
+    @Suppress("ConstPropertyName") public const val operationName: String = "DeleteFoo"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun UpsertFooMutation.ref(
-  id: String,
-  bar: String?
-): MutationRef<UpsertFooMutation.Data, UpsertFooMutation.Variables> =
-  ref(UpsertFooMutation.Variables(id = id, bar = bar))
+public fun DeleteFooMutation.ref(
+  `is`: String
+): MutationRef<DeleteFooMutation.Data, DeleteFooMutation.Variables> =
+  ref(DeleteFooMutation.Variables(`is` = `is`))
 
-public suspend fun UpsertFooMutation.execute(
-  id: String,
-  bar: String?
-): MutationResult<UpsertFooMutation.Data, UpsertFooMutation.Variables> =
-  ref(id = id, bar = bar).execute()
+public suspend fun DeleteFooMutation.execute(
+  `is`: String
+): MutationResult<DeleteFooMutation.Data, DeleteFooMutation.Variables> = ref(`is` = `is`).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the
@@ -47,4 +44,4 @@ public suspend fun UpsertFooMutation.execute(
 // generator to delete this file, then remove the line below (and this comment too, if you want).
 
 // FIREBASE_DATA_CONNECT_GENERATED_FILE MARKER 42da5e14-69b3-401b-a9f1-e407bee89a78
-// FIREBASE_DATA_CONNECT_GENERATED_FILE CONNECTOR demo
+// FIREBASE_DATA_CONNECT_GENERATED_FILE CONNECTOR keywords

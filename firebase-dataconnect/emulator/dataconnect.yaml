@@ -5,6 +5,7 @@ schema:
 connectorDirs: [
   "./dataconnect/demo",
   "./dataconnect/alltypes",
+  "./dataconnect/keywords",
   "./dataconnect/person",
   "./dataconnect/posts",
 ]
