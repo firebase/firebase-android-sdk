@@ -37,6 +37,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -1274,17 +1275,18 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_and_end_connection() throws Exception {
-    when(mockHttpURLConnection.getInputStream())
-        .thenReturn(
-            new ByteArrayInputStream(
-                "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
+    InputStream inputStream =
+        new ByteArrayInputStream(
+            "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8));
+    InputStream inputStreamSpy = spy(inputStream);
+    when(mockHttpURLConnection.getInputStream()).thenReturn(inputStreamSpy);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockHttpURLConnection).disconnect();
+    verify(inputStreamSpy, times(1)).close();
   }
 
   @Test
@@ -1522,19 +1524,20 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_backgrounded_disconnects() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(Tasks.forResult(mockHttpURLConnection))
+        .when(configRealtimeHttpClientSpy)
+        .createRealtimeConnection();
+    doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnectionWhenBackoffEnds();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(
+            any(HttpURLConnection.class), any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpURLConnection.getInputStream())
-        .thenReturn(
-            new ByteArrayInputStream(
-                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 } }"
-                    .getBytes(StandardCharsets.UTF_8)));
-    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
-            ConfigFetchHandler.FetchType.REALTIME, 1))
-        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-
-    configAutoFetch.listenForNotifications();
-    frc.setConfigUpdateBackgroundState(true);
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+    configRealtimeHttpClientSpy.setRealtimeBackgroundState(true);
+    flushScheduledTasks();
 
     verify(mockHttpURLConnection, times(1)).disconnect();
   }
@@ -1558,15 +1561,17 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_get_inputstream_fail() throws Exception {
+    InputStream inputStream = mock(InputStream.class);
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
+    when(mockHttpURLConnection.getInputStream()).thenReturn(inputStream);
+    when(inputStream.read()).thenThrow(IOException.class);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
             ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockHttpURLConnection).disconnect();
+    verify(inputStream).close();
   }
 
   @Test

@@ -111,14 +111,22 @@ public class ConfigAutoFetch {
       return;
     }
 
+    InputStream inputStream = null;
     try {
-      InputStream inputStream = httpURLConnection.getInputStream();
+      inputStream = httpURLConnection.getInputStream();
       handleNotifications(inputStream);
-      inputStream.close();
     } catch (IOException ex) {
       if (!isInBackground) {
         // Stream was interrupted due to a transient issue and the system will retry the connection.
         Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      }
+    } finally {
+      if (inputStream != null) {
+        try {
+          inputStream.close();
+        } catch (IOException ex) {
+          Log.d(TAG, "Exception thrown when closing connection stream. Retrying connection...", ex);
+        }
       }
     }
   }
@@ -190,9 +198,6 @@ public class ConfigAutoFetch {
         currentConfigUpdateMessage = "";
       }
     }
-
-    reader.close();
-    inputStream.close();
   }
 
   private void autoFetch(int remainingAttempts, long targetVersion) {

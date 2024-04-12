@@ -393,7 +393,7 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  void setRealtimeBackgroundState(boolean backgroundState) {
+  public void setRealtimeBackgroundState(boolean backgroundState) {
     synchronized (isInBackground) {
       isInBackground = backgroundState;
       if (configAutoFetch != null) {
@@ -614,7 +614,7 @@ public class ConfigRealtimeHttpClient {
   // Pauses Http stream listening
   public void closeRealtimeHttpStream(
       HttpURLConnection httpURLConnection, InputStream inputStream, InputStream errorStream) {
-    if (httpURLConnection != null) {
+    if (httpURLConnection != null && !isInBackground) {
       httpURLConnection.disconnect();
     }
     closeHttpConnectionInputStream(inputStream);
