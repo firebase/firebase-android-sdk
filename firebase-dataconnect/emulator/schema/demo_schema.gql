@@ -51,3 +51,6 @@ type DateVariants @table {
   nonEmptyList: [Date!]
 }
 
+type SyntheticId @table {
+  value: String!
+}

@@ -29,6 +29,8 @@ public interface DemoConnector : GeneratedConnector {
 
   public val getStringVariantsById: GetStringVariantsByIdQuery
 
+  public val getSyntheticIdById: GetSyntheticIdByIdQuery
+
   public val getUuidvariantsById: GetUuidvariantsByIdQuery
 
   public val insertDateVariants: InsertDateVariantsMutation
@@ -38,6 +40,8 @@ public interface DemoConnector : GeneratedConnector {
   public val insertInt64variants: InsertInt64variantsMutation
 
   public val insertStringVariants: InsertStringVariantsMutation
+
+  public val insertSyntheticId: InsertSyntheticIdMutation
 
   public val insertUuidvariants: InsertUuidvariantsMutation
 
@@ -101,6 +105,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getStringVariantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetStringVariantsByIdQueryImpl(this) }
 
+  override val getSyntheticIdById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetSyntheticIdByIdQueryImpl(this) }
+
   override val getUuidvariantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetUuidvariantsByIdQueryImpl(this) }
 
@@ -114,6 +121,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val insertStringVariants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertStringVariantsMutationImpl(this) }
+
+  override val insertSyntheticId by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertSyntheticIdMutationImpl(this) }
 
   override val insertUuidvariants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertUuidvariantsMutationImpl(this) }
@@ -240,6 +250,20 @@ private class GetStringVariantsByIdQueryImpl(override val connector: DemoConnect
       "connector=$connector)"
 }
 
+private class GetSyntheticIdByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetSyntheticIdByIdQuery {
+  override val operationName by GetSyntheticIdByIdQuery.Companion::operationName
+  override val dataDeserializer by GetSyntheticIdByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetSyntheticIdByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetSyntheticIdByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
 private class GetUuidvariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetUuidvariantsByIdQuery {
   override val operationName by GetUuidvariantsByIdQuery.Companion::operationName
@@ -303,6 +327,20 @@ private class InsertStringVariantsMutationImpl(override val connector: DemoConne
 
   override fun toString() =
     "InsertStringVariantsMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertSyntheticIdMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertSyntheticIdMutation {
+  override val operationName by InsertSyntheticIdMutation.Companion::operationName
+  override val dataDeserializer by InsertSyntheticIdMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertSyntheticIdMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertSyntheticIdMutationImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +

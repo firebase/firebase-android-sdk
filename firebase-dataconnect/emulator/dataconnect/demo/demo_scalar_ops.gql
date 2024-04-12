@@ -145,3 +145,11 @@ query GetDateVariantsById($id: String!) @auth(level: PUBLIC) {
     nonEmptyList
   }
 }
+
+mutation InsertSyntheticId($value: String!) @auth(level: PUBLIC) {
+  syntheticId_insert(data: { value: $value })
+}
+
+query GetSyntheticIdById($id: UUID!) @auth(level: PUBLIC) {
+  syntheticId(id: $id) { id value }
+}

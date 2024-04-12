@@ -1,8 +1,12 @@
 @file:Suppress("SpellCheckingInspection")
+@file:UseSerializers(DateSerializer::class, UUIDSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.`typealias`
 
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 
 @Serializable public data class FooKey(val id: String)
 
