@@ -350,6 +350,7 @@ public final class FirebaseRemoteConfigTest {
             listeners,
             mockRetryListener,
             scheduledExecutorService);
+    configAutoFetch.setBackgroundState(false);
     realtimeMetadataClient =
         new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
@@ -1517,6 +1518,25 @@ public final class FirebaseRemoteConfigTest {
     verify(mockUnavailableEventListener, never())
         .onError(any(FirebaseRemoteConfigServerException.class));
     verify(mockFetchHandler).getTemplateVersionNumber();
+  }
+
+  @Test
+  public void realtime_stream_listen_backgrounded_disconnects() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 } }"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+
+    configAutoFetch.listenForNotifications();
+    frc.setConfigUpdateBackgroundState(true);
+
+    verify(mockHttpURLConnection, times(1)).disconnect();
   }
 
   @Test
