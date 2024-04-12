@@ -43,12 +43,14 @@ android {
 }
 
 dependencies {
+    api(project(":firebase-messaging"))
     api("com.google.firebase:firebase-common:20.4.2")
     api("com.google.firebase:firebase-common-ktx:20.4.2")
+
     implementation("com.google.firebase:firebase-components:17.1.5")
-    api(project(":firebase-messaging"))
+
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
 }

@@ -58,6 +58,20 @@ package com.google.firebase {
     ctor public FirebaseTooManyRequestsException(@NonNull String);
   }
 
+  public final class Timestamp implements java.lang.Comparable<com.google.firebase.Timestamp> android.os.Parcelable {
+    ctor public Timestamp(long, int);
+    ctor protected Timestamp(@NonNull android.os.Parcel);
+    ctor public Timestamp(@NonNull java.util.Date);
+    method public int compareTo(@NonNull com.google.firebase.Timestamp);
+    method public int describeContents();
+    method public int getNanoseconds();
+    method public long getSeconds();
+    method @NonNull public static com.google.firebase.Timestamp now();
+    method @NonNull public java.util.Date toDate();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<com.google.firebase.Timestamp> CREATOR;
+  }
+
 }
 
 package com.google.firebase.ktx {
