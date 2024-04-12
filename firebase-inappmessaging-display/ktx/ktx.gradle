@@ -45,16 +45,18 @@ android {
 }
 
 dependencies {
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
     api(project(":firebase-inappmessaging"))
     api(project(":firebase-inappmessaging-display"))
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+
+    implementation("com.google.firebase:firebase-components:17.1.5")
+
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
          exclude group: "com.google.firebase", module: "firebase-common"
      }
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'junit:junit:4.12'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
 }
