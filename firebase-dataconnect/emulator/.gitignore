@@ -1,3 +1,4 @@
 .dataconnect/
 /cli*
 /*.tools.json
+/firebase-debug.log
