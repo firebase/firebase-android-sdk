@@ -113,11 +113,6 @@ tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
-googleJavaFormat {
-    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-}
-
 dependencies {
     androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     androidTestImplementation "androidx.annotation:annotation:1.1.0"

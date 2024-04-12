@@ -18,8 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
+
 import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
@@ -43,8 +42,6 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
   override fun apply(project: Project) {
     project.apply<LibraryPlugin>()
     project.apply<LicenseResolverPlugin>()
-    project.apply<GoogleJavaFormatPlugin>()
-    project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupAndroidLibraryExtension(project)
     registerMakeReleaseNotesTask(project)

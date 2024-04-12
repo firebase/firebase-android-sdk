@@ -16,8 +16,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
 import com.google.common.collect.ImmutableList
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
@@ -38,9 +36,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
     project.apply<JavaLibraryPlugin>()
-    project.apply<GoogleJavaFormatPlugin>()
     project.apply<DackkaPlugin>()
-    project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupFirebaseLibraryExtension(project)
     registerMakeReleaseNotesTask(project)
