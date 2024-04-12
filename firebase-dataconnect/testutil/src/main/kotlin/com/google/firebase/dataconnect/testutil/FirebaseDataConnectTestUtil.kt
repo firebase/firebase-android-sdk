@@ -4,6 +4,8 @@ import android.annotation.SuppressLint
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.inject.Deferred
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 import org.mockito.Mockito
@@ -21,6 +23,9 @@ fun newMockFirebaseApp(
     FirebaseOptions.Builder().setApplicationId(applicationId).setProjectId(projectId).build()
   Mockito.`when`(firebaseApp.options).thenReturn(firebaseOptions)
 
+  abstract class DeferredAuthProvider : Deferred<InternalAuthProvider>
+  val deferredAuthProvider = Mockito.mock(DeferredAuthProvider::class.java)
+
   val firebaseDataConnectFactoryClass =
     Class.forName("com.google.firebase.dataconnect.core.FirebaseDataConnectFactory")
   val firebaseAppGetAnswer = Answer { invocation ->
@@ -33,7 +38,8 @@ fun newMockFirebaseApp(
         RuntimeEnvironment.getApplication(),
         firebaseApp,
         MoreExecutors.directExecutor(),
-        MoreExecutors.directExecutor()
+        MoreExecutors.directExecutor(),
+        deferredAuthProvider
       )
   }
   Mockito.`when`(firebaseApp.get(firebaseDataConnectFactoryClass)).thenAnswer(firebaseAppGetAnswer)

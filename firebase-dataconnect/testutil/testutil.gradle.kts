@@ -45,6 +45,12 @@ dependencies {
   implementation(libs.robolectric)
   implementation(libs.truth)
   implementation(project(":firebase-components"))
+
+  implementation("com.google.firebase:firebase-auth:20.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+    exclude(group = "com.google.android.recaptcha", module = "recaptcha")
+  }
 }
 
 tasks.withType<KotlinCompile>().all {
