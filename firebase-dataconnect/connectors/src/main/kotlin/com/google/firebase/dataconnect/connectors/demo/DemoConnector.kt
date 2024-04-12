@@ -27,6 +27,14 @@ public interface DemoConnector : GeneratedConnector {
 
   public val getInt64variantsById: GetInt64variantsByIdQuery
 
+  public val getPrimaryKeyIsCompositeById: GetPrimaryKeyIsCompositeByIdQuery
+
+  public val getPrimaryKeyIsIntById: GetPrimaryKeyIsIntByIdQuery
+
+  public val getPrimaryKeyIsStringById: GetPrimaryKeyIsStringByIdQuery
+
+  public val getPrimaryKeyIsUuidbyId: GetPrimaryKeyIsUuidbyIdQuery
+
   public val getStringVariantsById: GetStringVariantsByIdQuery
 
   public val getSyntheticIdById: GetSyntheticIdByIdQuery
@@ -38,6 +46,14 @@ public interface DemoConnector : GeneratedConnector {
   public val insertFoo: InsertFooMutation
 
   public val insertInt64variants: InsertInt64variantsMutation
+
+  public val insertPrimaryKeyIsComposite: InsertPrimaryKeyIsCompositeMutation
+
+  public val insertPrimaryKeyIsInt: InsertPrimaryKeyIsIntMutation
+
+  public val insertPrimaryKeyIsString: InsertPrimaryKeyIsStringMutation
+
+  public val insertPrimaryKeyIsUuid: InsertPrimaryKeyIsUuidMutation
 
   public val insertStringVariants: InsertStringVariantsMutation
 
@@ -102,6 +118,18 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getInt64variantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetInt64variantsByIdQueryImpl(this) }
 
+  override val getPrimaryKeyIsCompositeById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetPrimaryKeyIsCompositeByIdQueryImpl(this) }
+
+  override val getPrimaryKeyIsIntById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetPrimaryKeyIsIntByIdQueryImpl(this) }
+
+  override val getPrimaryKeyIsStringById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetPrimaryKeyIsStringByIdQueryImpl(this) }
+
+  override val getPrimaryKeyIsUuidbyId by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetPrimaryKeyIsUuidbyIdQueryImpl(this) }
+
   override val getStringVariantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetStringVariantsByIdQueryImpl(this) }
 
@@ -118,6 +146,18 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val insertInt64variants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertInt64variantsMutationImpl(this) }
+
+  override val insertPrimaryKeyIsComposite by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyIsCompositeMutationImpl(this) }
+
+  override val insertPrimaryKeyIsInt by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyIsIntMutationImpl(this) }
+
+  override val insertPrimaryKeyIsString by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyIsStringMutationImpl(this) }
+
+  override val insertPrimaryKeyIsUuid by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyIsUuidMutationImpl(this) }
 
   override val insertStringVariants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertStringVariantsMutationImpl(this) }
@@ -236,6 +276,63 @@ private class GetInt64variantsByIdQueryImpl(override val connector: DemoConnecto
       "connector=$connector)"
 }
 
+private class GetPrimaryKeyIsCompositeByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetPrimaryKeyIsCompositeByIdQuery {
+  override val operationName by GetPrimaryKeyIsCompositeByIdQuery.Companion::operationName
+  override val dataDeserializer by GetPrimaryKeyIsCompositeByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by
+    GetPrimaryKeyIsCompositeByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetPrimaryKeyIsCompositeByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetPrimaryKeyIsIntByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetPrimaryKeyIsIntByIdQuery {
+  override val operationName by GetPrimaryKeyIsIntByIdQuery.Companion::operationName
+  override val dataDeserializer by GetPrimaryKeyIsIntByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetPrimaryKeyIsIntByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetPrimaryKeyIsIntByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetPrimaryKeyIsStringByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetPrimaryKeyIsStringByIdQuery {
+  override val operationName by GetPrimaryKeyIsStringByIdQuery.Companion::operationName
+  override val dataDeserializer by GetPrimaryKeyIsStringByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetPrimaryKeyIsStringByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetPrimaryKeyIsStringByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetPrimaryKeyIsUuidbyIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetPrimaryKeyIsUuidbyIdQuery {
+  override val operationName by GetPrimaryKeyIsUuidbyIdQuery.Companion::operationName
+  override val dataDeserializer by GetPrimaryKeyIsUuidbyIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetPrimaryKeyIsUuidbyIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetPrimaryKeyIsUuidbyIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
 private class GetStringVariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetStringVariantsByIdQuery {
   override val operationName by GetStringVariantsByIdQuery.Companion::operationName
@@ -313,6 +410,64 @@ private class InsertInt64variantsMutationImpl(override val connector: DemoConnec
 
   override fun toString() =
     "InsertInt64variantsMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyIsCompositeMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyIsCompositeMutation {
+  override val operationName by InsertPrimaryKeyIsCompositeMutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyIsCompositeMutation.Companion::dataDeserializer
+  override val variablesSerializer by
+    InsertPrimaryKeyIsCompositeMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyIsCompositeMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyIsIntMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyIsIntMutation {
+  override val operationName by InsertPrimaryKeyIsIntMutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyIsIntMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyIsIntMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyIsIntMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyIsStringMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyIsStringMutation {
+  override val operationName by InsertPrimaryKeyIsStringMutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyIsStringMutation.Companion::dataDeserializer
+  override val variablesSerializer by
+    InsertPrimaryKeyIsStringMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyIsStringMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyIsUuidMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyIsUuidMutation {
+  override val operationName by InsertPrimaryKeyIsUuidMutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyIsUuidMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyIsUuidMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyIsUuidMutationImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +

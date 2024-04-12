@@ -54,3 +54,25 @@ type DateVariants @table {
 type SyntheticId @table {
   value: String!
 }
+
+type PrimaryKeyIsString @table {
+  id: String!
+  value: String!
+}
+
+type PrimaryKeyIsUUID @table {
+  id: UUID!
+  value: String!
+}
+
+type PrimaryKeyIsInt @table(key: ["foo"]) {
+  foo: Int!
+  value: String!
+}
+
+type PrimaryKeyIsComposite @table(key: ["foo", "bar", "baz"]) {
+  foo: Int!
+  bar: String!
+  baz: Boolean!
+  value: String!
+}

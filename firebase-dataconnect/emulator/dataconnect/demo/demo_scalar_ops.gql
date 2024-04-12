@@ -153,3 +153,54 @@ mutation InsertSyntheticId($value: String!) @auth(level: PUBLIC) {
 query GetSyntheticIdById($id: UUID!) @auth(level: PUBLIC) {
   syntheticId(id: $id) { id value }
 }
+
+mutation InsertPrimaryKeyIsString($id: String!, $value: String!) @auth(level: PUBLIC) {
+  primaryKeyIsString_insert(data: {
+    id: $id,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsStringById($key: PrimaryKeyIsString_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsString(key: $key) { id value }
+}
+
+mutation InsertPrimaryKeyIsUUID($id: UUID!, $value: String!) @auth(level: PUBLIC) {
+  primaryKeyIsUUID_insert(data: {
+    id: $id,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsUUIDById($key: PrimaryKeyIsUUID_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsUUID(key: $key) { id value }
+}
+
+mutation InsertPrimaryKeyIsInt($foo: Int!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Int only has a 32-bit
+  # representation, increasing the likelihood of conflicts. In the unlikely case of an ID being
+  # used that already exists, it will just be replaced. There is a minuscule chance that the test
+  # that generated the conflicting ID is running concurrently, but that chance is so small that I'm
+  # choosing to ignore it.
+  primaryKeyIsInt_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsIntById($key: PrimaryKeyIsInt_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsInt(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsComposite($foo: Int!, $bar: String!, $baz: Boolean!, $value: String!) @auth(level: PUBLIC) {
+  primaryKeyIsComposite_insert(data: {
+    foo: $foo,
+    bar: $bar,
+    baz: $baz,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsCompositeById($key: PrimaryKeyIsComposite_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsComposite(key: $key) { foo bar baz value }
+}

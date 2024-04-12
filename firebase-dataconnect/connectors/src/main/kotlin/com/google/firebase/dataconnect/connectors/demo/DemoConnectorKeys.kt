@@ -14,6 +14,15 @@ import kotlinx.serialization.UseSerializers
 
 @Serializable public data class Int64variantsKey(val id: String)
 
+@Serializable
+public data class PrimaryKeyIsCompositeKey(val foo: Int, val bar: String, val baz: Boolean)
+
+@Serializable public data class PrimaryKeyIsIntKey(val foo: Int)
+
+@Serializable public data class PrimaryKeyIsStringKey(val id: String)
+
+@Serializable public data class PrimaryKeyIsUuidKey(val id: java.util.UUID)
+
 @Serializable public data class StringVariantsKey(val id: String)
 
 @Serializable public data class SyntheticIdKey(val id: java.util.UUID)
