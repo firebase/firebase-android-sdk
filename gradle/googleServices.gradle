@@ -62,8 +62,9 @@ task copyRootGoogleServices(type: Copy) {
 afterEvaluate {
     tasks.findByName('preBuild').dependsOn(copyRootGoogleServices)
     tasks.findByName('ktfmtCheckMain')?.dependsOn(copyRootGoogleServices)
-    tasks.findByName('docStubs')?.dependsOn(copyRootGoogleServices)
     tasks.findByName('ktfmtCheckAndroidTest')?.dependsOn(copyRootGoogleServices)
+    tasks.findByName('ktfmtCheckTest')?.dependsOn(copyRootGoogleServices)
+    tasks.findByName('docStubs')?.dependsOn(copyRootGoogleServices)
 
 
     if (tasks.findByName("processReleaseGoogleServices")) {
