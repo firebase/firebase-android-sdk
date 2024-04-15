@@ -1536,8 +1536,8 @@ public final class FirebaseRemoteConfigTest {
             any(HttpURLConnection.class), any(InputStream.class), any(InputStream.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    configRealtimeHttpClientSpy.setRealtimeBackgroundState(true);
     flushScheduledTasks();
+    configRealtimeHttpClientSpy.setRealtimeBackgroundState(true);
 
     verify(mockHttpURLConnection).disconnect();
   }
