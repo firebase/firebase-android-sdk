@@ -57,16 +57,19 @@ android {
 }
 
 dependencies {
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'junit:junit:4.12'
+    api(project(":firebase-storage"))
     api("com.google.firebase:firebase-common:20.4.2")
     api("com.google.firebase:firebase-common-ktx:20.4.2")
+
     implementation("com.google.firebase:firebase-components:17.1.5")
-    api(project(":firebase-storage"))
+
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:3.3.3'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'junit:junit:4.12'
 }
