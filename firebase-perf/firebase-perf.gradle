@@ -110,7 +110,6 @@ dependencies {
     api 'com.google.firebase:protolite-well-known-types:18.0.0'
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
     api("com.google.firebase:firebase-components:17.1.5")
     api("com.google.firebase:firebase-config:21.5.0")
     api("com.google.firebase:firebase-installations:17.2.0")

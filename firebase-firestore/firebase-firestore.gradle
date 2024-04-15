@@ -128,7 +128,6 @@ dependencies {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
     api(project(":firebase-common"))
-    api("com.google.firebase:firebase-common-ktx:20.4.2") {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
     api("com.google.firebase:firebase-components:17.1.5") {
