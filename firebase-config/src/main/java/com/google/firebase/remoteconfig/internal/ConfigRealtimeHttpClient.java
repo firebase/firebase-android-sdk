@@ -394,11 +394,15 @@ public class ConfigRealtimeHttpClient {
   }
 
   public void setRealtimeBackgroundState(boolean backgroundState) {
+    // Make changes in synchronized block so that everything is updated in a single atomic
+    // transaction.
     synchronized (isInBackground) {
       isInBackground = backgroundState;
       if (configAutoFetch != null) {
         configAutoFetch.setBackgroundState(backgroundState);
       }
+      // Close the connection if the app is in the background and their is an active
+      // HttpUrlConnection.
       if (isInBackground) {
         if (httpURLConnection != null) {
           httpURLConnection.disconnect();
@@ -515,6 +519,8 @@ public class ConfigRealtimeHttpClient {
             this.scheduledExecutorService,
             (completedHttpUrlConnectionTask) -> {
               Integer responseCode = null;
+              // Get references to InputStream and ErrorStream before listening on the stream so
+              // that they can be closed without getting them from HttpUrlConnection.
               InputStream inputStream = null;
               InputStream errorStream = null;
 
@@ -611,7 +617,8 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  // Pauses Http stream listening
+  // Pauses Http stream listening by disconnecting the HttpUrlConnection and underlying InputStream
+  // and ErrorStream if they exist.
   public void closeRealtimeHttpStream(
       HttpURLConnection httpURLConnection, InputStream inputStream, InputStream errorStream) {
     if (httpURLConnection != null && !isInBackground) {

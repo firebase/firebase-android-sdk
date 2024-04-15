@@ -111,6 +111,8 @@ public class ConfigAutoFetch {
       return;
     }
 
+    // Keep reference to InputStream so it can be closed when the connection is finished or threw an
+    // exception.
     InputStream inputStream = null;
     try {
       inputStream = httpURLConnection.getInputStream();
@@ -123,6 +125,8 @@ public class ConfigAutoFetch {
     } finally {
       if (inputStream != null) {
         try {
+          // Only need to close the InputStream, ConfigRealtimeHttpClient will disconnect
+          // HttpUrlConnection
           inputStream.close();
         } catch (IOException ex) {
           Log.d(TAG, "Exception thrown when closing connection stream. Retrying connection...", ex);
