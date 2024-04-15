@@ -32,8 +32,7 @@ import org.junit.runners.JUnit4
 
 private const val MANIFEST =
   """<?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                  package="com.example">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-sdk android:minSdkVersion="14"/>
         </manifest>
         """
@@ -173,8 +172,11 @@ class VendorPluginTests {
                 jcenter()
             }
 
-            android.compileSdkVersion = 26
-
+            android {
+              namespace 'com.example'
+              compileSdkVersion 26
+            }
+            
             dependencies {
                 $deps
             }
