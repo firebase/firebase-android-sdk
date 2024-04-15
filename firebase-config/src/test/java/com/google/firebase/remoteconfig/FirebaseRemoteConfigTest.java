@@ -1539,7 +1539,7 @@ public final class FirebaseRemoteConfigTest {
     configRealtimeHttpClientSpy.setRealtimeBackgroundState(true);
     flushScheduledTasks();
 
-    verify(mockHttpURLConnection, times(1)).disconnect();
+    verify(mockHttpURLConnection).disconnect();
   }
 
   @Test
