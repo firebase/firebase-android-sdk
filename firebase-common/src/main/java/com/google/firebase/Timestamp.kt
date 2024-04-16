@@ -55,10 +55,6 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     this.nanoseconds = nanoseconds
   }
 
-  constructor(source: Parcel) : this(source.readLong(), source.readInt())
-
-  @RequiresApi(Build.VERSION_CODES.O) constructor(time: Instant) : this(time.epochSecond, time.nano)
-
   constructor(date: Date) {
     val (seconds, nanoseconds) = date.toPreciseTime()
 
@@ -67,6 +63,8 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     this.seconds = seconds
     this.nanoseconds = nanoseconds
   }
+
+  @RequiresApi(Build.VERSION_CODES.O) constructor(time: Instant) : this(time.epochSecond, time.nano)
 
   /**
    * Returns a new [Date] corresponding to this timestamp.
@@ -83,19 +81,19 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     compareValuesBy(this, other, Timestamp::seconds, Timestamp::nanoseconds)
 
   override fun equals(other: Any?): Boolean =
-    when {
-      (other === this) -> true
-      (other !is Timestamp) -> false
-      else -> compareTo(other) == 0
-    }
+    other === this || other is Timestamp && compareTo(other) == 0
 
-  override fun hashCode(): Int = 31 * seconds.hashCode() + nanoseconds
+  override fun hashCode(): Int {
+    val prime = 37
+    val initialHash = prime * seconds.toInt()
+    val withHighOrderBits = prime * initialHash + seconds.shr(32).toInt()
+
+    return prime * withHighOrderBits + nanoseconds
+  }
 
   override fun toString(): String = "Timestamp(seconds=$seconds, nanoseconds=$nanoseconds)"
 
-  override fun describeContents(): Int {
-    return 0
-  }
+  override fun describeContents(): Int = 0
 
   override fun writeToParcel(dest: Parcel, flags: Int) {
     dest.writeLong(seconds)
@@ -106,7 +104,8 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     @JvmField
     val CREATOR =
       object : Parcelable.Creator<Timestamp> {
-        override fun createFromParcel(source: Parcel): Timestamp = Timestamp(source)
+        override fun createFromParcel(source: Parcel): Timestamp =
+          Timestamp(source.readLong(), source.readInt())
         override fun newArray(size: Int): Array<Timestamp?> = arrayOfNulls(size)
       }
 
