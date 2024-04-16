@@ -72,7 +72,7 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     compareValuesBy(this, other, Timestamp::seconds, Timestamp::nanoseconds)
 
   override fun equals(other: Any?): Boolean =
-    other == this || other is Timestamp && compareTo(other) == 0
+    other === this || other is Timestamp && compareTo(other) == 0
 
   override fun hashCode(): Int {
     val prime = 37
