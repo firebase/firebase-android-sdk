@@ -29,10 +29,10 @@ import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL
 import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -1295,7 +1295,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verifyZeroInteractions(mockOnUpdateListener);
+    verifyNoInteractions(mockOnUpdateListener);
   }
 
   @Test
