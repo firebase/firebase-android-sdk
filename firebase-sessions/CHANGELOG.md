@@ -1,6 +1,6 @@
 # Unreleased
 
-* [fixed] Crashing of datastore writes when device has full internal memory
+* [fixed] Handled datastore writes when device has full internal memory more gracefully.
 
 # 1.2.3
 
