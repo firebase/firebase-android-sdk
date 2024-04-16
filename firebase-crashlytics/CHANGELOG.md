@@ -1,5 +1,6 @@
 # Unreleased
 
+* [fixed] Added keep rule for strict mode resource shrinkage.
 * [fixed] Force validation or rotation of FIDs.
 
 # 18.6.3
