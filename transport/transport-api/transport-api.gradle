@@ -38,9 +38,12 @@ android {
 }
 
 dependencies {
-    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
     implementation 'androidx.annotation:annotation:1.1.0'
+
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
+
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
-    testImplementation 'junit:junit:4.13-beta-3'
+
     testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'junit:junit:4.13-beta-3'
 }

@@ -1,4 +1,4 @@
-// Copyright 2019 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,29 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-    id 'firebase-java-library'
-}
-
-firebaseLibrary {
-    publishSources = true
-    publishJavadoc = false
-    publishReleaseNotes = false
-}
-
-java {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-}
-
-
-dependencies {
-    implementation 'androidx.annotation:annotation:1.1.0'
-
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'junit:junit:4.13'
-}
-
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
-}
+/** @hide */
+package com.google.firebase.util;
