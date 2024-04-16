@@ -60,7 +60,6 @@ package com.google.firebase {
 
   public final class Timestamp implements java.lang.Comparable<com.google.firebase.Timestamp> android.os.Parcelable {
     ctor public Timestamp(long seconds, int nanoseconds);
-    ctor public Timestamp(@NonNull android.os.Parcel source);
     ctor public Timestamp(@NonNull java.util.Date date);
     method public int compareTo(@NonNull com.google.firebase.Timestamp other);
     method public int describeContents();
