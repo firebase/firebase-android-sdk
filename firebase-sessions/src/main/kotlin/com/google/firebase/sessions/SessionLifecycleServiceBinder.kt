@@ -21,9 +21,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Messenger
 import android.util.Log
-import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
-import com.google.firebase.app
 
 /** Interface for binding with the [SessionLifecycleService]. */
 internal fun interface SessionLifecycleServiceBinder {
@@ -32,11 +30,6 @@ internal fun interface SessionLifecycleServiceBinder {
    * callback will be used to relay session updates to this client.
    */
   fun bindToService(callback: Messenger, serviceConnection: ServiceConnection)
-
-  companion object {
-    val instance: SessionLifecycleServiceBinder
-      get() = Firebase.app[SessionLifecycleServiceBinder::class.java]
-  }
 }
 
 internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: FirebaseApp) :
@@ -49,11 +42,22 @@ internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: Fireba
       // This is necessary for the onBind() to be called by each process
       intent.action = android.os.Process.myPid().toString()
       intent.putExtra(SessionLifecycleService.CLIENT_CALLBACK_MESSENGER, callback)
-      appContext.bindService(
-        intent,
-        serviceConnection,
-        Context.BIND_IMPORTANT or Context.BIND_AUTO_CREATE
-      )
+
+      val isServiceBound =
+        try {
+          appContext.bindService(
+            intent,
+            serviceConnection,
+            Context.BIND_IMPORTANT or Context.BIND_AUTO_CREATE,
+          )
+        } catch (ex: SecurityException) {
+          Log.w(TAG, "Failed to bind session lifecycle service to application.", ex)
+          false
+        }
+      if (!isServiceBound) {
+        appContext.unbindService(serviceConnection)
+        Log.i(TAG, "Session lifecycle service binding failed.")
+      }
     }
   }
 

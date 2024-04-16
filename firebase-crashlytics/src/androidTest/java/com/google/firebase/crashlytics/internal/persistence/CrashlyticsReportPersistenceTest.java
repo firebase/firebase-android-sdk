@@ -837,6 +837,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
         .setGmpAppId("gmpAppId")
         .setPlatform(1)
         .setInstallationUuid("installationId")
+        .setFirebaseInstallationId("firebaseInstallationId")
+        .setFirebaseAuthenticationToken("firebaseAuthenticationToken")
         .setBuildVersion("1")
         .setDisplayVersion("1.0.0");
   }

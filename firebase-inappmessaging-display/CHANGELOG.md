@@ -1,5 +1,17 @@
 # Unreleased
+* [fixed] Fixed bad token exception while showing FIAM
+  (GitHub [#5567](//github.com/firebase/firebase-android-sdk/issues/5567))
+  (GitHub [#5780](//github.com/firebase/firebase-android-sdk/issues/5780))
 
+# 20.4.1
+* [fixed] Fixed FirebaseInAppMessagingDisplayErrorListener not being called
+  (GitHub [#5644](//github.com/firebase/firebase-android-sdk/issues/5644))
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-inappmessaging-display-ktx`

@@ -181,15 +181,11 @@ abstract class DackkaPlugin : Plugin<Project> {
               sourceSets.flatMap { it.javaDirectories } +
                 sourceSets.flatMap { it.kotlinDirectories }
 
-            val packageLists = fetchPackageLists(project)
-            val excludedFiles = projectSpecificSuppressedFiles(project)
-            val fixedSourceDirectories = projectSpecificSources(project) + sourceDirectories
-
-            sources.set(fixedSourceDirectories)
-            suppressedFiles.set(excludedFiles)
-            packageListFiles.set(packageLists)
+            sources.set(sourceDirectories)
             dependencies.set(classpath)
             outputDirectory.set(targetDirectory)
+            suppressedFiles.set(emptyList())
+            packageListFiles.set(fetchPackageLists(project))
 
             applyCommonConfigurations()
           }
@@ -202,30 +198,6 @@ abstract class DackkaPlugin : Plugin<Project> {
       .fileTree("kotlindoc/package-lists")
       .matching { include("**/package-list") }
       .toList()
-
-  // TODO(b/243534168): Remove when fixed
-  private fun projectSpecificSources(project: Project) =
-    when (project.name) {
-      "firebase-common" -> {
-        project.project(":firebase-firestore").files("src/main/java/com/google/firebase").toList()
-      }
-      else -> emptyList()
-    }
-
-  // TODO(b/243534168): Remove when fixed
-  private fun projectSpecificSuppressedFiles(project: Project): List<File> =
-    when (project.name) {
-      "firebase-common" -> {
-        project
-          .project(":firebase-firestore")
-          .files("src/main/java/com/google/firebase/firestore")
-          .toList()
-      }
-      "firebase-firestore" -> {
-        project.files("src/main/java/com/google/firebase/Timestamp.java").toList()
-      }
-      else -> emptyList()
-    }
 
   private fun GenerateDocumentationTask.applyCommonConfigurations() {
     dependsOnAndMustRunAfter("createFullJarRelease")

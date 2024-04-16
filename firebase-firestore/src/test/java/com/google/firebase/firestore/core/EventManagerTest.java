@@ -17,6 +17,8 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -58,8 +60,16 @@ public class EventManagerTest {
 
     manager.removeQueryListener(listener1);
     manager.removeQueryListener(listener2);
-    verify(syncSpy, times(1)).listen(query);
-    verify(syncSpy, times(1)).stopListening(query);
+    verify(syncSpy, times(1))
+        .listen(
+            query,
+            /** shouldListenToRemote= */
+            true);
+    verify(syncSpy, times(1))
+        .stopListening(
+            query,
+            /** shouldUnlistenToRemote= */
+            true);
   }
 
   @Test
@@ -70,7 +80,7 @@ public class EventManagerTest {
 
     EventManager manager = new EventManager(syncSpy);
     manager.removeQueryListener(queryListener(query));
-    verify(syncSpy, never()).stopListening(query);
+    verify(syncSpy, never()).stopListening(eq(query), anyBoolean());
   }
 
   @Test
@@ -91,8 +101,8 @@ public class EventManagerTest {
     eventManager.addQueryListener(spy2);
     eventManager.addQueryListener(spy3);
 
-    verify(syncSpy, times(1)).listen(query1);
-    verify(syncSpy, times(1)).listen(query2);
+    verify(syncSpy, times(1)).listen(eq(query1), anyBoolean());
+    verify(syncSpy, times(1)).listen(eq(query2), anyBoolean());
 
     ViewSnapshot snap1 = mock(ViewSnapshot.class);
     when(snap1.getQuery()).thenReturn(query1);

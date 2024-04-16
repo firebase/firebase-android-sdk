@@ -15,10 +15,13 @@
 package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.writeAllDocs;
 import static com.google.firebase.firestore.util.Util.autoId;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
@@ -121,6 +124,14 @@ public class CompositeIndexTestHelper {
   public void assertOnlineAndOfflineResultsMatch(
       @NonNull Query query, @NonNull String... expectedDocs) {
     checkOnlineAndOfflineResultsMatch(query, toHashedIds(expectedDocs));
+  }
+
+  // Asserts that the IDs in the query snapshot matches the expected Ids. The expected document
+  // IDs are hashed to match the actual document IDs created by the test helper.
+  @NonNull
+  public void assertSnapshotResultIdsMatch(
+      @NonNull QuerySnapshot snapshot, @NonNull String... expectedIds) {
+    assertEquals(querySnapshotToIds(snapshot), asList(toHashedIds(expectedIds)));
   }
 
   // Adds a filter on test id for a query.

@@ -172,6 +172,7 @@ public class CrashlyticsReportDataCapture {
         .setGmpAppId(appData.googleAppId)
         .setInstallationUuid(idManager.getInstallIds().getCrashlyticsInstallId())
         .setFirebaseInstallationId(idManager.getInstallIds().getFirebaseInstallationId())
+        .setFirebaseAuthenticationToken(idManager.getInstallIds().getFirebaseAuthenticationToken())
         .setBuildVersion(appData.versionCode)
         .setDisplayVersion(appData.versionName)
         .setPlatform(REPORT_ANDROID_PLATFORM);

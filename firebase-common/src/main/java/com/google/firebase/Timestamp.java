@@ -14,12 +14,11 @@
 
 package com.google.firebase;
 
-import static com.google.firebase.firestore.util.Preconditions.checkArgument;
-
 import android.os.Parcel;
 import android.os.Parcelable;
 import androidx.annotation.NonNull;
 import java.util.Date;
+import javax.annotation.Nullable;
 
 /**
  * A Timestamp represents a point in time independent of any time zone or calendar, represented as
@@ -155,6 +154,16 @@ public final class Timestamp implements Comparable<Timestamp>, Parcelable {
     checkArgument(seconds >= -62135596800L, "Timestamp seconds out of range: %s", seconds);
     // This will break in the year 10,000.
     checkArgument(seconds < 253402300800L, "Timestamp seconds out of range: %s", seconds);
+  }
+
+  // TODO(Remove when migrated to Kotlin)
+  private static void checkArgument(
+      boolean expression,
+      @Nullable String errorMessageTemplate,
+      @Nullable Object... errorMessageArgs) {
+    if (!expression) {
+      throw new IllegalArgumentException(String.format(errorMessageTemplate, errorMessageArgs));
+    }
   }
 
   private final long seconds;
