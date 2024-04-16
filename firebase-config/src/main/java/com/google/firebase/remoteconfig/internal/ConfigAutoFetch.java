@@ -54,7 +54,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
-  private volatile Boolean isInBackground;
+  private Boolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,

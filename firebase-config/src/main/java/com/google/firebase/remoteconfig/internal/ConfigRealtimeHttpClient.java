@@ -98,7 +98,7 @@ public class ConfigRealtimeHttpClient {
   private boolean isRealtimeDisabled;
 
   /** Flag to indicate whether or not the app is in the background or not. */
-  private volatile Boolean isInBackground;
+  private Boolean isInBackground;
   // The HttpUrlConnection and auto-fetcher for this client. Only one of each exist at a time.
   private HttpURLConnection httpURLConnection;
   private ConfigAutoFetch configAutoFetch;
