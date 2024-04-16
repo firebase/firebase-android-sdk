@@ -23,6 +23,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
+import com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +45,52 @@ public class DebugAppCheckTestHelperTest {
     initializeFirebaseApp(
         ApplicationProvider.getApplicationContext(), FirebaseApp.DEFAULT_APP_NAME);
     initializeFirebaseApp(ApplicationProvider.getApplicationContext(), OTHER_FIREBASE_APP_NAME);
+  }
+
+  @Test
+  public void testDebugAppCheckTestHelper_withDebugProviderDefaultApp_installsDebugProvider() {
+    DefaultFirebaseAppCheck firebaseAppCheck =
+        (DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance();
+    firebaseAppCheck.installAppCheckProviderFactory(
+        PlayIntegrityAppCheckProviderFactory.getInstance());
+
+    // Sanity check
+    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+        .isEqualTo(PlayIntegrityAppCheckProviderFactory.getInstance());
+
+    debugAppCheckTestHelper.withDebugProvider(
+        () -> {
+          assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+              .isInstanceOf(DebugAppCheckProviderFactory.class);
+        });
+
+    // Make sure the factory is reset.
+    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+        .isEqualTo(PlayIntegrityAppCheckProviderFactory.getInstance());
+  }
+
+  @Test
+  public void testDebugAppCheckTestHelper_withDebugProviderNamedApp_installsDebugProvider() {
+    FirebaseApp firebaseApp = FirebaseApp.getInstance(OTHER_FIREBASE_APP_NAME);
+    DefaultFirebaseAppCheck firebaseAppCheck =
+        (DefaultFirebaseAppCheck) FirebaseAppCheck.getInstance(firebaseApp);
+    firebaseAppCheck.installAppCheckProviderFactory(
+        PlayIntegrityAppCheckProviderFactory.getInstance());
+
+    // Sanity check
+    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+        .isEqualTo(PlayIntegrityAppCheckProviderFactory.getInstance());
+
+    debugAppCheckTestHelper.withDebugProvider(
+        firebaseApp,
+        () -> {
+          assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+              .isInstanceOf(DebugAppCheckProviderFactory.class);
+        });
+
+    // Make sure the factory is reset.
+    assertThat(firebaseAppCheck.getInstalledAppCheckProviderFactory())
+        .isEqualTo(PlayIntegrityAppCheckProviderFactory.getInstance());
   }
 
   @Test

@@ -59,6 +59,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
+    testImplementation project(':appcheck:firebase-appcheck-playintegrity')
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'junit:junit:4.13-beta-2'
