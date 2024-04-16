@@ -95,11 +95,6 @@ internal class SessionDatastoreImpl(
           TAG,
           "Failed to update session Id: $e",
         )
-      } catch (e: FileNotFoundException) {
-        Log.w(
-          TAG,
-          "Failed to update session Id: $e",
-        )
       }
     }
   }

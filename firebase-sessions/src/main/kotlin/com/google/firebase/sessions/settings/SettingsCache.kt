@@ -110,11 +110,6 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
         TAG,
         "Failed to remove config values: $e",
       )
-    } catch (e: FileNotFoundException) {
-      Log.w(
-        TAG,
-        "Failed to remove config values: $e",
-      )
     }
   }
 
@@ -131,8 +126,6 @@ internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
         updateSessionConfigs(preferences)
       }
     } catch (ex: IOException) {
-      Log.w(TAG, "Failed to update cache config value: $ex")
-    } catch (ex: FileNotFoundException) {
       Log.w(TAG, "Failed to update cache config value: $ex")
     }
   }
