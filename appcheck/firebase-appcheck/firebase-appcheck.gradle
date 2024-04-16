@@ -74,8 +74,8 @@ dependencies {
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-inline:2.25.0'
+    testImplementation 'org.mockito:mockito-core:5.2.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
