@@ -14,7 +14,7 @@
 
 plugins {
     id("com.ncorti.ktfmt.gradle") version "0.11.0"
-    kotlin("plugin.serialization") version "1.7.10"
+    kotlin("plugin.serialization") version "1.8.22"
     `kotlin-dsl`
 }
 
@@ -42,7 +42,7 @@ dependencies {
     implementation("com.google.firebase:perf-plugin:$perfPluginVersion")
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
-    implementation(kotlin("gradle-plugin", "1.7.10"))
+    implementation(kotlin("gradle-plugin", "1.8.22"))
     implementation("org.json:json:20210307")
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
