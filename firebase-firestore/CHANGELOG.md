@@ -1,5 +1,7 @@
 # Unreleased
+* [feature] Enable queries with range & inequality filters on multiple fields. [#5729](//github.com/firebase/firebase-android-sdk/pull/5729)
 * [changed] Internal improvements.
+* [feature] Support conversion between `java.time.Instant` and `Timestamp` [#5853](//github.com/firebase/firebase-android-sdk/pull/5853)
 
 # 24.11.0
 * [feature] Enable snapshot listener option to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
