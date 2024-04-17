@@ -72,6 +72,9 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     testOptions.unitTests.includeAndroidResources = true
+    testOptions.unitTests.all {
+        jvmArgs '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED'
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -84,8 +87,8 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
-    androidTestImplementation 'org.mockito:mockito-inline:2.25.0'
+    androidTestImplementation 'org.mockito:mockito-core:5.2.0'
+    androidTestImplementation 'org.mockito:mockito-inline:5.2.0'
     androidTestImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components' }
@@ -134,7 +137,7 @@ dependencies {
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
     testImplementation 'junit:junit:4.12'
     testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation 'org.mockito:mockito-core:5.2.0'
     testImplementation ("com.google.api-client:google-api-client:1.30.9") {
          exclude group: "org.apache.httpcomponents", module: "httpclient"
      }

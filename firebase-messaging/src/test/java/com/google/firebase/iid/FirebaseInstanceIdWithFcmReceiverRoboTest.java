@@ -20,7 +20,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Application;
@@ -125,7 +125,7 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
   public void testNullIntent() throws Exception {
     receiver.onReceive(context, null);
 
-    verifyZeroInteractions(serviceStarter);
+    verifyNoInteractions(serviceStarter);
   }
 
   @Test

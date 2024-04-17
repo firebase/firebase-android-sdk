@@ -69,8 +69,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'com.github.tomakehurst:wiremock:3.0.1'
-    // Keep Robolectric to 4.3.1 for httpclient and TelephonyManager compatibility.
-    testImplementation "org.robolectric:robolectric:4.3.1"
+    testImplementation "org.robolectric:robolectric:4.12"
     testImplementation 'junit:junit:4.13.1'
 
     androidTestImplementation 'androidx.test:runner:1.2.0'
