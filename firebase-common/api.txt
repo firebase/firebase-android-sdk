@@ -59,17 +59,23 @@ package com.google.firebase {
   }
 
   public final class Timestamp implements java.lang.Comparable<com.google.firebase.Timestamp> android.os.Parcelable {
-    ctor public Timestamp(long, int);
-    ctor protected Timestamp(@NonNull android.os.Parcel);
-    ctor public Timestamp(@NonNull java.util.Date);
-    method public int compareTo(@NonNull com.google.firebase.Timestamp);
+    ctor public Timestamp(long seconds, int nanoseconds);
+    ctor public Timestamp(@NonNull java.util.Date date);
+    method public int compareTo(@NonNull com.google.firebase.Timestamp other);
     method public int describeContents();
     method public int getNanoseconds();
     method public long getSeconds();
     method @NonNull public static com.google.firebase.Timestamp now();
     method @NonNull public java.util.Date toDate();
-    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    method public void writeToParcel(@NonNull android.os.Parcel dest, int flags);
+    property public final int nanoseconds;
+    property public final long seconds;
     field @NonNull public static final android.os.Parcelable.Creator<com.google.firebase.Timestamp> CREATOR;
+    field @NonNull public static final com.google.firebase.Timestamp.Companion Companion;
+  }
+
+  public static final class Timestamp.Companion {
+    method @NonNull public com.google.firebase.Timestamp now();
   }
 
 }
