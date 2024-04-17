@@ -52,7 +52,6 @@ dependencies {
 
     api("com.google.firebase:firebase-appcheck-interop:17.1.0")
     api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
     api("com.google.firebase:firebase-components:17.1.5")
     api("com.google.firebase:firebase-annotations:16.2.0")
     api("com.google.firebase:firebase-auth-interop:18.0.0") {

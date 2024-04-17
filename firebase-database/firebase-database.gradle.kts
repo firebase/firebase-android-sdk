@@ -57,7 +57,6 @@ android {
 dependencies {
     api("com.google.firebase:firebase-appcheck-interop:17.1.0")
     api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
     api("com.google.firebase:firebase-components:17.1.5")
     api("com.google.firebase:firebase-auth-interop:20.0.0") {
      exclude(group = "com.google.firebase", module = "firebase-common")
