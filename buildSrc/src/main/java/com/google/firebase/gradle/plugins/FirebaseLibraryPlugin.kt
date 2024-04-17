@@ -60,8 +60,8 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, ANDROID)
     val android = project.extensions.getByType<LibraryExtension>()
     android.compileOptions {
-      sourceCompatibility = JavaVersion.VERSION_1_8
-      targetCompatibility = JavaVersion.VERSION_1_8
+      sourceCompatibility = JavaVersion.VERSION_17
+      targetCompatibility = JavaVersion.VERSION_17
     }
 
     android.buildFeatures.buildConfig = true
