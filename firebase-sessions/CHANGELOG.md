@@ -1,5 +1,7 @@
 # Unreleased
 
+* [fixed] Handled datastore writes when device has full internal memory more gracefully.
+
 # 1.2.3
 
 * [fixed] Force validation or rotation of FIDs.
