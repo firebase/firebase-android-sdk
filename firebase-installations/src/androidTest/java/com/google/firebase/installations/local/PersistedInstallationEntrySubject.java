@@ -19,13 +19,12 @@ import static com.google.common.truth.Truth.assertAbout;
 import com.google.common.truth.FailureMetadata;
 import com.google.common.truth.Subject;
 import com.google.firebase.installations.local.PersistedInstallation.RegistrationStatus;
-import org.checkerframework.checker.nullness.compatqual.NullableDecl;
 
 public final class PersistedInstallationEntrySubject extends Subject {
 
   // User-defined entry point
   public static PersistedInstallationEntrySubject assertThat(
-      @NullableDecl PersistedInstallationEntry persistedInstallationEntry) {
+      PersistedInstallationEntry persistedInstallationEntry) {
     return assertAbout(PERSISTED_INSTALLATION_ENTRY_SUBJECT_FACTORY)
         .that(persistedInstallationEntry);
   }
@@ -51,7 +50,7 @@ public final class PersistedInstallationEntrySubject extends Subject {
    * @param actual
    */
   protected PersistedInstallationEntrySubject(
-      FailureMetadata metadata, @NullableDecl PersistedInstallationEntry actual) {
+      FailureMetadata metadata, PersistedInstallationEntry actual) {
     super(metadata, actual);
     this.actual = actual;
   }
