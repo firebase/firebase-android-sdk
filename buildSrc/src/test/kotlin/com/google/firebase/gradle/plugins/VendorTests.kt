@@ -75,15 +75,15 @@ class VendorPluginTests {
                       }
                     }
                     """
-              .trimIndent()
-        )
+              .trimIndent(),
+        ),
       )
     // expected to vendor preconditions and errorprone annotations from transitive dep.
     assertThat(classes)
       .containsAtLeast(
         "com/example/Hello.class",
         "com/example/com/google/common/base/Preconditions.class",
-        "com/example/com/google/errorprone/annotations/CanIgnoreReturnValue.class"
+        "com/example/com/google/errorprone/annotations/CanIgnoreReturnValue.class",
       )
 
     // ImmutableList is not used, so it should be stripped out.
@@ -110,8 +110,8 @@ class VendorPluginTests {
                       public static void main(String[] args) {}
                     }
                     """
-              .trimIndent()
-        )
+              .trimIndent(),
+        ),
       )
     // expected classes
     assertThat(classes).containsExactly("com/example/Hello.class", "com/example/BuildConfig.class")
@@ -140,15 +140,15 @@ class VendorPluginTests {
                       public static void main(String[] args) {}
                     }
                     """
-              .trimIndent()
-        )
+              .trimIndent(),
+        ),
       )
     // expected classes
     assertThat(classes)
       .containsAtLeast(
         "com/example/Hello.class",
         "com/example/BuildConfig.class",
-        "com/example/dagger/Module.class"
+        "com/example/dagger/Module.class",
       )
   }
 
@@ -173,6 +173,9 @@ class VendorPluginTests {
             }
 
             android {
+                buildFeatures {
+                    buildConfig true
+                }
               namespace 'com.example'
               compileSdkVersion 26
             }

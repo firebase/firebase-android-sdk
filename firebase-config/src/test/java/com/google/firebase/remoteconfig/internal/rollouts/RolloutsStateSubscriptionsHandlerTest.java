@@ -19,6 +19,7 @@ package com.google.firebase.remoteconfig.internal.rollouts;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Tasks;
@@ -172,6 +173,6 @@ public class RolloutsStateSubscriptionsHandlerTest {
     // Then assignments are removed.
     // Exception isn't thrown, and the subscriber won't be called.
     handler.publishActiveRolloutsState(configWithoutRollouts);
-    verifyNoInteractions(mockRolloutsStateSubscriber);
+    verifyNoMoreInteractions(mockRolloutsStateSubscriber);
   }
 }

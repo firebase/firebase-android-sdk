@@ -50,7 +50,7 @@ data class Project(
                 ${"publishJavadoc = $publishJavadoc"}
             }
             ${if (libraryType == LibraryType.ANDROID) "android {\n" +
-            "  compileSdkVersion 26\n" +
+            "  compileSdkVersion 30\n" +
             "  namespace 'com.example" + libraryGroup + "'" +
             "\n}\n" else ""}
 
