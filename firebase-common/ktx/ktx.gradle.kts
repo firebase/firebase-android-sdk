@@ -39,6 +39,9 @@ android {
             java.srcDirs("src/test/kotlin")
         }
     }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 
