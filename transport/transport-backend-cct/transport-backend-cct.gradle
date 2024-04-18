@@ -40,7 +40,7 @@ protobuf {
 
 android {
     namespace "com.google.android.datatransport.backend.cct"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion

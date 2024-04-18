@@ -33,10 +33,10 @@ android {
     }
     namespace "com.google.firebase.crashlytics.ndk"
     ndkVersion "25.1.8937393"
-    compileSdkVersion 33
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 33
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         versionName version
 
         externalNativeBuild {
