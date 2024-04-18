@@ -45,8 +45,8 @@ android {
     named("test") { java.srcDir("src/testUtil") }
 
     compileOptions {
-      sourceCompatibility = JavaVersion.VERSION_17
-      targetCompatibility = JavaVersion.VERSION_17
+      sourceCompatibility = JavaVersion.VERSION_1_8
+      targetCompatibility = JavaVersion.VERSION_1_8
     }
 
     packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
