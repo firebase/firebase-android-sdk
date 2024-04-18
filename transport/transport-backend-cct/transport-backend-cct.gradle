@@ -38,7 +38,7 @@ protobuf {
 
 android {
     namespace "com.google.android.datatransport.backend.cct"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdk project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
@@ -47,8 +47,8 @@ android {
         consumerProguardFiles 'proguard.txt'
     }
     compileOptions {
-        sourceCompatibility = '1.8'
-        targetCompatibility = '1.8'
+        sourceCompatibility = '17'
+        targetCompatibility = '17'
     }
 }
 

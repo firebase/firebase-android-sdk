@@ -62,7 +62,7 @@ firebaseLibrary {
 
 android {
     namespace "com.google.android.datatransport.runtime"
-    compileSdkVersion project.targetSdkVersion
+    compileSdk project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
