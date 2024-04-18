@@ -94,7 +94,7 @@ public class CampaignCacheClientTest {
   @Test
   public void put_noErrors_cachesInMemory() {
     when(storageClient.write(fetchEligibleCampaignsResponse2)).thenReturn(fakeWrite);
-    when(storageClient.read(any(CampaignResponseParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.just(fetchEligibleCampaignsResponse1));
 
     campaignCacheClient.put(fetchEligibleCampaignsResponse2).subscribe();
