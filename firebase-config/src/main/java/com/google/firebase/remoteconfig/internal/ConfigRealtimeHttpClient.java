@@ -562,7 +562,7 @@ public class ConfigRealtimeHttpClient {
                 }
               } finally {
                 // Close HTTP connection and associated streams.
-                closeRealtimeHttpStream(httpURLConnection, inputStream, errorStream);
+                closeAllRealtimeHttpStreams(inputStream, errorStream);
                 setIsHttpConnectionRunning(false);
 
                 boolean connectionFailed =
@@ -619,8 +619,8 @@ public class ConfigRealtimeHttpClient {
 
   // Pauses Http stream listening by disconnecting the HttpUrlConnection and underlying InputStream
   // and ErrorStream if they exist.
-  public void closeRealtimeHttpStream(
-      HttpURLConnection httpURLConnection, InputStream inputStream, InputStream errorStream) {
+  @VisibleForTesting
+  public void closeAllRealtimeHttpStreams(InputStream inputStream, InputStream errorStream) {
     if (httpURLConnection != null && !isInBackground) {
       httpURLConnection.disconnect();
     }
