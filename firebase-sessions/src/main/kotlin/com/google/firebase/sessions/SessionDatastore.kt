@@ -28,6 +28,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -84,8 +85,15 @@ internal class SessionDatastoreImpl(
 
   override fun updateSessionId(sessionId: String) {
     CoroutineScope(backgroundDispatcher).launch {
-      context.dataStore.edit { preferences ->
-        preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
+      try {
+        context.dataStore.edit { preferences ->
+          preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
+        }
+      } catch (e: IOException) {
+        Log.w(
+          TAG,
+          "Failed to update session Id: $e",
+        )
       }
     }
   }
