@@ -22,7 +22,7 @@ firebaseTestLab {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion project.compileSdkVersion
 
     namespace "com.googletest.firebase.perf.testapp"
     compileOptions {
@@ -47,8 +47,8 @@ android {
         // https://developer.android.com/studio/build/application-id.html
         applicationId "com.googletest.firebase.perf.testapp.prod"
 
-        minSdkVersion 16
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         versionCode 3
         versionName "3.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
