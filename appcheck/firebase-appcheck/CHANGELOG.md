@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Internal support for `SafetyNet` has been dropped, as the [SafetyNet Attestation API
+has been deprecated.](https://developer.android.com/privacy-and-security/safetynet/deprecation-timeline#safetynet_attestation_deprecation_timeline)
 
 
 # 17.1.2
