@@ -29,7 +29,14 @@ internal constructor(
 )
 
 /** Rating for a particular [HarmCategory] with a provided [HarmProbability]. */
-class SafetyRating(val category: HarmCategory, val probability: HarmProbability)
+class SafetyRating(
+  val category: HarmCategory,
+  val probability: HarmProbability,
+  val probabilityScore: Float = 0f,
+  val blocked: Boolean? = null,
+  val severity: HarmSeverity? = null,
+  val severityScore: Float? = null
+)
 
 /**
  * Provides citation metadata for sourcing of content provided by the model between a given

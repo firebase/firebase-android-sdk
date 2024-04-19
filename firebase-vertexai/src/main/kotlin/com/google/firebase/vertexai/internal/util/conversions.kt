@@ -38,6 +38,7 @@ import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
+import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.ImagePart
 import com.google.firebase.vertexai.type.Part
 import com.google.firebase.vertexai.type.PromptFeedback
@@ -229,7 +230,14 @@ internal fun com.google.ai.client.generativeai.common.server.CitationSources.toP
   CitationMetadata(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
 
 internal fun com.google.ai.client.generativeai.common.server.SafetyRating.toPublic() =
-  SafetyRating(category.toPublic(), probability.toPublic())
+  SafetyRating(
+    category = category.toPublic(),
+    probability = probability.toPublic(),
+    probabilityScore = probabilityScore ?: 0f,
+    blocked = blocked,
+    severity = severity?.toPublic(),
+    severityScore = severityScore
+  )
 
 internal fun com.google.ai.client.generativeai.common.server.PromptFeedback.toPublic():
   PromptFeedback {
@@ -279,6 +287,18 @@ internal fun com.google.ai.client.generativeai.common.server.HarmProbability.toP
       HarmProbability.UNSPECIFIED
     com.google.ai.client.generativeai.common.server.HarmProbability.UNKNOWN ->
       HarmProbability.UNKNOWN
+  }
+
+internal fun com.google.ai.client.generativeai.common.server.HarmSeverity.toPublic() =
+  when (this) {
+    com.google.ai.client.generativeai.common.server.HarmSeverity.HIGH -> HarmSeverity.HIGH
+    com.google.ai.client.generativeai.common.server.HarmSeverity.MEDIUM -> HarmSeverity.MEDIUM
+    com.google.ai.client.generativeai.common.server.HarmSeverity.LOW -> HarmSeverity.LOW
+    com.google.ai.client.generativeai.common.server.HarmSeverity.NEGLIGIBLE ->
+      HarmSeverity.NEGLIGIBLE
+    com.google.ai.client.generativeai.common.server.HarmSeverity.UNSPECIFIED ->
+      HarmSeverity.UNSPECIFIED
+    com.google.ai.client.generativeai.common.server.HarmSeverity.UNKNOWN -> HarmSeverity.UNKNOWN
   }
 
 internal fun com.google.ai.client.generativeai.common.server.BlockReason.toPublic() =
