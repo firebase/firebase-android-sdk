@@ -42,6 +42,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.events.EventHandler;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
@@ -95,13 +96,11 @@ public class FirebaseMessaging {
 
   private final FirebaseApp firebaseApp;
   @Nullable private final FirebaseInstanceIdInternal iid;
-  private final FirebaseInstallationsApi fis;
   private final Context context;
   private final GmsRpc gmsRpc;
   private final RequestDeduplicator requestDeduplicator;
   private final AutoInit autoInit;
   private final Executor initExecutor;
-  private final Executor taskExecutor;
   private final Executor fileExecutor;
   private final Task<TopicsSubscriber> topicsSubscriberTask;
   private final Metadata metadata;
@@ -111,11 +110,7 @@ public class FirebaseMessaging {
 
   private final Application.ActivityLifecycleCallbacks lifecycleCallbacks;
 
-  @Nullable
-  @SuppressLint(
-      "FirebaseUnknownNullness") // Checktest wasn't recognizing @Nullable nor @NonNull annotations.
-  @VisibleForTesting
-  static TransportFactory transportFactory;
+  @VisibleForTesting static Provider<TransportFactory> transportFactory = () -> null;
 
   @GuardedBy("FirebaseMessaging.class")
   @VisibleForTesting
@@ -154,7 +149,7 @@ public class FirebaseMessaging {
       Provider<UserAgentPublisher> userAgentPublisher,
       Provider<HeartBeatInfo> heartBeatInfo,
       FirebaseInstallationsApi firebaseInstallationsApi,
-      @Nullable TransportFactory transportFactory,
+      Provider<TransportFactory> transportFactory,
       Subscriber subscriber) {
     this(
         firebaseApp,
@@ -173,13 +168,12 @@ public class FirebaseMessaging {
       Provider<UserAgentPublisher> userAgentPublisher,
       Provider<HeartBeatInfo> heartBeatInfo,
       FirebaseInstallationsApi firebaseInstallationsApi,
-      @Nullable TransportFactory transportFactory,
+      Provider<TransportFactory> transportFactory,
       Subscriber subscriber,
       Metadata metadata) {
     this(
         firebaseApp,
         iid,
-        firebaseInstallationsApi,
         transportFactory,
         subscriber,
         metadata,
@@ -193,8 +187,7 @@ public class FirebaseMessaging {
   FirebaseMessaging(
       FirebaseApp firebaseApp,
       @Nullable FirebaseInstanceIdInternal iid,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      @Nullable TransportFactory transportFactory,
+      Provider<TransportFactory> transportFactory,
       Subscriber subscriber,
       Metadata metadata,
       GmsRpc gmsRpc,
@@ -206,12 +199,10 @@ public class FirebaseMessaging {
 
     this.firebaseApp = firebaseApp;
     this.iid = iid;
-    fis = firebaseInstallationsApi;
     autoInit = new AutoInit(subscriber);
     context = firebaseApp.getApplicationContext();
     this.lifecycleCallbacks = new FcmLifecycleCallbacks();
     this.metadata = metadata;
-    this.taskExecutor = taskExecutor;
     this.gmsRpc = gmsRpc;
     this.requestDeduplicator = new RequestDeduplicator(taskExecutor);
     this.initExecutor = initExecutor;
@@ -260,10 +251,49 @@ public class FirebaseMessaging {
           }
         });
 
-    initExecutor.execute(
-        () ->
-            // Initializes proxy notification support for the app.
-            ProxyNotificationInitializer.initialize(context));
+    initExecutor.execute(() -> initializeProxyNotifications());
+  }
+
+  private void initializeProxyNotifications() {
+    // Initializes proxy notification support for the app.
+    ProxyNotificationInitializer.initialize(context);
+    // Update proxy retention in case any settings or included libraries has changed.
+    ProxyNotificationPreferences.setProxyRetention(
+        context, gmsRpc, shouldRetainProxyNotifications());
+    if (shouldRetainProxyNotifications()) {
+      // Handle any retained proxy notifications.
+      handleProxiedNotificationData();
+    }
+  }
+
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
+  private boolean shouldRetainProxyNotifications() {
+    ProxyNotificationInitializer.initialize(context);
+    if (!ProxyNotificationInitializer.isProxyNotificationEnabled(context)) {
+      // Proxy notifications not enabled, shouldn't retain.
+      return false;
+    }
+    if (firebaseApp.get(AnalyticsConnector.class) != null) {
+      // Google Analytics is present, should retain.
+      return true;
+    }
+    // Retain if BigQuery export is enabled and Firelog is present so that proxied notifications can
+    // be retrieved and logged to Firelog for BigQuery export on next startup after being displayed.
+    return MessagingAnalytics.deliveryMetricsExportToBigQueryEnabled() && transportFactory != null;
+  }
+
+  private void handleProxiedNotificationData() {
+    gmsRpc
+        .getProxyNotificationData()
+        .addOnSuccessListener(
+            initExecutor,
+            notification -> {
+              if (notification != null) {
+                // Proxied notification retrieved, log it and check if there's more.
+                MessagingAnalytics.logNotificationReceived(notification.getIntent());
+                handleProxiedNotificationData();
+              }
+            });
   }
 
   /**
@@ -324,6 +354,9 @@ public class FirebaseMessaging {
    */
   public void setDeliveryMetricsExportToBigQuery(boolean enable) {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(enable);
+    // Update proxy retention since BigQuery export setting may have changed.
+    ProxyNotificationPreferences.setProxyRetention(
+        context, gmsRpc, shouldRetainProxyNotifications());
   }
 
   /**
@@ -358,7 +391,13 @@ public class FirebaseMessaging {
    */
   @NonNull
   public Task<Void> setNotificationDelegationEnabled(boolean enable) {
-    return ProxyNotificationInitializer.setEnableProxyNotification(initExecutor, context, enable);
+    return ProxyNotificationInitializer.setEnableProxyNotification(initExecutor, context, enable)
+        .addOnSuccessListener(
+            Runnable::run,
+            listener ->
+                // Update proxy retention since proxy enabled state may have changed.
+                ProxyNotificationPreferences.setProxyRetention(
+                    context, gmsRpc, shouldRetainProxyNotifications()));
   }
 
   /**
@@ -516,12 +555,12 @@ public class FirebaseMessaging {
   /** @hide */
   @Nullable
   public static TransportFactory getTransportFactory() {
-    return transportFactory;
+    return transportFactory.get();
   }
 
   /** @hide */
   static void clearTransportFactoryForTest() {
-    transportFactory = null;
+    transportFactory = () -> null;
   }
 
   /** Checks if Gmscore is present. */

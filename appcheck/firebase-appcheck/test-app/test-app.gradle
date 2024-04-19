@@ -40,7 +40,6 @@ dependencies {
     implementation project(":appcheck:firebase-appcheck-debug")
     implementation project(":appcheck:firebase-appcheck-interop")
     implementation project(":appcheck:firebase-appcheck-playintegrity")
-    implementation project(":appcheck:firebase-appcheck-safetynet")
     implementation project(":firebase-storage")
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
