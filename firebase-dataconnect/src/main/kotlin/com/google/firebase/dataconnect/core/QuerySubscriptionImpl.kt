@@ -31,7 +31,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
 
   // Each collection of this flow triggers an implicit `reload()`.
   override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = channelFlow {
-    val cachedResult = lastResult?.also { send(it) }
+    lastResult?.also { send(it) }
 
     var collectJob: Job? = null
     _query.collect { query ->

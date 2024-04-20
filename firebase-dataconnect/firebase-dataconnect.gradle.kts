@@ -95,8 +95,10 @@ dependencies {
   api(libs.kotlinx.coroutines.core)
   api(libs.kotlinx.serialization.core)
 
-  implementation(project(":firebase-annotations"))
-  implementation(project(":firebase-components"))
+  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  implementation("com.google.firebase:firebase-components:17.1.5") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
   implementation(project(":protolite-well-known-types"))
   implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
