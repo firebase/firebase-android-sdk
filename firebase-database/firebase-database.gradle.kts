@@ -24,11 +24,12 @@ firebaseLibrary {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
   installation.timeOutInMs = 60 * 1000
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database"
   defaultConfig {

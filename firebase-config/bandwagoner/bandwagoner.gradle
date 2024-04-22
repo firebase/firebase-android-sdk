@@ -23,7 +23,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace "com.googletest.firebase.remoteconfig.bandwagoner"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     lintOptions {
         abortOnError false
     }
@@ -31,7 +31,7 @@ android {
 
     defaultConfig {
         applicationId "com.googletest.firebase.remoteconfig.bandwagoner"
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName "1.0"

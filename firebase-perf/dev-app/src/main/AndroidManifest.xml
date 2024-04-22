@@ -4,6 +4,7 @@
     package="com.googletest.firebase.perf.testapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -17,6 +18,7 @@
             android:label="@string/title_activity_fragment"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar" />
         <activity
+            android:exported="true"
             android:name=".PerfTestActivity"
             android:label="Perf Test App">
             <intent-filter>

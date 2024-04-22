@@ -27,7 +27,9 @@ firebaseLibrary {
 }
 
 android {
+    val compileSdkVersion : Int by rootProject
     val targetSdkVersion: Int by rootProject
+    val minSdkVersion : Int by rootProject
 
     namespace = "com.google.firebase.remoteconfig"
     compileSdk = targetSdkVersion

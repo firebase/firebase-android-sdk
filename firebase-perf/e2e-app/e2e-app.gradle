@@ -27,7 +27,7 @@ firebaseTestLab {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion project.compileSdkVersion
 
     namespace "com.google.firebase.testing.fireperf"
     // Specifies the build type that the Android plugin should use to run the instrumentation tests.
@@ -52,8 +52,8 @@ android {
         // https://developer.android.com/studio/build/application-id.html
         applicationId "com.google.firebase.testing.fireperf"
 
-        minSdkVersion 18
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         versionCode 3
         versionName "3.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
