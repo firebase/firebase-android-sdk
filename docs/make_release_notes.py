@@ -204,13 +204,7 @@ PRODUCTS = {
                   target_path='firebase-appcheck-playintegrity',
                   has_ktx=False,
                   alt_name='{{app_check}} Play integrity',
-                  version_name='appcheck-playintegrity'),
-    'appcheck:firebase-appcheck-safetynet':
-        Changelog(path='appcheck/firebase-appcheck-safetynet/CHANGELOG.md',
-                  target_path='firebase-appcheck-safetynet',
-                  has_ktx=False,
-                  alt_name='{{app_check}} SafetyNet',
-                  version_name='appcheck-safetynet')
+                  version_name='appcheck-playintegrity')
 }
 KTX_PLACEHOLDER_TEXT = """
 The Kotlin extensions library transitively includes the updated

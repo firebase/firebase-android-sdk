@@ -42,6 +42,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.DataCollectionDefaultChange;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.events.EventHandler;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
@@ -250,10 +251,49 @@ public class FirebaseMessaging {
           }
         });
 
-    initExecutor.execute(
-        () ->
-            // Initializes proxy notification support for the app.
-            ProxyNotificationInitializer.initialize(context));
+    initExecutor.execute(() -> initializeProxyNotifications());
+  }
+
+  private void initializeProxyNotifications() {
+    // Initializes proxy notification support for the app.
+    ProxyNotificationInitializer.initialize(context);
+    // Update proxy retention in case any settings or included libraries has changed.
+    ProxyNotificationPreferences.setProxyRetention(
+        context, gmsRpc, shouldRetainProxyNotifications());
+    if (shouldRetainProxyNotifications()) {
+      // Handle any retained proxy notifications.
+      handleProxiedNotificationData();
+    }
+  }
+
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
+  private boolean shouldRetainProxyNotifications() {
+    ProxyNotificationInitializer.initialize(context);
+    if (!ProxyNotificationInitializer.isProxyNotificationEnabled(context)) {
+      // Proxy notifications not enabled, shouldn't retain.
+      return false;
+    }
+    if (firebaseApp.get(AnalyticsConnector.class) != null) {
+      // Google Analytics is present, should retain.
+      return true;
+    }
+    // Retain if BigQuery export is enabled and Firelog is present so that proxied notifications can
+    // be retrieved and logged to Firelog for BigQuery export on next startup after being displayed.
+    return MessagingAnalytics.deliveryMetricsExportToBigQueryEnabled() && transportFactory != null;
+  }
+
+  private void handleProxiedNotificationData() {
+    gmsRpc
+        .getProxyNotificationData()
+        .addOnSuccessListener(
+            initExecutor,
+            notification -> {
+              if (notification != null) {
+                // Proxied notification retrieved, log it and check if there's more.
+                MessagingAnalytics.logNotificationReceived(notification.getIntent());
+                handleProxiedNotificationData();
+              }
+            });
   }
 
   /**
@@ -314,6 +354,9 @@ public class FirebaseMessaging {
    */
   public void setDeliveryMetricsExportToBigQuery(boolean enable) {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(enable);
+    // Update proxy retention since BigQuery export setting may have changed.
+    ProxyNotificationPreferences.setProxyRetention(
+        context, gmsRpc, shouldRetainProxyNotifications());
   }
 
   /**
@@ -348,7 +391,13 @@ public class FirebaseMessaging {
    */
   @NonNull
   public Task<Void> setNotificationDelegationEnabled(boolean enable) {
-    return ProxyNotificationInitializer.setEnableProxyNotification(initExecutor, context, enable);
+    return ProxyNotificationInitializer.setEnableProxyNotification(initExecutor, context, enable)
+        .addOnSuccessListener(
+            Runnable::run,
+            listener ->
+                // Update proxy retention since proxy enabled state may have changed.
+                ProxyNotificationPreferences.setProxyRetention(
+                    context, gmsRpc, shouldRetainProxyNotifications()));
   }
 
   /**

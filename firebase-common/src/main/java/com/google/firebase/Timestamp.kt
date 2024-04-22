@@ -16,8 +16,11 @@
 
 package com.google.firebase
 
+import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
+import androidx.annotation.RequiresApi
+import java.time.Instant
 import java.util.Date
 
 /**
@@ -61,12 +64,18 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     this.nanoseconds = nanoseconds
   }
 
+  @RequiresApi(Build.VERSION_CODES.O) constructor(time: Instant) : this(time.epochSecond, time.nano)
+
   /**
    * Returns a new [Date] corresponding to this timestamp.
    *
    * This may lose precision.
    */
   fun toDate(): Date = Date(seconds * 1_000 + (nanoseconds / 1_000_000))
+
+  /** Returns a new [Instant] that matches the time defined by this timestamp. */
+  @RequiresApi(Build.VERSION_CODES.O)
+  fun toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
 
   override fun compareTo(other: Timestamp): Int =
     compareValuesBy(this, other, Timestamp::seconds, Timestamp::nanoseconds)

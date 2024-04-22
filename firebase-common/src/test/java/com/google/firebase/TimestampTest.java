@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.common.testutil.Assert.assertThrows;
 
 import android.os.Parcel;
+import java.time.Instant;
 import java.util.Date;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +45,19 @@ public class TimestampTest {
     assertThat(actual.getNanoseconds()).isEqualTo(750000000);
     expected = new Timestamp(-2, 750000000);
     assertThat(actual).isEqualTo(expected);
+  }
+
+  @Test
+  public void testFromInstant() {
+    Instant input1 = Instant.now();
+    Timestamp output1 = new Timestamp(input1);
+    assertThat(output1.getSeconds()).isEqualTo(input1.getEpochSecond());
+    assertThat(output1.getNanoseconds()).isEqualTo(input1.getNano());
+
+    Timestamp input2 = new Timestamp(12345, 1);
+    Instant output2 = input2.toInstant();
+    assertThat(input2.getSeconds()).isEqualTo(output2.getEpochSecond());
+    assertThat(input2.getNanoseconds()).isEqualTo(output2.getNano());
   }
 
   @Test
