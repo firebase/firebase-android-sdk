@@ -26,9 +26,9 @@ firebaseLibrary {
 
 android {
     namespace "com.google.firebase.inappmessaging.ktx"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version

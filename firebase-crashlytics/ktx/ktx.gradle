@@ -27,11 +27,11 @@ firebaseLibrary {
 
 android {
   namespace "com.google.firebase.crashlytics.ktx"
-  compileSdk 33  
+  compileSdk project.compileSdkVersion
   defaultConfig {
-    minSdk 16
+    minSdk project.minSdkVersion
     multiDexEnabled true
-    targetSdk 33
+    targetSdk project.targetSdkVersion
     versionName version
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
   }

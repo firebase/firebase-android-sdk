@@ -28,7 +28,7 @@ android {
     }
 
     namespace "com.google.firebase.datatransport"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion

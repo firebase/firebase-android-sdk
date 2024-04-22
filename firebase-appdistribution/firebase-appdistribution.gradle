@@ -24,10 +24,10 @@ firebaseLibrary {
 
 android {
     namespace "com.google.firebase.appdistribution.impl"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         multiDexEnabled true
         versionName version
