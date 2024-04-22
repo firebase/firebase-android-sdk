@@ -17,37 +17,53 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetFooByIdQuery :
-  GeneratedQuery<DemoConnector, GetFooByIdQuery.Data, GetFooByIdQuery.Variables> {
+public interface GetTimestampVariantsByIdQuery :
+  GeneratedQuery<
+    DemoConnector, GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables
+  > {
 
   @Serializable public data class Variables(val id: String)
 
   @Serializable
-  public data class Data(val foo: Foo?) {
+  public data class Data(val timestampVariants: TimestampVariants?) {
 
-    @Serializable public data class Foo(val bar: String?)
+    @Serializable
+    public data class TimestampVariants(
+      val nonNullValue: com.google.firebase.Timestamp,
+      val nullableWithNullValue: com.google.firebase.Timestamp?,
+      val nullableWithNonNullValue: com.google.firebase.Timestamp?,
+      val minValue: com.google.firebase.Timestamp?,
+      val maxValue: com.google.firebase.Timestamp?,
+      val emptyList: List<com.google.firebase.Timestamp>,
+      val nonEmptyList: List<com.google.firebase.Timestamp>
+    )
   }
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "GetFooById"
+    @Suppress("ConstPropertyName")
+    public const val operationName: String = "GetTimestampVariantsById"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetFooByIdQuery.ref(
+public fun GetTimestampVariantsByIdQuery.ref(
   id: String
-): QueryRef<GetFooByIdQuery.Data, GetFooByIdQuery.Variables> =
-  ref(GetFooByIdQuery.Variables(id = id))
+): QueryRef<GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables> =
+  ref(GetTimestampVariantsByIdQuery.Variables(id = id))
 
-public suspend fun GetFooByIdQuery.execute(
+public suspend fun GetTimestampVariantsByIdQuery.execute(
   id: String
-): QueryResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables> = ref(id = id).execute()
+): QueryResult<GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables> =
+  ref(id = id).execute()
 
-public fun GetFooByIdQuery.flow(
+public fun GetTimestampVariantsByIdQuery.flow(
   id: String
-): Flow<QuerySubscriptionResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables>> =
-  ref(id = id).subscribe().flow
+): Flow<
+  QuerySubscriptionResult<
+    GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables
+  >
+> = ref(id = id).subscribe().flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

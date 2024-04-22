@@ -27,6 +27,8 @@ public data class PrimaryKeyIsCompositeKey(val foo: Int, val bar: String, val ba
 
 @Serializable public data class SyntheticIdKey(val id: java.util.UUID)
 
+@Serializable public data class TimestampVariantsKey(val id: String)
+
 @Serializable public data class UuidvariantsKey(val id: String)
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no

@@ -112,6 +112,40 @@ query GetUUIDVariantsById($id: String!) @auth(level: PUBLIC) {
   }
 }
 
+mutation InsertTimestampVariants(
+  $id: String!,
+  $nonNullValue: Timestamp!,
+  $nullableWithNullValue: Timestamp,
+  $nullableWithNonNullValue: Timestamp,
+  $minValue: Timestamp!,
+  $maxValue: Timestamp!,
+  $emptyList: [Timestamp!],
+  $nonEmptyList: [Timestamp!]
+) @auth(level: PUBLIC) {
+  timestampVariants_insert(data: {
+    id: $id,
+    nonNullValue: $nonNullValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    minValue: $minValue,
+    maxValue: $maxValue,
+    emptyList: $emptyList,
+    nonEmptyList: $nonEmptyList
+  })
+}
+
+query GetTimestampVariantsById($id: String!) @auth(level: PUBLIC) {
+  timestampVariants(id: $id) {
+    nonNullValue
+    nullableWithNullValue
+    nullableWithNonNullValue
+    minValue
+    maxValue
+    emptyList
+    nonEmptyList
+  }
+}
+
 mutation InsertDateVariants(
   $id: String!,
   $nonNullValue: Date!,

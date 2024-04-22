@@ -51,6 +51,17 @@ type DateVariants @table {
   nonEmptyList: [Date!]
 }
 
+type TimestampVariants @table {
+  id: String!
+  nonNullValue: Timestamp!
+  nullableWithNullValue: Timestamp
+  nullableWithNonNullValue: Timestamp
+  minValue: Timestamp
+  maxValue: Timestamp
+  emptyList: [Timestamp!]
+  nonEmptyList: [Timestamp!]
+}
+
 type SyntheticId @table {
   value: String!
 }

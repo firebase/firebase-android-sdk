@@ -39,6 +39,8 @@ public interface DemoConnector : GeneratedConnector {
 
   public val getSyntheticIdById: GetSyntheticIdByIdQuery
 
+  public val getTimestampVariantsById: GetTimestampVariantsByIdQuery
+
   public val getUuidvariantsById: GetUuidvariantsByIdQuery
 
   public val insertDateVariants: InsertDateVariantsMutation
@@ -58,6 +60,8 @@ public interface DemoConnector : GeneratedConnector {
   public val insertStringVariants: InsertStringVariantsMutation
 
   public val insertSyntheticId: InsertSyntheticIdMutation
+
+  public val insertTimestampVariants: InsertTimestampVariantsMutation
 
   public val insertUuidvariants: InsertUuidvariantsMutation
 
@@ -136,6 +140,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getSyntheticIdById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetSyntheticIdByIdQueryImpl(this) }
 
+  override val getTimestampVariantsById by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetTimestampVariantsByIdQueryImpl(this) }
+
   override val getUuidvariantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetUuidvariantsByIdQueryImpl(this) }
 
@@ -164,6 +171,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val insertSyntheticId by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertSyntheticIdMutationImpl(this) }
+
+  override val insertTimestampVariants by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertTimestampVariantsMutationImpl(this) }
 
   override val insertUuidvariants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertUuidvariantsMutationImpl(this) }
@@ -361,6 +371,20 @@ private class GetSyntheticIdByIdQueryImpl(override val connector: DemoConnectorI
       "connector=$connector)"
 }
 
+private class GetTimestampVariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
+  GetTimestampVariantsByIdQuery {
+  override val operationName by GetTimestampVariantsByIdQuery.Companion::operationName
+  override val dataDeserializer by GetTimestampVariantsByIdQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetTimestampVariantsByIdQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetTimestampVariantsByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
 private class GetUuidvariantsByIdQueryImpl(override val connector: DemoConnectorImpl) :
   GetUuidvariantsByIdQuery {
   override val operationName by GetUuidvariantsByIdQuery.Companion::operationName
@@ -496,6 +520,20 @@ private class InsertSyntheticIdMutationImpl(override val connector: DemoConnecto
 
   override fun toString() =
     "InsertSyntheticIdMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertTimestampVariantsMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertTimestampVariantsMutation {
+  override val operationName by InsertTimestampVariantsMutation.Companion::operationName
+  override val dataDeserializer by InsertTimestampVariantsMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertTimestampVariantsMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertTimestampVariantsMutationImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +

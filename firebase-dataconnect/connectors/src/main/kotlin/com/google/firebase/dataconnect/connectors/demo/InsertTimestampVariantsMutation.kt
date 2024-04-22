@@ -16,62 +16,74 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface InsertUuidvariantsMutation :
+public interface InsertTimestampVariantsMutation :
   GeneratedMutation<
-    DemoConnector, InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables
+    DemoConnector, InsertTimestampVariantsMutation.Data, InsertTimestampVariantsMutation.Variables
   > {
 
   @Serializable
   public data class Variables(
     val id: String,
-    val nonNullValue: java.util.UUID,
-    val nullableWithNullValue: java.util.UUID?,
-    val nullableWithNonNullValue: java.util.UUID?,
-    val emptyList: List<java.util.UUID>,
-    val nonEmptyList: List<java.util.UUID>
+    val nonNullValue: com.google.firebase.Timestamp,
+    val nullableWithNullValue: com.google.firebase.Timestamp?,
+    val nullableWithNonNullValue: com.google.firebase.Timestamp?,
+    val minValue: com.google.firebase.Timestamp,
+    val maxValue: com.google.firebase.Timestamp,
+    val emptyList: List<com.google.firebase.Timestamp>,
+    val nonEmptyList: List<com.google.firebase.Timestamp>
   )
 
-  @Serializable public data class Data(@SerialName("uUIDVariants_insert") val key: UuidvariantsKey)
+  @Serializable
+  public data class Data(@SerialName("timestampVariants_insert") val key: TimestampVariantsKey)
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "InsertUUIDVariants"
+    @Suppress("ConstPropertyName")
+    public const val operationName: String = "InsertTimestampVariants"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun InsertUuidvariantsMutation.ref(
+public fun InsertTimestampVariantsMutation.ref(
   id: String,
-  nonNullValue: java.util.UUID,
-  nullableWithNullValue: java.util.UUID?,
-  nullableWithNonNullValue: java.util.UUID?,
-  emptyList: List<java.util.UUID>,
-  nonEmptyList: List<java.util.UUID>
-): MutationRef<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
+  nonNullValue: com.google.firebase.Timestamp,
+  nullableWithNullValue: com.google.firebase.Timestamp?,
+  nullableWithNonNullValue: com.google.firebase.Timestamp?,
+  minValue: com.google.firebase.Timestamp,
+  maxValue: com.google.firebase.Timestamp,
+  emptyList: List<com.google.firebase.Timestamp>,
+  nonEmptyList: List<com.google.firebase.Timestamp>
+): MutationRef<InsertTimestampVariantsMutation.Data, InsertTimestampVariantsMutation.Variables> =
   ref(
-    InsertUuidvariantsMutation.Variables(
+    InsertTimestampVariantsMutation.Variables(
       id = id,
       nonNullValue = nonNullValue,
       nullableWithNullValue = nullableWithNullValue,
       nullableWithNonNullValue = nullableWithNonNullValue,
+      minValue = minValue,
+      maxValue = maxValue,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )
   )
 
-public suspend fun InsertUuidvariantsMutation.execute(
+public suspend fun InsertTimestampVariantsMutation.execute(
   id: String,
-  nonNullValue: java.util.UUID,
-  nullableWithNullValue: java.util.UUID?,
-  nullableWithNonNullValue: java.util.UUID?,
-  emptyList: List<java.util.UUID>,
-  nonEmptyList: List<java.util.UUID>
-): MutationResult<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
+  nonNullValue: com.google.firebase.Timestamp,
+  nullableWithNullValue: com.google.firebase.Timestamp?,
+  nullableWithNonNullValue: com.google.firebase.Timestamp?,
+  minValue: com.google.firebase.Timestamp,
+  maxValue: com.google.firebase.Timestamp,
+  emptyList: List<com.google.firebase.Timestamp>,
+  nonEmptyList: List<com.google.firebase.Timestamp>
+): MutationResult<InsertTimestampVariantsMutation.Data, InsertTimestampVariantsMutation.Variables> =
   ref(
       id = id,
       nonNullValue = nonNullValue,
       nullableWithNullValue = nullableWithNullValue,
       nullableWithNonNullValue = nullableWithNonNullValue,
+      minValue = minValue,
+      maxValue = maxValue,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )

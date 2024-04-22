@@ -1,5 +1,5 @@
 @file:Suppress("SpellCheckingInspection")
-@file:UseSerializers(DateSerializer::class, UUIDSerializer::class)
+@file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.`typealias`
 
@@ -7,6 +7,7 @@ import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable

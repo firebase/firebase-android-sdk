@@ -15,6 +15,7 @@
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.randomAlphanumericString
@@ -22,9 +23,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import kotlin.reflect.full.memberProperties
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
+import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Test
 
@@ -164,6 +167,39 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
+  fun timestampVariants() = runTest {
+    val id = randomAlphanumericString()
+
+    connector.insertTimestampVariants.execute(
+      id = id,
+      nonNullValue = Timestamp(1, 3_219),
+      nullableWithNullValue = null,
+      nullableWithNonNullValue = Timestamp(-46_239, 4_628),
+      minValue = Timestamp(-62_135_596_800, 0),
+      maxValue = Timestamp(253_402_300_799, 999_999_999),
+      // TODO: Change to emptyList() when emulator bug fixes
+      emptyList = listOf(Timestamp(-543, 41)),
+      nonEmptyList = listOf(Timestamp(-543, 41), Timestamp(739, 62))
+    )
+
+    val queryResult = connector.getTimestampVariantsById.execute(id)
+    assertTrue(
+      queryResult.data.timestampVariants!!.isEqualTo(
+        GetTimestampVariantsByIdQuery.Data.TimestampVariants(
+          nonNullValue = Timestamp(1, 3_219),
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = Timestamp(-46_239, 4_628),
+          minValue = Timestamp(-62_135_596_800, 0),
+          maxValue = Timestamp(253_402_300_799, 999_999_999),
+          // TODO: Change to emptyList() when emulator bug fixes
+          emptyList = listOf(Timestamp(-543, 41)),
+          nonEmptyList = listOf(Timestamp(-543, 41), Timestamp(739, 62))
+        )
+      )
+    )
+  }
+
+  @Test
   fun dateVariantsInData() = runTest {
     val id = randomAlphanumericString()
 
@@ -218,6 +254,40 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         InsertDateVariantsMutation.dataDeserializer,
         serializer()
       )
+
+    fun GetTimestampVariantsByIdQuery.Data.TimestampVariants.isEqualTo(
+      other: GetTimestampVariantsByIdQuery.Data.TimestampVariants
+    ): Boolean {
+      val properties = GetTimestampVariantsByIdQuery.Data.TimestampVariants::class.memberProperties
+      for (field in properties) {
+        val actual = field.get(this)
+        val expect = field.get(other)
+        if (actual == null && expect == null) {
+          continue
+        } else if (actual is Timestamp && expect is Timestamp) {
+          if (!comparedSerializedTimestamp(actual, expect)) {
+            return false
+          }
+        } else if (actual is List<*> && expect is List<*>) {
+          if (actual.size != expect.size) {
+            return false
+          }
+          for (i in 0 until actual.size) {
+            if (!comparedSerializedTimestamp(actual[i] as Timestamp, expect[i] as Timestamp)) {
+              return false
+            }
+          }
+        } else {
+          return false
+        }
+      }
+      return true
+    }
+
+    fun comparedSerializedTimestamp(actual: Timestamp, expect: Timestamp): Boolean {
+      // TODO: Figure out better way to check nanoseconds
+      return actual.seconds == expect.seconds
+    }
   }
 
   /**
