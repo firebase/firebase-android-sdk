@@ -4,7 +4,7 @@
   (GitHub [#5859](https://github.com/firebase/firebase-android-sdk/issues/5859))
 * [fixed] Safely unbind to release service connection.
   (GitHub [#5869](https://github.com/firebase/firebase-android-sdk/issues/5869))
-* 
+
 # 1.2.3
 
 * [fixed] Force validation or rotation of FIDs.
