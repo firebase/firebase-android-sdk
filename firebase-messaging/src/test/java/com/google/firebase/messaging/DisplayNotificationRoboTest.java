@@ -44,6 +44,8 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.test.core.app.ApplicationProvider;
+
+import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.TestImageServer;
 import java.io.IOException;
@@ -64,6 +66,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowSystemClock;
 
 @RunWith(RobolectricTestRunner.class)
+@Config(shadows = {ShadowPreconditions.class})
 public class DisplayNotificationRoboTest {
 
   // Constants copy pasted here as they are part of the protocol

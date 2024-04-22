@@ -23,7 +23,7 @@ android {
   compileSdk = compileSdkVersion
   namespace = "com.google.firebase.datacollectiontests"
   defaultConfig {
-    minSdk = 21
+    minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
