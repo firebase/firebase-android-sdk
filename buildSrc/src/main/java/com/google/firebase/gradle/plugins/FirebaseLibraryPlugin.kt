@@ -18,8 +18,6 @@ package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
 import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
@@ -43,8 +41,6 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
   override fun apply(project: Project) {
     project.apply<LibraryPlugin>()
     project.apply<LicenseResolverPlugin>()
-    project.apply<GoogleJavaFormatPlugin>()
-    project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupAndroidLibraryExtension(project)
     registerMakeReleaseNotesTask(project)
@@ -67,6 +63,8 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
     }
+
+    android.buildFeatures.buildConfig = true
 
     // In the case of and android library signing config only affects instrumentation test APK.
     // We need it signed with default debug credentials in order for FTL to accept the APK.
@@ -178,7 +176,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
   private fun configurePublishing(
     project: Project,
     firebaseLibrary: FirebaseLibraryExtension,
-    android: LibraryExtension
+    android: LibraryExtension,
   ) {
     android.publishing.singleVariant("release") { withSourcesJar() }
     project.tasks.withType<GenerateModuleMetadata> { isEnabled = false }

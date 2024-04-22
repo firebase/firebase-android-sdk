@@ -34,6 +34,7 @@ android {
 
   namespace = "com.google.firebase.testing.sessions"
   compileSdk = compileSdkVersion
+  buildFeatures.buildConfig = true
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
     minSdk = minSdkVersion
@@ -57,6 +58,10 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
   buildFeatures { viewBinding = true }
+}
+
+kotlin {
+  jvmToolchain(8)
 }
 
 dependencies {
