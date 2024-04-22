@@ -61,7 +61,7 @@ internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: Fireba
     }
   }
 
-  private fun unbindServiceSafely(appContext: Context, serviceConnection: ServiceConnection){
+  private fun unbindServiceSafely(appContext: Context, serviceConnection: ServiceConnection) {
     try {
       appContext.unbindService(serviceConnection)
     } catch (exception: IllegalArgumentException) {
