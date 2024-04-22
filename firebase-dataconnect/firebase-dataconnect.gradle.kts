@@ -167,3 +167,12 @@ tasks.withType<KotlinCompile>().all {
     }
   }
 }
+
+// This is a workaround for the following intermittent build error:
+// Querying the mapped value of provider(java.util.Set) before task
+// ':firebase-components:createFullJarDebug' has completed is not supported
+afterEvaluate {
+  tasks.named<Task>("extractIncludeDebugUnitTestProto") {
+    dependsOn(":firebase-components:createFullJarDebug")
+  }
+}
