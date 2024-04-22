@@ -4,7 +4,6 @@
         ":firebase-common",
         ":firebase-common:ktx",
         ":firebase-components",
-        ":firebase-components:firebase-dynamic-module-support",
         ":firebase-annotations"
     ]
 }
