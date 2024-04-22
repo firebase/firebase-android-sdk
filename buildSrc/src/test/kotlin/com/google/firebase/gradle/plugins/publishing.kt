@@ -56,7 +56,7 @@ data class Project(
 
             dependencies {
             ${projectDependencies.joinToString("\n") { "implementation project(':${it.name}')" }}
-            ${externalDependencies.joinToString("\n") { "implementation '${it.simpleDepString}'" }}
+            ${externalDependencies.joinToString("\n") { "${it.configuration} '${it.simpleDepString}'" }}
             }
             """
   }
@@ -74,10 +74,11 @@ data class Artifact(
   val artifactId: String,
   val version: String,
   val type: Type = Type.JAR,
-  val scope: String = "compile"
+  val scope: String = "runtime"
 ) {
-  val simpleDepString: String
-    get() = "$groupId:$artifactId:$version"
+  val simpleDepString = "$groupId:$artifactId:$version"
+
+  val configuration = if (scope == "compile") "api" else "implementation"
 }
 
 data class Pom(

@@ -31,6 +31,7 @@ import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
 import org.w3c.dom.Element
 
@@ -44,6 +45,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
       changelogFile.set(changelog)
       releaseNotesFile.set(releaseNotes)
+      skipMissingEntries.set(project.provideProperty("skipEmptyChangelog"))
     }
 
   protected fun kotlinModuleName(project: Project): String {
@@ -149,7 +151,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
    * The transformations are done lazily via the [withXml][MavenPom.withXml] provider.
    *
    * @param pom the [MavenPom] to prepare
-   * @see [convertToCompileDependency]
    * @see [addTypeWithAARSupport]
    */
   // TODO(b/270576405): Combine with applyPomCustomization when migrating FirebaseLibraryExtension
@@ -158,24 +159,9 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       val dependencies = asElement().findElementsByTag("dependency")
       val androidDependencies = resolveAndroidDependencies()
       for (dependency in dependencies) {
-        convertToCompileDependency(dependency)
         addTypeWithAARSupport(dependency, androidDependencies)
       }
     }
-  }
-
-  /**
-   * Adds + configures the `scope` element as a direct descendant of the provided [Element].
-   *
-   * Sets the [textContent][Element.getTextContent] of `scope` to "compile"- regardless of its
-   * initial value. This is needed to avoid a breaking change until the bug below is fixed.
-   *
-   * @param dependency the element to append the `scope` to
-   * @see applyPomTransformations
-   */
-  // TODO(b/277605778): Remove after configurations have been migrated to the right type
-  private fun convertToCompileDependency(dependency: Element) {
-    dependency.findOrCreate("scope").textContent = "compile"
   }
 
   /**

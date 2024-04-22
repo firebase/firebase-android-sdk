@@ -35,7 +35,7 @@ from fireci import ci_command
 def changelog_comment(changelogs, output):
   """Generates and formats release notes to a pretty comment for GitHub."""
 
-  gradle.run('makeReleaseNotes')
+  gradle.run('makeReleaseNotes', gradle.P("skipEmptyChangelog", "true"))
   release_notes = []
   missing_release_notes = []
   for changelog in changelogs.rsplit(" "):

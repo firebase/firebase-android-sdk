@@ -20,12 +20,14 @@ plugins {
 firebaseLibrary {
     libraryGroup("common")
     publishJavadoc = false
+    publishReleaseNotes = false
 }
 
 android {
+    val compileSdkVersion : Int by rootProject
     val targetSdkVersion : Int by rootProject
     val minSdkVersion : Int by rootProject
-    compileSdk = targetSdkVersion
+    compileSdk = compileSdkVersion
     namespace = "com.google.firebase.ktx"
     defaultConfig {
         minSdk = minSdkVersion

@@ -32,10 +32,10 @@ buildscript {
 apply plugin: "com.android.application"
 
 android {
-  compileSdkVersion 33
+  compileSdkVersion 34
 
   defaultConfig {
-    minSdkVersion 19
+    minSdkVersion 21
     multiDexEnabled true
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     versionName "1.0.0"

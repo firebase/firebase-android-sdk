@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 17.1.2
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 17.1.1
 * [fixed] Fixed client-side throttling in Play Integrity flows.
 * [changed] Bumped Play Integrity API Library dependency version.

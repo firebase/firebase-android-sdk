@@ -41,6 +41,10 @@ import com.google.android.datatransport.runtime.scheduling.persistence.Persisted
 import com.google.android.datatransport.runtime.synchronization.SynchronizationGuard;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -90,7 +94,7 @@ public class UploaderTest {
           .build();
   private static final int MANY_EVENT_COUNT = 1000;
 
-  private final EventStore store = spy(new InMemoryEventStore());
+  private final InMemoryEventStore store = spy(new InMemoryEventStore());
   private final EventStore mockStore = mock(EventStore.class);
   private BackendRegistry mockRegistry = mock(BackendRegistry.class);
   private TransportBackend mockBackend = mock(TransportBackend.class);
@@ -111,10 +115,27 @@ public class UploaderTest {
               () -> 2,
               mockClientHealthMetricsStore));
 
+  private EventInternal makeEventWithPseudonymousId(String id) {
+    return EventInternal.builder()
+        .setTransportName("43")
+        .setEventMillis(1)
+        .setUptimeMillis(2)
+        .setEncodedPayload(
+            new EncodedPayload(Encoding.of("proto"), "Hello".getBytes(Charset.defaultCharset())))
+        .addMetadata("key1", "value1")
+        .addMetadata("key2", "value2")
+        .setPseudonymousId(id)
+        .build();
+  }
+
   @Before
   public void setUp() {
     when(mockRegistry.get(BACKEND_NAME)).thenReturn(mockBackend);
-    store.persist(TRANSPORT_CONTEXT, EVENT);
+  }
+
+  @After
+  public void cleanUp() {
+    store.reset();
   }
 
   @Test
@@ -137,6 +158,7 @@ public class UploaderTest {
 
   @Test
   public void logAndUpdateStatus_okResponse() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
     when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordSuccess(any());
@@ -145,6 +167,7 @@ public class UploaderTest {
 
   @Test
   public void logAndUpdateStatus_nontransientResponse() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
     when(mockBackend.send(any())).thenReturn(BackendResponse.fatalError());
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordSuccess(any());
@@ -152,6 +175,7 @@ public class UploaderTest {
 
   @Test
   public void logAndUpdateStatus_transientReponse() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
     when(mockBackend.send(any())).thenReturn(BackendResponse.transientError());
     uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
     verify(store, times(1)).recordFailure(any());
@@ -161,6 +185,7 @@ public class UploaderTest {
   @Test
   public void
       upload_singleEvent_withInvalidPayloadResponse_shouldRecordLogEventDroppedDueToInvalidPayload() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
     when(mockBackend.send(any())).thenReturn(BackendResponse.invalidPayload());
     uploader.upload(TRANSPORT_CONTEXT, 1, mockRunnable);
     verify(mockClientHealthMetricsStore, times(1))
@@ -170,6 +195,7 @@ public class UploaderTest {
   @Test
   public void
       upload_multipleEvents_withInvalidPayloadResponse_shouldRecordLogEventDroppedDueToInvalidPayload() {
+    store.persist(TRANSPORT_CONTEXT, EVENT);
     store.persist(TRANSPORT_CONTEXT, EVENT);
     store.persist(TRANSPORT_CONTEXT, ANOTHER_EVENT);
     when(mockBackend.send(any())).thenReturn(BackendResponse.invalidPayload());
@@ -219,5 +245,102 @@ public class UploaderTest {
                   }
                   return false;
                 })));
+  }
+
+  @Test
+  public void upload_shouldBatchSamePseudonymousIds() {
+    String targetId = "myId";
+    String alternativeId = "otherId";
+
+    EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal siblingEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal otherEvent = makeEventWithPseudonymousId(alternativeId);
+
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+
+    store.persist(TRANSPORT_CONTEXT, oldestEvent);
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, siblingEvent);
+    store.persist(TRANSPORT_CONTEXT, otherEvent);
+
+    List<EventInternal> targetEvents = Arrays.asList(oldestEvent, siblingEvent);
+
+    uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
+    verify(mockBackend, times(1))
+        .send(
+            argThat(
+                (backendRequest -> {
+                  List<EventInternal> events =
+                      StreamSupport.stream(backendRequest.getEvents().spliterator(), false)
+                          .collect(Collectors.toList());
+
+                  return events.equals(targetEvents);
+                })));
+  }
+
+  @Test
+  public void upload_shouldLeaveOtherPseudonymousIds() {
+    String targetId = "myId";
+    String alternativeId = "otherId";
+
+    EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal otherEvent = makeEventWithPseudonymousId(alternativeId);
+
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+
+    store.persist(TRANSPORT_CONTEXT, oldestEvent);
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, otherEvent);
+
+    uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
+    assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isTrue();
+  }
+
+  @Test
+  public void upload_shouldBatchOldestEventType() {
+    String targetId = "myId";
+
+    EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal siblingEvent = makeEventWithPseudonymousId(targetId);
+
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, oldestEvent);
+    store.persist(TRANSPORT_CONTEXT, ANOTHER_EVENT);
+    store.persist(TRANSPORT_CONTEXT, siblingEvent);
+
+    List<EventInternal> targetEvents = Arrays.asList(EVENT, ANOTHER_EVENT);
+
+    uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
+    verify(mockBackend, times(1))
+        .send(
+            argThat(
+                (backendRequest -> {
+                  List<EventInternal> events =
+                      StreamSupport.stream(backendRequest.getEvents().spliterator(), false)
+                          .collect(Collectors.toList());
+
+                  return events.equals(targetEvents);
+                })));
+  }
+
+  @Test
+  public void upload_shouldRescheduleIfThereAreAdditionalEventsPending() {
+    String targetId = "myId";
+    String alternativeId = "otherId";
+
+    EventInternal oldestEvent = makeEventWithPseudonymousId(targetId);
+    EventInternal otherEvent = makeEventWithPseudonymousId(alternativeId);
+
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+
+    store.persist(TRANSPORT_CONTEXT, oldestEvent);
+    store.persist(TRANSPORT_CONTEXT, EVENT);
+    store.persist(TRANSPORT_CONTEXT, otherEvent);
+
+    uploader.logAndUpdateState(TRANSPORT_CONTEXT, 1);
+    assertThat(store.hasPendingEventsFor(TRANSPORT_CONTEXT)).isTrue();
+    verify(mockScheduler, times(1)).schedule(TRANSPORT_CONTEXT, 1, true);
   }
 }

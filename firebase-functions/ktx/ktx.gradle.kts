@@ -20,17 +20,20 @@ plugins {
 firebaseLibrary {
   libraryGroup("functions")
   publishJavadoc = false
+  publishReleaseNotes = false
   publishSources = true
   testLab.enabled = true
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
+  val minSdkVersion : Int by rootProject
 
   namespace = "com.google.firebase.functions.ktx"
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
+    minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

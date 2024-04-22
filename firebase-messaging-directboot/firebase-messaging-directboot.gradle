@@ -27,9 +27,9 @@ android {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.messaging.directboot"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionName version
 
@@ -43,7 +43,7 @@ android {
 }
 
 dependencies {
-    implementation project(':firebase-messaging')
+    api project(':firebase-messaging')
 
     implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.2'
     implementation "com.google.errorprone:error_prone_annotations:2.9.0"

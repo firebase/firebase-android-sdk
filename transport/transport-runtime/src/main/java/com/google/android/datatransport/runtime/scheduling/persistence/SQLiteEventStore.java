@@ -136,6 +136,9 @@ public class SQLiteEventStore
               values.put("inline", inline);
               values.put("payload", inline ? payloadBytes : new byte[0]);
               values.put("product_id", event.getProductId());
+              values.put("pseudonymous_id", event.getPseudonymousId());
+              values.put("experiment_ids_clear_blob", event.getExperimentIdsClear());
+              values.put("experiment_ids_encrypted_blob", event.getExperimentIdsEncrypted());
               long newEventId = db.insert("events", null, values);
               if (!inline) {
                 int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
@@ -450,6 +453,9 @@ public class SQLiteEventStore
               "code",
               "inline",
               "product_id",
+              "pseudonymous_id",
+              "experiment_ids_clear_blob",
+              "experiment_ids_encrypted_blob",
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -478,6 +484,15 @@ public class SQLiteEventStore
             }
             if (!cursor.isNull(8)) {
               event.setProductId(cursor.getInt(8));
+            }
+            if (!cursor.isNull(9)) {
+              event.setPseudonymousId(cursor.getString(9));
+            }
+            if (!cursor.isNull(10)) {
+              event.setExperimentIdsClear(cursor.getBlob(10));
+            }
+            if (!cursor.isNull(11)) {
+              event.setExperimentIdsEncrypted(cursor.getBlob(11));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }

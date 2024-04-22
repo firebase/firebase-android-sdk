@@ -240,11 +240,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    */
   private CrashlyticsReportWithSessionId ensureHasFid(CrashlyticsReportWithSessionId reportToSend) {
     // Only do the update if the fid is already missing from the report.
-    if (reportToSend.getReport().getFirebaseInstallationId() == null) {
+    if (reportToSend.getReport().getFirebaseInstallationId() == null
+        || reportToSend.getReport().getFirebaseAuthenticationToken() == null) {
       // Fetch the true fid, regardless of automatic data collection since it's uploading.
-      String fid = idManager.fetchTrueFid();
+      FirebaseInstallationId firebaseInstallationId = idManager.fetchTrueFid();
       return CrashlyticsReportWithSessionId.create(
-          reportToSend.getReport().withFirebaseInstallationId(fid),
+          reportToSend
+              .getReport()
+              .withFirebaseInstallationId(firebaseInstallationId.getFid())
+              .withFirebaseAuthenticationToken(firebaseInstallationId.getAuthToken()),
           reportToSend.getSessionId(),
           reportToSend.getReportFile());
     }

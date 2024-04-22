@@ -20,6 +20,7 @@ import android.util.Base64;
 import android.util.Log;
 import androidx.annotation.AnyThread;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.cloudmessaging.CloudMessage;
 import com.google.android.gms.cloudmessaging.Rpc;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -215,6 +216,14 @@ class GmsRpc {
 
     Task<Bundle> rpcTask = startRpc(to, scope, extras);
     return extractResponseWhenComplete(rpcTask);
+  }
+
+  Task<Void> setRetainProxiedNotifications(boolean retain) {
+    return rpc.setRetainProxiedNotifications(retain);
+  }
+
+  Task<CloudMessage> getProxyNotificationData() {
+    return rpc.getProxiedNotificationData();
   }
 
   private Task<Bundle> startRpc(String to, String scope, Bundle extras) {

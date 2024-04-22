@@ -21,16 +21,19 @@ plugins {
 firebaseLibrary {
     publishSources = true
     publishJavadoc = false
+    publishReleaseNotes = false
 }
 
 android {
+    val compileSdkVersion : Int by rootProject
     val targetSdkVersion: Int by rootProject
+    val minSdkVersion : Int by rootProject
 
     namespace = "com.google.firebase.remoteconfiginterop"
-    compileSdk = 33
+    compileSdk = compileSdkVersion
 
     defaultConfig {
-        minSdk = 16
+        minSdk = minSdkVersion
         targetSdk = targetSdkVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -43,8 +46,8 @@ android {
 }
 
 dependencies {
-    implementation("com.google.firebase:firebase-encoders-json:18.0.1")
-    implementation("com.google.firebase:firebase-encoders:17.0.0")
+    api("com.google.firebase:firebase-encoders-json:18.0.1")
+    api("com.google.firebase:firebase-encoders:17.0.0")
 
     compileOnly("com.google.auto.value:auto-value-annotations:1.10.1")
 

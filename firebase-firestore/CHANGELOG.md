@@ -1,5 +1,35 @@
 # Unreleased
+* [feature] Enable queries with range & inequality filters on multiple fields. [#5729](//github.com/firebase/firebase-android-sdk/pull/5729)
+* [changed] Internal improvements.
+* [feature] Support conversion between `java.time.Instant` and `Timestamp` [#5853](//github.com/firebase/firebase-android-sdk/pull/5853)
 
+# 24.11.0
+* [feature] Enable snapshot listener option to retrieve data from local cache only. [#5690](//github.com/firebase/firebase-android-sdk/pull/5690)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.10.3
+* [fixed] Fixed the missing handling setter annotations bug introduced by [#5626](//github.com/firebase/firebase-android-sdk/pull/5626). [#5706](//github.com/firebase/firebase-android-sdk/pull/5706)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.10.2
+* [changed] Internal test improvements.
+* [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5626)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.10.1
 * [fixed] Fixed an issue caused by calling mutation on immutable map object. [#5573](//github.com/firebase/firebase-android-sdk/pull/5573)

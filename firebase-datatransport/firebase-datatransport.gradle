@@ -18,6 +18,7 @@ plugins {
 
 firebaseLibrary {
     publishJavadoc = false
+    publishReleaseNotes = false
     publishSources = true
 }
 
@@ -27,7 +28,7 @@ android {
     }
 
     namespace "com.google.firebase.datatransport"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
@@ -47,16 +48,17 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.3.3'
-    implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.android.datatransport:transport-api:3.1.0'
-    implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
-    implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
-    implementation 'androidx.annotation:annotation:1.1.0'
+    api 'com.google.firebase:firebase-common:20.4.2'
+    api 'com.google.firebase:firebase-components:17.1.5'
 
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'com.google.android.datatransport:transport-api:3.1.0'
+    implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
+    implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
+
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation 'androidx.test:runner:1.2.0'
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation 'junit:junit:4.12'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
 }

@@ -27,12 +27,16 @@ plugins {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion : Int by rootProject
+
   namespace = "com.google.firebase.testing.config"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
     applicationId = "com.google.firebase.testing.config"
-    minSdk = 16
-    targetSdk = 33
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true
@@ -52,8 +56,12 @@ kotlin {
 }
 
 dependencies {
-  implementation(project(":firebase-crashlytics"))
-  implementation(project(":firebase-config"))
+  implementation(project(":firebase-crashlytics")) {
+    exclude(group = "com.google.firebase", module = "firebase-config-interop")
+  }
+  implementation(project(":firebase-config")) {
+    exclude(group = "com.google.firebase", module = "firebase-config-interop")
+  }
   implementation(project(":firebase-config:ktx"))
 
   // This is required since a `project` dependency on frc does not expose the APIs of its

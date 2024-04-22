@@ -1,5 +1,16 @@
 # Unreleased
+* [changed] Internal support for `SafetyNet` has been dropped, as the [SafetyNet Attestation API
+has been deprecated.](https://developer.android.com/privacy-and-security/safetynet/deprecation-timeline#safetynet_attestation_deprecation_timeline)
 
+
+# 17.1.2
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
 
 # 17.1.1
 * [fixed] Fixed a bug causing internal tests to depend directly on `firebase-common`.

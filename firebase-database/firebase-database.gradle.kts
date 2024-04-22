@@ -24,11 +24,12 @@ firebaseLibrary {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
   installation.timeOutInMs = 60 * 1000
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database"
   defaultConfig {
@@ -56,20 +57,20 @@ android {
 }
 
 dependencies {
-    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
+    api("com.google.firebase:firebase-appcheck-interop:17.1.0")
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-auth-interop:20.0.0") {
      exclude(group = "com.google.firebase", module = "firebase-common")
      exclude(group = "com.google.firebase", module = "firebase-components")
    }
-    implementation("com.google.firebase:firebase-database-collection:18.0.1")
+    api("com.google.firebase:firebase-database-collection:18.0.1")
     implementation(libs.androidx.annotation)
     implementation(libs.bundles.playservices)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.playservices.tasks)
+    api(libs.playservices.tasks)
 
     testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")

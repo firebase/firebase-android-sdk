@@ -24,10 +24,11 @@ firebaseLibrary {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
   val minSdkVersion : Int by rootProject
 
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   namespace = "com.google.firebase"
   defaultConfig {
     minSdk = minSdkVersion
@@ -57,8 +58,8 @@ android {
 dependencies {
     api(libs.kotlin.coroutines.tasks)
 
-    implementation(project(":firebase-components"))
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
+    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-annotations:16.2.0")
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.futures)
     implementation(libs.kotlin.stdlib)
@@ -86,6 +87,9 @@ dependencies {
         exclude("com.google.firebase","firebase-common")
         exclude("com.google.firebase","firebase-common-ktx")
     }
+
+    // TODO(Remove when FirbaseAppTest has been modernized to use LiveData)
+    androidTestImplementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)

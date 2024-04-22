@@ -44,7 +44,7 @@ public class RecipeVersionWriter {
             "com.google.gms:google-services"));
     outputBuilder.append(
         "  <!ENTITY google-services-plugin \"com.google.gms.google-services\">\n"
-            + "  <!ENTITY gradle-plugin-class \"com.android.tools.build:gradle:7.3.0\">\n");
+            + "  <!ENTITY gradle-plugin-class \"com.android.tools.build:gradle:8.1.0\">\n");
     outputBuilder.append("\n");
     outputBuilder.append("  <!-- Firebase SDK libraries -->\n");
     outputBuilder.append(

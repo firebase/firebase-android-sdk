@@ -28,13 +28,17 @@ plugins {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion : Int by rootProject
+
   namespace = "com.google.firebase.testing.sessions"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   buildFeatures.buildConfig = true
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
-    minSdk = 16
-    targetSdk = 33
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true

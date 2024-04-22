@@ -23,14 +23,16 @@ group = "com.google.firebase"
 firebaseLibrary {
   libraryGroup("database")
   publishJavadoc = false
+  publishReleaseNotes = false
   publishSources = true
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database.ktx"
   defaultConfig {

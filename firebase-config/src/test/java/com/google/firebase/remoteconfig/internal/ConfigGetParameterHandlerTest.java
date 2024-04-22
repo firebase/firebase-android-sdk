@@ -21,8 +21,12 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALU
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_LONG;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING;
 import static com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler.FRC_BYTE_ARRAY_ENCODING;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.android.gms.common.util.BiConsumer;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableMap;
@@ -77,6 +81,7 @@ public class ConfigGetParameterHandlerTest {
 
   @Mock private ConfigCacheClient mockActivatedCache;
   @Mock private ConfigCacheClient mockDefaultsCache;
+  @Mock private BiConsumer<String, ConfigContainer> mockListener;
 
   private ConfigGetParameterHandler getHandler;
 
@@ -170,6 +175,19 @@ public class ConfigGetParameterHandlerTest {
     String stringValue = getHandler.getString(STRING_KEY);
 
     assertThat(stringValue).isEqualTo(ACTIVATED_STRING_VALUE);
+  }
+
+  @Test
+  public void getString_activatedKeyExists_callsListeners() throws Exception {
+    loadActivatedCacheWithMap(ImmutableMap.of(STRING_KEY, ACTIVATED_STRING_VALUE));
+    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+
+    getHandler.addListener(this.mockListener);
+
+    String stringValue = getHandler.getString(STRING_KEY);
+
+    assertThat(stringValue).isEqualTo(ACTIVATED_STRING_VALUE);
+    verify(this.mockListener).accept(eq(STRING_KEY), any(ConfigContainer.class));
   }
 
   @Test

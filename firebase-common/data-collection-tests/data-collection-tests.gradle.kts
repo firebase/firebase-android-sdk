@@ -17,9 +17,10 @@ plugins {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
   val minSdkVersion : Int by rootProject
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   namespace = "com.google.firebase.datacollectiontests"
   defaultConfig {
     minSdk = minSdkVersion
@@ -36,7 +37,7 @@ android {
 
 dependencies {
     implementation("com.google.firebase:firebase-common:20.3.1")
-    implementation("com.google.firebase:firebase-components:17.1.0")
+    implementation("com.google.firebase:firebase-components:17.1.5")
 
     testImplementation(libs.androidx.core)
     testImplementation(libs.androidx.test.junit)

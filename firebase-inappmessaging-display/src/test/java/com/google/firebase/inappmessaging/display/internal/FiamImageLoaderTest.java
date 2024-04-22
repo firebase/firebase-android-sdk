@@ -65,6 +65,14 @@ public class FiamImageLoaderTest {
   }
 
   @Test
+  public void addErrorListener_setsErrorListenerOnUnderlyingRequestCreator() {
+    FiamImageLoader.FiamImageRequestCreator fiamImageRequestCreator = imageLoader.load(IMAGE_URL);
+    GlideErrorListener errorListener = new GlideErrorListener(null, null);
+    fiamImageRequestCreator.addErrorListener(errorListener);
+    verify(requestBuilder).addListener(errorListener);
+  }
+
+  @Test
   public void tag_tagsUnderlyingRequestCreator() {
     ImageView imageView = mock(ImageView.class);
     FiamImageLoader.Callback callback = mock(FiamImageLoader.Callback.class);
