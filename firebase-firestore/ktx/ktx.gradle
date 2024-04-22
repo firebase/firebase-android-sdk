@@ -28,9 +28,9 @@ firebaseLibrary {
 
 android {
     namespace "com.google.firebase.firestore.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version

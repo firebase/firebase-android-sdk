@@ -28,7 +28,7 @@ android {
     }
 
     namespace "com.google.firebase.appcheck.debug.testing"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
