@@ -28,6 +28,7 @@ public final class RepoInfo {
   public String namespace;
   public String internalHost;
 
+
   @Override
   public String toString() {
     return "http" + (secure ? "s" : "") + "://" + host;

@@ -67,7 +67,7 @@ public class FirebaseDatabase {
    * @return A FirebaseDatabase instance.
    */
   @NonNull
-  public static FirebaseDatabase getInstance(@NonNull String url) {
+  public static FirebaseDatabase getXInstance(@NonNull String url) {
     FirebaseApp instance = FirebaseApp.getInstance();
     if (instance == null) {
       throw new DatabaseException("You must call FirebaseApp.initialize() first.");
@@ -313,12 +313,13 @@ public class FirebaseDatabase {
    * @param port the emulator port (for example, 9000)
    */
   public void useEmulator(@NonNull String host, int port) {
+    System.out.println("Using Emulator");
     if (this.repo != null) {
       throw new IllegalStateException(
           "Cannot call useEmulator() after instance has already been initialized.");
     }
-
     this.emulatorSettings = new EmulatedServiceSettings(host, port);
+    this.config.setUsingEmulator(true);
   }
 
   /** @return The semver version for this build of the Firebase Database client */

@@ -54,6 +54,8 @@ public class Context {
 
   private Platform platform;
 
+  protected boolean isUsingEmulator = false;
+
   private Platform getPlatform() {
     if (platform == null) {
       initializeAndroidPlatform();
@@ -63,6 +65,10 @@ public class Context {
 
   private synchronized void initializeAndroidPlatform() {
     platform = new AndroidPlatform(this.firebaseApp);
+  }
+
+  public boolean isUsingEmulator() {
+    return this.isUsingEmulator;
   }
 
   public boolean isFrozen() {
@@ -139,6 +145,7 @@ public class Context {
     return new LogWrapper(logger, component, prefix);
   }
 
+  // TODO(mtewani): fill this in instead of repoinfo
   public ConnectionContext getConnectionContext() {
     return new ConnectionContext(
         this.getLogger(),
@@ -211,8 +218,9 @@ public class Context {
     return this.appCheckTokenProvider;
   }
 
+
   public PersistentConnection newPersistentConnection(
-      HostInfo info, PersistentConnection.Delegate delegate) {
+          HostInfo info, PersistentConnection.Delegate delegate) {
     return getPlatform().newPersistentConnection(this, this.getConnectionContext(), info, delegate);
   }
 

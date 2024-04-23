@@ -55,7 +55,7 @@ public class SynchronousConnection implements PersistentConnection.Delegate {
     RepoInfo repoInfo = parsed.repoInfo;
     HostInfo hostInfo = new HostInfo(repoInfo.host, repoInfo.namespace, repoInfo.secure);
 
-    connection = new PersistentConnectionImpl(context.getConnectionContext(), hostInfo, this);
+    connection = new PersistentConnectionImpl(context.getConnectionContext(), hostInfo, this, false);
     this.connectSemaphore = new Semaphore(0);
   }
 

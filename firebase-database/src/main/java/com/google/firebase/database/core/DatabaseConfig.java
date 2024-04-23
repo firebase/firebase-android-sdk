@@ -173,6 +173,14 @@ public class DatabaseConfig extends Context {
     this.cacheSize = cacheSizeInBytes;
   }
 
+  /**
+   * @hide
+   * @param isUsingEmulator
+   */
+  public synchronized void setUsingEmulator(boolean isUsingEmulator) {
+    this.isUsingEmulator = isUsingEmulator;
+  }
+
   public synchronized void setFirebaseApp(FirebaseApp app) {
     this.firebaseApp = app;
   }
