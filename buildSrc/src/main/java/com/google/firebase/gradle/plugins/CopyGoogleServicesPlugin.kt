@@ -39,6 +39,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
 
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
+      // I wonder if it's preReleaseBuild and preDebugBuild instead?
       tasks.configureEach {
         if (name !== "copyRootGoogleServices") dependsOn(copyRootGoogleServices)
       }
@@ -63,7 +64,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
 
       val library = project.extensions.getByType<BaseExtension>()
 
-      val targetPackageLine = "\"package_name\": \"${library.namespace}"
+      val targetPackageLine = "\"package_name\": \"${library.namespace}\""
       val packageLineRegex = Regex("\"package_name\":\\s+\".*\"")
 
       from(sourcePath)
