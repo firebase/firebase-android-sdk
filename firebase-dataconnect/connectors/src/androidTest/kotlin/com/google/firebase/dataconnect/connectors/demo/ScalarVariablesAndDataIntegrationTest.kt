@@ -183,8 +183,16 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     )
 
     val queryResult = connector.getTimestampVariantsById.execute(id)
+
+    /**
+     * Note: Timestamp sent from SDK is always 9 digits nanosecond precision, meaning there are 9
+     * digits in SSSSSSSSS parts. However, when running against different databases, this precision
+     * might change, and server will truncate it to 0/3/6 digits precision without throwing an
+     * error. That's why in the integration test, we only verify the second. Serializer will be
+     * tested in unit tests.
+     */
     assertTrue(
-      queryResult.data.timestampVariants!!.isEqualTo(
+      queryResult.data.timestampVariants!!.verifySeconds(
         GetTimestampVariantsByIdQuery.Data.TimestampVariants(
           nonNullValue = Timestamp(1, 3_219),
           nullableWithNullValue = null,
@@ -255,7 +263,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         serializer()
       )
 
-    fun GetTimestampVariantsByIdQuery.Data.TimestampVariants.isEqualTo(
+    fun GetTimestampVariantsByIdQuery.Data.TimestampVariants.verifySeconds(
       other: GetTimestampVariantsByIdQuery.Data.TimestampVariants
     ): Boolean {
       val properties = GetTimestampVariantsByIdQuery.Data.TimestampVariants::class.memberProperties
@@ -278,14 +286,15 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
             }
           }
         } else {
-          return false
+          throw IllegalArgumentException(
+            "`TimestampVariants.verifySeconds` doesn't support these types."
+          )
         }
       }
       return true
     }
 
-    fun comparedSerializedTimestamp(actual: Timestamp, expect: Timestamp): Boolean {
-      // TODO: Figure out better way to check nanoseconds
+    private fun comparedSerializedTimestamp(actual: Timestamp, expect: Timestamp): Boolean {
       return actual.seconds == expect.seconds
     }
   }
