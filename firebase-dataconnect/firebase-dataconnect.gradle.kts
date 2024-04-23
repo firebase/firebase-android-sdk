@@ -122,6 +122,7 @@ dependencies {
   testImplementation(libs.truth)
   testImplementation(libs.truth.liteproto.extension)
   testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.kotlinx.serialization.json)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
