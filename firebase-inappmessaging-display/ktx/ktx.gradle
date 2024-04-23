@@ -26,9 +26,9 @@ firebaseLibrary {
 
 android {
     namespace "com.google.firebase.inappmessaging.display.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -40,7 +40,9 @@ android {
             srcDir 'src/test/kotlin'
         }
     }
-
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
     testOptions.unitTests.includeAndroidResources = true
 }
 

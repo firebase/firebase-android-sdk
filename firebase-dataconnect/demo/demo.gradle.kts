@@ -47,9 +47,9 @@ android {
     viewBinding = true
   }
   composeOptions {
-    // Chosen based on the mapping to Kotlin 1.7.10 here:
+    // Chosen based on the mapping to Kotlin 1.8.22 here:
     // https://developer.android.com/jetpack/androidx/releases/compose-kotlin
-    kotlinCompilerExtensionVersion = "1.3.1"
+    kotlinCompilerExtensionVersion = "1.4.8"
   }
 }
 
@@ -73,4 +73,41 @@ dependencies {
 
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+}
+
+// This is a workaround for gradle build error like this:
+// Task ':firebase-dataconnect:connectors:extractDeepLinksDebug' uses this output of task
+// ':firebase-dataconnect:copyRootGoogleServices' without declaring an explicit or
+// implicit dependency. 
+afterEvaluate {
+  tasks.named<Task>("extractDeepLinksDebug") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("packageDebugResources") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("processDebugManifest") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugAndroidTestResources") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugShaders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugAndroidTestShaders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugJniLibFolders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeExtDexDebugAndroidTest") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugAndroidTestJniLibFolders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeExtDexDebug") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
 }

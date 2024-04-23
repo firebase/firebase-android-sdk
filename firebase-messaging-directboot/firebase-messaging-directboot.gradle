@@ -27,9 +27,9 @@ android {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.messaging.directboot"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionName version
 

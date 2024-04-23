@@ -44,7 +44,7 @@ protobuf {
 
 android {
     namespace "com.google.firebase.perf"
-    compileSdk 33
+    compileSdk project.compileSdkVersion
 
     lintOptions {
         abortOnError true
@@ -74,7 +74,7 @@ android {
             buildConfigField("Boolean", "ENFORCE_DEFAULT_LOG_SRC", "Boolean.valueOf(true)")
         }
 
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -85,7 +85,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
+    kotlinOptions.jvmTarget = "1.8"
     testOptions {
         unitTests {
             includeAndroidResources = true
@@ -131,8 +131,7 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-core:2.28.2'
-    testImplementation 'org.mockito:mockito-inline:2.13.0'
+    testImplementation 'org.mockito:mockito-core:5.2.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
 }

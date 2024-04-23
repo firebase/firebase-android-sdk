@@ -16,7 +16,7 @@ package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_STRING;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -92,7 +92,7 @@ public class ImpressionStorageClientTest {
               return null;
             });
 
-    when(storageClient.read(any(CampaignImpressionsParser.class))).thenReturn(fakeRead);
+    when(storageClient.read(any(Parser.class))).thenReturn(fakeRead);
     when(storageClient.write(any(CampaignImpressionList.class))).thenReturn(fakeWrite);
   }
 
@@ -105,7 +105,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void storeImpression_noExistingImpressions_writesToStorage() {
-    when(storageClient.read(any(CampaignImpressionsParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
 
     impressionStorageClient.storeImpression(campaignImpression).subscribe();
 
@@ -114,7 +114,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void storeImpression_noErrors_storesAppendedCampaigns() {
-    when(storageClient.read(any(CampaignImpressionsParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(
             Maybe.just(
                 CampaignImpressionList.newBuilder()
@@ -131,7 +131,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void storeImpression_noExistingCampaigns_storesAppendedCampaigns() {
-    when(storageClient.read(any(CampaignImpressionsParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     ArgumentCaptor<CampaignImpressionList> campaignImpressionListArgumentCaptor =
         ArgumentCaptor.forClass(CampaignImpressionList.class);
     impressionStorageClient.storeImpression(campaignImpression).subscribe();
@@ -145,9 +145,9 @@ public class ImpressionStorageClientTest {
   public void storeImpression_noErrors_cachesInMemory() {
     CampaignImpressionList otherCampaignImpressionList =
         CampaignImpressionList.getDefaultInstance();
-    when(storageClient.read(any(CampaignImpressionsParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     impressionStorageClient.storeImpression(campaignImpression).subscribe();
-    when(storageClient.read(any(CampaignImpressionsParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.just(otherCampaignImpressionList));
 
     TestSubscriber<CampaignImpressionList> subscriber =
@@ -165,9 +165,9 @@ public class ImpressionStorageClientTest {
         CampaignImpressionList.getDefaultInstance();
     when(storageClient.write(any(CampaignImpressionList.class)))
         .thenReturn(Completable.error(new IOException()));
-    when(storageClient.read(any(CampaignImpressionsParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     impressionStorageClient.storeImpression(campaignImpression).subscribe();
-    when(storageClient.read(any(CampaignImpressionsParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.just(otherCampaignImpressionList));
 
     TestSubscriber<CampaignImpressionList> subscriber =
@@ -189,7 +189,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void storeImpression_readErrors_notifiesError() {
-    when(storageClient.read(any(CampaignImpressionsParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.error(new IOException()));
 
     TestSubscriber<Object> subscriber =
@@ -208,7 +208,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void getAllImpressions_readError_notifiesError() {
-    when(storageClient.read(any(CampaignImpressionsParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.error(new IOException()));
 
     TestSubscriber<CampaignImpressionList> subscriber =
@@ -242,7 +242,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void isImpressed_ifExperimentImpressed_isTrue() {
-    when(storageClient.read(any(CampaignImpressionsParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.fromCallable(() -> experimentImpressionList));
     TestSubscriber<Boolean> subscriber =
         impressionStorageClient.isImpressed(experimentalCampaign).toFlowable().test();
@@ -260,7 +260,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void isImpressed_ifNoCampaigns_isFalse() {
-    when(storageClient.read(any(CampaignImpressionsParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
 
     TestSubscriber<Boolean> subscriber =
         impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
@@ -270,7 +270,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void isImpressed_onError_notifiesError() {
-    when(storageClient.read(any(CampaignImpressionsParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.error(new IOException()));
 
     TestSubscriber<Boolean> subscriber =
@@ -318,6 +318,4 @@ public class ImpressionStorageClientTest {
         impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
     assertThat(subscriber2.getEvents().get(0)).containsExactly(true);
   }
-
-  interface CampaignImpressionsParser extends Parser<CampaignImpressionList> {}
 }

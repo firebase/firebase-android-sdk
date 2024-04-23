@@ -82,3 +82,37 @@ tasks.withType<KotlinCompile>().all {
     }
   }
 }
+
+// This is a workaround for gradle build error like this:
+// Task ':firebase-dataconnect:connectors:extractDeepLinksDebug' uses this output of task
+// ':firebase-dataconnect:copyRootGoogleServices' without declaring an explicit or
+// implicit dependency. 
+afterEvaluate {
+  tasks.named<Task>("extractDeepLinksDebug") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("packageDebugResources") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("processDebugManifest") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugAndroidTestResources") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugShaders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugAndroidTestShaders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugJniLibFolders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeExtDexDebugAndroidTest") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+  tasks.named<Task>("mergeDebugAndroidTestJniLibFolders") {
+    dependsOn(":firebase-dataconnect:copyRootGoogleServices")
+  }
+}

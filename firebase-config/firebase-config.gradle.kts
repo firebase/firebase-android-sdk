@@ -27,7 +27,9 @@ firebaseLibrary {
 }
 
 android {
+    val compileSdkVersion : Int by rootProject
     val targetSdkVersion: Int by rootProject
+    val minSdkVersion : Int by rootProject
 
     namespace = "com.google.firebase.remoteconfig"
     compileSdk = targetSdkVersion
@@ -47,7 +49,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 

@@ -29,10 +29,10 @@ android {
     }
 
     namespace "com.google.firebase.dynamiclinks"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -42,6 +42,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'

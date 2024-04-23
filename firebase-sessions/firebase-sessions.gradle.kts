@@ -32,12 +32,14 @@ firebaseLibrary {
 }
 
 android {
-  val targetSdkVersion: Int by rootProject
+  val compileSdkVersion : Int by rootProject
+  val targetSdkVersion : Int by rootProject
+  val minSdkVersion : Int by rootProject
 
   namespace = "com.google.firebase.sessions"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
+    minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -48,6 +50,10 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
   testOptions.unitTests.isIncludeAndroidResources = true
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
+  kotlinOptions.jvmTarget = "1.8"
 }
 
 dependencies {

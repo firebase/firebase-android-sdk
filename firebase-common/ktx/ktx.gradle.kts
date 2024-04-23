@@ -24,9 +24,10 @@ firebaseLibrary {
 }
 
 android {
+    val compileSdkVersion : Int by rootProject
     val targetSdkVersion : Int by rootProject
     val minSdkVersion : Int by rootProject
-    compileSdk = targetSdkVersion
+    compileSdk = compileSdkVersion
     namespace = "com.google.firebase.ktx"
     defaultConfig {
         minSdk = minSdkVersion
@@ -39,6 +40,9 @@ android {
         getByName("test") {
             java.srcDirs("src/test/kotlin")
         }
+    }
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
     testOptions.unitTests.isIncludeAndroidResources = true
 }

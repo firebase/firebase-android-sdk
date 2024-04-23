@@ -19,7 +19,7 @@ plugins {
 
 android {
     namespace "com.google.android.datatransport.runtime.testing"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion

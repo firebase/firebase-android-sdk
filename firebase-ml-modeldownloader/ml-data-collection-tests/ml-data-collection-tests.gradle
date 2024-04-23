@@ -22,9 +22,9 @@ android {
     }
 
     namespace "com.google.firebase.ml_data_collection_tests"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionName version
         multiDexEnabled true

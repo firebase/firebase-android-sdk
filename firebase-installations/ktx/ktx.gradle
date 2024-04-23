@@ -26,7 +26,7 @@ firebaseLibrary {
 
 android {
     namespace "com.google.firebase.installations.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         multiDexEnabled true
@@ -38,6 +38,9 @@ android {
         main.java.srcDirs += 'src/main/kotlin'
         test.java.srcDirs += 'src/test/kotlin'
         androidTest.java.srcDirs += 'src/androidTest/kotlin'
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
     testOptions.unitTests.includeAndroidResources = true
 }

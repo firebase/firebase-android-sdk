@@ -16,6 +16,7 @@
             android:label="@string/title_activity_fragment"
             android:theme="@style/Theme.MaterialComponents.DayNight.DarkActionBar" />
         <activity
+            android:exported="true"
             android:name=".FirebasePerfActivity"
             android:label="FirebasePerfActivity">
             <intent-filter>

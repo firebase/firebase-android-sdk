@@ -32,8 +32,7 @@ import org.junit.runners.JUnit4
 
 private const val MANIFEST =
   """<?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                  package="com.example">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-sdk android:minSdkVersion="14"/>
         </manifest>
         """
@@ -76,15 +75,15 @@ class VendorPluginTests {
                       }
                     }
                     """
-              .trimIndent()
-        )
+              .trimIndent(),
+        ),
       )
     // expected to vendor preconditions and errorprone annotations from transitive dep.
     assertThat(classes)
       .containsAtLeast(
         "com/example/Hello.class",
         "com/example/com/google/common/base/Preconditions.class",
-        "com/example/com/google/errorprone/annotations/CanIgnoreReturnValue.class"
+        "com/example/com/google/errorprone/annotations/CanIgnoreReturnValue.class",
       )
 
     // ImmutableList is not used, so it should be stripped out.
@@ -111,8 +110,8 @@ class VendorPluginTests {
                       public static void main(String[] args) {}
                     }
                     """
-              .trimIndent()
-        )
+              .trimIndent(),
+        ),
       )
     // expected classes
     assertThat(classes).containsExactly("com/example/Hello.class", "com/example/BuildConfig.class")
@@ -141,15 +140,15 @@ class VendorPluginTests {
                       public static void main(String[] args) {}
                     }
                     """
-              .trimIndent()
-        )
+              .trimIndent(),
+        ),
       )
     // expected classes
     assertThat(classes)
       .containsAtLeast(
         "com/example/Hello.class",
         "com/example/BuildConfig.class",
-        "com/example/dagger/Module.class"
+        "com/example/dagger/Module.class",
       )
   }
 
@@ -173,8 +172,14 @@ class VendorPluginTests {
                 jcenter()
             }
 
-            android.compileSdkVersion = 26
-
+            android {
+                buildFeatures {
+                    buildConfig true
+                }
+              namespace 'com.example'
+              compileSdkVersion 26
+            }
+            
             dependencies {
                 $deps
             }

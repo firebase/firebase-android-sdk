@@ -62,9 +62,9 @@ android {
         timeOutInMs 60 * 1000
     }
     namespace "com.google.firebase.messaging"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionName version
 
@@ -72,10 +72,14 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     testOptions.unitTests.includeAndroidResources = true
+    testOptions.unitTests.all {
+        jvmArgs '--add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED'
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
 }
 
 dependencies {
@@ -136,7 +140,7 @@ dependencies {
         testImplementation "com.google.truth:truth:$googleTruthVersion"
         testImplementation 'junit:junit:4.12'
         testImplementation 'junit:junit:4.13-beta-2'
-        testImplementation 'org.mockito:mockito-core:2.25.0'
+        testImplementation 'org.mockito:mockito-core:5.2.0'
         testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
         testCompileOnly 'com.google.auto.value:auto-value-annotations:1.6.3'
@@ -149,6 +153,6 @@ dependencies {
         androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
         androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
         androidTestImplementation 'junit:junit:4.12'
-        androidTestImplementation 'org.mockito:mockito-core:2.25.0'
-        androidTestImplementation 'org.mockito:mockito-inline:2.25.0'
+        androidTestImplementation 'org.mockito:mockito-core:5.2.0'
+        androidTestImplementation 'org.mockito:mockito-inline:5.2.0'
 }

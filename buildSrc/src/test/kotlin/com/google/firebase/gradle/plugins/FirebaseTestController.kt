@@ -194,8 +194,7 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
 
     const val ANDROID_MANIFEST =
       """<?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                  package="com.example">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-sdk android:minSdkVersion="14"/>
         </manifest>
         """

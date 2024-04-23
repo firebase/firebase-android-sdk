@@ -18,7 +18,7 @@ plugins {
 
 android {
     namespace "com.google.firebase.segmentation"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
 
     defaultConfig {
         minSdkVersion project.minSdkVersion
@@ -56,7 +56,7 @@ dependencies {
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-inline:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation 'org.mockito:mockito-core:5.2.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
 }

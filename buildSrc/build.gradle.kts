@@ -14,8 +14,7 @@
 
 plugins {
     id("com.ncorti.ktfmt.gradle") version "0.11.0"
-    id("com.github.sherter.google-java-format") version "0.9"
-    kotlin("plugin.serialization") version "1.7.10"
+    kotlin("plugin.serialization") version "1.8.22"
     `kotlin-dsl`
 }
 
@@ -32,11 +31,6 @@ repositories {
 // Refer go/fireperf-plugin-test-on-head for more details.
 val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
-googleJavaFormat {
-    toolVersion = "1.15.0"
-    exclude(".gradle/**")
-}
-
 ktfmt {
     googleStyle()
 }
@@ -48,7 +42,7 @@ dependencies {
     implementation("com.google.firebase:perf-plugin:$perfPluginVersion")
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
-    implementation(kotlin("gradle-plugin", "1.7.10"))
+    implementation(kotlin("gradle-plugin", "1.8.22"))
     implementation("org.json:json:20210307")
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
@@ -65,9 +59,8 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:7.4.2")
-    implementation("com.android.tools.build:builder-test-api:7.4.2")
-    implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
+    implementation("com.android.tools.build:gradle:8.2.1")
+    implementation("com.android.tools.build:builder-test-api:8.2.1")
 
     testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")
