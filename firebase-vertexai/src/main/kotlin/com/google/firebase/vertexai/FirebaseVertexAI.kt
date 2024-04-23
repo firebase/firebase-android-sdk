@@ -23,6 +23,7 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.InvalidLocationException
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
@@ -45,6 +46,8 @@ class FirebaseVertexAI(
    * @param toolConfig the configuration that defines how the model handles the tools provided
    * @param requestOptions configuration options to utilize during backend communication
    * @property systemInstruction contains a [Content] that directs the model to behave a certain way
+   * @param location location identifier, defaults to `us-central1`; see available
+   * [Vertex AI regions](https://cloud.google.com/vertex-ai/docs/general/locations#vertex-ai-regions)
    */
   @JvmOverloads
   fun generativeModel(
@@ -55,9 +58,13 @@ class FirebaseVertexAI(
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
-  ) =
-    GenerativeModel(
-      "projects/${firebaseApp.options.projectId}/locations/${LOCATION}/publishers/google/models/${modelName}",
+    location: String = "us-central1"
+  ): GenerativeModel {
+    if (location.trim().isEmpty() || location.contains("/")) {
+      throw InvalidLocationException(location)
+    }
+    return GenerativeModel(
+      "projects/${firebaseApp.options.projectId}/locations/${location}/publishers/google/models/${modelName}",
       firebaseApp.options.apiKey,
       generationConfig,
       safetySettings,
@@ -67,6 +74,7 @@ class FirebaseVertexAI(
       requestOptions,
       appCheckProvider.get()
     )
+  }
 
   companion object {
     @JvmStatic
@@ -75,8 +83,6 @@ class FirebaseVertexAI(
 
     @JvmStatic
     fun getInstance(app: FirebaseApp): FirebaseVertexAI = app[FirebaseVertexAI::class.java]
-
-    private val LOCATION = "us-central1"
   }
 }
 
