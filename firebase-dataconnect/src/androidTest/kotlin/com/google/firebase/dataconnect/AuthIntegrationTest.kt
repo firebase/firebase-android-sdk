@@ -8,10 +8,8 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -24,10 +22,8 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
   fun testOperationRequiredSignIn() = runTest {
     val auth = FirebaseAuth.getInstance()
     auth.useEmulator("10.0.2.2", 9099)
-    withContext(Dispatchers.IO) {
-      val task: Task<AuthResult> = auth.signInAnonymously()
-      task.await()
-    }
+    val task: Task<AuthResult> = auth.signInAnonymously()
+    task.await()
 
     val person1Id = randomPersonId()
     val person2Id = randomPersonId()
@@ -38,7 +34,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = personSchema.getPersonAuth(id = person2Id).execute()
 
-    Truth.assertThat(result.data.person?.name).isEqualTo("TestName2")
-    Truth.assertThat(result.data.person?.age).isEqualTo(43)
+    Truth.assertThat(result.data.person!!.name).isEqualTo("TestName2")
+    Truth.assertThat(result.data.person!!.age).isEqualTo(43)
   }
 }
