@@ -40,7 +40,6 @@ protobuf {
     }
     generateProtoTasks {
         all().each { task ->
-            task.dependsOn("copyRootGoogleServices")
             task.builtins {
                 java { option 'lite' }
             }
