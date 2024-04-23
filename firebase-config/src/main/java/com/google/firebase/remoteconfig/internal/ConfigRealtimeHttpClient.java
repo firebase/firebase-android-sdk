@@ -394,8 +394,8 @@ public class ConfigRealtimeHttpClient {
   }
 
   public void setRealtimeBackgroundState(boolean backgroundState) {
-    // Make changes in synchronized block so that everything is updated in a single atomic
-    // transaction.
+    // Make changes in synchronized block so only one thread sets the background state and calls
+    // disconnect.
     synchronized (isInBackground) {
       isInBackground = backgroundState;
       if (configAutoFetch != null) {
@@ -562,7 +562,7 @@ public class ConfigRealtimeHttpClient {
                 }
               } finally {
                 // Close HTTP connection and associated streams.
-                closeAllRealtimeHttpStreams(inputStream, errorStream);
+                closeRealtimeHttpConnection(inputStream, errorStream);
                 setIsHttpConnectionRunning(false);
 
                 boolean connectionFailed =
@@ -605,13 +605,13 @@ public class ConfigRealtimeHttpClient {
             });
   }
 
-  private void closeHttpConnectionInputStream(InputStream stream) {
-    if (stream == null) {
+  private void closeHttpConnectionInputStream(InputStream inputStream) {
+    if (inputStream == null) {
       return;
     }
 
     try {
-      stream.close();
+      inputStream.close();
     } catch (IOException ex) {
       Log.d(TAG, "Exception thrown when closing connection stream. Retrying connection...", ex);
     }
@@ -620,7 +620,7 @@ public class ConfigRealtimeHttpClient {
   // Pauses Http stream listening by disconnecting the HttpUrlConnection and underlying InputStream
   // and ErrorStream if they exist.
   @VisibleForTesting
-  public void closeAllRealtimeHttpStreams(InputStream inputStream, InputStream errorStream) {
+  public void closeRealtimeHttpConnection(InputStream inputStream, InputStream errorStream) {
     if (httpURLConnection != null && !isInBackground) {
       httpURLConnection.disconnect();
     }
