@@ -39,7 +39,6 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
 
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
-      // I wonder if it's preReleaseBuild and preDebugBuild instead?
       tasks.configureEach {
         if (name !== "copyRootGoogleServices") dependsOn(copyRootGoogleServices)
       }
