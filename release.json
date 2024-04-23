@@ -1,0 +1,8 @@
+{
+    "name": "m147_test",
+    "libraries": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-components"
+    ]
+}

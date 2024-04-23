@@ -1,0 +1,631 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "0dd5941cc8e6d3880b3b9f48713fbd46940e7583",
+                "prId": "5882",
+                "author": "argzdev",
+                "message": "Added keep rule for Crashlytics Build ID resource names (#5882)\n\nProposed fix for #5859, previously regressed issue from #5562.\r\n\r\nThe issue affects both `firebase-crashlytics` and\r\n`firebase-crashlytics-ndk. This behavior is triggered when\r\n`isShrinkResources` is enabled and when \"strict\" rule. is added to\r\nresource shrinkage. e.g.\r\n```\r\n<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<resources xmlns:tools=\"http://schemas.android.com/tools\"\r\n    tools:shrinkMode=\"strict\" />\r\n```\r\n\r\nb/311837855 advises that if strict mode is used, the keep rule is needed\r\nfor getIdentifier constants.\r\n\r\nSimulated tests by publishing local copy of the `firebase-crashlytics`,\r\nand `firebase-crashlytics-ndk`. Then testing with sample app variant\r\nthat includes `isShrinkResources` enabled in `build.gradle`\r\n\r\n```\r\nbuildTypes {\r\n    release {\r\n            isShrinkResources = true\r\n            isMinifyEnabled = true\r\n    }\r\n}\r\n```",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0dd5941cc8e6d3880b3b9f48713fbd46940e7583",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5882"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "2f470155b2c1b26af45c59f68358293b930b797e",
+                "prId": "5884",
+                "author": "argzdev",
+                "message": "Safely handle unbinding service connection (#5884)\n\nFix for #5869.\r\n\r\n`Fatal Exception: java.lang.IllegalArgumentException: Service not\r\nregistered: [obfuscated]` happens when the context calls `unbindService`\r\non a service connection that has not been bounded. Either due to\r\n`SecurityException` or the existing service cannot be found from the map\r\nof services that has been bounded.\r\n\r\nSimulating tests by calling `unbindService` without initially calling\r\n`bindService` will result to the same stacktrace as with the issue:\r\n```\r\njava.lang.IllegalArgumentException: Service not registered: com.example.testunbinding.MainActivity$onCreate$serviceConnection$1@8988566\r\n                                                                                                    \tat android.app.LoadedApk.forgetServiceDispatcher(LoadedApk.java:1289)\r\n                                                                                                    \tat android.app.ContextImpl.unbindService(ContextImpl.java:1511)\r\n                                                                                                    \tat android.content.ContextWrapper.unbindService(ContextWrapper.java:648)\r\n                                                                                                    \tat com.example.testunbinding.MainActivity.onCreate$lambda$0(MainActivity.kt:48)\r\n                                                                                                    \tat com.example.testunbinding.MainActivity.$r8$lambda$mcIw03Dd4PpO0vDw0ScUjxsazkw(MainActivity.kt)\r\n                                                                                                    \tat com.example.testunbinding.MainActivity$$ExternalSyntheticLambda0.onClick(D8$$SyntheticClass:0)\r\n```\r\n\r\nI've verified that the try-catch for `IllegalArgumentException` works.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f470155b2c1b26af45c59f68358293b930b797e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5884"
+            },
+            {
+                "commitId": "ec9b699817b322da2e0e6c6562d1ee07013dcfda",
+                "prId": "5833",
+                "author": "argzdev",
+                "message": "Try catch for datastore write (#5833)\n\nProposed fix for issue #5802. Datastore crashes when writing from a\r\ndevice that has full internal memory.\r\n\r\nI did a manual test by creating a clean project and importing the part\r\nof the code with the condition checkers to simulate the issue. I was\r\nable to receive the issue stacktrace the developer was encountering and\r\nwas able to verify that the try catch condition mitigates the issue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ec9b699817b322da2e0e6c6562d1ee07013dcfda",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5833"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "1d717ea6c7f1feb3219b254008212e8e73b9ce18",
+                "prId": "5853",
+                "author": "cherylEnkidu",
+                "message": "Support for java.time.Instant in Firebase Timestamp (#5853)\n\nCo-authored-by: Daymon <daymxn@google.com>\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1d717ea6c7f1feb3219b254008212e8e73b9ce18",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5853"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98f2f9aa01599dd38e2b294479ac9727ff20f211",
+                "prId": "5850",
+                "author": "Vinay Guthal",
+                "message": "update change log (#5850)\n\nCo-authored-by: VinayGuthal <vguthal109@gmail.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98f2f9aa01599dd38e2b294479ac9727ff20f211",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5850"
+            },
+            {
+                "commitId": "18db6bd00091e8989db993916449d9aa02ba275c",
+                "prId": "5842",
+                "author": "Daymon",
+                "message": "Move Timestamp to common (#5842)\n\nPer [b/243534168](https://b.corp.google.com/issues/243534168),\r\n\r\nThis moves `Timestamp` from the firestore package to the common package-\r\nas `Timestamp` actually lives under the `com.google.firebase` package\r\nname, but the file itself was residing in the firestore module.\r\n\r\nThis is intended to just be a near 1:1 move.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/18db6bd00091e8989db993916449d9aa02ba275c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5842"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "72698fe765286f5882fae9785c95b7d3512fcf84",
+                "prId": "5854",
+                "author": "Eldhose M Babu",
+                "message": "Updating changelog (#5854)\n\nUpdating changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/72698fe765286f5882fae9785c95b7d3512fcf84",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5854"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "72698fe765286f5882fae9785c95b7d3512fcf84",
+                "prId": "5854",
+                "author": "Eldhose M Babu",
+                "message": "Updating changelog (#5854)\n\nUpdating changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/72698fe765286f5882fae9785c95b7d3512fcf84",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5854"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "49821fee25216196a5007691457bc0cbb78e15cd",
+                "prId": "5878",
+                "author": "Greg Sakakihara",
+                "message": "Log analytics for proxied notifications. (#5878)\n\n- Add setting of proxy notification retention based on whether the app\r\nuses Google Analytics or has BigQuery export enabled.\r\n- Add retrieval and logging to GA or BigQuery of proxied notifications\r\nat startup.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/49821fee25216196a5007691457bc0cbb78e15cd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5878"
+            },
+            {
+                "commitId": "059f51930ac4fe7eef284e403fd9086fe6133cbf",
+                "prId": "5717",
+                "author": "Greg Sakakihara",
+                "message": "Switch Firelog to use the new TransportBackend. (#5717)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/059f51930ac4fe7eef284e403fd9086fe6133cbf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5717"
+            },
+            {
+                "commitId": "9f0f312d77bce1912da5b14f47d90105e0ea467d",
+                "prId": "5696",
+                "author": "Greg Sakakihara",
+                "message": "Remove unnecessary custom shadow annotations. (#5696)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9f0f312d77bce1912da5b14f47d90105e0ea467d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5696"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "firebase-messaging/ktx": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "7040a87a21afdf3ea256129fd3abeb656bed6d5c",
+                "prId": "5862",
+                "author": "Daymon",
+                "message": "Remove SafetyNet (#5862)\n\nPer [b/333906221](https://b.corp.google.com/issues/333906221),\r\n\r\nThis drops the `SafetyNet` sdk, and its related usage throughout\r\napp-check.\r\n\r\nAlthough, some of the app-check removals may not be desired, so let me\r\nknow if that's the case so I can revert or change them.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7040a87a21afdf3ea256129fd3abeb656bed6d5c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5862"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prId": "5886",
+                "author": "David Motsonashvili",
+                "message": "upgrade kotlin, gradle, AGP (#5886)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8dc53fa92378efc589f219f90d6722cd7e504f2e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5886"
+            },
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "7040a87a21afdf3ea256129fd3abeb656bed6d5c",
+                "prId": "5862",
+                "author": "Daymon",
+                "message": "Remove SafetyNet (#5862)\n\nPer [b/333906221](https://b.corp.google.com/issues/333906221),\r\n\r\nThis drops the `SafetyNet` sdk, and its related usage throughout\r\napp-check.\r\n\r\nAlthough, some of the app-check removals may not be desired, so let me\r\nknow if that's the case so I can revert or change them.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7040a87a21afdf3ea256129fd3abeb656bed6d5c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5862"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prId": "5851",
+                "author": "Daymon",
+                "message": "Major bump all SDKs (#5851)\n\nPer [b/333733199](https://b.corp.google.com/issues/333733199),\r\n\r\nThis major bumps all SDKs in preparation for the I/O breaking changes.\r\nBeyond just getting ready for I/O, this should also help avoid\r\nextraneous smoke test failures from breaking changes at master.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcaf4c38b9dcdafcf9ded322d689a0aa18214f7d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5851"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ],
+        "appcheck/firebase-appcheck/ktx": [
+            {
+                "commitId": "ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prId": "5877",
+                "author": "emilypgoogle",
+                "message": "Bump minSdk to 21 across SDKs and pin compileSdk (#5877)\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddae42dc4e3e73c5d6546bb68103553f21392e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5877"
+            },
+            {
+                "commitId": "98682cce992ea14135c72beac2afc258f3db0925",
+                "prId": "5832",
+                "author": "Daymon",
+                "message": "Fix compile type transformations (#5832)\n\nPer [b/277605778](https://b.corp.google.com/issues/277605778),\r\n\r\nThis removes the step during our release generation where we were\r\nconverting the scope of dependencies to compile. As such, all published\r\nlibraries that had dependencies on firebase library were changed to\r\n`api` level dependencies. While this may not be necessary for a lot of\r\nthem, it's a sufficient middle ground between all dependencies being\r\n`api` level and none. It should now be easier to deduce what exactly\r\nneeds to be `api` level, and which does not.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98682cce992ea14135c72beac2afc258f3db0925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5832"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-abt",
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-components",
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-config-interop",
+        ":firebase-database",
+        ":firebase-database-collection",
+        ":firebase-datatransport",
+        ":firebase-functions",
+        ":firebase-installations",
+        ":firebase-installations:ktx",
+        ":firebase-installations-interop",
+        ":firebase-ml-modeldownloader",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-segmentation",
+        ":firebase-storage",
+        ":protolite-well-known-types",
+        ":appcheck:firebase-appcheck-interop",
+        ":encoders:firebase-decoders-json",
+        ":encoders:firebase-encoders-json",
+        ":encoders:firebase-encoders-reflective",
+        ":firebase-components:firebase-dynamic-module-support",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}

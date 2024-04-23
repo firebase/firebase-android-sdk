@@ -49,7 +49,7 @@ android {
 
 dependencies {
     api(project(":firebase-common"))
-    implementation("com.google.firebase:firebase-components:17.1.5")
+    implementation(project(":firebase-components"))
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)
