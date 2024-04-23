@@ -60,7 +60,7 @@ task copyRootGoogleServices(type: Copy) {
 // Before the google-services plugin tries to process the JSON file, attempt
 // to copy it from the root project.
 afterEvaluate {
-    subprojects.forEach {
+    (subprojects + project).forEach {
         it.tasks.findByName('preBuild')?.dependsOn(copyRootGoogleServices)
         it.tasks.findByName('ktfmtCheckMain')?.dependsOn(copyRootGoogleServices)
         it.tasks.findByName('ktfmtCheckAndroidTest')?.dependsOn(copyRootGoogleServices)
