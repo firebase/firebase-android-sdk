@@ -2,9 +2,7 @@
 
 syntax = "proto3";
 
-// TODO: Change the package to "v1main" (instead of "emulator") to match production, and remove the
-//  "option java_package = ..." below (see https://chat.google.com/room/AAAAdvEjzno/RkgZJA4WcCE).
-package google.firebase.dataconnect.emulator;
+package google.firebase.dataconnect.v1alpha;
 
 import "google/api/field_behavior.proto";
 import "google/firebase/dataconnect/v1main/graphql_error.proto";
