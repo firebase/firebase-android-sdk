@@ -32,7 +32,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.TITLE_MODEL;
 import static com.google.firebase.inappmessaging.testutil.TestData.createBannerMessageCustomMetadata;
 import static io.reactivex.BackpressureStrategy.BUFFER;
 import static io.reactivex.schedulers.Schedulers.trampoline;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
