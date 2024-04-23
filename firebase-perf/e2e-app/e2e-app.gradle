@@ -112,7 +112,3 @@ dependencies {
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.google.firebase.testing.fireperf"
-apply from: '../../gradle/googleServices.gradle'

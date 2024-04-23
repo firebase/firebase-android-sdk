@@ -59,11 +59,3 @@ dependencies {
   androidTestImplementation 'androidx.test:rules:1.2.0'
   androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
-
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.example.storage"
-apply from: '../../gradle/googleServices.gradle'

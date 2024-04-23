@@ -93,7 +93,3 @@ dependencies {
     androidTestImplementation(libs.quickcheck)
     androidTestImplementation(libs.truth)
 }
-
-ext["packageName"] = "com.google.firebase.database"
-
-apply("../gradle/googleServices.gradle")

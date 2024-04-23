@@ -96,7 +96,3 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.googletest.firebase.appdistribution.testapp"
-apply from: '../../gradle/googleServices.gradle'

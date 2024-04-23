@@ -120,7 +120,3 @@ dependencies {
     androidTestImplementation 'com.google.truth:truth:1.1.2'
     androidTestImplementation 'com.google.truth.extensions:truth-java8-extension:1.0.1'
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.googletest.firebase.perf.testapp.prod"
-apply from: '../../gradle/googleServices.gradle'

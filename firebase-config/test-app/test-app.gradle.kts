@@ -90,8 +90,4 @@ dependencies {
   androidTestImplementation(libs.truth)
 }
 
-extra["packageName"] = "com.google.firebase.testing.config"
-
-apply(from = "../../gradle/googleServices.gradle")
-
 apply<FirebaseTestLabPlugin>()

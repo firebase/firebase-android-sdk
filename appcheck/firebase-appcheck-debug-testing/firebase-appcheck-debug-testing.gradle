@@ -72,10 +72,3 @@ dependencies {
     androidTestImplementation 'junit:junit:4.13-beta-2'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.google.firebase.appcheck.debug.testing"
-apply from: '../../gradle/googleServices.gradle'
