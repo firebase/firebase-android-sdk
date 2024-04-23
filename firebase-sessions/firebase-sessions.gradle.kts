@@ -52,6 +52,10 @@ android {
   testOptions.unitTests.isIncludeAndroidResources = true
 }
 
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
+  kotlinOptions.jvmTarget = "1.8"
+}
+
 dependencies {
   api("com.google.firebase:firebase-common:20.4.2")
   api("com.google.firebase:firebase-common-ktx:20.4.2")

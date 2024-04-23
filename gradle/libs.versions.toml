@@ -7,10 +7,10 @@ coroutines = "1.6.4"
 dagger = "2.43.2"
 grpc = "1.57.2"
 javalite = "3.21.11"
-kotlin = "1.7.10"
+kotlin = "1.8.22"
 protoc = "3.21.11"
-robolectric = "4.10.3"
 truth = "1.4.2"
+robolectric = "4.12"
 protobufjavautil = "3.21.11"
 kotest = "5.5.5"
 quickcheck = "0.6"
@@ -31,7 +31,7 @@ autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autova
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
-errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.9.0" }
+errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.26.0" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
@@ -52,7 +52,7 @@ androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-
 androidx-test-runner = { module = "androidx.test:runner", version = "1.5.2" }
 junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-mockito-core = { module = "org.mockito:mockito-core", version = "2.28.2" }
+mockito-core = { module = "org.mockito:mockito-core", version = "5.2.0" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }

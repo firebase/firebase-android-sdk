@@ -34,7 +34,7 @@ protobuf {
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                java { }
+                java {}
             }
         }
     }
@@ -55,9 +55,14 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
     testOptions {
         unitTests {
             includeAndroidResources = true
+        }
+
+        unitTests.all {
+            jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
         }
     }
     lint {
@@ -117,8 +122,7 @@ dependencies {
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    testImplementation 'org.mockito:mockito-core:3.3.3'
-    testImplementation 'org.mockito:mockito-core:3.6.0'
+    testImplementation 'org.mockito:mockito-core:5.2.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
     androidTestImplementation "androidx.annotation:annotation:1.1.0"

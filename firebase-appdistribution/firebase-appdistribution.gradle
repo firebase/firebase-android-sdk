@@ -91,7 +91,7 @@ dependencies {
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-inline:3.4.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
     androidTestImplementation(project(":integ-testing")){

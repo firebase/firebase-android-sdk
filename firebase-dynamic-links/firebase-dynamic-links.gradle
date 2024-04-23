@@ -28,6 +28,10 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    buildFeatures {
+        aidl true
+    }
+
     namespace "com.google.firebase.dynamiclinks"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
@@ -42,6 +46,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
