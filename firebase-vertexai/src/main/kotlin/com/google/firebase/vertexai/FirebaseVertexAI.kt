@@ -60,7 +60,7 @@ class FirebaseVertexAI(
     systemInstruction: Content? = null,
     location: String = "us-central1"
   ): GenerativeModel {
-    if (location.isEmpty() || location.trim().isEmpty() || location.contains("/")) {
+    if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
     }
     return GenerativeModel(
