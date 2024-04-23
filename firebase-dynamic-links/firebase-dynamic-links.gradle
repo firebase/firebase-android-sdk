@@ -28,6 +28,10 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    buildFeatures {
+        aidl true
+    }
+
     namespace "com.google.firebase.dynamiclinks"
     compileSdkVersion project.compileSdkVersion
     defaultConfig {
