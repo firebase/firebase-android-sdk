@@ -50,7 +50,7 @@ android {
 dependencies {
     api(project(":firebase-common"))
     implementation(project(":firebase-components"))
-    implementation(project(":firebase-annotations"))
+    implementation("com.google.firebase:firebase-annotations:16.2.0")
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.coroutines.test)

@@ -43,7 +43,7 @@ android {
 }
 
 dependencies {
-  api(project(":firebase-annotations"))
+  api("com.google.firebase:firebase-annotations:16.2.0")
   implementation(libs.androidx.annotation)
   implementation(libs.errorprone.annotations)
 
