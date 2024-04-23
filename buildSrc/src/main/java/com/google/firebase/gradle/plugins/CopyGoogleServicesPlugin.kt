@@ -16,7 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.BaseExtension
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -61,7 +61,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
       val sourcePath =
         System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
 
-      val library = project.extensions.getByType<LibraryExtension>()
+      val library = project.extensions.getByType<BaseExtension>()
 
       val targetPackageLine = "\"package_name\": \"${library.namespace}"
       val packageLineRegex = Regex("\"package_name\":\\s+\".*\"")
