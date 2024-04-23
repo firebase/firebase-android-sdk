@@ -55,68 +55,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.apply<DackkaPlugin>()
     project.apply<GitSubmodulePlugin>()
 
-    val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project)
-
-    if (project.runningTestTask()) {
-      println("[test] applying google-services plugin")
-      project.plugins.apply("com.google.gms.google-services")
-
-      project.allprojects {
-        // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
-        tasks.configureEach {
-          if (name !== "copyRootGoogleServices") dependsOn(copyRootGoogleServices)
-        }
-      }
-    }
-
     project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
-  }
-
-  private fun Project.runningTestTask(): Boolean {
-    val testTasks = listOf("AndroidTest", "connectedCheck", "deviceCheck")
-
-    return gradle.startParameter.taskNames.any { testTasks.any(it::contains) }
-  }
-
-  /**
-   * Copies the root google-services.json into the project directory.
-   *
-   * If a path is provided via `FIREBASE_GOOGLE_SERVICES_PATH`, that will be used instead. The file
-   * will also be renamed to `google-services.json`, so provided files do *not* need to be properly
-   * named.
-   */
-  private fun registerCopyRootGoogleServicesTask(project: Project) =
-    project.tasks.register<Copy>("copyRootGoogleServices") {
-      val sourcePath =
-        System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
-
-      val targetPackageLine = "\"package_name\": \"${project.firebaseLibrary.namespace}"
-      val packageLineRegex = Regex("\"package_name\":\\s+\".*\"")
-
-      from(sourcePath)
-      into(project.projectDir)
-
-      rename { "google-services.json" }
-
-      if (fileIsMissingPackageName(sourcePath, targetPackageLine)) {
-        /**
-         * Modifies `google-services.json` such that all declared `package_name` entries are
-         * replaced with the project's namespace. This tricks the google services plugin into
-         * thinking that the target `package_name` is a Firebase App and allows connection to the
-         * Firebase project.
-         *
-         * Note that all events generated from that app will then go to whatever the first client
-         * entry is in the `google-services.json` file.
-         */
-        filter { it.replace(packageLineRegex, targetPackageLine) }
-      }
-    }
-
-  private fun fileIsMissingPackageName(path: String, targetPackageLine: String): Boolean {
-    val file = File(path)
-    if (!file.exists()) return true
-
-    return !file.readText().contains(targetPackageLine)
   }
 
   private fun setupAndroidLibraryExtension(project: Project) {
