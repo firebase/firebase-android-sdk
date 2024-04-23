@@ -60,21 +60,23 @@ task copyRootGoogleServices(type: Copy) {
 // Before the google-services plugin tries to process the JSON file, attempt
 // to copy it from the root project.
 afterEvaluate {
-    tasks.findByName('preBuild').dependsOn(copyRootGoogleServices)
-    tasks.findByName('ktfmtCheckMain')?.dependsOn(copyRootGoogleServices)
-    tasks.findByName('ktfmtCheckAndroidTest')?.dependsOn(copyRootGoogleServices)
-    tasks.findByName('ktfmtCheckTest')?.dependsOn(copyRootGoogleServices)
-    tasks.findByName('docStubs')?.dependsOn(copyRootGoogleServices)
+    subprojects.forEach {
+        it.tasks.findByName('preBuild')?.dependsOn(copyRootGoogleServices)
+        it.tasks.findByName('ktfmtCheckMain')?.dependsOn(copyRootGoogleServices)
+        it.tasks.findByName('ktfmtCheckAndroidTest')?.dependsOn(copyRootGoogleServices)
+        it.tasks.findByName('ktfmtCheckTest')?.dependsOn(copyRootGoogleServices)
+        it.tasks.findByName('docStubs')?.dependsOn(copyRootGoogleServices)
 
 
-    if (tasks.findByName("processReleaseGoogleServices")) {
-        processReleaseGoogleServices.dependsOn 'copyRootGoogleServices'
-    }
-    if (tasks.findByName("processDebugGoogleServices")) {
-        processDebugGoogleServices.dependsOn 'copyRootGoogleServices'
-    }
-    if (tasks.findByName("processAggressiveGoogleServices")) {
-        processAggressiveGoogleServices.dependsOn 'copyRootGoogleServices'
+        if (it.tasks.findByName("processReleaseGoogleServices")) {
+            processReleaseGoogleServices.dependsOn 'copyRootGoogleServices'
+        }
+        if (it.tasks.findByName("processDebugGoogleServices")) {
+            processDebugGoogleServices.dependsOn 'copyRootGoogleServices'
+        }
+        if (it.tasks.findByName("processAggressiveGoogleServices")) {
+            processAggressiveGoogleServices.dependsOn 'copyRootGoogleServices'
+        }
     }
 }
 
