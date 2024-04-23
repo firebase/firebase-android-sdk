@@ -130,6 +130,9 @@ class ResponseStoppedException(val response: GenerateContentResponse, cause: Thr
 class RequestTimeoutException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
+class InvalidLocationException(location: String, cause: Throwable? = null):
+  GoogleGenerativeAIException("Invalid location \"${location}\"", cause)
+
 /** Catch all case for exceptions not explicitly expected. */
 class UnknownException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
