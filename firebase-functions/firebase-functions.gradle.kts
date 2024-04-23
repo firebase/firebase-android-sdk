@@ -16,6 +16,7 @@ plugins {
     id("firebase-library")
     id("kotlin-android")
     id("firebase-vendor")
+    id("copy-google-services")
 }
 
 firebaseLibrary {
