@@ -1,7 +1,7 @@
 [versions]
 # javalite, protoc and protobufjavautil versions should be in sync while updating and
 # it needs to match the protobuf version which grpc has transitive dependency on.
-android-lint = "30.3.1"
+android-lint = "31.2.2"
 autovalue = "1.10.1"
 coroutines = "1.6.4"
 dagger = "2.43.2"
