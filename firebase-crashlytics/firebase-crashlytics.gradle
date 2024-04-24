@@ -84,6 +84,7 @@ dependencies {
     implementation 'com.google.android.datatransport:transport-backend-cct:3.1.9'
     implementation 'com.google.android.datatransport:transport-runtime:3.1.9'
     implementation(libs.androidx.annotation)
+    compileOnly(libs.errorprone.annotations)
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
 

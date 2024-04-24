@@ -101,7 +101,7 @@ dependencies {
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation 'com.google.dagger:dagger:2.27'
