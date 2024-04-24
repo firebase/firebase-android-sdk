@@ -14,6 +14,12 @@ import kotlinx.serialization.UseSerializers
 
 @Serializable public data class Int64variantsKey(val id: String)
 
+@Serializable public data class Nested1Key(val id: java.util.UUID)
+
+@Serializable public data class Nested2Key(val id: java.util.UUID)
+
+@Serializable public data class Nested3Key(val id: java.util.UUID)
+
 @Serializable
 public data class PrimaryKeyIsCompositeKey(val foo: Int, val bar: String, val baz: Boolean)
 

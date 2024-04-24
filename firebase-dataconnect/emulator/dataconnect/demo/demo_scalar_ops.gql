@@ -238,3 +238,143 @@ mutation InsertPrimaryKeyIsComposite($foo: Int!, $bar: String!, $baz: Boolean!, 
 query GetPrimaryKeyIsCompositeById($key: PrimaryKeyIsComposite_Key!) @auth(level: PUBLIC) {
   primaryKeyIsComposite(key: $key) { foo bar baz value }
 }
+
+mutation InsertNested1(
+    $nested1: Nested1_Key,
+    $nested2: Nested2_Key!,
+    $nested2NullableNonNull: Nested2_Key,
+    $nested2NullableNull: Nested2_Key,
+    $value: String!
+) @auth(level: PUBLIC) {
+  nested1_insert(data: {
+    nested1: $nested1,
+    nested2: $nested2,
+    nested2NullableNonNull: $nested2NullableNonNull,
+    nested2NullableNull: $nested2NullableNull,
+    value: $value
+  })
+}
+
+query GetNested1ByKey($key: Nested1_Key!) @auth(level: PUBLIC) {
+  nested1(key: $key) {
+    id
+    nested1 {
+      id
+      nested1 { id }
+      nested2 {
+        id
+        value
+        nested3 {
+          id
+          value
+        }
+        nested3NullableNull {
+          id
+          value
+        }
+        nested3NullableNonNull {
+          id
+          value
+        }
+      }
+      nested2NullableNull {
+        id
+        value
+        nested3 {
+          id
+          value
+        }
+        nested3NullableNull {
+          id
+          value
+        }
+        nested3NullableNonNull {
+          id
+          value
+        }
+      }
+      nested2NullableNonNull {
+        id
+        value
+        nested3 {
+          id
+          value
+        }
+        nested3NullableNull {
+          id
+          value
+        }
+        nested3NullableNonNull {
+          id
+          value
+        }
+      }
+    }
+    nested2 {
+      id
+      value
+      nested3 {
+        id
+        value
+      }
+      nested3NullableNull {
+        id
+        value
+      }
+      nested3NullableNonNull {
+        id
+        value
+      }
+    }
+    nested2NullableNonNull {
+      id
+      value
+      nested3 {
+        id
+        value
+      }
+      nested3NullableNull {
+        id
+        value
+      }
+      nested3NullableNonNull {
+        id
+        value
+      }
+    }
+    nested2NullableNull {
+      id
+      value
+      nested3 {
+        id
+        value
+      }
+      nested3NullableNull {
+        id
+        value
+      }
+      nested3NullableNonNull {
+        id
+        value
+      }
+    }
+  }
+}
+
+mutation InsertNested2(
+    $nested3: Nested3_Key!,
+    $nested3NullableNonNull: Nested3_Key,
+    $nested3NullableNull: Nested3_Key,
+    $value: String!
+) @auth(level: PUBLIC) {
+  nested2_insert(data: {
+    nested3: $nested3,
+    nested3NullableNonNull: $nested3NullableNonNull,
+    nested3NullableNull: $nested3NullableNull,
+    value: $value
+  })
+}
+
+mutation InsertNested3($value: String!) @auth(level: PUBLIC) {
+  nested3_insert(data: { value: $value })
+}

@@ -87,3 +87,22 @@ type PrimaryKeyIsComposite @table(key: ["foo", "bar", "baz"]) {
   baz: Boolean!
   value: String!
 }
+
+type Nested1 @table {
+  value: String!
+  nested1: Nested1
+  nested2: Nested2!
+  nested2NullableNull: Nested2
+  nested2NullableNonNull: Nested2!
+}
+
+type Nested2 @table {
+  value: String!
+  nested3: Nested3!
+  nested3NullableNull: Nested3
+  nested3NullableNonNull: Nested3!
+}
+
+type Nested3 @table {
+  value: String!
+}
