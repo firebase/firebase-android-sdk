@@ -35,7 +35,7 @@ android {
     compileSdk = targetSdkVersion
 
     defaultConfig {
-      minSdk = 16
+      minSdk = 21
       targetSdk = targetSdkVersion
       multiDexEnabled = true
       testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
