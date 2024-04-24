@@ -90,7 +90,7 @@ dependencies {
   implementation("com.google.android.material:material:1.9.0")
   implementation(libs.androidx.core)
 
-  androidTestImplementation("com.google.firebase:firebase-common:20.4.2")
+  androidTestImplementation("com.google.firebase:firebase-common:21.0.0")
   androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
