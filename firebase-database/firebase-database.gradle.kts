@@ -15,6 +15,7 @@
 plugins {
     id("firebase-library")
     id("kotlin-android")
+    id("copy-google-services")
 }
 
 firebaseLibrary {
@@ -93,7 +94,3 @@ dependencies {
     androidTestImplementation(libs.quickcheck)
     androidTestImplementation(libs.truth)
 }
-
-ext["packageName"] = "com.google.firebase.database"
-
-apply("../gradle/googleServices.gradle")
