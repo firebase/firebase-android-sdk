@@ -67,7 +67,7 @@ public class FirebaseDatabase {
    * @return A FirebaseDatabase instance.
    */
   @NonNull
-  public static FirebaseDatabase getXInstance(@NonNull String url) {
+  public static FirebaseDatabase getInstance(@NonNull String url) {
     FirebaseApp instance = FirebaseApp.getInstance();
     if (instance == null) {
       throw new DatabaseException("You must call FirebaseApp.initialize() first.");
