@@ -125,7 +125,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val queryResult = connector.getUuidvariantsById.execute(id)
     assertThat(queryResult.data.uUIDVariants)
       .isEqualTo(
-        GetUuidvariantsByIdQuery.Data.Uuidvariants(
+        GetUuidvariantsByIdQuery.Data.UUidvariants(
           nonNullValue = nonNullValue,
           nullableWithNullValue = nullableWithNullValue,
           nullableWithNonNullValue = null,

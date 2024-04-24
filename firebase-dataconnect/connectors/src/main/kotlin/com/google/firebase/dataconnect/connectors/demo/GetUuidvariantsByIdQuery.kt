@@ -23,10 +23,10 @@ public interface GetUuidvariantsByIdQuery :
   @Serializable public data class Variables(val id: String)
 
   @Serializable
-  public data class Data(val uUIDVariants: Uuidvariants?) {
+  public data class Data(val uUIDVariants: UUidvariants?) {
 
     @Serializable
-    public data class Uuidvariants(
+    public data class UUidvariants(
       val nonNullValue: java.util.UUID,
       val nullableWithNullValue: java.util.UUID?,
       val nullableWithNonNullValue: java.util.UUID?,

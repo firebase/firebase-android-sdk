@@ -23,9 +23,9 @@ public interface GetFoosByBarQuery :
   @Serializable public data class Variables(val `as`: String?)
 
   @Serializable
-  public data class Data(val foos: List<Foo>) {
+  public data class Data(val foos: List<FoosItem>) {
 
-    @Serializable public data class Foo(val id: String)
+    @Serializable public data class FoosItem(val id: String)
   }
 
   public companion object {

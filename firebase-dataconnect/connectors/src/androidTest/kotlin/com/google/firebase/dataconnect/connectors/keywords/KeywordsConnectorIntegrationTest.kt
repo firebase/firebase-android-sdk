@@ -92,9 +92,9 @@ class KeywordsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
 
     assertThat(queryResult.data.foos)
       .containsExactly(
-        GetFoosByBarQuery.Data.Foo(id1),
-        GetFoosByBarQuery.Data.Foo(id2),
-        GetFoosByBarQuery.Data.Foo(id3),
+        GetFoosByBarQuery.Data.FoosItem(id1),
+        GetFoosByBarQuery.Data.FoosItem(id2),
+        GetFoosByBarQuery.Data.FoosItem(id3),
       )
   }
 
