@@ -55,8 +55,8 @@ tasks.withType(Test) {
 
 dependencies {
     api(project(":firebase-firestore"))
-    api(project(":firebase-common"))
-    api(project(":firebase-common:ktx"))
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
 
     implementation("com.google.firebase:firebase-components:17.1.5")
 
