@@ -25,6 +25,7 @@ plugins {
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
   id("com.google.firebase.firebase-perf")
+  id("copy-google-services")
 }
 
 android {
@@ -60,10 +61,6 @@ android {
   buildFeatures { viewBinding = true }
 }
 
-kotlin {
-  jvmToolchain(8)
-}
-
 dependencies {
   if (project.hasProperty("useReleasedVersions")) {
     implementation(platform("com.google.firebase:firebase-bom:latest.release"))
@@ -95,10 +92,6 @@ dependencies {
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
-
-extra["packageName"] = "com.google.firebase.testing.sessions"
-
-apply(from = "../../gradle/googleServices.gradle")
 
 apply<FirebaseTestLabPlugin>()
 

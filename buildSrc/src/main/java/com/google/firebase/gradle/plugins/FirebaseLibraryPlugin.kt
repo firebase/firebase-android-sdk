@@ -36,6 +36,7 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+// TODO() maybe rename to FirebaseAndroidLibraryPlugin; makes more sense alongside java one
 class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
@@ -48,10 +49,12 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
       kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
+      kotlinOptions.jvmTarget = "1.8"
     }
 
     project.apply<DackkaPlugin>()
     project.apply<GitSubmodulePlugin>()
+
     project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
   }
 
