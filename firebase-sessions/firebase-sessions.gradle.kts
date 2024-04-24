@@ -31,10 +31,6 @@ firebaseLibrary {
   publishReleaseNotes = false
 }
 
-kapt {
- // correctErrorTypes = true
-}
-
 android {
   val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
