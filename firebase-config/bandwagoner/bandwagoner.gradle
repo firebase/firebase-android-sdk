@@ -17,6 +17,7 @@
 apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'copy-google-services'
 
 // Uncomment this line after adding a google-services.json file to the project.
 // apply plugin: 'com.google.gms.google-services'
@@ -112,6 +113,3 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-idling-resource:3.2.0'
 }
-
-ext.packageName = "com.googletest.firebase.remoteconfig.bandwagoner"
-apply from: '../../gradle/googleServices.gradle'

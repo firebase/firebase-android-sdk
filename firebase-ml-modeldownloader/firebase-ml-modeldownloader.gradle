@@ -17,6 +17,7 @@ plugins {
     id("kotlin-android")
     id 'firebase-vendor'
     id 'com.google.protobuf'
+    id("copy-google-services")
 }
 
 firebaseLibrary {
@@ -131,10 +132,3 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.13.1'
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.google.firebase.ml.modeldownloader"
-apply from: '../gradle/googleServices.gradle'
