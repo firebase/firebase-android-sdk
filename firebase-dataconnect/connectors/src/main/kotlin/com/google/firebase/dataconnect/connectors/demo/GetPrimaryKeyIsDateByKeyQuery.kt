@@ -17,42 +17,42 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetPrimaryKeyIsStringByIdQuery :
+public interface GetPrimaryKeyIsDateByKeyQuery :
   GeneratedQuery<
-    DemoConnector, GetPrimaryKeyIsStringByIdQuery.Data, GetPrimaryKeyIsStringByIdQuery.Variables
+    DemoConnector, GetPrimaryKeyIsDateByKeyQuery.Data, GetPrimaryKeyIsDateByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsStringKey)
+  @Serializable public data class Variables(val key: PrimaryKeyIsDateKey)
 
   @Serializable
-  public data class Data(val primaryKeyIsString: PrimaryKeyIsString?) {
+  public data class Data(val primaryKeyIsDate: PrimaryKeyIsDate?) {
 
-    @Serializable public data class PrimaryKeyIsString(val id: String, val value: String)
+    @Serializable public data class PrimaryKeyIsDate(val foo: java.util.Date, val value: String)
   }
 
   public companion object {
     @Suppress("ConstPropertyName")
-    public const val operationName: String = "GetPrimaryKeyIsStringById"
+    public const val operationName: String = "GetPrimaryKeyIsDateByKey"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetPrimaryKeyIsStringByIdQuery.ref(
-  key: PrimaryKeyIsStringKey
-): QueryRef<GetPrimaryKeyIsStringByIdQuery.Data, GetPrimaryKeyIsStringByIdQuery.Variables> =
-  ref(GetPrimaryKeyIsStringByIdQuery.Variables(key = key))
+public fun GetPrimaryKeyIsDateByKeyQuery.ref(
+  key: PrimaryKeyIsDateKey
+): QueryRef<GetPrimaryKeyIsDateByKeyQuery.Data, GetPrimaryKeyIsDateByKeyQuery.Variables> =
+  ref(GetPrimaryKeyIsDateByKeyQuery.Variables(key = key))
 
-public suspend fun GetPrimaryKeyIsStringByIdQuery.execute(
-  key: PrimaryKeyIsStringKey
-): QueryResult<GetPrimaryKeyIsStringByIdQuery.Data, GetPrimaryKeyIsStringByIdQuery.Variables> =
+public suspend fun GetPrimaryKeyIsDateByKeyQuery.execute(
+  key: PrimaryKeyIsDateKey
+): QueryResult<GetPrimaryKeyIsDateByKeyQuery.Data, GetPrimaryKeyIsDateByKeyQuery.Variables> =
   ref(key = key).execute()
 
-public fun GetPrimaryKeyIsStringByIdQuery.flow(
-  key: PrimaryKeyIsStringKey
+public fun GetPrimaryKeyIsDateByKeyQuery.flow(
+  key: PrimaryKeyIsDateKey
 ): Flow<
   QuerySubscriptionResult<
-    GetPrimaryKeyIsStringByIdQuery.Data, GetPrimaryKeyIsStringByIdQuery.Variables
+    GetPrimaryKeyIsDateByKeyQuery.Data, GetPrimaryKeyIsDateByKeyQuery.Variables
   >
 > = ref(key = key).subscribe().flow
 

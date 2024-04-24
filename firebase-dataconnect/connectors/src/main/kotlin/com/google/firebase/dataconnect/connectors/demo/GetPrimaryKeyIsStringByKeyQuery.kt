@@ -17,49 +17,44 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetDateVariantsByIdQuery :
-  GeneratedQuery<DemoConnector, GetDateVariantsByIdQuery.Data, GetDateVariantsByIdQuery.Variables> {
+public interface GetPrimaryKeyIsStringByKeyQuery :
+  GeneratedQuery<
+    DemoConnector, GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables
+  > {
 
-  @Serializable public data class Variables(val id: String)
+  @Serializable public data class Variables(val key: PrimaryKeyIsStringKey)
 
   @Serializable
-  public data class Data(val dateVariants: DateVariants?) {
+  public data class Data(val primaryKeyIsString: PrimaryKeyIsString?) {
 
-    @Serializable
-    public data class DateVariants(
-      val nonNullValue: java.util.Date,
-      val nullableWithNullValue: java.util.Date?,
-      val nullableWithNonNullValue: java.util.Date?,
-      val minValue: java.util.Date?,
-      val maxValue: java.util.Date?,
-      val nonZeroTime: java.util.Date?,
-      val emptyList: List<java.util.Date>,
-      val nonEmptyList: List<java.util.Date>
-    )
+    @Serializable public data class PrimaryKeyIsString(val id: String, val value: String)
   }
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "GetDateVariantsById"
+    @Suppress("ConstPropertyName")
+    public const val operationName: String = "GetPrimaryKeyIsStringByKey"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetDateVariantsByIdQuery.ref(
-  id: String
-): QueryRef<GetDateVariantsByIdQuery.Data, GetDateVariantsByIdQuery.Variables> =
-  ref(GetDateVariantsByIdQuery.Variables(id = id))
+public fun GetPrimaryKeyIsStringByKeyQuery.ref(
+  key: PrimaryKeyIsStringKey
+): QueryRef<GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables> =
+  ref(GetPrimaryKeyIsStringByKeyQuery.Variables(key = key))
 
-public suspend fun GetDateVariantsByIdQuery.execute(
-  id: String
-): QueryResult<GetDateVariantsByIdQuery.Data, GetDateVariantsByIdQuery.Variables> =
-  ref(id = id).execute()
+public suspend fun GetPrimaryKeyIsStringByKeyQuery.execute(
+  key: PrimaryKeyIsStringKey
+): QueryResult<GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables> =
+  ref(key = key).execute()
 
-public fun GetDateVariantsByIdQuery.flow(
-  id: String
+public fun GetPrimaryKeyIsStringByKeyQuery.flow(
+  key: PrimaryKeyIsStringKey
 ): Flow<
-  QuerySubscriptionResult<GetDateVariantsByIdQuery.Data, GetDateVariantsByIdQuery.Variables>
-> = ref(id = id).subscribe().flow
+  QuerySubscriptionResult<
+    GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables
+  >
+> = ref(key = key).subscribe().flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

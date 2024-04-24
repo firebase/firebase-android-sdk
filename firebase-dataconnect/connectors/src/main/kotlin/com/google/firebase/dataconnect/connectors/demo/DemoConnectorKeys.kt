@@ -1,9 +1,10 @@
 @file:Suppress("SpellCheckingInspection")
-@file:UseSerializers(DateSerializer::class, UUIDSerializer::class)
+@file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
@@ -23,9 +24,15 @@ import kotlinx.serialization.UseSerializers
 @Serializable
 public data class PrimaryKeyIsCompositeKey(val foo: Int, val bar: String, val baz: Boolean)
 
+@Serializable public data class PrimaryKeyIsDateKey(val foo: java.util.Date)
+
+@Serializable public data class PrimaryKeyIsFloatKey(val foo: Double)
+
 @Serializable public data class PrimaryKeyIsIntKey(val foo: Int)
 
 @Serializable public data class PrimaryKeyIsStringKey(val id: String)
+
+@Serializable public data class PrimaryKeyIsTimestampKey(val foo: com.google.firebase.Timestamp)
 
 @Serializable public data class PrimaryKeyIsUuidKey(val id: java.util.UUID)
 

@@ -153,6 +153,7 @@ mutation InsertDateVariants(
   $nullableWithNonNullValue: Date,
   $minValue: Date!,
   $maxValue: Date!,
+  $nonZeroTime: Date!,
   $emptyList: [Date!],
   $nonEmptyList: [Date!]
 ) @auth(level: PUBLIC) {
@@ -163,6 +164,7 @@ mutation InsertDateVariants(
     nullableWithNonNullValue: $nullableWithNonNullValue,
     minValue: $minValue,
     maxValue: $maxValue,
+    nonZeroTime: $nonZeroTime,
     emptyList: $emptyList,
     nonEmptyList: $nonEmptyList
   })
@@ -175,6 +177,7 @@ query GetDateVariantsById($id: String!) @auth(level: PUBLIC) {
     nullableWithNonNullValue
     minValue
     maxValue
+    nonZeroTime
     emptyList
     nonEmptyList
   }
@@ -195,7 +198,7 @@ mutation InsertPrimaryKeyIsString($id: String!, $value: String!) @auth(level: PU
   })
 }
 
-query GetPrimaryKeyIsStringById($key: PrimaryKeyIsString_Key!) @auth(level: PUBLIC) {
+query GetPrimaryKeyIsStringByKey($key: PrimaryKeyIsString_Key!) @auth(level: PUBLIC) {
   primaryKeyIsString(key: $key) { id value }
 }
 
@@ -206,7 +209,7 @@ mutation InsertPrimaryKeyIsUUID($id: UUID!, $value: String!) @auth(level: PUBLIC
   })
 }
 
-query GetPrimaryKeyIsUUIDById($key: PrimaryKeyIsUUID_Key!) @auth(level: PUBLIC) {
+query GetPrimaryKeyIsUUIDByKey($key: PrimaryKeyIsUUID_Key!) @auth(level: PUBLIC) {
   primaryKeyIsUUID(key: $key) { id value }
 }
 
@@ -222,8 +225,56 @@ mutation InsertPrimaryKeyIsInt($foo: Int!, $value: String!) @auth(level: PUBLIC)
   })
 }
 
-query GetPrimaryKeyIsIntById($key: PrimaryKeyIsInt_Key!) @auth(level: PUBLIC) {
+query GetPrimaryKeyIsIntByKey($key: PrimaryKeyIsInt_Key!) @auth(level: PUBLIC) {
   primaryKeyIsInt(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsFloat($foo: Float!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Float values are generated
+  # using a pseudo-random number generator, which has a non-zero chance of conflicts. In the
+  # unlikely case of an value being used that already exists, it will just be replaced. There is a
+  # minuscule chance that the test that generated the conflicting ID is running concurrently, but
+  # that chance is so small that I'm choosing to ignore it.
+  primaryKeyIsFloat_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsFloatByKey($key: PrimaryKeyIsFloat_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsFloat(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsDate($foo: Date!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Date values are generated
+  # using a pseudo-random number generator, which has a non-zero chance of conflicts. In the
+  # unlikely case of an value being used that already exists, it will just be replaced. There is a
+  # minuscule chance that the test that generated the conflicting ID is running concurrently, but
+  # that chance is so small that I'm choosing to ignore it.
+  primaryKeyIsDate_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsDateByKey($key: PrimaryKeyIsDate_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsDate(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsTimestamp($foo: Timestamp!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Timestamp values are
+  # generated using a pseudo-random number generator, which has a non-zero chance of conflicts. In
+  # the unlikely case of an value being used that already exists, it will just be replaced. There is
+  # a minuscule chance that the test that generated the conflicting ID is running concurrently, but
+  # that chance is so small that I'm choosing to ignore it.
+  primaryKeyIsTimestamp_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsTimestampByKey($key: PrimaryKeyIsTimestamp_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsTimestamp(key: $key) { foo value }
 }
 
 mutation InsertPrimaryKeyIsComposite($foo: Int!, $bar: String!, $baz: Boolean!, $value: String!) @auth(level: PUBLIC) {
@@ -235,7 +286,7 @@ mutation InsertPrimaryKeyIsComposite($foo: Int!, $bar: String!, $baz: Boolean!, 
   })
 }
 
-query GetPrimaryKeyIsCompositeById($key: PrimaryKeyIsComposite_Key!) @auth(level: PUBLIC) {
+query GetPrimaryKeyIsCompositeByKey($key: PrimaryKeyIsComposite_Key!) @auth(level: PUBLIC) {
   primaryKeyIsComposite(key: $key) { foo bar baz value }
 }
 

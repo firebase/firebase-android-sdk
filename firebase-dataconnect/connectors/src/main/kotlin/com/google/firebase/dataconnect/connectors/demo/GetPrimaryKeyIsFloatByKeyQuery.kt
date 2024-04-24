@@ -17,41 +17,43 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetPrimaryKeyIsUuidbyIdQuery :
+public interface GetPrimaryKeyIsFloatByKeyQuery :
   GeneratedQuery<
-    DemoConnector, GetPrimaryKeyIsUuidbyIdQuery.Data, GetPrimaryKeyIsUuidbyIdQuery.Variables
+    DemoConnector, GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsUuidKey)
+  @Serializable public data class Variables(val key: PrimaryKeyIsFloatKey)
 
   @Serializable
-  public data class Data(val primaryKeyIsUUID: PrimaryKeyIsUuid?) {
+  public data class Data(val primaryKeyIsFloat: PrimaryKeyIsFloat?) {
 
-    @Serializable public data class PrimaryKeyIsUuid(val id: java.util.UUID, val value: String)
+    @Serializable public data class PrimaryKeyIsFloat(val foo: Double, val value: String)
   }
 
   public companion object {
     @Suppress("ConstPropertyName")
-    public const val operationName: String = "GetPrimaryKeyIsUUIDById"
+    public const val operationName: String = "GetPrimaryKeyIsFloatByKey"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetPrimaryKeyIsUuidbyIdQuery.ref(
-  key: PrimaryKeyIsUuidKey
-): QueryRef<GetPrimaryKeyIsUuidbyIdQuery.Data, GetPrimaryKeyIsUuidbyIdQuery.Variables> =
-  ref(GetPrimaryKeyIsUuidbyIdQuery.Variables(key = key))
+public fun GetPrimaryKeyIsFloatByKeyQuery.ref(
+  key: PrimaryKeyIsFloatKey
+): QueryRef<GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables> =
+  ref(GetPrimaryKeyIsFloatByKeyQuery.Variables(key = key))
 
-public suspend fun GetPrimaryKeyIsUuidbyIdQuery.execute(
-  key: PrimaryKeyIsUuidKey
-): QueryResult<GetPrimaryKeyIsUuidbyIdQuery.Data, GetPrimaryKeyIsUuidbyIdQuery.Variables> =
+public suspend fun GetPrimaryKeyIsFloatByKeyQuery.execute(
+  key: PrimaryKeyIsFloatKey
+): QueryResult<GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables> =
   ref(key = key).execute()
 
-public fun GetPrimaryKeyIsUuidbyIdQuery.flow(
-  key: PrimaryKeyIsUuidKey
+public fun GetPrimaryKeyIsFloatByKeyQuery.flow(
+  key: PrimaryKeyIsFloatKey
 ): Flow<
-  QuerySubscriptionResult<GetPrimaryKeyIsUuidbyIdQuery.Data, GetPrimaryKeyIsUuidbyIdQuery.Variables>
+  QuerySubscriptionResult<
+    GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables
+  >
 > = ref(key = key).subscribe().flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no

@@ -3,55 +3,55 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.QueryResult
-import com.google.firebase.dataconnect.QuerySubscriptionResult
-import com.google.firebase.dataconnect.generated.GeneratedQuery
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetPrimaryKeyIsIntByIdQuery :
-  GeneratedQuery<
-    DemoConnector, GetPrimaryKeyIsIntByIdQuery.Data, GetPrimaryKeyIsIntByIdQuery.Variables
+public interface InsertPrimaryKeyIsTimestampMutation :
+  GeneratedMutation<
+    DemoConnector,
+    InsertPrimaryKeyIsTimestampMutation.Data,
+    InsertPrimaryKeyIsTimestampMutation.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsIntKey)
+  @Serializable
+  public data class Variables(val foo: com.google.firebase.Timestamp, val value: String)
 
   @Serializable
-  public data class Data(val primaryKeyIsInt: PrimaryKeyIsInt?) {
-
-    @Serializable public data class PrimaryKeyIsInt(val foo: Int, val value: String)
-  }
+  public data class Data(
+    @SerialName("primaryKeyIsTimestamp_upsert") val key: PrimaryKeyIsTimestampKey
+  )
 
   public companion object {
-    @Suppress("ConstPropertyName") public const val operationName: String = "GetPrimaryKeyIsIntById"
+    @Suppress("ConstPropertyName")
+    public const val operationName: String = "InsertPrimaryKeyIsTimestamp"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetPrimaryKeyIsIntByIdQuery.ref(
-  key: PrimaryKeyIsIntKey
-): QueryRef<GetPrimaryKeyIsIntByIdQuery.Data, GetPrimaryKeyIsIntByIdQuery.Variables> =
-  ref(GetPrimaryKeyIsIntByIdQuery.Variables(key = key))
+public fun InsertPrimaryKeyIsTimestampMutation.ref(
+  foo: com.google.firebase.Timestamp,
+  value: String
+): MutationRef<
+  InsertPrimaryKeyIsTimestampMutation.Data, InsertPrimaryKeyIsTimestampMutation.Variables
+> = ref(InsertPrimaryKeyIsTimestampMutation.Variables(foo = foo, value = value))
 
-public suspend fun GetPrimaryKeyIsIntByIdQuery.execute(
-  key: PrimaryKeyIsIntKey
-): QueryResult<GetPrimaryKeyIsIntByIdQuery.Data, GetPrimaryKeyIsIntByIdQuery.Variables> =
-  ref(key = key).execute()
-
-public fun GetPrimaryKeyIsIntByIdQuery.flow(
-  key: PrimaryKeyIsIntKey
-): Flow<
-  QuerySubscriptionResult<GetPrimaryKeyIsIntByIdQuery.Data, GetPrimaryKeyIsIntByIdQuery.Variables>
-> = ref(key = key).subscribe().flow
+public suspend fun InsertPrimaryKeyIsTimestampMutation.execute(
+  foo: com.google.firebase.Timestamp,
+  value: String
+): MutationResult<
+  InsertPrimaryKeyIsTimestampMutation.Data, InsertPrimaryKeyIsTimestampMutation.Variables
+> = ref(foo = foo, value = value).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

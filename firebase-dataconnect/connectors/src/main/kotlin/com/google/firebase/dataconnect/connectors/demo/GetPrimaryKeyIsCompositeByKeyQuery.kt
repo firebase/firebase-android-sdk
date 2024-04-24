@@ -17,11 +17,11 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetPrimaryKeyIsCompositeByIdQuery :
+public interface GetPrimaryKeyIsCompositeByKeyQuery :
   GeneratedQuery<
     DemoConnector,
-    GetPrimaryKeyIsCompositeByIdQuery.Data,
-    GetPrimaryKeyIsCompositeByIdQuery.Variables
+    GetPrimaryKeyIsCompositeByKeyQuery.Data,
+    GetPrimaryKeyIsCompositeByKeyQuery.Variables
   > {
 
   @Serializable public data class Variables(val key: PrimaryKeyIsCompositeKey)
@@ -40,28 +40,28 @@ public interface GetPrimaryKeyIsCompositeByIdQuery :
 
   public companion object {
     @Suppress("ConstPropertyName")
-    public const val operationName: String = "GetPrimaryKeyIsCompositeById"
+    public const val operationName: String = "GetPrimaryKeyIsCompositeByKey"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetPrimaryKeyIsCompositeByIdQuery.ref(
+public fun GetPrimaryKeyIsCompositeByKeyQuery.ref(
   key: PrimaryKeyIsCompositeKey
-): QueryRef<GetPrimaryKeyIsCompositeByIdQuery.Data, GetPrimaryKeyIsCompositeByIdQuery.Variables> =
-  ref(GetPrimaryKeyIsCompositeByIdQuery.Variables(key = key))
+): QueryRef<GetPrimaryKeyIsCompositeByKeyQuery.Data, GetPrimaryKeyIsCompositeByKeyQuery.Variables> =
+  ref(GetPrimaryKeyIsCompositeByKeyQuery.Variables(key = key))
 
-public suspend fun GetPrimaryKeyIsCompositeByIdQuery.execute(
+public suspend fun GetPrimaryKeyIsCompositeByKeyQuery.execute(
   key: PrimaryKeyIsCompositeKey
 ): QueryResult<
-  GetPrimaryKeyIsCompositeByIdQuery.Data, GetPrimaryKeyIsCompositeByIdQuery.Variables
+  GetPrimaryKeyIsCompositeByKeyQuery.Data, GetPrimaryKeyIsCompositeByKeyQuery.Variables
 > = ref(key = key).execute()
 
-public fun GetPrimaryKeyIsCompositeByIdQuery.flow(
+public fun GetPrimaryKeyIsCompositeByKeyQuery.flow(
   key: PrimaryKeyIsCompositeKey
 ): Flow<
   QuerySubscriptionResult<
-    GetPrimaryKeyIsCompositeByIdQuery.Data, GetPrimaryKeyIsCompositeByIdQuery.Variables
+    GetPrimaryKeyIsCompositeByKeyQuery.Data, GetPrimaryKeyIsCompositeByKeyQuery.Variables
   >
 > = ref(key = key).subscribe().flow
 

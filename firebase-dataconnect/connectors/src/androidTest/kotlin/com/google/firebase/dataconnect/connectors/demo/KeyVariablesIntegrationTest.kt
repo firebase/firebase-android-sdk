@@ -31,9 +31,9 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val key = connector.insertPrimaryKeyIsString.execute(id = id, value = value).data.key
 
-    val queryResult = connector.getPrimaryKeyIsStringById.execute(key)
+    val queryResult = connector.getPrimaryKeyIsStringByKey.execute(key)
     assertThat(queryResult.data.primaryKeyIsString)
-      .isEqualTo(GetPrimaryKeyIsStringByIdQuery.Data.PrimaryKeyIsString(id = id, value = value))
+      .isEqualTo(GetPrimaryKeyIsStringByKeyQuery.Data.PrimaryKeyIsString(id = id, value = value))
   }
 
   @Test
@@ -43,9 +43,9 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val key = connector.insertPrimaryKeyIsUuid.execute(id = id, value = value).data.key
 
-    val queryResult = connector.getPrimaryKeyIsUuidbyId.execute(key)
+    val queryResult = connector.getPrimaryKeyIsUuidbyKey.execute(key)
     assertThat(queryResult.data.primaryKeyIsUUID)
-      .isEqualTo(GetPrimaryKeyIsUuidbyIdQuery.Data.PrimaryKeyIsUuid(id = id, value = value))
+      .isEqualTo(GetPrimaryKeyIsUuidbyKeyQuery.Data.PrimaryKeyIsUuid(id = id, value = value))
   }
 
   @Test
@@ -55,9 +55,50 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val key = connector.insertPrimaryKeyIsInt.execute(foo = id, value = value).data.key
 
-    val queryResult = connector.getPrimaryKeyIsIntById.execute(key)
+    val queryResult = connector.getPrimaryKeyIsIntByKey.execute(key)
     assertThat(queryResult.data.primaryKeyIsInt)
-      .isEqualTo(GetPrimaryKeyIsIntByIdQuery.Data.PrimaryKeyIsInt(foo = id, value = value))
+      .isEqualTo(GetPrimaryKeyIsIntByKeyQuery.Data.PrimaryKeyIsInt(foo = id, value = value))
+  }
+
+  @Test
+  fun primaryKeyIsFloat() = runTest {
+    val id = Random.nextDouble()
+    val value = randomAlphanumericString()
+
+    val key = connector.insertPrimaryKeyIsFloat.execute(foo = id, value = value).data.key
+
+    val queryResult = connector.getPrimaryKeyIsFloatByKey.execute(key)
+    assertThat(queryResult.data.primaryKeyIsFloat)
+      .isEqualTo(GetPrimaryKeyIsFloatByKeyQuery.Data.PrimaryKeyIsFloat(foo = id, value = value))
+  }
+
+  @Test
+  fun primaryKeyIsDate() = runTest {
+    val id = randomDate()
+    val value = randomAlphanumericString()
+
+    val key = connector.insertPrimaryKeyIsDate.execute(foo = id, value = value).data.key
+
+    val queryResult = connector.getPrimaryKeyIsDateByKey.execute(key)
+    assertThat(queryResult.data.primaryKeyIsDate)
+      .isEqualTo(GetPrimaryKeyIsDateByKeyQuery.Data.PrimaryKeyIsDate(foo = id, value = value))
+  }
+
+  @Test
+  fun primaryKeyIsTimestamp() = runTest {
+    val id = randomTimestamp()
+    val value = randomAlphanumericString()
+
+    val key = connector.insertPrimaryKeyIsTimestamp.execute(foo = id, value = value).data.key
+
+    val queryResult = connector.getPrimaryKeyIsTimestampByKey.execute(key)
+    assertThat(queryResult.data.primaryKeyIsTimestamp)
+      .isEqualTo(
+        GetPrimaryKeyIsTimestampByKeyQuery.Data.PrimaryKeyIsTimestamp(
+          foo = id.withMicrosecondPrecision(),
+          value = value
+        )
+      )
   }
 
   @Test
@@ -73,10 +114,10 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
         .data
         .key
 
-    val queryResult = connector.getPrimaryKeyIsCompositeById.execute(key)
+    val queryResult = connector.getPrimaryKeyIsCompositeByKey.execute(key)
     assertThat(queryResult.data.primaryKeyIsComposite)
       .isEqualTo(
-        GetPrimaryKeyIsCompositeByIdQuery.Data.PrimaryKeyIsComposite(
+        GetPrimaryKeyIsCompositeByKeyQuery.Data.PrimaryKeyIsComposite(
           foo = foo,
           bar = bar,
           baz = baz,

@@ -29,6 +29,7 @@ public interface InsertDateVariantsMutation :
     val nullableWithNonNullValue: java.util.Date?,
     val minValue: java.util.Date,
     val maxValue: java.util.Date,
+    val nonZeroTime: java.util.Date,
     val emptyList: List<java.util.Date>,
     val nonEmptyList: List<java.util.Date>
   )
@@ -49,6 +50,7 @@ public fun InsertDateVariantsMutation.ref(
   nullableWithNonNullValue: java.util.Date?,
   minValue: java.util.Date,
   maxValue: java.util.Date,
+  nonZeroTime: java.util.Date,
   emptyList: List<java.util.Date>,
   nonEmptyList: List<java.util.Date>
 ): MutationRef<InsertDateVariantsMutation.Data, InsertDateVariantsMutation.Variables> =
@@ -60,6 +62,7 @@ public fun InsertDateVariantsMutation.ref(
       nullableWithNonNullValue = nullableWithNonNullValue,
       minValue = minValue,
       maxValue = maxValue,
+      nonZeroTime = nonZeroTime,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )
@@ -72,6 +75,7 @@ public suspend fun InsertDateVariantsMutation.execute(
   nullableWithNonNullValue: java.util.Date?,
   minValue: java.util.Date,
   maxValue: java.util.Date,
+  nonZeroTime: java.util.Date,
   emptyList: List<java.util.Date>,
   nonEmptyList: List<java.util.Date>
 ): MutationResult<InsertDateVariantsMutation.Data, InsertDateVariantsMutation.Variables> =
@@ -82,6 +86,7 @@ public suspend fun InsertDateVariantsMutation.execute(
       nullableWithNonNullValue = nullableWithNonNullValue,
       minValue = minValue,
       maxValue = maxValue,
+      nonZeroTime = nonZeroTime,
       emptyList = emptyList,
       nonEmptyList = nonEmptyList
     )

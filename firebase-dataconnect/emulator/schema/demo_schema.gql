@@ -47,6 +47,7 @@ type DateVariants @table {
   nullableWithNonNullValue: Date
   minValue: Date
   maxValue: Date
+  nonZeroTime: Date
   emptyList: [Date!]
   nonEmptyList: [Date!]
 }
@@ -71,13 +72,28 @@ type PrimaryKeyIsString @table {
   value: String!
 }
 
+type PrimaryKeyIsInt @table(key: ["foo"]) {
+  foo: Int!
+  value: String!
+}
+
+type PrimaryKeyIsFloat @table(key: ["foo"]) {
+  foo: Float!
+  value: String!
+}
+
 type PrimaryKeyIsUUID @table {
   id: UUID!
   value: String!
 }
 
-type PrimaryKeyIsInt @table(key: ["foo"]) {
-  foo: Int!
+type PrimaryKeyIsDate @table(key: ["foo"]) {
+  foo: Date!
+  value: String!
+}
+
+type PrimaryKeyIsTimestamp @table(key: ["foo"]) {
+  foo: Timestamp!
   value: String!
 }
 

@@ -17,11 +17,10 @@ package com.google.firebase.dataconnect.connectors.demo
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.randomAlphanumericString
-import java.text.SimpleDateFormat
+import com.google.firebase.dataconnect.connectors.demo.testutil.*
+import com.google.firebase.dataconnect.testutil.*
+import java.util.Calendar
 import java.util.Date
-import java.util.Locale
 import java.util.UUID
 import kotlin.reflect.full.memberProperties
 import kotlinx.coroutines.test.*
@@ -138,16 +137,19 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun dateVariantsInVariables() = runTest {
     val id = randomAlphanumericString()
+    val dateWithNonZeroTime =
+      Calendar.getInstance().apply { set(2024, Calendar.MAY, 23, 11, 12, 13) }.time
 
     connector.insertDateVariants.execute(
       id = id,
-      nonNullValue = dateFromString("2024-04-26"),
+      nonNullValue = "2024-04-26".toDate(),
       nullableWithNullValue = null,
-      nullableWithNonNullValue = dateFromString("2024-05-19"),
-      minValue = dateFromString("0001-01-01"),
-      maxValue = dateFromString("9999-12-31"),
+      nullableWithNonNullValue = "2024-05-19".toDate(),
+      minValue = "0001-01-01".toDate(),
+      maxValue = "9999-12-31".toDate(),
+      nonZeroTime = dateWithNonZeroTime,
       emptyList = emptyList(),
-      nonEmptyList = listOf("1234-05-19", "5678-12-31").map(::dateFromString)
+      nonEmptyList = listOf("1234-05-19", "5678-12-31").map(String::toDate)
     )
 
     val queryRef = connector.getDateVariantsById.ref(id).withStringData()
@@ -160,6 +162,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNonNullValue = "2024-05-19",
           minValue = "0001-01-01",
           maxValue = "9999-12-31",
+          nonZeroTime = "2024-05-23",
           emptyList = emptyList(),
           nonEmptyList = listOf("1234-05-19", "5678-12-31")
         )
@@ -220,6 +223,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNonNullValue = "2024-05-19",
           minValue = "0001-01-01",
           maxValue = "9999-12-31",
+          nonZeroTime = "2024-04-24",
           emptyList = emptyList(),
           nonEmptyList = listOf("1234-05-19", "5678-12-31")
         )
@@ -230,13 +234,14 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     assertThat(queryResult.data.dateVariants)
       .isEqualTo(
         GetDateVariantsByIdQuery.Data.DateVariants(
-          nonNullValue = dateFromString("2024-04-26"),
+          nonNullValue = "2024-04-26".toDate(),
           nullableWithNullValue = null,
-          nullableWithNonNullValue = dateFromString("2024-05-19"),
-          minValue = dateFromString("0001-01-01"),
-          maxValue = dateFromString("9999-12-31"),
+          nullableWithNonNullValue = "2024-05-19".toDate(),
+          minValue = "0001-01-01".toDate(),
+          maxValue = "9999-12-31".toDate(),
+          nonZeroTime = "2024-04-24".toDate(),
           emptyList = emptyList(),
-          nonEmptyList = listOf("1234-05-19", "5678-12-31").map(::dateFromString)
+          nonEmptyList = listOf("1234-05-19", "5678-12-31").map(String::toDate)
         )
       )
   }
@@ -245,8 +250,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   //  Make sure to test boundary values, like Int.MAX_VALUE, Float.NaN, true, and false.
 
   private companion object {
-    fun dateFromString(s: String): Date = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(s)!!
-
     fun QueryRef<*, GetDateVariantsByIdQuery.Variables>.withStringData() =
       dataConnect.query(
         operationName,
@@ -310,6 +313,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val nullableWithNullValue: String?,
     val nullableWithNonNullValue: String?,
     val minValue: String,
+    val nonZeroTime: String,
     val maxValue: String,
     val emptyList: List<String>,
     val nonEmptyList: List<String>
@@ -329,6 +333,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       val nullableWithNonNullValue: String?,
       val minValue: String,
       val maxValue: String,
+      val nonZeroTime: String,
       val emptyList: List<String>,
       val nonEmptyList: List<String>
     )
