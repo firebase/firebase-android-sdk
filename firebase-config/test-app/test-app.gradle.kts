@@ -52,10 +52,6 @@ android {
   }
 }
 
-kotlin {
-  jvmToolchain(8)
-}
-
 dependencies {
   implementation(project(":firebase-crashlytics")) {
     exclude(group = "com.google.firebase", module = "firebase-config-interop")
