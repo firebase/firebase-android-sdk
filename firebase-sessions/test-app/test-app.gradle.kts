@@ -61,10 +61,6 @@ android {
   buildFeatures { viewBinding = true }
 }
 
-kotlin {
-  jvmToolchain(8)
-}
-
 dependencies {
   if (project.hasProperty("useReleasedVersions")) {
     implementation(platform("com.google.firebase:firebase-bom:latest.release"))
