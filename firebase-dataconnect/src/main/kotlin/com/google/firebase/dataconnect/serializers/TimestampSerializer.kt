@@ -48,7 +48,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
    */
   private fun timestampToString(timestamp: Timestamp): String {
     val serializedSecond = dateFormatter.format(Date(timestamp.seconds * 1000))
-    val serializedNano = timestamp.nanoseconds.toString().padStart(9, '0').takeLast(9)
+    val serializedNano = timestamp.nanoseconds.toString().padEnd(9, '0')
     return "$serializedSecond.${serializedNano}Z"
   }
 
@@ -69,7 +69,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
 
     // Nanoseconds
     val nanosecondsStr = parts[1].replace("Z", "")
-    val nanoseconds = if (nanosecondsStr.length > 1) nanosecondsStr.toInt() else 0
+    val nanoseconds = if (nanosecondsStr.isEmpty()) 0 else nanosecondsStr.padEnd(9, '0').toInt()
     return Timestamp(seconds, nanoseconds)
   }
 
