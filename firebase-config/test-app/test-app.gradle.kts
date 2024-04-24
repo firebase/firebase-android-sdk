@@ -24,6 +24,7 @@ plugins {
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
   id("com.google.firebase.firebase-perf")
+  id("copy-google-services")
 }
 
 android {
@@ -89,9 +90,5 @@ dependencies {
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
-
-extra["packageName"] = "com.google.firebase.testing.config"
-
-apply(from = "../../gradle/googleServices.gradle")
 
 apply<FirebaseTestLabPlugin>()

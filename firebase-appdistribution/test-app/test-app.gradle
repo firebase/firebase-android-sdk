@@ -16,6 +16,7 @@ plugins {
     id 'kotlin-android'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.appdistribution'
+    id 'copy-google-services'
 }
 
 android {
@@ -96,7 +97,3 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.googletest.firebase.appdistribution.testapp"
-apply from: '../../gradle/googleServices.gradle'
