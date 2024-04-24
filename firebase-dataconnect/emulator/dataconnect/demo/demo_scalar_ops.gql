@@ -277,6 +277,17 @@ query GetPrimaryKeyIsTimestampByKey($key: PrimaryKeyIsTimestamp_Key!) @auth(leve
   primaryKeyIsTimestamp(key: $key) { foo value }
 }
 
+mutation InsertPrimaryKeyIsInt64($foo: Int64!, $value: String!) @auth(level: PUBLIC) {
+  primaryKeyIsInt64_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsInt64ByKey($key: PrimaryKeyIsInt64_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsInt64(key: $key) { foo value }
+}
+
 mutation InsertPrimaryKeyIsComposite($foo: Int!, $bar: String!, $baz: Boolean!, $value: String!) @auth(level: PUBLIC) {
   primaryKeyIsComposite_insert(data: {
     foo: $foo,

@@ -102,6 +102,18 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
+  fun primaryKeyIsInt64() = runTest {
+    val id = Random.nextLong()
+    val value = randomAlphanumericString()
+
+    val key = connector.insertPrimaryKeyIsInt64.execute(foo = id, value = value).data.key
+
+    val queryResult = connector.getPrimaryKeyIsInt64byKey.execute(key)
+    assertThat(queryResult.data.primaryKeyIsInt64)
+      .isEqualTo(GetPrimaryKeyIsInt64byKeyQuery.Data.PrimaryKeyIsInt64(foo = id, value = value))
+  }
+
+  @Test
   fun primaryKeyIsComposite() = runTest {
     val foo = Random.nextInt()
     val bar = randomAlphanumericString()

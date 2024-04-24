@@ -28,6 +28,8 @@ public data class PrimaryKeyIsCompositeKey(val foo: Int, val bar: String, val ba
 
 @Serializable public data class PrimaryKeyIsFloatKey(val foo: Double)
 
+@Serializable public data class PrimaryKeyIsInt64Key(val foo: Long)
+
 @Serializable public data class PrimaryKeyIsIntKey(val foo: Int)
 
 @Serializable public data class PrimaryKeyIsStringKey(val id: String)

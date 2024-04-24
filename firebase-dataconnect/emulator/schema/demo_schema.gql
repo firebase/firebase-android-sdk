@@ -97,6 +97,11 @@ type PrimaryKeyIsTimestamp @table(key: ["foo"]) {
   value: String!
 }
 
+type PrimaryKeyIsInt64 @table(key: ["foo"]) {
+  foo: Int64!
+  value: String!
+}
+
 type PrimaryKeyIsComposite @table(key: ["foo", "bar", "baz"]) {
   foo: Int!
   bar: String!
