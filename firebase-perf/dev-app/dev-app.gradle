@@ -48,7 +48,7 @@ android {
     defaultConfig {
         // NOTE: This can be different than the package name.
         // https://developer.android.com/studio/build/application-id.html
-        applicationId "com.googletest.firebase.perf.testapp.prod"
+        applicationId "com.googletest.firebase.perf.testapp"
 
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
