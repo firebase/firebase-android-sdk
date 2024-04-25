@@ -47,7 +47,7 @@ class FirebaseVertexAI(
    * @param requestOptions configuration options to utilize during backend communication
    * @property systemInstruction contains a [Content] that directs the model to behave a certain way
    * @param location location identifier, defaults to `us-central1`; see available
-   * [Vertex AI regions](https://cloud.google.com/vertex-ai/docs/general/locations#vertex-ai-regions)
+   * [Vertex AI regions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
    */
   @JvmOverloads
   fun generativeModel(

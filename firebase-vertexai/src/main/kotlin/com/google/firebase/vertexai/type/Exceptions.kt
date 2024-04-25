@@ -134,7 +134,7 @@ class RequestTimeoutException(message: String, cause: Throwable? = null) :
  * The specified Vertex AI location is invalid.
  *
  * For a list of valid locations, see
- * [Vertex AI locations](https://cloud.google.com/vertex-ai/docs/general/locations#vertex-ai-regions)
+ * [Vertex AI locations](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
  */
 class InvalidLocationException(location: String, cause: Throwable? = null):
   GoogleGenerativeAIException("Invalid location \"${location}\"", cause)
