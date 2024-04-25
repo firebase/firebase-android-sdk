@@ -56,6 +56,8 @@ dependencies {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
+
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.espresso:espresso-core:3.2.0'
     testImplementation 'com.google.truth:truth:0.44'
