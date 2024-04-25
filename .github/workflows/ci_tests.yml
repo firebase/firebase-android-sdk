@@ -71,7 +71,7 @@ jobs:
         uses: actions/upload-artifact@v4.3.3
         if: always()
         with:
-          name: Unit Test Results
+          name: unit-test-result-${{matrix.module}}
           path: "**/build/test-results/**/*.xml"
 
   # A job that fails if any job in the unit_tests matrix fails,
