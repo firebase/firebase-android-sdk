@@ -19,6 +19,7 @@ plugins {
   id("firebase-library")
   id("kotlin-android")
   id("com.google.protobuf")
+  id("copy-google-services")
   id("org.jetbrains.dokka") version "1.9.10"
   id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
 }
@@ -149,7 +150,6 @@ tasks.withType<KotlinCompile>().all {
 }
 
 extra["packageName"] = "com.google.firebase.dataconnect"
-apply(from = "../gradle/googleServices.gradle")
 
 tasks.withType<DokkaTask>().configureEach {
   moduleName.set("firebase-dataconnect")
