@@ -22,7 +22,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
 import com.google.firebase.inject.Provider;

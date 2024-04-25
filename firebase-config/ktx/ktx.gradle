@@ -48,15 +48,15 @@ android {
 
 dependencies {
     api(project(":firebase-config"))
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
     api("com.google.firebase:firebase-installations:17.2.0")
 
     implementation('com.google.firebase:firebase-abt:21.1.1') {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    implementation("com.google.firebase:firebase-components:17.1.5")
+    implementation("com.google.firebase:firebase-components:18.0.0")
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
 
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

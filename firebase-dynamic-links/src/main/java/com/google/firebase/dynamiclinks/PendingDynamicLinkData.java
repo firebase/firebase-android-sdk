@@ -21,10 +21,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.DefaultClock;
-import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkData;
 import com.google.firebase.dynamiclinks.internal.DynamicLinkUTMParams;
 
