@@ -240,7 +240,7 @@ private class ProtoStructValueEncoder(path: String?, onValue: (Value) -> Unit) :
       Struct.newBuilder().also { structBuilder ->
         valueByKey.forEach { (key, value) ->
           if (value.hasNullValue()) {
-            structBuilder.removeFields(key)
+            structBuilder.putFields(key, nullProtoValue)
           } else {
             structBuilder.putFields(key, value)
           }
