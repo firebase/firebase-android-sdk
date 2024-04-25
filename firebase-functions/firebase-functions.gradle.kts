@@ -16,6 +16,7 @@ plugins {
     id("firebase-library")
     id("kotlin-android")
     id("firebase-vendor")
+    id("copy-google-services")
 }
 
 firebaseLibrary {
@@ -97,10 +98,3 @@ dependencies {
     androidTestImplementation(libs.mockito.dexmaker)
     androidTestImplementation(libs.truth)
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-extra["packageName"] = "com.google.firebase.functions"
-apply(from = "../gradle/googleServices.gradle")

@@ -16,6 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.android.build.gradle.LibraryExtension
 import com.google.firebase.gradle.plugins.ci.Coverage
 import java.io.File
 import java.nio.file.Paths
@@ -31,6 +32,7 @@ import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
 import org.w3c.dom.Element
@@ -280,3 +282,19 @@ val FirebaseLibraryExtension.latestVersion: ModuleVersion
         "Invalid format for ModuleVersion for module '$artifactName':\n $latestVersion"
       )
   }
+
+/**
+ * Fetches the namespace for this SDK from the [LibraryExtension].
+ *
+ * eg;
+ *
+ * ```
+ * com.googletest.firebase.appdistribution
+ * ```
+ *
+ * @throws RuntimeException when the project doesn't have a defined namespace
+ */
+val FirebaseLibraryExtension.namespace: String
+  get() =
+    project.extensions.getByType<LibraryExtension>().namespace
+      ?: throw RuntimeException("Project doesn't have a defined namespace: ${project.path}")

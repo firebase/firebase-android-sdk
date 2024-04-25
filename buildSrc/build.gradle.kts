@@ -94,6 +94,10 @@ gradlePlugin {
             id = "firebase-vendor"
             implementationClass = "com.google.firebase.gradle.plugins.VendorPlugin"
         }
+        register("copyGoogleServicesPlugin") {
+            id = "copy-google-services"
+            implementationClass = "com.google.firebase.gradle.plugins.CopyGoogleServicesPlugin"
+        }
     }
 }
 
