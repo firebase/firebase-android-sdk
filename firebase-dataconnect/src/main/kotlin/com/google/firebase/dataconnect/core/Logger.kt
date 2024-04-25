@@ -14,6 +14,7 @@
 package com.google.firebase.dataconnect.core
 
 import android.util.Log
+import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
@@ -64,7 +65,7 @@ private class LoggerImpl(override val name: String) : Logger {
   override val nameWithId: String by lazy(LazyThreadSafetyMode.PUBLICATION) { "$name[id=$id]" }
 
   override fun log(exception: Throwable?, level: LogLevel, message: String) {
-    val fullMessage = "$nameWithId $message"
+    val fullMessage = "[${BuildConfig.VERSION_NAME}] $nameWithId $message"
     when (level) {
       LogLevel.DEBUG -> Log.d(LOG_TAG, fullMessage, exception)
       LogLevel.WARN -> Log.w(LOG_TAG, fullMessage, exception)
