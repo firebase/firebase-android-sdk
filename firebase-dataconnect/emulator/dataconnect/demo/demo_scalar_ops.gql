@@ -533,3 +533,82 @@ mutation InsertNested2(
 mutation InsertNested3($value: String!) @auth(level: PUBLIC) {
   nested3_insert(data: { value: $value })
 }
+
+mutation InsertManyToOneParent($child: ManyToOneChild_Key) @auth(level: PUBLIC) {
+  manyToOneParent_insert(data: { child: $child })
+}
+
+mutation InsertManyToOneChild @auth(level: PUBLIC) {
+  manyToOneChild_insert(data: {value: null})
+}
+
+query GetManyToOneChildByKey($key: ManyToOneChild_Key!) @auth(level: PUBLIC) {
+  manyToOneChild(key: $key) {
+    parents: manyToOneParents_on_child {
+      id
+    }
+  }
+}
+
+mutation InsertManyToManyChildA @auth(level: PUBLIC) {
+  manyToManyChildA_insert(data: {})
+}
+
+mutation InsertManyToManyChildB @auth(level: PUBLIC) {
+  manyToManyChildB_insert(data: {})
+}
+
+mutation InsertManyToManyParent($childA: ManyToManyChildA_Key!, $childB: ManyToManyChildB_Key!) @auth(level: PUBLIC) {
+  manyToManyParent_insert(data: {childA: $childA, childB: $childB})
+}
+
+query GetManyToManyChildAByKey($key: ManyToManyChildA_Key!) @auth(level: PUBLIC) {
+  manyToManyChildA(key: $key) {
+    manyToManyChildBS_via_ManyToManyParent {
+      id
+    }
+  }
+}
+
+mutation InsertManyToOneSelfCustomName($ref: ManyToOneSelfCustomName_Key) @auth(level: PUBLIC) {
+  manyToOneSelfCustomName_insert(data: {ref: $ref})
+}
+
+query GetManyToOneSelfCustomNameByKey($key: ManyToOneSelfCustomName_Key) @auth(level: PUBLIC) {
+  manyToOneSelfCustomName(key: $key) {
+    id
+    ref {
+      id
+      refId
+    }
+  }
+}
+
+mutation InsertManyToOneSelfMatchingName($ref: ManyToOneSelfMatchingName_Key) @auth(level: PUBLIC) {
+  manyToOneSelfMatchingName_insert(data: {manyToOneSelfMatchingName: $ref})
+}
+
+query GetManyToOneSelfMatchingNameByKey($key: ManyToOneSelfMatchingName_Key) @auth(level: PUBLIC) {
+  manyToOneSelfMatchingName(key: $key) {
+    id
+    manyToOneSelfMatchingName {
+      id
+      manyToOneSelfMatchingNameId
+    }
+  }
+}
+
+mutation InsertManyToManySelfParent($child1: ManyToManySelfChild_Key!, $child2: ManyToManySelfChild_Key!) @auth(level: PUBLIC) {
+  manyToManySelfParent_insert(data: {child1: $child1, child2: $child2})
+}
+
+mutation InsertManyToManySelfChild @auth(level: PUBLIC) {
+  manyToManySelfChild_insert(data: {})
+}
+
+query GetManyToManySelfChildByKey($key: ManyToManySelfChild_Key) @auth(level: PUBLIC) {
+  manyToManySelfChild(key: $key) {
+    manyToManySelfChildren_via_ManyToManySelfParent_on_child1 { id }
+    manyToManySelfChildren_via_ManyToManySelfParent_on_child2 { id }
+  }
+}

@@ -162,3 +162,41 @@ type Nested2 @table {
 type Nested3 @table {
   value: String!
 }
+
+type ManyToOneParent @table {
+  child: ManyToOneChild
+}
+
+type ManyToOneChild @table {
+  value: String
+}
+
+type ManyToManyChildA @table {
+  value: String
+}
+
+type ManyToManyChildB @table {
+  value: String
+}
+
+type ManyToManyParent @table(key: ["childA", "childB"]) {
+  childA: ManyToManyChildA!
+  childB: ManyToManyChildB!
+}
+
+type ManyToOneSelfCustomName @table {
+  ref: ManyToOneSelfCustomName
+}
+
+type ManyToOneSelfMatchingName @table {
+  manyToOneSelfMatchingName: ManyToOneSelfMatchingName
+}
+
+type ManyToManySelfParent @table(key: ["child1", "child2"]) {
+  child1: ManyToManySelfChild!
+  child2: ManyToManySelfChild!
+}
+
+type ManyToManySelfChild @table {
+  value: String
+}

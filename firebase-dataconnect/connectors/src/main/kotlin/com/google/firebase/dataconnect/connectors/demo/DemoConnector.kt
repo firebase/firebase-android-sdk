@@ -27,6 +27,16 @@ public interface DemoConnector : GeneratedConnector {
 
   public val getInt64variantsById: GetInt64variantsByIdQuery
 
+  public val getManyToManyChildAbyKey: GetManyToManyChildAbyKeyQuery
+
+  public val getManyToManySelfChildByKey: GetManyToManySelfChildByKeyQuery
+
+  public val getManyToOneChildByKey: GetManyToOneChildByKeyQuery
+
+  public val getManyToOneSelfCustomNameByKey: GetManyToOneSelfCustomNameByKeyQuery
+
+  public val getManyToOneSelfMatchingNameByKey: GetManyToOneSelfMatchingNameByKeyQuery
+
   public val getNested1byKey: GetNested1byKeyQuery
 
   public val getPrimaryKeyIsCompositeByKey: GetPrimaryKeyIsCompositeByKeyQuery
@@ -60,6 +70,24 @@ public interface DemoConnector : GeneratedConnector {
   public val insertFoo: InsertFooMutation
 
   public val insertInt64variants: InsertInt64variantsMutation
+
+  public val insertManyToManyChildA: InsertManyToManyChildAMutation
+
+  public val insertManyToManyChildB: InsertManyToManyChildBMutation
+
+  public val insertManyToManyParent: InsertManyToManyParentMutation
+
+  public val insertManyToManySelfChild: InsertManyToManySelfChildMutation
+
+  public val insertManyToManySelfParent: InsertManyToManySelfParentMutation
+
+  public val insertManyToOneChild: InsertManyToOneChildMutation
+
+  public val insertManyToOneParent: InsertManyToOneParentMutation
+
+  public val insertManyToOneSelfCustomName: InsertManyToOneSelfCustomNameMutation
+
+  public val insertManyToOneSelfMatchingName: InsertManyToOneSelfMatchingNameMutation
 
   public val insertNested1: InsertNested1Mutation
 
@@ -162,6 +190,21 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getInt64variantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetInt64variantsByIdQueryImpl(this) }
 
+  override val getManyToManyChildAbyKey by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetManyToManyChildAbyKeyQueryImpl(this) }
+
+  override val getManyToManySelfChildByKey by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetManyToManySelfChildByKeyQueryImpl(this) }
+
+  override val getManyToOneChildByKey by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetManyToOneChildByKeyQueryImpl(this) }
+
+  override val getManyToOneSelfCustomNameByKey by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetManyToOneSelfCustomNameByKeyQueryImpl(this) }
+
+  override val getManyToOneSelfMatchingNameByKey by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetManyToOneSelfMatchingNameByKeyQueryImpl(this) }
+
   override val getNested1byKey by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetNested1byKeyQueryImpl(this) }
 
@@ -211,6 +254,33 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val insertInt64variants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertInt64variantsMutationImpl(this) }
+
+  override val insertManyToManyChildA by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToManyChildAMutationImpl(this) }
+
+  override val insertManyToManyChildB by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToManyChildBMutationImpl(this) }
+
+  override val insertManyToManyParent by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToManyParentMutationImpl(this) }
+
+  override val insertManyToManySelfChild by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToManySelfChildMutationImpl(this) }
+
+  override val insertManyToManySelfParent by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToManySelfParentMutationImpl(this) }
+
+  override val insertManyToOneChild by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToOneChildMutationImpl(this) }
+
+  override val insertManyToOneParent by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToOneParentMutationImpl(this) }
+
+  override val insertManyToOneSelfCustomName by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToOneSelfCustomNameMutationImpl(this) }
+
+  override val insertManyToOneSelfMatchingName by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertManyToOneSelfMatchingNameMutationImpl(this) }
 
   override val insertNested1 by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertNested1MutationImpl(this) }
@@ -380,6 +450,81 @@ private class GetInt64variantsByIdQueryImpl(override val connector: DemoConnecto
 
   override fun toString() =
     "GetInt64variantsByIdQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetManyToManyChildAbyKeyQueryImpl(override val connector: DemoConnectorImpl) :
+  GetManyToManyChildAbyKeyQuery {
+  override val operationName by GetManyToManyChildAbyKeyQuery.Companion::operationName
+  override val dataDeserializer by GetManyToManyChildAbyKeyQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetManyToManyChildAbyKeyQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetManyToManyChildAbyKeyQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetManyToManySelfChildByKeyQueryImpl(override val connector: DemoConnectorImpl) :
+  GetManyToManySelfChildByKeyQuery {
+  override val operationName by GetManyToManySelfChildByKeyQuery.Companion::operationName
+  override val dataDeserializer by GetManyToManySelfChildByKeyQuery.Companion::dataDeserializer
+  override val variablesSerializer by
+    GetManyToManySelfChildByKeyQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetManyToManySelfChildByKeyQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetManyToOneChildByKeyQueryImpl(override val connector: DemoConnectorImpl) :
+  GetManyToOneChildByKeyQuery {
+  override val operationName by GetManyToOneChildByKeyQuery.Companion::operationName
+  override val dataDeserializer by GetManyToOneChildByKeyQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetManyToOneChildByKeyQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetManyToOneChildByKeyQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetManyToOneSelfCustomNameByKeyQueryImpl(override val connector: DemoConnectorImpl) :
+  GetManyToOneSelfCustomNameByKeyQuery {
+  override val operationName by GetManyToOneSelfCustomNameByKeyQuery.Companion::operationName
+  override val dataDeserializer by GetManyToOneSelfCustomNameByKeyQuery.Companion::dataDeserializer
+  override val variablesSerializer by
+    GetManyToOneSelfCustomNameByKeyQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetManyToOneSelfCustomNameByKeyQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetManyToOneSelfMatchingNameByKeyQueryImpl(
+  override val connector: DemoConnectorImpl
+) : GetManyToOneSelfMatchingNameByKeyQuery {
+  override val operationName by GetManyToOneSelfMatchingNameByKeyQuery.Companion::operationName
+  override val dataDeserializer by
+    GetManyToOneSelfMatchingNameByKeyQuery.Companion::dataDeserializer
+  override val variablesSerializer by
+    GetManyToOneSelfMatchingNameByKeyQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetManyToOneSelfMatchingNameByKeyQueryImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +
@@ -619,6 +764,138 @@ private class InsertInt64variantsMutationImpl(override val connector: DemoConnec
 
   override fun toString() =
     "InsertInt64variantsMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToManyChildAMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToManyChildAMutation {
+  override val operationName by InsertManyToManyChildAMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToManyChildAMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertManyToManyChildAMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToManyChildAMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToManyChildBMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToManyChildBMutation {
+  override val operationName by InsertManyToManyChildBMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToManyChildBMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertManyToManyChildBMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToManyChildBMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToManyParentMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToManyParentMutation {
+  override val operationName by InsertManyToManyParentMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToManyParentMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertManyToManyParentMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToManyParentMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToManySelfChildMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToManySelfChildMutation {
+  override val operationName by InsertManyToManySelfChildMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToManySelfChildMutation.Companion::dataDeserializer
+  override val variablesSerializer by
+    InsertManyToManySelfChildMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToManySelfChildMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToManySelfParentMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToManySelfParentMutation {
+  override val operationName by InsertManyToManySelfParentMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToManySelfParentMutation.Companion::dataDeserializer
+  override val variablesSerializer by
+    InsertManyToManySelfParentMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToManySelfParentMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToOneChildMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToOneChildMutation {
+  override val operationName by InsertManyToOneChildMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToOneChildMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertManyToOneChildMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToOneChildMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToOneParentMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToOneParentMutation {
+  override val operationName by InsertManyToOneParentMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToOneParentMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertManyToOneParentMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToOneParentMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToOneSelfCustomNameMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertManyToOneSelfCustomNameMutation {
+  override val operationName by InsertManyToOneSelfCustomNameMutation.Companion::operationName
+  override val dataDeserializer by InsertManyToOneSelfCustomNameMutation.Companion::dataDeserializer
+  override val variablesSerializer by
+    InsertManyToOneSelfCustomNameMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToOneSelfCustomNameMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertManyToOneSelfMatchingNameMutationImpl(
+  override val connector: DemoConnectorImpl
+) : InsertManyToOneSelfMatchingNameMutation {
+  override val operationName by InsertManyToOneSelfMatchingNameMutation.Companion::operationName
+  override val dataDeserializer by
+    InsertManyToOneSelfMatchingNameMutation.Companion::dataDeserializer
+  override val variablesSerializer by
+    InsertManyToOneSelfMatchingNameMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertManyToOneSelfMatchingNameMutationImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +

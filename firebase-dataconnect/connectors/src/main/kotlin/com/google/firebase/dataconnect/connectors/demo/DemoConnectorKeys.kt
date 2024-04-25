@@ -15,6 +15,29 @@ import kotlinx.serialization.UseSerializers
 
 @Serializable public data class Int64variantsKey(val id: String)
 
+@Serializable public data class ManyToManyChildAKey(val id: java.util.UUID)
+
+@Serializable public data class ManyToManyChildBKey(val id: java.util.UUID)
+
+@Serializable
+public data class ManyToManyParentKey(val childAId: java.util.UUID, val childBId: java.util.UUID)
+
+@Serializable public data class ManyToManySelfChildKey(val id: java.util.UUID)
+
+@Serializable
+public data class ManyToManySelfParentKey(
+  val child1Id: java.util.UUID,
+  val child2Id: java.util.UUID
+)
+
+@Serializable public data class ManyToOneChildKey(val id: java.util.UUID)
+
+@Serializable public data class ManyToOneParentKey(val id: java.util.UUID)
+
+@Serializable public data class ManyToOneSelfCustomNameKey(val id: java.util.UUID)
+
+@Serializable public data class ManyToOneSelfMatchingNameKey(val id: java.util.UUID)
+
 @Serializable public data class Nested1Key(val id: java.util.UUID)
 
 @Serializable public data class Nested2Key(val id: java.util.UUID)
