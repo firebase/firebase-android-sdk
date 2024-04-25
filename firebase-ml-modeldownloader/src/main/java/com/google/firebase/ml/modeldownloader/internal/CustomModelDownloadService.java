@@ -21,9 +21,10 @@ import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
-import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseOptions;
@@ -72,7 +73,8 @@ public class CustomModelDownloadService {
   private static final String ERROR_RESPONSE_ERROR = "error";
   private static final String ERROR_RESPONSE_MESSAGE = "message";
 
-  @VisibleForTesting static final String ETAG_HEADER = "etag";
+  @VisibleForTesting
+  static final String ETAG_HEADER = "etag";
   @VisibleForTesting static final String CONTENT_TYPE = "Content-Type";
   @VisibleForTesting static final String APPLICATION_JSON = "application/json; charset=UTF-8";
   @VisibleForTesting static final String IF_NONE_MATCH_HEADER_KEY = "If-None-Match";
