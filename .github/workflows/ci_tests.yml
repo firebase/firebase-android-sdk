@@ -67,11 +67,15 @@ jobs:
           FIREBASE_CI: 1
         run: |
           ./gradlew ${{matrix.module}}:check withErrorProne
+      - name: Compute upload file name
+        run: |
+          MODULE=${{matrix.module}}
+          echo "ARTIFACT_NAME=${MODULE//:/_}" >> $GITHUB_ENV
       - name: Upload Test Results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.3.3
         if: always()
         with:
-          name: Unit Test Results
+          name: unit-test-result-${{env.ARTIFACT_NAME}}
           path: "**/build/test-results/**/*.xml"
 
   # A job that fails if any job in the unit_tests matrix fails,
@@ -259,7 +263,7 @@ jobs:
 
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.5
         with:
           path: artifacts
 
