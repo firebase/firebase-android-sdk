@@ -22,7 +22,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 
 /**
  * A Timer class provides both wall-clock (epoch) time and monotonic time (elapsedRealtime).

@@ -58,7 +58,7 @@ dependencies {
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-    implementation("com.google.firebase:firebase-components:17.1.5")
+    implementation("com.google.firebase:firebase-components:18.0.0")
 
     testImplementation project(':firebase-database-collection')
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
