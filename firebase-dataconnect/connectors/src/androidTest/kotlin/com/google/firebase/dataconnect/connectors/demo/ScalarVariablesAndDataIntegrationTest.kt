@@ -27,7 +27,6 @@ import kotlinx.coroutines.test.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -63,15 +62,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
-  @Ignore(
-    "TODO(b/336843741): Server erroneously sends null for an empty list of Int64; " +
-      "modify int64Variants() to test an empty list once the bug is fixed (b/335903750)."
-  )
-  fun int64EmptyList() {
-    // There is no test here; it is just a reminder to update int64Variants() once the bug is fixed.
-  }
-
-  @Test
   fun int64Variants() = runTest {
     val id = randomAlphanumericString()
 
@@ -88,9 +78,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       nullableWithNegativeValue = -2424242424242424,
       nullableWithMaxValue = Long.MAX_VALUE,
       nullableWithMinValue = Long.MIN_VALUE,
-      // TODO(b/336843741): Change to emptyList() when emulator bug is fixed.
-      //  emptyList = emptyList(),
-      emptyList = listOf(42),
+      emptyList = emptyList(),
       nonEmptyList = listOf(0, -1, 1, 99, -99, Long.MIN_VALUE, Long.MAX_VALUE)
     )
 
@@ -109,7 +97,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNegativeValue = -2424242424242424,
           nullableWithMaxValue = Long.MAX_VALUE,
           nullableWithMinValue = Long.MIN_VALUE,
-          emptyList = listOf(42),
+          emptyList = emptyList(),
           nonEmptyList = listOf(0, -1, 1, 99, -99, Long.MIN_VALUE, Long.MAX_VALUE)
         )
       )
@@ -180,16 +168,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
-  @Ignore(
-    "TODO(b/336843741) Server erroneously sends null for an empty list of Timestamp; " +
-      "modify timestampVariants() to test an empty list once the bug is fixed (b/335903750)."
-  )
-  fun timestampEmptyList() {
-    // There is no test here; it is just a reminder to update timestampVariants() once the bug is
-    // fixed.
-  }
-
-  @Test
   fun timestampVariants() = runTest {
     val id = randomAlphanumericString()
 
@@ -200,9 +178,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       nullableWithNonNullValue = Timestamp(-46_239, 4_628),
       minValue = Timestamp(-62_135_596_800, 0),
       maxValue = Timestamp(253_402_300_799, 999_999_999),
-      // TODO(b/336843741): Change to emptyList() when emulator bug is fixed.
-      //  emptyList = emptyList(),
-      emptyList = listOf(Timestamp(-543, 41)),
+      emptyList = emptyList(),
       nonEmptyList = listOf(Timestamp(-543, 41), Timestamp(739, 62))
     )
 
@@ -223,7 +199,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNonNullValue = Timestamp(-46_239, 4_628),
           minValue = Timestamp(-62_135_596_800, 0),
           maxValue = Timestamp(253_402_300_799, 999_999_999),
-          emptyList = listOf(Timestamp(-543, 41)),
+          emptyList = emptyList(),
           nonEmptyList = listOf(Timestamp(-543, 41), Timestamp(739, 62))
         )
       )
