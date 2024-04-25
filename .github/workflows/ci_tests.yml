@@ -22,7 +22,7 @@ jobs:
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.1.0
         with:
           java-version: 17
           distribution: temurin
@@ -50,7 +50,7 @@ jobs:
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.1.0
         with:
           java-version: 17
           distribution: temurin
@@ -106,7 +106,7 @@ jobs:
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.1.0
         with:
           java-version: 17
           distribution: temurin
@@ -147,7 +147,7 @@ jobs:
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.1.0
         with:
           java-version: 17
           distribution: temurin
@@ -217,7 +217,7 @@ jobs:
           submodules: true
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4.1.0
         with:
           java-version: 17
           distribution: temurin
