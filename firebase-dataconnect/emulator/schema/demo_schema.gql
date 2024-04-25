@@ -109,6 +109,41 @@ type PrimaryKeyIsComposite @table(key: ["foo", "bar", "baz"]) {
   value: String!
 }
 
+type PrimaryKeyNested1 @table {
+  value: String!
+}
+
+type PrimaryKeyNested2 @table {
+  value: String!
+}
+
+type PrimaryKeyNested3 @table {
+  value: String!
+}
+
+type PrimaryKeyNested4 @table {
+  value: String!
+}
+
+type PrimaryKeyNested5 @table(key: ["nested1", "nested2"]) {
+  value: String!
+  nested1: PrimaryKeyNested1!
+  nested2: PrimaryKeyNested2!
+}
+
+type PrimaryKeyNested6 @table(key: ["nested3", "nested4"]) {
+  value: String!
+  nested3: PrimaryKeyNested3!
+  nested4: PrimaryKeyNested4!
+}
+
+type PrimaryKeyNested7 @table(key: ["nested5a", "nested5b", "nested6"]) {
+  value: String!
+  nested5a: PrimaryKeyNested5!
+  nested5b: PrimaryKeyNested5!
+  nested6: PrimaryKeyNested6!
+}
+
 type Nested1 @table {
   value: String!
   nested1: Nested1

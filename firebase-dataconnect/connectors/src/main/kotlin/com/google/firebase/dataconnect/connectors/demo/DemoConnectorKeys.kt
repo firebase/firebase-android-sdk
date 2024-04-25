@@ -38,6 +38,36 @@ public data class PrimaryKeyIsCompositeKey(val foo: Int, val bar: String, val ba
 
 @Serializable public data class PrimaryKeyIsUuidKey(val id: java.util.UUID)
 
+@Serializable public data class PrimaryKeyNested1Key(val id: java.util.UUID)
+
+@Serializable public data class PrimaryKeyNested2Key(val id: java.util.UUID)
+
+@Serializable public data class PrimaryKeyNested3Key(val id: java.util.UUID)
+
+@Serializable public data class PrimaryKeyNested4Key(val id: java.util.UUID)
+
+@Serializable
+public data class PrimaryKeyNested5Key(
+  val nested1Id: java.util.UUID,
+  val nested2Id: java.util.UUID
+)
+
+@Serializable
+public data class PrimaryKeyNested6Key(
+  val nested3Id: java.util.UUID,
+  val nested4Id: java.util.UUID
+)
+
+@Serializable
+public data class PrimaryKeyNested7Key(
+  val nested5aNested1id: java.util.UUID,
+  val nested5aNested2id: java.util.UUID,
+  val nested5bNested1id: java.util.UUID,
+  val nested5bNested2id: java.util.UUID,
+  val nested6Nested3id: java.util.UUID,
+  val nested6Nested4id: java.util.UUID
+)
+
 @Serializable public data class StringVariantsKey(val id: String)
 
 @Serializable public data class SyntheticIdKey(val id: java.util.UUID)

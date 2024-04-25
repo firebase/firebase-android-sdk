@@ -301,6 +301,99 @@ query GetPrimaryKeyIsCompositeByKey($key: PrimaryKeyIsComposite_Key!) @auth(leve
   primaryKeyIsComposite(key: $key) { foo bar baz value }
 }
 
+mutation InsertPrimaryKeyNested1($value: String!) @auth(level: PUBLIC) {
+  primaryKeyNested1_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested2($value: String!) @auth(level: PUBLIC) {
+  primaryKeyNested2_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested3($value: String!) @auth(level: PUBLIC) {
+  primaryKeyNested3_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested4($value: String!) @auth(level: PUBLIC) {
+  primaryKeyNested4_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested5(
+  $value: String!,
+  $nested1: PrimaryKeyNested1_Key!,
+  $nested2: PrimaryKeyNested2_Key!
+) @auth(level: PUBLIC) {
+  primaryKeyNested5_insert(data: {
+    value: $value,
+    nested1: $nested1,
+    nested2: $nested2
+  })
+}
+
+mutation InsertPrimaryKeyNested6(
+  $value: String!,
+  $nested3: PrimaryKeyNested3_Key!,
+  $nested4: PrimaryKeyNested4_Key!
+) @auth(level: PUBLIC) {
+  primaryKeyNested6_insert(data: {
+    value: $value,
+    nested3: $nested3,
+    nested4: $nested4
+  })
+}
+
+mutation InsertPrimaryKeyNested7(
+  $value: String!,
+  $nested5a: PrimaryKeyNested5_Key!,
+  $nested5b: PrimaryKeyNested5_Key!,
+  $nested6: PrimaryKeyNested6_Key!
+) @auth(level: PUBLIC) {
+  primaryKeyNested7_insert(data: {
+    value: $value,
+    nested5a: $nested5a,
+    nested5b: $nested5b,
+    nested6: $nested6
+  })
+}
+
+query GetPrimaryKeyNested7ByKey($key: PrimaryKeyNested7_Key!) @auth(level: PUBLIC) {
+  primaryKeyNested7(key: $key) {
+    value
+    nested5a {
+      value
+      nested1 {
+        id
+        value
+      }
+      nested2 {
+        id
+        value
+      }
+    }
+    nested5b {
+      value
+      nested1 {
+        id
+        value
+      }
+      nested2 {
+        id
+        value
+      }
+    }
+    nested6 {
+      value
+      nested3 {
+        id
+        value
+      }
+      nested4 {
+        id
+        value
+      }
+    }
+  }
+}
+
 mutation InsertNested1(
     $nested1: Nested1_Key,
     $nested2: Nested2_Key!,

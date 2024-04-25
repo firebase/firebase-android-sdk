@@ -45,6 +45,8 @@ public interface DemoConnector : GeneratedConnector {
 
   public val getPrimaryKeyIsUuidbyKey: GetPrimaryKeyIsUuidbyKeyQuery
 
+  public val getPrimaryKeyNested7byKey: GetPrimaryKeyNested7byKeyQuery
+
   public val getStringVariantsById: GetStringVariantsByIdQuery
 
   public val getSyntheticIdById: GetSyntheticIdByIdQuery
@@ -80,6 +82,20 @@ public interface DemoConnector : GeneratedConnector {
   public val insertPrimaryKeyIsTimestamp: InsertPrimaryKeyIsTimestampMutation
 
   public val insertPrimaryKeyIsUuid: InsertPrimaryKeyIsUuidMutation
+
+  public val insertPrimaryKeyNested1: InsertPrimaryKeyNested1Mutation
+
+  public val insertPrimaryKeyNested2: InsertPrimaryKeyNested2Mutation
+
+  public val insertPrimaryKeyNested3: InsertPrimaryKeyNested3Mutation
+
+  public val insertPrimaryKeyNested4: InsertPrimaryKeyNested4Mutation
+
+  public val insertPrimaryKeyNested5: InsertPrimaryKeyNested5Mutation
+
+  public val insertPrimaryKeyNested6: InsertPrimaryKeyNested6Mutation
+
+  public val insertPrimaryKeyNested7: InsertPrimaryKeyNested7Mutation
 
   public val insertStringVariants: InsertStringVariantsMutation
 
@@ -173,6 +189,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getPrimaryKeyIsUuidbyKey by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetPrimaryKeyIsUuidbyKeyQueryImpl(this) }
 
+  override val getPrimaryKeyNested7byKey by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetPrimaryKeyNested7byKeyQueryImpl(this) }
+
   override val getStringVariantsById by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetStringVariantsByIdQueryImpl(this) }
 
@@ -225,6 +244,27 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val insertPrimaryKeyIsUuid by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyIsUuidMutationImpl(this) }
+
+  override val insertPrimaryKeyNested1 by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyNested1MutationImpl(this) }
+
+  override val insertPrimaryKeyNested2 by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyNested2MutationImpl(this) }
+
+  override val insertPrimaryKeyNested3 by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyNested3MutationImpl(this) }
+
+  override val insertPrimaryKeyNested4 by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyNested4MutationImpl(this) }
+
+  override val insertPrimaryKeyNested5 by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyNested5MutationImpl(this) }
+
+  override val insertPrimaryKeyNested6 by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyNested6MutationImpl(this) }
+
+  override val insertPrimaryKeyNested7 by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyNested7MutationImpl(this) }
 
   override val insertStringVariants by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertStringVariantsMutationImpl(this) }
@@ -468,6 +508,20 @@ private class GetPrimaryKeyIsUuidbyKeyQueryImpl(override val connector: DemoConn
 
   override fun toString() =
     "GetPrimaryKeyIsUuidbyKeyQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetPrimaryKeyNested7byKeyQueryImpl(override val connector: DemoConnectorImpl) :
+  GetPrimaryKeyNested7byKeyQuery {
+  override val operationName by GetPrimaryKeyNested7byKeyQuery.Companion::operationName
+  override val dataDeserializer by GetPrimaryKeyNested7byKeyQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetPrimaryKeyNested7byKeyQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetPrimaryKeyNested7byKeyQueryImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +
@@ -722,6 +776,104 @@ private class InsertPrimaryKeyIsUuidMutationImpl(override val connector: DemoCon
 
   override fun toString() =
     "InsertPrimaryKeyIsUuidMutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyNested1MutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyNested1Mutation {
+  override val operationName by InsertPrimaryKeyNested1Mutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyNested1Mutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyNested1Mutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyNested1MutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyNested2MutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyNested2Mutation {
+  override val operationName by InsertPrimaryKeyNested2Mutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyNested2Mutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyNested2Mutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyNested2MutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyNested3MutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyNested3Mutation {
+  override val operationName by InsertPrimaryKeyNested3Mutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyNested3Mutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyNested3Mutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyNested3MutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyNested4MutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyNested4Mutation {
+  override val operationName by InsertPrimaryKeyNested4Mutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyNested4Mutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyNested4Mutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyNested4MutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyNested5MutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyNested5Mutation {
+  override val operationName by InsertPrimaryKeyNested5Mutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyNested5Mutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyNested5Mutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyNested5MutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyNested6MutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyNested6Mutation {
+  override val operationName by InsertPrimaryKeyNested6Mutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyNested6Mutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyNested6Mutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyNested6MutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertPrimaryKeyNested7MutationImpl(override val connector: DemoConnectorImpl) :
+  InsertPrimaryKeyNested7Mutation {
+  override val operationName by InsertPrimaryKeyNested7Mutation.Companion::operationName
+  override val dataDeserializer by InsertPrimaryKeyNested7Mutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertPrimaryKeyNested7Mutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertPrimaryKeyNested7MutationImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +
