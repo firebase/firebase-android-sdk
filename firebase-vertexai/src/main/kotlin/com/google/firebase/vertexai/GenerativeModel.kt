@@ -48,24 +48,15 @@ import kotlinx.coroutines.tasks.await
 
 /**
  * A facilitator for a given multimodal model (eg; Gemini).
- *
- * @property modelName name of the model in the backend
- * @property apiKey authentication key for interacting with the backend
- * @property generationConfig configuration parameters to use for content generation
- * @property safetySettings the safety bounds to use during alongside prompts during content
- * generation
- * @property requestOptions configuration options to utilize during backend communication
  */
 class GenerativeModel
 internal constructor(
-  val modelName: String,
-  val apiKey: String,
-  val generationConfig: GenerationConfig? = null,
-  val safetySettings: List<SafetySetting>? = null,
-  val requestOptions: RequestOptions = RequestOptions(),
-  val tools: List<Tool>? = null,
-  val toolConfig: ToolConfig? = null,
-  val systemInstruction: Content? = null,
+  private val modelName: String,
+  private val generationConfig: GenerationConfig? = null,
+  private val safetySettings: List<SafetySetting>? = null,
+  private val tools: List<Tool>? = null,
+  private val toolConfig: ToolConfig? = null,
+  private val systemInstruction: Content? = null,
   private val controller: APIController
 ) {
 
@@ -82,10 +73,8 @@ internal constructor(
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null
   ) : this(
     modelName,
-    apiKey,
     generationConfig,
     safetySettings,
-    requestOptions,
     tools,
     toolConfig,
     systemInstruction,
@@ -116,10 +105,10 @@ internal constructor(
   )
 
   /**
-   * Generates a response from the backend with the provided [Content]s.
+   * Generates a [GenerateContentResponse] from the backend with the provided [Content]s.
    *
-   * @param prompt A group of [Content]s to send to the model.
-   * @return A [GenerateContentResponse] after some delay. Function should be called within a
+   * @param prompt [Content]s to send to the model.
+   * @return A [GenerateContentResponse]. Function should be called within a
    * suspend context to properly manage concurrency.
    */
   suspend fun generateContent(vararg prompt: Content): GenerateContentResponse =
@@ -132,7 +121,7 @@ internal constructor(
   /**
    * Generates a streaming response from the backend with the provided [Content]s.
    *
-   * @param prompt A group of [Content]s to send to the model.
+   * @param prompt [Content]s to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
    */
   fun generateContentStream(vararg prompt: Content): Flow<GenerateContentResponse> =
@@ -142,7 +131,7 @@ internal constructor(
       .map { it.toPublic().validate() }
 
   /**
-   * Generates a response from the backend with the provided text represented [Content].
+   * Generates a [GenerateContentResponse] from the backend with the provided text prompt.
    *
    * @param prompt The text to be converted into a single piece of [Content] to send to the model.
    * @return A [GenerateContentResponse] after some delay. Function should be called within a
@@ -152,7 +141,7 @@ internal constructor(
     generateContent(content { text(prompt) })
 
   /**
-   * Generates a streaming response from the backend with the provided text represented [Content].
+   * Generates a streaming response from the backend with the provided text prompt.
    *
    * @param prompt The text to be converted into a single piece of [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
@@ -161,7 +150,7 @@ internal constructor(
     generateContentStream(content { text(prompt) })
 
   /**
-   * Generates a response from the backend with the provided bitmap represented [Content].
+   * Generates a [GenerateContentResponse] from the backend with the provided bitmap prompt.
    *
    * @param prompt The bitmap to be converted into a single piece of [Content] to send to the model.
    * @return A [GenerateContentResponse] after some delay. Function should be called within a
@@ -171,7 +160,7 @@ internal constructor(
     generateContent(content { image(prompt) })
 
   /**
-   * Generates a streaming response from the backend with the provided bitmap represented [Content].
+   * Generates a streaming response from the backend with the provided bitmap prompt.
    *
    * @param prompt The bitmap to be converted into a single piece of [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
@@ -179,34 +168,34 @@ internal constructor(
   fun generateContentStream(prompt: Bitmap): Flow<GenerateContentResponse> =
     generateContentStream(content { image(prompt) })
 
-  /** Creates a chat instance which internally tracks the ongoing conversation with the model */
+  /** Creates a [Chat] instance which internally tracks the ongoing conversation with the model */
   fun startChat(history: List<Content> = emptyList()): Chat = Chat(this, history.toMutableList())
 
   /**
-   * Counts the number of tokens used in a prompt.
+   * Counts the amount of tokens in a prompt.
    *
    * @param prompt A group of [Content]s to count tokens of.
-   * @return A [CountTokensResponse] containing the number of tokens in the prompt.
+   * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
     return controller.countTokens(constructCountTokensRequest(*prompt)).toPublic()
   }
 
   /**
-   * Counts the number of tokens used in a prompt.
+   * Counts the amount of tokens in the text prompt.
    *
    * @param prompt The text to be converted to a single piece of [Content] to count the tokens of.
-   * @return A [CountTokensResponse] containing the number of tokens in the prompt.
+   * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(prompt: String): CountTokensResponse {
     return countTokens(content { text(prompt) })
   }
 
   /**
-   * Counts the number of tokens used in a prompt.
+   * Counts the amount of tokens in the image prompt.
    *
    * @param prompt The image to be converted to a single piece of [Content] to count the tokens of.
-   * @return A [CountTokensResponse] containing the number of tokens in the prompt.
+   * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(prompt: Bitmap): CountTokensResponse {
     return countTokens(content { image(prompt) })

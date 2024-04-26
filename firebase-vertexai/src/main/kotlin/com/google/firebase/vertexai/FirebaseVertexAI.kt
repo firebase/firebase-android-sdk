@@ -30,22 +30,22 @@ import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
 /** Entry point for all Firebase Vertex AI functionality. */
-class FirebaseVertexAI(
+class FirebaseVertexAI internal constructor(
   private val firebaseApp: FirebaseApp,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>
 ) {
 
   /**
-   * A facilitator for a given multimodal model (eg; Gemini).
+   * Instantiates a new [GenerativeModel] given the provided parameters.
    *
    * @param modelName name of the model in the backend
    * @param generationConfig configuration parameters to use for content generation
    * @param safetySettings the safety bounds to use during alongside prompts during content
    * generation
+   * @param requestOptions configuration options to utilize during backend communication
    * @param tools the list of tools to make available to the model
    * @param toolConfig the configuration that defines how the model handles the tools provided
-   * @param requestOptions configuration options to utilize during backend communication
-   * @property systemInstruction contains a [Content] that directs the model to behave a certain way
+   * @param systemInstruction contains a [Content] that directs the model to behave a certain way
    * @param location location identifier, defaults to `us-central1`; see available
    * [Vertex AI regions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
    */
@@ -77,10 +77,12 @@ class FirebaseVertexAI(
   }
 
   companion object {
+    /** The [FirebaseVertexAI] instance for the default [FirebaseApp] */
     @JvmStatic
     val instance: FirebaseVertexAI
       get() = Firebase.app[FirebaseVertexAI::class.java]
 
+    /** Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp]*/
     @JvmStatic
     fun getInstance(app: FirebaseApp): FirebaseVertexAI = app[FirebaseVertexAI::class.java]
   }
