@@ -24,6 +24,7 @@
         ":firebase-inappmessaging-display",
         ":firebase-inappmessaging-display:ktx",
         ":firebase-installations",
+        ":firebase-installations:ktx",
         ":firebase-messaging",
         ":firebase-messaging:ktx",
         ":firebase-messaging-directboot",
