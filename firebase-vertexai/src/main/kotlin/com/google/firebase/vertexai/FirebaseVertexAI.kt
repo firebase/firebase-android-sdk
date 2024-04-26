@@ -30,7 +30,8 @@ import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
 /** Entry point for all Firebase Vertex AI functionality. */
-class FirebaseVertexAI internal constructor(
+class FirebaseVertexAI
+internal constructor(
   private val firebaseApp: FirebaseApp,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>
 ) {
@@ -82,7 +83,7 @@ class FirebaseVertexAI internal constructor(
     val instance: FirebaseVertexAI
       get() = Firebase.app[FirebaseVertexAI::class.java]
 
-    /** Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp]*/
+    /** Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] */
     @JvmStatic
     fun getInstance(app: FirebaseApp): FirebaseVertexAI = app[FirebaseVertexAI::class.java]
   }

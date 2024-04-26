@@ -46,9 +46,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
-/**
- * A facilitator for a given multimodal model (eg; Gemini).
- */
+/** A facilitator for a given multimodal model (eg; Gemini). */
 class GenerativeModel
 internal constructor(
   private val modelName: String,
@@ -108,8 +106,8 @@ internal constructor(
    * Generates a [GenerateContentResponse] from the backend with the provided [Content]s.
    *
    * @param prompt [Content]s to send to the model.
-   * @return A [GenerateContentResponse]. Function should be called within a
-   * suspend context to properly manage concurrency.
+   * @return A [GenerateContentResponse]. Function should be called within a suspend context to
+   * properly manage concurrency.
    */
   suspend fun generateContent(vararg prompt: Content): GenerateContentResponse =
     try {
