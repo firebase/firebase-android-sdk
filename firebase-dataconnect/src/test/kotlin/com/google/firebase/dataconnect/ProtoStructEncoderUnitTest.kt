@@ -109,6 +109,7 @@ class ProtoStructEncoderUnitTest {
           put("bvt", true)
           put("bvf", false)
           put("sv", "blah blah")
+          putNull("nsvn")
           put("nsvnn", "I'm not null")
         }
       )
@@ -175,7 +176,12 @@ class ProtoStructEncoderUnitTest {
 
     assertThat(encodedStruct)
       .isEqualTo(
-        buildStructProto { putStruct("data2") { putStruct("data3") { put("s", "zzzz") } } }
+        buildStructProto {
+          putStruct("data2") {
+            putNull("data3N")
+            putStruct("data3") { put("s", "zzzz") }
+          }
+        }
       )
   }
 }

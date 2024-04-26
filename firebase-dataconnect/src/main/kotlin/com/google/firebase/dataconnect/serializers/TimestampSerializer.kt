@@ -25,6 +25,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+// Googlers see go/firemat:timestamps for specifications.
 public object TimestampSerializer : KSerializer<Timestamp> {
   private val threadLocalDateFormatter =
     object : ThreadLocal<SimpleDateFormat>() {
@@ -48,7 +49,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
    */
   private fun timestampToString(timestamp: Timestamp): String {
     val serializedSecond = dateFormatter.format(Date(timestamp.seconds * 1000))
-    val serializedNano = timestamp.nanoseconds.toString().padEnd(9, '0')
+    val serializedNano = timestamp.nanoseconds.toString().padStart(9, '0')
     return "$serializedSecond.${serializedNano}Z"
   }
 
@@ -58,18 +59,34 @@ public object TimestampSerializer : KSerializer<Timestamp> {
    * might change, and server will truncate it to 0/3/6 digits precision without throwing an error.
    */
   private fun timestampFromString(str: String): Timestamp {
-    // Split `yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS'Z'` into `yyyy-MM-dd'T'HH:mm:ss` and SSSSSSSSS'Z'
-    val parts = str.split(".")
+    // TODO: support +/- time zone offsets as well (b/337299540)
+    require(str.uppercase().endsWith("Z")) {
+      "the last character should be 'Z', but got '${str.takeLast(1)}' (str=$str)"
+    }
 
-    // Seconds
+    // TODO: Replace this implementation with Instant.parse() once minSdkVersion is bumped to at
+    //  least 26 (Build.VERSION_CODES.O).
     val position = ParsePosition(0)
-    val date = dateFormatter.parse(str, position)
-    requireNotNull(date)
-    val seconds = Timestamp(date).seconds
+    val seconds = run {
+      val date = dateFormatter.parse(str.uppercase(), position)
+      requireNotNull(date)
+      require(position.index == 19) {
+        "position.index=${position.index}, but expected 19 (str=$str)"
+      }
+      Timestamp(date).seconds
+    }
 
-    // Nanoseconds
-    val nanosecondsStr = parts[1].replace("Z", "")
-    val nanoseconds = if (nanosecondsStr.isEmpty()) 0 else nanosecondsStr.padEnd(9, '0').toInt()
+    val nanoseconds =
+      if (str[position.index] == 'Z' || str[position.index] == 'z') {
+        0
+      } else {
+        require(str[position.index] == '.') {
+          "str[${position.index}]=='${str[position.index]}', but expected '.' (str=$str)"
+        }
+        val nanosecondsStr = str.substring(position.index + 1, str.length - 1)
+        nanosecondsStr.padEnd(9, '0').toInt()
+      }
+
     return Timestamp(seconds, nanoseconds)
   }
 

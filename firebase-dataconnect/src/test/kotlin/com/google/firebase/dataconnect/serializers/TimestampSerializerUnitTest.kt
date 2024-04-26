@@ -13,39 +13,128 @@
 // limitations under the License.
 package com.google.firebase.dataconnect.serializers
 
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
+import com.google.firebase.dataconnect.testutil.assertThrows
+import com.google.firebase.dataconnect.util.buildStructProto
+import com.google.firebase.dataconnect.util.decodeFromStruct
+import com.google.firebase.dataconnect.util.encodeToStruct
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import org.junit.Assert.assertEquals
 import org.junit.Test
 
-@Suppress("ReplaceCallWithBinaryOperator")
 class TimestampSerializerUnitTest {
 
-  @Serializable
-  data class TimestampTest(
-    @Serializable(with = TimestampSerializer::class) var timestamp: Timestamp
-  )
+  @Test
+  fun `seconds=0 nanoseconds=0 can be encoded and decoded`() {
+    verifyEncodeDecodeRoundTrip(Timestamp(0, 0))
+  }
 
   @Test
-  fun `test serialization between timestamp and RFC3339`() {
-    val timestamps =
-      listOf(
-        // zero
-        TimestampTest(Timestamp(0, 0)),
-        // min
-        TimestampTest(Timestamp(-62_135_596_800, 0)),
-        // max
-        TimestampTest(Timestamp(253_402_300_799, 999_999_999)),
-        // positive
-        TimestampTest(Timestamp(130804, 642)),
-        // negative
-        TimestampTest(Timestamp(-46239, 472302))
-      )
-    timestamps.forEach {
-      val rfc3339 = Json.encodeToString(TimestampTest.serializer(), it)
-      val timestamp = Json.decodeFromString(TimestampTest.serializer(), rfc3339)
-      assertEquals(it, timestamp)
+  fun `smallest value can be encoded and decoded`() {
+    verifyEncodeDecodeRoundTrip(Timestamp(-62_135_596_800, 0))
+  }
+
+  @Test
+  fun `largest value can be encoded and decoded`() {
+    verifyEncodeDecodeRoundTrip(Timestamp(253_402_300_799, 999_999_999))
+  }
+
+  @Test
+  fun `nanoseconds with millisecond precision can be encoded and decoded`() {
+    verifyEncodeDecodeRoundTrip(Timestamp(130804, 642))
+  }
+
+  @Test
+  fun `nanoseconds with microsecond precision can be encoded and decoded`() {
+    verifyEncodeDecodeRoundTrip(Timestamp(-46239, 472302))
+  }
+
+  @Test
+  fun `decoding should succeed when 'time-secfrac' is omitted`() {
+    assertThat(decodeTimestamp("2006-01-02T15:04:05Z")).isEqualTo(Timestamp(1136214245, 0))
+  }
+
+  @Test
+  fun `decoding should succeed when 'time-secfrac' has millisecond precision`() {
+    assertThat(decodeTimestamp("2006-01-02T15:04:05.123Z"))
+      .isEqualTo(Timestamp(1136214245, 123_000_000))
+  }
+
+  @Test
+  fun `decoding should succeed when 'time-secfrac' has microsecond precision`() {
+    assertThat(decodeTimestamp("2006-01-02T15:04:05.123456Z"))
+      .isEqualTo(Timestamp(1136214245, 123_456_000))
+  }
+
+  @Test
+  fun `decoding should succeed when 'time-secfrac' has nanosecond precision`() {
+    assertThat(decodeTimestamp("2006-01-02T15:04:05.123456789Z"))
+      .isEqualTo(Timestamp(1136214245, 123_456_789))
+  }
+
+  @Test
+  fun `decoding should be case-insensitive`() {
+    // According to https://www.rfc-editor.org/rfc/rfc3339#section-5.6 the "t" and "z" are
+    // case-insensitive.
+    assertThat(decodeTimestamp("2006-01-02t15:04:05.123456789z"))
+      .isEqualTo(decodeTimestamp("2006-01-02T15:04:05.123456789Z"))
+  }
+
+  @Test
+  fun `decoding should fail for an empty string`() {
+    assertThrows(IllegalArgumentException::class) { decodeTimestamp("") }
+  }
+
+  @Test
+  fun `decoding should fail if 'time-offset' is omitted`() {
+    assertThrows(IllegalArgumentException::class) {
+      decodeTimestamp("2006-01-02T15:04:05.123456789")
+    }
+  }
+
+  @Test
+  fun `decoding should fail if 'time-offset' when 'time-secfrac' is also omitted`() {
+    assertThrows(IllegalArgumentException::class) { decodeTimestamp("2006-01-02T15:04:05") }
+  }
+
+  @Test
+  fun `decoding should fail if the date portion cannot be parsed`() {
+    assertThrows(IllegalArgumentException::class) {
+      decodeTimestamp("200X-01-02T15:04:05.123456789Z")
+    }
+  }
+
+  @Test
+  fun `decoding should fail if some character other than period delimits the 'time-secfrac'`() {
+    assertThrows(IllegalArgumentException::class) {
+      decodeTimestamp("2006-01-02T15:04:05 123456789Z")
+    }
+  }
+
+  @Test
+  fun `decoding should fail if 'time-secfrac' contains an invalid character`() {
+    assertThrows(IllegalArgumentException::class) {
+      decodeTimestamp("2006-01-02T15:04:05.123456X89Z")
+    }
+  }
+
+  @Serializable
+  private data class TimestampWrapper(
+    @Serializable(with = TimestampSerializer::class) val timestamp: Timestamp
+  )
+
+  private companion object {
+
+    fun verifyEncodeDecodeRoundTrip(timestamp: Timestamp) {
+      val encoded = encodeToStruct(TimestampWrapper(timestamp))
+      val decoded = decodeFromStruct<TimestampWrapper>(encoded)
+      assertThat(decoded.timestamp).isEqualTo(timestamp)
+    }
+
+    fun decodeTimestamp(text: String): Timestamp {
+      val encodedAsStruct = buildStructProto { put("timestamp", text) }
+      val decodedStruct = decodeFromStruct<TimestampWrapper>(encodedAsStruct)
+      return decodedStruct.timestamp
     }
   }
 }
