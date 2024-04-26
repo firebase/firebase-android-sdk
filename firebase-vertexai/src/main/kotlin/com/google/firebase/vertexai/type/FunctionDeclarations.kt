@@ -19,14 +19,13 @@ package com.google.firebase.vertexai.type
 import org.json.JSONObject
 
 /**
- * A declared function, including implementation, that a model can be given access to in order to
- * gain info or complete tasks.
+ * A declared zero param function, including implementation, that a model can be given access to in
+ * order to gain info or complete tasks.
  *
- * @property name The name of the function call, this should be clear and descriptive for the model
- * @property description A description of what the function does and its output.
- * @property function the function implementation
+ * @see [defineFunction] for how to create an instance of this class.
  */
-class NoParameterFunction(
+class NoParameterFunction
+internal constructor(
   name: String,
   description: String,
   val function: suspend () -> JSONObject,
@@ -39,15 +38,13 @@ class NoParameterFunction(
 }
 
 /**
- * A declared function, including implementation, that a model can be given access to in order to
- * gain info or complete tasks.
+ * A declared one param function, including implementation, that a model can be given access to in
+ * order to gain info or complete tasks.
  *
- * @property name The name of the function call, this should be clear and descriptive for the model
- * @property description A description of what the function does and its output.
- * @property param A description of the first function parameter
- * @property function the function implementation
+ * @see [defineFunction] for how to create an instance of this class.
  */
-class OneParameterFunction<T>(
+class OneParameterFunction<T>
+internal constructor(
   name: String,
   description: String,
   val param: Schema<T>,
@@ -62,16 +59,13 @@ class OneParameterFunction<T>(
 }
 
 /**
- * A declared function, including implementation, that a model can be given access to in order to
- * gain info or complete tasks.
+ * A declared two param function, including implementation, that a model can be given access to in
+ * order to gain info or complete tasks.
  *
- * @property name The name of the function call, this should be clear and descriptive for the model
- * @property description A description of what the function does and its output.
- * @property param1 A description of the first function parameter
- * @property param2 A description of the second function parameter
- * @property function the function implementation
+ * @see [defineFunction] for how to create an instance of this class.
  */
-class TwoParameterFunction<T, U>(
+class TwoParameterFunction<T, U>
+internal constructor(
   name: String,
   description: String,
   val param1: Schema<T>,
@@ -88,17 +82,13 @@ class TwoParameterFunction<T, U>(
 }
 
 /**
- * A declared function, including implementation, that a model can be given access to in order to
- * gain info or complete tasks.
+ * A declared three param function, including implementation, that a model can be given access to in
+ * order to gain info or complete tasks.
  *
- * @property name The name of the function call, this should be clear and descriptive for the model
- * @property description A description of what the function does and its output.
- * @property param1 A description of the first function parameter
- * @property param2 A description of the second function parameter
- * @property param3 A description of the third function parameter
- * @property function the function implementation
+ * @see [defineFunction] for how to create an instance of this class.
  */
-class ThreeParameterFunction<T, U, V>(
+class ThreeParameterFunction<T, U, V>
+internal constructor(
   name: String,
   description: String,
   val param1: Schema<T>,
@@ -117,18 +107,13 @@ class ThreeParameterFunction<T, U, V>(
 }
 
 /**
- * A declared function, including implementation, that a model can be given access to in order to
- * gain info or complete tasks.
+ * A declared four param function, including implementation, that a model can be given access to in
+ * order to gain info or complete tasks.
  *
- * @property name The name of the function call, this should be clear and descriptive for the model
- * @property description A description of what the function does and its output.
- * @property param1 A description of the first function parameter
- * @property param2 A description of the second function parameter
- * @property param3 A description of the third function parameter
- * @property param4 A description of the fourth function parameter
- * @property function the function implementation
+ * @see [defineFunction] for how to create an instance of this class.
  */
-class FourParameterFunction<T, U, V, W>(
+class FourParameterFunction<T, U, V, W>
+internal constructor(
   name: String,
   description: String,
   val param1: Schema<T>,
@@ -220,9 +205,26 @@ class Schema<T>(
   }
 }
 
+/**
+ * Defines a function with zero parameters, including its implementation, that a model can be given
+ * access to in order to gain info or complete tasks.
+ *
+ * @param name The name of the function call, this should be clear and descriptive for the model
+ * @param description A description of what the function does and its output.
+ * @param function the function implementation
+ */
 fun defineFunction(name: String, description: String, function: suspend () -> JSONObject) =
   NoParameterFunction(name, description, function)
 
+/**
+ * Defines a function with one parameter, including its implementation, that a model can be given
+ * access to in order to gain info or complete tasks.
+ *
+ * @param name The name of the function call, this should be clear and descriptive for the model
+ * @param description A description of what the function does and its output.
+ * @param arg1 A description of the first function parameter
+ * @param function the function implementation
+ */
 fun <T> defineFunction(
   name: String,
   description: String,
@@ -230,6 +232,16 @@ fun <T> defineFunction(
   function: suspend (T) -> JSONObject,
 ) = OneParameterFunction(name, description, arg1, function)
 
+/**
+ * Defines a function with two parameters, including its implementation, that a model can be given
+ * access to in order to gain info or complete tasks.
+ *
+ * @param name The name of the function call, this should be clear and descriptive for the model
+ * @param description A description of what the function does and its output.
+ * @param arg1 A description of the first function parameter
+ * @param arg2 A description of the second function parameter
+ * @param function the function implementation
+ */
 fun <T, U> defineFunction(
   name: String,
   description: String,
@@ -238,6 +250,17 @@ fun <T, U> defineFunction(
   function: suspend (T, U) -> JSONObject,
 ) = TwoParameterFunction(name, description, arg1, arg2, function)
 
+/**
+ * Defines a function with three parameters, including its implementation, that a model can be given
+ * access to in order to gain info or complete tasks.
+ *
+ * @param name The name of the function call, this should be clear and descriptive for the model
+ * @param description A description of what the function does and its output.
+ * @param arg1 A description of the first function parameter
+ * @param arg2 A description of the second function parameter
+ * @param arg3 A description of the third function parameter
+ * @param function the function implementation
+ */
 fun <T, U, W> defineFunction(
   name: String,
   description: String,
@@ -247,6 +270,18 @@ fun <T, U, W> defineFunction(
   function: suspend (T, U, W) -> JSONObject,
 ) = ThreeParameterFunction(name, description, arg1, arg2, arg3, function)
 
+/**
+ * Defines a function with four parameters, including its implementation, that a model can be given
+ * access to in order to gain info or complete tasks.
+ *
+ * @param name The name of the function call, this should be clear and descriptive for the model
+ * @param description A description of what the function does and its output.
+ * @param arg1 A description of the first function parameter
+ * @param arg2 A description of the second function parameter
+ * @param arg3 A description of the third function parameter
+ * @param arg4 A description of the fourth function parameter
+ * @param function the function implementation
+ */
 fun <T, U, W, Z> defineFunction(
   name: String,
   description: String,
