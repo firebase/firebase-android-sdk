@@ -77,6 +77,8 @@ jobs:
         with:
           name: unit-test-result-${{env.ARTIFACT_NAME}}
           path: "**/build/test-results/**/*.xml"
+          retention-days: 7
+          if-no-files-found: ignore
 
   # A job that fails if any job in the unit_tests matrix fails,
   # to be used as a required check for merging.
