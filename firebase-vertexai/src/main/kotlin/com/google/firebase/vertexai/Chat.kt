@@ -39,8 +39,8 @@ import kotlinx.coroutines.flow.onEach
  * Note: This object is not thread-safe, and calling [sendMessage] multiple times without waiting
  * for a response will throw an [InvalidStateException].
  *
- * @param model the model to use for the interaction
- * @property history the previous interactions with the model
+ * @param model The model to use for the interaction
+ * @property history The previous interactions with the model
  */
 class Chat(private val model: GenerativeModel, val history: MutableList<Content> = ArrayList()) {
   private var lock = Semaphore(1)
@@ -67,7 +67,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
   }
 
   /**
-   * Generates a response from the backend with the provided text represented [Content].
+   * Generates a response from the backend with the provided text prompt.
    *
    * @param prompt The text to be converted into a single piece of [Content] to send to the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
@@ -78,7 +78,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
   }
 
   /**
-   * Generates a response from the backend with the provided image represented [Content].
+   * Generates a response from the backend with the provided image prompt.
    *
    * @param prompt The image to be converted into a single piece of [Content] to send to the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
@@ -143,9 +143,9 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
   }
 
   /**
-   * Generates a streaming response from the backend with the provided [Content]s.
+   * Generates a streaming response from the backend with the provided text prompt.
    *
-   * @param prompt A [Content] to send to the model.
+   * @param prompt a text to be converted into a single piece of [Content] to send to the model
    * @return A [Flow] which will emit responses as they are returned from the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
@@ -155,7 +155,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
   }
 
   /**
-   * Generates a streaming response from the backend with the provided [Content]s.
+   * Generates a streaming response from the backend with the provided image prompt.
    *
    * @param prompt A [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
