@@ -17,6 +17,8 @@ package com.google.firebase.dynamiclinks.internal;
 import android.content.Context;
 import android.os.Looper;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.Api.ApiOptions;
 import com.google.android.gms.common.api.Api.ApiOptions.NoOptions;
@@ -24,7 +26,6 @@ import com.google.android.gms.common.api.GoogleApi;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.internal.ClientSettings;
-import com.google.android.gms.common.util.VisibleForTesting;
 
 public class DynamicLinksApi extends GoogleApi<NoOptions> {
 
