@@ -172,30 +172,30 @@ internal constructor(
   fun startChat(history: List<Content> = emptyList()): Chat = Chat(this, history.toMutableList())
 
   /**
-   * Counts the number of tokens in a prompt.
+   * Counts the amount of tokens in a prompt.
    *
    * @param prompt A group of [Content]s to count tokens of.
-   * @return A [CountTokensResponse] containing the number of tokens in the prompt.
+   * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
     return controller.countTokens(constructCountTokensRequest(*prompt)).toPublic()
   }
 
   /**
-   * Counts the number of tokens in the text prompt.
+   * Counts the amount of tokens in the text prompt.
    *
    * @param prompt The text to be converted to a single piece of [Content] to count the tokens of.
-   * @return A [CountTokensResponse] containing the number of tokens in the prompt.
+   * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(prompt: String): CountTokensResponse {
     return countTokens(content { text(prompt) })
   }
 
   /**
-   * Counts the number of tokens in the image prompt.
+   * Counts the amount of tokens in the image prompt.
    *
    * @param prompt The image to be converted to a single piece of [Content] to count the tokens of.
-   * @return A [CountTokensResponse] containing the number of tokens in the prompt.
+   * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(prompt: Bitmap): CountTokensResponse {
     return countTokens(content { image(prompt) })
