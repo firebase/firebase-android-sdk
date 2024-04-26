@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies
 
 # 17.2.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-installations-ktx`

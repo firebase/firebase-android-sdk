@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies
 
 # 16.0.0-beta12
 * [unchanged] Updated to accommodate the release of the updated

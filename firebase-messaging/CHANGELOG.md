@@ -2,6 +2,7 @@
 * [changed] Switched Firelog to use the new TransportBackend.
 * [changed] Log analytics for notifications displayed by Google Play services on
   behalf of the app.
+* [changed] Bump internal dependencies
 
 # 23.4.1
 * [changed] Bump internal dependencies.

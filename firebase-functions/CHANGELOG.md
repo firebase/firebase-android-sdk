@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies
 
 # 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-functions-ktx`

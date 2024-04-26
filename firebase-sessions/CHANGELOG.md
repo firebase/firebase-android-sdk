@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies
 * [fixed] Handled datastore writes when device has full internal memory more gracefully.
   (GitHub [#5859](https://github.com/firebase/firebase-android-sdk/issues/5859))
 * [fixed] Safely unbind malfunctioning session lifecycle service to release service connections.
