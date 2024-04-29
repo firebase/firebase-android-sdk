@@ -35,7 +35,7 @@ android {
   compileSdkVersion 34
   namespace = "com.google.firebase.testing"
   defaultConfig {
-    minSdkVersion 21
+    minSdkVersion 23
     multiDexEnabled true
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     versionName "1.0.0"
