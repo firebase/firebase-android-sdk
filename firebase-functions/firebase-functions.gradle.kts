@@ -16,6 +16,7 @@ plugins {
     id("firebase-library")
     id("kotlin-android")
     id("firebase-vendor")
+    id("copy-google-services")
 }
 
 firebaseLibrary {
@@ -55,9 +56,9 @@ dependencies {
     javadocClasspath(libs.findbugs.jsr305)
 
     api("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
     api("com.google.firebase:firebase-annotations:16.2.0")
     api("com.google.firebase:firebase-auth-interop:18.0.0") {
        exclude(group = "com.google.firebase", module = "firebase-common")
@@ -97,10 +98,3 @@ dependencies {
     androidTestImplementation(libs.mockito.dexmaker)
     androidTestImplementation(libs.truth)
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-extra["packageName"] = "com.google.firebase.functions"
-apply(from = "../gradle/googleServices.gradle")

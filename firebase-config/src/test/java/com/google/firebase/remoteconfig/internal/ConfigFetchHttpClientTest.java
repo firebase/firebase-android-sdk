@@ -288,21 +288,6 @@ public class ConfigFetchHttpClientTest {
   }
 
   @Test
-  @Config(sdk = Build.VERSION_CODES.KITKAT /* 19 */)
-  public void fetch_localeUsesToStringBelowLollipop() throws Exception {
-    String languageTag = "zh-Hant-TW"; // Taiwan Chinese in traditional script
-    String languageString = "zh_TW_#Hant";
-    context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
-
-    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
-
-    fetch(FIRST_ETAG);
-
-    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
-    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageString);
-  }
-
-  @Test
   public void fetch_installationIdIsNull_throwsFRCClientException() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 

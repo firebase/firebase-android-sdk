@@ -106,9 +106,9 @@ thirdPartyLicenses {
 
 dependencies {
     api project(':firebase-crashlytics')
-    api "com.google.firebase:firebase-common:20.4.2"
-    api "com.google.firebase:firebase-common-ktx:20.4.2"
-    api "com.google.firebase:firebase-components:17.1.5"
+    api "com.google.firebase:firebase-common:21.0.0"
+    api "com.google.firebase:firebase-common-ktx:21.0.0"
+    api "com.google.firebase:firebase-components:18.0.0"
 
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
 

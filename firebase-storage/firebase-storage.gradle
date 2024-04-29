@@ -16,6 +16,7 @@ plugins {
     id 'firebase-library'
     id("kotlin-android")
     id 'com.google.protobuf'
+    id("copy-google-services")
 }
 
 firebaseLibrary {
@@ -94,9 +95,9 @@ dependencies {
          exclude group: "com.google.firebase", module: "firebase-components"
          exclude group: "com.google.firebase", module: "firebase-annotations"
      }
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
@@ -118,10 +119,3 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.12'
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.google.firebase.storage"
-apply from: '../gradle/googleServices.gradle'

@@ -43,8 +43,8 @@ dependencies {
 
     api 'com.google.android.gms:play-services-tasks:18.0.1'
     api 'com.google.firebase:firebase-annotations:16.2.0'
-    api 'com.google.firebase:firebase-common:20.3.1'
-    api 'com.google.firebase:firebase-components:17.1.0'
+    api 'com.google.firebase:firebase-common:21.0.0'
+    api 'com.google.firebase:firebase-components:18.0.0'
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"

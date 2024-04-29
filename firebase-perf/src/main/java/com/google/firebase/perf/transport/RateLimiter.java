@@ -20,7 +20,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.resource.ResourceType;
