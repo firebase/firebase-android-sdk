@@ -24,7 +24,7 @@ public interface GetManyToOneSelfMatchingNameByKeyQuery :
     GetManyToOneSelfMatchingNameByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: ManyToOneSelfMatchingNameKey?)
+  @Serializable public data class Variables(val key: ManyToOneSelfMatchingNameKey)
 
   @Serializable
   public data class Data(val manyToOneSelfMatchingName: ManyToOneSelfMatchingName?) {
@@ -52,19 +52,19 @@ public interface GetManyToOneSelfMatchingNameByKeyQuery :
 }
 
 public fun GetManyToOneSelfMatchingNameByKeyQuery.ref(
-  key: ManyToOneSelfMatchingNameKey?
+  key: ManyToOneSelfMatchingNameKey
 ): QueryRef<
   GetManyToOneSelfMatchingNameByKeyQuery.Data, GetManyToOneSelfMatchingNameByKeyQuery.Variables
 > = ref(GetManyToOneSelfMatchingNameByKeyQuery.Variables(key = key))
 
 public suspend fun GetManyToOneSelfMatchingNameByKeyQuery.execute(
-  key: ManyToOneSelfMatchingNameKey?
+  key: ManyToOneSelfMatchingNameKey
 ): QueryResult<
   GetManyToOneSelfMatchingNameByKeyQuery.Data, GetManyToOneSelfMatchingNameByKeyQuery.Variables
 > = ref(key = key).execute()
 
 public fun GetManyToOneSelfMatchingNameByKeyQuery.flow(
-  key: ManyToOneSelfMatchingNameKey?
+  key: ManyToOneSelfMatchingNameKey
 ): Flow<
   QuerySubscriptionResult<
     GetManyToOneSelfMatchingNameByKeyQuery.Data, GetManyToOneSelfMatchingNameByKeyQuery.Variables

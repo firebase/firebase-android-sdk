@@ -22,7 +22,7 @@ public interface GetManyToManySelfChildByKeyQuery :
     DemoConnector, GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: ManyToManySelfChildKey?)
+  @Serializable public data class Variables(val key: ManyToManySelfChildKey)
 
   @Serializable
   public data class Data(val manyToManySelfChild: ManyToManySelfChild?) {
@@ -56,17 +56,17 @@ public interface GetManyToManySelfChildByKeyQuery :
 }
 
 public fun GetManyToManySelfChildByKeyQuery.ref(
-  key: ManyToManySelfChildKey?
+  key: ManyToManySelfChildKey
 ): QueryRef<GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables> =
   ref(GetManyToManySelfChildByKeyQuery.Variables(key = key))
 
 public suspend fun GetManyToManySelfChildByKeyQuery.execute(
-  key: ManyToManySelfChildKey?
+  key: ManyToManySelfChildKey
 ): QueryResult<GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables> =
   ref(key = key).execute()
 
 public fun GetManyToManySelfChildByKeyQuery.flow(
-  key: ManyToManySelfChildKey?
+  key: ManyToManySelfChildKey
 ): Flow<
   QuerySubscriptionResult<
     GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables
