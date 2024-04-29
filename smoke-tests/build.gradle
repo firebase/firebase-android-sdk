@@ -33,7 +33,7 @@ apply plugin: "com.android.application"
 
 android {
   compileSdkVersion 34
-  namespace = "com.google.firebase"
+  namespace = "com.google.firebase.testing"
   defaultConfig {
     minSdkVersion 21
     multiDexEnabled true
