@@ -632,7 +632,7 @@ mutation InsertManyToOneSelfCustomName($ref: ManyToOneSelfCustomName_Key) @auth(
   manyToOneSelfCustomName_insert(data: {ref: $ref})
 }
 
-query GetManyToOneSelfCustomNameByKey($key: ManyToOneSelfCustomName_Key) @auth(level: PUBLIC) {
+query GetManyToOneSelfCustomNameByKey($key: ManyToOneSelfCustomName_Key!) @auth(level: PUBLIC) {
   manyToOneSelfCustomName(key: $key) {
     id
     ref {
@@ -646,7 +646,7 @@ mutation InsertManyToOneSelfMatchingName($ref: ManyToOneSelfMatchingName_Key) @a
   manyToOneSelfMatchingName_insert(data: {manyToOneSelfMatchingName: $ref})
 }
 
-query GetManyToOneSelfMatchingNameByKey($key: ManyToOneSelfMatchingName_Key) @auth(level: PUBLIC) {
+query GetManyToOneSelfMatchingNameByKey($key: ManyToOneSelfMatchingName_Key!) @auth(level: PUBLIC) {
   manyToOneSelfMatchingName(key: $key) {
     id
     manyToOneSelfMatchingName {
@@ -664,7 +664,7 @@ mutation InsertManyToManySelfChild @auth(level: PUBLIC) {
   manyToManySelfChild_insert(data: {})
 }
 
-query GetManyToManySelfChildByKey($key: ManyToManySelfChild_Key) @auth(level: PUBLIC) {
+query GetManyToManySelfChildByKey($key: ManyToManySelfChild_Key!) @auth(level: PUBLIC) {
   manyToManySelfChild(key: $key) {
     manyToManySelfChildren_via_ManyToManySelfParent_on_child1 { id }
     manyToManySelfChildren_via_ManyToManySelfParent_on_child2 { id }
