@@ -27,11 +27,11 @@ import com.google.firebase.dataconnect.util.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.firebase.dataconnect.v1main.ConnectorServiceGrpc
-import google.firebase.dataconnect.v1main.ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub
-import google.firebase.dataconnect.v1main.GraphqlError
-import google.firebase.dataconnect.v1main.executeMutationRequest
-import google.firebase.dataconnect.v1main.executeQueryRequest
+import google.firebase.dataconnect.proto.ConnectorServiceGrpc
+import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub
+import google.firebase.dataconnect.proto.GraphqlError
+import google.firebase.dataconnect.proto.executeMutationRequest
+import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata

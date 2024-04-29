@@ -6,7 +6,7 @@ package google.firebase.dataconnect.v1alpha;
 
 import "google/protobuf/struct.proto";
 
-option java_package = "google.firebase.dataconnect.v1main";
+option java_package = "google.firebase.dataconnect.proto";
 option java_multiple_files = true;
 
 // GraphqlError conforms to the GraphQL error spec.
