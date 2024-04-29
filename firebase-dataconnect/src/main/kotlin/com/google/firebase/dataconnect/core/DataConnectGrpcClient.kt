@@ -27,6 +27,7 @@ import com.google.firebase.dataconnect.util.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import google.firebase.dataconnect.v1main.ConnectorServiceGrpc
 import google.firebase.dataconnect.v1main.ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub
 import google.firebase.dataconnect.v1main.GraphqlError
 import google.firebase.dataconnect.v1main.executeMutationRequest
@@ -129,7 +130,8 @@ internal class DataConnectGrpcClient(
     }
 
     logger.debug {
-      "executeQuery() [rid=$requestId] sending " +
+      val method = ConnectorServiceGrpc.getExecuteQueryMethod()
+      "executeQuery() [rid=$requestId] sending RPC \"${method.fullMethodName}\" with " +
         "ExecuteQueryRequest: ${request.toCompactString()}"
     }
     val response =
@@ -165,7 +167,8 @@ internal class DataConnectGrpcClient(
     }
 
     logger.debug {
-      "executeMutation() [rid=$requestId] sending " +
+      val method = ConnectorServiceGrpc.getExecuteMutationMethod()
+      "executeMutation() [rid=$requestId] sending RPC \"${method.fullMethodName}\" with " +
         "ExecuteMutationRequest: ${request.toCompactString()}"
     }
     val response =
