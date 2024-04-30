@@ -44,10 +44,9 @@ dependencies {
   implementation("com.google.firebase:firebase-components:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
   }
-  implementation("com.google.firebase:firebase-auth:20.0.0") {
+  implementation("com.google.firebase:firebase-auth:22.3.1") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
-    exclude(group = "com.google.android.recaptcha", module = "recaptcha")
   }
 
   implementation(libs.mockito.core)
