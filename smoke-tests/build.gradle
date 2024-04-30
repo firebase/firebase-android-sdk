@@ -23,8 +23,8 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:7.2.2"
-    classpath "com.google.gms:google-services:4.3.10"
+    classpath "com.android.tools.build:gradle:8.3.2"
+    classpath "com.google.gms:google-services:4.3.14"
     classpath "com.google.firebase:firebase-crashlytics-gradle:2.8.1"
   }
 }
@@ -33,9 +33,9 @@ apply plugin: "com.android.application"
 
 android {
   compileSdkVersion 34
-
+  namespace = "com.google.firebase.testing"
   defaultConfig {
-    minSdkVersion 21
+    minSdkVersion 23
     multiDexEnabled true
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     versionName "1.0.0"
@@ -76,7 +76,7 @@ dependencies {
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.firebase:firebase-config"
-  implementation "com.google.firebase:firebase-crashlytics"
+  implementation "com.google.firebase:firebase-crashlytics:18.6.4"
   implementation "com.google.firebase:firebase-database"
   implementation "com.google.firebase:firebase-dynamic-links"
   implementation "com.google.firebase:firebase-firestore"
@@ -86,7 +86,7 @@ dependencies {
   implementation "com.google.firebase:firebase-iid:21.1.0"
   implementation "com.google.firebase:firebase-inappmessaging"
   implementation "com.google.firebase:firebase-messaging"
-  implementation "com.google.firebase:firebase-ml-modeldownloader"
+  implementation "com.google.firebase:firebase-ml-modeldownloader:24.2.3"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
   implementation "com.google.truth:truth:1.0.1"
