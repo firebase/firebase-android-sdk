@@ -35,7 +35,7 @@ android {
     compileSdk = targetSdkVersion
 
     defaultConfig {
-      minSdk = 16
+      minSdk = 21
       targetSdk = targetSdkVersion
       multiDexEnabled = true
       testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -49,7 +49,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 
@@ -66,9 +68,9 @@ dependencies {
          exclude(group = "com.google.firebase", module = "firebase-common")
          exclude(group = "com.google.firebase", module = "firebase-components")
      }
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
     api("com.google.firebase:firebase-installations:17.2.0")
 
     // Kotlin & Android

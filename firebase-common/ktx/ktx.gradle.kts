@@ -41,12 +41,15 @@ android {
             java.srcDirs("src/test/kotlin")
         }
     }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
     api(project(":firebase-common"))
-    implementation("com.google.firebase:firebase-components:17.1.5")
+    implementation("com.google.firebase:firebase-components:18.0.0")
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)

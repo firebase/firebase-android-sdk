@@ -40,7 +40,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
+    kotlinOptions { jvmTarget = "1.8" }
     testOptions.unitTests.includeAndroidResources = true
 }
 
@@ -50,9 +50,9 @@ dependencies {
     api 'com.google.android.gms:play-services-tasks:18.1.0'
     api 'com.google.firebase:firebase-annotations:16.2.0'
     api "com.google.firebase:firebase-appcheck-interop:17.1.0"
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:18.1.0'
@@ -67,8 +67,8 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-inline:2.25.0'
+    testImplementation 'org.mockito:mockito-core:5.2.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
     androidTestImplementation project(':appcheck:firebase-appcheck')

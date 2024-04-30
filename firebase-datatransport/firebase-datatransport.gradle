@@ -39,6 +39,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     testOptions {
         unitTests {
             includeAndroidResources = true
@@ -47,13 +48,14 @@ android {
 }
 
 dependencies {
-    api 'com.google.firebase:firebase-common:20.4.2'
-    api 'com.google.firebase:firebase-components:17.1.5'
+    api 'com.google.firebase:firebase-common:21.0.0'
+    api 'com.google.firebase:firebase-components:18.0.0'
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.datatransport:transport-api:3.1.0'
     implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
     implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
 
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation 'androidx.test:runner:1.2.0'

@@ -25,6 +25,7 @@ plugins {
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
   id("com.google.firebase.firebase-perf")
+  id("copy-google-services")
 }
 
 android {
@@ -34,6 +35,7 @@ android {
 
   namespace = "com.google.firebase.testing.sessions"
   compileSdk = compileSdkVersion
+  buildFeatures.buildConfig = true
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
     minSdk = minSdkVersion
@@ -84,16 +86,12 @@ dependencies {
   implementation("com.google.android.material:material:1.9.0")
   implementation(libs.androidx.core)
 
-  androidTestImplementation("com.google.firebase:firebase-common:20.4.2")
+  androidTestImplementation("com.google.firebase:firebase-common:21.0.0")
   androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
-
-extra["packageName"] = "com.google.firebase.testing.sessions"
-
-apply(from = "../../gradle/googleServices.gradle")
 
 apply<FirebaseTestLabPlugin>()
 

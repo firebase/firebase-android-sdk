@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'copy-google-services'
 }
 
 firebaseLibrary {
@@ -41,7 +42,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
     testOptions.unitTests.includeAndroidResources = true
 }
 
@@ -51,9 +51,9 @@ dependencies {
     api project(':appcheck:firebase-appcheck')
     api project(':appcheck:firebase-appcheck-debug')
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
-    api 'com.google.firebase:firebase-common:20.4.2'
-    api 'com.google.firebase:firebase-common-ktx:20.4.2'
-    api 'com.google.firebase:firebase-components:17.1.5'
+    api 'com.google.firebase:firebase-common:21.0.0'
+    api 'com.google.firebase:firebase-common-ktx:21.0.0'
+    api 'com.google.firebase:firebase-components:18.0.0'
 
     implementation "androidx.test:core:$androidxTestCoreVersion"
     implementation 'com.google.android.gms:play-services-base:18.0.1'
@@ -73,10 +73,3 @@ dependencies {
     androidTestImplementation 'junit:junit:4.13-beta-2'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.google.firebase.appcheck.debug.testing"
-apply from: '../../gradle/googleServices.gradle'
