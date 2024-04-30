@@ -87,17 +87,13 @@ protobuf {
 }
 
 dependencies {
-  // TODO: Change `project` dependencies to normal, versioned dependencies once firebase-common is
-  // released with RandomUtil changes from https://github.com/firebase/firebase-android-sdk/pull/5818.
-  // This should be the M147 release that is scheduled for May 02, 2024.
-  api(project(":firebase-common"))
-  api(project(":firebase-common:ktx"))
+  api("com.google.firebase:firebase-common:21.0.0")
 
   api(libs.kotlinx.coroutines.core)
   api(libs.kotlinx.serialization.core)
 
   implementation("com.google.firebase:firebase-annotations:16.2.0")
-  implementation("com.google.firebase:firebase-components:17.1.5") {
+  implementation("com.google.firebase:firebase-components:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
   }
   implementation(project(":protolite-well-known-types"))
