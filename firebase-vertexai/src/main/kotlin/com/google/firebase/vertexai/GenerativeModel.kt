@@ -23,6 +23,7 @@ import com.google.ai.client.generativeai.common.CountTokensRequest
 import com.google.ai.client.generativeai.common.GenerateContentRequest
 import com.google.ai.client.generativeai.common.HeaderProvider
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.internal.util.toPublic
 import com.google.firebase.vertexai.type.Content
@@ -68,7 +69,8 @@ internal constructor(
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
-    appCheckTokenProvider: InteropAppCheckTokenProvider? = null
+    appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
+    internalAuthProvider: InternalAuthProvider? = null,
   ) : this(
     modelName,
     generationConfig,
@@ -86,17 +88,28 @@ internal constructor(
           get() = 10.seconds
 
         override suspend fun generateHeaders(): Map<String, String> {
+          val headers = HashMap<String, String>()
           if (appCheckTokenProvider == null) {
             Log.w(TAG, "AppCheck not registered, skipping")
-            return emptyMap()
-          }
-          val token = appCheckTokenProvider.getToken(false).await()
+          } else {
+            val token = appCheckTokenProvider.getToken(false).await()
 
-          if (token.error != null) {
-            Log.w(TAG, "Error obtaining appcheck token", token.error)
+            if (token.error != null) {
+              Log.w(TAG, "Error obtaining AppCheck token", token.error)
+            } else {
+              headers["X-Firebase-AppCheck"] = token.token
+            }
           }
 
-          return mapOf("X-Firebase-AppCheck" to token.token)
+          if (internalAuthProvider == null) {
+            Log.w(TAG, "Auth not registered, skipping")
+          } else {
+            val token = internalAuthProvider.getAccessToken(false).await()
+
+            headers["Authorization"] = token.token!!
+          }
+
+          return headers
         }
       }
     )

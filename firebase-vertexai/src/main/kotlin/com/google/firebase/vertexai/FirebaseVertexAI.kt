@@ -20,6 +20,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
@@ -33,7 +34,8 @@ import com.google.firebase.vertexai.type.ToolConfig
 class FirebaseVertexAI
 internal constructor(
   private val firebaseApp: FirebaseApp,
-  private val appCheckProvider: Provider<InteropAppCheckTokenProvider>
+  private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
+  private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
 
   /**
@@ -73,7 +75,8 @@ internal constructor(
       toolConfig,
       systemInstruction,
       requestOptions,
-      appCheckProvider.get()
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
     )
   }
 
