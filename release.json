@@ -32,7 +32,6 @@
         ":firebase-ml-modeldownloader:ktx",
         ":firebase-perf",
         ":firebase-perf:ktx",
-        ":firebase-segmentation",
         ":firebase-sessions",
         ":firebase-storage",
         ":firebase-storage:ktx",
