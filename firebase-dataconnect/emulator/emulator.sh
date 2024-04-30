@@ -15,7 +15,7 @@ readonly CLI_ARGS=(
 readonly FIREBASE_ARGS=(
   firebase emulators:exec
   --only auth
-  --project placeholder-test-project-for-data-connect-integration-testing
+  --project dataconnect-demo
   "${CLI_ARGS[*]}"
 )
 

@@ -4,7 +4,6 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.auth.FirebaseAuthCredentialsProvider
 import com.google.firebase.inject.Deferred
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
@@ -64,7 +63,7 @@ internal class FirebaseDataConnectFactory(
       config = config,
       blockingExecutor = blockingExecutor,
       nonBlockingExecutor = nonBlockingExecutor,
-      authProvider = FirebaseAuthCredentialsProvider(deferredAuthProvider),
+      deferredAuthProvider = deferredAuthProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
     )

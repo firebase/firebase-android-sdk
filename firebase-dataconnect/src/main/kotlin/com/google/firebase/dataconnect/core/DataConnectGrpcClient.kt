@@ -15,11 +15,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
-import com.google.firebase.dataconnect.DataConnectError
-import com.google.firebase.dataconnect.DataConnectException
-import com.google.firebase.dataconnect.DataConnectUntypedData
-import com.google.firebase.dataconnect.auth.CredentialsProvider
-import com.google.firebase.dataconnect.auth.User
+import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.decodeFromStruct
 import com.google.firebase.dataconnect.util.toCompactString
@@ -39,8 +35,7 @@ import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.*
 import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
@@ -49,7 +44,7 @@ internal class DataConnectGrpcClient(
   connector: String,
   location: String,
   service: String,
-  private val authProvider: CredentialsProvider<User>,
+  private val dataConnectAuth: DataConnectAuth,
   host: String,
   sslEnabled: Boolean,
   private val blockingExecutor: Executor,
@@ -64,11 +59,13 @@ internal class DataConnectGrpcClient(
   private val AUTHORIZATION_HEADER =
     Metadata.Key.of("X-Firebase-Auth-Token", Metadata.ASCII_STRING_MARSHALLER)
 
+  private val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
+
   private val closedMutex = Mutex()
   private var closed = false
 
   private val lazyGrpcChannel =
-    SuspendingLazy(closedMutex, blockingExecutor.asCoroutineDispatcher()) {
+    SuspendingLazy(closedMutex, blockingDispatcher) {
       if (closed) throw IllegalStateException("DataConnectGrpcClient instance has been closed")
 
       logger.debug { "${ManagedChannel::class.qualifiedName} initialization started" }
@@ -137,7 +134,7 @@ internal class DataConnectGrpcClient(
     val response =
       lazyGrpcStub
         .get()
-        .runCatching { executeQuery(request, createMetadata()) }
+        .runCatching { executeQuery(request, createMetadata(requestId)) }
         .onFailure {
           logger.warn(it) {
             "executeQuery() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
@@ -174,7 +171,7 @@ internal class DataConnectGrpcClient(
     val response =
       lazyGrpcStub
         .get()
-        .runCatching { executeMutation(request, createMetadata()) }
+        .runCatching { executeMutation(request, createMetadata(requestId)) }
         .onFailure {
           logger.warn(it) {
             "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
@@ -196,14 +193,11 @@ internal class DataConnectGrpcClient(
   private var awaitTerminationJob: Deferred<Unit>? = null
   private var closeCompleted = false
 
-  private suspend fun createMetadata(): Metadata {
+  private suspend fun createMetadata(requestId: String): Metadata {
+    val token = dataConnectAuth.getAccessToken(requestId)
     val metadata = Metadata()
-    val token = authProvider.getToken()
-    if (token != null) {
+    if (token !== null) {
       metadata.put(AUTHORIZATION_HEADER, "Bearer $token")
-      logger.debug { "Successfully fetched auth token." }
-    } else {
-      logger.debug { "Failed to get auth token." }
     }
     return metadata
   }
@@ -227,7 +221,7 @@ internal class DataConnectGrpcClient(
     val job =
       awaitTerminationJob?.let { if (it.isCancelled && it.isCompleted) null else it }
         ?: GlobalScope.async<Unit> {
-            withContext(blockingExecutor.asCoroutineDispatcher()) {
+            withContext(blockingDispatcher) {
               grpcChannel.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
             }
           }

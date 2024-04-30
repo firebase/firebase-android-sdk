@@ -15,9 +15,8 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.auth.CredentialsProvider
-import com.google.firebase.dataconnect.auth.User
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import java.util.concurrent.Executor
 import kotlinx.coroutines.*
@@ -46,7 +45,7 @@ internal class FirebaseDataConnectImpl(
   override val config: ConnectorConfig,
   override val blockingExecutor: Executor,
   override val nonBlockingExecutor: Executor,
-  private val authProvider: CredentialsProvider<User>,
+  private val deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
 ) : FirebaseDataConnectInternal {
@@ -82,6 +81,12 @@ internal class FirebaseDataConnectImpl(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
+  private val dataConnectAuth =
+    SuspendingLazy(mutex) {
+      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      DataConnectAuth(deferredAuthProvider, blockingExecutor, logger)
+    }
+
   override val lazyGrpcClient =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
@@ -107,7 +112,7 @@ internal class FirebaseDataConnectImpl(
         connector = config.connector,
         location = config.location,
         service = config.serviceId,
-        authProvider = authProvider,
+        dataConnectAuth = dataConnectAuth.getLocked(),
         host = host,
         sslEnabled = sslEnabled,
         blockingExecutor = blockingExecutor,
@@ -173,6 +178,10 @@ internal class FirebaseDataConnectImpl(
     // accessed by a coroutine that has acquired `mutex`
     runBlocking { mutex.withLock { closed = true } }
 
+    // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
+    // is re-entrant, this is safe even if it's already been closed.
+    dataConnectAuth.initializedValueOrNull?.close()
+
     // If a previous attempt was successful, then just return because there is nothing to do.
     if (closeResult.isResultSuccess) {
       return
@@ -201,7 +210,7 @@ internal class FirebaseDataConnectImpl(
         kotlin
           .runCatching {
             logger.debug { "Closing started" }
-            lazyGrpcClient.initializedValueOrNull?.apply { close() }
+            lazyGrpcClient.initializedValueOrNull?.close()
             coroutineScope.cancel()
             logger.debug { "Closing completed" }
           }
