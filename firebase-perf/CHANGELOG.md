@@ -1,5 +1,6 @@
 # Unreleased
-
+[fixed] Fixed an `ExceptionInInitializerError` where the `url.openStream()` causes a crash if
+FirebasePerf is not yet initialized.
 
 # 20.5.2
 * [changed] Bump internal dependencies.
