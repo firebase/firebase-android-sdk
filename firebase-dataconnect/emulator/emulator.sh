@@ -2,23 +2,12 @@
 
 set -euo pipefail
 
-readonly CLI_ARGS=(
-  ./cli
-  -alsologtostderr=1
-  -stderrthreshold=0
-  -log_dir=logs
-  dev
-  --disable_sdk_generation=true
-  "-local_connection_string=\"postgresql://postgres:postgres@localhost:5432/emulator?sslmode=disable\""
-)
-
 readonly FIREBASE_ARGS=(
   firebase emulators:exec
   --only auth
   --project dataconnect-demo
-  "${CLI_ARGS[*]}"
+  ./emulator_noauth.sh
 )
 
-set -xv
-
+echo "[$0] Running command: ${FIREBASE_ARGS[*]}"
 exec "${FIREBASE_ARGS[@]}"
