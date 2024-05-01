@@ -21,3 +21,8 @@ public class DataConnectSettings(
 }
 
 internal fun DataConnectSettings.isDefaultHost() = host == DataConnectSettings().host
+
+// NOTE: To have firebase-tools use a different Data Connect host (e.g. staging), set the
+// environment variable `FIREBASE_DATACONNECT_URL` to the URL.
+internal const val STAGING_DATACONNECT_HOST =
+  "https://staging-firebasedataconnect.sandbox.googleapis.com"
