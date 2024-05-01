@@ -40,8 +40,13 @@ suspend fun delayUntil(name: String? = null, predicate: () -> Boolean) {
   }
 }
 
-/** Generates and returns a random UUID in its string format. */
-fun randomId(): String = UUID.randomUUID().toString()
+/**
+ * Generates and returns a random UUID in its string format.
+ *
+ * The returned string will be a UUID with all dashes removed, because Data Connect will remove the
+ * dashes before writing the value to the database (see cl/629562890).
+ */
+fun randomId(): String = UUID.randomUUID().toString().replace("-", "")
 
 class DelayUntilTimeoutException(message: String) : Exception(message)
 

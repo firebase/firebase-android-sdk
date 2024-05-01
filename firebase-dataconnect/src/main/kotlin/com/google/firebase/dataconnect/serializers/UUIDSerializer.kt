@@ -26,11 +26,34 @@ public object UUIDSerializer : KSerializer<UUID> {
     PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
 
   override fun serialize(encoder: Encoder, value: UUID) {
-    encoder.encodeString(value.toString())
+    // Remove dashes from the UUID since the server will remove them anyways (see cl/629562890).
+    val uuidString = value.toString().replace("-", "")
+    encoder.encodeString(uuidString)
   }
 
   override fun deserialize(decoder: Decoder): UUID {
-    val uuidString = decoder.decodeString()
-    return UUID.fromString(uuidString)
+    val decodedString = decoder.decodeString()
+    require(decodedString.length == 32) {
+      "invalid UUID string: $decodedString (length=${decodedString.length}, expected=32)"
+    }
+
+    // Insert dashes into the UUID string since the server will remove them (see cl/629562890).
+    val decodedStringWithDashes = buildString {
+      append(decodedString, 0, 8)
+      append("-")
+      append(decodedString, 8, 12)
+      append("-")
+      append(decodedString, 12, 16)
+      append("-")
+      append(decodedString, 16, 20)
+      append("-")
+      append(decodedString, 20, decodedString.length)
+    }
+    check(decodedStringWithDashes.length == 36) {
+      "internal error: decodedStringWithDashes.length==${decodedStringWithDashes.length}, " +
+        "but expected 36 (decodedStringWithDashes=\"${decodedStringWithDashes}\")"
+    }
+
+    return UUID.fromString(decodedStringWithDashes)
   }
 }

@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.randomId
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.randomAnimalId
@@ -24,7 +25,6 @@ import com.google.firebase.dataconnect.testutil.schemas.randomFarmId
 import com.google.firebase.dataconnect.testutil.schemas.randomFarmerId
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonName
-import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
@@ -99,7 +99,7 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
       .createPrimitive(
         AllTypesSchema.PrimitiveData(
           id = id,
-          idFieldNullable = "e03b3062-bf60-4428-956a-17c0bc444691",
+          idFieldNullable = "e03b3062bf604428956a17c0bc444691",
           intField = 42,
           intFieldNullable = 43,
           floatField = 123.45,
@@ -116,7 +116,7 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val primitive = result.data.primitive ?: error("result.data.primitive is null")
     assertThat(primitive.id).isEqualTo(id)
-    assertThat(primitive.idFieldNullable).isEqualTo("e03b3062-bf60-4428-956a-17c0bc444691")
+    assertThat(primitive.idFieldNullable).isEqualTo("e03b3062bf604428956a17c0bc444691")
     assertThat(primitive.intField).isEqualTo(42)
     assertThat(primitive.intFieldNullable).isEqualTo(43)
     assertThat(primitive.floatField).isEqualTo(123.45)
@@ -166,9 +166,9 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
         AllTypesSchema.PrimitiveListData(
           id = id,
           idListNullable =
-            listOf("1c2a5a6d-f81c-4252-ac86-383bb93d3dfb", "b53f44ae-5be9-4354-b58d-10db98690954"),
+            listOf("1c2a5a6df81c4252ac86383bb93d3dfb", "b53f44ae5be94354b58d10db98690954"),
           idListOfNullable =
-            listOf("e87004fc-b45d-4b83-8ccb-3ffca5c98e8d", "ad08635e-7b49-4511-9b6e-daa3b390235e"),
+            listOf("e87004fcb45d4b838ccb3ffca5c98e8d", "ad08635e7b4945119b6edaa3b390235e"),
           intList = listOf(42, 43, 44),
           intListNullable = listOf(45, 46),
           intListOfNullable = listOf(47, 48),
@@ -192,16 +192,10 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
     val primitive = result.data.primitiveList ?: error("result.data.primitiveList is null")
     assertThat(primitive.id).isEqualTo(id)
     assertThat(primitive.idListNullable)
-      .containsExactly(
-        "1c2a5a6d-f81c-4252-ac86-383bb93d3dfb",
-        "b53f44ae-5be9-4354-b58d-10db98690954"
-      )
+      .containsExactly("1c2a5a6df81c4252ac86383bb93d3dfb", "b53f44ae5be94354b58d10db98690954")
       .inOrder()
     assertThat(primitive.idListOfNullable)
-      .containsExactly(
-        "e87004fc-b45d-4b83-8ccb-3ffca5c98e8d",
-        "ad08635e-7b49-4511-9b6e-daa3b390235e"
-      )
+      .containsExactly("e87004fcb45d4b838ccb3ffca5c98e8d", "ad08635e7b4945119b6edaa3b390235e")
       .inOrder()
     assertThat(primitive.intList).containsExactly(42, 43, 44).inOrder()
     assertThat(primitive.intListNullable).containsExactly(45, 46).inOrder()
@@ -373,8 +367,4 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
         assertWithMessage("results[$index]").that(result.data.person).isNull()
       }
     }
-
-  private companion object {
-    fun randomId(): String = UUID.randomUUID().toString()
-  }
 }

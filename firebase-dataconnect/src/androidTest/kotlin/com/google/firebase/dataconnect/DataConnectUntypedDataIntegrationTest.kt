@@ -44,7 +44,7 @@ class DataConnectUntypedDataIntegrationTest {
       .createPrimitive(
         AllTypesSchema.PrimitiveData(
           id = id,
-          idFieldNullable = "eebf7592-cf74-4871-8730-00a03a9af43e",
+          idFieldNullable = "eebf7592cf744871873000a03a9af43e",
           intField = 42,
           intFieldNullable = 43,
           floatField = 99.0,
@@ -68,7 +68,7 @@ class DataConnectUntypedDataIntegrationTest {
       .containsExactlyEntriesIn(
         mapOf(
           "id" to id,
-          "idFieldNullable" to "eebf7592-cf74-4871-8730-00a03a9af43e",
+          "idFieldNullable" to "eebf7592cf744871873000a03a9af43e",
           "intField" to 42.0,
           "intFieldNullable" to 43.0,
           "floatField" to 99.0,
@@ -133,9 +133,9 @@ class DataConnectUntypedDataIntegrationTest {
         AllTypesSchema.PrimitiveListData(
           id = id,
           idListNullable =
-            listOf("257e52b0-c3bf-4414-a7fa-8824b605f134", "33561fab-8645-464c-b818-89ce9a72f8bf"),
+            listOf("257e52b0c3bf4414a7fa8824b605f134", "33561fab8645464cb81889ce9a72f8bf"),
           idListOfNullable =
-            listOf("517cb2d6-48f3-4be3-bb0d-8ab81e57dabc", "1ebedd8f-8707-46f2-bd1b-b72c2b71b354"),
+            listOf("517cb2d648f34be3bb0d8ab81e57dabc", "1ebedd8f870746f2bd1bb72c2b71b354"),
           intList = listOf(42, 43, 44),
           intListNullable = listOf(45, 46),
           intListOfNullable = listOf(47, 48),
@@ -165,9 +165,9 @@ class DataConnectUntypedDataIntegrationTest {
         mapOf(
           "id" to id,
           "idListNullable" to
-            listOf("257e52b0-c3bf-4414-a7fa-8824b605f134", "33561fab-8645-464c-b818-89ce9a72f8bf"),
+            listOf("257e52b0c3bf4414a7fa8824b605f134", "33561fab8645464cb81889ce9a72f8bf"),
           "idListOfNullable" to
-            listOf("517cb2d6-48f3-4be3-bb0d-8ab81e57dabc", "1ebedd8f-8707-46f2-bd1b-b72c2b71b354"),
+            listOf("517cb2d648f34be3bb0d8ab81e57dabc", "1ebedd8f870746f2bd1bb72c2b71b354"),
           "intList" to listOf(42.0, 43.0, 44.0),
           "intListNullable" to listOf(45.0, 46.0),
           "intListOfNullable" to listOf(47.0, 48.0),
@@ -202,7 +202,7 @@ class DataConnectUntypedDataIntegrationTest {
           //  idListNullable = null,
           idListNullable = emptyList(),
           idListOfNullable =
-            listOf("1a392d5a-4b42-4425-b9ad-677ac8066697", "9faab31e-a108-4b53-be69-45fc47c4f0fc"),
+            listOf("1a392d5a4b424425b9ad677ac8066697", "9faab31ea1084b53be6945fc47c4f0fc"),
           intList = listOf(42, 43, 44),
           // TODO(b/337312723) Replace the line below once nullable list support is added
           //  intListNullable = null,
@@ -241,7 +241,7 @@ class DataConnectUntypedDataIntegrationTest {
           "id" to id,
           "idListNullable" to emptyList<String>(),
           "idListOfNullable" to
-            listOf("1a392d5a-4b42-4425-b9ad-677ac8066697", "9faab31e-a108-4b53-be69-45fc47c4f0fc"),
+            listOf("1a392d5a4b424425b9ad677ac8066697", "9faab31ea1084b53be6945fc47c4f0fc"),
           "intList" to listOf(42.0, 43.0, 44.0),
           "intListNullable" to emptyList<Int>(),
           "intListOfNullable" to listOf(47.0, 48.0),
