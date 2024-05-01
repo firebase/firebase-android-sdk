@@ -88,7 +88,7 @@ internal constructor(
           get() = 10.seconds
 
         override suspend fun generateHeaders(): Map<String, String> {
-          val headers = HashMap<String, String>()
+          val headers = mutableMapOf<String,String>()
           if (appCheckTokenProvider == null) {
             Log.w(TAG, "AppCheck not registered, skipping")
           } else {
@@ -104,9 +104,13 @@ internal constructor(
           if (internalAuthProvider == null) {
             Log.w(TAG, "Auth not registered, skipping")
           } else {
-            val token = internalAuthProvider.getAccessToken(false).await()
+            try {
+              val token = internalAuthProvider.getAccessToken(false).await()
 
-            headers["Authorization"] = token.token!!
+              headers["Authorization"] = token.token!!
+            } catch (e: Exception) {
+              Log.w(TAG, "Error getting Auth token ", e)
+            }
           }
 
           return headers
