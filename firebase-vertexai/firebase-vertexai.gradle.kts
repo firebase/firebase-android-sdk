@@ -63,7 +63,7 @@ dependencies {
   implementation("com.google.guava:listenablefuture:1.0")
   implementation("androidx.concurrent:concurrent-futures:1.2.0-alpha03")
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0-alpha03")
-  api("com.google.firebase:firebase-auth-interop:18.0.0")
+  implementation("com.google.firebase:firebase-auth-interop:18.0.0")
 
   testImplementation("io.kotest:kotest-assertions-core:5.5.5")
   testImplementation("io.kotest:kotest-assertions-core-jvm:5.5.5")
