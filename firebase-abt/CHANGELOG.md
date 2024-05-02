@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 22.0.0
+* [changed] Bump internal dependencies
+
 # 21.1.2
 * [changed] Bump internal dependencies.
 
