@@ -45,6 +45,7 @@ dependencies {
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)
   implementation(libs.turbine)
+  implementation(libs.truth)
 }
 
 tasks.withType<KotlinCompile>().all {

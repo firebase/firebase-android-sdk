@@ -14,10 +14,12 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import androidx.annotation.VisibleForTesting
 import androidx.test.platform.app.InstrumentationRegistry
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
+import java.net.URL
 
 // NOTE: To have firebase-tools use a different Data Connect host (e.g. staging), set the
 // environment variable `FIREBASE_DATACONNECT_URL` to the URL.
@@ -46,6 +48,13 @@ sealed interface DataConnectBackend {
     override fun toString() = "DataConnectBackend.Emulator(host=$host, port=$port)"
   }
 
+  class InvalidInstrumentationArgument(argumentValue: String, details: String, cause: Throwable) :
+    Exception(
+      "Invalid value for instrumentation argument \"$INSTRUMENTATION_ARGUMENT\": " +
+        "\"$argumentValue\" ($details: ${cause.message}",
+      cause
+    )
+
   companion object {
 
     private const val INSTRUMENTATION_ARGUMENT = "DATA_CONNECT_BACKEND"
@@ -65,7 +74,8 @@ sealed interface DataConnectBackend {
       return fromInstrumentationArgument(argument) ?: Emulator()
     }
 
-    private fun fromInstrumentationArgument(arg: String?): DataConnectBackend? {
+    @VisibleForTesting
+    internal fun fromInstrumentationArgument(arg: String?): DataConnectBackend? {
       if (arg === null) {
         return null
       }
@@ -81,24 +91,28 @@ sealed interface DataConnectBackend {
         try {
           URI(arg)
         } catch (e: URISyntaxException) {
-          println("WARNING: invalid $INSTRUMENTATION_ARGUMENT: \"$arg\" (e)")
-          e.printStackTrace()
-          return null
+          throw InvalidInstrumentationArgument(arg, "cannot be parsed as a URI", e)
         }
 
       if (uri.scheme == "emulator") {
-        return Emulator(host = uri.host, port = if (uri.port > 0) uri.port else null)
+        val url =
+          try {
+            URL("https://${uri.schemeSpecificPart}")
+          } catch (e: MalformedURLException) {
+            throw InvalidInstrumentationArgument(arg, "invalid 'emulator' URI", e)
+          }
+        val emulatorHost = url.host.ifEmpty { null }
+        val emulatorPort = url.port.let { if (it > 0) it else null }
+        return Emulator(host = emulatorHost, port = emulatorPort)
       }
 
       try {
-        uri.toURL()
+        URL(arg)
       } catch (e: MalformedURLException) {
-        println("WARNING: invalid $INSTRUMENTATION_ARGUMENT: \"$arg\" (e)")
-        e.printStackTrace()
-        return null
+        throw InvalidInstrumentationArgument(arg, "cannot be parsed as a URL", e)
       }
 
-      return Custom(host = arg)
+      return Custom(arg)
     }
   }
 }

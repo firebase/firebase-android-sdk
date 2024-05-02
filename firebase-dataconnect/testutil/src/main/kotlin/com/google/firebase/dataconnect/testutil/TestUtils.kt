@@ -16,8 +16,11 @@ import org.junit.Assert
  * if any, is also a non-word character. This effectively verifies that the given string is included
  * in the string being checked without being "mashed" into adjacent text.
  */
-fun StringSubject.containsWithNonAdjacentText(text: String) =
-  containsMatch("(^|\\W)${Pattern.quote(text)}($|\\W)")
+fun StringSubject.containsWithNonAdjacentText(text: String, ignoreCase: Boolean = false) {
+  val pattern = "(^|\\W)${Pattern.quote(text)}($|\\W)"
+  val expr = Pattern.compile(pattern, if (ignoreCase) Pattern.CASE_INSENSITIVE else 0)
+  containsMatch(expr)
+}
 
 /**
  * Calls [kotlinx.coroutines.delay] in such a way that it _really_ will delay, even when called from
