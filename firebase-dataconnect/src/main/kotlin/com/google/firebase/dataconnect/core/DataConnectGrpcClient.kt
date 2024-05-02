@@ -34,8 +34,14 @@ import io.grpc.Metadata
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.*
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
@@ -202,12 +208,34 @@ internal class DataConnectGrpcClient(
   private suspend fun createMetadata(requestId: String): Metadata {
     val token = dataConnectAuth.getAccessToken(requestId)
 
-    return Metadata().apply {
-      put(firebaseAuthTokenHeader, "location=${connector.location}&frontend=data")
-      if (token !== null) {
-        put(googRequestParamsHeader, "Bearer $token")
+    return Metadata()
+      .apply {
+        put(googRequestParamsHeader, "location=${connector.location}&frontend=data")
+        if (token !== null) {
+          put(firebaseAuthTokenHeader, "Bearer $token")
+        }
       }
-    }
+      .also {
+        logger.debug {
+          "[rid=$requestId] Sending grpc metadata \"${googRequestParamsHeader.name()}\": " +
+            it.get(googRequestParamsHeader)
+        }
+
+        val abbreviatedAuthHeaderValue =
+          it.get(firebaseAuthTokenHeader).let { authHeader ->
+            if (authHeader === null) {
+              null
+            } else if (authHeader.length <= 16) {
+              authHeader
+            } else {
+              authHeader.substring(0, 11) + "..." + authHeader.substring(authHeader.length - 4)
+            }
+          }
+        logger.debug {
+          "[rid=$requestId] Sending grpc metadata \"${firebaseAuthTokenHeader.name()}\": " +
+            abbreviatedAuthHeaderValue
+        }
+      }
   }
 
   suspend fun close() {
