@@ -89,16 +89,18 @@ class MainActivity : ComponentActivity() {
       val generativeModel =
         Firebase.vertexAI.generativeModel(
           modelName =
-            if (Build.MANUFACTURER == "google") "gemini-1.0-pro-002" else "gemini-1.0-pro",
+            if (Build.MANUFACTURER != "google") "gemini-1.0-pro-002" else "gemini-1.0-pro",
           generationConfig = generationConfig { temperature = 0.7f },
         )
 
       deviceInfo.value = "Fetching device details"
       val manufacturer = Build.MANUFACTURER
-      val deviceName =
-        Build.MODEL // Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
-      val deviceDetailsPrompt =
-        "Give me details about the phone ${manufacturer} ${deviceName} in JSON format without adding any extra details outside of json. Include information about the features that are available on the device including camera, bluetooth, size, weight and battery. Respond as just a plain json string without any markups."
+      val deviceName = Build.MODEL// Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+      val deviceDetailsPrompt = """Give me details about the phone $manufacturer $deviceName as a 
+        | JSON format without adding any extra details. Include information about the features that
+        | are available on the device including camera, bluetooth, size, weight and battery. Respond
+        | as just a plain JSON text without including any markups
+        |like quotes or back quotes.""".trimMargin()
       val result = generativeModel.generateContent(deviceDetailsPrompt)
 
       Log.i("TAG", "find me Prompt: ${deviceDetailsPrompt}")
