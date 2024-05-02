@@ -81,7 +81,7 @@ class MainActivity : ComponentActivity() {
       jsonText = jsonText.substring(7, jsonText.length - 3).trim()
     }
     val jsonObject = JSONObject(jsonText)
-    deviceInfo.value = jsonObject.toString(2)
+    deviceInfo.value = jsonObject.getString("name")
   }
 
   private fun promptAi(callback: (Any?) -> Unit) =
