@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -21,10 +21,10 @@ public interface InsertPrimaryKeyNested2Mutation :
     DemoConnector, InsertPrimaryKeyNested2Mutation.Data, InsertPrimaryKeyNested2Mutation.Variables
   > {
 
-  @Serializable public data class Variables(val value: String)
+  @Serializable public data class Variables(val value: String) {}
 
   @Serializable
-  public data class Data(@SerialName("primaryKeyNested2_insert") val key: PrimaryKeyNested2Key)
+  public data class Data(@SerialName("primaryKeyNested2_insert") val key: PrimaryKeyNested2Key) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -35,14 +35,21 @@ public interface InsertPrimaryKeyNested2Mutation :
 }
 
 public fun InsertPrimaryKeyNested2Mutation.ref(
-  value: String
+  value: String,
 ): MutationRef<InsertPrimaryKeyNested2Mutation.Data, InsertPrimaryKeyNested2Mutation.Variables> =
-  ref(InsertPrimaryKeyNested2Mutation.Variables(value = value))
+  ref(
+    InsertPrimaryKeyNested2Mutation.Variables(
+      value = value,
+    )
+  )
 
 public suspend fun InsertPrimaryKeyNested2Mutation.execute(
-  value: String
+  value: String,
 ): MutationResult<InsertPrimaryKeyNested2Mutation.Data, InsertPrimaryKeyNested2Mutation.Variables> =
-  ref(value = value).execute()
+  ref(
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

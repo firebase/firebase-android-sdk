@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,12 +22,12 @@ public interface GetPrimaryKeyIsUuidbyKeyQuery :
     DemoConnector, GetPrimaryKeyIsUuidbyKeyQuery.Data, GetPrimaryKeyIsUuidbyKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsUuidKey)
+  @Serializable public data class Variables(val key: PrimaryKeyIsUuidKey) {}
 
   @Serializable
   public data class Data(val primaryKeyIsUUID: PrimaryKeyIsUuid?) {
 
-    @Serializable public data class PrimaryKeyIsUuid(val id: java.util.UUID, val value: String)
+    @Serializable public data class PrimaryKeyIsUuid(val id: java.util.UUID, val value: String) {}
   }
 
   public companion object {
@@ -39,22 +39,34 @@ public interface GetPrimaryKeyIsUuidbyKeyQuery :
 }
 
 public fun GetPrimaryKeyIsUuidbyKeyQuery.ref(
-  key: PrimaryKeyIsUuidKey
+  key: PrimaryKeyIsUuidKey,
 ): QueryRef<GetPrimaryKeyIsUuidbyKeyQuery.Data, GetPrimaryKeyIsUuidbyKeyQuery.Variables> =
-  ref(GetPrimaryKeyIsUuidbyKeyQuery.Variables(key = key))
+  ref(
+    GetPrimaryKeyIsUuidbyKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetPrimaryKeyIsUuidbyKeyQuery.execute(
-  key: PrimaryKeyIsUuidKey
+  key: PrimaryKeyIsUuidKey,
 ): QueryResult<GetPrimaryKeyIsUuidbyKeyQuery.Data, GetPrimaryKeyIsUuidbyKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetPrimaryKeyIsUuidbyKeyQuery.flow(
-  key: PrimaryKeyIsUuidKey
+  key: PrimaryKeyIsUuidKey,
 ): Flow<
   QuerySubscriptionResult<
     GetPrimaryKeyIsUuidbyKeyQuery.Data, GetPrimaryKeyIsUuidbyKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,7 +22,7 @@ public interface GetInt64variantsByIdQuery :
     DemoConnector, GetInt64variantsByIdQuery.Data, GetInt64variantsByIdQuery.Variables
   > {
 
-  @Serializable public data class Variables(val id: String)
+  @Serializable public data class Variables(val id: String) {}
 
   @Serializable
   public data class Data(val int64Variants: Int64variants?) {
@@ -42,7 +42,7 @@ public interface GetInt64variantsByIdQuery :
       val nullableWithMinValue: Long?,
       val emptyList: List<Long>,
       val nonEmptyList: List<Long>
-    )
+    ) {}
   }
 
   public companion object {
@@ -53,20 +53,32 @@ public interface GetInt64variantsByIdQuery :
 }
 
 public fun GetInt64variantsByIdQuery.ref(
-  id: String
+  id: String,
 ): QueryRef<GetInt64variantsByIdQuery.Data, GetInt64variantsByIdQuery.Variables> =
-  ref(GetInt64variantsByIdQuery.Variables(id = id))
+  ref(
+    GetInt64variantsByIdQuery.Variables(
+      id = id,
+    )
+  )
 
 public suspend fun GetInt64variantsByIdQuery.execute(
-  id: String
+  id: String,
 ): QueryResult<GetInt64variantsByIdQuery.Data, GetInt64variantsByIdQuery.Variables> =
-  ref(id = id).execute()
+  ref(
+      id = id,
+    )
+    .execute()
 
 public fun GetInt64variantsByIdQuery.flow(
-  id: String
+  id: String,
 ): Flow<
   QuerySubscriptionResult<GetInt64variantsByIdQuery.Data, GetInt64variantsByIdQuery.Variables>
-> = ref(id = id).subscribe().flow
+> =
+  ref(
+      id = id,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

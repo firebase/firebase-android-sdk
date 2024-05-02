@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-@file:OptIn(ExperimentalSerializationApi::class, ExperimentalSerializationApi::class)
+@file:OptIn(ExperimentalSerializationApi::class)
 
 package com.google.firebase.dataconnect
 
@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.extensions.proto.LiteProtoTruth.assertThat
 import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.firebase.dataconnect.util.encodeToStruct
+import com.google.protobuf.Struct
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -184,12 +185,58 @@ class ProtoStructEncoderUnitTest {
         }
       )
   }
+
+  @Test
+  fun `encodeToStruct() should support OptionalVariable Undefined when T is not nullable`() {
+    @Serializable data class TestData(val s: OptionalVariable<String>)
+
+    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Undefined))
+
+    assertThat(encodedStruct).isEqualTo(Struct.getDefaultInstance())
+  }
+
+  @Test
+  fun `encodeToStruct() should support OptionalVariable Undefined when T is nullable`() {
+    @Serializable data class TestData(val s: OptionalVariable<String?>)
+
+    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Undefined))
+
+    assertThat(encodedStruct).isEqualTo(Struct.getDefaultInstance())
+  }
+
+  @Test
+  fun `encodeToStruct() should support OptionalVariable Value when T is not nullable`() {
+    @Serializable data class TestData(val s: OptionalVariable<String>)
+
+    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value("Hello")))
+
+    assertThat(encodedStruct).isEqualTo(buildStructProto { put("s", "Hello") })
+  }
+
+  @Test
+  fun `encodeToStruct() should support OptionalVariable Value when T is nullable but not null`() {
+    @Serializable data class TestData(val s: OptionalVariable<String?>)
+
+    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value("World")))
+
+    assertThat(encodedStruct).isEqualTo(buildStructProto { put("s", "World") })
+  }
+
+  @Test
+  fun `encodeToStruct() should support OptionalVariable Value when T is nullable and null`() {
+    @Serializable data class TestData(val s: OptionalVariable<String?>)
+
+    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value(null)))
+
+    assertThat(encodedStruct).isEqualTo(buildStructProto { putNull("s") })
+  }
 }
 
 /**
  * An encoder that can be useful during testing to simply print the method invocations in order to
  * discover how an encoder should be implemented.
  */
+@Suppress("unused")
 private class LoggingEncoder(
   private val idBySerialDescriptor: MutableMap<SerialDescriptor, Long> = mutableMapOf()
 ) : Encoder, CompositeEncoder {

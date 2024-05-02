@@ -1,10 +1,11 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
@@ -29,18 +30,174 @@ public interface InsertInt64variantsMutation :
     val nonNullWithNegativeValue: Long,
     val nonNullWithMaxValue: Long,
     val nonNullWithMinValue: Long,
-    val nullableWithNullValue: Long?,
-    val nullableWithZeroValue: Long?,
-    val nullableWithPositiveValue: Long?,
-    val nullableWithNegativeValue: Long?,
-    val nullableWithMaxValue: Long?,
-    val nullableWithMinValue: Long?,
+    val nullableWithNullValue: OptionalVariable<Long?>,
+    val nullableWithZeroValue: OptionalVariable<Long?>,
+    val nullableWithPositiveValue: OptionalVariable<Long?>,
+    val nullableWithNegativeValue: OptionalVariable<Long?>,
+    val nullableWithMaxValue: OptionalVariable<Long?>,
+    val nullableWithMinValue: OptionalVariable<Long?>,
     val emptyList: List<Long>,
     val nonEmptyList: List<Long>
-  )
+  ) {
+
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var id: String
+      public var nonNullWithZeroValue: Long
+      public var nonNullWithPositiveValue: Long
+      public var nonNullWithNegativeValue: Long
+      public var nonNullWithMaxValue: Long
+      public var nonNullWithMinValue: Long
+      public var nullableWithNullValue: Long?
+      public var nullableWithZeroValue: Long?
+      public var nullableWithPositiveValue: Long?
+      public var nullableWithNegativeValue: Long?
+      public var nullableWithMaxValue: Long?
+      public var nullableWithMinValue: Long?
+      public var emptyList: List<Long>
+      public var nonEmptyList: List<Long>
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(
+        id: String,
+        nonNullWithZeroValue: Long,
+        nonNullWithPositiveValue: Long,
+        nonNullWithNegativeValue: Long,
+        nonNullWithMaxValue: Long,
+        nonNullWithMinValue: Long,
+        emptyList: List<Long>,
+        nonEmptyList: List<Long>,
+        block_: Builder.() -> Unit
+      ): Variables {
+        var id = id
+        var nonNullWithZeroValue = nonNullWithZeroValue
+        var nonNullWithPositiveValue = nonNullWithPositiveValue
+        var nonNullWithNegativeValue = nonNullWithNegativeValue
+        var nonNullWithMaxValue = nonNullWithMaxValue
+        var nonNullWithMinValue = nonNullWithMinValue
+        var nullableWithNullValue: OptionalVariable<Long?> = OptionalVariable.Undefined
+        var nullableWithZeroValue: OptionalVariable<Long?> = OptionalVariable.Undefined
+        var nullableWithPositiveValue: OptionalVariable<Long?> = OptionalVariable.Undefined
+        var nullableWithNegativeValue: OptionalVariable<Long?> = OptionalVariable.Undefined
+        var nullableWithMaxValue: OptionalVariable<Long?> = OptionalVariable.Undefined
+        var nullableWithMinValue: OptionalVariable<Long?> = OptionalVariable.Undefined
+        var emptyList = emptyList
+        var nonEmptyList = nonEmptyList
+
+        return object : Builder {
+            override var id: String
+              get() = id
+              set(value_) {
+                id = value_
+              }
+
+            override var nonNullWithZeroValue: Long
+              get() = nonNullWithZeroValue
+              set(value_) {
+                nonNullWithZeroValue = value_
+              }
+
+            override var nonNullWithPositiveValue: Long
+              get() = nonNullWithPositiveValue
+              set(value_) {
+                nonNullWithPositiveValue = value_
+              }
+
+            override var nonNullWithNegativeValue: Long
+              get() = nonNullWithNegativeValue
+              set(value_) {
+                nonNullWithNegativeValue = value_
+              }
+
+            override var nonNullWithMaxValue: Long
+              get() = nonNullWithMaxValue
+              set(value_) {
+                nonNullWithMaxValue = value_
+              }
+
+            override var nonNullWithMinValue: Long
+              get() = nonNullWithMinValue
+              set(value_) {
+                nonNullWithMinValue = value_
+              }
+
+            override var nullableWithNullValue: Long?
+              get() = nullableWithNullValue.valueOrNull()
+              set(value_) {
+                nullableWithNullValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithZeroValue: Long?
+              get() = nullableWithZeroValue.valueOrNull()
+              set(value_) {
+                nullableWithZeroValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithPositiveValue: Long?
+              get() = nullableWithPositiveValue.valueOrNull()
+              set(value_) {
+                nullableWithPositiveValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithNegativeValue: Long?
+              get() = nullableWithNegativeValue.valueOrNull()
+              set(value_) {
+                nullableWithNegativeValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithMaxValue: Long?
+              get() = nullableWithMaxValue.valueOrNull()
+              set(value_) {
+                nullableWithMaxValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithMinValue: Long?
+              get() = nullableWithMinValue.valueOrNull()
+              set(value_) {
+                nullableWithMinValue = OptionalVariable.Value(value_)
+              }
+
+            override var emptyList: List<Long>
+              get() = emptyList
+              set(value_) {
+                emptyList = value_
+              }
+
+            override var nonEmptyList: List<Long>
+              get() = nonEmptyList
+              set(value_) {
+                nonEmptyList = value_
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              id = id,
+              nonNullWithZeroValue = nonNullWithZeroValue,
+              nonNullWithPositiveValue = nonNullWithPositiveValue,
+              nonNullWithNegativeValue = nonNullWithNegativeValue,
+              nonNullWithMaxValue = nonNullWithMaxValue,
+              nonNullWithMinValue = nonNullWithMinValue,
+              nullableWithNullValue = nullableWithNullValue,
+              nullableWithZeroValue = nullableWithZeroValue,
+              nullableWithPositiveValue = nullableWithPositiveValue,
+              nullableWithNegativeValue = nullableWithNegativeValue,
+              nullableWithMaxValue = nullableWithMaxValue,
+              nullableWithMinValue = nullableWithMinValue,
+              emptyList = emptyList,
+              nonEmptyList = nonEmptyList,
+            )
+          }
+      }
+    }
+  }
 
   @Serializable
-  public data class Data(@SerialName("int64Variants_insert") val key: Int64variantsKey)
+  public data class Data(@SerialName("int64Variants_insert") val key: Int64variantsKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertInt64Variants"
@@ -56,31 +213,21 @@ public fun InsertInt64variantsMutation.ref(
   nonNullWithNegativeValue: Long,
   nonNullWithMaxValue: Long,
   nonNullWithMinValue: Long,
-  nullableWithNullValue: Long?,
-  nullableWithZeroValue: Long?,
-  nullableWithPositiveValue: Long?,
-  nullableWithNegativeValue: Long?,
-  nullableWithMaxValue: Long?,
-  nullableWithMinValue: Long?,
   emptyList: List<Long>,
-  nonEmptyList: List<Long>
+  nonEmptyList: List<Long>,
+  block_: InsertInt64variantsMutation.Variables.Builder.() -> Unit
 ): MutationRef<InsertInt64variantsMutation.Data, InsertInt64variantsMutation.Variables> =
   ref(
-    InsertInt64variantsMutation.Variables(
+    InsertInt64variantsMutation.Variables.build(
       id = id,
       nonNullWithZeroValue = nonNullWithZeroValue,
       nonNullWithPositiveValue = nonNullWithPositiveValue,
       nonNullWithNegativeValue = nonNullWithNegativeValue,
       nonNullWithMaxValue = nonNullWithMaxValue,
       nonNullWithMinValue = nonNullWithMinValue,
-      nullableWithNullValue = nullableWithNullValue,
-      nullableWithZeroValue = nullableWithZeroValue,
-      nullableWithPositiveValue = nullableWithPositiveValue,
-      nullableWithNegativeValue = nullableWithNegativeValue,
-      nullableWithMaxValue = nullableWithMaxValue,
-      nullableWithMinValue = nullableWithMinValue,
       emptyList = emptyList,
-      nonEmptyList = nonEmptyList
+      nonEmptyList = nonEmptyList,
+      block_
     )
   )
 
@@ -91,14 +238,9 @@ public suspend fun InsertInt64variantsMutation.execute(
   nonNullWithNegativeValue: Long,
   nonNullWithMaxValue: Long,
   nonNullWithMinValue: Long,
-  nullableWithNullValue: Long?,
-  nullableWithZeroValue: Long?,
-  nullableWithPositiveValue: Long?,
-  nullableWithNegativeValue: Long?,
-  nullableWithMaxValue: Long?,
-  nullableWithMinValue: Long?,
   emptyList: List<Long>,
-  nonEmptyList: List<Long>
+  nonEmptyList: List<Long>,
+  block_: InsertInt64variantsMutation.Variables.Builder.() -> Unit
 ): MutationResult<InsertInt64variantsMutation.Data, InsertInt64variantsMutation.Variables> =
   ref(
       id = id,
@@ -107,14 +249,9 @@ public suspend fun InsertInt64variantsMutation.execute(
       nonNullWithNegativeValue = nonNullWithNegativeValue,
       nonNullWithMaxValue = nonNullWithMaxValue,
       nonNullWithMinValue = nonNullWithMinValue,
-      nullableWithNullValue = nullableWithNullValue,
-      nullableWithZeroValue = nullableWithZeroValue,
-      nullableWithPositiveValue = nullableWithPositiveValue,
-      nullableWithNegativeValue = nullableWithNegativeValue,
-      nullableWithMaxValue = nullableWithMaxValue,
-      nullableWithMinValue = nullableWithMinValue,
       emptyList = emptyList,
-      nonEmptyList = nonEmptyList
+      nonEmptyList = nonEmptyList,
+      block_
     )
     .execute()
 

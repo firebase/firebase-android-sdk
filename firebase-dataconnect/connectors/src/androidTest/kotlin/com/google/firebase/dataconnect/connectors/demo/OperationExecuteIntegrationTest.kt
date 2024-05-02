@@ -31,7 +31,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     assertWith(connector).thatFooWithId(id).doesNotExist()
     val bar = randomBar()
 
-    connector.insertFoo.execute(id = id, bar = bar)
+    connector.insertFoo.execute(id = id) { this.bar = bar }
 
     assertWith(connector).thatFooWithId(id).existsWithBar(bar)
   }
@@ -40,10 +40,12 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insert_ShouldThrowIfPrimaryKeyExists() = runTest {
     val id = randomFooId()
     val bar = randomBar()
-    connector.insertFoo.execute(id = id, bar = bar)
+    connector.insertFoo.execute(id = id) { this.bar = bar }
     assertWith(connector).thatFooWithId(id).exists()
 
-    connector.insertFoo.assertThrows(DataConnectException::class) { execute(id = id, bar = bar) }
+    connector.insertFoo.assertThrows(DataConnectException::class) {
+      execute(id = id) { this.bar = bar }
+    }
   }
 
   @Test
@@ -51,7 +53,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     val id = randomFooId()
     val bar = randomBar()
 
-    val mutationResult = connector.insertFoo.execute(id = id, bar = bar)
+    val mutationResult = connector.insertFoo.execute(id = id) { this.bar = bar }
 
     assertThat(mutationResult.data.key).isEqualTo(FooKey(id))
   }
@@ -62,7 +64,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     assertWith(connector).thatFooWithId(id).doesNotExist()
     val bar = randomBar()
 
-    connector.upsertFoo.execute(id = id, bar = bar)
+    connector.upsertFoo.execute(id = id) { this.bar = bar }
 
     assertWith(connector).thatFooWithId(id).existsWithBar(bar)
   }
@@ -72,10 +74,10 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     val id = randomFooId()
     val bar1 = randomBar()
     val bar2 = randomBar()
-    connector.insertFoo.execute(id = id, bar = bar1)
+    connector.insertFoo.execute(id = id) { bar = bar1 }
     assertWith(connector).thatFooWithId(id).existsWithBar(bar1)
 
-    connector.upsertFoo.execute(id = id, bar = bar2)
+    connector.upsertFoo.execute(id = id) { bar = bar2 }
 
     assertWith(connector).thatFooWithId(id).existsWithBar(bar2)
   }
@@ -84,7 +86,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun upsert_ShouldContainTheIdInTheResultOnInsert() = runTest {
     val id = randomFooId()
 
-    val mutationResult = connector.upsertFoo.execute(id = id, bar = randomBar())
+    val mutationResult = connector.upsertFoo.execute(id = id) { bar = randomBar() }
 
     assertThat(mutationResult.data.key).isEqualTo(FooKey(id))
   }
@@ -92,9 +94,9 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun upsert_ShouldContainTheIdInTheResultOnUpdate() = runTest {
     val id = randomFooId()
-    connector.insertFoo.execute(id = id, bar = randomBar())
+    connector.insertFoo.execute(id = id) { bar = randomBar() }
 
-    val mutationResult = connector.upsertFoo.execute(id = id, bar = randomBar())
+    val mutationResult = connector.upsertFoo.execute(id = id) { bar = randomBar() }
 
     assertThat(mutationResult.data.key).isEqualTo(FooKey(id))
   }
@@ -113,7 +115,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun delete_ShouldSucceedIfPrimaryKeyExists() = runTest {
     val id = randomFooId()
     val bar = randomBar()
-    connector.insertFoo.execute(id = id, bar = bar)
+    connector.insertFoo.execute(id = id) { this.bar = bar }
     assertWith(connector).thatFooWithId(id).existsWithBar(bar)
 
     connector.deleteFoo.execute(id = id)
@@ -135,7 +137,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun delete_ShouldContainTheIdInTheResultIfTheRowWasDeleted() = runTest {
     val id = randomFooId()
     val bar = randomBar()
-    connector.insertFoo.execute(id = id, bar = bar)
+    connector.insertFoo.execute(id = id) { this.bar = bar }
     assertWith(connector).thatFooWithId(id).existsWithBar(bar)
 
     val mutationResult = connector.deleteFoo.execute(id = id)
@@ -156,7 +158,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun deleteMany_ShouldSucceedIfMultipleMatches() = runTest {
     val bar = randomBar()
-    repeat(5) { connector.insertFoo.execute(id = randomFooId(), bar = bar) }
+    repeat(5) { connector.insertFoo.execute(id = randomFooId()) { this.bar = bar } }
     assertWith(connector).thatFoosWithBar(bar).exist(expectedCount = 5)
 
     connector.deleteFoosByBar.execute(bar = bar)
@@ -177,7 +179,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun deleteMany_ShouldReturn5If5Matches() = runTest {
     val bar = randomBar()
-    repeat(5) { connector.insertFoo.execute(id = randomFooId(), bar = bar) }
+    repeat(5) { connector.insertFoo.execute(id = randomFooId()) { this.bar = bar } }
     assertWith(connector).thatFoosWithBar(bar).exist(expectedCount = 5)
 
     val mutationResult = connector.deleteFoosByBar.execute(bar = bar)
@@ -190,7 +192,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     val id = randomFooId()
     assertWith(connector).thatFooWithId(id).doesNotExist()
 
-    connector.updateFoo.execute(id = id, newBar = randomBar())
+    connector.updateFoo.execute(id = id) { newBar = randomBar() }
 
     assertWith(connector).thatFooWithId(id).doesNotExist()
   }
@@ -200,10 +202,10 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     val id = randomFooId()
     val oldBar = randomBar()
     val newBar = randomBar()
-    connector.insertFoo.execute(id = id, bar = oldBar)
+    connector.insertFoo.execute(id = id) { bar = oldBar }
     assertWith(connector).thatFooWithId(id).existsWithBar(oldBar)
 
-    connector.updateFoo.execute(id = id, newBar = newBar)
+    connector.updateFoo.execute(id = id) { this.newBar = newBar }
 
     assertWith(connector).thatFooWithId(id).existsWithBar(newBar)
   }
@@ -213,7 +215,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     val id = randomFooId()
     assertWith(connector).thatFooWithId(id).doesNotExist()
 
-    val mutationResult = connector.updateFoo.execute(id = id, newBar = randomBar())
+    val mutationResult = connector.updateFoo.execute(id = id) { newBar = randomBar() }
 
     assertThat(mutationResult.data.key).isNull()
   }
@@ -223,10 +225,10 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     val id = randomFooId()
     val oldBar = randomBar()
     val newBar = randomBar()
-    connector.insertFoo.execute(id = id, bar = oldBar)
+    connector.insertFoo.execute(id = id) { bar = oldBar }
     assertWith(connector).thatFooWithId(id).existsWithBar(oldBar)
 
-    val mutationResult = connector.updateFoo.execute(id = id, newBar = newBar)
+    val mutationResult = connector.updateFoo.execute(id = id) { this.newBar = newBar }
 
     assertThat(mutationResult.data.key).isEqualTo(FooKey(id))
   }
@@ -238,7 +240,10 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     assertWith(connector).thatFoosWithBar(oldBar).doNotExist()
     assertWith(connector).thatFoosWithBar(newBar).doNotExist()
 
-    connector.updateFoosByBar.execute(oldBar = oldBar, newBar = newBar)
+    connector.updateFoosByBar.execute {
+      this.oldBar = oldBar
+      this.newBar = newBar
+    }
 
     assertWith(connector).thatFoosWithBar(oldBar).doNotExist()
     assertWith(connector).thatFoosWithBar(newBar).doNotExist()
@@ -248,11 +253,14 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun updateMany_ShouldSucceedIfMultipleMatches() = runTest {
     val oldBar = randomBar()
     val newBar = randomBar()
-    repeat(5) { connector.insertFoo.execute(id = randomFooId(), bar = oldBar) }
+    repeat(5) { connector.insertFoo.execute(id = randomFooId()) { bar = oldBar } }
     assertWith(connector).thatFoosWithBar(oldBar).exist(expectedCount = 5)
     assertWith(connector).thatFoosWithBar(newBar).doNotExist()
 
-    connector.updateFoosByBar.execute(oldBar = oldBar, newBar = newBar)
+    connector.updateFoosByBar.execute {
+      this.oldBar = oldBar
+      this.newBar = newBar
+    }
 
     assertWith(connector).thatFoosWithBar(oldBar).doNotExist()
     assertWith(connector).thatFoosWithBar(newBar).exist(expectedCount = 5)
@@ -263,7 +271,11 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
     val oldBar = randomBar()
     assertWith(connector).thatFoosWithBar(oldBar).doNotExist()
 
-    val mutationResult = connector.updateFoosByBar.execute(oldBar = oldBar, newBar = randomBar())
+    val mutationResult =
+      connector.updateFoosByBar.execute {
+        this.oldBar = oldBar
+        newBar = randomBar()
+      }
 
     assertThat(mutationResult.data.count).isEqualTo(0)
   }
@@ -272,11 +284,15 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun updateMany_ShouldReturn5If5Matches() = runTest {
     val oldBar = randomBar()
     val newBar = randomBar()
-    repeat(5) { connector.insertFoo.execute(id = randomFooId(), bar = oldBar) }
+    repeat(5) { connector.insertFoo.execute(id = randomFooId()) { bar = oldBar } }
     assertWith(connector).thatFoosWithBar(oldBar).exist(expectedCount = 5)
     assertWith(connector).thatFoosWithBar(newBar).doNotExist()
 
-    val mutationResult = connector.updateFoosByBar.execute(oldBar = oldBar, newBar = newBar)
+    val mutationResult =
+      connector.updateFoosByBar.execute {
+        this.oldBar = oldBar
+        this.newBar = newBar
+      }
 
     assertThat(mutationResult.data.count).isEqualTo(5)
   }
@@ -286,7 +302,7 @@ class OperationExecuteIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   suspend fun DemoConnector.insertFooWithRandomId(): String {
     val id = randomFooId()
-    insertFoo.execute(id = id, bar = randomBar())
+    insertFoo.execute(id = id) { bar = randomBar() }
     return id
   }
 }

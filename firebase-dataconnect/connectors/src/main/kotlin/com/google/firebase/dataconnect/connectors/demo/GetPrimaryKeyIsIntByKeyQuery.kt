@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,12 +22,12 @@ public interface GetPrimaryKeyIsIntByKeyQuery :
     DemoConnector, GetPrimaryKeyIsIntByKeyQuery.Data, GetPrimaryKeyIsIntByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsIntKey)
+  @Serializable public data class Variables(val key: PrimaryKeyIsIntKey) {}
 
   @Serializable
   public data class Data(val primaryKeyIsInt: PrimaryKeyIsInt?) {
 
-    @Serializable public data class PrimaryKeyIsInt(val foo: Int, val value: String)
+    @Serializable public data class PrimaryKeyIsInt(val foo: Int, val value: String) {}
   }
 
   public companion object {
@@ -39,20 +39,32 @@ public interface GetPrimaryKeyIsIntByKeyQuery :
 }
 
 public fun GetPrimaryKeyIsIntByKeyQuery.ref(
-  key: PrimaryKeyIsIntKey
+  key: PrimaryKeyIsIntKey,
 ): QueryRef<GetPrimaryKeyIsIntByKeyQuery.Data, GetPrimaryKeyIsIntByKeyQuery.Variables> =
-  ref(GetPrimaryKeyIsIntByKeyQuery.Variables(key = key))
+  ref(
+    GetPrimaryKeyIsIntByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetPrimaryKeyIsIntByKeyQuery.execute(
-  key: PrimaryKeyIsIntKey
+  key: PrimaryKeyIsIntKey,
 ): QueryResult<GetPrimaryKeyIsIntByKeyQuery.Data, GetPrimaryKeyIsIntByKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetPrimaryKeyIsIntByKeyQuery.flow(
-  key: PrimaryKeyIsIntKey
+  key: PrimaryKeyIsIntKey,
 ): Flow<
   QuerySubscriptionResult<GetPrimaryKeyIsIntByKeyQuery.Data, GetPrimaryKeyIsIntByKeyQuery.Variables>
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

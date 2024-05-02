@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -21,9 +21,9 @@ public interface InsertSyntheticIdMutation :
     DemoConnector, InsertSyntheticIdMutation.Data, InsertSyntheticIdMutation.Variables
   > {
 
-  @Serializable public data class Variables(val value: String)
+  @Serializable public data class Variables(val value: String) {}
 
-  @Serializable public data class Data(@SerialName("syntheticId_insert") val key: SyntheticIdKey)
+  @Serializable public data class Data(@SerialName("syntheticId_insert") val key: SyntheticIdKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertSyntheticId"
@@ -33,14 +33,21 @@ public interface InsertSyntheticIdMutation :
 }
 
 public fun InsertSyntheticIdMutation.ref(
-  value: String
+  value: String,
 ): MutationRef<InsertSyntheticIdMutation.Data, InsertSyntheticIdMutation.Variables> =
-  ref(InsertSyntheticIdMutation.Variables(value = value))
+  ref(
+    InsertSyntheticIdMutation.Variables(
+      value = value,
+    )
+  )
 
 public suspend fun InsertSyntheticIdMutation.execute(
-  value: String
+  value: String,
 ): MutationResult<InsertSyntheticIdMutation.Data, InsertSyntheticIdMutation.Variables> =
-  ref(value = value).execute()
+  ref(
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

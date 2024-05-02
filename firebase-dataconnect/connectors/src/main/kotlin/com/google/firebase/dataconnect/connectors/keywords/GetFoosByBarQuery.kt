@@ -1,8 +1,9 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.`typealias`
 
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.QuerySubscriptionResult
@@ -20,12 +21,42 @@ import kotlinx.serialization.serializer
 public interface GetFoosByBarQuery :
   GeneratedQuery<KeywordsConnector, GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables> {
 
-  @Serializable public data class Variables(val `as`: String?)
+  @Serializable
+  public data class Variables(val `as`: OptionalVariable<String?>) {
+
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var `as`: String?
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(block_: Builder.() -> Unit): Variables {
+        var `as`: OptionalVariable<String?> = OptionalVariable.Undefined
+
+        return object : Builder {
+            override var `as`: String?
+              get() = `as`.valueOrNull()
+              set(value_) {
+                `as` = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              `as` = `as`,
+            )
+          }
+      }
+    }
+  }
 
   @Serializable
   public data class Data(val foos: List<FoosItem>) {
 
-    @Serializable public data class FoosItem(val id: String)
+    @Serializable public data class FoosItem(val id: String) {}
   }
 
   public companion object {
@@ -36,18 +67,18 @@ public interface GetFoosByBarQuery :
 }
 
 public fun GetFoosByBarQuery.ref(
-  `as`: String?
+  block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
 ): QueryRef<GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables> =
-  ref(GetFoosByBarQuery.Variables(`as` = `as`))
+  ref(GetFoosByBarQuery.Variables.build(block_))
 
 public suspend fun GetFoosByBarQuery.execute(
-  `as`: String?
-): QueryResult<GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables> = ref(`as` = `as`).execute()
+  block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
+): QueryResult<GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables> = ref(block_).execute()
 
 public fun GetFoosByBarQuery.flow(
-  `as`: String?
+  block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
 ): Flow<QuerySubscriptionResult<GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables>> =
-  ref(`as` = `as`).subscribe().flow
+  ref(block_).subscribe().flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

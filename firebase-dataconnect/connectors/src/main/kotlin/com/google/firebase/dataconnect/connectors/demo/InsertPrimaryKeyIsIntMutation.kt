@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -21,10 +21,10 @@ public interface InsertPrimaryKeyIsIntMutation :
     DemoConnector, InsertPrimaryKeyIsIntMutation.Data, InsertPrimaryKeyIsIntMutation.Variables
   > {
 
-  @Serializable public data class Variables(val foo: Int, val value: String)
+  @Serializable public data class Variables(val foo: Int, val value: String) {}
 
   @Serializable
-  public data class Data(@SerialName("primaryKeyIsInt_upsert") val key: PrimaryKeyIsIntKey)
+  public data class Data(@SerialName("primaryKeyIsInt_upsert") val key: PrimaryKeyIsIntKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertPrimaryKeyIsInt"
@@ -35,15 +35,24 @@ public interface InsertPrimaryKeyIsIntMutation :
 
 public fun InsertPrimaryKeyIsIntMutation.ref(
   foo: Int,
-  value: String
+  value: String,
 ): MutationRef<InsertPrimaryKeyIsIntMutation.Data, InsertPrimaryKeyIsIntMutation.Variables> =
-  ref(InsertPrimaryKeyIsIntMutation.Variables(foo = foo, value = value))
+  ref(
+    InsertPrimaryKeyIsIntMutation.Variables(
+      foo = foo,
+      value = value,
+    )
+  )
 
 public suspend fun InsertPrimaryKeyIsIntMutation.execute(
   foo: Int,
-  value: String
+  value: String,
 ): MutationResult<InsertPrimaryKeyIsIntMutation.Data, InsertPrimaryKeyIsIntMutation.Variables> =
-  ref(foo = foo, value = value).execute()
+  ref(
+      foo = foo,
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

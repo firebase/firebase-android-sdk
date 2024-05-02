@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -23,7 +23,7 @@ public interface GetHardcodedFooQuery :
   @Serializable
   public data class Data(val foo: Foo?) {
 
-    @Serializable public data class Foo(val bar: String?)
+    @Serializable public data class Foo(val bar: String?) {}
   }
 
   public companion object {

@@ -200,3 +200,12 @@ type ManyToManySelfParent @table(key: ["child1", "child2"]) {
 type ManyToManySelfChild @table {
   value: String
 }
+
+type OptionalStrings @table {
+  required1: String!
+  required2: String!
+  nullable1: String
+  nullable2: String
+  nullable3: String
+  nullableWithSchemaDefault: String @default(value: "pb429m")
+}

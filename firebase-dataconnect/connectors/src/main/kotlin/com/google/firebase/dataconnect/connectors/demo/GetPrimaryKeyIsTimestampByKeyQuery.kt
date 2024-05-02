@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -24,7 +24,7 @@ public interface GetPrimaryKeyIsTimestampByKeyQuery :
     GetPrimaryKeyIsTimestampByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsTimestampKey)
+  @Serializable public data class Variables(val key: PrimaryKeyIsTimestampKey) {}
 
   @Serializable
   public data class Data(val primaryKeyIsTimestamp: PrimaryKeyIsTimestamp?) {
@@ -33,7 +33,7 @@ public interface GetPrimaryKeyIsTimestampByKeyQuery :
     public data class PrimaryKeyIsTimestamp(
       val foo: com.google.firebase.Timestamp,
       val value: String
-    )
+    ) {}
   }
 
   public companion object {
@@ -45,23 +45,36 @@ public interface GetPrimaryKeyIsTimestampByKeyQuery :
 }
 
 public fun GetPrimaryKeyIsTimestampByKeyQuery.ref(
-  key: PrimaryKeyIsTimestampKey
+  key: PrimaryKeyIsTimestampKey,
 ): QueryRef<GetPrimaryKeyIsTimestampByKeyQuery.Data, GetPrimaryKeyIsTimestampByKeyQuery.Variables> =
-  ref(GetPrimaryKeyIsTimestampByKeyQuery.Variables(key = key))
+  ref(
+    GetPrimaryKeyIsTimestampByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetPrimaryKeyIsTimestampByKeyQuery.execute(
-  key: PrimaryKeyIsTimestampKey
+  key: PrimaryKeyIsTimestampKey,
 ): QueryResult<
   GetPrimaryKeyIsTimestampByKeyQuery.Data, GetPrimaryKeyIsTimestampByKeyQuery.Variables
-> = ref(key = key).execute()
+> =
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetPrimaryKeyIsTimestampByKeyQuery.flow(
-  key: PrimaryKeyIsTimestampKey
+  key: PrimaryKeyIsTimestampKey,
 ): Flow<
   QuerySubscriptionResult<
     GetPrimaryKeyIsTimestampByKeyQuery.Data, GetPrimaryKeyIsTimestampByKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

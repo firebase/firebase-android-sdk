@@ -30,7 +30,7 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
     val parents =
       List(6) {
         val childKey = children[it % children.size]
-        connector.insertManyToOneParent.execute(childKey).data.key
+        connector.insertManyToOneParent.execute { child = childKey }.data.key
       }
 
     val queryResult = connector.getManyToOneChildByKey.execute(children[0])
@@ -68,9 +68,9 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun manyToOneSelfCustomName() = runTest {
-    val key1 = connector.insertManyToOneSelfCustomName.execute(null).data.key
-    val key2 = connector.insertManyToOneSelfCustomName.execute(key1).data.key
-    val key3 = connector.insertManyToOneSelfCustomName.execute(key2).data.key
+    val key1 = connector.insertManyToOneSelfCustomName.execute { ref = null }.data.key
+    val key2 = connector.insertManyToOneSelfCustomName.execute { ref = key1 }.data.key
+    val key3 = connector.insertManyToOneSelfCustomName.execute { ref = key2 }.data.key
 
     val queryResult = connector.getManyToOneSelfCustomNameByKey.execute(key3)
 
@@ -87,9 +87,9 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun manyToOneSelfMatchingName() = runTest {
-    val key1 = connector.insertManyToOneSelfMatchingName.execute(null).data.key
-    val key2 = connector.insertManyToOneSelfMatchingName.execute(key1).data.key
-    val key3 = connector.insertManyToOneSelfMatchingName.execute(key2).data.key
+    val key1 = connector.insertManyToOneSelfMatchingName.execute { ref = null }.data.key
+    val key2 = connector.insertManyToOneSelfMatchingName.execute { ref = key1 }.data.key
+    val key3 = connector.insertManyToOneSelfMatchingName.execute { ref = key2 }.data.key
 
     val queryResult = connector.getManyToOneSelfMatchingNameByKey.execute(key3)
 

@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,12 +22,12 @@ public interface GetPrimaryKeyIsInt64byKeyQuery :
     DemoConnector, GetPrimaryKeyIsInt64byKeyQuery.Data, GetPrimaryKeyIsInt64byKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsInt64Key)
+  @Serializable public data class Variables(val key: PrimaryKeyIsInt64Key) {}
 
   @Serializable
   public data class Data(val primaryKeyIsInt64: PrimaryKeyIsInt64?) {
 
-    @Serializable public data class PrimaryKeyIsInt64(val foo: Long, val value: String)
+    @Serializable public data class PrimaryKeyIsInt64(val foo: Long, val value: String) {}
   }
 
   public companion object {
@@ -39,22 +39,34 @@ public interface GetPrimaryKeyIsInt64byKeyQuery :
 }
 
 public fun GetPrimaryKeyIsInt64byKeyQuery.ref(
-  key: PrimaryKeyIsInt64Key
+  key: PrimaryKeyIsInt64Key,
 ): QueryRef<GetPrimaryKeyIsInt64byKeyQuery.Data, GetPrimaryKeyIsInt64byKeyQuery.Variables> =
-  ref(GetPrimaryKeyIsInt64byKeyQuery.Variables(key = key))
+  ref(
+    GetPrimaryKeyIsInt64byKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetPrimaryKeyIsInt64byKeyQuery.execute(
-  key: PrimaryKeyIsInt64Key
+  key: PrimaryKeyIsInt64Key,
 ): QueryResult<GetPrimaryKeyIsInt64byKeyQuery.Data, GetPrimaryKeyIsInt64byKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetPrimaryKeyIsInt64byKeyQuery.flow(
-  key: PrimaryKeyIsInt64Key
+  key: PrimaryKeyIsInt64Key,
 ): Flow<
   QuerySubscriptionResult<
     GetPrimaryKeyIsInt64byKeyQuery.Data, GetPrimaryKeyIsInt64byKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

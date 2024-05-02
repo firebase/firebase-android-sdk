@@ -1,10 +1,11 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
@@ -25,13 +26,94 @@ public interface InsertUuidvariantsMutation :
   public data class Variables(
     val id: String,
     val nonNullValue: java.util.UUID,
-    val nullableWithNullValue: java.util.UUID?,
-    val nullableWithNonNullValue: java.util.UUID?,
+    val nullableWithNullValue: OptionalVariable<java.util.UUID?>,
+    val nullableWithNonNullValue: OptionalVariable<java.util.UUID?>,
     val emptyList: List<java.util.UUID>,
     val nonEmptyList: List<java.util.UUID>
-  )
+  ) {
 
-  @Serializable public data class Data(@SerialName("uUIDVariants_insert") val key: UuidvariantsKey)
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var id: String
+      public var nonNullValue: java.util.UUID
+      public var nullableWithNullValue: java.util.UUID?
+      public var nullableWithNonNullValue: java.util.UUID?
+      public var emptyList: List<java.util.UUID>
+      public var nonEmptyList: List<java.util.UUID>
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(
+        id: String,
+        nonNullValue: java.util.UUID,
+        emptyList: List<java.util.UUID>,
+        nonEmptyList: List<java.util.UUID>,
+        block_: Builder.() -> Unit
+      ): Variables {
+        var id = id
+        var nonNullValue = nonNullValue
+        var nullableWithNullValue: OptionalVariable<java.util.UUID?> = OptionalVariable.Undefined
+        var nullableWithNonNullValue: OptionalVariable<java.util.UUID?> = OptionalVariable.Undefined
+        var emptyList = emptyList
+        var nonEmptyList = nonEmptyList
+
+        return object : Builder {
+            override var id: String
+              get() = id
+              set(value_) {
+                id = value_
+              }
+
+            override var nonNullValue: java.util.UUID
+              get() = nonNullValue
+              set(value_) {
+                nonNullValue = value_
+              }
+
+            override var nullableWithNullValue: java.util.UUID?
+              get() = nullableWithNullValue.valueOrNull()
+              set(value_) {
+                nullableWithNullValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithNonNullValue: java.util.UUID?
+              get() = nullableWithNonNullValue.valueOrNull()
+              set(value_) {
+                nullableWithNonNullValue = OptionalVariable.Value(value_)
+              }
+
+            override var emptyList: List<java.util.UUID>
+              get() = emptyList
+              set(value_) {
+                emptyList = value_
+              }
+
+            override var nonEmptyList: List<java.util.UUID>
+              get() = nonEmptyList
+              set(value_) {
+                nonEmptyList = value_
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              id = id,
+              nonNullValue = nonNullValue,
+              nullableWithNullValue = nullableWithNullValue,
+              nullableWithNonNullValue = nullableWithNonNullValue,
+              emptyList = emptyList,
+              nonEmptyList = nonEmptyList,
+            )
+          }
+      }
+    }
+  }
+
+  @Serializable
+  public data class Data(@SerialName("uUIDVariants_insert") val key: UuidvariantsKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertUUIDVariants"
@@ -43,37 +125,33 @@ public interface InsertUuidvariantsMutation :
 public fun InsertUuidvariantsMutation.ref(
   id: String,
   nonNullValue: java.util.UUID,
-  nullableWithNullValue: java.util.UUID?,
-  nullableWithNonNullValue: java.util.UUID?,
   emptyList: List<java.util.UUID>,
-  nonEmptyList: List<java.util.UUID>
+  nonEmptyList: List<java.util.UUID>,
+  block_: InsertUuidvariantsMutation.Variables.Builder.() -> Unit
 ): MutationRef<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
   ref(
-    InsertUuidvariantsMutation.Variables(
+    InsertUuidvariantsMutation.Variables.build(
       id = id,
       nonNullValue = nonNullValue,
-      nullableWithNullValue = nullableWithNullValue,
-      nullableWithNonNullValue = nullableWithNonNullValue,
       emptyList = emptyList,
-      nonEmptyList = nonEmptyList
+      nonEmptyList = nonEmptyList,
+      block_
     )
   )
 
 public suspend fun InsertUuidvariantsMutation.execute(
   id: String,
   nonNullValue: java.util.UUID,
-  nullableWithNullValue: java.util.UUID?,
-  nullableWithNonNullValue: java.util.UUID?,
   emptyList: List<java.util.UUID>,
-  nonEmptyList: List<java.util.UUID>
+  nonEmptyList: List<java.util.UUID>,
+  block_: InsertUuidvariantsMutation.Variables.Builder.() -> Unit
 ): MutationResult<InsertUuidvariantsMutation.Data, InsertUuidvariantsMutation.Variables> =
   ref(
       id = id,
       nonNullValue = nonNullValue,
-      nullableWithNullValue = nullableWithNullValue,
-      nullableWithNonNullValue = nullableWithNonNullValue,
       emptyList = emptyList,
-      nonEmptyList = nonEmptyList
+      nonEmptyList = nonEmptyList,
+      block_
     )
     .execute()
 

@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -20,7 +20,7 @@ import kotlinx.serialization.serializer
 public interface GetNested1byKeyQuery :
   GeneratedQuery<DemoConnector, GetNested1byKeyQuery.Data, GetNested1byKeyQuery.Variables> {
 
-  @Serializable public data class Variables(val key: Nested1Key)
+  @Serializable public data class Variables(val key: Nested1Key) {}
 
   @Serializable
   public data class Data(val nested1: Nested1?) {
@@ -43,7 +43,7 @@ public interface GetNested1byKeyQuery :
         val nested2NullableNonNull: Nested2nullableNonNull
       ) {
 
-        @Serializable public data class Nested1(val id: java.util.UUID)
+        @Serializable public data class Nested1(val id: java.util.UUID) {}
 
         @Serializable
         public data class Nested2(
@@ -54,13 +54,13 @@ public interface GetNested1byKeyQuery :
           val nested3NullableNonNull: Nested3nullableNonNull
         ) {
 
-          @Serializable public data class Nested3(val id: java.util.UUID, val value: String)
+          @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
 
           @Serializable
-          public data class Nested3nullableNull(val id: java.util.UUID, val value: String)
+          public data class Nested3nullableNull(val id: java.util.UUID, val value: String) {}
 
           @Serializable
-          public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String)
+          public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String) {}
         }
 
         @Serializable
@@ -72,13 +72,13 @@ public interface GetNested1byKeyQuery :
           val nested3NullableNonNull: Nested3nullableNonNull
         ) {
 
-          @Serializable public data class Nested3(val id: java.util.UUID, val value: String)
+          @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
 
           @Serializable
-          public data class Nested3nullableNull(val id: java.util.UUID, val value: String)
+          public data class Nested3nullableNull(val id: java.util.UUID, val value: String) {}
 
           @Serializable
-          public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String)
+          public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String) {}
         }
 
         @Serializable
@@ -90,13 +90,13 @@ public interface GetNested1byKeyQuery :
           val nested3NullableNonNull: Nested3nullableNonNull
         ) {
 
-          @Serializable public data class Nested3(val id: java.util.UUID, val value: String)
+          @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
 
           @Serializable
-          public data class Nested3nullableNull(val id: java.util.UUID, val value: String)
+          public data class Nested3nullableNull(val id: java.util.UUID, val value: String) {}
 
           @Serializable
-          public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String)
+          public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String) {}
         }
       }
 
@@ -109,13 +109,13 @@ public interface GetNested1byKeyQuery :
         val nested3NullableNonNull: Nested3nullableNonNull
       ) {
 
-        @Serializable public data class Nested3(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
 
         @Serializable
-        public data class Nested3nullableNull(val id: java.util.UUID, val value: String)
+        public data class Nested3nullableNull(val id: java.util.UUID, val value: String) {}
 
         @Serializable
-        public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String)
+        public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String) {}
       }
 
       @Serializable
@@ -127,13 +127,13 @@ public interface GetNested1byKeyQuery :
         val nested3NullableNonNull: Nested3nullableNonNull
       ) {
 
-        @Serializable public data class Nested3(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
 
         @Serializable
-        public data class Nested3nullableNull(val id: java.util.UUID, val value: String)
+        public data class Nested3nullableNull(val id: java.util.UUID, val value: String) {}
 
         @Serializable
-        public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String)
+        public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String) {}
       }
 
       @Serializable
@@ -145,13 +145,13 @@ public interface GetNested1byKeyQuery :
         val nested3NullableNonNull: Nested3nullableNonNull
       ) {
 
-        @Serializable public data class Nested3(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
 
         @Serializable
-        public data class Nested3nullableNull(val id: java.util.UUID, val value: String)
+        public data class Nested3nullableNull(val id: java.util.UUID, val value: String) {}
 
         @Serializable
-        public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String)
+        public data class Nested3nullableNonNull(val id: java.util.UUID, val value: String) {}
       }
     }
   }
@@ -164,18 +164,30 @@ public interface GetNested1byKeyQuery :
 }
 
 public fun GetNested1byKeyQuery.ref(
-  key: Nested1Key
+  key: Nested1Key,
 ): QueryRef<GetNested1byKeyQuery.Data, GetNested1byKeyQuery.Variables> =
-  ref(GetNested1byKeyQuery.Variables(key = key))
+  ref(
+    GetNested1byKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetNested1byKeyQuery.execute(
-  key: Nested1Key
-): QueryResult<GetNested1byKeyQuery.Data, GetNested1byKeyQuery.Variables> = ref(key = key).execute()
+  key: Nested1Key,
+): QueryResult<GetNested1byKeyQuery.Data, GetNested1byKeyQuery.Variables> =
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetNested1byKeyQuery.flow(
-  key: Nested1Key
+  key: Nested1Key,
 ): Flow<QuerySubscriptionResult<GetNested1byKeyQuery.Data, GetNested1byKeyQuery.Variables>> =
-  ref(key = key).subscribe().flow
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

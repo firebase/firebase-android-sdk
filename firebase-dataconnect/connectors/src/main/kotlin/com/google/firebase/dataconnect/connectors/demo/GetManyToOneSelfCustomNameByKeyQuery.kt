@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -24,7 +24,7 @@ public interface GetManyToOneSelfCustomNameByKeyQuery :
     GetManyToOneSelfCustomNameByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: ManyToOneSelfCustomNameKey)
+  @Serializable public data class Variables(val key: ManyToOneSelfCustomNameKey) {}
 
   @Serializable
   public data class Data(val manyToOneSelfCustomName: ManyToOneSelfCustomName?) {
@@ -32,7 +32,7 @@ public interface GetManyToOneSelfCustomNameByKeyQuery :
     @Serializable
     public data class ManyToOneSelfCustomName(val id: java.util.UUID, val ref: Ref?) {
 
-      @Serializable public data class Ref(val id: java.util.UUID, val refId: java.util.UUID?)
+      @Serializable public data class Ref(val id: java.util.UUID, val refId: java.util.UUID?) {}
     }
   }
 
@@ -45,24 +45,38 @@ public interface GetManyToOneSelfCustomNameByKeyQuery :
 }
 
 public fun GetManyToOneSelfCustomNameByKeyQuery.ref(
-  key: ManyToOneSelfCustomNameKey
+  key: ManyToOneSelfCustomNameKey,
 ): QueryRef<
   GetManyToOneSelfCustomNameByKeyQuery.Data, GetManyToOneSelfCustomNameByKeyQuery.Variables
-> = ref(GetManyToOneSelfCustomNameByKeyQuery.Variables(key = key))
+> =
+  ref(
+    GetManyToOneSelfCustomNameByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetManyToOneSelfCustomNameByKeyQuery.execute(
-  key: ManyToOneSelfCustomNameKey
+  key: ManyToOneSelfCustomNameKey,
 ): QueryResult<
   GetManyToOneSelfCustomNameByKeyQuery.Data, GetManyToOneSelfCustomNameByKeyQuery.Variables
-> = ref(key = key).execute()
+> =
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetManyToOneSelfCustomNameByKeyQuery.flow(
-  key: ManyToOneSelfCustomNameKey
+  key: ManyToOneSelfCustomNameKey,
 ): Flow<
   QuerySubscriptionResult<
     GetManyToOneSelfCustomNameByKeyQuery.Data, GetManyToOneSelfCustomNameByKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

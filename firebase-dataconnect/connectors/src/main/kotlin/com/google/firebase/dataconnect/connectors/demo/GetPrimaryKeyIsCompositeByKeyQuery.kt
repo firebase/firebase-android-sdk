@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -24,7 +24,7 @@ public interface GetPrimaryKeyIsCompositeByKeyQuery :
     GetPrimaryKeyIsCompositeByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsCompositeKey)
+  @Serializable public data class Variables(val key: PrimaryKeyIsCompositeKey) {}
 
   @Serializable
   public data class Data(val primaryKeyIsComposite: PrimaryKeyIsComposite?) {
@@ -35,7 +35,7 @@ public interface GetPrimaryKeyIsCompositeByKeyQuery :
       val bar: String,
       val baz: Boolean,
       val value: String
-    )
+    ) {}
   }
 
   public companion object {
@@ -47,23 +47,36 @@ public interface GetPrimaryKeyIsCompositeByKeyQuery :
 }
 
 public fun GetPrimaryKeyIsCompositeByKeyQuery.ref(
-  key: PrimaryKeyIsCompositeKey
+  key: PrimaryKeyIsCompositeKey,
 ): QueryRef<GetPrimaryKeyIsCompositeByKeyQuery.Data, GetPrimaryKeyIsCompositeByKeyQuery.Variables> =
-  ref(GetPrimaryKeyIsCompositeByKeyQuery.Variables(key = key))
+  ref(
+    GetPrimaryKeyIsCompositeByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetPrimaryKeyIsCompositeByKeyQuery.execute(
-  key: PrimaryKeyIsCompositeKey
+  key: PrimaryKeyIsCompositeKey,
 ): QueryResult<
   GetPrimaryKeyIsCompositeByKeyQuery.Data, GetPrimaryKeyIsCompositeByKeyQuery.Variables
-> = ref(key = key).execute()
+> =
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetPrimaryKeyIsCompositeByKeyQuery.flow(
-  key: PrimaryKeyIsCompositeKey
+  key: PrimaryKeyIsCompositeKey,
 ): Flow<
   QuerySubscriptionResult<
     GetPrimaryKeyIsCompositeByKeyQuery.Data, GetPrimaryKeyIsCompositeByKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

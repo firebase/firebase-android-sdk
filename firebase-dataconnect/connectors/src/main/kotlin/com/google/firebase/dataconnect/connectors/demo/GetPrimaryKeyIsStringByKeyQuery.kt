@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,12 +22,12 @@ public interface GetPrimaryKeyIsStringByKeyQuery :
     DemoConnector, GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsStringKey)
+  @Serializable public data class Variables(val key: PrimaryKeyIsStringKey) {}
 
   @Serializable
   public data class Data(val primaryKeyIsString: PrimaryKeyIsString?) {
 
-    @Serializable public data class PrimaryKeyIsString(val id: String, val value: String)
+    @Serializable public data class PrimaryKeyIsString(val id: String, val value: String) {}
   }
 
   public companion object {
@@ -39,22 +39,34 @@ public interface GetPrimaryKeyIsStringByKeyQuery :
 }
 
 public fun GetPrimaryKeyIsStringByKeyQuery.ref(
-  key: PrimaryKeyIsStringKey
+  key: PrimaryKeyIsStringKey,
 ): QueryRef<GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables> =
-  ref(GetPrimaryKeyIsStringByKeyQuery.Variables(key = key))
+  ref(
+    GetPrimaryKeyIsStringByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetPrimaryKeyIsStringByKeyQuery.execute(
-  key: PrimaryKeyIsStringKey
+  key: PrimaryKeyIsStringKey,
 ): QueryResult<GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetPrimaryKeyIsStringByKeyQuery.flow(
-  key: PrimaryKeyIsStringKey
+  key: PrimaryKeyIsStringKey,
 ): Flow<
   QuerySubscriptionResult<
     GetPrimaryKeyIsStringByKeyQuery.Data, GetPrimaryKeyIsStringByKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

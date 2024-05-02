@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -24,7 +24,7 @@ public interface GetManyToOneSelfMatchingNameByKeyQuery :
     GetManyToOneSelfMatchingNameByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: ManyToOneSelfMatchingNameKey)
+  @Serializable public data class Variables(val key: ManyToOneSelfMatchingNameKey) {}
 
   @Serializable
   public data class Data(val manyToOneSelfMatchingName: ManyToOneSelfMatchingName?) {
@@ -39,7 +39,7 @@ public interface GetManyToOneSelfMatchingNameByKeyQuery :
       public data class ManyToOneSelfMatchingName(
         val id: java.util.UUID,
         val manyToOneSelfMatchingNameId: java.util.UUID?
-      )
+      ) {}
     }
   }
 
@@ -52,24 +52,38 @@ public interface GetManyToOneSelfMatchingNameByKeyQuery :
 }
 
 public fun GetManyToOneSelfMatchingNameByKeyQuery.ref(
-  key: ManyToOneSelfMatchingNameKey
+  key: ManyToOneSelfMatchingNameKey,
 ): QueryRef<
   GetManyToOneSelfMatchingNameByKeyQuery.Data, GetManyToOneSelfMatchingNameByKeyQuery.Variables
-> = ref(GetManyToOneSelfMatchingNameByKeyQuery.Variables(key = key))
+> =
+  ref(
+    GetManyToOneSelfMatchingNameByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetManyToOneSelfMatchingNameByKeyQuery.execute(
-  key: ManyToOneSelfMatchingNameKey
+  key: ManyToOneSelfMatchingNameKey,
 ): QueryResult<
   GetManyToOneSelfMatchingNameByKeyQuery.Data, GetManyToOneSelfMatchingNameByKeyQuery.Variables
-> = ref(key = key).execute()
+> =
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetManyToOneSelfMatchingNameByKeyQuery.flow(
-  key: ManyToOneSelfMatchingNameKey
+  key: ManyToOneSelfMatchingNameKey,
 ): Flow<
   QuerySubscriptionResult<
     GetManyToOneSelfMatchingNameByKeyQuery.Data, GetManyToOneSelfMatchingNameByKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

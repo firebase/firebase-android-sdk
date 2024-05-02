@@ -1,10 +1,11 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
@@ -26,15 +27,114 @@ public interface InsertStringVariantsMutation :
     val id: String,
     val nonNullWithNonEmptyValue: String,
     val nonNullWithEmptyValue: String,
-    val nullableWithNullValue: String?,
-    val nullableWithNonNullValue: String?,
-    val nullableWithEmptyValue: String?,
+    val nullableWithNullValue: OptionalVariable<String?>,
+    val nullableWithNonNullValue: OptionalVariable<String?>,
+    val nullableWithEmptyValue: OptionalVariable<String?>,
     val emptyList: List<String>,
     val nonEmptyList: List<String>
-  )
+  ) {
+
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var id: String
+      public var nonNullWithNonEmptyValue: String
+      public var nonNullWithEmptyValue: String
+      public var nullableWithNullValue: String?
+      public var nullableWithNonNullValue: String?
+      public var nullableWithEmptyValue: String?
+      public var emptyList: List<String>
+      public var nonEmptyList: List<String>
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(
+        id: String,
+        nonNullWithNonEmptyValue: String,
+        nonNullWithEmptyValue: String,
+        emptyList: List<String>,
+        nonEmptyList: List<String>,
+        block_: Builder.() -> Unit
+      ): Variables {
+        var id = id
+        var nonNullWithNonEmptyValue = nonNullWithNonEmptyValue
+        var nonNullWithEmptyValue = nonNullWithEmptyValue
+        var nullableWithNullValue: OptionalVariable<String?> = OptionalVariable.Undefined
+        var nullableWithNonNullValue: OptionalVariable<String?> = OptionalVariable.Undefined
+        var nullableWithEmptyValue: OptionalVariable<String?> = OptionalVariable.Undefined
+        var emptyList = emptyList
+        var nonEmptyList = nonEmptyList
+
+        return object : Builder {
+            override var id: String
+              get() = id
+              set(value_) {
+                id = value_
+              }
+
+            override var nonNullWithNonEmptyValue: String
+              get() = nonNullWithNonEmptyValue
+              set(value_) {
+                nonNullWithNonEmptyValue = value_
+              }
+
+            override var nonNullWithEmptyValue: String
+              get() = nonNullWithEmptyValue
+              set(value_) {
+                nonNullWithEmptyValue = value_
+              }
+
+            override var nullableWithNullValue: String?
+              get() = nullableWithNullValue.valueOrNull()
+              set(value_) {
+                nullableWithNullValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithNonNullValue: String?
+              get() = nullableWithNonNullValue.valueOrNull()
+              set(value_) {
+                nullableWithNonNullValue = OptionalVariable.Value(value_)
+              }
+
+            override var nullableWithEmptyValue: String?
+              get() = nullableWithEmptyValue.valueOrNull()
+              set(value_) {
+                nullableWithEmptyValue = OptionalVariable.Value(value_)
+              }
+
+            override var emptyList: List<String>
+              get() = emptyList
+              set(value_) {
+                emptyList = value_
+              }
+
+            override var nonEmptyList: List<String>
+              get() = nonEmptyList
+              set(value_) {
+                nonEmptyList = value_
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              id = id,
+              nonNullWithNonEmptyValue = nonNullWithNonEmptyValue,
+              nonNullWithEmptyValue = nonNullWithEmptyValue,
+              nullableWithNullValue = nullableWithNullValue,
+              nullableWithNonNullValue = nullableWithNonNullValue,
+              nullableWithEmptyValue = nullableWithEmptyValue,
+              emptyList = emptyList,
+              nonEmptyList = nonEmptyList,
+            )
+          }
+      }
+    }
+  }
 
   @Serializable
-  public data class Data(@SerialName("stringVariants_insert") val key: StringVariantsKey)
+  public data class Data(@SerialName("stringVariants_insert") val key: StringVariantsKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertStringVariants"
@@ -47,22 +147,18 @@ public fun InsertStringVariantsMutation.ref(
   id: String,
   nonNullWithNonEmptyValue: String,
   nonNullWithEmptyValue: String,
-  nullableWithNullValue: String?,
-  nullableWithNonNullValue: String?,
-  nullableWithEmptyValue: String?,
   emptyList: List<String>,
-  nonEmptyList: List<String>
+  nonEmptyList: List<String>,
+  block_: InsertStringVariantsMutation.Variables.Builder.() -> Unit
 ): MutationRef<InsertStringVariantsMutation.Data, InsertStringVariantsMutation.Variables> =
   ref(
-    InsertStringVariantsMutation.Variables(
+    InsertStringVariantsMutation.Variables.build(
       id = id,
       nonNullWithNonEmptyValue = nonNullWithNonEmptyValue,
       nonNullWithEmptyValue = nonNullWithEmptyValue,
-      nullableWithNullValue = nullableWithNullValue,
-      nullableWithNonNullValue = nullableWithNonNullValue,
-      nullableWithEmptyValue = nullableWithEmptyValue,
       emptyList = emptyList,
-      nonEmptyList = nonEmptyList
+      nonEmptyList = nonEmptyList,
+      block_
     )
   )
 
@@ -70,21 +166,17 @@ public suspend fun InsertStringVariantsMutation.execute(
   id: String,
   nonNullWithNonEmptyValue: String,
   nonNullWithEmptyValue: String,
-  nullableWithNullValue: String?,
-  nullableWithNonNullValue: String?,
-  nullableWithEmptyValue: String?,
   emptyList: List<String>,
-  nonEmptyList: List<String>
+  nonEmptyList: List<String>,
+  block_: InsertStringVariantsMutation.Variables.Builder.() -> Unit
 ): MutationResult<InsertStringVariantsMutation.Data, InsertStringVariantsMutation.Variables> =
   ref(
       id = id,
       nonNullWithNonEmptyValue = nonNullWithNonEmptyValue,
       nonNullWithEmptyValue = nonNullWithEmptyValue,
-      nullableWithNullValue = nullableWithNullValue,
-      nullableWithNonNullValue = nullableWithNonNullValue,
-      nullableWithEmptyValue = nullableWithEmptyValue,
       emptyList = emptyList,
-      nonEmptyList = nonEmptyList
+      nonEmptyList = nonEmptyList,
+      block_
     )
     .execute()
 

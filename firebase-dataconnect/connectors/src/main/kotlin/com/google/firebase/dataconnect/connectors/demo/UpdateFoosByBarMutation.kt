@@ -1,10 +1,11 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
@@ -21,9 +22,51 @@ public interface UpdateFoosByBarMutation :
     DemoConnector, UpdateFoosByBarMutation.Data, UpdateFoosByBarMutation.Variables
   > {
 
-  @Serializable public data class Variables(val oldBar: String?, val newBar: String?)
+  @Serializable
+  public data class Variables(
+    val oldBar: OptionalVariable<String?>,
+    val newBar: OptionalVariable<String?>
+  ) {
 
-  @Serializable public data class Data(@SerialName("foo_updateMany") val count: Int)
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var oldBar: String?
+      public var newBar: String?
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(block_: Builder.() -> Unit): Variables {
+        var oldBar: OptionalVariable<String?> = OptionalVariable.Undefined
+        var newBar: OptionalVariable<String?> = OptionalVariable.Undefined
+
+        return object : Builder {
+            override var oldBar: String?
+              get() = oldBar.valueOrNull()
+              set(value_) {
+                oldBar = OptionalVariable.Value(value_)
+              }
+
+            override var newBar: String?
+              get() = newBar.valueOrNull()
+              set(value_) {
+                newBar = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              oldBar = oldBar,
+              newBar = newBar,
+            )
+          }
+      }
+    }
+  }
+
+  @Serializable public data class Data(@SerialName("foo_updateMany") val count: Int) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "UpdateFoosByBar"
@@ -33,16 +76,14 @@ public interface UpdateFoosByBarMutation :
 }
 
 public fun UpdateFoosByBarMutation.ref(
-  oldBar: String?,
-  newBar: String?
+  block_: UpdateFoosByBarMutation.Variables.Builder.() -> Unit
 ): MutationRef<UpdateFoosByBarMutation.Data, UpdateFoosByBarMutation.Variables> =
-  ref(UpdateFoosByBarMutation.Variables(oldBar = oldBar, newBar = newBar))
+  ref(UpdateFoosByBarMutation.Variables.build(block_))
 
 public suspend fun UpdateFoosByBarMutation.execute(
-  oldBar: String?,
-  newBar: String?
+  block_: UpdateFoosByBarMutation.Variables.Builder.() -> Unit
 ): MutationResult<UpdateFoosByBarMutation.Data, UpdateFoosByBarMutation.Variables> =
-  ref(oldBar = oldBar, newBar = newBar).execute()
+  ref(block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

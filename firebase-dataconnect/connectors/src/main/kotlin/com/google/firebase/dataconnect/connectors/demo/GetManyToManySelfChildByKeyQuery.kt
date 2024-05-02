@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,7 +22,7 @@ public interface GetManyToManySelfChildByKeyQuery :
     DemoConnector, GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: ManyToManySelfChildKey)
+  @Serializable public data class Variables(val key: ManyToManySelfChildKey) {}
 
   @Serializable
   public data class Data(val manyToManySelfChild: ManyToManySelfChild?) {
@@ -38,12 +38,12 @@ public interface GetManyToManySelfChildByKeyQuery :
       @Serializable
       public data class ManyToManySelfChildrenViaManyToManySelfParentOnChild1Item(
         val id: java.util.UUID
-      )
+      ) {}
 
       @Serializable
       public data class ManyToManySelfChildrenViaManyToManySelfParentOnChild2Item(
         val id: java.util.UUID
-      )
+      ) {}
     }
   }
 
@@ -56,22 +56,34 @@ public interface GetManyToManySelfChildByKeyQuery :
 }
 
 public fun GetManyToManySelfChildByKeyQuery.ref(
-  key: ManyToManySelfChildKey
+  key: ManyToManySelfChildKey,
 ): QueryRef<GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables> =
-  ref(GetManyToManySelfChildByKeyQuery.Variables(key = key))
+  ref(
+    GetManyToManySelfChildByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetManyToManySelfChildByKeyQuery.execute(
-  key: ManyToManySelfChildKey
+  key: ManyToManySelfChildKey,
 ): QueryResult<GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetManyToManySelfChildByKeyQuery.flow(
-  key: ManyToManySelfChildKey
+  key: ManyToManySelfChildKey,
 ): Flow<
   QuerySubscriptionResult<
     GetManyToManySelfChildByKeyQuery.Data, GetManyToManySelfChildByKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

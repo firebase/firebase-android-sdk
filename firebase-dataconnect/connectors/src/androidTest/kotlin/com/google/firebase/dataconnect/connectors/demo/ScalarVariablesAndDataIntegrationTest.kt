@@ -39,12 +39,13 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       id = id,
       nonNullWithNonEmptyValue = "some non-empty value for a *non*-nullable field",
       nonNullWithEmptyValue = "",
-      nullableWithNullValue = null,
-      nullableWithNonNullValue = "some non-empty value for a *nullable* field",
-      nullableWithEmptyValue = "",
       emptyList = emptyList(),
       nonEmptyList = listOf("foo", "", "BAR")
-    )
+    ) {
+      nullableWithNullValue = null
+      nullableWithNonNullValue = "some non-empty value for a *nullable* field"
+      nullableWithEmptyValue = ""
+    }
 
     val queryResult = connector.getStringVariantsById.execute(id)
     assertThat(queryResult.data.stringVariants)
@@ -72,15 +73,16 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       nonNullWithNegativeValue = -4242424242424242,
       nonNullWithMaxValue = Long.MAX_VALUE,
       nonNullWithMinValue = Long.MIN_VALUE,
-      nullableWithNullValue = null,
-      nullableWithZeroValue = 0,
-      nullableWithPositiveValue = 2424242424242424,
-      nullableWithNegativeValue = -2424242424242424,
-      nullableWithMaxValue = Long.MAX_VALUE,
-      nullableWithMinValue = Long.MIN_VALUE,
       emptyList = emptyList(),
       nonEmptyList = listOf(0, -1, 1, 99, -99, Long.MIN_VALUE, Long.MAX_VALUE)
-    )
+    ) {
+      nullableWithNullValue = null
+      nullableWithZeroValue = 0
+      nullableWithPositiveValue = 2424242424242424
+      nullableWithNegativeValue = -2424242424242424
+      nullableWithMaxValue = Long.MAX_VALUE
+      nullableWithMinValue = Long.MIN_VALUE
+    }
 
     val queryResult = connector.getInt64variantsById.execute(id)
     assertThat(queryResult.data.int64Variants)
@@ -113,11 +115,12 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.insertUuidvariants.execute(
       id = id,
       nonNullValue = nonNullValue,
-      nullableWithNullValue = nullableWithNullValue,
-      nullableWithNonNullValue = null,
       emptyList = emptyList(),
       nonEmptyList = nonEmptyList
-    )
+    ) {
+      this.nullableWithNullValue = nullableWithNullValue
+      nullableWithNonNullValue = null
+    }
 
     val queryResult = connector.getUuidvariantsById.execute(id)
     assertThat(queryResult.data.uUIDVariants)
@@ -141,14 +144,15 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.insertDateVariants.execute(
       id = id,
       nonNullValue = "2024-04-26".toDate(),
-      nullableWithNullValue = null,
-      nullableWithNonNullValue = "2024-05-19".toDate(),
       minValue = "0001-01-01".toDate(),
       maxValue = "9999-12-31".toDate(),
       nonZeroTime = dateWithNonZeroTime,
       emptyList = emptyList(),
       nonEmptyList = listOf("1234-05-19", "5678-12-31").map(String::toDate)
-    )
+    ) {
+      nullableWithNullValue = null
+      nullableWithNonNullValue = "2024-05-19".toDate()
+    }
 
     val queryRef = connector.getDateVariantsById.ref(id).withStringData()
     val queryResult = queryRef.execute()
@@ -174,13 +178,14 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.insertTimestampVariants.execute(
       id = id,
       nonNullValue = Timestamp(1, 3_219),
-      nullableWithNullValue = null,
-      nullableWithNonNullValue = Timestamp(-46_239, 4_628),
       minValue = Timestamp(-62_135_596_800, 0),
       maxValue = Timestamp(253_402_300_799, 999_999_999),
       emptyList = emptyList(),
       nonEmptyList = listOf(Timestamp(-543, 41), Timestamp(739, 62))
-    )
+    ) {
+      nullableWithNullValue = null
+      nullableWithNonNullValue = Timestamp(-46_239, 4_628)
+    }
 
     val queryResult = connector.getTimestampVariantsById.execute(id)
 

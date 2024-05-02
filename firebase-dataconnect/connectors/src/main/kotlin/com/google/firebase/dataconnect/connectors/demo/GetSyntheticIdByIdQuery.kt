@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -20,12 +20,12 @@ import kotlinx.serialization.serializer
 public interface GetSyntheticIdByIdQuery :
   GeneratedQuery<DemoConnector, GetSyntheticIdByIdQuery.Data, GetSyntheticIdByIdQuery.Variables> {
 
-  @Serializable public data class Variables(val id: java.util.UUID)
+  @Serializable public data class Variables(val id: java.util.UUID) {}
 
   @Serializable
   public data class Data(val syntheticId: SyntheticId?) {
 
-    @Serializable public data class SyntheticId(val id: java.util.UUID, val value: String)
+    @Serializable public data class SyntheticId(val id: java.util.UUID, val value: String) {}
   }
 
   public companion object {
@@ -36,19 +36,30 @@ public interface GetSyntheticIdByIdQuery :
 }
 
 public fun GetSyntheticIdByIdQuery.ref(
-  id: java.util.UUID
+  id: java.util.UUID,
 ): QueryRef<GetSyntheticIdByIdQuery.Data, GetSyntheticIdByIdQuery.Variables> =
-  ref(GetSyntheticIdByIdQuery.Variables(id = id))
+  ref(
+    GetSyntheticIdByIdQuery.Variables(
+      id = id,
+    )
+  )
 
 public suspend fun GetSyntheticIdByIdQuery.execute(
-  id: java.util.UUID
+  id: java.util.UUID,
 ): QueryResult<GetSyntheticIdByIdQuery.Data, GetSyntheticIdByIdQuery.Variables> =
-  ref(id = id).execute()
+  ref(
+      id = id,
+    )
+    .execute()
 
 public fun GetSyntheticIdByIdQuery.flow(
-  id: java.util.UUID
+  id: java.util.UUID,
 ): Flow<QuerySubscriptionResult<GetSyntheticIdByIdQuery.Data, GetSyntheticIdByIdQuery.Variables>> =
-  ref(id = id).subscribe().flow
+  ref(
+      id = id,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

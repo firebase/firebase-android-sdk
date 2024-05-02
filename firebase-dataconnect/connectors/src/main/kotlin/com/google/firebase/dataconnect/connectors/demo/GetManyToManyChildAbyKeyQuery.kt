@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,7 +22,7 @@ public interface GetManyToManyChildAbyKeyQuery :
     DemoConnector, GetManyToManyChildAbyKeyQuery.Data, GetManyToManyChildAbyKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: ManyToManyChildAKey)
+  @Serializable public data class Variables(val key: ManyToManyChildAKey) {}
 
   @Serializable
   public data class Data(val manyToManyChildA: ManyToManyChildA?) {
@@ -33,7 +33,7 @@ public interface GetManyToManyChildAbyKeyQuery :
     ) {
 
       @Serializable
-      public data class ManyToManyChildBsViaManyToManyParentItem(val id: java.util.UUID)
+      public data class ManyToManyChildBsViaManyToManyParentItem(val id: java.util.UUID) {}
     }
   }
 
@@ -46,22 +46,34 @@ public interface GetManyToManyChildAbyKeyQuery :
 }
 
 public fun GetManyToManyChildAbyKeyQuery.ref(
-  key: ManyToManyChildAKey
+  key: ManyToManyChildAKey,
 ): QueryRef<GetManyToManyChildAbyKeyQuery.Data, GetManyToManyChildAbyKeyQuery.Variables> =
-  ref(GetManyToManyChildAbyKeyQuery.Variables(key = key))
+  ref(
+    GetManyToManyChildAbyKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetManyToManyChildAbyKeyQuery.execute(
-  key: ManyToManyChildAKey
+  key: ManyToManyChildAKey,
 ): QueryResult<GetManyToManyChildAbyKeyQuery.Data, GetManyToManyChildAbyKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetManyToManyChildAbyKeyQuery.flow(
-  key: ManyToManyChildAKey
+  key: ManyToManyChildAKey,
 ): Flow<
   QuerySubscriptionResult<
     GetManyToManyChildAbyKeyQuery.Data, GetManyToManyChildAbyKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

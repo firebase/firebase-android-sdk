@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -19,7 +19,7 @@ import kotlinx.serialization.serializer
 public interface UpsertHardcodedFooMutation :
   GeneratedMutation<DemoConnector, UpsertHardcodedFooMutation.Data, Unit> {
 
-  @Serializable public data class Data(@SerialName("foo_upsert") val key: FooKey)
+  @Serializable public data class Data(@SerialName("foo_upsert") val key: FooKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "UpsertHardcodedFoo"

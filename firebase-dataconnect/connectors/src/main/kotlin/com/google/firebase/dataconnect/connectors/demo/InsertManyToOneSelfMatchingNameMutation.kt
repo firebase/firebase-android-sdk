@@ -1,10 +1,11 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
@@ -23,12 +24,42 @@ public interface InsertManyToOneSelfMatchingNameMutation :
     InsertManyToOneSelfMatchingNameMutation.Variables
   > {
 
-  @Serializable public data class Variables(val ref: ManyToOneSelfMatchingNameKey?)
+  @Serializable
+  public data class Variables(val ref: OptionalVariable<ManyToOneSelfMatchingNameKey?>) {
+
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var ref: ManyToOneSelfMatchingNameKey?
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(block_: Builder.() -> Unit): Variables {
+        var ref: OptionalVariable<ManyToOneSelfMatchingNameKey?> = OptionalVariable.Undefined
+
+        return object : Builder {
+            override var ref: ManyToOneSelfMatchingNameKey?
+              get() = ref.valueOrNull()
+              set(value_) {
+                ref = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              ref = ref,
+            )
+          }
+      }
+    }
+  }
 
   @Serializable
   public data class Data(
     @SerialName("manyToOneSelfMatchingName_insert") val key: ManyToOneSelfMatchingNameKey
-  )
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -39,16 +70,16 @@ public interface InsertManyToOneSelfMatchingNameMutation :
 }
 
 public fun InsertManyToOneSelfMatchingNameMutation.ref(
-  ref: ManyToOneSelfMatchingNameKey?
+  block_: InsertManyToOneSelfMatchingNameMutation.Variables.Builder.() -> Unit
 ): MutationRef<
   InsertManyToOneSelfMatchingNameMutation.Data, InsertManyToOneSelfMatchingNameMutation.Variables
-> = ref(InsertManyToOneSelfMatchingNameMutation.Variables(ref = ref))
+> = ref(InsertManyToOneSelfMatchingNameMutation.Variables.build(block_))
 
 public suspend fun InsertManyToOneSelfMatchingNameMutation.execute(
-  ref: ManyToOneSelfMatchingNameKey?
+  block_: InsertManyToOneSelfMatchingNameMutation.Variables.Builder.() -> Unit
 ): MutationResult<
   InsertManyToOneSelfMatchingNameMutation.Data, InsertManyToOneSelfMatchingNameMutation.Variables
-> = ref(ref = ref).execute()
+> = ref(block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.`typealias`
@@ -20,14 +20,14 @@ import kotlinx.serialization.serializer
 public interface GetTwoFoosByIdQuery :
   GeneratedQuery<KeywordsConnector, GetTwoFoosByIdQuery.Data, GetTwoFoosByIdQuery.Variables> {
 
-  @Serializable public data class Variables(val id1: String, val id2: String)
+  @Serializable public data class Variables(val id1: String, val id2: String) {}
 
   @Serializable
   public data class Data(val `super`: Super?, val `this`: This?) {
 
-    @Serializable public data class Super(val id: String, val bar: String?)
+    @Serializable public data class Super(val id: String, val bar: String?) {}
 
-    @Serializable public data class This(val id: String, val bar: String?)
+    @Serializable public data class This(val id: String, val bar: String?) {}
   }
 
   public companion object {
@@ -39,21 +39,35 @@ public interface GetTwoFoosByIdQuery :
 
 public fun GetTwoFoosByIdQuery.ref(
   id1: String,
-  id2: String
+  id2: String,
 ): QueryRef<GetTwoFoosByIdQuery.Data, GetTwoFoosByIdQuery.Variables> =
-  ref(GetTwoFoosByIdQuery.Variables(id1 = id1, id2 = id2))
+  ref(
+    GetTwoFoosByIdQuery.Variables(
+      id1 = id1,
+      id2 = id2,
+    )
+  )
 
 public suspend fun GetTwoFoosByIdQuery.execute(
   id1: String,
-  id2: String
+  id2: String,
 ): QueryResult<GetTwoFoosByIdQuery.Data, GetTwoFoosByIdQuery.Variables> =
-  ref(id1 = id1, id2 = id2).execute()
+  ref(
+      id1 = id1,
+      id2 = id2,
+    )
+    .execute()
 
 public fun GetTwoFoosByIdQuery.flow(
   id1: String,
-  id2: String
+  id2: String,
 ): Flow<QuerySubscriptionResult<GetTwoFoosByIdQuery.Data, GetTwoFoosByIdQuery.Variables>> =
-  ref(id1 = id1, id2 = id2).subscribe().flow
+  ref(
+      id1 = id1,
+      id2 = id2,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

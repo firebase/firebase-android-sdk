@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -24,12 +24,12 @@ public interface InsertPrimaryKeyIsCompositeMutation :
   > {
 
   @Serializable
-  public data class Variables(val foo: Int, val bar: String, val baz: Boolean, val value: String)
+  public data class Variables(val foo: Int, val bar: String, val baz: Boolean, val value: String) {}
 
   @Serializable
   public data class Data(
     @SerialName("primaryKeyIsComposite_insert") val key: PrimaryKeyIsCompositeKey
-  )
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -43,20 +43,34 @@ public fun InsertPrimaryKeyIsCompositeMutation.ref(
   foo: Int,
   bar: String,
   baz: Boolean,
-  value: String
+  value: String,
 ): MutationRef<
   InsertPrimaryKeyIsCompositeMutation.Data, InsertPrimaryKeyIsCompositeMutation.Variables
 > =
-  ref(InsertPrimaryKeyIsCompositeMutation.Variables(foo = foo, bar = bar, baz = baz, value = value))
+  ref(
+    InsertPrimaryKeyIsCompositeMutation.Variables(
+      foo = foo,
+      bar = bar,
+      baz = baz,
+      value = value,
+    )
+  )
 
 public suspend fun InsertPrimaryKeyIsCompositeMutation.execute(
   foo: Int,
   bar: String,
   baz: Boolean,
-  value: String
+  value: String,
 ): MutationResult<
   InsertPrimaryKeyIsCompositeMutation.Data, InsertPrimaryKeyIsCompositeMutation.Variables
-> = ref(foo = foo, bar = bar, baz = baz, value = value).execute()
+> =
+  ref(
+      foo = foo,
+      bar = bar,
+      baz = baz,
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,10 +22,10 @@ public interface InsertManyToManyParentMutation :
   > {
 
   @Serializable
-  public data class Variables(val childA: ManyToManyChildAKey, val childB: ManyToManyChildBKey)
+  public data class Variables(val childA: ManyToManyChildAKey, val childB: ManyToManyChildBKey) {}
 
   @Serializable
-  public data class Data(@SerialName("manyToManyParent_insert") val key: ManyToManyParentKey)
+  public data class Data(@SerialName("manyToManyParent_insert") val key: ManyToManyParentKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertManyToManyParent"
@@ -36,15 +36,24 @@ public interface InsertManyToManyParentMutation :
 
 public fun InsertManyToManyParentMutation.ref(
   childA: ManyToManyChildAKey,
-  childB: ManyToManyChildBKey
+  childB: ManyToManyChildBKey,
 ): MutationRef<InsertManyToManyParentMutation.Data, InsertManyToManyParentMutation.Variables> =
-  ref(InsertManyToManyParentMutation.Variables(childA = childA, childB = childB))
+  ref(
+    InsertManyToManyParentMutation.Variables(
+      childA = childA,
+      childB = childB,
+    )
+  )
 
 public suspend fun InsertManyToManyParentMutation.execute(
   childA: ManyToManyChildAKey,
-  childB: ManyToManyChildBKey
+  childB: ManyToManyChildBKey,
 ): MutationResult<InsertManyToManyParentMutation.Data, InsertManyToManyParentMutation.Variables> =
-  ref(childA = childA, childB = childB).execute()
+  ref(
+      childA = childA,
+      childB = childB,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

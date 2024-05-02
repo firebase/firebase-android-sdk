@@ -39,6 +39,8 @@ public interface DemoConnector : GeneratedConnector {
 
   public val getNested1byKey: GetNested1byKeyQuery
 
+  public val getOptionalStringsByKey: GetOptionalStringsByKeyQuery
+
   public val getPrimaryKeyIsCompositeByKey: GetPrimaryKeyIsCompositeByKeyQuery
 
   public val getPrimaryKeyIsDateByKey: GetPrimaryKeyIsDateByKeyQuery
@@ -94,6 +96,8 @@ public interface DemoConnector : GeneratedConnector {
   public val insertNested2: InsertNested2Mutation
 
   public val insertNested3: InsertNested3Mutation
+
+  public val insertOptionalStrings: InsertOptionalStringsMutation
 
   public val insertPrimaryKeyIsComposite: InsertPrimaryKeyIsCompositeMutation
 
@@ -208,6 +212,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
   override val getNested1byKey by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetNested1byKeyQueryImpl(this) }
 
+  override val getOptionalStringsByKey by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { GetOptionalStringsByKeyQueryImpl(this) }
+
   override val getPrimaryKeyIsCompositeByKey by
     lazy(LazyThreadSafetyMode.PUBLICATION) { GetPrimaryKeyIsCompositeByKeyQueryImpl(this) }
 
@@ -290,6 +297,9 @@ private class DemoConnectorImpl(override val dataConnect: FirebaseDataConnect) :
 
   override val insertNested3 by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertNested3MutationImpl(this) }
+
+  override val insertOptionalStrings by
+    lazy(LazyThreadSafetyMode.PUBLICATION) { InsertOptionalStringsMutationImpl(this) }
 
   override val insertPrimaryKeyIsComposite by
     lazy(LazyThreadSafetyMode.PUBLICATION) { InsertPrimaryKeyIsCompositeMutationImpl(this) }
@@ -539,6 +549,20 @@ private class GetNested1byKeyQueryImpl(override val connector: DemoConnectorImpl
 
   override fun toString() =
     "GetNested1byKeyQueryImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class GetOptionalStringsByKeyQueryImpl(override val connector: DemoConnectorImpl) :
+  GetOptionalStringsByKeyQuery {
+  override val operationName by GetOptionalStringsByKeyQuery.Companion::operationName
+  override val dataDeserializer by GetOptionalStringsByKeyQuery.Companion::dataDeserializer
+  override val variablesSerializer by GetOptionalStringsByKeyQuery.Companion::variablesSerializer
+
+  override fun toString() =
+    "GetOptionalStringsByKeyQueryImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +
@@ -938,6 +962,20 @@ private class InsertNested3MutationImpl(override val connector: DemoConnectorImp
 
   override fun toString() =
     "InsertNested3MutationImpl(" +
+      "operationName=$operationName, " +
+      "dataDeserializer=$dataDeserializer, " +
+      "variablesSerializer=$variablesSerializer, " +
+      "connector=$connector)"
+}
+
+private class InsertOptionalStringsMutationImpl(override val connector: DemoConnectorImpl) :
+  InsertOptionalStringsMutation {
+  override val operationName by InsertOptionalStringsMutation.Companion::operationName
+  override val dataDeserializer by InsertOptionalStringsMutation.Companion::dataDeserializer
+  override val variablesSerializer by InsertOptionalStringsMutation.Companion::variablesSerializer
+
+  override fun toString() =
+    "InsertOptionalStringsMutationImpl(" +
       "operationName=$operationName, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +

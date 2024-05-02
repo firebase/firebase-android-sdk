@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -27,10 +27,10 @@ public interface InsertPrimaryKeyNested7Mutation :
     val nested5a: PrimaryKeyNested5Key,
     val nested5b: PrimaryKeyNested5Key,
     val nested6: PrimaryKeyNested6Key
-  )
+  ) {}
 
   @Serializable
-  public data class Data(@SerialName("primaryKeyNested7_insert") val key: PrimaryKeyNested7Key)
+  public data class Data(@SerialName("primaryKeyNested7_insert") val key: PrimaryKeyNested7Key) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -44,14 +44,14 @@ public fun InsertPrimaryKeyNested7Mutation.ref(
   value: String,
   nested5a: PrimaryKeyNested5Key,
   nested5b: PrimaryKeyNested5Key,
-  nested6: PrimaryKeyNested6Key
+  nested6: PrimaryKeyNested6Key,
 ): MutationRef<InsertPrimaryKeyNested7Mutation.Data, InsertPrimaryKeyNested7Mutation.Variables> =
   ref(
     InsertPrimaryKeyNested7Mutation.Variables(
       value = value,
       nested5a = nested5a,
       nested5b = nested5b,
-      nested6 = nested6
+      nested6 = nested6,
     )
   )
 
@@ -59,9 +59,15 @@ public suspend fun InsertPrimaryKeyNested7Mutation.execute(
   value: String,
   nested5a: PrimaryKeyNested5Key,
   nested5b: PrimaryKeyNested5Key,
-  nested6: PrimaryKeyNested6Key
+  nested6: PrimaryKeyNested6Key,
 ): MutationResult<InsertPrimaryKeyNested7Mutation.Data, InsertPrimaryKeyNested7Mutation.Variables> =
-  ref(value = value, nested5a = nested5a, nested5b = nested5b, nested6 = nested6).execute()
+  ref(
+      value = value,
+      nested5a = nested5a,
+      nested5b = nested5b,
+      nested6 = nested6,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

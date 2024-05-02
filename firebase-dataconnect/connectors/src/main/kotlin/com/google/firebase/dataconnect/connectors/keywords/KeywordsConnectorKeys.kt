@@ -9,7 +9,7 @@ import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UseSerializers
 
-@Serializable public data class FooKey(val id: String)
+@Serializable public data class FooKey(val id: String) {}
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -1,10 +1,11 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
@@ -19,9 +20,48 @@ import kotlinx.serialization.serializer
 public interface InsertFooMutation :
   GeneratedMutation<DemoConnector, InsertFooMutation.Data, InsertFooMutation.Variables> {
 
-  @Serializable public data class Variables(val id: String, val bar: String?)
+  @Serializable
+  public data class Variables(val id: String, val bar: OptionalVariable<String?>) {
 
-  @Serializable public data class Data(@SerialName("foo_insert") val key: FooKey)
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var id: String
+      public var bar: String?
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(id: String, block_: Builder.() -> Unit): Variables {
+        var id = id
+        var bar: OptionalVariable<String?> = OptionalVariable.Undefined
+
+        return object : Builder {
+            override var id: String
+              get() = id
+              set(value_) {
+                id = value_
+              }
+
+            override var bar: String?
+              get() = bar.valueOrNull()
+              set(value_) {
+                bar = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              id = id,
+              bar = bar,
+            )
+          }
+      }
+    }
+  }
+
+  @Serializable public data class Data(@SerialName("foo_insert") val key: FooKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertFoo"
@@ -32,15 +72,15 @@ public interface InsertFooMutation :
 
 public fun InsertFooMutation.ref(
   id: String,
-  bar: String?
+  block_: InsertFooMutation.Variables.Builder.() -> Unit
 ): MutationRef<InsertFooMutation.Data, InsertFooMutation.Variables> =
-  ref(InsertFooMutation.Variables(id = id, bar = bar))
+  ref(InsertFooMutation.Variables.build(id = id, block_))
 
 public suspend fun InsertFooMutation.execute(
   id: String,
-  bar: String?
+  block_: InsertFooMutation.Variables.Builder.() -> Unit
 ): MutationResult<InsertFooMutation.Data, InsertFooMutation.Variables> =
-  ref(id = id, bar = bar).execute()
+  ref(id = id, block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

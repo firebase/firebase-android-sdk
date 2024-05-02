@@ -102,5 +102,6 @@ private class FooListSubjectImpl(private val connector: DemoConnector, private v
     }
   }
 
-  private suspend fun fooCount(): Int = connector.getFoosByBar.execute(bar).data.foos.size
+  private suspend fun fooCount(): Int =
+    connector.getFoosByBar.execute { bar = this@FooListSubjectImpl.bar }.data.foos.size
 }

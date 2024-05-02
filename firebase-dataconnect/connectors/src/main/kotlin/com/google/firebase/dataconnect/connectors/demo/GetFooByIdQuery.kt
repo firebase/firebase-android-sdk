@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -20,12 +20,12 @@ import kotlinx.serialization.serializer
 public interface GetFooByIdQuery :
   GeneratedQuery<DemoConnector, GetFooByIdQuery.Data, GetFooByIdQuery.Variables> {
 
-  @Serializable public data class Variables(val id: String)
+  @Serializable public data class Variables(val id: String) {}
 
   @Serializable
   public data class Data(val foo: Foo?) {
 
-    @Serializable public data class Foo(val bar: String?)
+    @Serializable public data class Foo(val bar: String?) {}
   }
 
   public companion object {
@@ -36,18 +36,30 @@ public interface GetFooByIdQuery :
 }
 
 public fun GetFooByIdQuery.ref(
-  id: String
+  id: String,
 ): QueryRef<GetFooByIdQuery.Data, GetFooByIdQuery.Variables> =
-  ref(GetFooByIdQuery.Variables(id = id))
+  ref(
+    GetFooByIdQuery.Variables(
+      id = id,
+    )
+  )
 
 public suspend fun GetFooByIdQuery.execute(
-  id: String
-): QueryResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables> = ref(id = id).execute()
+  id: String,
+): QueryResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables> =
+  ref(
+      id = id,
+    )
+    .execute()
 
 public fun GetFooByIdQuery.flow(
-  id: String
+  id: String,
 ): Flow<QuerySubscriptionResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables>> =
-  ref(id = id).subscribe().flow
+  ref(
+      id = id,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -17,50 +17,56 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-public interface GetPrimaryKeyIsFloatByKeyQuery :
+public interface GetOptionalStringsByKeyQuery :
   GeneratedQuery<
-    DemoConnector, GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables
+    DemoConnector, GetOptionalStringsByKeyQuery.Data, GetOptionalStringsByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyIsFloatKey) {}
+  @Serializable public data class Variables(val key: OptionalStringsKey) {}
 
   @Serializable
-  public data class Data(val primaryKeyIsFloat: PrimaryKeyIsFloat?) {
+  public data class Data(val optionalStrings: OptionalStrings?) {
 
-    @Serializable public data class PrimaryKeyIsFloat(val foo: Double, val value: String) {}
+    @Serializable
+    public data class OptionalStrings(
+      val required1: String,
+      val required2: String,
+      val nullable1: String?,
+      val nullable2: String?,
+      val nullable3: String?,
+      val nullableWithSchemaDefault: String?
+    ) {}
   }
 
   public companion object {
     @Suppress("ConstPropertyName")
-    public const val operationName: String = "GetPrimaryKeyIsFloatByKey"
+    public const val operationName: String = "GetOptionalStringsByKey"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
-public fun GetPrimaryKeyIsFloatByKeyQuery.ref(
-  key: PrimaryKeyIsFloatKey,
-): QueryRef<GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables> =
+public fun GetOptionalStringsByKeyQuery.ref(
+  key: OptionalStringsKey,
+): QueryRef<GetOptionalStringsByKeyQuery.Data, GetOptionalStringsByKeyQuery.Variables> =
   ref(
-    GetPrimaryKeyIsFloatByKeyQuery.Variables(
+    GetOptionalStringsByKeyQuery.Variables(
       key = key,
     )
   )
 
-public suspend fun GetPrimaryKeyIsFloatByKeyQuery.execute(
-  key: PrimaryKeyIsFloatKey,
-): QueryResult<GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables> =
+public suspend fun GetOptionalStringsByKeyQuery.execute(
+  key: OptionalStringsKey,
+): QueryResult<GetOptionalStringsByKeyQuery.Data, GetOptionalStringsByKeyQuery.Variables> =
   ref(
       key = key,
     )
     .execute()
 
-public fun GetPrimaryKeyIsFloatByKeyQuery.flow(
-  key: PrimaryKeyIsFloatKey,
+public fun GetOptionalStringsByKeyQuery.flow(
+  key: OptionalStringsKey,
 ): Flow<
-  QuerySubscriptionResult<
-    GetPrimaryKeyIsFloatByKeyQuery.Data, GetPrimaryKeyIsFloatByKeyQuery.Variables
-  >
+  QuerySubscriptionResult<GetOptionalStringsByKeyQuery.Data, GetOptionalStringsByKeyQuery.Variables>
 > =
   ref(
       key = key,

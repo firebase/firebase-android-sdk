@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,7 +22,7 @@ public interface GetManyToOneChildByKeyQuery :
     DemoConnector, GetManyToOneChildByKeyQuery.Data, GetManyToOneChildByKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: ManyToOneChildKey)
+  @Serializable public data class Variables(val key: ManyToOneChildKey) {}
 
   @Serializable
   public data class Data(val manyToOneChild: ManyToOneChild?) {
@@ -30,7 +30,7 @@ public interface GetManyToOneChildByKeyQuery :
     @Serializable
     public data class ManyToOneChild(val parents: List<ParentsItem>) {
 
-      @Serializable public data class ParentsItem(val id: java.util.UUID)
+      @Serializable public data class ParentsItem(val id: java.util.UUID) {}
     }
   }
 
@@ -42,20 +42,32 @@ public interface GetManyToOneChildByKeyQuery :
 }
 
 public fun GetManyToOneChildByKeyQuery.ref(
-  key: ManyToOneChildKey
+  key: ManyToOneChildKey,
 ): QueryRef<GetManyToOneChildByKeyQuery.Data, GetManyToOneChildByKeyQuery.Variables> =
-  ref(GetManyToOneChildByKeyQuery.Variables(key = key))
+  ref(
+    GetManyToOneChildByKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetManyToOneChildByKeyQuery.execute(
-  key: ManyToOneChildKey
+  key: ManyToOneChildKey,
 ): QueryResult<GetManyToOneChildByKeyQuery.Data, GetManyToOneChildByKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetManyToOneChildByKeyQuery.flow(
-  key: ManyToOneChildKey
+  key: ManyToOneChildKey,
 ): Flow<
   QuerySubscriptionResult<GetManyToOneChildByKeyQuery.Data, GetManyToOneChildByKeyQuery.Variables>
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

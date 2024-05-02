@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -27,12 +27,12 @@ public interface InsertManyToManySelfParentMutation :
   public data class Variables(
     val child1: ManyToManySelfChildKey,
     val child2: ManyToManySelfChildKey
-  )
+  ) {}
 
   @Serializable
   public data class Data(
     @SerialName("manyToManySelfParent_insert") val key: ManyToManySelfParentKey
-  )
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -44,17 +44,28 @@ public interface InsertManyToManySelfParentMutation :
 
 public fun InsertManyToManySelfParentMutation.ref(
   child1: ManyToManySelfChildKey,
-  child2: ManyToManySelfChildKey
+  child2: ManyToManySelfChildKey,
 ): MutationRef<
   InsertManyToManySelfParentMutation.Data, InsertManyToManySelfParentMutation.Variables
-> = ref(InsertManyToManySelfParentMutation.Variables(child1 = child1, child2 = child2))
+> =
+  ref(
+    InsertManyToManySelfParentMutation.Variables(
+      child1 = child1,
+      child2 = child2,
+    )
+  )
 
 public suspend fun InsertManyToManySelfParentMutation.execute(
   child1: ManyToManySelfChildKey,
-  child2: ManyToManySelfChildKey
+  child2: ManyToManySelfChildKey,
 ): MutationResult<
   InsertManyToManySelfParentMutation.Data, InsertManyToManySelfParentMutation.Variables
-> = ref(child1 = child1, child2 = child2).execute()
+> =
+  ref(
+      child1 = child1,
+      child2 = child2,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

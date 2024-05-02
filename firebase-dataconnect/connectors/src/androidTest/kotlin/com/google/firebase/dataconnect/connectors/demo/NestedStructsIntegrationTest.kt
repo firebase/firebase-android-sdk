@@ -131,12 +131,10 @@ class NestedStructsIntegrationTest : DemoConnectorIntegrationTestBase() {
       val value = "nested2_${it}_" + randomAlphanumericString()
       val key =
         connector.insertNested2
-          .execute(
-            nested3 = nested3s.next(),
-            nested3NullableNonNull = nested3s.next(),
-            nested3NullableNull = null,
-            value = value
-          )
+          .execute(nested3 = nested3s.next(), value = value) {
+            nested3NullableNonNull = nested3s.next()
+            nested3NullableNull = null
+          }
           .data
           .key
       Nested2Info(key, value)
@@ -151,13 +149,11 @@ class NestedStructsIntegrationTest : DemoConnectorIntegrationTestBase() {
     val value = "nested1_1_" + randomAlphanumericString()
     val key =
       connector.insertNested1
-        .execute(
-          nested1 = nested1,
-          nested2 = nested2s.next(),
-          nested2NullableNonNull = nested2s.next(),
-          nested2NullableNull = null,
-          value = value
-        )
+        .execute(nested2 = nested2s.next(), value = value) {
+          this.nested1 = nested1
+          nested2NullableNonNull = nested2s.next()
+          nested2NullableNull = null
+        }
         .data
         .key
     return Nested1Info(key, value)

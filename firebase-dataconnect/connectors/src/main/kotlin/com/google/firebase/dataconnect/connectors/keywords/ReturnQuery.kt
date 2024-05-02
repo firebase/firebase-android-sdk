@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.`typealias`
@@ -20,12 +20,12 @@ import kotlinx.serialization.serializer
 public interface ReturnQuery :
   GeneratedQuery<KeywordsConnector, ReturnQuery.Data, ReturnQuery.Variables> {
 
-  @Serializable public data class Variables(val id: String)
+  @Serializable public data class Variables(val id: String) {}
 
   @Serializable
   public data class Data(val foo: Foo?) {
 
-    @Serializable public data class Foo(val bar: String?)
+    @Serializable public data class Foo(val bar: String?) {}
   }
 
   public companion object {
@@ -35,17 +35,31 @@ public interface ReturnQuery :
   }
 }
 
-public fun ReturnQuery.ref(id: String): QueryRef<ReturnQuery.Data, ReturnQuery.Variables> =
-  ref(ReturnQuery.Variables(id = id))
+public fun ReturnQuery.ref(
+  id: String,
+): QueryRef<ReturnQuery.Data, ReturnQuery.Variables> =
+  ref(
+    ReturnQuery.Variables(
+      id = id,
+    )
+  )
 
 public suspend fun ReturnQuery.execute(
-  id: String
-): QueryResult<ReturnQuery.Data, ReturnQuery.Variables> = ref(id = id).execute()
+  id: String,
+): QueryResult<ReturnQuery.Data, ReturnQuery.Variables> =
+  ref(
+      id = id,
+    )
+    .execute()
 
 public fun ReturnQuery.flow(
-  id: String
+  id: String,
 ): Flow<QuerySubscriptionResult<ReturnQuery.Data, ReturnQuery.Variables>> =
-  ref(id = id).subscribe().flow
+  ref(
+      id = id,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

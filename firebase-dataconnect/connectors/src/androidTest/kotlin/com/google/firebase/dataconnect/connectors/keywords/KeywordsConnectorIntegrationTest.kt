@@ -44,7 +44,7 @@ class KeywordsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
     val bar = "bar_" + randomAlphanumericString()
 
     // The "do" mutation inserts a Foo into the database.
-    val mutationResult = keywordsConnector.`do`.execute(id = id, bar = bar)
+    val mutationResult = keywordsConnector.`do`.execute(id = id) { this.bar = bar }
 
     assertThat(mutationResult.data).isEqualTo(DoMutation.Data(FooKey(id)))
     val queryResult = demoConnector.getFooById.execute(id)
@@ -55,7 +55,7 @@ class KeywordsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
   fun queryNameShouldBeEscapedIfItIsAKotlinKeyword() = runTest {
     val id = "id_" + randomAlphanumericString()
     val bar = "bar_" + randomAlphanumericString()
-    demoConnector.insertFoo.execute(id = id, bar = bar)
+    demoConnector.insertFoo.execute(id = id) { this.bar = bar }
 
     // The "return" query gets a Foo from the database by its ID.
     val queryResult = keywordsConnector.`return`.execute(id)
@@ -67,7 +67,7 @@ class KeywordsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
   fun mutationVariableNamesShouldBeEscapedIfTheyAreKotlinKeywords() = runTest {
     val id = "id_" + randomAlphanumericString()
     val bar = "bar_" + randomAlphanumericString()
-    demoConnector.insertFoo.execute(id = id, bar = bar)
+    demoConnector.insertFoo.execute(id = id) { this.bar = bar }
 
     // The "is" variable is the ID of the row to delete.
     val mutationResult = keywordsConnector.deleteFoo.execute(`is` = id)
@@ -83,12 +83,12 @@ class KeywordsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
     val id2 = "id2_" + randomAlphanumericString()
     val id3 = "id3_" + randomAlphanumericString()
     val bar = "bar_" + randomAlphanumericString()
-    demoConnector.insertFoo.execute(id = id1, bar = bar)
-    demoConnector.insertFoo.execute(id = id2, bar = bar)
-    demoConnector.insertFoo.execute(id = id3, bar = bar)
+    demoConnector.insertFoo.execute(id = id1) { this.bar = bar }
+    demoConnector.insertFoo.execute(id = id2) { this.bar = bar }
+    demoConnector.insertFoo.execute(id = id3) { this.bar = bar }
 
     // The "as" variable is the value of "bar" whose rows to return.
-    val queryResult = keywordsConnector.getFoosByBar.execute(`as` = bar)
+    val queryResult = keywordsConnector.getFoosByBar.execute { `as` = bar }
 
     assertThat(queryResult.data.foos)
       .containsExactly(
@@ -106,7 +106,10 @@ class KeywordsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
     val bar2 = "bar2_" + randomAlphanumericString()
 
     val mutationResult =
-      keywordsConnector.insertTwoFoos.execute(id1 = id1, id2 = id2, bar1 = bar1, bar2 = bar2)
+      keywordsConnector.insertTwoFoos.execute(id1 = id1, id2 = id2) {
+        this.bar1 = bar1
+        this.bar2 = bar2
+      }
 
     // The `val` and `var` fields are the keys of the 1st and 2nd inserted rows, respectively.
     assertThat(mutationResult.data)
@@ -128,8 +131,8 @@ class KeywordsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
     val id2 = "id2_" + randomAlphanumericString()
     val bar1 = "bar1_" + randomAlphanumericString()
     val bar2 = "bar2_" + randomAlphanumericString()
-    demoConnector.insertFoo.execute(id = id1, bar = bar1)
-    demoConnector.insertFoo.execute(id = id2, bar = bar2)
+    demoConnector.insertFoo.execute(id = id1) { bar = bar1 }
+    demoConnector.insertFoo.execute(id = id2) { bar = bar2 }
 
     val queryResult = keywordsConnector.getTwoFoosById.execute(id1 = id1, id2 = id2)
 

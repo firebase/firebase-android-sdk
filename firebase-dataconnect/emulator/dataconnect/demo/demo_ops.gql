@@ -670,3 +670,32 @@ query GetManyToManySelfChildByKey($key: ManyToManySelfChild_Key!) @auth(level: P
     manyToManySelfChildren_via_ManyToManySelfParent_on_child2 { id }
   }
 }
+
+mutation InsertOptionalStrings(
+  $required1: String!,
+  $required2: String!,
+  $nullable1: String,
+  $nullable2: String,
+  $nullable3: String,
+  $nullableWithSchemaDefault: String,
+) @auth(level: PUBLIC) {
+  optionalStrings_insert(data: {
+    required1: $required1,
+    required2: $required2,
+    nullable1: $nullable1,
+    nullable2: $nullable2,
+    nullable3: $nullable3,
+    nullableWithSchemaDefault: $nullableWithSchemaDefault,
+  })
+}
+
+query GetOptionalStringsByKey($key: OptionalStrings_Key!) @auth(level: PUBLIC) {
+  optionalStrings(key: $key) {
+    required1
+    required2
+    nullable1
+    nullable2
+    nullable3
+    nullableWithSchemaDefault
+  }
+}

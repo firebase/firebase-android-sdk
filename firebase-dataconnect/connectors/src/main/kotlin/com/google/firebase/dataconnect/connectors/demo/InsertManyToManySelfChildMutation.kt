@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -20,7 +20,9 @@ public interface InsertManyToManySelfChildMutation :
   GeneratedMutation<DemoConnector, InsertManyToManySelfChildMutation.Data, Unit> {
 
   @Serializable
-  public data class Data(@SerialName("manyToManySelfChild_insert") val key: ManyToManySelfChildKey)
+  public data class Data(
+    @SerialName("manyToManySelfChild_insert") val key: ManyToManySelfChildKey
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")

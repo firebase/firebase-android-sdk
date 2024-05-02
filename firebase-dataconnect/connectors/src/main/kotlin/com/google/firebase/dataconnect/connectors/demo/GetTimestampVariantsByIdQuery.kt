@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,7 +22,7 @@ public interface GetTimestampVariantsByIdQuery :
     DemoConnector, GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables
   > {
 
-  @Serializable public data class Variables(val id: String)
+  @Serializable public data class Variables(val id: String) {}
 
   @Serializable
   public data class Data(val timestampVariants: TimestampVariants?) {
@@ -36,7 +36,7 @@ public interface GetTimestampVariantsByIdQuery :
       val maxValue: com.google.firebase.Timestamp?,
       val emptyList: List<com.google.firebase.Timestamp>,
       val nonEmptyList: List<com.google.firebase.Timestamp>
-    )
+    ) {}
   }
 
   public companion object {
@@ -48,22 +48,34 @@ public interface GetTimestampVariantsByIdQuery :
 }
 
 public fun GetTimestampVariantsByIdQuery.ref(
-  id: String
+  id: String,
 ): QueryRef<GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables> =
-  ref(GetTimestampVariantsByIdQuery.Variables(id = id))
+  ref(
+    GetTimestampVariantsByIdQuery.Variables(
+      id = id,
+    )
+  )
 
 public suspend fun GetTimestampVariantsByIdQuery.execute(
-  id: String
+  id: String,
 ): QueryResult<GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables> =
-  ref(id = id).execute()
+  ref(
+      id = id,
+    )
+    .execute()
 
 public fun GetTimestampVariantsByIdQuery.flow(
-  id: String
+  id: String,
 ): Flow<
   QuerySubscriptionResult<
     GetTimestampVariantsByIdQuery.Data, GetTimestampVariantsByIdQuery.Variables
   >
-> = ref(id = id).subscribe().flow
+> =
+  ref(
+      id = id,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

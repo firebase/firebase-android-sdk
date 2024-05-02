@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -22,7 +22,7 @@ public interface GetPrimaryKeyNested7byKeyQuery :
     DemoConnector, GetPrimaryKeyNested7byKeyQuery.Data, GetPrimaryKeyNested7byKeyQuery.Variables
   > {
 
-  @Serializable public data class Variables(val key: PrimaryKeyNested7Key)
+  @Serializable public data class Variables(val key: PrimaryKeyNested7Key) {}
 
   @Serializable
   public data class Data(val primaryKeyNested7: PrimaryKeyNested7?) {
@@ -38,25 +38,25 @@ public interface GetPrimaryKeyNested7byKeyQuery :
       @Serializable
       public data class Nested5a(val value: String, val nested1: Nested1, val nested2: Nested2) {
 
-        @Serializable public data class Nested1(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested1(val id: java.util.UUID, val value: String) {}
 
-        @Serializable public data class Nested2(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested2(val id: java.util.UUID, val value: String) {}
       }
 
       @Serializable
       public data class Nested5b(val value: String, val nested1: Nested1, val nested2: Nested2) {
 
-        @Serializable public data class Nested1(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested1(val id: java.util.UUID, val value: String) {}
 
-        @Serializable public data class Nested2(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested2(val id: java.util.UUID, val value: String) {}
       }
 
       @Serializable
       public data class Nested6(val value: String, val nested3: Nested3, val nested4: Nested4) {
 
-        @Serializable public data class Nested3(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
 
-        @Serializable public data class Nested4(val id: java.util.UUID, val value: String)
+        @Serializable public data class Nested4(val id: java.util.UUID, val value: String) {}
       }
     }
   }
@@ -70,22 +70,34 @@ public interface GetPrimaryKeyNested7byKeyQuery :
 }
 
 public fun GetPrimaryKeyNested7byKeyQuery.ref(
-  key: PrimaryKeyNested7Key
+  key: PrimaryKeyNested7Key,
 ): QueryRef<GetPrimaryKeyNested7byKeyQuery.Data, GetPrimaryKeyNested7byKeyQuery.Variables> =
-  ref(GetPrimaryKeyNested7byKeyQuery.Variables(key = key))
+  ref(
+    GetPrimaryKeyNested7byKeyQuery.Variables(
+      key = key,
+    )
+  )
 
 public suspend fun GetPrimaryKeyNested7byKeyQuery.execute(
-  key: PrimaryKeyNested7Key
+  key: PrimaryKeyNested7Key,
 ): QueryResult<GetPrimaryKeyNested7byKeyQuery.Data, GetPrimaryKeyNested7byKeyQuery.Variables> =
-  ref(key = key).execute()
+  ref(
+      key = key,
+    )
+    .execute()
 
 public fun GetPrimaryKeyNested7byKeyQuery.flow(
-  key: PrimaryKeyNested7Key
+  key: PrimaryKeyNested7Key,
 ): Flow<
   QuerySubscriptionResult<
     GetPrimaryKeyNested7byKeyQuery.Data, GetPrimaryKeyNested7byKeyQuery.Variables
   >
-> = ref(key = key).subscribe().flow
+> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

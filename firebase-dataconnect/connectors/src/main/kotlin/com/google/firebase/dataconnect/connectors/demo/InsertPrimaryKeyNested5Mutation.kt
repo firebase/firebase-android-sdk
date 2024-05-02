@@ -1,4 +1,4 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
@@ -26,10 +26,10 @@ public interface InsertPrimaryKeyNested5Mutation :
     val value: String,
     val nested1: PrimaryKeyNested1Key,
     val nested2: PrimaryKeyNested2Key
-  )
+  ) {}
 
   @Serializable
-  public data class Data(@SerialName("primaryKeyNested5_insert") val key: PrimaryKeyNested5Key)
+  public data class Data(@SerialName("primaryKeyNested5_insert") val key: PrimaryKeyNested5Key) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -42,18 +42,27 @@ public interface InsertPrimaryKeyNested5Mutation :
 public fun InsertPrimaryKeyNested5Mutation.ref(
   value: String,
   nested1: PrimaryKeyNested1Key,
-  nested2: PrimaryKeyNested2Key
+  nested2: PrimaryKeyNested2Key,
 ): MutationRef<InsertPrimaryKeyNested5Mutation.Data, InsertPrimaryKeyNested5Mutation.Variables> =
   ref(
-    InsertPrimaryKeyNested5Mutation.Variables(value = value, nested1 = nested1, nested2 = nested2)
+    InsertPrimaryKeyNested5Mutation.Variables(
+      value = value,
+      nested1 = nested1,
+      nested2 = nested2,
+    )
   )
 
 public suspend fun InsertPrimaryKeyNested5Mutation.execute(
   value: String,
   nested1: PrimaryKeyNested1Key,
-  nested2: PrimaryKeyNested2Key
+  nested2: PrimaryKeyNested2Key,
 ): MutationResult<InsertPrimaryKeyNested5Mutation.Data, InsertPrimaryKeyNested5Mutation.Variables> =
-  ref(value = value, nested1 = nested1, nested2 = nested2).execute()
+  ref(
+      value = value,
+      nested1 = nested1,
+      nested2 = nested2,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

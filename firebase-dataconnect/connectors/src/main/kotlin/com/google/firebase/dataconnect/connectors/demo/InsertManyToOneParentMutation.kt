@@ -1,10 +1,11 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress("SpellCheckingInspection", "LocalVariableName")
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.serializers.DateSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
@@ -21,10 +22,40 @@ public interface InsertManyToOneParentMutation :
     DemoConnector, InsertManyToOneParentMutation.Data, InsertManyToOneParentMutation.Variables
   > {
 
-  @Serializable public data class Variables(val child: ManyToOneChildKey?)
+  @Serializable
+  public data class Variables(val child: OptionalVariable<ManyToOneChildKey?>) {
+
+    @DslMarker public annotation class BuilderDsl
+
+    @BuilderDsl
+    public interface Builder {
+      public var child: ManyToOneChildKey?
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(block_: Builder.() -> Unit): Variables {
+        var child: OptionalVariable<ManyToOneChildKey?> = OptionalVariable.Undefined
+
+        return object : Builder {
+            override var child: ManyToOneChildKey?
+              get() = child.valueOrNull()
+              set(value_) {
+                child = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
+          .let {
+            Variables(
+              child = child,
+            )
+          }
+      }
+    }
+  }
 
   @Serializable
-  public data class Data(@SerialName("manyToOneParent_insert") val key: ManyToOneParentKey)
+  public data class Data(@SerialName("manyToOneParent_insert") val key: ManyToOneParentKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName") public const val operationName: String = "InsertManyToOneParent"
@@ -34,14 +65,14 @@ public interface InsertManyToOneParentMutation :
 }
 
 public fun InsertManyToOneParentMutation.ref(
-  child: ManyToOneChildKey?
+  block_: InsertManyToOneParentMutation.Variables.Builder.() -> Unit
 ): MutationRef<InsertManyToOneParentMutation.Data, InsertManyToOneParentMutation.Variables> =
-  ref(InsertManyToOneParentMutation.Variables(child = child))
+  ref(InsertManyToOneParentMutation.Variables.build(block_))
 
 public suspend fun InsertManyToOneParentMutation.execute(
-  child: ManyToOneChildKey?
+  block_: InsertManyToOneParentMutation.Variables.Builder.() -> Unit
 ): MutationResult<InsertManyToOneParentMutation.Data, InsertManyToOneParentMutation.Variables> =
-  ref(child = child).execute()
+  ref(block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the
