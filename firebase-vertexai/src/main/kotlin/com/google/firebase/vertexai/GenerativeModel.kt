@@ -53,7 +53,7 @@ internal constructor(
   private val modelName: String,
   private val generationConfig: GenerationConfig? = null,
   private val safetySettings: List<SafetySetting>? = null,
-  private val tools: List<Tool>? = null,
+  val tools: List<Tool>? = null,
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val controller: APIController
