@@ -33,12 +33,8 @@ sealed interface DataConnectBackend {
 
   val dataConnectSettings: DataConnectSettings
 
-  fun getDataConnect(app: FirebaseApp?, config: ConnectorConfig): FirebaseDataConnect =
-    if (app === null) {
-      FirebaseDataConnect.getInstance(config, dataConnectSettings)
-    } else {
-      FirebaseDataConnect.getInstance(app, config, dataConnectSettings)
-    }
+  fun getDataConnect(app: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =
+    FirebaseDataConnect.getInstance(app, config, dataConnectSettings)
 
   object Production : DataConnectBackend {
     override val dataConnectSettings
@@ -72,7 +68,7 @@ sealed interface DataConnectBackend {
       get() = DataConnectSettings()
     override fun toString() = "DataConnectBackend.Emulator(host=$host, port=$port)"
 
-    override fun getDataConnect(app: FirebaseApp?, config: ConnectorConfig): FirebaseDataConnect =
+    override fun getDataConnect(app: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =
       super.getDataConnect(app, config).apply {
         if (host !== null && port !== null) {
           useEmulator(host = host, port = port)

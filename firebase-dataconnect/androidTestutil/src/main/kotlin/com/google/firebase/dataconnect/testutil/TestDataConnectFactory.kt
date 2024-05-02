@@ -23,7 +23,7 @@ import kotlin.random.Random
  * A JUnit test rule that creates instances of [FirebaseDataConnect] for use during testing, and
  * closes them upon test completion.
  */
-class TestDataConnectFactory :
+class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
   FactoryTestRule<FirebaseDataConnect, TestDataConnectFactory.Params>() {
 
   fun newInstance(
@@ -46,6 +46,8 @@ class TestDataConnectFactory :
   override fun createInstance(params: Params?): FirebaseDataConnect {
     val instanceId = Random.nextAlphanumericString(length = 10)
 
+    val firebaseApp = params?.firebaseApp ?: firebaseAppFactory.newInstance()
+
     val connectorConfig =
       ConnectorConfig(
         connector = params?.connector ?: "TestConnector$instanceId",
@@ -54,7 +56,7 @@ class TestDataConnectFactory :
       )
 
     val backend = DataConnectBackend.fromInstrumentationArguments()
-    return backend.getDataConnect(params?.firebaseApp, connectorConfig)
+    return backend.getDataConnect(firebaseApp, connectorConfig)
   }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {

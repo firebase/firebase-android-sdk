@@ -30,7 +30,7 @@ abstract class DataConnectIntegrationTestBase {
 
   @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
 
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+  @get:Rule val dataConnectFactory = TestDataConnectFactory(firebaseAppFactory)
 }
 
 /** The name of the currently-running test, in the form "ClassName.MethodName". */
