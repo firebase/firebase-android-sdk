@@ -1,4 +1,12 @@
-@file:Suppress("SpellCheckingInspection", "LocalVariableName")
+@file:Suppress(
+  "KotlinRedundantDiagnosticSuppress",
+  "LocalVariableName",
+  "RedundantVisibilityModifier",
+  "RemoveEmptyClassBody",
+  "SpellCheckingInspection",
+  "LocalVariableName",
+  "unused",
+)
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo

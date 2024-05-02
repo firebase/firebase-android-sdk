@@ -1,4 +1,12 @@
-@file:Suppress("SpellCheckingInspection")
+@file:Suppress(
+  "KotlinRedundantDiagnosticSuppress",
+  "LocalVariableName",
+  "RedundantVisibilityModifier",
+  "RemoveEmptyClassBody",
+  "SpellCheckingInspection",
+  "LocalVariableName",
+  "unused",
+)
 
 package com.google.firebase.dataconnect.connectors.demo
 
