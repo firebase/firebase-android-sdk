@@ -56,7 +56,7 @@ internal constructor(
   val tools: List<Tool>? = null,
   val toolConfig: ToolConfig? = null,
   val systemInstruction: Content? = null,
-  val controller: APIController
+  private val controller: APIController
 ) {
 
   @JvmOverloads
@@ -88,7 +88,7 @@ internal constructor(
           get() = 10.seconds
 
         override suspend fun generateHeaders(): Map<String, String> {
-          val headers = mutableMapOf<String,String>()
+          val headers = mutableMapOf<String, String>()
           if (appCheckTokenProvider == null) {
             Log.w(TAG, "AppCheck not registered, skipping")
           } else {
