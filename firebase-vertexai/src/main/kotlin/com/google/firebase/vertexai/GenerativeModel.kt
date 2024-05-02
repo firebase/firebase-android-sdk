@@ -56,7 +56,7 @@ internal constructor(
   val tools: List<Tool>? = null,
   val toolConfig: ToolConfig? = null,
   val systemInstruction: Content? = null,
-  val controller: APIController
+  private val controller: APIController
 ) {
 
   @JvmOverloads
