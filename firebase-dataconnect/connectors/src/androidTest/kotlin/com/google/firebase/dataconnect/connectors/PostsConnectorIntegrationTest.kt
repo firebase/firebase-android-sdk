@@ -28,9 +28,10 @@ import org.junit.Test
 class PostsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val posts: PostsConnector by lazy {
-    PostsConnector.getInstance(firebaseAppFactory.newInstance()).apply {
-      dataConnect.useEmulator()
-      dataConnectFactory.adoptInstance(dataConnect)
+    val firebaseApp = firebaseAppFactory.newInstance()
+    val dataConnect = dataConnectFactory.newInstance(firebaseApp, PostsConnector.config)
+    PostsConnector.getInstance(firebaseApp, dataConnect.settings).also {
+      require(it.dataConnect === dataConnect)
     }
   }
 

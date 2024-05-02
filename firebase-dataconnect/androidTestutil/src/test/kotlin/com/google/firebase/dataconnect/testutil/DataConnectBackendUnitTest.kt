@@ -56,25 +56,25 @@ class DataConnectBackendUnitTest {
   @Test
   fun `fromInstrumentationArgument(http url with host) should return Custom()`() {
     assertThat(fromInstrumentationArgument("http://a.b.c"))
-      .isEqualTo(DataConnectBackend.Custom("http://a.b.c"))
+      .isEqualTo(DataConnectBackend.Custom("a.b.c", false))
   }
 
   @Test
   fun `fromInstrumentationArgument(http url with host and port) should return Custom()`() {
     assertThat(fromInstrumentationArgument("http://a.b.c:9987"))
-      .isEqualTo(DataConnectBackend.Custom("http://a.b.c:9987"))
+      .isEqualTo(DataConnectBackend.Custom("a.b.c:9987", false))
   }
 
   @Test
   fun `fromInstrumentationArgument(https url with host) should return Custom()`() {
     assertThat(fromInstrumentationArgument("https://a.b.c"))
-      .isEqualTo(DataConnectBackend.Custom("https://a.b.c"))
+      .isEqualTo(DataConnectBackend.Custom("a.b.c", true))
   }
 
   @Test
   fun `fromInstrumentationArgument(https url with host and port) should return Custom()`() {
     assertThat(fromInstrumentationArgument("https://a.b.c:9987"))
-      .isEqualTo(DataConnectBackend.Custom("https://a.b.c:9987"))
+      .isEqualTo(DataConnectBackend.Custom("a.b.c:9987", true))
   }
 
   @Test

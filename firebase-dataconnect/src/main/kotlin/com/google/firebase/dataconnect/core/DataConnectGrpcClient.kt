@@ -41,9 +41,7 @@ import kotlinx.serialization.DeserializationStrategy
 internal class DataConnectGrpcClient(
   context: Context,
   projectId: String,
-  connector: String,
-  location: String,
-  service: String,
+  connector: ConnectorConfig,
   private val dataConnectAuth: DataConnectAuth,
   host: String,
   sslEnabled: Boolean,
@@ -51,10 +49,21 @@ internal class DataConnectGrpcClient(
   parentLogger: Logger,
 ) {
   private val logger =
-    Logger("DataConnectGrpcClient").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+    Logger("DataConnectGrpcClient").apply {
+      debug {
+        "Created by ${parentLogger.nameWithId};" +
+          " projectId=$projectId" +
+          " connector=$connector" +
+          " host=$host" +
+          " sslEnabled=$sslEnabled"
+      }
+    }
 
   private val requestName =
-    "projects/$projectId/locations/$location/services/$service/connectors/$connector"
+    "projects/$projectId/" +
+      "locations/${connector.location}" +
+      "/services/${connector.serviceId}" +
+      "/connectors/${connector.connector}"
 
   private val AUTHORIZATION_HEADER =
     Metadata.Key.of("X-Firebase-Auth-Token", Metadata.ASCII_STRING_MARSHALLER)

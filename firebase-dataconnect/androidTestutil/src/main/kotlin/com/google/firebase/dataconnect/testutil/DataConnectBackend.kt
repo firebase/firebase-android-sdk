@@ -16,6 +16,11 @@ package com.google.firebase.dataconnect.testutil
 
 import androidx.annotation.VisibleForTesting
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.getInstance
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
@@ -26,32 +31,71 @@ import java.net.URL
 
 sealed interface DataConnectBackend {
 
+  val dataConnectSettings: DataConnectSettings
+
+  fun getDataConnect(app: FirebaseApp?, config: ConnectorConfig): FirebaseDataConnect =
+    if (app === null) {
+      FirebaseDataConnect.getInstance(config, dataConnectSettings)
+    } else {
+      FirebaseDataConnect.getInstance(app, config, dataConnectSettings)
+    }
+
   object Production : DataConnectBackend {
+    override val dataConnectSettings
+      get() = DataConnectSettings()
     override fun toString() = "DataConnectBackend.Production"
   }
 
-  object Staging : DataConnectBackend {
-    const val host = "https://staging-firebasedataconnect.sandbox.googleapis.com"
+  sealed class PredefinedDataConnectBackend(val host: String) : DataConnectBackend {
+    override val dataConnectSettings
+      get() = DataConnectSettings().copy(host = host, sslEnabled = true)
+  }
+
+  object Staging :
+    PredefinedDataConnectBackend("staging-firebasedataconnect.sandbox.googleapis.com") {
     override fun toString() = "DataConnectBackend.Staging($host)"
   }
 
-  object Autopush : DataConnectBackend {
-    const val host = "https://autopush-firebasedataconnect.sandbox.googleapis.com"
+  object Autopush :
+    PredefinedDataConnectBackend("autopush-firebasedataconnect.sandbox.googleapis.com") {
     override fun toString() = "DataConnectBackend.Autopush($host)"
   }
 
-  data class Custom(val host: String) : DataConnectBackend {
-    override fun toString() = "DataConnectBackend.Custom(host=$host)"
+  data class Custom(val host: String, val sslEnabled: Boolean) : DataConnectBackend {
+    override val dataConnectSettings
+      get() = DataConnectSettings().copy(host = host, sslEnabled = sslEnabled)
+    override fun toString() = "DataConnectBackend.Custom(host=$host, sslEnabled=$sslEnabled)"
   }
 
   data class Emulator(val host: String? = null, val port: Int? = null) : DataConnectBackend {
+    override val dataConnectSettings
+      get() = DataConnectSettings()
     override fun toString() = "DataConnectBackend.Emulator(host=$host, port=$port)"
+
+    override fun getDataConnect(app: FirebaseApp?, config: ConnectorConfig): FirebaseDataConnect =
+      super.getDataConnect(app, config).apply {
+        if (host !== null && port !== null) {
+          useEmulator(host = host, port = port)
+        } else if (host !== null) {
+          useEmulator(host = host)
+        } else if (port !== null) {
+          useEmulator(port = port)
+        } else {
+          useEmulator()
+        }
+      }
   }
 
-  class InvalidInstrumentationArgument(argumentValue: String, details: String, cause: Throwable) :
+  class InvalidInstrumentationArgument(
+    argumentValue: String,
+    details: String,
+    cause: Throwable? = null
+  ) :
     Exception(
       "Invalid value for instrumentation argument \"$INSTRUMENTATION_ARGUMENT\": " +
-        "\"$argumentValue\" ($details: ${cause.message}",
+        "\"$argumentValue\" ($details" +
+        (if (cause === null) "" else ": ${cause.message}") +
+        ")",
       cause
     )
 
@@ -73,6 +117,9 @@ sealed interface DataConnectBackend {
       val argument = bundle?.getString(INSTRUMENTATION_ARGUMENT)
       return fromInstrumentationArgument(argument) ?: Emulator()
     }
+
+    private fun URL.hostOrNull(): String? = host.ifEmpty { null }
+    private fun URL.portOrNull(): Int? = port.let { if (it > 0) it else null }
 
     @VisibleForTesting
     internal fun fromInstrumentationArgument(arg: String?): DataConnectBackend? {
@@ -101,18 +148,38 @@ sealed interface DataConnectBackend {
           } catch (e: MalformedURLException) {
             throw InvalidInstrumentationArgument(arg, "invalid 'emulator' URI", e)
           }
-        val emulatorHost = url.host.ifEmpty { null }
-        val emulatorPort = url.port.let { if (it > 0) it else null }
-        return Emulator(host = emulatorHost, port = emulatorPort)
+        return Emulator(host = url.hostOrNull(), port = url.portOrNull())
       }
 
-      try {
-        URL(arg)
-      } catch (e: MalformedURLException) {
-        throw InvalidInstrumentationArgument(arg, "cannot be parsed as a URL", e)
-      }
+      val url =
+        try {
+          URL(arg)
+        } catch (e: MalformedURLException) {
+          throw InvalidInstrumentationArgument(arg, "cannot be parsed as a URL", e)
+        }
 
-      return Custom(arg)
+      val host = url.hostOrNull()
+      val port = url.portOrNull()
+      val sslEnabled =
+        when (url.protocol) {
+          "http" -> false
+          "https" -> true
+          else ->
+            throw InvalidInstrumentationArgument(arg, "unsupported protocol: ${url.protocol}", null)
+        }
+
+      val customHost =
+        if (host !== null && port !== null) {
+          "$host:$port"
+        } else if (host !== null) {
+          host
+        } else if (port !== null) {
+          ":$port"
+        } else {
+          throw InvalidInstrumentationArgument(arg, "a host and/or a port must be specified", null)
+        }
+
+      return Custom(host = customHost, sslEnabled = sslEnabled)
     }
   }
 }

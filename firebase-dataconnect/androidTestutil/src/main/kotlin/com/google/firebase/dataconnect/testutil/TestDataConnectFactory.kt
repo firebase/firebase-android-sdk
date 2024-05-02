@@ -45,6 +45,7 @@ class TestDataConnectFactory :
 
   override fun createInstance(params: Params?): FirebaseDataConnect {
     val instanceId = Random.nextAlphanumericString(length = 10)
+
     val connectorConfig =
       ConnectorConfig(
         connector = params?.connector ?: "TestConnector$instanceId",
@@ -52,16 +53,8 @@ class TestDataConnectFactory :
         serviceId = params?.serviceId ?: "TestService$instanceId",
       )
 
-    val dataConnect =
-      if (params?.firebaseApp == null) {
-        FirebaseDataConnect.getInstance(connectorConfig)
-      } else {
-        FirebaseDataConnect.getInstance(params.firebaseApp, connectorConfig)
-      }
-
-    dataConnect.useEmulator()
-
-    return dataConnect
+    val backend = DataConnectBackend.fromInstrumentationArguments()
+    return backend.getDataConnect(params?.firebaseApp, connectorConfig)
   }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {

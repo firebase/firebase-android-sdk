@@ -109,9 +109,7 @@ internal class FirebaseDataConnectImpl(
       DataConnectGrpcClient(
         context = context,
         projectId = projectId,
-        connector = config.connector,
-        location = config.location,
-        service = config.serviceId,
+        connector = config,
         dataConnectAuth = dataConnectAuth.getLocked(),
         host = host,
         sslEnabled = sslEnabled,
