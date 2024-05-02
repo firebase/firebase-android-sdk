@@ -1,6 +1,7 @@
 package com.google.firebase.dataconnect.connectors.demo.testutil
 
 import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.connectors.demo.DemoConnector
 import com.google.firebase.dataconnect.connectors.demo.getInstance
@@ -16,5 +17,6 @@ class TestDemoConnectorFactory(
   firebaseAppFactory: TestFirebaseAppFactory,
   dataConnectFactory: TestDataConnectFactory
 ) : TestConnectorFactory<DemoConnector>(firebaseAppFactory, dataConnectFactory) {
-  override fun createConnector(firebaseApp: FirebaseApp) = DemoConnector.getInstance(firebaseApp)
+  override fun createConnector(firebaseApp: FirebaseApp, settings: DataConnectSettings) =
+    DemoConnector.getInstance(firebaseApp, settings)
 }

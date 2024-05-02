@@ -16,12 +16,12 @@ abstract class TestConnectorFactory<T : GeneratedConnector>(
   private val dataConnectFactory: TestDataConnectFactory
 ) : FactoryTestRule<T, Nothing>() {
 
-  abstract fun createConnector(firebaseApp: FirebaseApp): T
+  abstract fun createConnector(firebaseApp: FirebaseApp, settings: DataConnectSettings): T
 
   override fun createInstance(params: Nothing?): T {
     val firebaseApp = firebaseAppFactory.newInstance()
 
-    val connector = createConnector(firebaseApp)
+    val connector = createConnector(firebaseApp, dataConnectFactory.backend.dataConnectSettings)
 
     // Get the instance of `FirebaseDataConnect` from the `TestDataConnectFactory` so that it will
     // register the instance and set any settings required for talking to the backend.

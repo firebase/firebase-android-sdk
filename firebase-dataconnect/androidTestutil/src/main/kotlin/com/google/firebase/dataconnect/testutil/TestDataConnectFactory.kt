@@ -26,6 +26,9 @@ import kotlin.random.Random
 class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
   FactoryTestRule<FirebaseDataConnect, TestDataConnectFactory.Params>() {
 
+  val backend: DataConnectBackend
+    get() = DataConnectBackend.fromInstrumentationArguments()
+
   fun newInstance(
     service: String? = null,
     location: String? = null,
@@ -55,7 +58,6 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
         serviceId = params?.serviceId ?: "TestService$instanceId",
       )
 
-    val backend = DataConnectBackend.fromInstrumentationArguments()
     return backend.getDataConnect(firebaseApp, connectorConfig)
   }
 
