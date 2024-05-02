@@ -2,23 +2,36 @@ package com.firebase.io2024.whoami
 
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import com.firebase.io2024.whoami.ui.theme.WhoAmITheme
 import com.google.firebase.Firebase
 import com.google.firebase.vertexai.type.generationConfig
 import com.google.firebase.vertexai.vertexAI
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 
 class MainActivity : ComponentActivity() {
@@ -28,14 +41,23 @@ class MainActivity : ComponentActivity() {
     setContent {
       WhoAmITheme {
         // A surface container using the 'background' color from the theme
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-          Button(
-            onClick = {
-              promptAi("")
+        Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
+          Column(Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Spacer(modifier = Modifier.height(32.dp)) // Add space between button and text
+            Button(onClick = { promptAi("") }) {
+              Text("Current Device", modifier = Modifier.width(IntrinsicSize.Max), textAlign = TextAlign.Center)
             }
-          ) {
-            Text(text = "Click me to do AI", modifier = Modifier.fillMaxSize())
+
+            Spacer(modifier = Modifier.height(32.dp)) // Add space between button and text
+            Text(text = "Device Info will be displayed here", modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp))
           }
+//          Button(
+//            onClick = {
+//              promptAi("")
+//            }
+//          ) {
+//            Text(text = "Current Device", modifier = Modifier.fillMaxWidth())
+//          }
         }
       }
     }
@@ -49,12 +71,15 @@ class MainActivity : ComponentActivity() {
           generationConfig = generationConfig { temperature = 0.7f },
         )
 
-
       val manufacturer = Build.MANUFACTURER
-      val model = Build.MODEL
-       val result = generativeModel.generateContent("Tell me about the phone: ${manufacturer} ${model} parsable in json")
+      val deviceName = Build.MODEL// Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+      val deviceDetailsPrompt = "Give me details about the phone ${manufacturer} ${deviceName} in JSON format without adding any extra details outside of json. Include information about the features that are available on the device including camera, bluetooth, size, weight and battery"
+      val result = generativeModel.generateContent(deviceDetailsPrompt)
 
-      Log.i("TAG", "find me: ${result.text}")
+      Log.i("TAG", "find me Prompt: ${deviceDetailsPrompt}")
+      Log.i("TAG", "find me Response: ${result.text}")
+      val jsonObject = JSONObject(result.text)
+      jsonObject.getString("name")
     }
 }
 
