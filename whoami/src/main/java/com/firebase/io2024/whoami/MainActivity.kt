@@ -68,7 +68,12 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun parseContent() {
-    val jsonObject = JSONObject(deviceInfo.value)
+    var jsonText = deviceInfo.value
+    if (jsonText.startsWith("```json") && jsonText.endsWith("```")) {
+      // The json is wrapped in a code markup block
+      jsonText = jsonText.substring(7, jsonText.length - 3).trim()
+    }
+    val jsonObject = JSONObject(jsonText)
     jsonObject.getString("name")
   }
 
