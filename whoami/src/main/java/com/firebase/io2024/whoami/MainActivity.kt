@@ -34,9 +34,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-
 class MainActivity : ComponentActivity() {
   private val deviceInfo = MutableStateFlow("Device details information here...!!")
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
@@ -47,19 +47,26 @@ class MainActivity : ComponentActivity() {
         Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.background) {
           Column(Modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(modifier = Modifier.height(32.dp)) // Add space between button and text
-            Button(onClick = {
-              promptAi { newInfo ->
-                deviceInfo.value = newInfo.toString()
-              }
-            }) {
-              Text("Current Device", modifier = Modifier.width(IntrinsicSize.Max), textAlign = TextAlign.Center)
+            Button(onClick = { promptAi { newInfo -> deviceInfo.value = newInfo.toString() } }) {
+              Text(
+                "Current Device",
+                modifier = Modifier.width(IntrinsicSize.Max),
+                textAlign = TextAlign.Center,
+              )
             }
 
             Spacer(modifier = Modifier.height(32.dp)) // Add space between button and text
-            Text(text = info, modifier = Modifier.fillMaxWidth().fillMaxHeight(0.8f).padding(horizontal = 16.dp))
+            Text(
+              text = info,
+              modifier = Modifier.fillMaxWidth().fillMaxHeight(0.8f).padding(horizontal = 16.dp),
+            )
             Spacer(modifier = Modifier.height(32.dp)) // Add space between button and text
             Button(onClick = { parseContent() }) {
-              Text("Parse Content", modifier = Modifier.width(IntrinsicSize.Max), textAlign = TextAlign.Center)
+              Text(
+                "Parse Content",
+                modifier = Modifier.width(IntrinsicSize.Max),
+                textAlign = TextAlign.Center,
+              )
             }
           }
         }
@@ -81,14 +88,17 @@ class MainActivity : ComponentActivity() {
     lifecycleScope.launch {
       val generativeModel =
         Firebase.vertexAI.generativeModel(
-          modelName = "gemini-1.0-pro",
+          modelName =
+            if (Build.MANUFACTURER == "google") "gemini-1.0-pro-002" else "gemini-1.0-pro",
           generationConfig = generationConfig { temperature = 0.7f },
         )
 
       deviceInfo.value = "Fetching device details"
       val manufacturer = Build.MANUFACTURER
-      val deviceName = Build.MODEL// Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
-      val deviceDetailsPrompt = "Give me details about the phone ${manufacturer} ${deviceName} in JSON format without adding any extra details outside of json. Include information about the features that are available on the device including camera, bluetooth, size, weight and battery. Respond as just a plain json string without any markups."
+      val deviceName =
+        Build.MODEL // Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+      val deviceDetailsPrompt =
+        "Give me details about the phone ${manufacturer} ${deviceName} in JSON format without adding any extra details outside of json. Include information about the features that are available on the device including camera, bluetooth, size, weight and battery. Respond as just a plain json string without any markups."
       val result = generativeModel.generateContent(deviceDetailsPrompt)
 
       Log.i("TAG", "find me Prompt: ${deviceDetailsPrompt}")
