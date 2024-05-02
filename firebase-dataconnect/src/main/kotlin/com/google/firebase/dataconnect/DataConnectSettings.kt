@@ -3,7 +3,7 @@ package com.google.firebase.dataconnect
 import java.util.Objects
 
 public class DataConnectSettings(
-  public val host: String = "dataconnect.googleapis.com",
+  public val host: String = "firebasedataconnect.googleapis.com",
   public val sslEnabled: Boolean = true
 ) {
 
