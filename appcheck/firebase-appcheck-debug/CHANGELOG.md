@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies
 
 # 17.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.

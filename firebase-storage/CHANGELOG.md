@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies
 
 # 20.3.0
 * [fixed] Fixed an issue where the wrong SDK version was being reported to the backend.

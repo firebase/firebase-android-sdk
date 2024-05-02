@@ -1,7 +1,8 @@
 # Unreleased
-
 * [fixed] Force validation or rotation of FIDs.
 * [fixed] Added keep rule for shrinkage of Crashlytics build resources in strict mode.
+* [changed] Bump internal dependencies
+
 
 # 18.6.3
 

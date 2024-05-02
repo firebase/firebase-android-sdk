@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Bump internal dependencies
 
 # 21.6.3
 * [fixed] Fixed a bug that could cause a crash if the app was backgrounded
