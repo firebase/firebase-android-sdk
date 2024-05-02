@@ -114,8 +114,9 @@ public class AndroidPlatform implements Platform {
       ConnectionContext connectionContext,
       HostInfo info,
       PersistentConnection.Delegate delegate) {
+
     final PersistentConnection connection =
-        new PersistentConnectionImpl(connectionContext, info, delegate);
+        new PersistentConnectionImpl(connectionContext, info, delegate, context.isUsingEmulator());
 
     // TODO: Ideally we would remove this listener at some point, but right now
     // there's no cleanup path for PersistentConnection (or Repo, etc.). They live forever.

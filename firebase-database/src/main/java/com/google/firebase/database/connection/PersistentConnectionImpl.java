@@ -327,10 +327,13 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
   private long lastWriteTimestamp;
   private boolean hasOnDisconnects;
 
+  private boolean isUsingEmulator;
+
   public PersistentConnectionImpl(
-      ConnectionContext context, HostInfo info, final Delegate delegate) {
+      ConnectionContext context, HostInfo info, final Delegate delegate, boolean isUsingEmulator) {
     this.delegate = delegate;
     this.context = context;
+    this.isUsingEmulator = isUsingEmulator;
     this.executorService = context.getExecutorService();
     this.authTokenProvider = context.getAuthTokenProvider();
     this.appCheckTokenProvider = context.getAppCheckTokenProvider();
@@ -829,7 +832,7 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
     this.connectionState = ConnectionState.Connecting;
     realtime =
         new Connection(
-            this.context, this.hostInfo, this.cachedHost, this, this.lastSessionId, appCheckToken);
+            this.context, this.hostInfo, this.cachedHost, this, this.lastSessionId, appCheckToken, this.isUsingEmulator);
     realtime.open();
   }
 

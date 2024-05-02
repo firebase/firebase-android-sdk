@@ -70,18 +70,22 @@ class Connection implements WebsocketConnection.Delegate {
   private State state;
   private final LogWrapper logger;
 
+  private boolean isUsingEmulator;
+
   public Connection(
       ConnectionContext context,
       HostInfo hostInfo,
       String cachedHost,
       Delegate delegate,
       String optLastSessionId,
-      String appCheckToken) {
+      String appCheckToken,
+      boolean isUsingEmulator) {
     long connId = connectionIds++;
     this.hostInfo = hostInfo;
     this.delegate = delegate;
     this.logger = new LogWrapper(context.getLogger(), "Connection", "conn_" + connId);
     this.state = State.REALTIME_CONNECTING;
+    this.isUsingEmulator = isUsingEmulator;
     this.conn =
         new WebsocketConnection(
             context, hostInfo, cachedHost, appCheckToken, this, optLastSessionId);
@@ -205,7 +209,9 @@ class Connection implements WebsocketConnection.Delegate {
   private void onHandshake(Map<String, Object> handshake) {
     long timestamp = (Long) handshake.get(SERVER_HELLO_TIMESTAMP);
     String host = (String) handshake.get(SERVER_HELLO_HOST);
-    delegate.onCacheHost(host);
+    if(!this.isUsingEmulator) {
+      delegate.onCacheHost(host);
+    }
     String sessionId = (String) handshake.get(SERVER_HELLO_SESSION_ID);
 
     if (state == State.REALTIME_CONNECTING) {
