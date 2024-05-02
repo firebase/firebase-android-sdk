@@ -41,7 +41,7 @@ import kotlinx.serialization.DeserializationStrategy
 internal class DataConnectGrpcClient(
   context: Context,
   projectId: String,
-  connector: ConnectorConfig,
+  private val connector: ConnectorConfig,
   private val dataConnectAuth: DataConnectAuth,
   host: String,
   sslEnabled: Boolean,
@@ -64,9 +64,6 @@ internal class DataConnectGrpcClient(
       "locations/${connector.location}" +
       "/services/${connector.serviceId}" +
       "/connectors/${connector.connector}"
-
-  private val AUTHORIZATION_HEADER =
-    Metadata.Key.of("X-Firebase-Auth-Token", Metadata.ASCII_STRING_MARSHALLER)
 
   private val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
 
@@ -204,11 +201,13 @@ internal class DataConnectGrpcClient(
 
   private suspend fun createMetadata(requestId: String): Metadata {
     val token = dataConnectAuth.getAccessToken(requestId)
-    val metadata = Metadata()
-    if (token !== null) {
-      metadata.put(AUTHORIZATION_HEADER, "Bearer $token")
+
+    return Metadata().apply {
+      put(firebaseAuthTokenHeader, "location=${connector.location}&frontend=data")
+      if (token !== null) {
+        put(googRequestParamsHeader, "Bearer $token")
+      }
     }
-    return metadata
   }
 
   suspend fun close() {
@@ -237,6 +236,15 @@ internal class DataConnectGrpcClient(
           .also { awaitTerminationJob = it }
 
     job.await()
+  }
+
+  private companion object {
+    private val firebaseAuthTokenHeader =
+      Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
+
+    @Suppress("SpellCheckingInspection")
+    private val googRequestParamsHeader =
+      Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
   }
 }
 
