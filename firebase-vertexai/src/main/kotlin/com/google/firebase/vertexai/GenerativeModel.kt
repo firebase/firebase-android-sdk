@@ -50,13 +50,13 @@ import kotlinx.coroutines.tasks.await
 /** A facilitator for a given multimodal model (eg; Gemini). */
 class GenerativeModel
 internal constructor(
-  private val modelName: String,
-  private val generationConfig: GenerationConfig? = null,
-  private val safetySettings: List<SafetySetting>? = null,
+  val modelName: String,
+  val generationConfig: GenerationConfig? = null,
+  val safetySettings: List<SafetySetting>? = null,
   val tools: List<Tool>? = null,
-  private val toolConfig: ToolConfig? = null,
-  private val systemInstruction: Content? = null,
-  private val controller: APIController
+  val toolConfig: ToolConfig? = null,
+  val systemInstruction: Content? = null,
+  val controller: APIController
 ) {
 
   @JvmOverloads
