@@ -213,7 +213,7 @@ internal class DataConnectGrpcClient(
       .apply {
         put(googRequestParamsHeader, "location=${connector.location}&frontend=data")
         if (token !== null) {
-          put(firebaseAuthTokenHeader, "Bearer $token")
+          put(firebaseAuthTokenHeader, token)
         }
       }
       .also {
