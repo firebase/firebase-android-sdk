@@ -8,8 +8,8 @@ readonly CLI_ARGS=(
   -stderrthreshold=0
   -log_dir=logs
   dev
-  --disable_sdk_generation=true
-  -local_connection_string="postgresql://postgres:postgres@localhost:5432/emulator?sslmode=disable"
+  -disable_sdk_generation=true
+  -config_dir=dataconnect
 )
 
 echo "[$0] Running command: ${CLI_ARGS[*]}"

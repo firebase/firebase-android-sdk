@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "dataconnect-demo"
+  },
+  "dataconnectEmulatorConfig": {
+    "postgres": {
+      "localConnectionString": "postgresql://postgres:postgres@localhost:5432?sslmode=disable"
+    }
+  }
+}

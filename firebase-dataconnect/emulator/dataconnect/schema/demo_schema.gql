@@ -127,36 +127,36 @@ type PrimaryKeyNested4 @table {
 
 type PrimaryKeyNested5 @table(key: ["nested1", "nested2"]) {
   value: String!
-  nested1: PrimaryKeyNested1!
-  nested2: PrimaryKeyNested2!
+  nested1: PrimaryKeyNested1! @ref(constraintName: "xc78y5zy8g")
+  nested2: PrimaryKeyNested2! @ref(constraintName: "zhc54nhp9y")
 }
 
 type PrimaryKeyNested6 @table(key: ["nested3", "nested4"]) {
   value: String!
-  nested3: PrimaryKeyNested3!
-  nested4: PrimaryKeyNested4!
+  nested3: PrimaryKeyNested3! @ref(constraintName: "ecwmmfw7mc")
+  nested4: PrimaryKeyNested4! @ref(constraintName: "kj6rf4krsy")
 }
 
 type PrimaryKeyNested7 @table(key: ["nested5a", "nested5b", "nested6"]) {
   value: String!
-  nested5a: PrimaryKeyNested5!
-  nested5b: PrimaryKeyNested5!
-  nested6: PrimaryKeyNested6!
+  nested5a: PrimaryKeyNested5! @ref(constraintName: "scp8jctndd")
+  nested5b: PrimaryKeyNested5! @ref(constraintName: "vs8pak27zd")
+  nested6: PrimaryKeyNested6! @ref(constraintName: "sgnjjj4j6z")
 }
 
 type Nested1 @table {
   value: String!
-  nested1: Nested1
-  nested2: Nested2!
-  nested2NullableNull: Nested2
-  nested2NullableNonNull: Nested2!
+  nested1: Nested1 @ref(constraintName: "d7ehkzccaf")
+  nested2: Nested2! @ref(constraintName: "3xzv2rnqvx")
+  nested2NullableNull: Nested2 @ref(constraintName: "6ey7mpzmja")
+  nested2NullableNonNull: Nested2! @ref(constraintName: "fy65d2frd4")
 }
 
 type Nested2 @table {
   value: String!
-  nested3: Nested3!
-  nested3NullableNull: Nested3
-  nested3NullableNonNull: Nested3!
+  nested3: Nested3!@ref(constraintName: "wf72fzcndy")
+  nested3NullableNull: Nested3 @ref(constraintName: "btzepr3n67")
+  nested3NullableNonNull: Nested3! @ref(constraintName: "tsse8qpwpq")
 }
 
 type Nested3 @table {
@@ -164,7 +164,7 @@ type Nested3 @table {
 }
 
 type ManyToOneParent @table {
-  child: ManyToOneChild
+  child: ManyToOneChild @ref(constraintName: "y9pbzvyeb5")
 }
 
 type ManyToOneChild @table {
@@ -180,21 +180,21 @@ type ManyToManyChildB @table {
 }
 
 type ManyToManyParent @table(key: ["childA", "childB"]) {
-  childA: ManyToManyChildA!
-  childB: ManyToManyChildB!
+  childA: ManyToManyChildA! @ref(constraintName: "kneaq52b9z")
+  childB: ManyToManyChildB! @ref(constraintName: "pj3hs9yrv2")
 }
 
 type ManyToOneSelfCustomName @table {
-  ref: ManyToOneSelfCustomName
+  ref: ManyToOneSelfCustomName @ref(constraintName: "aetgz9hzcg")
 }
 
 type ManyToOneSelfMatchingName @table {
-  manyToOneSelfMatchingName: ManyToOneSelfMatchingName
+  manyToOneSelfMatchingName: ManyToOneSelfMatchingName @ref(constraintName: "qq6gzw5dfk")
 }
 
 type ManyToManySelfParent @table(key: ["child1", "child2"]) {
-  child1: ManyToManySelfChild!
-  child2: ManyToManySelfChild!
+  child1: ManyToManySelfChild! @ref(constraintName: "k2v4gjr95k")
+  child2: ManyToManySelfChild! @ref(constraintName: "tew95zy8m8")
 }
 
 type ManyToManySelfChild @table {
