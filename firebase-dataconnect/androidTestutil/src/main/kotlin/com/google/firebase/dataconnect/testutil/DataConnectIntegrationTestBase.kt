@@ -15,6 +15,7 @@
 package com.google.firebase.dataconnect.testutil
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 import org.junit.Rule
@@ -31,6 +32,16 @@ abstract class DataConnectIntegrationTestBase {
   @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
 
   @get:Rule val dataConnectFactory = TestDataConnectFactory(firebaseAppFactory)
+
+  companion object {
+    val testConnectorConfig: ConnectorConfig
+      get() =
+        ConnectorConfig(
+          connector = "demo", // TODO: change to "ctrgqyawcfbm4" once it's ready
+          location = "us-central1",
+          serviceId = "sid2ehn9ct8te",
+        )
+  }
 }
 
 /** The name of the currently-running test, in the form "ClassName.MethodName". */

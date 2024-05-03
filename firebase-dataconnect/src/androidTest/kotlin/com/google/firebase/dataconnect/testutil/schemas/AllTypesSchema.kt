@@ -16,6 +16,7 @@ package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase.Companion.testConnectorConfig
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import kotlinx.serialization.Serializable
@@ -25,13 +26,7 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
   constructor(
     dataConnectFactory: TestDataConnectFactory
-  ) : this(
-    dataConnectFactory.newInstance(
-      connector = CONNECTOR,
-      location = "us-central1",
-      service = "sid2ehn9ct8te"
-    )
-  )
+  ) : this(dataConnectFactory.newInstance(testConnectorConfig.copy(connector = CONNECTOR)))
 
   init {
     dataConnect.config.connector.let {

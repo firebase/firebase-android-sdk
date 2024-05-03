@@ -29,12 +29,10 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
   val backend: DataConnectBackend
     get() = DataConnectBackend.fromInstrumentationArguments()
 
-  fun newInstance(
-    service: String? = null,
-    location: String? = null,
-    connector: String? = null
-  ): FirebaseDataConnect =
-    newInstance(Params(serviceId = service, location = location, connector = connector))
+  fun newInstance(config: ConnectorConfig): FirebaseDataConnect =
+    config.run {
+      newInstance(Params(connector = connector, location = location, serviceId = serviceId))
+    }
 
   fun newInstance(firebaseApp: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =
     newInstance(

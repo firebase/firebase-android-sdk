@@ -15,6 +15,7 @@ package com.google.firebase.dataconnect.connectors
 
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.connectors.demo.DemoConnector
 import java.util.WeakHashMap
 
 public class PostsConnector private constructor(public val dataConnect: FirebaseDataConnect) {
@@ -24,8 +25,7 @@ public class PostsConnector private constructor(public val dataConnect: Firebase
   public val createComment: CreateComment by lazy { CreateComment(this) }
 
   public companion object {
-    public val config: ConnectorConfig =
-      ConnectorConfig(connector = "posts", location = "us-central1", serviceId = "sid2ehn9ct8te")
+    public val config: ConnectorConfig = DemoConnector.config.copy(connector = "posts")
 
     public val instance: PostsConnector
       get() = getInstance(FirebaseDataConnect.getInstance(config))
