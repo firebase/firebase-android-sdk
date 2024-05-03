@@ -32,6 +32,7 @@ import java.net.URL
 sealed interface DataConnectBackend {
 
   val dataConnectSettings: DataConnectSettings
+  val authBackend: FirebaseAuthBackend
 
   fun getDataConnect(app: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =
     FirebaseDataConnect.getInstance(app, config, dataConnectSettings)
@@ -39,12 +40,16 @@ sealed interface DataConnectBackend {
   object Production : DataConnectBackend {
     override val dataConnectSettings
       get() = DataConnectSettings()
+    override val authBackend: FirebaseAuthBackend
+      get() = FirebaseAuthBackend.Production
     override fun toString() = "DataConnectBackend.Production"
   }
 
   sealed class PredefinedDataConnectBackend(val host: String) : DataConnectBackend {
     override val dataConnectSettings
       get() = DataConnectSettings().copy(host = host, sslEnabled = true)
+    override val authBackend: FirebaseAuthBackend
+      get() = FirebaseAuthBackend.Production
   }
 
   object Staging :
@@ -60,12 +65,16 @@ sealed interface DataConnectBackend {
   data class Custom(val host: String, val sslEnabled: Boolean) : DataConnectBackend {
     override val dataConnectSettings
       get() = DataConnectSettings().copy(host = host, sslEnabled = sslEnabled)
+    override val authBackend: FirebaseAuthBackend
+      get() = FirebaseAuthBackend.Production
     override fun toString() = "DataConnectBackend.Custom(host=$host, sslEnabled=$sslEnabled)"
   }
 
   data class Emulator(val host: String? = null, val port: Int? = null) : DataConnectBackend {
     override val dataConnectSettings
       get() = DataConnectSettings()
+    override val authBackend: FirebaseAuthBackend
+      get() = FirebaseAuthBackend.Emulator()
     override fun toString() = "DataConnectBackend.Emulator(host=$host, port=$port)"
 
     override fun getDataConnect(app: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =

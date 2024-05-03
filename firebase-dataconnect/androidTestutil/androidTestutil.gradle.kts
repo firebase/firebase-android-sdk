@@ -46,6 +46,11 @@ dependencies {
   implementation(libs.androidx.test.junit)
   implementation(libs.turbine)
   implementation(libs.truth)
+
+  implementation("com.google.firebase:firebase-auth:22.3.1") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
 }
 
 tasks.withType<KotlinCompile>().all {

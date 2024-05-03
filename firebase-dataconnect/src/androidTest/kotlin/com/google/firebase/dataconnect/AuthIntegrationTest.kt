@@ -9,12 +9,11 @@ import com.google.firebase.dataconnect.testutil.assertThrows
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
-import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.util.nextAlphanumericString
 import io.grpc.Status
 import kotlin.random.Random
-import kotlinx.coroutines.tasks.*
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -23,8 +22,8 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val personSchema by lazy { PersonSchema(dataConnectFactory) }
 
-  private val auth = SuspendingLazy {
-    FirebaseAuth.getInstance(personSchema.dataConnect.app).apply { useEmulator("10.0.2.2", 9099) }
+  private val auth: FirebaseAuth by lazy {
+    dataConnectFactory.backend.authBackend.getFirebaseAuth(personSchema.dataConnect.app)
   }
 
   @Test
@@ -75,11 +74,11 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   private suspend fun signIn() {
-    val authResult = auth.get().run { signInAnonymously().await() }
+    val authResult = auth.run { signInAnonymously().await() }
     assertWithMessage("authResult.user").that(authResult.user).isNotNull()
   }
 
-  private suspend fun signOut() {
-    auth.get().run { signOut() }
+  private fun signOut() {
+    auth.run { signOut() }
   }
 }
