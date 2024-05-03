@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 21.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-functions-ktx`
   to `com.google.firebase:firebase-functions` under the `com.google.firebase.functions` package.

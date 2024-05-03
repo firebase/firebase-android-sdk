@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 17.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appdistribution-api` library. The Kotlin extensions library has no additional
+updates.
+
 # 16.0.0-beta12
 * [unchanged] Updated to accommodate the release of the updated
   [appdistro] library.

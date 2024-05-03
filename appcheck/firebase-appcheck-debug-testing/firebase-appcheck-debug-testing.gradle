@@ -51,9 +51,9 @@ dependencies {
     api project(':appcheck:firebase-appcheck')
     api project(':appcheck:firebase-appcheck-debug')
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
-    api 'com.google.firebase:firebase-common:20.4.2'
-    api 'com.google.firebase:firebase-common-ktx:20.4.2'
-    api 'com.google.firebase:firebase-components:17.1.5'
+    api 'com.google.firebase:firebase-common:21.0.0'
+    api 'com.google.firebase:firebase-common-ktx:21.0.0'
+    api 'com.google.firebase:firebase-components:18.0.0'
 
     implementation "androidx.test:core:$androidxTestCoreVersion"
     implementation 'com.google.android.gms:play-services-base:18.0.1'
