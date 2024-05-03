@@ -39,7 +39,7 @@ public interface KeywordsConnector : GeneratedConnector {
       ConnectorConfig(
         connector = "keywords",
         location = "us-central1",
-        serviceId = "local",
+        serviceId = "sid2ehn9ct8te",
       )
 
     public fun getInstance(dataConnect: FirebaseDataConnect): KeywordsConnector =

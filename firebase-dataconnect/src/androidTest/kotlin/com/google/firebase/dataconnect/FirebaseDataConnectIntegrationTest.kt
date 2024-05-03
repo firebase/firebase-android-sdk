@@ -337,7 +337,8 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun useEmulator_should_set_the_emulator_host() = runTest {
     val app = firebaseAppFactory.newInstance()
-    val config = ConnectorConfig(connector = "demo", location = "TestLocation", serviceId = "local")
+    val config =
+      ConnectorConfig(connector = "demo", location = "us-central1", serviceId = "sid2ehn9ct8te")
     val settings = DataConnectSettings(host = "host_from_settings")
     val dataConnect = FirebaseDataConnect.getInstance(app, config, settings)
 
@@ -351,7 +352,8 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun useEmulator_should_throw_if_invoked_too_late() = runTest {
     val app = firebaseAppFactory.newInstance()
-    val config = ConnectorConfig(connector = "demo", location = "TestLocation", serviceId = "local")
+    val config =
+      ConnectorConfig(connector = "demo", location = "us-central1", serviceId = "sid2ehn9ct8te")
     val settings = DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
     val dataConnect = FirebaseDataConnect.getInstance(app, config, settings)
     dataConnect.query("GetHardcodedFoo", Unit, DataConnectUntypedData, serializer<Unit>()).execute()

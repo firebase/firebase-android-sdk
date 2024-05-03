@@ -159,7 +159,7 @@ public interface DemoConnector : GeneratedConnector {
       ConnectorConfig(
         connector = "demo",
         location = "us-central1",
-        serviceId = "local",
+        serviceId = "sid2ehn9ct8te",
       )
 
     public fun getInstance(dataConnect: FirebaseDataConnect): DemoConnector =

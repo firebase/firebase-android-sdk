@@ -25,7 +25,13 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
 
   constructor(
     dataConnectFactory: TestDataConnectFactory
-  ) : this(dataConnectFactory.newInstance(connector = CONNECTOR, service = "local"))
+  ) : this(
+    dataConnectFactory.newInstance(
+      connector = CONNECTOR,
+      location = "us-central1",
+      service = "sid2ehn9ct8te"
+    )
+  )
 
   init {
     dataConnect.config.connector.let {
