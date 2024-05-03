@@ -20,9 +20,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
@@ -31,16 +29,11 @@ import kotlin.concurrent.withLock
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.serializer
 import org.junit.Assert.assertThrows
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class FirebaseDataConnectIntegrationTest {
-
-  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun getInstance_without_specifying_an_app_should_use_the_default_app() {

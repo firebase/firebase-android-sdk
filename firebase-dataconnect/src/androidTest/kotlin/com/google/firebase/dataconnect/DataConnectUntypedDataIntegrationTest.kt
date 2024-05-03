@@ -16,8 +16,7 @@ package com.google.firebase.dataconnect
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertWithMessage
-import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.randomId
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
@@ -25,15 +24,11 @@ import com.google.firebase.dataconnect.testutil.withVariables
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.Serializable
 import org.junit.Ignore
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class DataConnectUntypedDataIntegrationTest {
-
-  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val dataConnectFactory = TestDataConnectFactory()
+class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val allTypesSchema by lazy { AllTypesSchema(dataConnectFactory) }
 
