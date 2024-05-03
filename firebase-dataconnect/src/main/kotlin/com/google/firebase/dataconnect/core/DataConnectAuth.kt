@@ -63,15 +63,15 @@ internal class DataConnectAuth(
         mutex.withLock {
           val capturedAuthProvider = authProvider
           if (closed) {
-            logger.debug(
-              "[rid=$requestId] DataConnectAuth is closed; " + "returning null access token"
-            )
+            logger.debug {
+              "[rid=$requestId] DataConnectAuth is closed; returning null access token"
+            }
             return null
           } else if (capturedAuthProvider === null) {
-            logger.debug(
+            logger.debug {
               "[rid=$requestId] FirebaseAuth is not (yet?) available; " +
                 "returning null access token"
-            )
+            }
             return null
           }
           Pair(capturedAuthProvider, tokenSequenceNumber)
@@ -89,18 +89,20 @@ internal class DataConnectAuth(
       if (accessTokenResult.isSuccess) {
         val accessToken = accessTokenResult.getOrNull()?.token
         if (accessToken === null) {
-          logger.debug("[rid=$requestId] returning null access token as provided by FirebaseAuth")
+          logger.debug {
+            "[rid=$requestId] returning null access token as provided by FirebaseAuth"
+          }
           return null
         }
-        logger.debug { "[rid=$requestId] got access token: ${scrubAccessToken(accessToken)}" }
+        logger.debug { "[rid=$requestId] got access token: ${accessToken.toScrubbedAccessToken()}" }
         return accessToken
       }
 
       val exception = accessTokenResult.exceptionOrNull()!!
       if (exception is FirebaseNoSignedInUserException) {
-        logger.debug(
-          "[rid=$requestId] FirebaseAuth has no signed-in user; " + "returning null access token"
-        )
+        logger.debug {
+          "[rid=$requestId] FirebaseAuth has no signed-in user; returning null access token"
+        }
         return null
       }
 
@@ -137,16 +139,43 @@ internal class DataConnectAuth(
     }
 
   private suspend fun onIdTokenChanged(result: InternalTokenResult) {
-    logger.debug { "onIdTokenChanged(): token=${result.token?.let {scrubAccessToken(it)}}" }
+    logger.debug {
+      "onIdTokenChanged(): token=${result.token?.uppercase()?.toScrubbedAccessToken()}"
+    }
     mutex.withLock { tokenSequenceNumber = nextSequenceNumber() }
   }
 
-  private companion object {
-    fun scrubAccessToken(token: String): String =
-      if (token.length <= 8) {
-        token
+  companion object {
+
+    /**
+     * Returns a new string that is equal to this string but only includes a chunk from the
+     * beginning and the end.
+     *
+     * This method assumes that the contents of this string are an access token. The returned string
+     * will have enough information to reason about the access token in logs without giving its
+     * value away.
+     */
+    fun String.toScrubbedAccessToken(): String =
+      if (length < 30) {
+        "<redacted>"
       } else {
-        token.substring(0, 4) + "..." + token.substring(token.length - 4)
+        buildString {
+          append(this@toScrubbedAccessToken, 0, 6)
+          append("<redacted>")
+          append(this@toScrubbedAccessToken, length - 6, length)
+        }
+      }
+
+    /**
+     * Returns a new string that is equal to this string but with all occurrences of the given
+     * access token with replaced with only the first and last 6 characters. This allows logging the
+     * access token without completely giving it away.
+     */
+    fun String.withScrubbedAccessToken(accessToken: String): String =
+      if (accessToken.isEmpty()) {
+        this
+      } else {
+        replace(accessToken, accessToken.toScrubbedAccessToken())
       }
   }
 }

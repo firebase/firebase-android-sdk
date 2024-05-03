@@ -16,6 +16,7 @@ package com.google.firebase.dataconnect.core
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.core.DataConnectAuth.Companion.withScrubbedAccessToken
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.decodeFromStruct
 import com.google.firebase.dataconnect.util.toCompactString
@@ -220,20 +221,16 @@ internal class DataConnectGrpcClient(
           "[rid=$requestId] Sending grpc metadata \"${googRequestParamsHeader.name()}\": " +
             it.get(googRequestParamsHeader)
         }
-
-        val abbreviatedAuthHeaderValue =
-          it.get(firebaseAuthTokenHeader).let { authHeader ->
-            if (authHeader === null) {
-              null
-            } else if (authHeader.length <= 16) {
-              authHeader
+        logger.debug {
+          it.get(firebaseAuthTokenHeader).let { authHeaderValue ->
+            if (authHeaderValue === null) {
+              "[rid=$requestId] Not sending grpc metadata \"${firebaseAuthTokenHeader.name()}\" " +
+                "because no auth token is available"
             } else {
-              authHeader.substring(0, 11) + "..." + authHeader.substring(authHeader.length - 4)
+              "[rid=$requestId] Sending grpc metadata \"${firebaseAuthTokenHeader.name()}\": " +
+                it.get(firebaseAuthTokenHeader)?.withScrubbedAccessToken(token ?: "")
             }
           }
-        logger.debug {
-          "[rid=$requestId] Sending grpc metadata \"${firebaseAuthTokenHeader.name()}\": " +
-            abbreviatedAuthHeaderValue
         }
       }
   }
