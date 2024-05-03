@@ -25,7 +25,7 @@ public class PostsConnector private constructor(public val dataConnect: Firebase
 
   public companion object {
     public val config: ConnectorConfig =
-      ConnectorConfig(connector = "posts", location = "foo", serviceId = "local")
+      ConnectorConfig(connector = "posts", location = "us-central1", serviceId = "sid2ehn9ct8te")
 
     public val instance: PostsConnector
       get() = getInstance(FirebaseDataConnect.getInstance(config))
