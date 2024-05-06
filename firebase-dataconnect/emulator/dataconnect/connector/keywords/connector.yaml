@@ -2,7 +2,7 @@ connectorId: keywords
 authMode: PUBLIC
 generate:
   kotlinSdk:
-    outputDir: ../../../../connectors/src/main/kotlin/com/google/firebase/dataconnect/connectors/keywords
+    outputDir: ../../../../connectors/build/generated/source/dataconnect/com/google/firebase/dataconnect/connectors/keywords
     # Use a Kotlin keyword ("typealias", in this case) in the package name to ensure that it gets
     # correctly escaped by codegen.
     package: com.google.firebase.dataconnect.connectors.typealias
