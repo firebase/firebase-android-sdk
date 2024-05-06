@@ -15,8 +15,6 @@ readonly TARGETS=(
   ":firebase-dataconnect:connectedDebugAndroidTest"
   ":firebase-dataconnect:connectors:connectedDebugAndroidTest"
   ":firebase-dataconnect:connectors:testDebugUnitTest"
-  ":firebase-dataconnect:demo:connectedDebugAndroidTest"
-  ":firebase-dataconnect:demo:testDebugUnitTest"
   ":firebase-dataconnect:testDebugUnitTest"
   ":firebase-dataconnect:testutil:connectedDebugAndroidTest"
   ":firebase-dataconnect:testutil:testDebugUnitTest"

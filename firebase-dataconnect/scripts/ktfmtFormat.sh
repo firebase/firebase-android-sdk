@@ -13,7 +13,6 @@ readonly TARGETS=(
   ":firebase-dataconnect:ktfmtFormat"
   ":firebase-dataconnect:androidTestutil:ktfmtFormat"
   ":firebase-dataconnect:connectors:ktfmtFormat"
-  ":firebase-dataconnect:demo:ktfmtFormat"
   ":firebase-dataconnect:testutil:ktfmtFormat"
 )
 
