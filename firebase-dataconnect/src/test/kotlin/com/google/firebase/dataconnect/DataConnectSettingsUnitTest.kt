@@ -10,7 +10,7 @@ class DataConnectSettingsUnitTest {
   fun `default constructor arguments are correct`() {
     val settings = DataConnectSettings()
 
-    assertThat(settings.host).isEqualTo("dataconnect.googleapis.com")
+    assertThat(settings.host).isEqualTo("firebasedataconnect.googleapis.com")
     assertThat(settings.sslEnabled).isTrue()
   }
 
