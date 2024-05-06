@@ -23,7 +23,6 @@ import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withVariables
 import kotlinx.coroutines.test.*
 import kotlinx.serialization.Serializable
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -180,43 +179,26 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  @Ignore("b/337312723")
-  fun nullLists() {
-    // This test is merely a placeholder as a reminder to replace "emptyList()" with "null"
-    // in nullListsOfPrimitiveTypes() once the backend supports null lists (b/337312723).
-  }
-
-  @Test
   fun nullListsOfPrimitiveTypes() = runTest {
     val id = randomId()
     allTypesSchema
       .createPrimitiveList(
         AllTypesSchema.PrimitiveListData(
           id = id,
-          // TODO(b/337312723) Replace the line below once nullable list support is added
-          //  idListNullable = null,
-          idListNullable = emptyList(),
+          idListNullable = null,
           idListOfNullable =
             listOf("1a392d5a4b424425b9ad677ac8066697", "9faab31ea1084b53be6945fc47c4f0fc"),
           intList = listOf(42, 43, 44),
-          // TODO(b/337312723) Replace the line below once nullable list support is added
-          //  intListNullable = null,
-          intListNullable = emptyList(),
+          intListNullable = null,
           intListOfNullable = listOf(47, 48),
           floatList = listOf(12.3, 45.6, 78.9),
-          // TODO(b/337312723) Replace the line below once nullable list support is added
-          //  floatListNullable = null,
-          floatListNullable = emptyList(),
+          floatListNullable = null,
           floatListOfNullable = listOf(100.1, 100.2),
           booleanList = listOf(true, false, true, false),
-          // TODO(b/337312723) Replace the line below once nullable list support is added
-          //  booleanListNullable = null,
-          booleanListNullable = emptyList(),
+          booleanListNullable = null,
           booleanListOfNullable = listOf(false, false, true, true),
           stringList = listOf("xxx", "yyy", "zzz"),
-          // TODO(b/337312723) Replace the line below once nullable list support is added
-          //  stringListNullable = null,
-          stringListNullable = emptyList(),
+          stringListNullable = null,
           stringListOfNullable = listOf("sss", "ttt"),
         )
       )
@@ -234,20 +216,20 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
       .containsExactlyEntriesIn(
         mapOf(
           "id" to id,
-          "idListNullable" to emptyList<String>(),
+          "idListNullable" to null,
           "idListOfNullable" to
             listOf("1a392d5a4b424425b9ad677ac8066697", "9faab31ea1084b53be6945fc47c4f0fc"),
           "intList" to listOf(42.0, 43.0, 44.0),
-          "intListNullable" to emptyList<Int>(),
+          "intListNullable" to null,
           "intListOfNullable" to listOf(47.0, 48.0),
           "floatList" to listOf(12.3, 45.6, 78.9),
-          "floatListNullable" to emptyList<Double>(),
+          "floatListNullable" to null,
           "floatListOfNullable" to listOf(100.1, 100.2),
           "booleanList" to listOf(true, false, true, false),
-          "booleanListNullable" to emptyList<Boolean>(),
+          "booleanListNullable" to null,
           "booleanListOfNullable" to listOf(false, false, true, true),
           "stringList" to listOf("xxx", "yyy", "zzz"),
-          "stringListNullable" to emptyList<String>(),
+          "stringListNullable" to null,
           "stringListOfNullable" to listOf("sss", "ttt"),
         )
       )
