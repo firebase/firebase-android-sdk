@@ -1,7 +1,16 @@
 # Unreleased
+
+
+# 24.0.0
 * [changed] Switched Firelog to use the new TransportBackend.
 * [changed] Log analytics for notifications displayed by Google Play services on
   behalf of the app.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 23.4.1
 * [changed] Bump internal dependencies.

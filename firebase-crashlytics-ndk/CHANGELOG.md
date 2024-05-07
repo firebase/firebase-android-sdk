@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 19.0.0
+* [changed] Bump internal dependencies
+
 # 18.6.3
 * [changed] Updated `firebase-crashlytics` dependency to v18.6.3
 
