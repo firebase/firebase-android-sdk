@@ -22,7 +22,6 @@ readonly CLI_ARGS=(
   -stderrthreshold=0
   -log_dir=logs
   dev
-  -disable_sdk_generation=true
   -service_location=us-central1
   -config_dir=dataconnect
   -local_connection_string='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
