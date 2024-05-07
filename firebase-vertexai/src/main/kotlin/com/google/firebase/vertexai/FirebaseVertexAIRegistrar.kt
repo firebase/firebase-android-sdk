@@ -35,16 +35,16 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 internal class FirebaseVertexAIRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
-      Component.builder(FirebaseVertexAI::class.java)
+      Component.builder(FirebaseVertexAIMultiResourceComponent::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
         .add(Dependency.optionalProvider(appCheckInterop))
         .add(Dependency.optionalProvider(internalAuthProvider))
         .factory { container ->
-          FirebaseVertexAI(
+          FirebaseVertexAIMultiResourceComponent(
             container[firebaseApp],
             container.getProvider(appCheckInterop),
-            container.getProvider(internalAuthProvider),
+            container.getProvider(internalAuthProvider)
           )
         }
         .build(),
