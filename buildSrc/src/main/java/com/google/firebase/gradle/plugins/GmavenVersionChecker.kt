@@ -25,7 +25,7 @@ import org.gradle.api.tasks.TaskAction
 abstract class GmavenVersionChecker : DefaultTask() {
 
   companion object {
-    private val PERMITTED_TO_LEAVE_BETA = setOf("")
+    private val PERMITTED_TO_LEAVE_BETA = setOf<String>()
   }
 
   @get:Input abstract val groupId: Property<String>
