@@ -163,8 +163,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.insertTimestampVariants.execute(
       id = id,
       nonNullValue = Timestamp(1, 3_219),
-      minValue = Timestamp(-62_135_596_800, 0),
-      maxValue = Timestamp(253_402_300_799, 999_999_999),
+      minValue = Timestamp.MIN_VALUE,
+      maxValue = Timestamp.MAX_VALUE,
     ) {
       nullableWithNullValue = null
       nullableWithNonNullValue = Timestamp(-46_239, 4_628)
@@ -185,8 +185,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullValue = Timestamp(1, 3_219),
           nullableWithNullValue = null,
           nullableWithNonNullValue = Timestamp(-46_239, 4_628),
-          minValue = Timestamp(-62_135_596_800, 0),
-          maxValue = Timestamp(253_402_300_799, 999_999_999),
+          minValue = Timestamp.MIN_VALUE,
+          maxValue = Timestamp.MAX_VALUE,
         )
       )
     )

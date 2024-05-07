@@ -683,3 +683,76 @@ query GetOptionalStringsByKey($key: OptionalStrings_Key!) @auth(level: PUBLIC) {
     nullableWithSchemaDefault
   }
 }
+
+mutation InsertNonNullableLists(
+  $strings: [String!]!,
+  $ints: [Int!]!,
+  $floats: [Float!]!,
+  $booleans: [Boolean!]!,
+  $uuids: [UUID!]!,
+  $int64s: [Int64!]!,
+  $dates: [Date!]!,
+  $timestamps: [Timestamp!]!,
+) @auth(level: PUBLIC) {
+  nonNullableLists_insert(data: {
+    strings: $strings,
+    ints: $ints,
+    floats: $floats,
+    booleans: $booleans,
+    uuids: $uuids,
+    int64s: $int64s,
+    dates: $dates,
+    timestamps: $timestamps,
+  })
+}
+
+query GetNonNullableListsByKey($key: NonNullableLists_Key!) @auth(level: PUBLIC) {
+  nonNullableLists(key: $key) {
+    strings
+    ints
+    floats
+    booleans
+    uuids
+    int64s
+    dates
+    timestamps
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
