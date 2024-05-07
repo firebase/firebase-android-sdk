@@ -77,8 +77,6 @@ mutation InsertStringVariants(
   $nullableWithNullValue: String,
   $nullableWithNonNullValue: String,
   $nullableWithEmptyValue: String,
-  $emptyList: [String!],
-  $nonEmptyList: [String!]
 ) @auth(level: PUBLIC) {
   stringVariants_insert(data: {
     id: $id,
@@ -87,8 +85,6 @@ mutation InsertStringVariants(
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
     nullableWithEmptyValue: $nullableWithEmptyValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -99,8 +95,6 @@ query GetStringVariantsById($id: String!) @auth(level: PUBLIC) {
     nullableWithNullValue
     nullableWithNonNullValue
     nullableWithEmptyValue
-    emptyList
-    nonEmptyList
   }
 }
 
@@ -117,8 +111,6 @@ mutation InsertInt64Variants(
   $nullableWithNegativeValue: Int64,
   $nullableWithMaxValue: Int64,
   $nullableWithMinValue: Int64,
-  $emptyList: [Int64!],
-  $nonEmptyList: [Int64!]
 ) @auth(level: PUBLIC) {
   int64Variants_insert(data: {
     id: $id,
@@ -133,8 +125,6 @@ mutation InsertInt64Variants(
     nullableWithNegativeValue: $nullableWithNegativeValue,
     nullableWithMaxValue: $nullableWithMaxValue,
     nullableWithMinValue: $nullableWithMinValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -151,8 +141,6 @@ query GetInt64VariantsById($id: String!) @auth(level: PUBLIC) {
     nullableWithNegativeValue
     nullableWithMaxValue
     nullableWithMinValue
-    emptyList
-    nonEmptyList
   }
 }
 
@@ -161,16 +149,12 @@ mutation InsertUUIDVariants(
   $nonNullValue: UUID!,
   $nullableWithNullValue: UUID,
   $nullableWithNonNullValue: UUID,
-  $emptyList: [UUID!],
-  $nonEmptyList: [UUID!]
 ) @auth(level: PUBLIC) {
   uUIDVariants_insert(data: {
     id: $id,
     nonNullValue: $nonNullValue,
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -179,8 +163,6 @@ query GetUUIDVariantsById($id: String!) @auth(level: PUBLIC) {
     nonNullValue
     nullableWithNullValue
     nullableWithNonNullValue
-    emptyList
-    nonEmptyList
   }
 }
 
@@ -191,8 +173,6 @@ mutation InsertTimestampVariants(
   $nullableWithNonNullValue: Timestamp,
   $minValue: Timestamp!,
   $maxValue: Timestamp!,
-  $emptyList: [Timestamp!],
-  $nonEmptyList: [Timestamp!]
 ) @auth(level: PUBLIC) {
   timestampVariants_insert(data: {
     id: $id,
@@ -201,8 +181,6 @@ mutation InsertTimestampVariants(
     nullableWithNonNullValue: $nullableWithNonNullValue,
     minValue: $minValue,
     maxValue: $maxValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -213,8 +191,6 @@ query GetTimestampVariantsById($id: String!) @auth(level: PUBLIC) {
     nullableWithNonNullValue
     minValue
     maxValue
-    emptyList
-    nonEmptyList
   }
 }
 
@@ -226,8 +202,6 @@ mutation InsertDateVariants(
   $minValue: Date!,
   $maxValue: Date!,
   $nonZeroTime: Date!,
-  $emptyList: [Date!],
-  $nonEmptyList: [Date!]
 ) @auth(level: PUBLIC) {
   dateVariants_insert(data: {
     id: $id,
@@ -237,8 +211,6 @@ mutation InsertDateVariants(
     minValue: $minValue,
     maxValue: $maxValue,
     nonZeroTime: $nonZeroTime,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -250,8 +222,6 @@ query GetDateVariantsById($id: String!) @auth(level: PUBLIC) {
     minValue
     maxValue
     nonZeroTime
-    emptyList
-    nonEmptyList
   }
 }
 

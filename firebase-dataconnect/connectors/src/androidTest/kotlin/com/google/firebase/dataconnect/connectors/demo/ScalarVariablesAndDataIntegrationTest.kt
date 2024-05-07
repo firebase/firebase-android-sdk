@@ -41,8 +41,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       id = id,
       nonNullWithNonEmptyValue = "some non-empty value for a *non*-nullable field",
       nonNullWithEmptyValue = "",
-      emptyList = emptyList(),
-      nonEmptyList = listOf("foo", "", "BAR")
     ) {
       nullableWithNullValue = null
       nullableWithNonNullValue = "some non-empty value for a *nullable* field"
@@ -58,8 +56,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNullValue = null,
           nullableWithNonNullValue = "some non-empty value for a *nullable* field",
           nullableWithEmptyValue = "",
-          emptyList = emptyList(),
-          nonEmptyList = listOf("foo", "", "BAR")
         )
       )
   }
@@ -75,8 +71,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       nonNullWithNegativeValue = -4242424242424242,
       nonNullWithMaxValue = Long.MAX_VALUE,
       nonNullWithMinValue = Long.MIN_VALUE,
-      emptyList = emptyList(),
-      nonEmptyList = listOf(0, -1, 1, 99, -99, Long.MIN_VALUE, Long.MAX_VALUE)
     ) {
       nullableWithNullValue = null
       nullableWithZeroValue = 0
@@ -101,8 +95,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNegativeValue = -2424242424242424,
           nullableWithMaxValue = Long.MAX_VALUE,
           nullableWithMinValue = Long.MIN_VALUE,
-          emptyList = emptyList(),
-          nonEmptyList = listOf(0, -1, 1, 99, -99, Long.MIN_VALUE, Long.MAX_VALUE)
         )
       )
   }
@@ -112,13 +104,10 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val id = randomAlphanumericString()
     val nonNullValue = UUID.randomUUID()
     val nullableWithNullValue = UUID.randomUUID()
-    val nonEmptyList = listOf(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID())
 
     connector.insertUuidvariants.execute(
       id = id,
       nonNullValue = nonNullValue,
-      emptyList = emptyList(),
-      nonEmptyList = nonEmptyList
     ) {
       this.nullableWithNullValue = nullableWithNullValue
       nullableWithNonNullValue = null
@@ -131,8 +120,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullValue = nonNullValue,
           nullableWithNullValue = nullableWithNullValue,
           nullableWithNonNullValue = null,
-          emptyList = emptyList(),
-          nonEmptyList = nonEmptyList
         )
       )
   }
@@ -149,8 +136,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       minValue = "0001-01-01".toDate(),
       maxValue = "9999-12-31".toDate(),
       nonZeroTime = dateWithNonZeroTime,
-      emptyList = emptyList(),
-      nonEmptyList = listOf("1234-05-19", "5678-12-31").map(String::toDate)
     ) {
       nullableWithNullValue = null
       nullableWithNonNullValue = "2024-05-19".toDate()
@@ -167,8 +152,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           minValue = "0001-01-01",
           maxValue = "9999-12-31",
           nonZeroTime = "2024-05-23",
-          emptyList = emptyList(),
-          nonEmptyList = listOf("1234-05-19", "5678-12-31")
         )
       )
   }
@@ -182,8 +165,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       nonNullValue = Timestamp(1, 3_219),
       minValue = Timestamp(-62_135_596_800, 0),
       maxValue = Timestamp(253_402_300_799, 999_999_999),
-      emptyList = emptyList(),
-      nonEmptyList = listOf(Timestamp(-543, 41), Timestamp(739, 62))
     ) {
       nullableWithNullValue = null
       nullableWithNonNullValue = Timestamp(-46_239, 4_628)
@@ -206,8 +187,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNonNullValue = Timestamp(-46_239, 4_628),
           minValue = Timestamp(-62_135_596_800, 0),
           maxValue = Timestamp(253_402_300_799, 999_999_999),
-          emptyList = emptyList(),
-          nonEmptyList = listOf(Timestamp(-543, 41), Timestamp(739, 62))
         )
       )
     )
@@ -227,8 +206,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           minValue = "0001-01-01",
           maxValue = "9999-12-31",
           nonZeroTime = "2024-04-24",
-          emptyList = emptyList(),
-          nonEmptyList = listOf("1234-05-19", "5678-12-31")
         )
       )
     mutationRef.execute()
@@ -243,8 +220,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           minValue = "0001-01-01".toDate(),
           maxValue = "9999-12-31".toDate(),
           nonZeroTime = "2024-04-24".toDate(),
-          emptyList = emptyList(),
-          nonEmptyList = listOf("1234-05-19", "5678-12-31").map(String::toDate)
         )
       )
   }
@@ -318,8 +293,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val minValue: String,
     val nonZeroTime: String,
     val maxValue: String,
-    val emptyList: List<String>,
-    val nonEmptyList: List<String>
   )
 
   /**
@@ -337,8 +310,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       val minValue: String,
       val maxValue: String,
       val nonZeroTime: String,
-      val emptyList: List<String>,
-      val nonEmptyList: List<String>
     )
   }
 }

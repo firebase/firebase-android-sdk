@@ -24,8 +24,6 @@ type StringVariants @table {
   nullableWithNullValue: String
   nullableWithNonNullValue: String
   nullableWithEmptyValue: String
-  emptyList: [String!]
-  nonEmptyList: [String!]
 }
 
 type Int64Variants @table {
@@ -41,8 +39,6 @@ type Int64Variants @table {
   nullableWithNegativeValue: Int64
   nullableWithMaxValue: Int64
   nullableWithMinValue: Int64
-  emptyList: [Int64!]
-  nonEmptyList: [Int64!]
 }
 
 type UUIDVariants @table {
@@ -50,8 +46,6 @@ type UUIDVariants @table {
   nonNullValue: UUID!
   nullableWithNullValue: UUID
   nullableWithNonNullValue: UUID
-  emptyList: [UUID!]
-  nonEmptyList: [UUID!]
 }
 
 type DateVariants @table {
@@ -62,8 +56,6 @@ type DateVariants @table {
   minValue: Date
   maxValue: Date
   nonZeroTime: Date
-  emptyList: [Date!]
-  nonEmptyList: [Date!]
 }
 
 type TimestampVariants @table {
@@ -73,8 +65,6 @@ type TimestampVariants @table {
   nullableWithNonNullValue: Timestamp
   minValue: Timestamp
   maxValue: Timestamp
-  emptyList: [Timestamp!]
-  nonEmptyList: [Timestamp!]
 }
 
 type SyntheticId @table {
