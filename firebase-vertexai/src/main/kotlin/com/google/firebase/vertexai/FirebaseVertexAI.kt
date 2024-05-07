@@ -84,17 +84,17 @@ internal constructor(
     val instance: FirebaseVertexAI
       get() = getInstance(location = "us-central1")
 
+    @JvmStatic fun getInstance(app: FirebaseApp): FirebaseVertexAI = getInstance(app)
+
     /**
-     *  Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location]
+     * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location]
      *
      * @param location location identifier, defaults to `us-central1`; see available
      * [Vertex AI regions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
      */
     @JvmStatic
-    fun getInstance(
-      app: FirebaseApp = Firebase.app,
-      location: String
-    ): FirebaseVertexAI {
+    @JvmOverloads
+    fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
       return multiResourceComponent.get(location)
     }
