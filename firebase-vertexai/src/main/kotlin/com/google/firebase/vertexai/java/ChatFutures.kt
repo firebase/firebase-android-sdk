@@ -40,7 +40,7 @@ abstract class ChatFutures internal constructor() {
   abstract fun sendMessage(prompt: Content): ListenableFuture<GenerateContentResponse>
 
   /**
-   * Generates a streaming response from the backend with the provided [Content]s.
+   * Generates a streaming response from the backend with the provided [Content].
    *
    * @param prompt A [Content] to send to the model.
    */

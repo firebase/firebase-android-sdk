@@ -22,7 +22,7 @@ import android.graphics.Bitmap
  * Represents content sent to and received from the model.
  *
  * @param role the producer of the content. By default, it's "user".
- * @param parts ordered list of [Part]s that constitute a single message.
+ * @param parts ordered list of [Part] that constitute a single message.
  *
  * @see content
  */

@@ -47,7 +47,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
-/** A facilitator for a given multimodal model (eg; Gemini). */
+/** A facilitator for a given multimodal model (for example, Gemini). */
 class GenerativeModel
 internal constructor(
   val modelName: String,
@@ -120,9 +120,9 @@ internal constructor(
   )
 
   /**
-   * Generates a [GenerateContentResponse] from the backend with the provided [Content]s.
+   * Generates a [GenerateContentResponse] from the backend with the provided [Content].
    *
-   * @param prompt [Content]s to send to the model.
+   * @param prompt [Content] to send to the model.
    * @return A [GenerateContentResponse]. Function should be called within a suspend context to
    * properly manage concurrency.
    */
@@ -134,9 +134,9 @@ internal constructor(
     }
 
   /**
-   * Generates a streaming response from the backend with the provided [Content]s.
+   * Generates a streaming response from the backend with the provided [Content].
    *
-   * @param prompt [Content]s to send to the model.
+   * @param prompt [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
    */
   fun generateContentStream(vararg prompt: Content): Flow<GenerateContentResponse> =
@@ -165,9 +165,9 @@ internal constructor(
     generateContentStream(content { text(prompt) })
 
   /**
-   * Generates a [GenerateContentResponse] from the backend with the provided bitmap prompt.
+   * Generates a [GenerateContentResponse] from the backend with the provided image prompt.
    *
-   * @param prompt The bitmap to be converted into a single piece of [Content] to send to the model.
+   * @param prompt The image to be converted into a single piece of [Content] to send to the model.
    * @return A [GenerateContentResponse] after some delay. Function should be called within a
    * suspend context to properly manage concurrency.
    */
@@ -175,9 +175,9 @@ internal constructor(
     generateContent(content { image(prompt) })
 
   /**
-   * Generates a streaming response from the backend with the provided bitmap prompt.
+   * Generates a streaming response from the backend with the provided image prompt.
    *
-   * @param prompt The bitmap to be converted into a single piece of [Content] to send to the model.
+   * @param prompt The image to be converted into a single piece of [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
    */
   fun generateContentStream(prompt: Bitmap): Flow<GenerateContentResponse> =
@@ -189,7 +189,7 @@ internal constructor(
   /**
    * Counts the amount of tokens in a prompt.
    *
-   * @param prompt A group of [Content]s to count tokens of.
+   * @param prompt A group of [Content] to count tokens of.
    * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
