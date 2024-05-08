@@ -76,6 +76,23 @@ class TimestampSerializerUnitTest {
   }
 
   @Test
+  fun `decoding should succeed when time offset is 0`() {
+    assertThat(decodeTimestamp("2006-01-02T15:04:05-00:00")).isEqualTo(Timestamp(1136214245, 0))
+
+    assertThat(decodeTimestamp("2006-01-02T15:04:05+00:00")).isEqualTo(Timestamp(1136214245, 0))
+  }
+
+  @Test
+  fun `decoding should succeed when time offset is positive`() {
+    assertThat(decodeTimestamp("2006-01-02T15:04:05+23:50")).isEqualTo(Timestamp(1136300045, 0))
+  }
+
+  @Test
+  fun `decoding should succeed when time offset is negative`() {
+    assertThat(decodeTimestamp("2006-01-02T15:04:05-05:10")).isEqualTo(Timestamp(1136195645, 0))
+  }
+
+  @Test
   fun `decoding should be case-insensitive`() {
     // According to https://www.rfc-editor.org/rfc/rfc3339#section-5.6 the "t" and "z" are
     // case-insensitive.
@@ -107,7 +124,7 @@ class TimestampSerializerUnitTest {
   }
 
   @Test
-  fun `decoding should fail if 'time-offset' when 'time-secfrac' is also omitted`() {
+  fun `decoding should fail if 'time-offset' when 'time-secfrac' and time offset are both omitted`() {
     assertThrows(IllegalArgumentException::class) { decodeTimestamp("2006-01-02T15:04:05") }
   }
 
@@ -130,6 +147,23 @@ class TimestampSerializerUnitTest {
     assertThrows(IllegalArgumentException::class) {
       decodeTimestamp("2006-01-02T15:04:05.123456X89Z")
     }
+  }
+
+  @Test
+  fun `decoding should fail if time offset has no + or - sign`() {
+    assertThrows(IllegalArgumentException::class) { decodeTimestamp("1985-04-12T23:20:5007:00") }
+  }
+
+  @Test
+  fun `decoding should fail if time string has mix format`() {
+    assertThrows(IllegalArgumentException::class) {
+      decodeTimestamp("2006-01-02T15:04:05-07:00.123456X89Z")
+    }
+  }
+
+  @Test
+  fun `decoding should fail if time offset is not in the correct format`() {
+    assertThrows(IllegalArgumentException::class) { decodeTimestamp("1985-04-12T23:20:50+7:00") }
   }
 
   @Serializable

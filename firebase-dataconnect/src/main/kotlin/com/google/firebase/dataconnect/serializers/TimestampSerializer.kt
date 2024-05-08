@@ -56,41 +56,50 @@ public object TimestampSerializer : KSerializer<Timestamp> {
     return "$serializedSecond.${serializedNano}Z"
   }
 
-  /**
-   * Note: Timestamp sent from SDK is always 9 digits nanosecond precision, meaning there are 9
-   * digits in SSSSSSSSS parts. However, when running against different databases, this precision
-   * might change, and server will truncate it to 0/3/6 digits precision without throwing an error.
-   */
+  // TODO: Replace this implementation with Instant.parse() once minSdkVersion is bumped to at
+  //  least 26 (Build.VERSION_CODES.O).
   private fun timestampFromString(str: String): Timestamp {
-    // TODO: support +/- time zone offsets as well (b/337299540)
-    require(str.uppercase().endsWith("Z")) {
-      "the last character should be 'Z', but got '${str.takeLast(1)}' (str=$str)"
+    val time = str.uppercase()
+
+    val timeZoneOffsetFormatRegex =
+      Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{0,9})?Z$")
+    val nanoFormatRegex = Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$")
+
+    require(time.matches(timeZoneOffsetFormatRegex) || time.matches(nanoFormatRegex)) {
+      "str=$time cannot be deserialized into Timestamp."
     }
 
-    // TODO: Replace this implementation with Instant.parse() once minSdkVersion is bumped to at
-    //  least 26 (Build.VERSION_CODES.O).
     val position = ParsePosition(0)
     val seconds = run {
-      val date = dateFormatter.parse(str.uppercase(), position)
+      val date = dateFormatter.parse(time.uppercase(), position)
       requireNotNull(date)
       require(position.index == 19) {
-        "position.index=${position.index}, but expected 19 (str=$str)"
+        "position.index=${position.index}, but expected 19 (str=$time)"
       }
       Timestamp(date).seconds
     }
 
-    val nanoseconds =
-      if (str[position.index] == 'Z' || str[position.index] == 'z') {
-        0
-      } else {
-        require(str[position.index] == '.') {
-          "str[${position.index}]=='${str[position.index]}', but expected '.' (str=$str)"
-        }
-        val nanosecondsStr = str.substring(position.index + 1, str.length - 1)
-        nanosecondsStr.padEnd(9, '0').toInt()
-      }
+    /** When Timestamp sent from server is in time zone offset format. */
+    if (time[position.index] == '+' || time[position.index] == '-') {
+      val addTimeDiffer = time[position.index] == '+'
+      val hours = time.substring(position.index + 1, position.index + 3).toInt()
+      val minutes = time.substring(position.index + 4, position.index + 6).toInt()
+      val timeZoneDiffer = hours * 3600 + minutes * 60
+      return Timestamp(seconds + if (addTimeDiffer) timeZoneDiffer else -timeZoneDiffer, 0)
+    }
 
-    return Timestamp(seconds, nanoseconds)
+    /**
+     * When Timestamp sent from server is in nanosecond precision format. Please note, when running
+     * against different databases, this precision might change, and server will truncate it to
+     * 0/3/6 digits precision without throwing an error.
+     */
+    return if (time[position.index] == 'Z') {
+      Timestamp(seconds, 0)
+    } else {
+      val nanosecondsStr = time.substring(position.index + 1, time.length - 1)
+      val nanoseconds = nanosecondsStr.padEnd(9, '0').toInt()
+      Timestamp(seconds, nanoseconds)
+    }
   }
 
   override fun serialize(encoder: Encoder, value: Timestamp) {

@@ -256,3 +256,25 @@ type OptionalStrings @table {
   nullable3: String
   nullableWithSchemaDefault: String @default(value: "pb429m")
 }
+
+type NonNullableLists @table {
+  strings: [String!]!
+  ints: [Int!]!
+  floats: [Float!]!
+  booleans: [Boolean!]!
+  uuids: [UUID!]!
+  int64s: [Int64!]!
+  dates: [Date!]!
+  timestamps: [Timestamp!]!
+}
+
+type NullableLists @table {
+  strings: [String!]
+  ints: [Int!]
+  floats: [Float!]
+  booleans: [Boolean!]
+  uuids: [UUID!]
+  int64s: [Int64!]
+  dates: [Date!]
+  timestamps: [Timestamp!]
+}
