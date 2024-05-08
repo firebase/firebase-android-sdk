@@ -84,6 +84,17 @@ class TimestampSerializerUnitTest {
   }
 
   @Test
+  fun `decoding should parse the minimum value officially supported by Data Connect`() {
+    assertThat(decodeTimestamp("1583-01-01T00:00:00.000000Z")).isEqualTo(Timestamp(-12212553600, 0))
+  }
+
+  @Test
+  fun `decoding should parse the maximum value officially supported by Data Connect`() {
+    assertThat(decodeTimestamp("9999-12-31T23:59:59.999999999Z"))
+      .isEqualTo(Timestamp(253402300799, 999999999))
+  }
+
+  @Test
   fun `decoding should fail for an empty string`() {
     assertThrows(IllegalArgumentException::class) { decodeTimestamp("") }
   }
