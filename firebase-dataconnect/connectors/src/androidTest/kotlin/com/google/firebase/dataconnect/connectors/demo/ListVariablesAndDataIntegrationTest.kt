@@ -18,10 +18,8 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
-import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.connectors.demo.testutil.*
 import com.google.firebase.dataconnect.testutil.*
-import java.text.SimpleDateFormat
 import java.util.UUID
 import kotlinx.coroutines.test.*
 import org.junit.Test
@@ -110,8 +108,6 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun nonNullableListsWithExtremeValues() = runTest {
-    val dateFormatter = SimpleDateFormat("yyyy-MM-dd")
-
     val key =
       connector.insertNonNullableLists
         .execute(
@@ -160,7 +156,11 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 Long.MIN_VALUE
               ),
             dates = listOf(MIN_DATE, MAX_DATE),
-            timestamps = listOf(Timestamp.MIN_VALUE, Timestamp.MAX_VALUE),
+            timestamps =
+              listOf(
+                Timestamp.MIN_VALUE.withMicrosecondPrecision(),
+                Timestamp.MAX_VALUE.withMicrosecondPrecision()
+              ),
           )
         )
       )
