@@ -57,7 +57,6 @@ private constructor(
         candidateCount = candidateCount,
         maxOutputTokens = maxOutputTokens,
         stopSequences = stopSequences,
-        responseMimeType = responseMimeType,
         responseMimeType = responseMimeType
       )
   }
