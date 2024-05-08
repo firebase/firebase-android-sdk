@@ -78,7 +78,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
             ),
           int64s = listOf(1, 2, 3),
-          dates = listOf(dateFromYYYYMMDD("2024-05-07"), dateFromYYYYMMDD("1978-03-30")),
+          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
         )
         .data
@@ -100,7 +100,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
               ),
             int64s = listOf(1, 2, 3),
-            dates = listOf(dateFromYYYYMMDD("2024-05-07"), dateFromYYYYMMDD("1978-03-30")),
+            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
             timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )

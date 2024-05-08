@@ -20,8 +20,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.MAX_DATE
 import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
 import com.google.firebase.dataconnect.testutil.MAX_VALUE
+import com.google.firebase.dataconnect.testutil.MIN_DATE
 import com.google.firebase.dataconnect.testutil.MIN_VALUE
 import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import com.google.firebase.dataconnect.testutil.toDate
@@ -263,8 +265,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.insertDateVariants.execute(
       id = id,
       nonNullValue = "2024-04-26".toDate(),
-      minValue = "0001-01-01".toDate(),
-      maxValue = "9999-12-31".toDate(),
+      minValue = MIN_DATE,
+      maxValue = MAX_DATE,
       nonZeroTime = dateWithNonZeroTime,
     ) {
       nullableWithNullValue = null
@@ -279,7 +281,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullValue = "2024-04-26",
           nullableWithNullValue = null,
           nullableWithNonNullValue = "2024-05-19",
-          minValue = "0001-01-01",
+          minValue = "1583-01-01",
           maxValue = "9999-12-31",
           nonZeroTime = "2024-05-23",
         )
@@ -333,7 +335,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullValue = "2024-04-26",
           nullableWithNullValue = null,
           nullableWithNonNullValue = "2024-05-19",
-          minValue = "0001-01-01",
+          minValue = "1583-01-01",
           maxValue = "9999-12-31",
           nonZeroTime = "2024-04-24",
         )
@@ -347,8 +349,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullValue = "2024-04-26".toDate(),
           nullableWithNullValue = null,
           nullableWithNonNullValue = "2024-05-19".toDate(),
-          minValue = "0001-01-01".toDate(),
-          maxValue = "9999-12-31".toDate(),
+          minValue = MIN_DATE,
+          maxValue = MAX_DATE,
           nonZeroTime = "2024-04-24".toDate(),
         )
       )
