@@ -18,8 +18,10 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.Timestamp
 
+// "1583-01-01T00:00:00.000000Z"
 val Timestamp.Companion.MIN_VALUE
-  get() = Timestamp(-62_135_596_800, 0)
+  get() = Timestamp(-12_212_553_600, 0)
 
+// "9999-12-31T23:59:59.999999999Z"
 val Timestamp.Companion.MAX_VALUE
   get() = Timestamp(253_402_300_799, 999_999_999)
