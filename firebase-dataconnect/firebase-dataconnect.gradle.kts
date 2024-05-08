@@ -27,17 +27,21 @@ plugins {
 }
 
 firebaseLibrary {
+  libraryGroup("dataconnect")
+  testLab.enabled = false
   publishSources = true
-  publishJavadoc = true
+  publishJavadoc = false
 }
 
 android {
-  val targetSdkVersion: Int by rootProject
+  val compileSdkVersion : Int by rootProject
+  val targetSdkVersion : Int by rootProject
+  val minSdkVersion : Int by rootProject
 
   namespace = "com.google.firebase.dataconnect"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 21
+    minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
