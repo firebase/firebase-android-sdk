@@ -86,6 +86,41 @@ mutation InsertStringVariants(
   })
 }
 
+mutation UpdateStringVariantsByKey(
+  $key: StringVariants_Key!,
+  $nonNullWithNonEmptyValue: String,
+  $nonNullWithEmptyValue: String,
+  $nullableWithNullValue: String,
+  $nullableWithNonNullValue: String,
+  $nullableWithEmptyValue: String,
+) @auth(level: PUBLIC) {
+  stringVariants_update(key: $key, data: {
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+  })
+}
+
+mutation UpdateStringVariantsWithHardcodedDefaultsByKey(
+  $key: StringVariants_Key!,
+  $nonNullWithNonEmptyValue: String! = "",
+  $nonNullWithEmptyValue: String! = "pfnk98yqqs",
+  $nullableWithNullValue: String = "af8k72s98t",
+  $nullableWithNonNullValue: String = "",
+  # TODO(b/339490396) Set the default value to null once the emulator accepts null default values.
+  $nullableWithEmptyValue: String = "b/339490396",
+) @auth(level: PUBLIC) {
+  stringVariants_update(key: $key, data: {
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+  })
+}
+
 query GetStringVariantsByKey($key: StringVariants_Key!) @auth(level: PUBLIC) {
   stringVariants(key: $key) {
     nonNullWithNonEmptyValue

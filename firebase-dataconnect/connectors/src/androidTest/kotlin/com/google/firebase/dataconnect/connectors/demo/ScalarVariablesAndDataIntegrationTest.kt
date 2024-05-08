@@ -40,7 +40,7 @@ import org.junit.Test
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
-  fun stringVariants() = runTest {
+  fun insertStringVariants() = runTest {
     val key =
       connector.insertStringVariants
         .execute(
@@ -63,6 +63,138 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNullValue = null,
           nullableWithNonNullValue = "some non-empty value for a *nullable* field",
           nullableWithEmptyValue = "",
+        )
+      )
+  }
+
+  @Test
+  fun updateStringVariantsToNonNullValues() = runTest {
+    val key =
+      connector.insertStringVariants
+        .execute(
+          nonNullWithNonEmptyValue = "d94gpbmwf6",
+          nonNullWithEmptyValue = "",
+        ) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = "wcwkenscxd"
+          nullableWithEmptyValue = ""
+        }
+        .data
+        .key
+
+    connector.updateStringVariantsByKey.execute(key) {
+      nonNullWithNonEmptyValue = ""
+      nonNullWithEmptyValue = "q3vvetx52x"
+      nullableWithNullValue = "d54kpn29pb"
+      nullableWithNonNullValue = "sfbm8epy94"
+      nullableWithEmptyValue = "pxhz7awrz9"
+    }
+
+    val queryResult = connector.getStringVariantsByKey.execute(key)
+    assertThat(queryResult.data.stringVariants)
+      .isEqualTo(
+        GetStringVariantsByKeyQuery.Data.StringVariants(
+          nonNullWithNonEmptyValue = "",
+          nonNullWithEmptyValue = "q3vvetx52x",
+          nullableWithNullValue = "d54kpn29pb",
+          nullableWithNonNullValue = "sfbm8epy94",
+          nullableWithEmptyValue = "pxhz7awrz9",
+        )
+      )
+  }
+
+  @Test
+  fun updateStringVariantsToNullValues() = runTest {
+    val key =
+      connector.insertStringVariants
+        .execute(
+          nonNullWithNonEmptyValue = "pqb9vc52pp",
+          nonNullWithEmptyValue = "",
+        ) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = "xyka3gsmad"
+          nullableWithEmptyValue = ""
+        }
+        .data
+        .key
+
+    connector.updateStringVariantsByKey.execute(key) {
+      nullableWithNullValue = null
+      nullableWithNonNullValue = null
+      nullableWithEmptyValue = null
+    }
+
+    val queryResult = connector.getStringVariantsByKey.execute(key)
+    assertThat(queryResult.data.stringVariants)
+      .isEqualTo(
+        GetStringVariantsByKeyQuery.Data.StringVariants(
+          nonNullWithNonEmptyValue = "pqb9vc52pp",
+          nonNullWithEmptyValue = "",
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = null,
+          nullableWithEmptyValue = null,
+        )
+      )
+  }
+
+  @Test
+  fun updateStringVariantsToUndefinedValues() = runTest {
+    val key =
+      connector.insertStringVariants
+        .execute(
+          nonNullWithNonEmptyValue = "6t25b9jyxc",
+          nonNullWithEmptyValue = "",
+        ) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = "kybbsaxpkw"
+          nullableWithEmptyValue = ""
+        }
+        .data
+        .key
+
+    connector.updateStringVariantsByKey.execute(key) {}
+
+    val queryResult = connector.getStringVariantsByKey.execute(key)
+    assertThat(queryResult.data.stringVariants)
+      .isEqualTo(
+        GetStringVariantsByKeyQuery.Data.StringVariants(
+          nonNullWithNonEmptyValue = "6t25b9jyxc",
+          nonNullWithEmptyValue = "",
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = "kybbsaxpkw",
+          nullableWithEmptyValue = "",
+        )
+      )
+  }
+
+  @Test
+  fun updateStringVariantsToDefaultValues() = runTest {
+    val key =
+      connector.insertStringVariants
+        .execute(
+          nonNullWithNonEmptyValue = "h87zh9da5g",
+          nonNullWithEmptyValue = "",
+        ) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = "efhg7t35ja"
+          nullableWithEmptyValue = ""
+        }
+        .data
+        .key
+
+    connector.updateStringVariantsWithHardcodedDefaultsByKey.execute(key) {}
+
+    val queryResult = connector.getStringVariantsByKey.execute(key)
+    assertThat(queryResult.data.stringVariants)
+      .isEqualTo(
+        GetStringVariantsByKeyQuery.Data.StringVariants(
+          nonNullWithNonEmptyValue = "",
+          nonNullWithEmptyValue = "pfnk98yqqs",
+          nullableWithNullValue = "af8k72s98t",
+          nullableWithNonNullValue = "",
+          // TODO(b/339490396) Set the expected value of `nullableWithEmptyValue` to null once the
+          //  emulator accepts null default values.
+          nullableWithEmptyValue = "b/339490396",
         )
       )
   }
