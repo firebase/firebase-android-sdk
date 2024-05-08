@@ -41,6 +41,25 @@ type IntVariants @table {
   nullableWithMinValue: Int
 }
 
+type FloatVariants @table {
+  id: String!
+  nonNullWithZeroValue: Float!
+  nonNullWithNegativeZeroValue: Float!
+  nonNullWithPositiveValue: Float!
+  nonNullWithNegativeValue: Float!
+  nonNullWithMaxValue: Float!
+  nonNullWithMinValue: Float!
+  nonNullWithMaxSafeIntegerValue: Float!
+  nullableWithNullValue: Float
+  nullableWithZeroValue: Float
+  nullableWithNegativeZeroValue: Float
+  nullableWithPositiveValue: Float
+  nullableWithNegativeValue: Float
+  nullableWithMaxValue: Float
+  nullableWithMinValue: Float
+  nullableWithMaxSafeIntegerValue: Float
+}
+
 type Int64Variants @table {
   id: String!
   nonNullWithZeroValue: Int64!

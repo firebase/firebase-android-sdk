@@ -144,6 +144,64 @@ query GetIntVariantsById($id: String!) @auth(level: PUBLIC) {
   }
 }
 
+mutation InsertFloatVariants(
+  $id: String!,
+  $nonNullWithZeroValue: Float!,
+  $nonNullWithNegativeZeroValue: Float!,
+  $nonNullWithPositiveValue: Float!,
+  $nonNullWithNegativeValue: Float!,
+  $nonNullWithMaxValue: Float!,
+  $nonNullWithMinValue: Float!,
+  $nonNullWithMaxSafeIntegerValue: Float!,
+  $nullableWithNullValue: Float,
+  $nullableWithZeroValue: Float,
+  $nullableWithNegativeZeroValue: Float,
+  $nullableWithPositiveValue: Float,
+  $nullableWithNegativeValue: Float,
+  $nullableWithMaxValue: Float,
+  $nullableWithMinValue: Float,
+  $nullableWithMaxSafeIntegerValue: Float,
+) @auth(level: PUBLIC) {
+  floatVariants_insert(data: {
+    id: $id,
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
+query GetFloatVariantsById($id: String!) @auth(level: PUBLIC) {
+  floatVariants(id: $id) {
+    nonNullWithZeroValue
+    nonNullWithNegativeZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nonNullWithMaxSafeIntegerValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithNegativeZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+    nullableWithMaxSafeIntegerValue
+  }
+}
+
 mutation InsertInt64Variants(
   $id: String!,
   $nonNullWithZeroValue: Int64!,

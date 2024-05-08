@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.connectors.demo.testutil.*
 import com.google.firebase.dataconnect.testutil.*
 import java.util.UUID
 import kotlinx.coroutines.test.*
+import org.junit.Ignore
 import org.junit.Test
 
 class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -106,6 +107,18 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
       )
   }
 
+  @Ignore(
+    "b/339440054 Fix this test once -0.0 is correctly sent from the backend " +
+      "instead of being converted to 0.0"
+  )
+  @Test
+  fun floatCorrectlySerializesNegativeZero() {
+    TODO(
+      "this test is merely a placeholder as a reminder " +
+        "and should be removed once the test is updated"
+    )
+  }
+
   @Test
   fun nonNullableListsWithExtremeValues() = runTest {
     val key =
@@ -113,8 +126,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
         .execute(
           strings = listOf(""),
           ints = listOf(0, 1, -1, Int.MAX_VALUE, Int.MIN_VALUE),
-          floats =
-            listOf(0.0, -0.0, 1.0, -1.0, Double.MAX_VALUE, Double.MIN_VALUE, MAX_SAFE_INTEGER),
+          // TODO(b/339440054) add -0.0 to the list once the bug is fixed
+          floats = listOf(0.0, 1.0, -1.0, Double.MAX_VALUE, Double.MIN_VALUE, MAX_SAFE_INTEGER),
           booleans = emptyList(), // Boolean have no "extreme" values
           uuids = emptyList(), // UUID have no "extreme" values
           int64s =
@@ -141,8 +154,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
           GetNonNullableListsByKeyQuery.Data.NonNullableLists(
             strings = listOf(""),
             ints = listOf(0, 1, -1, Int.MAX_VALUE, Int.MIN_VALUE),
-            floats =
-              listOf(0.0, -0.0, 1.0, -1.0, Double.MAX_VALUE, Double.MIN_VALUE, MAX_SAFE_INTEGER),
+            // TODO(b/339440054) add -0.0 to the list once the bug is fixed
+            floats = listOf(0.0, 1.0, -1.0, Double.MAX_VALUE, Double.MIN_VALUE, MAX_SAFE_INTEGER),
             booleans = emptyList(), // Boolean have no "extreme" values
             uuids = emptyList(), // UUID have no "extreme" values
             int64s =
