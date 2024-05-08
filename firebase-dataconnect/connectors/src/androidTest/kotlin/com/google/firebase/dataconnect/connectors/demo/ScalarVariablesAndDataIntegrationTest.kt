@@ -200,7 +200,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
-  fun intVariants() = runTest {
+  fun insertIntVariants() = runTest {
     val key =
       connector.insertIntVariants
         .execute(
@@ -235,6 +235,60 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNegativeValue = -24242424,
           nullableWithMaxValue = Int.MAX_VALUE,
           nullableWithMinValue = Int.MIN_VALUE,
+        )
+      )
+  }
+
+  @Test
+  fun updateIntVariantsToNonNullValues() = runTest {
+    val key =
+      connector.insertIntVariants
+        .execute(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 42424242,
+          nonNullWithNegativeValue = -42424242,
+          nonNullWithMaxValue = Int.MAX_VALUE,
+          nonNullWithMinValue = Int.MIN_VALUE,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0
+          nullableWithPositiveValue = 24242424
+          nullableWithNegativeValue = -24242424
+          nullableWithMaxValue = Int.MAX_VALUE
+          nullableWithMinValue = Int.MIN_VALUE
+        }
+        .data
+        .key
+
+    connector.updateIntVariantsByKey.execute(key) {
+      nonNullWithZeroValue = 7878
+      nonNullWithPositiveValue = Int.MAX_VALUE
+      nonNullWithNegativeValue = Int.MIN_VALUE
+      nonNullWithMaxValue = 1
+      nonNullWithMinValue = -1
+      nullableWithNullValue = 8787
+      nullableWithZeroValue = 0
+      nullableWithPositiveValue = Int.MAX_VALUE
+      nullableWithNegativeValue = Int.MIN_VALUE
+      nullableWithMaxValue = 1
+      nullableWithMinValue = -1
+    }
+
+    val queryResult = connector.getIntVariantsByKey.execute(key)
+    assertThat(queryResult.data.intVariants)
+      .isEqualTo(
+        GetIntVariantsByKeyQuery.Data.IntVariants(
+          nonNullWithZeroValue = 7878,
+          nonNullWithPositiveValue = Int.MAX_VALUE,
+          nonNullWithNegativeValue = Int.MIN_VALUE,
+          nonNullWithMaxValue = 1,
+          nonNullWithMinValue = -1,
+          nullableWithNullValue = 8787,
+          nullableWithZeroValue = 0,
+          nullableWithPositiveValue = Int.MAX_VALUE,
+          nullableWithNegativeValue = Int.MIN_VALUE,
+          nullableWithMaxValue = 1,
+          nullableWithMinValue = -1,
         )
       )
   }

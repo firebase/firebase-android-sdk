@@ -159,6 +159,66 @@ mutation InsertIntVariants(
   })
 }
 
+mutation UpdateIntVariantsByKey(
+  $key: IntVariants_Key!,
+  $nonNullWithZeroValue: Int,
+  $nonNullWithPositiveValue: Int,
+  $nonNullWithNegativeValue: Int,
+  $nonNullWithMaxValue: Int,
+  $nonNullWithMinValue: Int,
+  $nullableWithNullValue: Int,
+  $nullableWithZeroValue: Int,
+  $nullableWithPositiveValue: Int,
+  $nullableWithNegativeValue: Int,
+  $nullableWithMaxValue: Int,
+  $nullableWithMinValue: Int,
+) @auth(level: PUBLIC) {
+  intVariants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation UpdateIntVariantsWithHardcodedDefaultsByKey(
+  $key: IntVariants_Key!,
+  $nonNullWithZeroValue: Int! = 0,
+  $nonNullWithPositiveValue: Int! = 123,
+  $nonNullWithNegativeValue: Int! = -123,
+  $nonNullWithMaxValue: Int! = 2147483647,
+  $nonNullWithMinValue: Int! = -2147483648,
+  # TODO(b/339490396) Set the default value of `$nullableWithNullValue` to null once the emulator
+  #  accepts null default values.
+  $nullableWithNullValue: Int = 0,
+  $nullableWithZeroValue: Int = 0,
+  $nullableWithPositiveValue: Int = 456,
+  $nullableWithNegativeValue: Int = -456,
+  $nullableWithMaxValue: Int = 2147483647,
+  $nullableWithMinValue: Int = -2147483648,
+) @auth(level: PUBLIC) {
+  intVariants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
 query GetIntVariantsByKey($key: IntVariants_Key!) @auth(level: PUBLIC) {
   intVariants(key: $key) {
     nonNullWithZeroValue
