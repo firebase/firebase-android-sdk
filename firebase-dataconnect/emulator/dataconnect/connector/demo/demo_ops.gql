@@ -39,7 +39,7 @@ mutation UpdateFoo($id: String!, $newBar: String)
 
 mutation UpdateFoosByBar($oldBar: String, $newBar: String)
     @auth(level: PUBLIC) {
-  foo_updateMany(where: {bar: {eq: $oldBar}}, update: {bar: {set: $newBar}})
+  foo_updateMany(where: {bar: {eq: $oldBar}}, data: {bar: $newBar})
 }
 
 query GetFooById($id: String!)
