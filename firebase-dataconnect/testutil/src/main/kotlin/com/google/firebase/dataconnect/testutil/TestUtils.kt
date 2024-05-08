@@ -93,3 +93,10 @@ inline fun <T, R, E : Any> T.assertThrows(expectedException: KClass<E>, block: T
           ?: fail("Expected block to throw ${expectedException.qualifiedName}, but it threw: $it")
       }
     )
+
+/**
+ * The largest positive integer value that can be represented by a 64-bit double.
+ *
+ * Taken from `Number.MAX_SAFE_INTEGER` in JavaScript.
+ */
+const val MAX_SAFE_INTEGER = 9007199254740991.0

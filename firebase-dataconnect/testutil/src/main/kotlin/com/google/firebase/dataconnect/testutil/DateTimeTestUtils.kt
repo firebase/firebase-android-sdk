@@ -21,7 +21,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.random.Random
-import kotlin.random.nextLong
 
 /**
  * Creates and returns a new [Date] object created from this string.
@@ -31,6 +30,12 @@ import kotlin.random.nextLong
  * Example: `"2024-04-24".toDate()`
  */
 fun String.toDate(): Date = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(this)!!
+
+val MIN_DATE: Date
+  get() = "1583-01-01".toDate()
+
+val MAX_DATE: Date
+  get() = "9999-12-31".toDate()
 
 /** Generates and returns a random [Date] object with hour, minute, and second set to zero. */
 fun randomDate(): Date {
@@ -46,7 +51,7 @@ fun randomDate(): Date {
 /** Generates and returns a random [Timestamp] object. */
 fun randomTimestamp(): Timestamp {
   val nanoseconds = Random.nextInt(1_000_000_000)
-  val seconds = Random.nextLong(-62_135_596_800 until 253_402_300_800)
+  val seconds = Random.nextLong(Timestamp.MIN_VALUE.seconds, Timestamp.MAX_VALUE.seconds)
   return Timestamp(seconds, nanoseconds)
 }
 
@@ -54,3 +59,11 @@ fun Timestamp.withMicrosecondPrecision(): Timestamp {
   val result = Timestamp(seconds, ((nanoseconds.toLong() / 1_000) * 1_000).toInt())
   return result
 }
+
+// "1583-01-01T00:00:00.000000Z"
+val Timestamp.Companion.MIN_VALUE
+  get() = Timestamp(-12_212_553_600, 0)
+
+// "9999-12-31T23:59:59.999999999Z"
+val Timestamp.Companion.MAX_VALUE
+  get() = Timestamp(253_402_300_799, 999_999_999)
