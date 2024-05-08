@@ -164,6 +164,33 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
+  fun booleanVariants() = runTest {
+    val id = randomAlphanumericString()
+
+    connector.insertBooleanVariants.execute(
+      id = id,
+      nonNullWithTrueValue = true,
+      nonNullWithFalseValue = false,
+    ) {
+      nullableWithNullValue = null
+      nullableWithTrueValue = true
+      nullableWithFalseValue = false
+    }
+
+    val queryResult = connector.getBooleanVariantsById.execute(id)
+    assertThat(queryResult.data.booleanVariants)
+      .isEqualTo(
+        GetBooleanVariantsByIdQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = true,
+          nullableWithFalseValue = false,
+        )
+      )
+  }
+
+  @Test
   fun int64Variants() = runTest {
     val id = randomAlphanumericString()
 

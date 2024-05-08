@@ -60,6 +60,15 @@ type FloatVariants @table {
   nullableWithMaxSafeIntegerValue: Float
 }
 
+type BooleanVariants @table {
+  id: String!
+  nonNullWithTrueValue: Boolean!
+  nonNullWithFalseValue: Boolean!
+  nullableWithNullValue: Boolean
+  nullableWithTrueValue: Boolean
+  nullableWithFalseValue: Boolean
+}
+
 type Int64Variants @table {
   id: String!
   nonNullWithZeroValue: Int64!

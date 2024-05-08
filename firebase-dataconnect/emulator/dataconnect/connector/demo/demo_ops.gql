@@ -202,6 +202,34 @@ query GetFloatVariantsById($id: String!) @auth(level: PUBLIC) {
   }
 }
 
+mutation InsertBooleanVariants(
+  $id: String!,
+  $nonNullWithTrueValue: Boolean!,
+  $nonNullWithFalseValue: Boolean!,
+  $nullableWithNullValue: Boolean,
+  $nullableWithTrueValue: Boolean,
+  $nullableWithFalseValue: Boolean,
+) @auth(level: PUBLIC) {
+  booleanVariants_insert(data: {
+    id: $id,
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+query GetBooleanVariantsById($id: String!) @auth(level: PUBLIC) {
+  booleanVariants(id: $id) {
+    nonNullWithTrueValue
+    nonNullWithFalseValue
+    nullableWithNullValue
+    nullableWithTrueValue
+    nullableWithFalseValue
+  }
+}
+
 mutation InsertInt64Variants(
   $id: String!,
   $nonNullWithZeroValue: Int64!,
