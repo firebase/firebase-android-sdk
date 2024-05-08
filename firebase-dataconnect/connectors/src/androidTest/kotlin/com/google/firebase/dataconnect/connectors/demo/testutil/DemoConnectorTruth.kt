@@ -119,6 +119,5 @@ private class FooListSubjectImpl(private val connector: DemoConnector, private v
   }
 
   private suspend fun fooCount(): Int =
-    // TODO: Remove the `!!` once the codegen is fixed to generate non-nullable lists.
-    connector.getFoosByBar.execute { bar = this@FooListSubjectImpl.bar }.data.foos!!.size
+    connector.getFoosByBar.execute { bar = this@FooListSubjectImpl.bar }.data.foos.size
 }
