@@ -111,6 +111,9 @@ public final class LocalStore implements BundleCallback {
   /** Manages our in-memory or durable persistence. */
   private final Persistence persistence;
 
+  /** General purpose global state. */
+  private GlobalsCache globalsCache;
+
   /** Manages the list of active field and collection indices. */
   private IndexManager indexManager;
 
@@ -168,6 +171,7 @@ public final class LocalStore implements BundleCallback {
 
   private void initializeUserComponents(User user) {
     // TODO(indexing): Add spec tests that test these components change after a user change
+    globalsCache = persistence.getGlobalsCache(user);
     indexManager = persistence.getIndexManager(user);
     mutationQueue = persistence.getMutationQueue(user, indexManager);
     documentOverlayCache = persistence.getDocumentOverlayCache(user);

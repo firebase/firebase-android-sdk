@@ -31,6 +31,7 @@ public final class MemoryPersistence extends Persistence {
   // tests affecting both the in-memory and SQLite-backed persistence layers. Tests can create a new
   // LocalStore wrapping this Persistence instance and this will make the in-memory persistence
   // layer behave as if it were actually persisting values.
+  private final Map<User, MemoryGlobalsCache> userGlobals;
   private final Map<User, MemoryMutationQueue> mutationQueues;
   private final Map<User, MemoryDocumentOverlayCache> overlays;
   private final MemoryIndexManager indexManager;
@@ -57,6 +58,7 @@ public final class MemoryPersistence extends Persistence {
 
   /** Use static helpers to instantiate */
   private MemoryPersistence() {
+    userGlobals = new HashMap<>();
     mutationQueues = new HashMap<>();
     indexManager = new MemoryIndexManager();
     targetCache = new MemoryTargetCache(this);
@@ -115,6 +117,16 @@ public final class MemoryPersistence extends Persistence {
   @Override
   MemoryRemoteDocumentCache getRemoteDocumentCache() {
     return remoteDocumentCache;
+  }
+
+  @Override
+  GlobalsCache getGlobalsCache(User user) {
+    MemoryGlobalsCache globals = userGlobals.get(user);
+    if (globals == null) {
+      globals = new MemoryGlobalsCache();
+      userGlobals.put(user, globals);
+    }
+    return globals;
   }
 
   @Override

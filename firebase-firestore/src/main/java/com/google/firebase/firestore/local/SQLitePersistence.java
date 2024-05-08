@@ -206,6 +206,11 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
+  GlobalsCache getGlobalsCache(User user) {
+    return new SQLiteGlobalsCache(this, user);
+  }
+
+  @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     db.beginTransactionWithListener(transactionListener);
