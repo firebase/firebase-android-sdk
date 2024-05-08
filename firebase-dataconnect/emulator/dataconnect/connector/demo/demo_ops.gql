@@ -77,8 +77,6 @@ mutation InsertStringVariants(
   $nullableWithNullValue: String,
   $nullableWithNonNullValue: String,
   $nullableWithEmptyValue: String,
-  $emptyList: [String!],
-  $nonEmptyList: [String!]
 ) @auth(level: PUBLIC) {
   stringVariants_insert(data: {
     id: $id,
@@ -87,8 +85,6 @@ mutation InsertStringVariants(
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
     nullableWithEmptyValue: $nullableWithEmptyValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -99,8 +95,138 @@ query GetStringVariantsById($id: String!) @auth(level: PUBLIC) {
     nullableWithNullValue
     nullableWithNonNullValue
     nullableWithEmptyValue
-    emptyList
-    nonEmptyList
+  }
+}
+
+mutation InsertIntVariants(
+  $id: String!,
+  $nonNullWithZeroValue: Int!,
+  $nonNullWithPositiveValue: Int!,
+  $nonNullWithNegativeValue: Int!,
+  $nonNullWithMaxValue: Int!,
+  $nonNullWithMinValue: Int!,
+  $nullableWithNullValue: Int,
+  $nullableWithZeroValue: Int,
+  $nullableWithPositiveValue: Int,
+  $nullableWithNegativeValue: Int,
+  $nullableWithMaxValue: Int,
+  $nullableWithMinValue: Int,
+) @auth(level: PUBLIC) {
+  intVariants_insert(data: {
+    id: $id,
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+query GetIntVariantsById($id: String!) @auth(level: PUBLIC) {
+  intVariants(id: $id) {
+    nonNullWithZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+  }
+}
+
+mutation InsertFloatVariants(
+  $id: String!,
+  $nonNullWithZeroValue: Float!,
+  $nonNullWithNegativeZeroValue: Float!,
+  $nonNullWithPositiveValue: Float!,
+  $nonNullWithNegativeValue: Float!,
+  $nonNullWithMaxValue: Float!,
+  $nonNullWithMinValue: Float!,
+  $nonNullWithMaxSafeIntegerValue: Float!,
+  $nullableWithNullValue: Float,
+  $nullableWithZeroValue: Float,
+  $nullableWithNegativeZeroValue: Float,
+  $nullableWithPositiveValue: Float,
+  $nullableWithNegativeValue: Float,
+  $nullableWithMaxValue: Float,
+  $nullableWithMinValue: Float,
+  $nullableWithMaxSafeIntegerValue: Float,
+) @auth(level: PUBLIC) {
+  floatVariants_insert(data: {
+    id: $id,
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
+query GetFloatVariantsById($id: String!) @auth(level: PUBLIC) {
+  floatVariants(id: $id) {
+    nonNullWithZeroValue
+    nonNullWithNegativeZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nonNullWithMaxSafeIntegerValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithNegativeZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+    nullableWithMaxSafeIntegerValue
+  }
+}
+
+mutation InsertBooleanVariants(
+  $id: String!,
+  $nonNullWithTrueValue: Boolean!,
+  $nonNullWithFalseValue: Boolean!,
+  $nullableWithNullValue: Boolean,
+  $nullableWithTrueValue: Boolean,
+  $nullableWithFalseValue: Boolean,
+) @auth(level: PUBLIC) {
+  booleanVariants_insert(data: {
+    id: $id,
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+query GetBooleanVariantsById($id: String!) @auth(level: PUBLIC) {
+  booleanVariants(id: $id) {
+    nonNullWithTrueValue
+    nonNullWithFalseValue
+    nullableWithNullValue
+    nullableWithTrueValue
+    nullableWithFalseValue
   }
 }
 
@@ -117,8 +243,6 @@ mutation InsertInt64Variants(
   $nullableWithNegativeValue: Int64,
   $nullableWithMaxValue: Int64,
   $nullableWithMinValue: Int64,
-  $emptyList: [Int64!],
-  $nonEmptyList: [Int64!]
 ) @auth(level: PUBLIC) {
   int64Variants_insert(data: {
     id: $id,
@@ -133,8 +257,6 @@ mutation InsertInt64Variants(
     nullableWithNegativeValue: $nullableWithNegativeValue,
     nullableWithMaxValue: $nullableWithMaxValue,
     nullableWithMinValue: $nullableWithMinValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -151,8 +273,6 @@ query GetInt64VariantsById($id: String!) @auth(level: PUBLIC) {
     nullableWithNegativeValue
     nullableWithMaxValue
     nullableWithMinValue
-    emptyList
-    nonEmptyList
   }
 }
 
@@ -161,16 +281,12 @@ mutation InsertUUIDVariants(
   $nonNullValue: UUID!,
   $nullableWithNullValue: UUID,
   $nullableWithNonNullValue: UUID,
-  $emptyList: [UUID!],
-  $nonEmptyList: [UUID!]
 ) @auth(level: PUBLIC) {
   uUIDVariants_insert(data: {
     id: $id,
     nonNullValue: $nonNullValue,
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -179,8 +295,6 @@ query GetUUIDVariantsById($id: String!) @auth(level: PUBLIC) {
     nonNullValue
     nullableWithNullValue
     nullableWithNonNullValue
-    emptyList
-    nonEmptyList
   }
 }
 
@@ -191,8 +305,6 @@ mutation InsertTimestampVariants(
   $nullableWithNonNullValue: Timestamp,
   $minValue: Timestamp!,
   $maxValue: Timestamp!,
-  $emptyList: [Timestamp!],
-  $nonEmptyList: [Timestamp!]
 ) @auth(level: PUBLIC) {
   timestampVariants_insert(data: {
     id: $id,
@@ -201,8 +313,6 @@ mutation InsertTimestampVariants(
     nullableWithNonNullValue: $nullableWithNonNullValue,
     minValue: $minValue,
     maxValue: $maxValue,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -213,8 +323,6 @@ query GetTimestampVariantsById($id: String!) @auth(level: PUBLIC) {
     nullableWithNonNullValue
     minValue
     maxValue
-    emptyList
-    nonEmptyList
   }
 }
 
@@ -226,8 +334,6 @@ mutation InsertDateVariants(
   $minValue: Date!,
   $maxValue: Date!,
   $nonZeroTime: Date!,
-  $emptyList: [Date!],
-  $nonEmptyList: [Date!]
 ) @auth(level: PUBLIC) {
   dateVariants_insert(data: {
     id: $id,
@@ -237,8 +343,6 @@ mutation InsertDateVariants(
     minValue: $minValue,
     maxValue: $maxValue,
     nonZeroTime: $nonZeroTime,
-    emptyList: $emptyList,
-    nonEmptyList: $nonEmptyList
   })
 }
 
@@ -250,8 +354,6 @@ query GetDateVariantsById($id: String!) @auth(level: PUBLIC) {
     minValue
     maxValue
     nonZeroTime
-    emptyList
-    nonEmptyList
   }
 }
 

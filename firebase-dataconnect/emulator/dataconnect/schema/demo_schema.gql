@@ -24,8 +24,49 @@ type StringVariants @table {
   nullableWithNullValue: String
   nullableWithNonNullValue: String
   nullableWithEmptyValue: String
-  emptyList: [String!]
-  nonEmptyList: [String!]
+}
+
+type IntVariants @table {
+  id: String!
+  nonNullWithZeroValue: Int!
+  nonNullWithPositiveValue: Int!
+  nonNullWithNegativeValue: Int!
+  nonNullWithMaxValue: Int!
+  nonNullWithMinValue: Int!
+  nullableWithNullValue: Int
+  nullableWithZeroValue: Int
+  nullableWithPositiveValue: Int
+  nullableWithNegativeValue: Int
+  nullableWithMaxValue: Int
+  nullableWithMinValue: Int
+}
+
+type FloatVariants @table {
+  id: String!
+  nonNullWithZeroValue: Float!
+  nonNullWithNegativeZeroValue: Float!
+  nonNullWithPositiveValue: Float!
+  nonNullWithNegativeValue: Float!
+  nonNullWithMaxValue: Float!
+  nonNullWithMinValue: Float!
+  nonNullWithMaxSafeIntegerValue: Float!
+  nullableWithNullValue: Float
+  nullableWithZeroValue: Float
+  nullableWithNegativeZeroValue: Float
+  nullableWithPositiveValue: Float
+  nullableWithNegativeValue: Float
+  nullableWithMaxValue: Float
+  nullableWithMinValue: Float
+  nullableWithMaxSafeIntegerValue: Float
+}
+
+type BooleanVariants @table {
+  id: String!
+  nonNullWithTrueValue: Boolean!
+  nonNullWithFalseValue: Boolean!
+  nullableWithNullValue: Boolean
+  nullableWithTrueValue: Boolean
+  nullableWithFalseValue: Boolean
 }
 
 type Int64Variants @table {
@@ -41,8 +82,6 @@ type Int64Variants @table {
   nullableWithNegativeValue: Int64
   nullableWithMaxValue: Int64
   nullableWithMinValue: Int64
-  emptyList: [Int64!]
-  nonEmptyList: [Int64!]
 }
 
 type UUIDVariants @table {
@@ -50,8 +89,6 @@ type UUIDVariants @table {
   nonNullValue: UUID!
   nullableWithNullValue: UUID
   nullableWithNonNullValue: UUID
-  emptyList: [UUID!]
-  nonEmptyList: [UUID!]
 }
 
 type DateVariants @table {
@@ -62,8 +99,6 @@ type DateVariants @table {
   minValue: Date
   maxValue: Date
   nonZeroTime: Date
-  emptyList: [Date!]
-  nonEmptyList: [Date!]
 }
 
 type TimestampVariants @table {
@@ -73,8 +108,6 @@ type TimestampVariants @table {
   nullableWithNonNullValue: Timestamp
   minValue: Timestamp
   maxValue: Timestamp
-  emptyList: [Timestamp!]
-  nonEmptyList: [Timestamp!]
 }
 
 type SyntheticId @table {
