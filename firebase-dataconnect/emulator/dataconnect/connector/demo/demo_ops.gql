@@ -98,6 +98,52 @@ query GetStringVariantsById($id: String!) @auth(level: PUBLIC) {
   }
 }
 
+mutation InsertIntVariants(
+  $id: String!,
+  $nonNullWithZeroValue: Int!,
+  $nonNullWithPositiveValue: Int!,
+  $nonNullWithNegativeValue: Int!,
+  $nonNullWithMaxValue: Int!,
+  $nonNullWithMinValue: Int!,
+  $nullableWithNullValue: Int,
+  $nullableWithZeroValue: Int,
+  $nullableWithPositiveValue: Int,
+  $nullableWithNegativeValue: Int,
+  $nullableWithMaxValue: Int,
+  $nullableWithMinValue: Int,
+) @auth(level: PUBLIC) {
+  intVariants_insert(data: {
+    id: $id,
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+query GetIntVariantsById($id: String!) @auth(level: PUBLIC) {
+  intVariants(id: $id) {
+    nonNullWithZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+  }
+}
+
 mutation InsertInt64Variants(
   $id: String!,
   $nonNullWithZeroValue: Int64!,

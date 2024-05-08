@@ -61,6 +61,45 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
+  fun intVariants() = runTest {
+    val id = randomAlphanumericString()
+
+    connector.insertIntVariants.execute(
+      id = id,
+      nonNullWithZeroValue = 0,
+      nonNullWithPositiveValue = 42424242,
+      nonNullWithNegativeValue = -42424242,
+      nonNullWithMaxValue = Int.MAX_VALUE,
+      nonNullWithMinValue = Int.MIN_VALUE,
+    ) {
+      nullableWithNullValue = null
+      nullableWithZeroValue = 0
+      nullableWithPositiveValue = 24242424
+      nullableWithNegativeValue = -24242424
+      nullableWithMaxValue = Int.MAX_VALUE
+      nullableWithMinValue = Int.MIN_VALUE
+    }
+
+    val queryResult = connector.getIntVariantsById.execute(id)
+    assertThat(queryResult.data.intVariants)
+      .isEqualTo(
+        GetIntVariantsByIdQuery.Data.IntVariants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 42424242,
+          nonNullWithNegativeValue = -42424242,
+          nonNullWithMaxValue = Int.MAX_VALUE,
+          nonNullWithMinValue = Int.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0,
+          nullableWithPositiveValue = 24242424,
+          nullableWithNegativeValue = -24242424,
+          nullableWithMaxValue = Int.MAX_VALUE,
+          nullableWithMinValue = Int.MIN_VALUE,
+        )
+      )
+  }
+
+  @Test
   fun int64Variants() = runTest {
     val id = randomAlphanumericString()
 

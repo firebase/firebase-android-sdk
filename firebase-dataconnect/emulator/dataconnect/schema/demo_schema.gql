@@ -26,6 +26,21 @@ type StringVariants @table {
   nullableWithEmptyValue: String
 }
 
+type IntVariants @table {
+  id: String!
+  nonNullWithZeroValue: Int!
+  nonNullWithPositiveValue: Int!
+  nonNullWithNegativeValue: Int!
+  nonNullWithMaxValue: Int!
+  nonNullWithMinValue: Int!
+  nullableWithNullValue: Int
+  nullableWithZeroValue: Int
+  nullableWithPositiveValue: Int
+  nullableWithNegativeValue: Int
+  nullableWithMaxValue: Int
+  nullableWithMinValue: Int
+}
+
 type Int64Variants @table {
   id: String!
   nonNullWithZeroValue: Int64!
