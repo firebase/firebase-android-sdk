@@ -71,7 +71,6 @@ query GetHardcodedFoo
 }
 
 mutation InsertStringVariants(
-  $id: String!,
   $nonNullWithNonEmptyValue: String!,
   $nonNullWithEmptyValue: String!,
   $nullableWithNullValue: String,
@@ -79,7 +78,6 @@ mutation InsertStringVariants(
   $nullableWithEmptyValue: String,
 ) @auth(level: PUBLIC) {
   stringVariants_insert(data: {
-    id: $id,
     nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
     nonNullWithEmptyValue: $nonNullWithEmptyValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -88,8 +86,8 @@ mutation InsertStringVariants(
   })
 }
 
-query GetStringVariantsById($id: String!) @auth(level: PUBLIC) {
-  stringVariants(id: $id) {
+query GetStringVariantsByKey($key: StringVariants_Key!) @auth(level: PUBLIC) {
+  stringVariants(key: $key) {
     nonNullWithNonEmptyValue
     nonNullWithEmptyValue
     nullableWithNullValue
@@ -99,7 +97,6 @@ query GetStringVariantsById($id: String!) @auth(level: PUBLIC) {
 }
 
 mutation InsertIntVariants(
-  $id: String!,
   $nonNullWithZeroValue: Int!,
   $nonNullWithPositiveValue: Int!,
   $nonNullWithNegativeValue: Int!,
@@ -113,7 +110,6 @@ mutation InsertIntVariants(
   $nullableWithMinValue: Int,
 ) @auth(level: PUBLIC) {
   intVariants_insert(data: {
-    id: $id,
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -128,8 +124,8 @@ mutation InsertIntVariants(
   })
 }
 
-query GetIntVariantsById($id: String!) @auth(level: PUBLIC) {
-  intVariants(id: $id) {
+query GetIntVariantsByKey($key: IntVariants_Key!) @auth(level: PUBLIC) {
+  intVariants(key: $key) {
     nonNullWithZeroValue
     nonNullWithPositiveValue
     nonNullWithNegativeValue
@@ -145,7 +141,6 @@ query GetIntVariantsById($id: String!) @auth(level: PUBLIC) {
 }
 
 mutation InsertFloatVariants(
-  $id: String!,
   $nonNullWithZeroValue: Float!,
   $nonNullWithNegativeZeroValue: Float!,
   $nonNullWithPositiveValue: Float!,
@@ -163,7 +158,6 @@ mutation InsertFloatVariants(
   $nullableWithMaxSafeIntegerValue: Float,
 ) @auth(level: PUBLIC) {
   floatVariants_insert(data: {
-    id: $id,
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
@@ -182,8 +176,8 @@ mutation InsertFloatVariants(
   })
 }
 
-query GetFloatVariantsById($id: String!) @auth(level: PUBLIC) {
-  floatVariants(id: $id) {
+query GetFloatVariantsByKey($key: FloatVariants_Key!) @auth(level: PUBLIC) {
+  floatVariants(key: $key) {
     nonNullWithZeroValue
     nonNullWithNegativeZeroValue
     nonNullWithPositiveValue
@@ -203,7 +197,6 @@ query GetFloatVariantsById($id: String!) @auth(level: PUBLIC) {
 }
 
 mutation InsertBooleanVariants(
-  $id: String!,
   $nonNullWithTrueValue: Boolean!,
   $nonNullWithFalseValue: Boolean!,
   $nullableWithNullValue: Boolean,
@@ -211,7 +204,6 @@ mutation InsertBooleanVariants(
   $nullableWithFalseValue: Boolean,
 ) @auth(level: PUBLIC) {
   booleanVariants_insert(data: {
-    id: $id,
     nonNullWithTrueValue: $nonNullWithTrueValue,
     nonNullWithFalseValue: $nonNullWithFalseValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -220,8 +212,8 @@ mutation InsertBooleanVariants(
   })
 }
 
-query GetBooleanVariantsById($id: String!) @auth(level: PUBLIC) {
-  booleanVariants(id: $id) {
+query GetBooleanVariantsByKey($key: BooleanVariants_Key!) @auth(level: PUBLIC) {
+  booleanVariants(key: $key) {
     nonNullWithTrueValue
     nonNullWithFalseValue
     nullableWithNullValue
@@ -231,7 +223,6 @@ query GetBooleanVariantsById($id: String!) @auth(level: PUBLIC) {
 }
 
 mutation InsertInt64Variants(
-  $id: String!,
   $nonNullWithZeroValue: Int64!,
   $nonNullWithPositiveValue: Int64!,
   $nonNullWithNegativeValue: Int64!,
@@ -245,7 +236,6 @@ mutation InsertInt64Variants(
   $nullableWithMinValue: Int64,
 ) @auth(level: PUBLIC) {
   int64Variants_insert(data: {
-    id: $id,
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -260,8 +250,8 @@ mutation InsertInt64Variants(
   })
 }
 
-query GetInt64VariantsById($id: String!) @auth(level: PUBLIC) {
-  int64Variants(id: $id) {
+query GetInt64VariantsByKey($key: Int64Variants_Key!) @auth(level: PUBLIC) {
+  int64Variants(key: $key) {
     nonNullWithZeroValue
     nonNullWithPositiveValue
     nonNullWithNegativeValue
@@ -277,21 +267,19 @@ query GetInt64VariantsById($id: String!) @auth(level: PUBLIC) {
 }
 
 mutation InsertUUIDVariants(
-  $id: String!,
   $nonNullValue: UUID!,
   $nullableWithNullValue: UUID,
   $nullableWithNonNullValue: UUID,
 ) @auth(level: PUBLIC) {
   uUIDVariants_insert(data: {
-    id: $id,
     nonNullValue: $nonNullValue,
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
   })
 }
 
-query GetUUIDVariantsById($id: String!) @auth(level: PUBLIC) {
-  uUIDVariants(id: $id) {
+query GetUUIDVariantsByKey($key: UUIDVariants_Key!) @auth(level: PUBLIC) {
+  uUIDVariants(key: $key) {
     nonNullValue
     nullableWithNullValue
     nullableWithNonNullValue
@@ -299,7 +287,6 @@ query GetUUIDVariantsById($id: String!) @auth(level: PUBLIC) {
 }
 
 mutation InsertTimestampVariants(
-  $id: String!,
   $nonNullValue: Timestamp!,
   $nullableWithNullValue: Timestamp,
   $nullableWithNonNullValue: Timestamp,
@@ -307,7 +294,6 @@ mutation InsertTimestampVariants(
   $maxValue: Timestamp!,
 ) @auth(level: PUBLIC) {
   timestampVariants_insert(data: {
-    id: $id,
     nonNullValue: $nonNullValue,
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
@@ -316,8 +302,8 @@ mutation InsertTimestampVariants(
   })
 }
 
-query GetTimestampVariantsById($id: String!) @auth(level: PUBLIC) {
-  timestampVariants(id: $id) {
+query GetTimestampVariantsByKey($key: TimestampVariants_Key!) @auth(level: PUBLIC) {
+  timestampVariants(key: $key) {
     nonNullValue
     nullableWithNullValue
     nullableWithNonNullValue
@@ -327,7 +313,6 @@ query GetTimestampVariantsById($id: String!) @auth(level: PUBLIC) {
 }
 
 mutation InsertDateVariants(
-  $id: String!,
   $nonNullValue: Date!,
   $nullableWithNullValue: Date,
   $nullableWithNonNullValue: Date,
@@ -336,7 +321,6 @@ mutation InsertDateVariants(
   $nonZeroTime: Date!,
 ) @auth(level: PUBLIC) {
   dateVariants_insert(data: {
-    id: $id,
     nonNullValue: $nonNullValue,
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
@@ -346,8 +330,8 @@ mutation InsertDateVariants(
   })
 }
 
-query GetDateVariantsById($id: String!) @auth(level: PUBLIC) {
-  dateVariants(id: $id) {
+query GetDateVariantsByKey($key: DateVariants_Key!) @auth(level: PUBLIC) {
+  dateVariants(key: $key) {
     nonNullValue
     nullableWithNullValue
     nullableWithNonNullValue
