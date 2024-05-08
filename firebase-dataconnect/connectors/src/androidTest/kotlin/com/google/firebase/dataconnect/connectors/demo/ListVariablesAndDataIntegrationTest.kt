@@ -18,17 +18,23 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
-import com.google.firebase.dataconnect.connectors.demo.testutil.*
-import com.google.firebase.dataconnect.testutil.*
+import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.MAX_DATE
+import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
+import com.google.firebase.dataconnect.testutil.MAX_VALUE
+import com.google.firebase.dataconnect.testutil.MIN_DATE
+import com.google.firebase.dataconnect.testutil.MIN_VALUE
+import com.google.firebase.dataconnect.testutil.toDate
+import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import java.util.UUID
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
 
 class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
-  fun nonNullableEmptyLists() = runTest {
+  fun insertNonNullableEmptyLists() = runTest {
     val key =
       connector.insertNonNullableLists
         .execute(
@@ -64,7 +70,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  fun nonNullableNonEmptyLists() = runTest {
+  fun insertNonNullableNonEmptyLists() = runTest {
     val key =
       connector.insertNonNullableLists
         .execute(
@@ -120,7 +126,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  fun nonNullableListsWithExtremeValues() = runTest {
+  fun insertNonNullableListsWithExtremeValues() = runTest {
     val key =
       connector.insertNonNullableLists
         .execute(
@@ -174,6 +180,158 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 Timestamp.MIN_VALUE.withMicrosecondPrecision(),
                 Timestamp.MAX_VALUE.withMicrosecondPrecision()
               ),
+          )
+        )
+      )
+  }
+
+  @Test
+  fun updateNonNullableEmptyListsToNonEmpty() = runTest {
+    val key =
+      connector.insertNonNullableLists
+        .execute(
+          strings = emptyList(),
+          ints = emptyList(),
+          floats = emptyList(),
+          booleans = emptyList(),
+          uuids = emptyList(),
+          int64s = emptyList(),
+          dates = emptyList(),
+          timestamps = emptyList(),
+        )
+        .data
+        .key
+
+    connector.updateNonNullableListsByKey.execute(key) {
+      strings = listOf("a", "b")
+      ints = listOf(1, 2, 3)
+      floats = listOf(1.1, 2.2, 3.3)
+      booleans = listOf(true, false, true, false)
+      uuids =
+        listOf(
+          UUID.fromString("317835d2-efae-4981-b70f-64ff31126921"),
+          UUID.fromString("91597f71-8f85-4ae5-ac4d-909287c8c52c")
+        )
+      int64s = listOf(1, 2, 3)
+      dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate())
+      timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000))
+    }
+
+    val queryResult = connector.getNonNullableListsByKey.execute(key)
+
+    assertThat(queryResult.data)
+      .isEqualTo(
+        GetNonNullableListsByKeyQuery.Data(
+          GetNonNullableListsByKeyQuery.Data.NonNullableLists(
+            strings = listOf("a", "b"),
+            ints = listOf(1, 2, 3),
+            floats = listOf(1.1, 2.2, 3.3),
+            booleans = listOf(true, false, true, false),
+            uuids =
+              listOf(
+                UUID.fromString("317835d2-efae-4981-b70f-64ff31126921"),
+                UUID.fromString("91597f71-8f85-4ae5-ac4d-909287c8c52c")
+              ),
+            int64s = listOf(1, 2, 3),
+            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
+          )
+        )
+      )
+  }
+
+  @Test
+  fun updateNonNullableNonEmptyListsToEmpty() = runTest {
+    val key =
+      connector.insertNonNullableLists
+        .execute(
+          strings = listOf("a", "b"),
+          ints = listOf(1, 2, 3),
+          floats = listOf(1.1, 2.2, 3.3),
+          booleans = listOf(true, false, true, false),
+          uuids =
+            listOf(
+              UUID.fromString("e7c0b51d-55ec-4c7f-b831-038e6377c4bc"),
+              UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
+            ),
+          int64s = listOf(1, 2, 3),
+          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+          timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
+        )
+        .data
+        .key
+
+    connector.updateNonNullableListsByKey.execute(key) {
+      strings = emptyList()
+      ints = emptyList()
+      floats = emptyList()
+      booleans = emptyList()
+      uuids = emptyList()
+      int64s = emptyList()
+      dates = emptyList()
+      timestamps = emptyList()
+    }
+
+    val queryResult = connector.getNonNullableListsByKey.execute(key)
+
+    assertThat(queryResult.data)
+      .isEqualTo(
+        GetNonNullableListsByKeyQuery.Data(
+          GetNonNullableListsByKeyQuery.Data.NonNullableLists(
+            strings = emptyList(),
+            ints = emptyList(),
+            floats = emptyList(),
+            booleans = emptyList(),
+            uuids = emptyList(),
+            int64s = emptyList(),
+            dates = emptyList(),
+            timestamps = emptyList(),
+          )
+        )
+      )
+  }
+
+  @Test
+  fun updateNonNullableWithUndefinedLists() = runTest {
+    val key =
+      connector.insertNonNullableLists
+        .execute(
+          strings = listOf("a", "b"),
+          ints = listOf(1, 2, 3),
+          floats = listOf(1.1, 2.2, 3.3),
+          booleans = listOf(true, false, true, false),
+          uuids =
+            listOf(
+              UUID.fromString("e60688ca-baae-4f79-8ef1-908220148399"),
+              UUID.fromString("e2170f8a-9a53-478c-ae2f-9fb5b09da5c7")
+            ),
+          int64s = listOf(1, 2, 3),
+          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+          timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
+        )
+        .data
+        .key
+
+    connector.updateNonNullableListsByKey.execute(key) {}
+
+    val queryResult = connector.getNonNullableListsByKey.execute(key)
+
+    assertThat(queryResult.data)
+      .isEqualTo(
+        GetNonNullableListsByKeyQuery.Data(
+          GetNonNullableListsByKeyQuery.Data.NonNullableLists(
+            strings = listOf("a", "b"),
+            ints = listOf(1, 2, 3),
+            floats = listOf(1.1, 2.2, 3.3),
+            booleans = listOf(true, false, true, false),
+            uuids =
+              listOf(
+                UUID.fromString("e60688ca-baae-4f79-8ef1-908220148399"),
+                UUID.fromString("e2170f8a-9a53-478c-ae2f-9fb5b09da5c7")
+              ),
+            int64s = listOf(1, 2, 3),
+            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )
       )
