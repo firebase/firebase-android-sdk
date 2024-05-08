@@ -874,40 +874,60 @@ query GetNonNullableListsByKey($key: NonNullableLists_Key!) @auth(level: PUBLIC)
   }
 }
 
+mutation InsertNullableLists(
+  $strings: [String!],
+  $ints: [Int!],
+  $floats: [Float!],
+  $booleans: [Boolean!],
+  $uuids: [UUID!],
+  $int64s: [Int64!],
+  $dates: [Date!],
+  $timestamps: [Timestamp!],
+) @auth(level: PUBLIC) {
+  nullableLists_insert(data: {
+    strings: $strings,
+    ints: $ints,
+    floats: $floats,
+    booleans: $booleans,
+    uuids: $uuids,
+    int64s: $int64s,
+    dates: $dates,
+    timestamps: $timestamps,
+  })
+}
 
+mutation UpdateNullableListsByKey(
+  $key: NullableLists_Key!,
+  $strings: [String!],
+  $ints: [Int!],
+  $floats: [Float!],
+  $booleans: [Boolean!],
+  $uuids: [UUID!],
+  $int64s: [Int64!],
+  $dates: [Date!],
+  $timestamps: [Timestamp!],
+) @auth(level: PUBLIC) {
+  nullableLists_update(key: $key, data: {
+    strings: $strings,
+    ints: $ints,
+    floats: $floats,
+    booleans: $booleans,
+    uuids: $uuids,
+    int64s: $int64s,
+    dates: $dates,
+    timestamps: $timestamps,
+  })
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+query GetNullableListsByKey($key: NullableLists_Key!) @auth(level: PUBLIC) {
+  nullableLists(key: $key) {
+    strings
+    ints
+    floats
+    booleans
+    uuids
+    int64s
+    dates
+    timestamps
+  }
+}
