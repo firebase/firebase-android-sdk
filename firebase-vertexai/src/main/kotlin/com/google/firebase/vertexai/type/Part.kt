@@ -59,6 +59,15 @@ class FunctionCallPart(val name: String, val args: Map<String, String>) : Part
  */
 class FunctionResponsePart(val name: String, val response: JSONObject) : Part
 
+/**
+ * Represents an URI-based data with a specified media type.
+ *
+ * @param uri The Google Cloud Storage for Firebase URI of a file to be included in the request.
+ * @param mimeType an IANA standard MIME type. For supported value see the
+ * [vertex documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
+ */
+class FileDataPart(val uri: String, val mimeType: String) : Part
+
 /** Returns the part as a [String] if it represents text, and null otherwise */
 fun Part.asTextOrNull(): String? = (this as? TextPart)?.text
 
@@ -67,3 +76,6 @@ fun Part.asImageOrNull(): Bitmap? = (this as? ImagePart)?.image
 
 /** Returns the part as a [BlobPart] if it represents a blob, and null otherwise */
 fun Part.asBlobPartOrNull(): BlobPart? = this as? BlobPart
+
+/** Returns the part as a [FileDataPart] if it represents a file, and null otherwise */
+fun Part.asFileDataOrNull(): FileDataPart? = this as? FileDataPart
