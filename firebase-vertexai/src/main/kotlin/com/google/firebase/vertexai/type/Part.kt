@@ -62,9 +62,8 @@ class FunctionResponsePart(val name: String, val response: JSONObject) : Part
 /**
  * Represents an URI-based data with a specified media type.
  *
- * @param uri The URI of file to be sent in the request
+ * @param uri The Google Cloud Storage for Firebase URI of a file to be included in the request.
  * @param mimeType an IANA standard MIME type. For supported value see the
- * *
  * [vertex documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  */
 class FileDataPart(val uri: String, val mimeType: String) : Part
