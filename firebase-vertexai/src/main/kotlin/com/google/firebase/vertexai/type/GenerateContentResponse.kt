@@ -30,8 +30,10 @@ class GenerateContentResponse(
   val promptFeedback: PromptFeedback?,
   val usageMetadata: UsageMetadata?,
 ) {
-  /** Convenience field representing the first text part in the response, if it exists. */
-  val text: String? by lazy { firstPartAs<TextPart>()?.text }
+  /** Convenience field representing all the text parts in the response, if they exists. */
+  val text: String? by lazy {
+    candidates.first().content.parts.filterIsInstance<TextPart>().joinToString(" ") { it.text }
+  }
 
   /** Convenience field to get all the function call parts in the request, if they exist */
   val functionCalls: List<FunctionCallPart> by lazy {
