@@ -165,7 +165,11 @@ internal class DataConnectAuth(
         buildString {
           append(this@toScrubbedAccessToken, 0, 6)
           append("<redacted>")
-          append(this@toScrubbedAccessToken, length - 6, length)
+          append(
+            this@toScrubbedAccessToken,
+            this@toScrubbedAccessToken.length - 6,
+            this@toScrubbedAccessToken.length
+          )
         }
       }
 
