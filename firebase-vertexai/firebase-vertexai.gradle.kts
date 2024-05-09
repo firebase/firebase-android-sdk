@@ -47,9 +47,9 @@ android {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:20.4.3")
+  api("com.google.firebase:firebase-common:21.0.0")
 
-  implementation("com.google.firebase:firebase-components:17.1.5")
+  implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation("com.google.ai.client.generativeai:common:0.4.0")
