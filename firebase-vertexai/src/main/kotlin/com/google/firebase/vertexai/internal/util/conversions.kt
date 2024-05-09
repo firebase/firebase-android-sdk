@@ -31,6 +31,7 @@ import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
+import com.google.firebase.vertexai.type.FileDataPart
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
@@ -88,6 +89,10 @@ internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.
       FunctionCallPart(FunctionCall(name, args.orEmpty()))
     is com.google.firebase.vertexai.type.FunctionResponsePart ->
       FunctionResponsePart(FunctionResponse(name, response.toInternal()))
+    is FileDataPart ->
+      com.google.ai.client.generativeai.common.shared.FileDataPart(
+        com.google.ai.client.generativeai.common.shared.FileData(mimeType = mimeType, fileUri = uri)
+      )
     else ->
       throw SerializationException(
         "The given subclass of Part (${javaClass.simpleName}) is not supported in the serialization yet."
@@ -194,7 +199,7 @@ internal fun com.google.ai.client.generativeai.common.server.Candidate.toPublic(
 }
 
 internal fun com.google.ai.client.generativeai.common.UsageMetadata.toPublic(): UsageMetadata =
-  UsageMetadata(promptTokenCount, candidatesTokenCount, totalTokenCount)
+  UsageMetadata(promptTokenCount ?: 0, candidatesTokenCount ?: 0, totalTokenCount ?: 0)
 
 internal fun com.google.ai.client.generativeai.common.shared.Content.toPublic(): Content =
   Content(role, parts.map { it.toPublic() })
@@ -220,6 +225,8 @@ internal fun com.google.ai.client.generativeai.common.shared.Part.toPublic(): Pa
         functionResponse.name,
         functionResponse.response.toPublic(),
       )
+    is com.google.ai.client.generativeai.common.shared.FileDataPart ->
+      FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
       throw SerializationException(
         "Unsupported part type \"${javaClass.simpleName}\" provided. This model may not be supported by this SDK."
