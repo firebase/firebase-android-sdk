@@ -35,6 +35,8 @@ import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
+import io.grpc.Status
+import io.grpc.StatusException
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
@@ -152,6 +154,9 @@ internal class DataConnectGrpcClient(
         .get()
         .runCatching { executeQuery(request, createMetadata(requestId)) }
         .onFailure {
+          if (it is StatusException && it.status.code == Status.UNAUTHENTICATED.code) {
+            dataConnectAuth.invalidateToken()
+          }
           logger.warn(it) {
             "executeQuery() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
           }
@@ -189,6 +194,9 @@ internal class DataConnectGrpcClient(
         .get()
         .runCatching { executeMutation(request, createMetadata(requestId)) }
         .onFailure {
+          if (it is StatusException && it.status.code == Status.UNAUTHENTICATED.code) {
+            dataConnectAuth.invalidateToken()
+          }
           logger.warn(it) {
             "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
           }
