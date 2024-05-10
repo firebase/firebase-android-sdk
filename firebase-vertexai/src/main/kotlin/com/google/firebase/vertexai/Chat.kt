@@ -36,8 +36,8 @@ import kotlinx.coroutines.flow.onEach
  * Handles the capturing and storage of the communication with the model, providing methods for
  * further interaction.
  *
- * **Note:** This object is not thread-safe, and calling [sendMessage] multiple times without waiting
- * for a response will throw an [InvalidStateException].
+ * **Note:** This object is not thread-safe, and calling [sendMessage] multiple times without
+ * waiting for a response will throw an [InvalidStateException].
  *
  * @param model The model to use for the interaction
  * @property history The previous interactions with the model

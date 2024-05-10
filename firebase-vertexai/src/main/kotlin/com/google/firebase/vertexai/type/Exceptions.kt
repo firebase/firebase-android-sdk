@@ -74,7 +74,7 @@ class SerializationException(message: String, cause: Throwable? = null) :
 class ServerException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
-/** The server responded that the API Key is no valid. */
+/** The server responded that the API Key is not valid. */
 class InvalidAPIKeyException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
@@ -95,9 +95,9 @@ class PromptBlockedException(val response: GenerateContentResponse, cause: Throw
 /**
  * The user's location (region) is not supported by the API.
  *
- * See the Google documentation for a
- * [list of regions](https://ai.google.dev/available_regions#available_regions) (countries and
- * territories) where the API is available.
+ * See the documentation for a
+ * [list of regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+ * (countries and territories) where the API is available.
  */
 // TODO(rlazo): Add secondary constructor to pass through the message?
 class UnsupportedUserLocationException(cause: Throwable? = null) :

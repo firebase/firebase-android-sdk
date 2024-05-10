@@ -36,8 +36,8 @@ class ImagePart(val image: Bitmap) : Part
 /**
  * Represents binary data with an associated MIME type sent to and received from requests.
  *
- * @param mimeType an IANA standard MIME type. For supported value see the
- * [vertex documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
+ * @param mimeType an IANA standard MIME type. For supported values, see the
+ * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  * .
  * @param blob the binary data as a [ByteArray]
  */
