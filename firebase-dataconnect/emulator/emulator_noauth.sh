@@ -18,9 +18,10 @@ set -euo pipefail
 
 readonly CLI_ARGS=(
   ./cli
-  -alsologtostderr=1
+  -logbuflevel=-1
+  -logtostderr
   -stderrthreshold=0
-  -log_dir=logs
+  -v=0
   dev
   -service_location=us-central1
   -config_dir=dataconnect
