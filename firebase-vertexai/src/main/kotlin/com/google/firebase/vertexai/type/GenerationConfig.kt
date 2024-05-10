@@ -25,6 +25,9 @@ package com.google.firebase.vertexai.type
  * @property candidateCount The max *unique* responses to return
  * @property maxOutputTokens The max tokens to generate per response
  * @property stopSequences A list of strings to stop generation on occurrence of
+ * * @property responseMimeType Response type for generated candidate text. See the
+ * [vertex docs](https://cloud.google.com/vertex-ai/docs/reference/rest/v1beta1/GenerationConfig)
+ * for a list of supported types.
  */
 class GenerationConfig
 private constructor(
@@ -33,7 +36,8 @@ private constructor(
   val topP: Float?,
   val candidateCount: Int?,
   val maxOutputTokens: Int?,
-  val stopSequences: List<String>?
+  val stopSequences: List<String>?,
+  val responseMimeType: String?
 ) {
 
   /**
@@ -58,6 +62,7 @@ private constructor(
     @JvmField var candidateCount: Int? = null
     @JvmField var maxOutputTokens: Int? = null
     @JvmField var stopSequences: List<String>? = null
+    @JvmField var responseMimeType: String? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     fun build() =
@@ -67,7 +72,8 @@ private constructor(
         topP = topP,
         candidateCount = candidateCount,
         maxOutputTokens = maxOutputTokens,
-        stopSequences = stopSequences
+        stopSequences = stopSequences,
+        responseMimeType = responseMimeType
       )
   }
 

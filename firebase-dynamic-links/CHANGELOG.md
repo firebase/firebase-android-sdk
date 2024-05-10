@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 22.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-dynamic-links` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.2.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-dynamic-links-ktx`
   to `com.google.firebase:firebase-dynamic-links` under the `com.google.firebase.dynamiclinks` package.

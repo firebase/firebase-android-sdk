@@ -55,6 +55,13 @@ class Content @JvmOverloads constructor(val role: String? = "user", val parts: L
     /** Wraps the provided [image] inside an [ImagePart] and adds it to the [parts] list. */
     @JvmName("addImage") fun image(image: Bitmap) = part(ImagePart(image))
 
+    /**
+     * Wraps the provided Google Cloud Storage for Firebase [uri] and [mimeType] inside a
+     * [FileDataPart] and adds it to the [parts] list.
+     */
+    @JvmName("addFileData")
+    fun fileData(uri: String, mimeType: String) = part(FileDataPart(uri, mimeType))
+
     /** Returns a new [Content] using the defined [role] and [parts]. */
     fun build(): Content = Content(role, parts)
   }
