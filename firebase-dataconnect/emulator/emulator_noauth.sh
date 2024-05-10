@@ -20,8 +20,7 @@ readonly CLI_ARGS=(
   ./cli
   -logbuflevel=-1
   -logtostderr
-  -stderrthreshold=0
-  -v=0
+  -v=9
   dev
   -service_location=us-central1
   -config_dir=dataconnect
