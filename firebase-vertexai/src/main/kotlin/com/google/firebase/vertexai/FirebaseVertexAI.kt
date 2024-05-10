@@ -30,7 +30,7 @@ import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
-/** Entry point for all Firebase Vertex AI functionality. */
+/** Entry point for all _Vertex AI for Firebase_ functionality. */
 class FirebaseVertexAI
 internal constructor(
   private val firebaseApp: FirebaseApp,
