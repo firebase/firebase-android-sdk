@@ -29,9 +29,9 @@ import com.google.firebase.vertexai.internal.util.toPublic
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.FirebaseVertexAIException
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
-import com.google.firebase.vertexai.type.GoogleGenerativeAIException
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.ResponseStoppedException
@@ -130,7 +130,7 @@ internal constructor(
     try {
       controller.generateContent(constructRequest(*prompt)).toPublic().validate()
     } catch (e: Throwable) {
-      throw GoogleGenerativeAIException.from(e)
+      throw FirebaseVertexAIException.from(e)
     }
 
   /**
@@ -142,7 +142,7 @@ internal constructor(
   fun generateContentStream(vararg prompt: Content): Flow<GenerateContentResponse> =
     controller
       .generateContentStream(constructRequest(*prompt))
-      .catch { throw GoogleGenerativeAIException.from(it) }
+      .catch { throw FirebaseVertexAIException.from(it) }
       .map { it.toPublic().validate() }
 
   /**
