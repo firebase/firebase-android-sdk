@@ -16,6 +16,7 @@ apply plugin: 'com.android.application'
 // Firebase performance plugin, the relevant dependency is specified in the "buildSrc/build-src.gradle"
 apply plugin: 'com.google.firebase.firebase-perf'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+apply plugin: 'copy-google-services'
 
 // Since Test Lab devices are wiped off immediately (for both Security and Privacy reasons) we have
 // previously seen issues pertaining to the App not sending data to our backend when the
@@ -27,7 +28,7 @@ firebaseTestLab {
 }
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion project.compileSdkVersion
 
     namespace "com.google.firebase.testing.fireperf"
     // Specifies the build type that the Android plugin should use to run the instrumentation tests.
@@ -52,8 +53,8 @@ android {
         // https://developer.android.com/studio/build/application-id.html
         applicationId "com.google.firebase.testing.fireperf"
 
-        minSdkVersion 18
-        targetSdkVersion 28
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         versionCode 3
         versionName "3.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -112,7 +113,3 @@ dependencies {
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.google.firebase.testing.fireperf"
-apply from: '../../gradle/googleServices.gradle'

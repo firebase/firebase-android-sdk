@@ -17,7 +17,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.messaging.FirebaseMessaging.GMS_PACKAGE;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -33,16 +39,25 @@ import android.os.Binder;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.Transformer;
+import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.TransportFactory;
+import com.google.android.gms.cloudmessaging.CloudMessage;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.messaging.reporting.MessagingClientEventExtension;
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import com.google.firebase.messaging.testing.FirebaseIidRoboTestHelper;
@@ -79,11 +94,11 @@ public final class FirebaseMessagingRoboTest {
   private static final String PROJECT_ID = FirebaseIidRoboTestHelper.PROJECT_ID;
   private static final String API_KEY = FirebaseIidRoboTestHelper.API_KEY;
 
+  private static final Provider<TransportFactory> EMPTY_TRANSPORT_FACTORY = () -> null;
+
   private Application context;
-  private FirebaseMessaging firebaseMessaging;
   private final FakeScheduledExecutorService fakeScheduledExecutorService =
       new FakeScheduledExecutorService();
-  private TopicsSubscriber topicSubscriber;
 
   @Before
   public void setUp() throws InterruptedException, ExecutionException, TimeoutException {
@@ -104,10 +119,6 @@ public final class FirebaseMessagingRoboTest {
             .setApiKey(API_KEY)
             .setGcmSenderId(FirebaseIidRoboTestHelper.SENDER_ID)
             .build());
-    firebaseMessaging = FirebaseMessaging.getInstance();
-    // Making sure Topic subscriber task succeeds before proceeding with tests.
-    topicSubscriber = Tasks.await(firebaseMessaging.getTopicsSubscriberTask(), 5, SECONDS);
-    clearTopicOperations();
 
     // To make sure proxy initialization happens before test execution.
     ProxyNotificationInitializer.initialize(context);
@@ -162,7 +173,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     assertThat(messaging.isAutoInitEnabled()).isTrue();
@@ -190,7 +201,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     assertThat(messaging.isAutoInitEnabled()).isFalse();
@@ -208,7 +219,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     assertThat(messaging.isAutoInitEnabled()).isFalse();
@@ -220,7 +231,7 @@ public final class FirebaseMessagingRoboTest {
     FirebaseApp.getInstance().setDataCollectionDefaultEnabled(false);
     editManifestApplicationMetadata().remove("firebase_messaging_auto_init_enabled");
 
-    assertThat(firebaseMessaging.isAutoInitEnabled()).isFalse();
+    assertThat(FirebaseMessaging.getInstance().isAutoInitEnabled()).isFalse();
   }
 
   /** Test that setting auto-init at runtime overrides the default setting. */
@@ -239,9 +250,9 @@ public final class FirebaseMessagingRoboTest {
     FirebaseApp.getInstance().setDataCollectionDefaultEnabled(false);
     editManifestApplicationMetadata().remove("firebase_messaging_auto_init_enabled");
 
-    firebaseMessaging.setAutoInitEnabled(true);
+    FirebaseMessaging.getInstance().setAutoInitEnabled(true);
 
-    assertThat(firebaseMessaging.isAutoInitEnabled()).isTrue();
+    assertThat(FirebaseMessaging.getInstance().isAutoInitEnabled()).isTrue();
   }
 
   /** Test that setting auto-init enabled at runtime overrides the manifest value. */
@@ -255,7 +266,7 @@ public final class FirebaseMessagingRoboTest {
             () -> mock(UserAgentPublisher.class),
             () -> mock(HeartBeatInfo.class),
             mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class));
 
     messaging.setAutoInitEnabled(true);
@@ -271,8 +282,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
@@ -298,8 +308,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             mockFiid,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
             mockGmsRpc,
@@ -323,8 +332,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,
@@ -352,8 +360,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             mockFiid,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
             mockGmsRpc,
@@ -373,15 +380,17 @@ public final class FirebaseMessagingRoboTest {
   @Test
   @Config(sdk = VERSION_CODES.Q)
   public void isProxyNotificationEnabledDefaultsToTrueForNewerDevices() {
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    when(mockGmsRpc.setRetainProxiedNotifications(anyBoolean())).thenReturn(Tasks.forResult(null));
+    when(mockGmsRpc.getProxyNotificationData()).thenReturn(Tasks.forResult(null));
     FirebaseMessaging messaging =
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
-            mock(GmsRpc.class),
+            mockGmsRpc,
             Runnable::run,
             Runnable::run,
             Runnable::run);
@@ -396,8 +405,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             mock(Metadata.class),
             mock(GmsRpc.class),
@@ -461,6 +469,277 @@ public final class FirebaseMessagingRoboTest {
     assertThat(FirebaseMessaging.getInstance().isNotificationDelegationEnabled()).isFalse();
   }
 
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void initialProxy_noGoogleAnalyticsNoBigQuery() {
+    // Delete SharedPreferences to clear out the RetainProxiedNotifications setting.
+    context.deleteSharedPreferences("com.google.firebase.messaging");
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+
+    createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ false);
+
+    // GA not present and BigQuery export not enabled, shouldn't retain proxy notifications.
+    verify(mockGmsRpc).setRetainProxiedNotifications(false);
+    verify(mockGmsRpc, never()).getProxyNotificationData();
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void initialProxy_googleAnalyticsNoBigQuery() {
+    // Delete SharedPreferences to clear out the RetainProxiedNotifications setting.
+    context.deleteSharedPreferences("com.google.firebase.messaging");
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+
+    createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ true);
+
+    // GA present and BigQuery export not enabled, should retain proxy notifications.
+    verify(mockGmsRpc).setRetainProxiedNotifications(true);
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void initialProxy_noGoogleAnalyticsBigQuery() {
+    // Delete SharedPreferences to clear out the RetainProxiedNotifications setting.
+    context.deleteSharedPreferences("com.google.firebase.messaging");
+    editManifestApplicationMetadata()
+        .putBoolean("delivery_metrics_exported_to_big_query_enabled", true);
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+
+    createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ false);
+
+    // GA not present and BigQuery export enabled, should retain proxy notifications.
+    verify(mockGmsRpc).setRetainProxiedNotifications(true);
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void initialProxy_googleAnalyticsBigQuery() {
+    // Delete SharedPreferences to clear out the RetainProxiedNotifications setting.
+    context.deleteSharedPreferences("com.google.firebase.messaging");
+    // Enable BigQuery export.
+    editManifestApplicationMetadata()
+        .putBoolean("delivery_metrics_exported_to_big_query_enabled", true);
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+
+    createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ true);
+
+    // GA present and BigQuery export enabled, should retain proxy notifications.
+    verify(mockGmsRpc).setRetainProxiedNotifications(true);
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.P)
+  public void initialProxy_preQ() {
+    // Delete SharedPreferences to clear out the RetainProxiedNotifications setting.
+    context.deleteSharedPreferences("com.google.firebase.messaging");
+    // Enable BigQuery export.
+    editManifestApplicationMetadata()
+        .putBoolean("delivery_metrics_exported_to_big_query_enabled", true);
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+
+    createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ true);
+
+    // Shouldn't set retention on a version that doesn't support proxy.
+    verify(mockGmsRpc, never()).setRetainProxiedNotifications(anyBoolean());
+    verify(mockGmsRpc, never()).getProxyNotificationData();
+  }
+
+  private static class FakeFirelogTransportFactory implements TransportFactory {
+    final Transport<?> mockTransport;
+
+    FakeFirelogTransportFactory(Transport<?> transport) {
+      mockTransport = transport;
+    }
+
+    @Override
+    public <T> Transport<T> getTransport(
+        String name, Class<T> payloadType, Transformer<T, byte[]> payloadTransformer) {
+      throw new IllegalStateException("unimplemented");
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T> Transport<T> getTransport(
+        String name,
+        Class<T> payloadType,
+        Encoding payloadEncoding,
+        Transformer<T, byte[]> payloadTransformer) {
+      return (Transport<T>) mockTransport;
+    }
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  @SuppressWarnings("unchecked")
+  public void initializeProxy_handlesProxyNotifications() {
+    // Enable BigQuery export so that it will try to log to Firelog if it receives proxy data.
+    editManifestApplicationMetadata()
+        .putBoolean("delivery_metrics_exported_to_big_query_enabled", true);
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+    when(mockGmsRpc.getProxyNotificationData())
+        .thenReturn(
+            Tasks.forResult(new CloudMessage(new Intent())),
+            Tasks.forResult(new CloudMessage(new Intent())),
+            Tasks.forResult(null));
+    Transport<MessagingClientEventExtension> mockTransport = mock(Transport.class);
+
+    FirebaseMessaging unused =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            () -> new FakeFirelogTransportFactory(mockTransport),
+            mock(Subscriber.class),
+            mock(Metadata.class),
+            mockGmsRpc,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    // Should have logged to Firelog twice, once for each notification returned.
+    verify(mockTransport, times(2)).send(any());
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  @SuppressWarnings("unchecked")
+  public void initializeProxy_handlesNoPendingProxyNotifications() {
+    // Enable BigQuery export so that it will try to log to Firelog if it receives proxy data.
+    editManifestApplicationMetadata()
+        .putBoolean("delivery_metrics_exported_to_big_query_enabled", true);
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+    when(mockGmsRpc.getProxyNotificationData()).thenReturn(Tasks.forResult(null));
+    Transport<MessagingClientEventExtension> mockTransport = mock(Transport.class);
+
+    FirebaseMessaging unused =
+        new FirebaseMessaging(
+            FirebaseApp.getInstance(),
+            /* iid= */ null,
+            () -> new FakeFirelogTransportFactory(mockTransport),
+            mock(Subscriber.class),
+            mock(Metadata.class),
+            mockGmsRpc,
+            Runnable::run,
+            Runnable::run,
+            Runnable::run);
+
+    // Should have tried to retrieve data, but should not have logged since there is no pending
+    // proxy notification data.
+    verify(mockGmsRpc).getProxyNotificationData();
+    verify(mockTransport, never()).send(any());
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void setDeliveryMetricsExportToBigQuery_enablesProxyRetention() {
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+    FirebaseMessaging messaging =
+        createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ false);
+    clearInvocations(mockGmsRpc);
+
+    messaging.setDeliveryMetricsExportToBigQuery(true);
+
+    // Enabling BigQuery should start retaining proxy notifications.
+    verify(mockGmsRpc).setRetainProxiedNotifications(true);
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void setDeliveryMetricsExportToBigQuery_disablesProxyRetention() {
+    // Enable BigQuery export.
+    editManifestApplicationMetadata()
+        .putBoolean("delivery_metrics_exported_to_big_query_enabled", true);
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+    // Create an instance that should retain proxy notifications because BigQuery is enabled.
+    FirebaseMessaging messaging =
+        createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ false);
+    clearInvocations(mockGmsRpc);
+
+    messaging.setDeliveryMetricsExportToBigQuery(false);
+
+    // Disabling BigQuery should stop retaining proxy notifications.
+    verify(mockGmsRpc).setRetainProxiedNotifications(false);
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void setDeliveryMetricsExportToBigQuery_noProxyRetentionChange() {
+    // Enable BigQuery export.
+    editManifestApplicationMetadata()
+        .putBoolean("delivery_metrics_exported_to_big_query_enabled", true);
+    // Create an instance that should retain proxy notifications due to AnalyticsConnector and
+    // BigQuery enabled.
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+    FirebaseMessaging messaging =
+        createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ true);
+    clearInvocations(mockGmsRpc);
+
+    messaging.setDeliveryMetricsExportToBigQuery(false);
+
+    // Disabling BigQuery should keep retaining proxy notifications since AnalyticsConnector is
+    // still present.
+    verify(mockGmsRpc, never()).setRetainProxiedNotifications(anyBoolean());
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void setNotificationDelegationEnabled_disablesProxyRetention() throws Exception {
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+    // Create an instance that should save that proxy notifications are retained.
+    FirebaseMessaging messaging =
+        createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ true);
+    clearInvocations(mockGmsRpc);
+
+    Tasks.await(messaging.setNotificationDelegationEnabled(false));
+
+    // Disabling proxy should stop retaining proxy notifications.
+    ShadowLooper.idleMainLooper();
+    verify(mockGmsRpc).setRetainProxiedNotifications(false);
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.Q)
+  public void setNotificationDelegationEnabled_enablesProxyRetention() throws Exception {
+    GmsRpc mockGmsRpc = createMockGmsRpc();
+    // Create an instance that should retain proxy notifications, but disable proxy notifications.
+    FirebaseMessaging messaging =
+        createFirebaseMessageInstance(mockGmsRpc, /* analyticsConnectorPresent= */ true);
+    Tasks.await(messaging.setNotificationDelegationEnabled(false));
+    ShadowLooper.idleMainLooper();
+    clearInvocations(mockGmsRpc);
+
+    Tasks.await(messaging.setNotificationDelegationEnabled(true));
+
+    // Enabling proxy should start retaining proxy notifications again.
+    ShadowLooper.idleMainLooper();
+    verify(mockGmsRpc).setRetainProxiedNotifications(true);
+  }
+
+  private GmsRpc createMockGmsRpc() {
+    GmsRpc mockGmsRpc = mock(GmsRpc.class);
+    when(mockGmsRpc.setRetainProxiedNotifications(anyBoolean())).thenReturn(Tasks.forResult(null));
+    when(mockGmsRpc.getProxyNotificationData()).thenReturn(Tasks.forResult(null));
+    return mockGmsRpc;
+  }
+
+  @CanIgnoreReturnValue
+  private FirebaseMessaging createFirebaseMessageInstance(
+      GmsRpc gmsRpc, boolean analyticsConnectorPresent) {
+    FirebaseApp firebaseAppSpy = spy(FirebaseApp.getInstance());
+    when(firebaseAppSpy.get(AnalyticsConnector.class))
+        .thenReturn(analyticsConnectorPresent ? mock(AnalyticsConnector.class) : null);
+
+    return new FirebaseMessaging(
+        firebaseAppSpy,
+        /* iid= */ null,
+        () -> mock(TransportFactory.class),
+        mock(Subscriber.class),
+        mock(Metadata.class),
+        gmsRpc,
+        Runnable::run,
+        Runnable::run,
+        Runnable::run);
+  }
+
   /*
   TODO b/286544512
   @Test
@@ -510,8 +789,7 @@ public final class FirebaseMessagingRoboTest {
         new FirebaseMessaging(
             FirebaseApp.getInstance(),
             /* iid= */ null,
-            mock(FirebaseInstallationsApi.class),
-            /* transportFactory= */ null,
+            EMPTY_TRANSPORT_FACTORY,
             mock(Subscriber.class),
             new Metadata(context),
             mockGmsRpc,

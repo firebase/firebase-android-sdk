@@ -55,13 +55,20 @@ internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: Fireba
           false
         }
       if (!isServiceBound) {
-        appContext.unbindService(serviceConnection)
+        unbindServiceSafely(appContext, serviceConnection)
         Log.i(TAG, "Session lifecycle service binding failed.")
       }
     }
   }
 
-  companion object {
+  private fun unbindServiceSafely(appContext: Context, serviceConnection: ServiceConnection) =
+    try {
+      appContext.unbindService(serviceConnection)
+    } catch (ex: IllegalArgumentException) {
+      Log.w(TAG, "Session lifecycle service binding failed.", ex)
+    }
+
+  private companion object {
     const val TAG = "LifecycleServiceBinder"
   }
 }

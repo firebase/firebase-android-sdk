@@ -17,6 +17,7 @@ plugins {
     id("kotlin-android")
     id 'firebase-vendor'
     id 'com.google.protobuf'
+    id("copy-google-services")
 }
 
 firebaseLibrary {
@@ -34,7 +35,7 @@ protobuf {
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                java { }
+                java {}
             }
         }
     }
@@ -42,10 +43,10 @@ protobuf {
 
 android {
     namespace "com.google.firebase.ml.modeldownloader"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         multiDexEnabled true
         versionName version
@@ -55,9 +56,14 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
     testOptions {
         unitTests {
             includeAndroidResources = true
+        }
+
+        unitTests.all {
+            jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
         }
     }
     lint {
@@ -78,9 +84,9 @@ dependencies {
 
     api 'com.google.android.gms:play-services-tasks:18.0.1'
     api 'com.google.firebase:firebase-annotations:16.2.0'
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
     api('com.google.firebase:firebase-datatransport:18.2.0'){
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
@@ -117,8 +123,7 @@ dependencies {
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    testImplementation 'org.mockito:mockito-core:3.3.3'
-    testImplementation 'org.mockito:mockito-core:3.6.0'
+    testImplementation 'org.mockito:mockito-core:5.2.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
@@ -127,10 +132,3 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.13.1'
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.google.firebase.ml.modeldownloader"
-apply from: '../gradle/googleServices.gradle'

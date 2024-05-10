@@ -49,7 +49,10 @@ data class Project(
                 ${if (customizePom != null) "customizePom {$customizePom}" else ""}
                 ${"publishJavadoc = $publishJavadoc"}
             }
-            ${if (libraryType == LibraryType.ANDROID) "android.compileSdkVersion = 26" else ""}
+            ${if (libraryType == LibraryType.ANDROID) "android {\n" +
+            "  compileSdkVersion 30\n" +
+            "  namespace 'com.example" + libraryGroup + "'" +
+            "\n}\n" else ""}
 
             dependencies {
             ${projectDependencies.joinToString("\n") { "implementation project(':${it.name}')" }}

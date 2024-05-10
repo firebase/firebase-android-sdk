@@ -26,9 +26,10 @@ import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
-import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;

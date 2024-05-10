@@ -15,7 +15,8 @@
 package com.google.firebase.perf.application;
 
 import androidx.annotation.NonNull;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import java.lang.ref.WeakReference;

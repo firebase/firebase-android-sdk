@@ -1,6 +1,15 @@
 # Unreleased
-* [fixed] Fixed Bad token exception while showing FIAM
-  (Buganizer [#330727156](b/330727156))
+
+
+# 21.0.0
+* [fixed] Fixed bad token exception while showing FIAM
+  (GitHub [#5567](//github.com/firebase/firebase-android-sdk/issues/5567))
+  (GitHub [#5780](//github.com/firebase/firebase-android-sdk/issues/5780))
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.4.1
 * [fixed] Fixed FirebaseInAppMessagingDisplayErrorListener not being called

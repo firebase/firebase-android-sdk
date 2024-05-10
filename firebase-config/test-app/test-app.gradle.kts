@@ -24,15 +24,20 @@ plugins {
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
   id("com.google.firebase.firebase-perf")
+  id("copy-google-services")
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion : Int by rootProject
+
   namespace = "com.google.firebase.testing.config"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
     applicationId = "com.google.firebase.testing.config"
-    minSdk = 16
-    targetSdk = 33
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true
@@ -42,7 +47,9 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
 }
 
 dependencies {
@@ -58,9 +65,9 @@ dependencies {
   // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
-  implementation("com.google.firebase:firebase-common:20.3.3")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.3")
-  implementation("com.google.firebase:firebase-components:17.1.1")
+  implementation("com.google.firebase:firebase-common:21.0.0")
+  implementation("com.google.firebase:firebase-common-ktx:21.0.0")
+  implementation("com.google.firebase:firebase-components:18.0.0")
 
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
   runtimeOnly("com.google.firebase:firebase-installations:17.1.4")
@@ -74,14 +81,10 @@ dependencies {
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.2")
+  androidTestImplementation("com.google.firebase:firebase-common-ktx:21.0.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
-
-extra["packageName"] = "com.google.firebase.testing.config"
-
-apply(from = "../../gradle/googleServices.gradle")
 
 apply<FirebaseTestLabPlugin>()

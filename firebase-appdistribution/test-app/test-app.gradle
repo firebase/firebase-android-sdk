@@ -16,6 +16,7 @@ plugins {
     id 'kotlin-android'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.appdistribution'
+    id 'copy-google-services'
 }
 
 android {
@@ -85,7 +86,7 @@ dependencies {
     implementation "androidx.fragment:fragment-ktx:1.5.3"
     implementation "com.google.android.gms:play-services-tasks:18.0.2"
     implementation 'com.google.android.material:material:1.6.1'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
+    implementation 'com.google.firebase:firebase-common-ktx:21.0.0'
     // Shake detection
     implementation 'com.squareup:seismic:1.0.3'
     // Other dependencies
@@ -96,7 +97,3 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.2'
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.googletest.firebase.appdistribution.testapp"
-apply from: '../../gradle/googleServices.gradle'

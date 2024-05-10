@@ -15,6 +15,7 @@
 plugins {
     id("firebase-library")
     id("kotlin-android")
+    id("copy-google-services")
 }
 
 firebaseLibrary {
@@ -24,11 +25,12 @@ firebaseLibrary {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
   installation.timeOutInMs = 60 * 1000
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database"
   defaultConfig {
@@ -48,6 +50,7 @@ android {
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
     testOptions.unitTests.isIncludeAndroidResources = true
@@ -56,9 +59,9 @@ android {
 
 dependencies {
     api("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
     api("com.google.firebase:firebase-auth-interop:20.0.0") {
      exclude(group = "com.google.firebase", module = "firebase-common")
      exclude(group = "com.google.firebase", module = "firebase-components")
@@ -91,7 +94,3 @@ dependencies {
     androidTestImplementation(libs.quickcheck)
     androidTestImplementation(libs.truth)
 }
-
-ext["packageName"] = "com.google.firebase.database"
-
-apply("../gradle/googleServices.gradle")

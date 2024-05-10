@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 21.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-database` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.3.1
 * [fixed] Fixed the `@Exclude` annotation doesn't been propagated to Kotlin's corresponding bridge methods. [#5626](//github.com/firebase/firebase-android-sdk/pull/5706)
 
