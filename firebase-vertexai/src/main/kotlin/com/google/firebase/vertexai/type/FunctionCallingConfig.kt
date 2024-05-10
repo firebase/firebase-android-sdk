@@ -23,6 +23,8 @@ package com.google.firebase.vertexai.type
  * @param mode The function calling mode of the model
  */
 class FunctionCallingConfig(val mode: Mode) {
+
+  /** Configuration for dictating when the model should call the attached function. */
   enum class Mode {
     /**
      * The default behavior for function calling. The model calls functions to answer queries at its

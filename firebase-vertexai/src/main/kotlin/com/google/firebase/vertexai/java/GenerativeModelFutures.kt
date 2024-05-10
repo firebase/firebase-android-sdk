@@ -34,23 +34,23 @@ import org.reactivestreams.Publisher
 abstract class GenerativeModelFutures internal constructor() {
 
   /**
-   * Generates a response from the backend with the provided [Content]s.
+   * Generates a response from the backend with the provided [Content].
    *
-   * @param prompt A group of [Content]s to send to the model.
+   * @param prompt A group of [Content] to send to the model.
    */
   abstract fun generateContent(vararg prompt: Content): ListenableFuture<GenerateContentResponse>
 
   /**
-   * Generates a streaming response from the backend with the provided [Content]s.
+   * Generates a streaming response from the backend with the provided [Content].
    *
-   * @param prompt A group of [Content]s to send to the model.
+   * @param prompt A group of [Content] to send to the model.
    */
   abstract fun generateContentStream(vararg prompt: Content): Publisher<GenerateContentResponse>
 
   /**
    * Counts the number of tokens used in a prompt.
    *
-   * @param prompt A group of [Content]s to count tokens of.
+   * @param prompt A group of [Content] to count tokens of.
    */
   abstract fun countTokens(vararg prompt: Content): ListenableFuture<CountTokensResponse>
 

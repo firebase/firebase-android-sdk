@@ -133,9 +133,21 @@ internal constructor(
   }
 }
 
+/**
+ * A declared function, including implementation, that a model can be given access to in order to
+ * gain info or complete tasks.
+ *
+ * @see [OneParameterFunction]
+ * @see [TwoParameterFunction]
+ * @see [ThreeParameterFunction]
+ * @see [FourParameterFunction]
+ */
 abstract class FunctionDeclaration(val name: String, val description: String) {
+
+  /** The parameters of the attached function as a list of [Schema]. */
   abstract fun getParameters(): List<Schema<out Any?>>
 
+  /** Run the attached function with the provided [arguments][part]. */
   abstract suspend fun execute(part: FunctionCallPart): JSONObject
 }
 
@@ -164,6 +176,11 @@ class Schema<T>(
   val items: Schema<out Any>? = null,
   val type: FunctionType<T>,
 ) {
+  /**
+   * Parses an instance of this [Schema] from the provided [String].
+   *
+   * This is done via the [parse][FunctionType.parse] method of [type].
+   */
   fun fromString(value: String?) = type.parse(value)
 
   companion object {

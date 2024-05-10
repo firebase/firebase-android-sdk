@@ -31,13 +31,13 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 
 /**
- * Representation of a back and forth interaction with a model.
+ * Representation of a multi-turn interaction with a model.
  *
  * Handles the capturing and storage of the communication with the model, providing methods for
  * further interaction.
  *
- * Note: This object is not thread-safe, and calling [sendMessage] multiple times without waiting
- * for a response will throw an [InvalidStateException].
+ * **Note:** This object is not thread-safe, and calling [sendMessage] multiple times without
+ * waiting for a response will throw an [InvalidStateException].
  *
  * @param model The model to use for the interaction
  * @property history The previous interactions with the model
@@ -89,7 +89,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
   }
 
   /**
-   * Generates a streaming response from the backend with the provided [Content]s.
+   * Generates a streaming response from the backend with the provided [Content].
    *
    * @param prompt A [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.

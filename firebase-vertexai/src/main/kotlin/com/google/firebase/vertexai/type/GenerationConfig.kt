@@ -40,6 +40,21 @@ private constructor(
   val responseMimeType: String?
 ) {
 
+  /**
+   * Builder for creating a [GenerationConfig].
+   *
+   * Mainly intended for Java interop. Kotlin consumers should use [generationConfig] for a more
+   * idiomatic experience.
+   *
+   * @property temperature The degree of randomness in token selection, typically between 0 and 1
+   * @property topK The sum of probabilities to collect to during token selection
+   * @property topP How many tokens to select amongst the highest probabilities
+   * @property candidateCount The max *unique* responses to return
+   * @property maxOutputTokens The max tokens to generate per response
+   * @property stopSequences A list of strings to stop generation on occurrence of
+   *
+   * @see [generationConfig]
+   */
   class Builder {
     @JvmField var temperature: Float? = null
     @JvmField var topK: Int? = null
@@ -49,6 +64,7 @@ private constructor(
     @JvmField var stopSequences: List<String>? = null
     @JvmField var responseMimeType: String? = null
 
+    /** Create a new [GenerationConfig] with the attached arguments. */
     fun build() =
       GenerationConfig(
         temperature = temperature,
@@ -62,6 +78,14 @@ private constructor(
   }
 
   companion object {
+
+    /**
+     * Alternative casing for [GenerationConfig.Builder]:
+     *
+     * ```
+     * val config = GenerationConfig.builder()
+     * ```
+     */
     fun builder() = Builder()
   }
 }

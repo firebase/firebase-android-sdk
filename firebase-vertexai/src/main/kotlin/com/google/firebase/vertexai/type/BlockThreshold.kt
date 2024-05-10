@@ -17,7 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Represents the threshold for some [HarmCategory] that is allowed and blocked by [SafetySetting]s.
+ * Represents the threshold for some [HarmCategory] that is allowed and blocked by [SafetySetting].
  */
 enum class BlockThreshold {
   /** The threshold was not specified. */

@@ -67,7 +67,7 @@ enum class FinishReason {
   /** Model hit the token limit. */
   MAX_TOKENS,
 
-  /** [SafetySetting]s prevented the model from outputting content. */
+  /** [SafetySetting] prevented the model from outputting content. */
   SAFETY,
 
   /** Model began looping. */

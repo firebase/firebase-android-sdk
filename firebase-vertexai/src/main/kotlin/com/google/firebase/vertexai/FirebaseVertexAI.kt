@@ -30,7 +30,7 @@ import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
-/** Entry point for all Firebase Vertex AI functionality. */
+/** Entry point for all _Vertex AI for Firebase_ functionality. */
 class FirebaseVertexAI
 internal constructor(
   private val firebaseApp: FirebaseApp,
@@ -44,11 +44,10 @@ internal constructor(
    *
    * @param modelName name of the model in the backend
    * @param generationConfig configuration parameters to use for content generation
-   * @param safetySettings the safety bounds to use during alongside prompts during content
-   * generation
+   * @param safetySettings safety bounds to use during alongside prompts during content generation
    * @param requestOptions configuration options to utilize during backend communication
-   * @param tools the list of tools to make available to the model
-   * @param toolConfig the configuration that defines how the model handles the tools provided
+   * @param tools list of tools to make available to the model
+   * @param toolConfig configuration that defines how the model handles the tools provided
    * @param systemInstruction contains a [Content] that directs the model to behave a certain way
    */
   @JvmOverloads
@@ -90,7 +89,7 @@ internal constructor(
      * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location]
      *
      * @param location location identifier, defaults to `us-central1`; see available
-     * [Vertex AI regions](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
+     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
      */
     @JvmStatic
     @JvmOverloads

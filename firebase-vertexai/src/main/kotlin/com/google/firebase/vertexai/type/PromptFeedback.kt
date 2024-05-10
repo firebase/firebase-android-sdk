@@ -20,7 +20,7 @@ package com.google.firebase.vertexai.type
  * Feedback on the prompt provided in the request.
  *
  * @param blockReason The reason that content was blocked, if at all.
- * @param safetyRatings A list of relevant [SafetyRating]s.
+ * @param safetyRatings A list of relevant [SafetyRating].
  */
 class PromptFeedback(
   val blockReason: BlockReason?,
@@ -35,7 +35,7 @@ enum class BlockReason {
   /** Content was blocked for an unspecified reason. */
   UNSPECIFIED,
 
-  /** Content was blocked for violating provided [SafetySetting]s. */
+  /** Content was blocked for violating provided [SafetySetting]. */
   SAFETY,
 
   /** Content was blocked for another reason. */
