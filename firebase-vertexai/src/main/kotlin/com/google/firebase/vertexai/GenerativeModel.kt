@@ -47,7 +47,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 
-/** A facilitator for a given multimodal model (for example, Gemini). */
+/**
+ * A controller for communicating with the API of a given multimodal model (for example, Gemini).
+ */
 class GenerativeModel
 internal constructor(
   val modelName: String,
