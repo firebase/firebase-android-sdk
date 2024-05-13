@@ -75,7 +75,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
       val date = dateFormatter.parse(strUppercase, position)
       requireNotNull(date)
       require(position.index == 19) {
-        "position.index=${position.index}, but expected 19 (str=$strUppercase)"
+        "position.index=${position.index}, but expected 19 (str=$str)"
       }
       Timestamp(date).seconds
     }
