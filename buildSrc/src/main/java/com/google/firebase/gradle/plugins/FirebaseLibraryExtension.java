@@ -44,7 +44,7 @@ public class FirebaseLibraryExtension {
   public boolean publishSources;
 
   /**
-   * Indicates the library is in beta, and must publish with a -beta version tag
+   * Indicates the library is in a preview mode (alpha, beta, ...), and must publish with a tag
    */
   public String previewMode = "";
 
