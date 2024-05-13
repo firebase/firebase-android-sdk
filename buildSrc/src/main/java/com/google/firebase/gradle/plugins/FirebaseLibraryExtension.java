@@ -46,7 +46,7 @@ public class FirebaseLibraryExtension {
   /**
    * Indicates the library is in beta, and must publish with a -beta version tag
    */
-  public boolean beta = false;
+  public String previewMode = "";
 
   /** Static analysis configuration. */
   public final FirebaseStaticAnalysis staticAnalysis;

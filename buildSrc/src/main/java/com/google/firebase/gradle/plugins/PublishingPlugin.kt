@@ -350,9 +350,9 @@ abstract class PublishingPlugin : Plugin<Project> {
           )
         }
         for (releasingLibrary in releasinglibraries) {
-          if (releasingLibrary.beta && !releasingLibrary.version.contains("beta")) {
+          if (!releasingLibrary.version.contains(releasingLibrary.previewMode)) {
             throw GradleException(
-              "You are releasing a beta SDK (${releasingLibrary.artifactId}) as non beta!"
+              "You are releasing a ${releasingLibrary.previewMode} SDK (${releasingLibrary.artifactId}) as ${releasingLibrary.version}!"
             )
           }
         }
