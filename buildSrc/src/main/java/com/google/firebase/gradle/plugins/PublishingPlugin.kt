@@ -345,8 +345,8 @@ abstract class PublishingPlugin : Plugin<Project> {
         if (releasinglibraries.isEmpty()) {
           throw GradleException(
             "No projects to release. " +
-                    "Ensure you've specified the projectsToPublish parameter, " +
-                    "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
+              "Ensure you've specified the projectsToPublish parameter, " +
+              "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
           )
         }
         for (releasingLibrary in releasinglibraries) {
