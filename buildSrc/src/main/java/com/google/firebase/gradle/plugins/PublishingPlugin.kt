@@ -345,17 +345,18 @@ abstract class PublishingPlugin : Plugin<Project> {
         if (releasinglibraries.isEmpty()) {
           throw GradleException(
             "No projects to release. " +
-              "Ensure you've specified the projectsToPublish parameter, " +
-              "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
+                    "Ensure you've specified the projectsToPublish parameter, " +
+                    "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
           )
         }
-        for (releasingLibrary in releasingLibraries) {
+        for (releasingLibrary in releasinglibraries) {
           if (releasingLibrary.beta && !releasingLibrary.version.contains("beta")) {
             throw GradleException(
               "You are releasing a beta SDK (${releasingLibrary.artifactId}) as non beta!"
             )
           }
         }
+      }
     }
 
   /**
