@@ -59,47 +59,51 @@ public object TimestampSerializer : KSerializer<Timestamp> {
   // TODO: Replace this implementation with Instant.parse() once minSdkVersion is bumped to at
   //  least 26 (Build.VERSION_CODES.O).
   private fun timestampFromString(str: String): Timestamp {
-    val time = str.uppercase()
+    val strUppercase = str.uppercase()
 
-    val timeZoneOffsetFormatRegex =
-      Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{0,9})?Z$")
-    val nanoFormatRegex = Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$")
+    // If the timestamp string is 1985-04-12T23:20:50.123456789-07:00, the time-secfrac part
+    // (.123456789) is optional. And time-offset part can either be Z or +xx:xx or -xx:xx.
+    val regex =
+      Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{0,9})?(Z|[+-]\\d{2}:\\d{2})$")
 
-    require(time.matches(timeZoneOffsetFormatRegex) || time.matches(nanoFormatRegex)) {
-      "str=$time cannot be deserialized into Timestamp."
+    require(strUppercase.matches(regex)) {
+      "The str=$str given doesn't match RFC3339 format, so it cannot be deserialized into Timestamp."
     }
 
     val position = ParsePosition(0)
     val seconds = run {
-      val date = dateFormatter.parse(time.uppercase(), position)
+      val date = dateFormatter.parse(strUppercase, position)
       requireNotNull(date)
       require(position.index == 19) {
-        "position.index=${position.index}, but expected 19 (str=$time)"
+        "position.index=${position.index}, but expected 19 (str=$strUppercase)"
       }
       Timestamp(date).seconds
     }
 
-    /** When Timestamp sent from server is in time zone offset format. */
-    if (time[position.index] == '+' || time[position.index] == '-') {
-      val addTimeDiffer = time[position.index] == '+'
-      val hours = time.substring(position.index + 1, position.index + 3).toInt()
-      val minutes = time.substring(position.index + 4, position.index + 6).toInt()
-      val timeZoneDiffer = hours * 3600 + minutes * 60
-      return Timestamp(seconds + if (addTimeDiffer) timeZoneDiffer else -timeZoneDiffer, 0)
+    // For time-secfrac part, when running against different databases, this precision might change,
+    // and server will truncate it to 0/3/6 digits precision without throwing an error.
+    var nanoseconds = 0
+    // Parse the nanoseconds.
+    if (strUppercase[position.index] == '.') {
+      val nanoStrStart = ++position.index
+      // We don't check for boundary since the string has pass the regex test.
+      while (strUppercase[position.index].isDigit()) {
+        position.index++
+      }
+      val nanosecondsStr = strUppercase.substring(nanoStrStart, position.index)
+      nanoseconds = nanosecondsStr.padEnd(9, '0').toInt()
     }
 
-    /**
-     * When Timestamp sent from server is in nanosecond precision format. Please note, when running
-     * against different databases, this precision might change, and server will truncate it to
-     * 0/3/6 digits precision without throwing an error.
-     */
-    return if (time[position.index] == 'Z') {
-      Timestamp(seconds, 0)
-    } else {
-      val nanosecondsStr = time.substring(position.index + 1, time.length - 1)
-      val nanoseconds = nanosecondsStr.padEnd(9, '0').toInt()
-      Timestamp(seconds, nanoseconds)
+    if (strUppercase[position.index] == 'Z') {
+      return Timestamp(seconds, nanoseconds)
     }
+
+    // Parse the +xx:xx or -xx:xx time-offset part.
+    val addTimeDiffer = strUppercase[position.index] == '+'
+    val hours = strUppercase.substring(position.index + 1, position.index + 3).toInt()
+    val minutes = strUppercase.substring(position.index + 4, position.index + 6).toInt()
+    val timeZoneDiffer = hours * 3600 + minutes * 60
+    return Timestamp(seconds + if (addTimeDiffer) timeZoneDiffer else -timeZoneDiffer, nanoseconds)
   }
 
   override fun serialize(encoder: Encoder, value: Timestamp) {

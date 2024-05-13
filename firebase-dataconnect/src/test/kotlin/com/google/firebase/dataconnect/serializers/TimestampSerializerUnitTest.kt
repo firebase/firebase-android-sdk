@@ -77,19 +77,47 @@ class TimestampSerializerUnitTest {
 
   @Test
   fun `decoding should succeed when time offset is 0`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05-00:00")).isEqualTo(Timestamp(1136214245, 0))
+    assertThat(decodeTimestamp("2006-01-02T15:04:05-00:00"))
+      .isEqualTo(decodeTimestamp("2006-01-02T15:04:05Z"))
 
-    assertThat(decodeTimestamp("2006-01-02T15:04:05+00:00")).isEqualTo(Timestamp(1136214245, 0))
+    assertThat(decodeTimestamp("2006-01-02T15:04:05+00:00"))
+      .isEqualTo(decodeTimestamp("2006-01-02T15:04:05Z"))
   }
 
   @Test
   fun `decoding should succeed when time offset is positive`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05+23:50")).isEqualTo(Timestamp(1136300045, 0))
+    assertThat(decodeTimestamp("2006-01-02T15:04:05+23:50"))
+      .isEqualTo(decodeTimestamp("2006-01-03T14:54:05Z"))
   }
 
   @Test
   fun `decoding should succeed when time offset is negative`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05-05:10")).isEqualTo(Timestamp(1136195645, 0))
+    assertThat(decodeTimestamp("2006-01-02T15:04:05-05:10"))
+      .isEqualTo(decodeTimestamp("2006-01-02T09:54:05Z"))
+  }
+
+  @Test
+  fun `decoding should succeed when there are both time-secfrac and - time offset`() {
+    assertThat(decodeTimestamp("2023-05-21T11:04:05.462-12:07"))
+      .isEqualTo(decodeTimestamp("2023-05-20T22:57:05.462Z"))
+
+    assertThat(decodeTimestamp("2053-11-02T15:04:05.743393-05:10"))
+      .isEqualTo(decodeTimestamp("2053-11-02T09:54:05.743393Z"))
+
+    assertThat(decodeTimestamp("1538-03-05T15:04:05.653498752-03:01"))
+      .isEqualTo(decodeTimestamp("1538-03-05T12:03:05.653498752Z"))
+  }
+
+  @Test
+  fun `decoding should succeed when there are both time-secfrac and + time offset`() {
+    assertThat(decodeTimestamp("2023-05-21T11:04:05.662+12:07"))
+      .isEqualTo(decodeTimestamp("2023-05-21T23:11:05.662Z"))
+
+    assertThat(decodeTimestamp("2144-01-02T15:04:05.753493+01:00"))
+      .isEqualTo(decodeTimestamp("2144-01-02T16:04:05.753493Z"))
+
+    assertThat(decodeTimestamp("1358-03-05T15:04:05.527094582+13:03"))
+      .isEqualTo(decodeTimestamp("1358-03-06T04:07:05.527094582Z"))
   }
 
   @Test
