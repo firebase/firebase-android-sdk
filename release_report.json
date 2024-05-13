@@ -1,0 +1,47 @@
+{
+    "changesByLibraryName": {
+        "firebase-perf": [
+            {
+                "commitId": "8f2d30ed7e56407c6379888b5ccd7f6cd379b4d6",
+                "prId": "5885",
+                "author": "argzdev",
+                "message": "openStream should not be intercepted if Firebase Perf is not initialized (#5885)\n\nProposed fix for #5584:\r\n\r\n### Issue\r\nCrash happens if a URL connection is opened e.g. `url.openStream()` when\r\n`TransportManager` has not been initialized. If developer wants to\r\nprogrammatically enable Firebase using FirebaseOptions, but have\r\nincluded the Firebase Perf plugin, the app will crash after doing a\r\nnetwork call.\r\n\r\n### Steps to reproduce\r\n1. Add Firebase perf plugin\r\n- Module `build.gradle`\r\n```\r\nplugins {\r\n    alias(libs.plugins.android.application) apply false\r\n    alias(libs.plugins.jetbrains.kotlin.android) apply false\r\n    id(\"com.google.gms.google-services\") version \"4.4.1\" apply false\r\n    id(\"com.google.firebase.firebase-perf\") version \"1.4.2\" apply false\r\n}\r\n```\r\n- App `build.gradle`\r\n```\r\nplugins {\r\n    alias(libs.plugins.android.application)\r\n    alias(libs.plugins.jetbrains.kotlin.android)\r\n    id(\"com.google.gms.google-services\")\r\n    id(\"com.google.firebase.firebase-perf\")\r\n}\r\n```\r\n2. Disable Firebase\r\n```xml\r\n        <provider\r\n            android:name=\"com.google.firebase.provider.FirebaseInitProvider\"\r\n            android:authorities=\"${applicationId}.firebaseinitprovider\"\r\n            tools:node=\"remove\"\r\n            />   \r\n```\r\n3. Do a network call\r\n```\r\nval url = URL(\"https\", \"www.amazon.com\", 443, \"\")\r\nval inputStream = url.openStream()\r\n```\r\n\r\n### Investigation\r\n1. `openStream` in `FirebasePerfUrlConnection` intercepts all urls that\r\nopens connections.\r\n5. `openStream` requires `TransportManager` to be initialized\r\n6. `TransportManager` is only initialized after `FirebasePerformance`\r\nhas been initialized\r\n\r\n### Solution\r\nIf `TransportManager` is not initialized, we should simply return the\r\nURL openStream and not intercept the connection.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f2d30ed7e56407c6379888b5ccd7f6cd379b4d6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5885"
+            }
+        ],
+        "firebase-perf/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "61cb7340349c30f7949306378105e401c7039b3b",
+                "prId": "",
+                "author": "David Motsonashvili",
+                "message": "replace beta with previewMode\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/61cb7340349c30f7949306378105e401c7039b3b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "a00ca2f2c10d0b4604bf6fa4a407343d36895ca3",
+                "prId": "",
+                "author": "David Motsonashvili",
+                "message": "mark vertex as beta\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a00ca2f2c10d0b4604bf6fa4a407343d36895ca3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "4d2fbfd4077a97da438419e1e81131fcacffd297",
+                "prId": "5958",
+                "author": "Rodrigo Lazo",
+                "message": "Vertex ai (#5958)\n\nCo-authored-by: David Motsonashvili <davidmotson@gmail.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>\r\nCo-authored-by: Rosário P. Fernandes <rosariopf@google.com>\r\nCo-authored-by: Vinay Guthal <vguthal@google.com>\r\nCo-authored-by: VinayGuthal <vguthal109@gmail.com>\r\nCo-authored-by: emilypgoogle <110422458+emilypgoogle@users.noreply.github.com>\r\nCo-authored-by: themiswang <themisw@google.com>\r\nCo-authored-by: argzdev <alvinrustan@google.com>\r\nCo-authored-by: Ryan Wilson <wilsonryan@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4d2fbfd4077a97da438419e1e81131fcacffd297",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5958"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx"
+    ]
+}
