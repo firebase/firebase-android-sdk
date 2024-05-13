@@ -24,10 +24,6 @@ import org.gradle.api.tasks.TaskAction
 
 abstract class GmavenVersionChecker : DefaultTask() {
 
-  companion object {
-    private val PERMITTED_TO_LEAVE_BETA = setOf<String>()
-  }
-
   @get:Input abstract val groupId: Property<String>
 
   @get:Input abstract val artifactId: Property<String>
@@ -79,16 +75,6 @@ abstract class GmavenVersionChecker : DefaultTask() {
             info
         )
       }
-    }
-    if (
-      latestMavenVersion.contains("beta") &&
-        !version.get().contains("beta") &&
-        !PERMITTED_TO_LEAVE_BETA.contains(artifactId.get())
-    ) {
-      throw GradleException(
-        "version from gradle.properties is exiting beta, if this is intentional please edit GmavenVersionChecker.kt" +
-          info
-      )
     }
   }
 }

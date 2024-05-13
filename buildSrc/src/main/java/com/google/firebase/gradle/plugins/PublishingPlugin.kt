@@ -349,7 +349,13 @@ abstract class PublishingPlugin : Plugin<Project> {
               "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
           )
         }
-      }
+        for (releasingLibrary in releasingLibraries) {
+          if (releasingLibrary.beta && !releasingLibrary.version.contains("beta")) {
+            throw GradleException(
+              "You are releasing a beta SDK (${releasingLibrary.artifactId}) as non beta!"
+            )
+          }
+        }
     }
 
   /**
