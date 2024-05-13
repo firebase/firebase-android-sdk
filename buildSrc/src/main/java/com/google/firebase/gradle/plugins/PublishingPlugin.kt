@@ -352,7 +352,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         for (releasingLibrary in releasinglibraries) {
           if (!releasingLibrary.version.contains(releasingLibrary.previewMode)) {
             throw GradleException(
-              "You are releasing a ${releasingLibrary.previewMode} SDK (${releasingLibrary.artifactId}) as ${releasingLibrary.version}!"
+              "You are releasing a ${releasingLibrary.previewMode} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version}!"
             )
           }
         }
