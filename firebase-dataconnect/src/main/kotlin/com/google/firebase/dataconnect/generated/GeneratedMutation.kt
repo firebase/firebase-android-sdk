@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.generated
 
 import com.google.firebase.dataconnect.MutationRef
 
+/** The specialization of [GeneratedOperation] for mutations. */
 public interface GeneratedMutation<C : GeneratedConnector, Data, Variables> :
   GeneratedOperation<C, Data, Variables> {
   override fun ref(variables: Variables): MutationRef<Data, Variables> =

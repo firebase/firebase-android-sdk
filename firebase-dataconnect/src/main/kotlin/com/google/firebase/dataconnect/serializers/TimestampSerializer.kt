@@ -29,6 +29,11 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 // Googlers see go/firemat:timestamps for specifications.
+
+/**
+ * An implementation of [KSerializer] for serializing and deserializing [Timestamp] objects in the
+ * wire format expected by the Firebase Data Connect backend.
+ */
 public object TimestampSerializer : KSerializer<Timestamp> {
   private val threadLocalDateFormatter =
     object : ThreadLocal<SimpleDateFormat>() {
@@ -67,7 +72,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
       Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{0,9})?(Z|[+-]\\d{2}:\\d{2})$")
 
     require(strUppercase.matches(regex)) {
-      "The str=$str given doesn't match RFC3339 format, so it cannot be deserialized into Timestamp."
+      "Value does not conform to the RFC3339 specification (str=$str)"
     }
 
     val position = ParsePosition(0)

@@ -16,10 +16,12 @@
 
 package com.google.firebase.dataconnect
 
+/** A specialization of [OperationRef] for _mutation_ operations. */
 public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
   override suspend fun execute(): MutationResult<Data, Variables>
 }
 
+/** A specialization of [OperationRef] for [MutationRef]. */
 public interface MutationResult<Data, Variables> : OperationResult<Data, Variables> {
   override val ref: MutationRef<Data, Variables>
 }

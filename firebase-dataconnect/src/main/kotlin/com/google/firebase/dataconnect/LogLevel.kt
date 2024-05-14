@@ -16,14 +16,19 @@
 
 package com.google.firebase.dataconnect
 
+/**
+ * The log levels supported by [FirebaseDataConnect].
+ *
+ * @see FirebaseDataConnect.Companion.logLevel
+ */
 public enum class LogLevel {
+
+  /** Log all messages, including detailed debug logs. */
   DEBUG,
+
+  /** Only log warnings and errors; this is the default log level. */
   WARN,
+
+  /** Do not log anything. */
   NONE,
 }
-
-public var FirebaseDataConnect.Companion.logLevel: LogLevel
-  get() = com.google.firebase.dataconnect.core.logLevel
-  set(newLogLevel) {
-    com.google.firebase.dataconnect.core.logLevel = newLogLevel
-  }
