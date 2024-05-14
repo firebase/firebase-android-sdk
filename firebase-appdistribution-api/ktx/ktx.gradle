@@ -23,6 +23,7 @@ firebaseLibrary {
     publishJavadoc = false
     publishReleaseNotes = false
     publishSources = true
+    previewMode = "beta"
 }
 
 android {

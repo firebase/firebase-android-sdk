@@ -20,6 +20,7 @@ plugins {
 firebaseLibrary {
     libraryGroup "appdistribution"
     publishJavadoc = false
+    previewMode = "beta"
 }
 
 android {
