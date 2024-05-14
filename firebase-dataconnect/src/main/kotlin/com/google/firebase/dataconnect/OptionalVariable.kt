@@ -44,7 +44,9 @@ public sealed interface OptionalVariable<out T> {
 
     override fun hashCode(): Int = value.hashCode()
     override fun equals(other: Any?): Boolean = other is Value<*> && value == other.value
-    override fun toString(): String = value.toString()
+    override fun toString(): String = value?.toString() ?: "null"
+
+    override fun hashCode(): Int = value?.hashCode() ?: 0
   }
 }
 
