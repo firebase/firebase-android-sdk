@@ -206,8 +206,8 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  GlobalsCache getGlobalsCache(User user) {
-    return new SQLiteGlobalsCache(this, user);
+  GlobalsCache getGlobalsCache() {
+    return new SQLiteGlobalsCache(this);
   }
 
   @Override

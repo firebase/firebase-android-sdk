@@ -719,16 +719,14 @@ class SQLiteSchema {
 
   private void createGlobalsTable() {
     ifTablesDontExist(
-            new String[] {"globals"},
-            () -> {
-              // A table of key value pairs by user.
-              db.execSQL(
-                      "CREATE TABLE globals ("
-                              + "uid TEXT, "
-                              + "global TEXT, "
-                              + "value BLOB, "
-                              + "PRIMARY KEY (uid, global))");
-            });
+        new String[] {"globals"},
+        () -> {
+          // A table of key value pairs by user.
+          db.execSQL(
+              "CREATE TABLE globals ("
+                  + "global TEXT PRIMARY KEY, "
+                  + "value BLOB)");
+        });
   }
 
   private boolean tableExists(String table) {

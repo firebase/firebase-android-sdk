@@ -33,7 +33,7 @@ public abstract class GlobalsCacheTest {
     @Before
     public void setUp() {
         persistence = getPersistence();
-        globalsCache = persistence.getGlobalsCache(User.UNAUTHENTICATED);
+        globalsCache = persistence.getGlobalsCache();
     }
 
     @After

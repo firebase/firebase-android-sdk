@@ -156,6 +156,7 @@ public final class LocalStore implements BundleCallback {
     this.persistence = persistence;
     this.queryEngine = queryEngine;
 
+    globalsCache = persistence.getGlobalsCache();
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
@@ -171,7 +172,6 @@ public final class LocalStore implements BundleCallback {
 
   private void initializeUserComponents(User user) {
     // TODO(indexing): Add spec tests that test these components change after a user change
-    globalsCache = persistence.getGlobalsCache(user);
     indexManager = persistence.getIndexManager(user);
     mutationQueue = persistence.getMutationQueue(user, indexManager);
     documentOverlayCache = persistence.getDocumentOverlayCache(user);
