@@ -34,5 +34,14 @@ readonly args=(
 echo "${args[*]}"
 "${args[@]}"
 
+if python -c pass ; then
+  readonly PYTHON_EXE=python
+elif python3 -c pass ; then
+  readonly PYTHON_EXE=python3
+else
+  echo "ERROR: unable to find python executable to start http server" &2
+  exit 1
+fi
+
 echo "Starting HTTP server to serve the generated documentation..."
-(cd "${PROJECT_ROOT_DIR}/firebase-dataconnect/build/dokka/html" && python -m http.server)
+(cd "${PROJECT_ROOT_DIR}/firebase-dataconnect/build/dokka/html" && "${PYTHON_EXE}" -m http.server)
