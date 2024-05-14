@@ -31,6 +31,7 @@ firebaseLibrary {
   testLab.enabled = false
   publishSources = true
   publishJavadoc = false
+  previewMode = "alpha"
 }
 
 android {
