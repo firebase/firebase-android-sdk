@@ -25,7 +25,7 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId 'com.google.apksize'
