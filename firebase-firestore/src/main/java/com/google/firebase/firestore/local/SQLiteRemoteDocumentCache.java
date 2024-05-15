@@ -112,6 +112,12 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
+  public void clear() {
+    db.execute("DELETE FROM remote_documents");
+    indexManager.clearIndexData();
+  }
+
+  @Override
   public MutableDocument get(DocumentKey documentKey) {
     return getAll(Collections.singletonList(documentKey)).get(documentKey);
   }

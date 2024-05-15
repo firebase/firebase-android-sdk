@@ -51,6 +51,9 @@ interface RemoteDocumentCache {
   /** Removes the cached entries for the given keys (no-op if no entry exists). */
   void removeAll(Collection<DocumentKey> keys);
 
+  /** Removes all cached entries. */
+  void clear();
+
   /**
    * Looks up an entry in the cache.
    *

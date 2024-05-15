@@ -146,6 +146,11 @@ public class MemoryComponentProvider extends ComponentProvider {
     }
 
     @Override
+    public void handleClearCache() {
+      getSyncEngine().handleClearCache();
+    }
+
+    @Override
     public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
       return getSyncEngine().getRemoteKeysForTarget(targetId);
     }

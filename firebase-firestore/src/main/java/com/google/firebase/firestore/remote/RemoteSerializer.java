@@ -75,6 +75,7 @@ import com.google.firestore.v1.StructuredQuery.UnaryFilter;
 import com.google.firestore.v1.Target;
 import com.google.firestore.v1.Target.DocumentsTarget;
 import com.google.firestore.v1.Target.QueryTarget;
+import com.google.firestore.v1.TargetChange;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.Int32Value;
 import io.grpc.Status;
@@ -1016,10 +1017,11 @@ public final class RemoteSerializer {
     if (watchChange.getResponseTypeCase() != ResponseTypeCase.TARGET_CHANGE) {
       return SnapshotVersion.NONE;
     }
-    if (watchChange.getTargetChange().getTargetIdsCount() != 0) {
+    TargetChange targetChange = watchChange.getTargetChange();
+    if (targetChange.getTargetIdsCount() != 0) {
       return SnapshotVersion.NONE;
     }
-    return decodeVersion(watchChange.getTargetChange().getReadTime());
+    return decodeVersion(targetChange.getReadTime());
   }
 
   private Status fromStatus(com.google.rpc.Status status) {

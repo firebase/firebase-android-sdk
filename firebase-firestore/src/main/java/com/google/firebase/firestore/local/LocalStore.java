@@ -230,6 +230,20 @@ public final class LocalStore implements BundleCallback {
     return localDocuments.getDocuments(changedKeys);
   }
 
+  public void clearCacheData() {
+    mutationQueue.clear();
+
+    // Clearing the mutation queue requires also clearing document overlays.
+    documentOverlayCache.clear();
+
+    remoteDocuments.clear();
+
+    // Clearing parents is only possible when both mutations and document cache are cleared.
+    indexManager.clearParents();
+
+    indexManager.clearIndexData();
+  }
+
   /** Accepts locally generated Mutations and commits them to storage. */
   public LocalDocumentsResult writeLocally(List<Mutation> mutations) {
     Timestamp localWriteTime = Timestamp.now();

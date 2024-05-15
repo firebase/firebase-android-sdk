@@ -515,6 +515,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
   }
 
+  @Override
+  public void handleClearCache() {
+    assertCallback("handleClearCache");
+
+    localStore.clearCacheData();
+    remoteStore.clearAllTargets();
+  }
+
   /**
    * Takes a snapshot of current mutation queue, and register a user task which will resolve when
    * all those mutations are either accepted or rejected by the server.

@@ -170,6 +170,12 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
+  public void clearParents() {
+    db.execute("DELETE FROM collection_parents");
+    collectionParentsCache.clear();
+  }
+
+  @Override
   public void addToCollectionParentIndex(ResourcePath collectionPath) {
     hardAssert(started, "IndexManager not started");
     hardAssert(collectionPath.length() % 2 == 1, "Expected a collection path.");
@@ -241,6 +247,8 @@ final class SQLiteIndexManager implements IndexManager {
 
     nextIndexToUpdate.clear();
     memoizedIndexes.clear();
+    memoizedMaxIndexId = -1;
+    memoizedMaxSequenceNumber = -1;
   }
 
   @Override
@@ -280,6 +288,32 @@ final class SQLiteIndexManager implements IndexManager {
         }
       }
     }
+  }
+
+  @Override
+  public void clearIndexData() {
+    db.execute("DELETE FROM index_entries");
+    db.execute("DELETE FROM index_state");
+    nextIndexToUpdate.clear();
+    memoizedIndexes.clear();
+    memoizedMaxIndexId = -1;
+    memoizedMaxSequenceNumber = -1;
+
+    db.query("SELECT index_id, collection_group, index_proto FROM index_configuration")
+        .forEach(
+            row -> {
+              try {
+                int indexId = row.getInt(0);
+                String collectionGroup = row.getString(1);
+                List<FieldIndex.Segment> segments =
+                        serializer.decodeFieldIndexSegments(Index.parseFrom(row.getBlob(2)));
+
+                // Store the index and update `memoizedMaxIndexId` and `memoizedMaxSequenceNumber`.
+                memoizeIndex(FieldIndex.create(indexId, collectionGroup, segments, FieldIndex.INITIAL_STATE));
+              } catch (InvalidProtocolBufferException e) {
+                throw fail("Failed to decode index: " + e);
+              }
+            });
   }
 
   /**

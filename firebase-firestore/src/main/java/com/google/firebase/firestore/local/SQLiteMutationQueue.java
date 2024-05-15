@@ -437,6 +437,15 @@ final class SQLiteMutationQueue implements MutationQueue {
         danglingMutationReferences);
   }
 
+  @Override
+  public void clear() {
+    db.execute("DELETE FROM mutations");
+    db.execute("DELETE FROM document_mutations");
+    db.execute("DELETE FROM mutation_queues");
+    nextBatchId = 1;
+    lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
+  }
+
   /**
    * Decodes mutation batch bytes obtained via substring. If the blob is smaller than
    * BLOB_MAX_INLINE_LENGTH, executes additional queries to load the rest of the blob.

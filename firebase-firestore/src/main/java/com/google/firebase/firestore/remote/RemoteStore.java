@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
@@ -47,6 +48,7 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -103,6 +105,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
      * now.
      */
     void handleOnlineStateChange(OnlineState onlineState);
+
+    /**
+     * Synchronization event that requires cache be cleared.
+     */
+    void handleClearCache();
 
     /**
      * Returns the set of remote document keys for the given target ID. This list includes the
@@ -468,8 +475,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         watchChange instanceof WatchTargetChange ? (WatchTargetChange) watchChange : null;
 
     if (watchTargetChange != null
-        && watchTargetChange.getChangeType().equals(WatchTargetChangeType.Removed)
-        && watchTargetChange.getCause() != null) {
+        && watchTargetChange.getChangeType().equals(WatchTargetChangeType.Removed)) {
       // There was an error on a target, don't wait for a consistent snapshot to raise events
       processTargetError(watchTargetChange);
     } else {
@@ -582,15 +588,38 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   }
 
   private void processTargetError(WatchTargetChange targetChange) {
-    hardAssert(targetChange.getCause() != null, "Processing target error without a cause");
+    Status cause = targetChange.getCause();
+    hardAssert(cause != null, "Processing target error without a cause");
     for (Integer targetId : targetChange.getTargetIds()) {
       // Ignore targets that have been removed already.
       if (listenTargets.containsKey(targetId)) {
         listenTargets.remove(targetId);
         watchChangeAggregator.removeTarget(targetId);
-        remoteStoreCallback.handleRejectedListen(targetId, targetChange.getCause());
+        remoteStoreCallback.handleRejectedListen(targetId, cause);
       }
     }
+  }
+
+  public void clearAllTargets() {
+    List<Integer> targetIds = new ArrayList<>();
+    for (Entry<Integer, TargetData> entry : listenTargets.entrySet()) {
+      switch (entry.getValue().getPurpose()) {
+        case LIMBO_RESOLUTION:
+          // Limbo resolutions are cleared when original listen is cleared.
+          continue;
+        case LISTEN:
+        case EXISTENCE_FILTER_MISMATCH:
+        case EXISTENCE_FILTER_MISMATCH_BLOOM:
+          targetIds.add(entry.getKey());
+      }
+    }
+    WatchTargetChange targetChange = new WatchTargetChange(
+        WatchTargetChangeType.Removed,
+        targetIds,
+        WatchStream.EMPTY_RESUME_TOKEN,
+        Status.ABORTED
+    );
+    processTargetError(targetChange);
   }
 
   // Write Stream

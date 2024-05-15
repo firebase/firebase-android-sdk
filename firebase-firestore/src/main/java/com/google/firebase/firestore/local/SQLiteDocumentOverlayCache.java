@@ -199,6 +199,11 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     return result;
   }
 
+  @Override
+  public void clear() {
+    db.execute("DELETE FROM document_overlays");
+  }
+
   private void processOverlaysInBackground(
       BackgroundQueue backgroundQueue, Map<DocumentKey, Overlay> results, Cursor row) {
     byte[] rawMutation = row.getBlob(0);

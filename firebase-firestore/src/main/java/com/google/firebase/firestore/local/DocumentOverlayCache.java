@@ -77,4 +77,9 @@ public interface DocumentOverlayCache {
    * @return Mapping of each document key in the collection group to its overlay.
    */
   Map<DocumentKey, Overlay> getOverlays(String collectionGroup, int sinceBatchId, int count);
+
+  /**
+   * Clear overlays. This should only be done when mutation queue is cleared.
+   */
+  void clear();
 }

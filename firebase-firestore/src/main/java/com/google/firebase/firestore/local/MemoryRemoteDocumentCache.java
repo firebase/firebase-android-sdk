@@ -75,6 +75,13 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
+  public void clear() {
+    hardAssert(indexManager != null, "setIndexManager() not called");
+    docs = emptyDocumentMap();
+    indexManager.clearIndexData();
+  }
+
+  @Override
   public MutableDocument get(DocumentKey key) {
     Document doc = docs.get(key);
     return doc != null ? doc.mutableCopy() : MutableDocument.newInvalidDocument(key);

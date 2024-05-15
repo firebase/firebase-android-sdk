@@ -109,7 +109,7 @@ public class WatchChangeAggregator {
     }
 
     for (int targetId : documentChange.getRemovedTargetIds()) {
-      removeDocumentFromTarget(targetId, documentKey, documentChange.getNewDocument());
+      removeDocumentFromTarget(targetId, documentKey, document);
     }
   }
 
@@ -526,6 +526,30 @@ public class WatchChangeAggregator {
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     for (DocumentKey key : existingKeys) {
       removeDocumentFromTarget(targetId, key, null);
+    }
+  }
+
+  private void resetAllTargets() {
+    for (Map.Entry<Integer, TargetState> entry : targetStates.entrySet()) {
+      Integer targetId = entry.getKey();
+      TargetState targetState = new TargetState();
+      entry.setValue(targetState);
+
+      if (!isActiveTarget(targetId)) {
+        continue;
+      }
+
+      ImmutableSortedSet<DocumentKey> existingKeys =
+              targetMetadataProvider.getRemoteKeysForTarget(targetId);
+      for (DocumentKey key : existingKeys) {
+        if (targetContainsDocument(targetId, key)) {
+          targetState.addDocumentChange(key, DocumentViewChange.Type.REMOVED);
+        } else {
+          // The document may have entered and left the target before we raised a snapshot, so we can
+          // just ignore the change.
+          targetState.removeDocumentChange(key);
+        }
+      }
     }
   }
 
