@@ -79,6 +79,23 @@ import kotlinx.serialization.SerializationStrategy
  * deserializers for classes annotated with `@Serializable`. Of course, applications are free to
  * write the serializers by hand as well.
  *
+ * ### Release Notes
+ *
+ * Release notes for the Firebase Data Connect Android API will be published here until it is merged
+ * into the `master` branch of https://github.com/firebase/firebase-android-sdk, at which point the
+ * release notes will become part of the regular Android SDK releases.
+ *
+ * ##### 16.0.0-alpha03 (not yet released)
+ * - KDoc comments added.
+ * - OptionalVariable: fix potential NullPointerException in toString() and hashCode().
+ * - TimestampSerializer: add support for time zones specified using +HH:MM or -HH:MM.
+ *
+ * ##### 16.0.0-alpha02 (May 13, 2024)
+ * - Internal code cleanup; no externally-visible changes.
+ *
+ * ##### 16.0.0-alpha01 (May 08, 2024)
+ * - Initial release.
+ *
  * ### Safe for Concurrent Use
  *
  * All methods and properties of [FirebaseDataConnect] are thread-safe and may be safely called
