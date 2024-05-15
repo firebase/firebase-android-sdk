@@ -18,6 +18,22 @@ package com.google.firebase.dataconnect.generated
 
 import com.google.firebase.dataconnect.QueryRef
 
+/**
+ * The specialization of [GeneratedOperation] for queries.
+ *
+ * ### Safe for Concurrent Use
+ *
+ * All methods and properties of [GeneratedQuery] are thread-safe and may be safely called and/or
+ * accessed concurrently from multiple threads and/or coroutines.
+ *
+ * ### Stable for Inheritance (after graduating to "Generally Available")
+ *
+ * The [GeneratedQuery] interface _is_ stable for inheritance in third-party libraries, as new
+ * methods will not be added to this interface and contracts of the existing methods will not be
+ * changed. Note, however, that this interface is still subject to changes, up to and including
+ * outright deletion, until the Firebase Data Connect product graduates from "alpha" and/or "beta"
+ * to "Generally Available" status.
+ */
 public interface GeneratedQuery<C : GeneratedConnector, Data, Variables> :
   GeneratedOperation<C, Data, Variables> {
   override fun ref(variables: Variables): QueryRef<Data, Variables> =

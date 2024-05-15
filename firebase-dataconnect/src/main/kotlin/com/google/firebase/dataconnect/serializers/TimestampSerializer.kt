@@ -29,6 +29,11 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 // Googlers see go/firemat:timestamps for specifications.
+
+/**
+ * An implementation of [KSerializer] for serializing and deserializing [Timestamp] objects in the
+ * wire format expected by the Firebase Data Connect backend.
+ */
 public object TimestampSerializer : KSerializer<Timestamp> {
   private val threadLocalDateFormatter =
     object : ThreadLocal<SimpleDateFormat>() {
@@ -56,22 +61,23 @@ public object TimestampSerializer : KSerializer<Timestamp> {
     return "$serializedSecond.${serializedNano}Z"
   }
 
-  /**
-   * Note: Timestamp sent from SDK is always 9 digits nanosecond precision, meaning there are 9
-   * digits in SSSSSSSSS parts. However, when running against different databases, this precision
-   * might change, and server will truncate it to 0/3/6 digits precision without throwing an error.
-   */
+  // TODO: Replace this implementation with Instant.parse() once minSdkVersion is bumped to at
+  //  least 26 (Build.VERSION_CODES.O).
   private fun timestampFromString(str: String): Timestamp {
-    // TODO: support +/- time zone offsets as well (b/337299540)
-    require(str.uppercase().endsWith("Z")) {
-      "the last character should be 'Z', but got '${str.takeLast(1)}' (str=$str)"
+    val strUppercase = str.uppercase()
+
+    // If the timestamp string is 1985-04-12T23:20:50.123456789-07:00, the time-secfrac part
+    // (.123456789) is optional. And time-offset part can either be Z or +xx:xx or -xx:xx.
+    val regex =
+      Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{0,9})?(Z|[+-]\\d{2}:\\d{2})$")
+
+    require(strUppercase.matches(regex)) {
+      "Value does not conform to the RFC3339 specification (str=$str)"
     }
 
-    // TODO: Replace this implementation with Instant.parse() once minSdkVersion is bumped to at
-    //  least 26 (Build.VERSION_CODES.O).
     val position = ParsePosition(0)
     val seconds = run {
-      val date = dateFormatter.parse(str.uppercase(), position)
+      val date = dateFormatter.parse(strUppercase, position)
       requireNotNull(date)
       require(position.index == 19) {
         "position.index=${position.index}, but expected 19 (str=$str)"
@@ -79,18 +85,30 @@ public object TimestampSerializer : KSerializer<Timestamp> {
       Timestamp(date).seconds
     }
 
-    val nanoseconds =
-      if (str[position.index] == 'Z' || str[position.index] == 'z') {
-        0
-      } else {
-        require(str[position.index] == '.') {
-          "str[${position.index}]=='${str[position.index]}', but expected '.' (str=$str)"
-        }
-        val nanosecondsStr = str.substring(position.index + 1, str.length - 1)
-        nanosecondsStr.padEnd(9, '0').toInt()
+    // For time-secfrac part, when running against different databases, this precision might change,
+    // and server will truncate it to 0/3/6 digits precision without throwing an error.
+    var nanoseconds = 0
+    // Parse the nanoseconds.
+    if (strUppercase[position.index] == '.') {
+      val nanoStrStart = ++position.index
+      // We don't check for boundary since the string has pass the regex test.
+      while (strUppercase[position.index].isDigit()) {
+        position.index++
       }
+      val nanosecondsStr = strUppercase.substring(nanoStrStart, position.index)
+      nanoseconds = nanosecondsStr.padEnd(9, '0').toInt()
+    }
 
-    return Timestamp(seconds, nanoseconds)
+    if (strUppercase[position.index] == 'Z') {
+      return Timestamp(seconds, nanoseconds)
+    }
+
+    // Parse the +xx:xx or -xx:xx time-offset part.
+    val addTimeDiffer = strUppercase[position.index] == '+'
+    val hours = strUppercase.substring(position.index + 1, position.index + 3).toInt()
+    val minutes = strUppercase.substring(position.index + 4, position.index + 6).toInt()
+    val timeZoneDiffer = hours * 3600 + minutes * 60
+    return Timestamp(seconds + if (addTimeDiffer) timeZoneDiffer else -timeZoneDiffer, nanoseconds)
   }
 
   override fun serialize(encoder: Encoder, value: Timestamp) {

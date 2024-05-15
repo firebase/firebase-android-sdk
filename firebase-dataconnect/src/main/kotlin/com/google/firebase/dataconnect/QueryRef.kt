@@ -16,12 +16,47 @@
 
 package com.google.firebase.dataconnect
 
+/**
+ * A specialization of [OperationRef] for _query_ operations.
+ *
+ * ### Safe for Concurrent Use
+ *
+ * All methods and properties of [QueryRef] are thread-safe and may be safely called and/or accessed
+ * concurrently from multiple threads and/or coroutines.
+ *
+ * ### Not Stable for Inheritance
+ *
+ * The [QueryRef] interface is _not_ stable for inheritance in third-party libraries, as new methods
+ * might be added to this interface or contracts of the existing methods can be changed.
+ */
 public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
   override suspend fun execute(): QueryResult<Data, Variables>
 
+  /**
+   * Subscribes to a query to be notified of updates to the query's data when the query is executed.
+   *
+   * At this time the notifications are _not_ realtime, and are _not_ pushed from the server.
+   * Instead, the notifications are sent whenever the query is explicitly executed by calling
+   * [QueryRef.execute].
+   *
+   * @return an object that can be used to subscribe to query results.
+   */
   public fun subscribe(): QuerySubscription<Data, Variables>
 }
 
+/**
+ * A specialization of [OperationResult] for [QueryRef].
+ *
+ * ### Safe for Concurrent Use
+ *
+ * All methods and properties of [QueryResult] are thread-safe and may be safely called and/or
+ * accessed concurrently from multiple threads and/or coroutines.
+ *
+ * ### Not Stable for Inheritance
+ *
+ * The [QueryResult] interface is _not_ stable for inheritance in third-party libraries, as new
+ * methods might be added to this interface or contracts of the existing methods can be changed.
+ */
 public interface QueryResult<Data, Variables> : OperationResult<Data, Variables> {
   override val ref: QueryRef<Data, Variables>
 }

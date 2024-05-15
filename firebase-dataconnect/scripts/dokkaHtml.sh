@@ -28,11 +28,10 @@ readonly args=(
   "-p"
   "${PROJECT_ROOT_DIR}"
   "--configure-on-demand"
+  ":firebase-dataconnect:ktfmtFormat"
   ":firebase-dataconnect:dokkaHtml"
+  ":firebase-dataconnect:dokkaHtmlServe"
 )
 
 echo "${args[*]}"
-"${args[@]}"
-
-echo "Starting HTTP server to serve the generated documentation..."
-(cd "${PROJECT_ROOT_DIR}/firebase-dataconnect/build/dokka/html" && python -m http.server)
+exec "${args[@]}"

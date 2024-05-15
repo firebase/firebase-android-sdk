@@ -28,6 +28,10 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+/**
+ * An implementation of [KSerializer] for serializing and deserializing [Date] objects in the wire
+ * format expected by the Firebase Data Connect backend.
+ */
 public object DateSerializer : KSerializer<Date> {
 
   private val threadLocalDateFormatter =

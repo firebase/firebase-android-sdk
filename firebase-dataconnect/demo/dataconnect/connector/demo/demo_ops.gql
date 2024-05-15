@@ -1,0 +1,20 @@
+mutation InsertPerson($name: String!, $age: Int) @auth(level: PUBLIC) {
+  person_insert(data: {
+    name: $name,
+    age: $age,
+  })
+}
+
+query GetPersonByKey($key: Person_Key!) @auth(level: PUBLIC) {
+  person(key: $key) {
+    name
+    age
+  }
+}
+
+query GetPersonByKeyAuth($key: Person_Key!) @auth(level: USER) {
+  person(key: $key) {
+    name
+    age
+  }
+}

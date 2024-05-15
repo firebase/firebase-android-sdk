@@ -19,6 +19,7 @@ plugins {
 
 firebaseLibrary {
     libraryGroup "appdistribution"
+    previewMode = "beta"
 }
 
 android {

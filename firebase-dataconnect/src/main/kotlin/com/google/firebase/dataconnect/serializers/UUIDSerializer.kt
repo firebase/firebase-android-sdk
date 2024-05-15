@@ -24,6 +24,10 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
+/**
+ * An implementation of [KSerializer] for serializing and deserializing [UUID] objects in the wire
+ * format expected by the Firebase Data Connect backend.
+ */
 public object UUIDSerializer : KSerializer<UUID> {
   override val descriptor: SerialDescriptor =
     PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)

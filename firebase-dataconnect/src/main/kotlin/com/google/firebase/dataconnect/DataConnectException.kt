@@ -16,5 +16,6 @@
 
 package com.google.firebase.dataconnect
 
+/** The exception thrown when an error occurs in Firebase Data Connect. */
 public open class DataConnectException(message: String, cause: Throwable? = null) :
   Exception(message, cause)

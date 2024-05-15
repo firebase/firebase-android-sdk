@@ -16,6 +16,8 @@
 
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import io.javalin.Javalin
+import io.javalin.http.staticfiles.Location
 
 plugins {
   id("firebase-library")
@@ -31,6 +33,7 @@ firebaseLibrary {
   testLab.enabled = false
   publishSources = true
   publishJavadoc = false
+  previewMode = "alpha"
 }
 
 android {
@@ -153,6 +156,10 @@ extra["packageName"] = "com.google.firebase.dataconnect"
 
 tasks.withType<DokkaTask>().configureEach {
   moduleName.set("firebase-dataconnect")
+  val cacheRootDirectory = layout.buildDirectory.dir("dokka/cache")
+  cacheRootDirectory.get().asFile.mkdirs()
+  cacheRoot.set(cacheRootDirectory)
+  mustRunAfter("ktfmtFormat")
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -166,5 +173,32 @@ tasks.withType<KotlinCompile>().all {
     if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
       kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
     }
+  }
+}
+
+// Runs dokkaHtml and starts a web server to serve it locally.
+tasks.register("dokkaHtmlServe") {
+  group = "documentation"
+  description = "Run a web server to serve the HTML output of the dokkaHtml task"
+  mustRunAfter("dokkaHtml")
+
+  doLast {
+    val port = 8000
+    val directory = layout.buildDirectory.dir("dokka/html").get().asFile.absolutePath
+
+    val javelin = Javalin.create { javalinConfig ->
+      javalinConfig.staticFiles.add { staticFileConfig ->
+        staticFileConfig.directory = directory
+        staticFileConfig.location = Location.EXTERNAL
+        staticFileConfig.hostedPath = "/"
+      }
+    }
+
+    javelin.start(port)
+    println("Starting HTTP server at http://localhost:$port which serves the contents of directory: $directory")
+    println("Press ENTER to stop the server")
+    readlnOrNull()
+    println("Stopping HTTP server at http://localhost:$port")
+    javelin.stop()
   }
 }

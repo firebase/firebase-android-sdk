@@ -43,6 +43,11 @@ public class FirebaseLibraryExtension {
   /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
 
+  /**
+   * Indicates the library is in a preview mode (alpha, beta, ...), and must publish with a tag
+   */
+  public String previewMode = "";
+
   /** Static analysis configuration. */
   public final FirebaseStaticAnalysis staticAnalysis;
 
