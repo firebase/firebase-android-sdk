@@ -89,8 +89,7 @@ public sealed interface OptionalVariable<out T> {
      * storage should generally be avoided in order to be robust in case that the string
      * representation changes.
      *
-     * @return a string representation of this object, which includes the class name and the values
-     * of all public properties.
+     * @return a string representation of this object.
      */
     override fun toString(): String = "undefined"
 
@@ -133,6 +132,12 @@ public sealed interface OptionalVariable<out T> {
     /**
      * Returns the [Object.toString()] result of the encapsulated value, or `"null"` if the
      * encapsulated value is `null`.
+     *
+     * The string representation is _not_ guaranteed to be stable and may change without notice at
+     * any time. Therefore, the only recommended usage of the returned string is debugging and/or
+     * logging. Namely, parsing the returned string or storing the returned string in non-volatile
+     * storage should generally be avoided in order to be robust in case that the string
+     * representation changes.
      */
     override fun toString(): String = value?.toString() ?: "null"
   }
