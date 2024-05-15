@@ -266,6 +266,79 @@ mutation InsertFloatVariants(
   })
 }
 
+mutation InsertFloatVariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Float! = 0.0,
+  $nonNullWithNegativeZeroValue: Float! = -0.0,
+  $nonNullWithPositiveValue: Float! = 750.452,
+  $nonNullWithNegativeValue: Float! = -598.351,
+  $nonNullWithMaxValue: Float! = 1.7976931348623157E308,
+  $nonNullWithMinValue: Float! = 4.9E-324,
+  $nonNullWithMaxSafeIntegerValue: Float! = 9007199254740991.0,
+  $nullableWithNullValue: Float = null,
+  $nullableWithZeroValue: Float = 0.0,
+  $nullableWithNegativeZeroValue: Float = -0.0,
+  $nullableWithPositiveValue: Float = 597.650,
+  $nullableWithNegativeValue: Float = -181.366,
+  $nullableWithMaxValue: Float = 1.7976931348623157E308,
+  $nullableWithMinValue: Float = 4.9E-324,
+  $nullableWithMaxSafeIntegerValue: Float = 9007199254740991.0,
+) @auth(level: PUBLIC) {
+  floatVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
+mutation UpdateFloatVariantsByKey(
+  $key: FloatVariants_Key!,
+  $nonNullWithZeroValue: Float,
+  $nonNullWithNegativeZeroValue: Float,
+  $nonNullWithPositiveValue: Float,
+  $nonNullWithNegativeValue: Float,
+  $nonNullWithMaxValue: Float,
+  $nonNullWithMinValue: Float,
+  $nonNullWithMaxSafeIntegerValue: Float,
+  $nullableWithNullValue: Float,
+  $nullableWithZeroValue: Float,
+  $nullableWithNegativeZeroValue: Float,
+  $nullableWithPositiveValue: Float,
+  $nullableWithNegativeValue: Float,
+  $nullableWithMaxValue: Float,
+  $nullableWithMinValue: Float,
+  $nullableWithMaxSafeIntegerValue: Float,
+) @auth(level: PUBLIC) {
+  floatVariants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
 query GetFloatVariantsByKey($key: FloatVariants_Key!) @auth(level: PUBLIC) {
   floatVariants(key: $key) {
     nonNullWithZeroValue

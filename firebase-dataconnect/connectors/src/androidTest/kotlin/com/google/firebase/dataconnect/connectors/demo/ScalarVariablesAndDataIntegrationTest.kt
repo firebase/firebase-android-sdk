@@ -34,7 +34,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -392,25 +391,13 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       )
   }
 
-  @Ignore(
-    "b/339440054 Fix this test once -0.0 is correctly sent from the backend " +
-      "instead of being converted to 0.0"
-  )
   @Test
-  fun floatCorrectlySerializesNegativeZero() {
-    TODO(
-      "this test is merely a placeholder as a reminder " +
-        "and should be removed once the test is updated"
-    )
-  }
-
-  @Test
-  fun floatVariants() = runTest {
+  fun insertFloatVariants() = runTest {
     val key =
       connector.insertFloatVariants
         .execute(
           nonNullWithZeroValue = 0.0,
-          nonNullWithNegativeZeroValue = 0.0, // TODO(b/339440054) change to -0.0
+          nonNullWithNegativeZeroValue = -0.0,
           nonNullWithPositiveValue = 123.456,
           nonNullWithNegativeValue = -987.654,
           nonNullWithMaxValue = Double.MAX_VALUE,
@@ -419,7 +406,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0.0
-          nullableWithNegativeZeroValue = 0.0 // TODO(b/339440054) change to -0.0
+          nullableWithNegativeZeroValue = 0.0
           nullableWithPositiveValue = 789.012
           nullableWithNegativeValue = -321.098
           nullableWithMaxValue = Double.MAX_VALUE
@@ -434,7 +421,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       .isEqualTo(
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = 0.0,
-          nonNullWithNegativeZeroValue = 0.0, // TODO(b/339440054) change to -0.0
+          nonNullWithNegativeZeroValue = 0.0,
           nonNullWithPositiveValue = 123.456,
           nonNullWithNegativeValue = -987.654,
           nonNullWithMaxValue = Double.MAX_VALUE,
@@ -442,9 +429,211 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
           nullableWithNullValue = null,
           nullableWithZeroValue = 0.0,
-          nullableWithNegativeZeroValue = 0.0, // TODO(b/339440054) change to -0.0
+          nullableWithNegativeZeroValue = 0.0,
           nullableWithPositiveValue = 789.012,
           nullableWithNegativeValue = -321.098,
+          nullableWithMaxValue = Double.MAX_VALUE,
+          nullableWithMinValue = Double.MIN_VALUE,
+          nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+        )
+      )
+  }
+
+  @Test
+  fun insertFloatVariantsWithDefaultValues() = runTest {
+    val key = connector.insertFloatVariantsWithHardcodedDefaults.execute {}.data.key
+
+    val queryResult = connector.getFloatVariantsByKey.execute(key)
+    assertThat(queryResult.data.floatVariants)
+      .isEqualTo(
+        GetFloatVariantsByKeyQuery.Data.FloatVariants(
+          nonNullWithZeroValue = 0.0,
+          nonNullWithNegativeZeroValue = 0.0,
+          nonNullWithPositiveValue = 750.452,
+          nonNullWithNegativeValue = -598.351,
+          nonNullWithMaxValue = Double.MAX_VALUE,
+          nonNullWithMinValue = Double.MIN_VALUE,
+          nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0.0,
+          nullableWithNegativeZeroValue = 0.0,
+          nullableWithPositiveValue = 597.650,
+          nullableWithNegativeValue = -181.366,
+          nullableWithMaxValue = Double.MAX_VALUE,
+          nullableWithMinValue = Double.MIN_VALUE,
+          nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+        )
+      )
+  }
+
+  @Test
+  fun updateFloatVariantsToNonNullValues() = runTest {
+    val key =
+      connector.insertFloatVariants
+        .execute(
+          nonNullWithZeroValue = 0.0,
+          nonNullWithNegativeZeroValue = -0.0,
+          nonNullWithPositiveValue = 662.096,
+          nonNullWithNegativeValue = -817.024,
+          nonNullWithMaxValue = Double.MAX_VALUE,
+          nonNullWithMinValue = Double.MIN_VALUE,
+          nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0.0
+          nullableWithNegativeZeroValue = 0.0
+          nullableWithPositiveValue = 990.273
+          nullableWithNegativeValue = -383.185
+          nullableWithMaxValue = Double.MAX_VALUE
+          nullableWithMinValue = Double.MIN_VALUE
+          nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+        }
+        .data
+        .key
+
+    connector.updateFloatVariantsByKey.execute(key) {
+      nonNullWithZeroValue = Double.MAX_VALUE
+      nonNullWithNegativeZeroValue = Double.MIN_VALUE
+      nonNullWithPositiveValue = MAX_SAFE_INTEGER
+      nonNullWithNegativeValue = -0.0
+      nonNullWithMaxValue = -270.396
+      nonNullWithMinValue = 470.563
+      nonNullWithMaxSafeIntegerValue = 0.0
+      nullableWithNullValue = 607.386
+      nullableWithZeroValue = Double.MIN_VALUE
+      nullableWithNegativeZeroValue = MAX_SAFE_INTEGER
+      nullableWithPositiveValue = -0.0
+      nullableWithNegativeValue = MAX_SAFE_INTEGER
+      nullableWithMaxValue = -930.342
+      nullableWithMinValue = 563.398
+      nullableWithMaxSafeIntegerValue = 0.0
+    }
+
+    val queryResult = connector.getFloatVariantsByKey.execute(key)
+    assertThat(queryResult.data.floatVariants)
+      .isEqualTo(
+        GetFloatVariantsByKeyQuery.Data.FloatVariants(
+          nonNullWithZeroValue = Double.MAX_VALUE,
+          nonNullWithNegativeZeroValue = Double.MIN_VALUE,
+          nonNullWithPositiveValue = MAX_SAFE_INTEGER,
+          nonNullWithNegativeValue = -0.0,
+          nonNullWithMaxValue = -270.396,
+          nonNullWithMinValue = 470.563,
+          nonNullWithMaxSafeIntegerValue = 0.0,
+          nullableWithNullValue = 607.386,
+          nullableWithZeroValue = Double.MIN_VALUE,
+          nullableWithNegativeZeroValue = MAX_SAFE_INTEGER,
+          nullableWithPositiveValue = -0.0,
+          nullableWithNegativeValue = MAX_SAFE_INTEGER,
+          nullableWithMaxValue = -930.342,
+          nullableWithMinValue = 563.398,
+          nullableWithMaxSafeIntegerValue = 0.0,
+        )
+      )
+  }
+
+  @Test
+  fun updateFloatVariantsToNullValues() = runTest {
+    val key =
+      connector.insertFloatVariants
+        .execute(
+          nonNullWithZeroValue = 0.0,
+          nonNullWithNegativeZeroValue = -0.0,
+          nonNullWithPositiveValue = 225.954,
+          nonNullWithNegativeValue = -432.366,
+          nonNullWithMaxValue = Double.MAX_VALUE,
+          nonNullWithMinValue = Double.MIN_VALUE,
+          nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0.0
+          nullableWithNegativeZeroValue = 0.0
+          nullableWithPositiveValue = 446.040
+          nullableWithNegativeValue = -573.104
+          nullableWithMaxValue = Double.MAX_VALUE
+          nullableWithMinValue = Double.MIN_VALUE
+          nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+        }
+        .data
+        .key
+
+    connector.updateFloatVariantsByKey.execute(key) {
+      nullableWithNullValue = null
+      nullableWithZeroValue = null
+      nullableWithNegativeZeroValue = null
+      nullableWithPositiveValue = null
+      nullableWithNegativeValue = null
+      nullableWithMaxValue = null
+      nullableWithMinValue = null
+      nullableWithMaxSafeIntegerValue = null
+    }
+
+    val queryResult = connector.getFloatVariantsByKey.execute(key)
+    assertThat(queryResult.data.floatVariants)
+      .isEqualTo(
+        GetFloatVariantsByKeyQuery.Data.FloatVariants(
+          nonNullWithZeroValue = 0.0,
+          nonNullWithNegativeZeroValue = -0.0,
+          nonNullWithPositiveValue = 225.954,
+          nonNullWithNegativeValue = -432.366,
+          nonNullWithMaxValue = Double.MAX_VALUE,
+          nonNullWithMinValue = Double.MIN_VALUE,
+          nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = null,
+          nullableWithNegativeZeroValue = null,
+          nullableWithPositiveValue = null,
+          nullableWithNegativeValue = null,
+          nullableWithMaxValue = null,
+          nullableWithMinValue = null,
+          nullableWithMaxSafeIntegerValue = null,
+        )
+      )
+  }
+
+  @Test
+  fun updateFloatVariantsToUndefinedValues() = runTest {
+    val key =
+      connector.insertFloatVariants
+        .execute(
+          nonNullWithZeroValue = 0.0,
+          nonNullWithNegativeZeroValue = -0.0,
+          nonNullWithPositiveValue = 969.803,
+          nonNullWithNegativeValue = -377.693,
+          nonNullWithMaxValue = Double.MAX_VALUE,
+          nonNullWithMinValue = Double.MIN_VALUE,
+          nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0.0
+          nullableWithNegativeZeroValue = 0.0
+          nullableWithPositiveValue = 789.821
+          nullableWithNegativeValue = -498.776
+          nullableWithMaxValue = Double.MAX_VALUE
+          nullableWithMinValue = Double.MIN_VALUE
+          nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+        }
+        .data
+        .key
+
+    connector.updateFloatVariantsByKey.execute(key) {}
+
+    val queryResult = connector.getFloatVariantsByKey.execute(key)
+    assertThat(queryResult.data.floatVariants)
+      .isEqualTo(
+        GetFloatVariantsByKeyQuery.Data.FloatVariants(
+          nonNullWithZeroValue = 0.0,
+          nonNullWithNegativeZeroValue = -0.0,
+          nonNullWithPositiveValue = 969.803,
+          nonNullWithNegativeValue = -377.693,
+          nonNullWithMaxValue = Double.MAX_VALUE,
+          nonNullWithMinValue = Double.MIN_VALUE,
+          nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0.0,
+          nullableWithNegativeZeroValue = 0.0,
+          nullableWithPositiveValue = 789.821,
+          nullableWithNegativeValue = -498.776,
           nullableWithMaxValue = Double.MAX_VALUE,
           nullableWithMinValue = Double.MIN_VALUE,
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
