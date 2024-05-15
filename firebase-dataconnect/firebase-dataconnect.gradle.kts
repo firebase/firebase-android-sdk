@@ -159,6 +159,7 @@ tasks.withType<DokkaTask>().configureEach {
   val cacheRootDirectory = layout.buildDirectory.dir("dokka/cache")
   cacheRootDirectory.get().asFile.mkdirs()
   cacheRoot.set(cacheRootDirectory)
+  mustRunAfter("ktfmtFormat")
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -178,8 +179,8 @@ tasks.withType<KotlinCompile>().all {
 // Runs dokkaHtml and starts a web server to serve it locally.
 tasks.register("dokkaHtmlServe") {
   group = "documentation"
-  description = "Build dokka HTML via the dokkaHtml task and serve it locally"
-  dependsOn("dokkaHtml")
+  description = "Run a web server to serve the HTML output of the dokkaHtml task"
+  mustRunAfter("dokkaHtml")
 
   doLast {
     val port = 8000

@@ -28,6 +28,8 @@ readonly args=(
   "-p"
   "${PROJECT_ROOT_DIR}"
   "--configure-on-demand"
+  ":firebase-dataconnect:ktfmtFormat"
+  ":firebase-dataconnect:dokkaHtml"
   ":firebase-dataconnect:dokkaHtmlServe"
 )
 
