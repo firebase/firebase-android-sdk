@@ -26,8 +26,15 @@ import kotlinx.serialization.SerializationStrategy
  * [OperationRef] merely serves to provide a common interface for the parts of queries and mutations
  * that are shared.
  *
+ * ### Safe for Concurrent Use
+ *
  * All methods and properties of [OperationRef] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
+ *
+ * ### Not Stable for Inheritance
+ *
+ * The [OperationRef] interface is _not_ stable for inheritance in third-party libraries, as new
+ * methods might be added to this interface or contracts of the existing methods can be changed.
  */
 public interface OperationRef<Data, Variables> {
 
@@ -188,6 +195,16 @@ public interface OperationRef<Data, Variables> {
  *
  * Typically, one of the inheritors of [OperationResult] is used, namely [QueryResult] for queries
  * and [MutationResult] for mutations.
+ *
+ * ### Safe for Concurrent Use
+ *
+ * All methods and properties of [OperationResult] are thread-safe and may be safely called and/or
+ * accessed concurrently from multiple threads and/or coroutines.
+ *
+ * ### Not Stable for Inheritance
+ *
+ * The [OperationResult] interface is _not_ stable for inheritance in third-party libraries, as new
+ * methods might be added to this interface or contracts of the existing methods can be changed.
  *
  * @see OperationRef.execute
  */

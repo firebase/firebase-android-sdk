@@ -22,12 +22,21 @@ import kotlinx.coroutines.flow.*
  * A facility to subscribe to a query to be notified of updates to the query's data when the query
  * is executed.
  *
+ * ### Notifications are _not_ Realtime
+ *
  * At this time the notifications are _not_ realtime, and are _not_ pushed from the server. Instead,
  * the notifications are sent whenever the query is explicitly executed by calling
  * [QueryRef.execute].
  *
+ * ### Safe for Concurrent Use
+ *
  * All methods and properties of [QuerySubscription] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
+ *
+ * ### Not Stable for Inheritance
+ *
+ * The [QuerySubscription] interface is _not_ stable for inheritance in third-party libraries, as
+ * new methods might be added to this interface or contracts of the existing methods can be changed.
  */
 public interface QuerySubscription<Data, Variables> {
 
@@ -76,14 +85,27 @@ public interface QuerySubscription<Data, Variables> {
   override fun toString(): String
 }
 
-/** The result of a query's execution, as notified to a [QuerySubscription]. */
+/**
+ * The result of a query's execution, as notified to a [QuerySubscription].
+ *
+ * ### Safe for Concurrent Use
+ *
+ * All methods and properties of [QuerySubscriptionResult] are thread-safe and may be safely called
+ * and/or accessed concurrently from multiple threads and/or coroutines.
+ *
+ * ### Not Stable for Inheritance
+ *
+ * The [QuerySubscriptionResult] interface is _not_ stable for inheritance in third-party libraries,
+ * as new methods might be added to this interface or contracts of the existing methods can be
+ * changed.
+ */
 public interface QuerySubscriptionResult<Data, Variables> {
 
   /** The query that was executed, whose result is captured in this object. */
   public val query: QueryRef<Data, Variables>
 
   /**
-   * The result of the query execution, a successful result if the query was executed successfully,
+   * The result of the query execution: a successful result if the query was executed successfully,
    * or a failure if the query's execution failed.
    */
   public val result: Result<QueryResult<Data, Variables>>
