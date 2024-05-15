@@ -16,6 +16,8 @@
 
 import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import io.javalin.Javalin
+import io.javalin.http.staticfiles.Location
 
 plugins {
   id("firebase-library")
@@ -167,5 +169,32 @@ tasks.withType<KotlinCompile>().all {
     if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
       kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
     }
+  }
+}
+
+// Runs dokkaHtml and starts a web server to serve it locally.
+tasks.register("dokkaHtmlServe") {
+  group = "documentation"
+  description = "Build dokka HTML via the dokkaHtml task and serve it locally"
+  dependsOn("dokkaHtml")
+
+  doLast {
+    val port = 8000
+    val directory = layout.buildDirectory.dir("dokka/html").get().asFile.absolutePath
+
+    val javelin = Javalin.create { javalinConfig ->
+      javalinConfig.staticFiles.add { staticFileConfig ->
+        staticFileConfig.directory = directory
+        staticFileConfig.location = Location.EXTERNAL
+        staticFileConfig.hostedPath = "/"
+      }
+    }
+
+    javelin.start(port)
+    println("Starting HTTP server at http://localhost:$port which serves the contents of directory: $directory")
+    println("Press ENTER to stop the server")
+    readlnOrNull()
+    println("Stopping HTTP server at http://localhost:$port")
+    javelin.stop()
   }
 }
