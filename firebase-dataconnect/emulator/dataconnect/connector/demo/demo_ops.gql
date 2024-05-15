@@ -103,16 +103,14 @@ mutation UpdateStringVariantsByKey(
   })
 }
 
-mutation UpdateStringVariantsWithHardcodedDefaultsByKey(
-  $key: StringVariants_Key!,
-  $nonNullWithNonEmptyValue: String! = "",
-  $nonNullWithEmptyValue: String! = "pfnk98yqqs",
-  $nullableWithNullValue: String = "af8k72s98t",
-  $nullableWithNonNullValue: String = "",
-  # TODO(b/339490396) Set the default value to null once the emulator accepts null default values.
-  $nullableWithEmptyValue: String = "b/339490396",
+mutation InsertStringVariantsWithHardcodedDefaults(
+  $nonNullWithNonEmptyValue: String! = "pfnk98yqqs",
+  $nonNullWithEmptyValue: String! = "",
+  $nullableWithNullValue: String = null,
+  $nullableWithNonNullValue: String = "af8k72s98t",
+  $nullableWithEmptyValue: String = "",
 ) @auth(level: PUBLIC) {
-  stringVariants_update(key: $key, data: {
+  stringVariants_insert(data: {
     nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
     nonNullWithEmptyValue: $nonNullWithEmptyValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -159,21 +157,20 @@ mutation InsertIntVariants(
   })
 }
 
-mutation UpdateIntVariantsByKey(
-  $key: IntVariants_Key!,
-  $nonNullWithZeroValue: Int,
-  $nonNullWithPositiveValue: Int,
-  $nonNullWithNegativeValue: Int,
-  $nonNullWithMaxValue: Int,
-  $nonNullWithMinValue: Int,
-  $nullableWithNullValue: Int,
-  $nullableWithZeroValue: Int,
-  $nullableWithPositiveValue: Int,
-  $nullableWithNegativeValue: Int,
-  $nullableWithMaxValue: Int,
-  $nullableWithMinValue: Int,
+mutation InsertIntVariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Int! = 0,
+  $nonNullWithPositiveValue: Int! = 819425,
+  $nonNullWithNegativeValue: Int! = -435970,
+  $nonNullWithMaxValue: Int! = 2147483647,
+  $nonNullWithMinValue: Int! = -2147483648,
+  $nullableWithNullValue: Int = null,
+  $nullableWithZeroValue: Int = 0,
+  $nullableWithPositiveValue: Int = 635166,
+  $nullableWithNegativeValue: Int = -171993,
+  $nullableWithMaxValue: Int = 2147483647,
+  $nullableWithMinValue: Int = -2147483648,
 ) @auth(level: PUBLIC) {
-  intVariants_update(key: $key, data: {
+  intVariants_insert(data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -188,21 +185,19 @@ mutation UpdateIntVariantsByKey(
   })
 }
 
-mutation UpdateIntVariantsWithHardcodedDefaultsByKey(
+mutation UpdateIntVariantsByKey(
   $key: IntVariants_Key!,
-  $nonNullWithZeroValue: Int! = 0,
-  $nonNullWithPositiveValue: Int! = 123,
-  $nonNullWithNegativeValue: Int! = -123,
-  $nonNullWithMaxValue: Int! = 2147483647,
-  $nonNullWithMinValue: Int! = -2147483648,
-  # TODO(b/339490396) Set the default value of `$nullableWithNullValue` to null once the emulator
-  #  accepts null default values.
-  $nullableWithNullValue: Int = 0,
-  $nullableWithZeroValue: Int = 0,
-  $nullableWithPositiveValue: Int = 456,
-  $nullableWithNegativeValue: Int = -456,
-  $nullableWithMaxValue: Int = 2147483647,
-  $nullableWithMinValue: Int = -2147483648,
+  $nonNullWithZeroValue: Int,
+  $nonNullWithPositiveValue: Int,
+  $nonNullWithNegativeValue: Int,
+  $nonNullWithMaxValue: Int,
+  $nonNullWithMinValue: Int,
+  $nullableWithNullValue: Int,
+  $nullableWithZeroValue: Int,
+  $nullableWithPositiveValue: Int,
+  $nullableWithNegativeValue: Int,
+  $nullableWithMaxValue: Int,
+  $nullableWithMinValue: Int,
 ) @auth(level: PUBLIC) {
   intVariants_update(key: $key, data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,

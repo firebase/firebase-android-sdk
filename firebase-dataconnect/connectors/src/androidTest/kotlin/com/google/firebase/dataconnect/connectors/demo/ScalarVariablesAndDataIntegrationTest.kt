@@ -68,6 +68,23 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
+  fun insertStringVariantsWithDefaultValues() = runTest {
+    val key = connector.insertStringVariantsWithHardcodedDefaults.execute {}.data.key
+
+    val queryResult = connector.getStringVariantsByKey.execute(key)
+    assertThat(queryResult.data.stringVariants)
+      .isEqualTo(
+        GetStringVariantsByKeyQuery.Data.StringVariants(
+          nonNullWithNonEmptyValue = "pfnk98yqqs",
+          nonNullWithEmptyValue = "",
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = "af8k72s98t",
+          nullableWithEmptyValue = "",
+        )
+      )
+  }
+
+  @Test
   fun updateStringVariantsToNonNullValues() = runTest {
     val key =
       connector.insertStringVariants
@@ -168,38 +185,6 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
-  fun updateStringVariantsToDefaultValues() = runTest {
-    val key =
-      connector.insertStringVariants
-        .execute(
-          nonNullWithNonEmptyValue = "h87zh9da5g",
-          nonNullWithEmptyValue = "",
-        ) {
-          nullableWithNullValue = null
-          nullableWithNonNullValue = "efhg7t35ja"
-          nullableWithEmptyValue = ""
-        }
-        .data
-        .key
-
-    connector.updateStringVariantsWithHardcodedDefaultsByKey.execute(key) {}
-
-    val queryResult = connector.getStringVariantsByKey.execute(key)
-    assertThat(queryResult.data.stringVariants)
-      .isEqualTo(
-        GetStringVariantsByKeyQuery.Data.StringVariants(
-          nonNullWithNonEmptyValue = "",
-          nonNullWithEmptyValue = "pfnk98yqqs",
-          nullableWithNullValue = "af8k72s98t",
-          nullableWithNonNullValue = "",
-          // TODO(b/339490396) Set the expected value of `nullableWithEmptyValue` to null once the
-          //  emulator accepts null default values.
-          nullableWithEmptyValue = "b/339490396",
-        )
-      )
-  }
-
-  @Test
   fun insertIntVariants() = runTest {
     val key =
       connector.insertIntVariants
@@ -233,6 +218,29 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithZeroValue = 0,
           nullableWithPositiveValue = 24242424,
           nullableWithNegativeValue = -24242424,
+          nullableWithMaxValue = Int.MAX_VALUE,
+          nullableWithMinValue = Int.MIN_VALUE,
+        )
+      )
+  }
+
+  @Test
+  fun insertIntVariantsWithDefaultValues() = runTest {
+    val key = connector.insertIntVariantsWithHardcodedDefaults.execute {}.data.key
+
+    val queryResult = connector.getIntVariantsByKey.execute(key)
+    assertThat(queryResult.data.intVariants)
+      .isEqualTo(
+        GetIntVariantsByKeyQuery.Data.IntVariants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 819425,
+          nonNullWithNegativeValue = -435970,
+          nonNullWithMaxValue = Int.MAX_VALUE,
+          nonNullWithMinValue = Int.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0,
+          nullableWithPositiveValue = 635166,
+          nullableWithNegativeValue = -171993,
           nullableWithMaxValue = Int.MAX_VALUE,
           nullableWithMinValue = Int.MIN_VALUE,
         )
@@ -289,6 +297,97 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNegativeValue = Int.MIN_VALUE,
           nullableWithMaxValue = 1,
           nullableWithMinValue = -1,
+        )
+      )
+  }
+
+  @Test
+  fun updateIntVariantsToNullValues() = runTest {
+    val key =
+      connector.insertIntVariants
+        .execute(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 42424242,
+          nonNullWithNegativeValue = -42424242,
+          nonNullWithMaxValue = Int.MAX_VALUE,
+          nonNullWithMinValue = Int.MIN_VALUE,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0
+          nullableWithPositiveValue = 24242424
+          nullableWithNegativeValue = -24242424
+          nullableWithMaxValue = Int.MAX_VALUE
+          nullableWithMinValue = Int.MIN_VALUE
+        }
+        .data
+        .key
+
+    connector.updateIntVariantsByKey.execute(key) {
+      nullableWithNullValue = null
+      nullableWithZeroValue = null
+      nullableWithPositiveValue = null
+      nullableWithNegativeValue = null
+      nullableWithMaxValue = null
+      nullableWithMinValue = null
+    }
+
+    val queryResult = connector.getIntVariantsByKey.execute(key)
+    assertThat(queryResult.data.intVariants)
+      .isEqualTo(
+        GetIntVariantsByKeyQuery.Data.IntVariants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 42424242,
+          nonNullWithNegativeValue = -42424242,
+          nonNullWithMaxValue = Int.MAX_VALUE,
+          nonNullWithMinValue = Int.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = null,
+          nullableWithPositiveValue = null,
+          nullableWithNegativeValue = null,
+          nullableWithMaxValue = null,
+          nullableWithMinValue = null,
+        )
+      )
+  }
+
+  @Test
+  fun updateIntVariantsToUndefinedValues() = runTest {
+    val key =
+      connector.insertIntVariants
+        .execute(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 42424242,
+          nonNullWithNegativeValue = -42424242,
+          nonNullWithMaxValue = Int.MAX_VALUE,
+          nonNullWithMinValue = Int.MIN_VALUE,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0
+          nullableWithPositiveValue = 24242424
+          nullableWithNegativeValue = -24242424
+          nullableWithMaxValue = Int.MAX_VALUE
+          nullableWithMinValue = Int.MIN_VALUE
+        }
+        .data
+        .key
+
+    connector.updateIntVariantsByKey.execute(key) {}
+
+    val queryResult = connector.getIntVariantsByKey.execute(key)
+    assertThat(queryResult.data.intVariants)
+      .isEqualTo(
+        GetIntVariantsByKeyQuery.Data.IntVariants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 42424242,
+          nonNullWithNegativeValue = -42424242,
+          nonNullWithMaxValue = Int.MAX_VALUE,
+          nonNullWithMinValue = Int.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0,
+          nullableWithPositiveValue = 24242424,
+          nullableWithNegativeValue = -24242424,
+          nullableWithMaxValue = Int.MAX_VALUE,
+          nullableWithMinValue = Int.MIN_VALUE,
         )
       )
   }
