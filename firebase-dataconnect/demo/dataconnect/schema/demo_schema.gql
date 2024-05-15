@@ -1,0 +1,4 @@
+type Person @table {
+  name: String!
+  age: Int
+}
