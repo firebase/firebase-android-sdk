@@ -85,6 +85,10 @@ import kotlinx.serialization.SerializationStrategy
  * into the `master` branch of https://github.com/firebase/firebase-android-sdk, at which point the
  * release notes will become part of the regular Android SDK releases.
  *
+ * ##### 16.0.0-alpha04 (not yet released)
+ * - XXXX
+ * - XXXX
+ *
  * ##### 16.0.0-alpha03 (May 15, 2024)
  * - KDoc comments added.
  * - OptionalVariable: fix potential NullPointerException in toString() and hashCode().
