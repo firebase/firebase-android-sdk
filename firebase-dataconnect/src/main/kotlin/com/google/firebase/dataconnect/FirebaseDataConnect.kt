@@ -28,6 +28,10 @@ import kotlinx.serialization.SerializationStrategy
  * Firebase Data Connect is Firebase's first relational database solution for app developers to
  * build mobile and web applications using a fully managed PostgreSQL database powered by Cloud SQL.
  *
+ * See
+ * [https://firebase.google.com/products/data-connect](https://firebase.google.com/products/data-connect)
+ * for full details about the Firebase Data Connect product.
+ *
  * The database schema and operations to query and mutate the data are authored in GraphQL and
  * uploaded to the server. Then, the queries and mutations can be executed by name, providing
  * variables along with the name to control their behavior. For example, a mutation that inserts a
