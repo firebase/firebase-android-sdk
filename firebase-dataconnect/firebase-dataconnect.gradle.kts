@@ -156,6 +156,9 @@ extra["packageName"] = "com.google.firebase.dataconnect"
 
 tasks.withType<DokkaTask>().configureEach {
   moduleName.set("firebase-dataconnect")
+  val cacheRootDirectory = layout.buildDirectory.dir("dokka/cache")
+  cacheRootDirectory.get().asFile.mkdirs()
+  cacheRoot.set(cacheRootDirectory)
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
