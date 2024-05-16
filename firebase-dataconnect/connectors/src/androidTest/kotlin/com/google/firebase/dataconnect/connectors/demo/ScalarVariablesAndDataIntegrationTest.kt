@@ -787,7 +787,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
-  fun int64Variants() = runTest {
+  fun insertInt64Variants() = runTest {
     val key =
       connector.insertInt64variants
         .execute(
@@ -820,6 +820,174 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithZeroValue = 0,
           nullableWithPositiveValue = 2424242424242424,
           nullableWithNegativeValue = -2424242424242424,
+          nullableWithMaxValue = Long.MAX_VALUE,
+          nullableWithMinValue = Long.MIN_VALUE,
+        )
+      )
+  }
+
+  @Test
+  fun insertInt64VariantsWithDefaultValues() = runTest {
+    val key = connector.insertInt64variantsWithHardcodedDefaults.execute {}.data.key
+
+    val queryResult = connector.getInt64variantsByKey.execute(key)
+    assertThat(queryResult.data.int64Variants)
+      .isEqualTo(
+        GetInt64variantsByKeyQuery.Data.Int64variants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 8140262498000722655,
+          nonNullWithNegativeValue = -6722404680598014256,
+          nonNullWithMaxValue = Long.MAX_VALUE,
+          nonNullWithMinValue = Long.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0,
+          nullableWithPositiveValue = 2623421399624774761,
+          nullableWithNegativeValue = -1400927531111898547,
+          nullableWithMaxValue = Long.MAX_VALUE,
+          nullableWithMinValue = Long.MIN_VALUE,
+        )
+      )
+  }
+
+  @Test
+  fun updateInt64VariantsToNonNullValues() = runTest {
+    val key =
+      connector.insertInt64variants
+        .execute(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 4242424242424242,
+          nonNullWithNegativeValue = -4242424242424242,
+          nonNullWithMaxValue = Long.MAX_VALUE,
+          nonNullWithMinValue = Long.MIN_VALUE,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0
+          nullableWithPositiveValue = 2424242424242424
+          nullableWithNegativeValue = -2424242424242424
+          nullableWithMaxValue = Long.MAX_VALUE
+          nullableWithMinValue = Long.MIN_VALUE
+        }
+        .data
+        .key
+
+    connector.updateInt64variantsByKey.execute(key) {
+      nonNullWithZeroValue = Long.MAX_VALUE
+      nonNullWithPositiveValue = Long.MIN_VALUE
+      nonNullWithNegativeValue = 0
+      nonNullWithMaxValue = 6252443364575076407
+      nonNullWithMinValue = -2729456791747763772
+      nullableWithNullValue = Long.MIN_VALUE
+      nullableWithZeroValue = Long.MAX_VALUE
+      nullableWithPositiveValue = -8687725805487568442
+      nullableWithNegativeValue = 2353423753564688753
+      nullableWithMaxValue = 0
+      nullableWithMinValue = 1138055334163106400
+    }
+
+    val queryResult = connector.getInt64variantsByKey.execute(key)
+    assertThat(queryResult.data.int64Variants)
+      .isEqualTo(
+        GetInt64variantsByKeyQuery.Data.Int64variants(
+          nonNullWithZeroValue = Long.MAX_VALUE,
+          nonNullWithPositiveValue = Long.MIN_VALUE,
+          nonNullWithNegativeValue = 0,
+          nonNullWithMaxValue = 6252443364575076407,
+          nonNullWithMinValue = -2729456791747763772,
+          nullableWithNullValue = Long.MIN_VALUE,
+          nullableWithZeroValue = Long.MAX_VALUE,
+          nullableWithPositiveValue = -8687725805487568442,
+          nullableWithNegativeValue = 2353423753564688753,
+          nullableWithMaxValue = 0,
+          nullableWithMinValue = 1138055334163106400,
+        )
+      )
+  }
+
+  @Test
+  fun updateInt64VariantsToNullValues() = runTest {
+    val key =
+      connector.insertInt64variants
+        .execute(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 6015655135498983208,
+          nonNullWithNegativeValue = -6239673548840053697,
+          nonNullWithMaxValue = Long.MAX_VALUE,
+          nonNullWithMinValue = Long.MIN_VALUE,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0
+          nullableWithPositiveValue = 2139268131023575155
+          nullableWithNegativeValue = -7753368718652189037
+          nullableWithMaxValue = Long.MAX_VALUE
+          nullableWithMinValue = Long.MIN_VALUE
+        }
+        .data
+        .key
+
+    connector.updateInt64variantsByKey.execute(key) {
+      nullableWithNullValue = null
+      nullableWithZeroValue = null
+      nullableWithPositiveValue = null
+      nullableWithNegativeValue = null
+      nullableWithMaxValue = null
+      nullableWithMinValue = null
+    }
+
+    val queryResult = connector.getInt64variantsByKey.execute(key)
+    assertThat(queryResult.data.int64Variants)
+      .isEqualTo(
+        GetInt64variantsByKeyQuery.Data.Int64variants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 6015655135498983208,
+          nonNullWithNegativeValue = -6239673548840053697,
+          nonNullWithMaxValue = Long.MAX_VALUE,
+          nonNullWithMinValue = Long.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = null,
+          nullableWithPositiveValue = null,
+          nullableWithNegativeValue = null,
+          nullableWithMaxValue = null,
+          nullableWithMinValue = null,
+        )
+      )
+  }
+
+  @Test
+  fun updateInt64VariantsToUndefinedValues() = runTest {
+    val key =
+      connector.insertInt64variants
+        .execute(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 6701682660019975832,
+          nonNullWithNegativeValue = -4478250605910359747,
+          nonNullWithMaxValue = Long.MAX_VALUE,
+          nonNullWithMinValue = Long.MIN_VALUE,
+        ) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = 0
+          nullableWithPositiveValue = 5813549730210600934
+          nullableWithNegativeValue = -8226376165047801337
+          nullableWithMaxValue = Long.MAX_VALUE
+          nullableWithMinValue = Long.MIN_VALUE
+        }
+        .data
+        .key
+
+    connector.updateInt64variantsByKey.execute(key) {}
+
+    val queryResult = connector.getInt64variantsByKey.execute(key)
+    assertThat(queryResult.data.int64Variants)
+      .isEqualTo(
+        GetInt64variantsByKeyQuery.Data.Int64variants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = 6701682660019975832,
+          nonNullWithNegativeValue = -4478250605910359747,
+          nonNullWithMaxValue = Long.MAX_VALUE,
+          nonNullWithMinValue = Long.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0,
+          nullableWithPositiveValue = 5813549730210600934,
+          nullableWithNegativeValue = -8226376165047801337,
           nullableWithMaxValue = Long.MAX_VALUE,
           nullableWithMinValue = Long.MIN_VALUE,
         )

@@ -446,6 +446,63 @@ mutation InsertInt64Variants(
   })
 }
 
+mutation InsertInt64VariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Int64! = 0,
+  $nonNullWithPositiveValue: Int64! = 8140262498000722655,
+  $nonNullWithNegativeValue: Int64! = -6722404680598014256,
+  $nonNullWithMaxValue: Int64! = 9223372036854775807,
+  $nonNullWithMinValue: Int64! = -9223372036854775808,
+  $nullableWithNullValue: Int64 = null,
+  $nullableWithZeroValue: Int64 = 0,
+  $nullableWithPositiveValue: Int64 = 2623421399624774761,
+  $nullableWithNegativeValue: Int64 = -1400927531111898547,
+  $nullableWithMaxValue: Int64 = 9223372036854775807,
+  $nullableWithMinValue: Int64 = -9223372036854775808,
+) @auth(level: PUBLIC) {
+  int64Variants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation UpdateInt64VariantsByKey(
+  $key: Int64Variants_Key!,
+  $nonNullWithZeroValue: Int64,
+  $nonNullWithPositiveValue: Int64,
+  $nonNullWithNegativeValue: Int64,
+  $nonNullWithMaxValue: Int64,
+  $nonNullWithMinValue: Int64,
+  $nullableWithNullValue: Int64,
+  $nullableWithZeroValue: Int64,
+  $nullableWithPositiveValue: Int64,
+  $nullableWithNegativeValue: Int64,
+  $nullableWithMaxValue: Int64,
+  $nullableWithMinValue: Int64,
+) @auth(level: PUBLIC) {
+  int64Variants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
 query GetInt64VariantsByKey($key: Int64Variants_Key!) @auth(level: PUBLIC) {
   int64Variants(key: $key) {
     nonNullWithZeroValue
