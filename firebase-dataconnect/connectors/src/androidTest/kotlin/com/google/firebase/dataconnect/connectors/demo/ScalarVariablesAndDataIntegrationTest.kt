@@ -642,7 +642,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
-  fun booleanVariants() = runTest {
+  fun insertBooleanVariants() = runTest {
     val key =
       connector.insertBooleanVariants
         .execute(
@@ -655,6 +655,123 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         }
         .data
         .key
+
+    val queryResult = connector.getBooleanVariantsByKey.execute(key)
+    assertThat(queryResult.data.booleanVariants)
+      .isEqualTo(
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = true,
+          nullableWithFalseValue = false,
+        )
+      )
+  }
+
+  @Test
+  fun insertBooleanVariantsWithDefaultValues() = runTest {
+    val key = connector.insertBooleanVariantsWithHardcodedDefaults.execute {}.data.key
+
+    val queryResult = connector.getBooleanVariantsByKey.execute(key)
+    assertThat(queryResult.data.booleanVariants)
+      .isEqualTo(
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = true,
+          nullableWithFalseValue = false,
+        )
+      )
+  }
+
+  @Test
+  fun updateBooleanVariantsToNonNullValues() = runTest {
+    val key =
+      connector.insertBooleanVariants
+        .execute(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+        ) {
+          nullableWithNullValue = null
+          nullableWithTrueValue = true
+          nullableWithFalseValue = false
+        }
+        .data
+        .key
+
+    connector.updateBooleanVariantsByKey.execute(key) {
+      nonNullWithTrueValue = false
+      nonNullWithFalseValue = true
+      nullableWithNullValue = true
+      nullableWithTrueValue = false
+      nullableWithFalseValue = true
+    }
+
+    val queryResult = connector.getBooleanVariantsByKey.execute(key)
+    assertThat(queryResult.data.booleanVariants)
+      .isEqualTo(
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = false,
+          nonNullWithFalseValue = true,
+          nullableWithNullValue = true,
+          nullableWithTrueValue = false,
+          nullableWithFalseValue = true,
+        )
+      )
+  }
+
+  @Test
+  fun updateBooleanVariantsToNullValues() = runTest {
+    val key =
+      connector.insertBooleanVariants
+        .execute(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+        ) {
+          nullableWithNullValue = null
+          nullableWithTrueValue = true
+          nullableWithFalseValue = false
+        }
+        .data
+        .key
+
+    connector.updateBooleanVariantsByKey.execute(key) {
+      nullableWithNullValue = null
+      nullableWithTrueValue = null
+      nullableWithFalseValue = null
+    }
+
+    val queryResult = connector.getBooleanVariantsByKey.execute(key)
+    assertThat(queryResult.data.booleanVariants)
+      .isEqualTo(
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = null,
+          nullableWithFalseValue = null,
+        )
+      )
+  }
+
+  @Test
+  fun updateBooleanVariantsToUndefinedValues() = runTest {
+    val key =
+      connector.insertBooleanVariants
+        .execute(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+        ) {
+          nullableWithNullValue = null
+          nullableWithTrueValue = true
+          nullableWithFalseValue = false
+        }
+        .data
+        .key
+
+    connector.updateBooleanVariantsByKey.execute(key) {}
 
     val queryResult = connector.getBooleanVariantsByKey.execute(key)
     assertThat(queryResult.data.booleanVariants)

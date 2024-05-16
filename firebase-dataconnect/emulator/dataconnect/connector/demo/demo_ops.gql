@@ -375,6 +375,39 @@ mutation InsertBooleanVariants(
   })
 }
 
+mutation InsertBooleanVariantsWithHardcodedDefaults(
+  $nonNullWithTrueValue: Boolean! = true,
+  $nonNullWithFalseValue: Boolean! = false,
+  $nullableWithNullValue: Boolean = null,
+  $nullableWithTrueValue: Boolean = true,
+  $nullableWithFalseValue: Boolean = false,
+) @auth(level: PUBLIC) {
+  booleanVariants_insert(data: {
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+mutation UpdateBooleanVariantsByKey(
+  $key: BooleanVariants_Key!,
+  $nonNullWithTrueValue: Boolean,
+  $nonNullWithFalseValue: Boolean,
+  $nullableWithNullValue: Boolean,
+  $nullableWithTrueValue: Boolean,
+  $nullableWithFalseValue: Boolean,
+) @auth(level: PUBLIC) {
+  booleanVariants_update(key: $key, data: {
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
 query GetBooleanVariantsByKey($key: BooleanVariants_Key!) @auth(level: PUBLIC) {
   booleanVariants(key: $key) {
     nonNullWithTrueValue
