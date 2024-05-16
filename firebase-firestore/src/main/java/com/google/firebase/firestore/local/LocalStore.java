@@ -237,6 +237,7 @@ public final class LocalStore implements BundleCallback {
     documentOverlayCache.clear();
 
     remoteDocuments.clear();
+    bundleCache.clear();
 
     // Clearing parents is only possible when both mutations and document cache are cleared.
     indexManager.clearParents();

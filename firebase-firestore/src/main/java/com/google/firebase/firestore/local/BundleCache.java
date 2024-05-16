@@ -39,4 +39,6 @@ public interface BundleCache {
 
   /** Saves a NamedQuery from a bundle, using its name as the persistent key. */
   void saveNamedQuery(NamedQuery query);
+
+  void clear();
 }

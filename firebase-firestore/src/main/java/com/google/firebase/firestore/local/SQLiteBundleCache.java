@@ -104,4 +104,10 @@ class SQLiteBundleCache implements BundleCache {
         query.getReadTime().getTimestamp().getNanoseconds(),
         bundledQuery.toByteArray());
   }
+
+  @Override
+  public void clear() {
+    db.execute("DELETE FROM bundles");
+    db.execute("DELETE FROM named_queries");
+  }
 }
