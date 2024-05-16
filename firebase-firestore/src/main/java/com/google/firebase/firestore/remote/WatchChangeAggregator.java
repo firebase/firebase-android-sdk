@@ -529,30 +529,6 @@ public class WatchChangeAggregator {
     }
   }
 
-  private void resetAllTargets() {
-    for (Map.Entry<Integer, TargetState> entry : targetStates.entrySet()) {
-      Integer targetId = entry.getKey();
-      TargetState targetState = new TargetState();
-      entry.setValue(targetState);
-
-      if (!isActiveTarget(targetId)) {
-        continue;
-      }
-
-      ImmutableSortedSet<DocumentKey> existingKeys =
-              targetMetadataProvider.getRemoteKeysForTarget(targetId);
-      for (DocumentKey key : existingKeys) {
-        if (targetContainsDocument(targetId, key)) {
-          targetState.addDocumentChange(key, DocumentViewChange.Type.REMOVED);
-        } else {
-          // The document may have entered and left the target before we raised a snapshot, so we can
-          // just ignore the change.
-          targetState.removeDocumentChange(key);
-        }
-      }
-    }
-  }
-
   /** Returns whether the LocalStore considers the document to be part of the specified target. */
   private boolean targetContainsDocument(int targetId, DocumentKey key) {
     ImmutableSortedSet<DocumentKey> existingKeys =

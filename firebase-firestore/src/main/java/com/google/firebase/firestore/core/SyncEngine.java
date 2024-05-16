@@ -518,9 +518,18 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   @Override
   public void handleClearCache() {
     assertCallback("handleClearCache");
+    boolean canUseNetwork = remoteStore.canUseNetwork();
 
+    if (canUseNetwork) {
+      remoteStore.disableNetwork();
+    }
+
+    remoteStore.abortAllTargets();
     localStore.clearCacheData();
-    remoteStore.clearAllTargets();
+
+    if (canUseNetwork) {
+      remoteStore.enableNetwork();
+    }
   }
 
   /**

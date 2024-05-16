@@ -139,6 +139,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final OnlineStateTracker onlineStateTracker;
 
   private boolean networkEnabled = false;
+
   private final WatchStream watchStream;
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
@@ -600,7 +601,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     }
   }
 
-  public void clearAllTargets() {
+  public void abortAllTargets() {
+    // To prevent Limbo Resolution from sending new listen request during abort of all targets, the
+    // network must be disabled. Not doing so will cause `handleRejectedListen` to start watch
+    // stream.
+    hardAssert(!canUseNetwork(), "Network should be disabled during abort of all targets.");
+
     List<Integer> targetIds = new ArrayList<>();
     for (Entry<Integer, TargetData> entry : listenTargets.entrySet()) {
       switch (entry.getValue().getPurpose()) {
@@ -613,13 +619,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           targetIds.add(entry.getKey());
       }
     }
-    WatchTargetChange targetChange = new WatchTargetChange(
-        WatchTargetChangeType.Removed,
-        targetIds,
-        WatchStream.EMPTY_RESUME_TOKEN,
-        Status.ABORTED
-    );
-    processTargetError(targetChange);
+    for (Integer targetId : targetIds) {
+      listenTargets.remove(targetId);
+      remoteStoreCallback.handleRejectedListen(targetId, Status.ABORTED);
+    }
   }
 
   // Write Stream

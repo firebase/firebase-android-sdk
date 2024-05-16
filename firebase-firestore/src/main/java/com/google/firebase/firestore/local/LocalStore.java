@@ -241,6 +241,7 @@ public final class LocalStore implements BundleCallback {
     // Clearing parents is only possible when both mutations and document cache are cleared.
     indexManager.clearParents();
 
+    // Note that index configuration is preserved.
     indexManager.clearIndexData();
   }
 
