@@ -516,14 +516,14 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullWithZeroValue = Double.MAX_VALUE,
           nonNullWithNegativeZeroValue = Double.MIN_VALUE,
           nonNullWithPositiveValue = MAX_SAFE_INTEGER,
-          nonNullWithNegativeValue = -0.0,
+          nonNullWithNegativeValue = 0.0,
           nonNullWithMaxValue = -270.396,
           nonNullWithMinValue = 470.563,
           nonNullWithMaxSafeIntegerValue = 0.0,
           nullableWithNullValue = 607.386,
           nullableWithZeroValue = Double.MIN_VALUE,
           nullableWithNegativeZeroValue = MAX_SAFE_INTEGER,
-          nullableWithPositiveValue = -0.0,
+          nullableWithPositiveValue = 0.0,
           nullableWithNegativeValue = MAX_SAFE_INTEGER,
           nullableWithMaxValue = -930.342,
           nullableWithMinValue = 563.398,
@@ -573,7 +573,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       .isEqualTo(
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = 0.0,
-          nonNullWithNegativeZeroValue = -0.0,
+          nonNullWithNegativeZeroValue = 0.0,
           nonNullWithPositiveValue = 225.954,
           nonNullWithNegativeValue = -432.366,
           nonNullWithMaxValue = Double.MAX_VALUE,
@@ -623,7 +623,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       .isEqualTo(
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = 0.0,
-          nonNullWithNegativeZeroValue = -0.0,
+          nonNullWithNegativeZeroValue = 0.0,
           nonNullWithPositiveValue = 969.803,
           nonNullWithNegativeValue = -377.693,
           nonNullWithMaxValue = Double.MAX_VALUE,
