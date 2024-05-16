@@ -34,6 +34,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Test
 
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -995,7 +996,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   }
 
   @Test
-  fun uuidVariants() = runTest {
+  fun insertUUIDVariants() = runTest {
     val key =
       connector.insertUuidvariants
         .execute(
@@ -1014,6 +1015,109 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nonNullValue = UUID.fromString("9ceda52f-18a1-431b-b9f7-89b674ca4bee"),
           nullableWithNullValue = null,
           nullableWithNonNullValue = UUID.fromString("7ca7c62a-c551-4cb9-8f86-0a2ce3d68b72"),
+        )
+      )
+  }
+
+  @Test
+  @Ignore("TODO(b/341070491) Re-enable this test once default values for UUID variables is fixed")
+  fun insertUUIDVariantsWithDefaultValues() = runTest {
+    // TODO(b/341070491) Update the definition of the "InsertUUIDVariantsWithHardcodedDefaults"
+    //  mutation in GraphQL and change .execute() to .execute{}.
+    val key = connector.insertUuidvariantsWithHardcodedDefaults.execute().data.key
+
+    val queryResult = connector.getUuidvariantsByKey.execute(key)
+    assertThat(queryResult.data.uUIDVariants)
+      .isEqualTo(
+        GetUuidvariantsByKeyQuery.Data.UUidvariants(
+          nonNullValue = UUID.fromString("66576fdc-1a35-4b59-8c8b-d3beb65956ca"),
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = UUID.fromString("59ab3886-8b84-4233-a5e6-da58c0e8b97d"),
+        )
+      )
+  }
+
+  @Test
+  fun updateUUIDVariantsToNonNullValues() = runTest {
+    val key =
+      connector.insertUuidvariants
+        .execute(
+          nonNullValue = UUID.fromString("e0e9539c-5723-4063-b490-20b0f28c82fc"),
+        ) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = UUID.fromString("c198ecf2-8de5-438f-8b9e-4d07e07d2a7e")
+        }
+        .data
+        .key
+
+    connector.updateUuidvariantsByKey.execute(key) {
+      nonNullValue = UUID.fromString("a4d3f3cb-f88a-4aeb-9440-b446780e3f1f")
+      nullableWithNullValue = UUID.fromString("e6fda23b-26ab-422c-a461-75bf2cd08775")
+      nullableWithNonNullValue = UUID.fromString("22d122a7-45c6-4f7a-ba0b-bf00aa47c77a")
+    }
+
+    val queryResult = connector.getUuidvariantsByKey.execute(key)
+    assertThat(queryResult.data.uUIDVariants)
+      .isEqualTo(
+        GetUuidvariantsByKeyQuery.Data.UUidvariants(
+          nonNullValue = UUID.fromString("a4d3f3cb-f88a-4aeb-9440-b446780e3f1f"),
+          nullableWithNullValue = UUID.fromString("e6fda23b-26ab-422c-a461-75bf2cd08775"),
+          nullableWithNonNullValue = UUID.fromString("22d122a7-45c6-4f7a-ba0b-bf00aa47c77a"),
+        )
+      )
+  }
+
+  @Test
+  fun updateUUIDVariantsToNullValues() = runTest {
+    val key =
+      connector.insertUuidvariants
+        .execute(
+          nonNullValue = UUID.fromString("a319232e-ef2b-4bb2-96e7-c31893914b77"),
+        ) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = UUID.fromString("95ba2d8e-7908-4b60-999c-7c292616c920")
+        }
+        .data
+        .key
+
+    connector.updateUuidvariantsByKey.execute(key) {
+      nullableWithNullValue = null
+      nullableWithNonNullValue = null
+    }
+
+    val queryResult = connector.getUuidvariantsByKey.execute(key)
+    assertThat(queryResult.data.uUIDVariants)
+      .isEqualTo(
+        GetUuidvariantsByKeyQuery.Data.UUidvariants(
+          nonNullValue = UUID.fromString("a319232e-ef2b-4bb2-96e7-c31893914b77"),
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = null,
+        )
+      )
+  }
+
+  @Test
+  fun updateUUIDVariantsToUndefinedValues() = runTest {
+    val key =
+      connector.insertUuidvariants
+        .execute(
+          nonNullValue = UUID.fromString("c72c5a7c-f179-48a5-83fb-171a148b0192"),
+        ) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = UUID.fromString("dd55c183-616a-4bc8-a4e0-2a32101450d7")
+        }
+        .data
+        .key
+
+    connector.updateUuidvariantsByKey.execute(key) {}
+
+    val queryResult = connector.getUuidvariantsByKey.execute(key)
+    assertThat(queryResult.data.uUIDVariants)
+      .isEqualTo(
+        GetUuidvariantsByKeyQuery.Data.UUidvariants(
+          nonNullValue = UUID.fromString("c72c5a7c-f179-48a5-83fb-171a148b0192"),
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = UUID.fromString("dd55c183-616a-4bc8-a4e0-2a32101450d7"),
         )
       )
   }

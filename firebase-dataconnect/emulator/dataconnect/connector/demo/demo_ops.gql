@@ -531,6 +531,46 @@ mutation InsertUUIDVariants(
   })
 }
 
+# TODO(b/341070491) Uncomment this mutation and enable test "insertUUIDVariantsWithDefaultValues"
+# At the time of writing, default values for UUID variables fails to generate valid SQL.
+# Once fixed, uncomment the definition of "InsertUUIDVariantsWithHardcodedDefaults" below
+#mutation InsertUUIDVariantsWithHardcodedDefaults(
+#  $nonNullValue: UUID! = "66576fdc-1a35-4b59-8c8b-d3beb65956ca",
+#  $nullableWithNullValue: UUID = null,
+#  $nullableWithNonNullValue: UUID = "59ab3886-8b84-4233-a5e6-da58c0e8b97d",
+#) @auth(level: PUBLIC) {
+#  uUIDVariants_insert(data: {
+#    nonNullValue: $nonNullValue,
+#    nullableWithNullValue: $nullableWithNullValue,
+#    nullableWithNonNullValue: $nullableWithNonNullValue,
+#  })
+#}
+
+# TODO(b/341070491) Delete this definition of the "InsertUUIDVariantsWithHardcodedDefaults" mutation
+# and uncomment the one above once the emulator is fixed to properly handle default values for UUID
+# variables. This definition is merely here so that the codegen will generate classes so that the
+# test can still be written in Kotlin and compile, even though it is disabled.
+mutation InsertUUIDVariantsWithHardcodedDefaults @auth(level: PUBLIC) {
+  uUIDVariants_insert(data: {
+    nonNullValue: "7f385800-13d6-491a-98c8-b4dee3fb45cb",
+    nullableWithNullValue: null,
+    nullableWithNonNullValue: "ede8dc0e-600c-4093-8812-071f2cedc8db",
+  })
+}
+
+mutation UpdateUUIDVariantsByKey(
+  $key: UUIDVariants_Key!,
+  $nonNullValue: UUID,
+  $nullableWithNullValue: UUID,
+  $nullableWithNonNullValue: UUID,
+) @auth(level: PUBLIC) {
+  uUIDVariants_update(key: $key, data: {
+    nonNullValue: $nonNullValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+  })
+}
+
 query GetUUIDVariantsByKey($key: UUIDVariants_Key!) @auth(level: PUBLIC) {
   uUIDVariants(key: $key) {
     nonNullValue
