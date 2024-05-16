@@ -41,7 +41,7 @@ internal class RemoteSettings(
   private val configsFetcher: CrashlyticsSettingsFetcher,
   dataStore: DataStore<Preferences>,
 ) : SettingsProvider {
-  private val settingsCache = SettingsCache(dataStore)
+  private val settingsCache by lazy { SettingsCache(dataStore) }
   private val fetchInProgress = Mutex()
 
   override val sessionEnabled: Boolean?
