@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
@@ -75,11 +76,15 @@ final class MemoryMutationQueue implements MutationQueue {
   MemoryMutationQueue(MemoryPersistence persistence, User user) {
     this.persistence = persistence;
     queue = new ArrayList<>();
+    indexManager = persistence.getIndexManager(user);
+    init();
+  }
 
+  private void init() {
+    queue.clear();
     batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
     nextBatchId = 1;
     lastStreamToken = WriteStream.EMPTY_STREAM_TOKEN;
-    indexManager = persistence.getIndexManager(user);
   }
 
   // MutationQueue implementation
@@ -318,6 +323,11 @@ final class MemoryMutationQueue implements MutationQueue {
           batchesByDocumentKey.isEmpty(),
           "Document leak -- detected dangling mutation references when queue is empty.");
     }
+  }
+
+  @Override
+  public void clear() {
+    init();
   }
 
   boolean containsKey(DocumentKey key) {
