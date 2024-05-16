@@ -24,7 +24,7 @@ import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
 import com.google.firebase.dataconnect.testutil.MAX_VALUE
 import com.google.firebase.dataconnect.testutil.MIN_DATE
 import com.google.firebase.dataconnect.testutil.MIN_VALUE
-import com.google.firebase.dataconnect.testutil.toDate
+import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
@@ -84,7 +84,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
             ),
           int64s = listOf(1, 2, 3),
-          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
         )
         .data
@@ -106,7 +106,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
               ),
             int64s = listOf(1, 2, 3),
-            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            dates =
+              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
             timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )
@@ -213,7 +214,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
           UUID.fromString("91597f71-8f85-4ae5-ac4d-909287c8c52c")
         )
       int64s = listOf(1, 2, 3)
-      dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate())
+      dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30))
       timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000))
     }
 
@@ -233,7 +234,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 UUID.fromString("91597f71-8f85-4ae5-ac4d-909287c8c52c")
               ),
             int64s = listOf(1, 2, 3),
-            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            dates =
+              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
             timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )
@@ -255,7 +257,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
             ),
           int64s = listOf(1, 2, 3),
-          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
         )
         .data
@@ -306,7 +308,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("e2170f8a-9a53-478c-ae2f-9fb5b09da5c7")
             ),
           int64s = listOf(1, 2, 3),
-          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
         )
         .data
@@ -330,7 +332,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 UUID.fromString("e2170f8a-9a53-478c-ae2f-9fb5b09da5c7")
               ),
             int64s = listOf(1, 2, 3),
-            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            dates =
+              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
             timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )
@@ -411,7 +414,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("66acc445-e384-4770-8524-279663e56bb3")
             )
           int64s = listOf(1, 2, 3)
-          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate())
+          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30))
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000))
         }
         .data
@@ -433,7 +436,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 UUID.fromString("66acc445-e384-4770-8524-279663e56bb3")
               ),
             int64s = listOf(1, 2, 3),
-            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            dates =
+              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
             timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )
@@ -528,7 +532,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
           UUID.fromString("80fa16ff-51ce-480a-b117-97a2d37d19f1")
         )
       int64s = listOf(1, 2, 3)
-      dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate())
+      dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30))
       timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000))
     }
 
@@ -548,7 +552,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 UUID.fromString("80fa16ff-51ce-480a-b117-97a2d37d19f1")
               ),
             int64s = listOf(1, 2, 3),
-            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            dates =
+              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
             timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )
@@ -570,7 +575,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("1dbf3cd7-ed04-4edd-9b77-65465f9fbaef")
             )
           int64s = listOf(1, 2, 3)
-          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate())
+          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30))
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000))
         }
         .data
@@ -621,7 +626,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("1dbf3cd7-ed04-4edd-9b77-65465f9fbaef")
             )
           int64s = listOf(1, 2, 3)
-          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate())
+          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30))
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000))
         }
         .data
@@ -672,7 +677,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               UUID.fromString("f0afdbfc-10a1-4446-8823-3bfc81ff3162")
             )
           int64s = listOf(1, 2, 3)
-          dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate())
+          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30))
           timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000))
         }
         .data
@@ -696,7 +701,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 UUID.fromString("f0afdbfc-10a1-4446-8823-3bfc81ff3162")
               ),
             int64s = listOf(1, 2, 3),
-            dates = listOf("2024-05-07".toDate(), "1978-03-30".toDate()),
+            dates =
+              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
             timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
           )
         )
