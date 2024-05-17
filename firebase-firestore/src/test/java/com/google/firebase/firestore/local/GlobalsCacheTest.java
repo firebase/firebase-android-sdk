@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 
 import static org.junit.Assert.assertEquals;
 
-import com.google.firebase.firestore.auth.User;
 import com.google.protobuf.ByteString;
 
 import org.junit.After;
