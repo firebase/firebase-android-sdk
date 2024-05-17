@@ -25,7 +25,7 @@ android {
         abortOnError false
         checkReleaseBuilds false
     }
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId 'com.google.apksize'
@@ -61,4 +61,5 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))
 }
