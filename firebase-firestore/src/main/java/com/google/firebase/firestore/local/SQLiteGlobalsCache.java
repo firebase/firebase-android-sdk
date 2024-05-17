@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import com.google.firebase.firestore.auth.User;
 import com.google.protobuf.ByteString;
 
 public class SQLiteGlobalsCache implements GlobalsCache{
