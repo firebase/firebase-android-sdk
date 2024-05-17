@@ -139,7 +139,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final OnlineStateTracker onlineStateTracker;
 
   private boolean networkEnabled = false;
-
   private final WatchStream watchStream;
   private final WriteStream writeStream;
   @Nullable private WatchChangeAggregator watchChangeAggregator;
@@ -476,7 +475,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         watchChange instanceof WatchTargetChange ? (WatchTargetChange) watchChange : null;
 
     if (watchTargetChange != null
-        && watchTargetChange.getChangeType().equals(WatchTargetChangeType.Removed)) {
+        && watchTargetChange.getChangeType().equals(WatchTargetChangeType.Removed)
+        && watchTargetChange.getCause() != null) {
       // There was an error on a target, don't wait for a consistent snapshot to raise events
       processTargetError(watchTargetChange);
     } else {
