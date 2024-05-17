@@ -16,8 +16,8 @@ apply plugin: "com.android.application"
 apply from: "default.gradle"
 android {
     flavorDimensions "firebase", "abi"
-
     // https://developer.android.com/ndk/guides/abis
+    namespace "com.google.apksize"
     productFlavors {
         "universal" {
             dimension "abi"
