@@ -344,6 +344,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     syncEngine.handleOnlineStateChange(onlineState);
   }
 
+  @Override
+  public void handleClearCache() {
+    syncEngine.handleClearCache();
+  }
+
   private List<Pair<Mutation, Task<Void>>> getCurrentOutstandingWrites() {
     List<Pair<Mutation, Task<Void>>> writes = outstandingWrites.get(currentUser);
     if (writes == null) {

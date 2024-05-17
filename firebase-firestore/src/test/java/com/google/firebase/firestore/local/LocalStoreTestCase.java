@@ -959,6 +959,25 @@ public abstract class LocalStoreTestCase {
   }
 
   @Test
+  public void testCanExecuteDocumentQueriesAfterClearingCacheData() {
+    localStore.writeLocally(
+            asList(
+                    setMutation("foo/bar", map("foo", "bar")),
+                    setMutation("foo/baz", map("foo", "baz")),
+                    setMutation("foo/bar/Foo/Bar", map("Foo", "Bar"))));
+    Query query = Query.atPath(ResourcePath.fromSegments(asList("foo", "bar")));
+    QueryResult resultBefore = localStore.executeQuery(query, /* usePreviousResults= */ true);
+
+    localStore.clearCacheData();
+
+    assertThat(values(resultBefore.getDocuments()))
+            .containsExactly(doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations());
+
+    QueryResult resultAfter = localStore.executeQuery(query, /* usePreviousResults= */ true);
+    assertThat(values(resultAfter.getDocuments())).isEmpty();
+  }
+
+  @Test
   public void testCanExecuteCollectionQueries() {
     localStore.writeLocally(
         asList(
@@ -973,6 +992,30 @@ public abstract class LocalStoreTestCase {
         .containsExactly(
             doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(),
             doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations());
+  }
+
+  @Test
+  public void testCanExecuteCollectionQueriesAfterClearingCacheData() {
+    localStore.writeLocally(
+            asList(
+                    setMutation("fo/bar", map("fo", "bar")),
+                    setMutation("foo/bar", map("foo", "bar")),
+                    setMutation("foo/baz", map("foo", "baz")),
+                    setMutation("foo/bar/Foo/Bar", map("Foo", "Bar")),
+                    setMutation("fooo/blah", map("fooo", "blah"))));
+    Query query = query("foo");
+    QueryResult resultBefore = localStore.executeQuery(query, /* usePreviousResults= */ true);
+
+    localStore.clearCacheData();
+
+    assertThat(values(resultBefore.getDocuments()))
+            .containsExactly(
+                    doc("foo/bar", 0, map("foo", "bar")).setHasLocalMutations(),
+                    doc("foo/baz", 0, map("foo", "baz")).setHasLocalMutations());
+
+    QueryResult resultAfter = localStore.executeQuery(query, /* usePreviousResults= */ true);
+
+    assertThat(values(resultAfter.getDocuments())).isEmpty();
   }
 
   @Test
@@ -991,6 +1034,31 @@ public abstract class LocalStoreTestCase {
             doc("foo/bar", 20, map("a", "b")),
             doc("foo/baz", 10, map("a", "b")),
             doc("foo/bonk", 0, map("a", "b")).setHasLocalMutations());
+  }
+
+  @Test
+  public void testCanExecuteMixedCollectionQueriesAfterClearingCacheData() {
+    Query query = query("foo");
+    allocateQuery(query);
+    assertTargetId(2);
+
+    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map("a", "b")), asList(2), emptyList()));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map("a", "b")), asList(2), emptyList()));
+    writeMutation(setMutation("foo/bonk", map("a", "b")));
+
+    QueryResult resultBefore = localStore.executeQuery(query, /* usePreviousResults= */ true);
+
+    localStore.clearCacheData();
+
+    assertThat(values(resultBefore.getDocuments()))
+            .containsExactly(
+                    doc("foo/bar", 20, map("a", "b")),
+                    doc("foo/baz", 10, map("a", "b")),
+                    doc("foo/bonk", 0, map("a", "b")).setHasLocalMutations());
+
+    QueryResult resultAfter = localStore.executeQuery(query, /* usePreviousResults= */ true);
+
+    assertThat(values(resultAfter.getDocuments())).isEmpty();
   }
 
   @Test
