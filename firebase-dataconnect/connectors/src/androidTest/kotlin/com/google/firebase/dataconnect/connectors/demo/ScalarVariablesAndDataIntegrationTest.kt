@@ -25,7 +25,7 @@ import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
 import com.google.firebase.dataconnect.testutil.MAX_VALUE
 import com.google.firebase.dataconnect.testutil.MIN_DATE
 import com.google.firebase.dataconnect.testutil.MIN_VALUE
-import com.google.firebase.dataconnect.testutil.toDate
+import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
 import java.util.Calendar
 import java.util.Date
 import java.util.UUID
@@ -267,13 +267,13 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val key =
       connector.insertDateVariants
         .execute(
-          nonNullValue = "2024-04-26".toDate(),
+          nonNullValue = dateFromYearMonthDayUTC(2024, 4, 26),
           minValue = MIN_DATE,
           maxValue = MAX_DATE,
           nonZeroTime = dateWithNonZeroTime,
         ) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = "2024-05-19".toDate()
+          nullableWithNonNullValue = dateFromYearMonthDayUTC(2024, 5, 19)
         }
         .data
         .key
@@ -349,12 +349,12 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     assertThat(queryResult.data.dateVariants)
       .isEqualTo(
         GetDateVariantsByKeyQuery.Data.DateVariants(
-          nonNullValue = "2024-04-26".toDate(),
+          nonNullValue = dateFromYearMonthDayUTC(2024, 4, 26),
           nullableWithNullValue = null,
-          nullableWithNonNullValue = "2024-05-19".toDate(),
+          nullableWithNonNullValue = dateFromYearMonthDayUTC(2024, 5, 19),
           minValue = MIN_DATE,
           maxValue = MAX_DATE,
-          nonZeroTime = "2024-04-24".toDate(),
+          nonZeroTime = dateFromYearMonthDayUTC(2024, 4, 24),
         )
       )
   }

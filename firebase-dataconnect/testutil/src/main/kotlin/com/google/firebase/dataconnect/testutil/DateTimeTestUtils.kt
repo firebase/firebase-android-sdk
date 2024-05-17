@@ -17,36 +17,50 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.Timestamp
-import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
-import java.util.Locale
+import java.util.GregorianCalendar
+import java.util.TimeZone
 import kotlin.random.Random
+import kotlin.random.nextInt
 
 /**
- * Creates and returns a new [Date] object created from this string.
+ * Creates and returns a new [Date] object that represents the given year, month, and day in UTC.
  *
- * The expected format of the string is `YYYY-MM-DD`.
- *
- * Example: `"2024-04-24".toDate()`
+ * @param year The year; must be between 0 and 9999, inclusive.
+ * @param month The month; must be between 1 and 12, inclusive.
+ * @param day The day of the month; must be between 1 and 31, inclusive.
  */
-fun String.toDate(): Date = SimpleDateFormat("yyyy-MM-dd", Locale.US).parse(this)!!
+fun dateFromYearMonthDayUTC(year: Int, month: Int, day: Int): Date {
+  require(year in 0..9999) { "year must be between 0 and 9999, inclusive" }
+  require(month in 1..12) { "month must be between 1 and 12, inclusive" }
+  require(day in 1..31) { "day must be between 1 and 31, inclusive" }
+
+  return GregorianCalendar(TimeZone.getTimeZone("UTC"))
+    .apply {
+      set(year, month - 1, day, 0, 0, 0)
+      set(Calendar.MILLISECOND, 0)
+    }
+    .time
+}
 
 val MIN_DATE: Date
-  get() = "1583-01-01".toDate()
+  get() = dateFromYearMonthDayUTC(1583, 1, 1)
 
 val MAX_DATE: Date
-  get() = "9999-12-31".toDate()
+  get() = dateFromYearMonthDayUTC(9999, 12, 31)
 
-/** Generates and returns a random [Date] object with hour, minute, and second set to zero. */
-fun randomDate(): Date {
-  // See https://en.wikipedia.org/wiki/ISO_8601#Years for rationale of lower bound of 1583.
-  val year = Random.nextInt(1583, 9999).toString().padStart(4, '0')
-  val month = Random.nextInt(0, 11).toString().padStart(2, '0')
-  val day = Random.nextInt(1, 28).toString().padStart(2, '0')
-
-  val dateString = "${year}-${month}-${day}"
-  return dateString.toDate()
-}
+/**
+ * Generates and returns a random [Date] object with hour, minute, and second set to zero.
+ *
+ * @see https://en.wikipedia.org/wiki/ISO_8601#Years for rationale of lower bound of 1583.
+ */
+fun randomDate(): Date =
+  dateFromYearMonthDayUTC(
+    year = Random.nextInt(1583..9999),
+    month = Random.nextInt(1..12),
+    day = Random.nextInt(1..28)
+  )
 
 /** Generates and returns a random [Timestamp] object. */
 fun randomTimestamp(): Timestamp {
