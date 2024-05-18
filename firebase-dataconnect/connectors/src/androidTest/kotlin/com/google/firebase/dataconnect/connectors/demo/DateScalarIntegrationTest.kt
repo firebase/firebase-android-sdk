@@ -17,12 +17,18 @@
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.testutil.MAX_DATE
 import com.google.firebase.dataconnect.testutil.MIN_DATE
+import com.google.firebase.dataconnect.testutil.assertThrows
 import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
+import com.google.firebase.dataconnect.testutil.executeWithEmptyVariables
+import com.google.firebase.dataconnect.testutil.randomDate
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
+import com.google.firebase.dataconnect.testutil.withVariablesSerializer
 import java.util.Date
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
@@ -32,36 +38,110 @@ import org.junit.Test
 class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
-  fun insertNonNullDateVariableForNonNullFieldTypicalValue() = runTest {
+  fun insertTypicalValueForNonNullField() = runTest {
     val date = dateFromYearMonthDayUTC(1944, 1, 1)
     val key = connector.insertNonNullDate.execute(date).data.key
     assertNonNullDateByKeyEquals(key, "1944-01-01")
   }
 
   @Test
-  fun insertNonNullDateVariableForNonNullFieldMinValue() = runTest {
+  fun insertMaxValueForNonNullDateField() = runTest {
     val key = connector.insertNonNullDate.execute(MIN_DATE).data.key
     assertNonNullDateByKeyEquals(key, "1583-01-01")
   }
 
   @Test
-  fun insertNonNullDateVariableForNonNullFieldMaxValue() = runTest {
+  fun insertMinValueForNonNullDateField() = runTest {
     val key = connector.insertNonNullDate.execute(MAX_DATE).data.key
     assertNonNullDateByKeyEquals(key, "9999-12-31")
   }
 
   @Test
-  fun updateNonNullDateField() = runTest {
-    val date1 = dateFromYearMonthDayUTC(1877, 12, 13)
-    val date2 = dateFromYearMonthDayUTC(1944, 5, 1)
+  fun insertValueWithTimeForNonNullDateField() = runTest {
+    // Use a date that, when converted to UTC, in on a different date to verify that the server does
+    // the expected thing; that is, that it _drops_ the time zone information (rather than
+    // converting the date to UTC then taking the YYYY-MM-DD of that). The server would use the date
+    // "2024-03-27" if it did the erroneous conversion to UTC before taking the YYYY-MM-DD.
+    val date = "2024-03-26T19:48:00.144-07:00"
+    val key = connector.insertNonNullDate.executeWithStringVariables(date).data.key
+    assertNonNullDateByKeyEquals(key, dateFromYearMonthDayUTC(2024, 3, 26))
+  }
+
+  @Test
+  fun insertNullForNonNullDateFieldShouldFail() = runTest {
+    assertThrows(DataConnectException::class) {
+      connector.insertNonNullDate.executeWithStringVariables(null).data.key
+    }
+  }
+
+  @Test
+  fun insertIntForNonNullDateFieldShouldFail() = runTest {
+    assertThrows(DataConnectException::class) {
+      connector.insertNonNullDate.executeWithIntVariables(999_888).data.key
+    }
+  }
+
+  @Test
+  fun insertWithMissingValueNonNullDateFieldShouldFail() = runTest {
+    assertThrows(DataConnectException::class) {
+      connector.insertNonNullDate.executeWithEmptyVariables().data.key
+    }
+  }
+
+  @Test
+  fun insertInvalidDatesValuesForNonNullDateFieldShouldFail() = runTest {
+    for (invalidDate in invalidDates) {
+      assertThrows(DataConnectException::class) {
+        connector.insertNonNullDate.executeWithStringVariables(invalidDate).data.key
+      }
+    }
+  }
+
+  @Test
+  fun updateNonNullDateFieldToAnotherValidValue() = runTest {
+    val date1 = randomDate()
+    val date2 = dateFromYearMonthDayUTC(5654, 12, 1)
     val key = connector.insertNonNullDate.execute(date1).data.key
     connector.updateNonNullDate.execute(key) { value = date2 }
-    assertNonNullDateByKeyEquals(key, "1944-05-01")
+    assertNonNullDateByKeyEquals(key, "5654-12-01")
+  }
+
+  @Test
+  fun updateNonNullDateFieldToMinValue() = runTest {
+    val date = randomDate()
+    val key = connector.insertNonNullDate.execute(date).data.key
+    connector.updateNonNullDate.execute(key) { value = MIN_DATE }
+    assertNonNullDateByKeyEquals(key, "1583-01-01")
+  }
+
+  @Test
+  fun updateNonNullDateFieldToMaxValue() = runTest {
+    val date = randomDate()
+    val key = connector.insertNonNullDate.execute(date).data.key
+    connector.updateNonNullDate.execute(key) { value = MAX_DATE }
+    assertNonNullDateByKeyEquals(key, "9999-12-31")
+  }
+
+  @Test
+  fun updateNonNullDateFieldToAnUndefinedValue() = runTest {
+    val date = randomDate()
+    val key = connector.insertNonNullDate.execute(date).data.key
+    connector.updateNonNullDate.execute(key) {}
+    assertNonNullDateByKeyEquals(key, date)
   }
 
   private suspend fun assertNonNullDateByKeyEquals(key: NonNullDateKey, expected: String) {
-    val queryResult = connector.getNonNullDateByKey.refWithStringData(key).execute()
+    val queryResult =
+      connector.getNonNullDateByKey
+        .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
+        .execute(key)
     assertThat(queryResult.data).isEqualTo(GetDateByKeyQueryStringData(expected))
+  }
+
+  private suspend fun assertNonNullDateByKeyEquals(key: NonNullDateKey, expected: Date) {
+    val queryResult = connector.getNonNullDateByKey.execute(key)
+    assertThat(queryResult.data)
+      .isEqualTo(GetNonNullDateByKeyQuery.Data(GetNonNullDateByKeyQuery.Data.Value(expected)))
   }
 
   /**
@@ -70,20 +150,90 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
    * possible confounding from date deserialization.
    */
   @Serializable
-  data class GetDateByKeyQueryStringData(val value: DateStringValue?) {
+  private data class GetDateByKeyQueryStringData(val value: DateStringValue?) {
     constructor(value: String) : this(DateStringValue(value))
     @Serializable data class DateStringValue(val value: String)
   }
 
+  /**
+   * A `Variables` type that can be used in place of [InsertNonNullDateMutation.Variables] that
+   * types the value as a [String] instead of a [Date], allowing verification of the data sent over
+   * the wire without possible confounding from date serialization.
+   */
+  @Serializable private data class InsertDateStringVariables(val value: String?)
+
+  /**
+   * A `Variables` type that can be used in place of [InsertNonNullDateMutation.Variables] that
+   * types the value as a [Int] instead of a [Date], allowing verification that the server fails
+   * with an expected error (rather than crashing, for example).
+   */
+  @Serializable private data class InsertDateIntVariables(val value: Int)
+
   private companion object {
-    /**
-     * Returns a [QueryRef] that uses [GetDateByKeyQueryStringData] instead of
-     * [GetNonNullDateByKeyQuery.Data].
-     */
-    fun GetNonNullDateByKeyQuery.refWithStringData(
+
+    suspend fun <Data> GeneratedMutation<*, Data, *>.executeWithStringVariables(value: String?) =
+      withVariablesSerializer(serializer<InsertDateStringVariables>())
+        .ref(InsertDateStringVariables(value))
+        .execute()
+
+    suspend fun <Data> GeneratedMutation<*, Data, *>.executeWithIntVariables(value: Int) =
+      withVariablesSerializer(serializer<InsertDateIntVariables>())
+        .ref(InsertDateIntVariables(value))
+        .execute()
+
+    suspend fun <Data> GeneratedQuery<*, Data, GetNonNullDateByKeyQuery.Variables>.execute(
       key: NonNullDateKey
-    ): QueryRef<GetDateByKeyQueryStringData, GetNonNullDateByKeyQuery.Variables> =
-      ref(GetNonNullDateByKeyQuery.Variables(key = key))
-        .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
+    ) = ref(GetNonNullDateByKeyQuery.Variables(key)).execute()
+
+    val invalidDates =
+      listOf(
+        // Partial dates
+        "2",
+        "20",
+        "202",
+        "2024",
+        "2024-",
+        "2024-0",
+        "2024-01",
+        "2024-01-",
+        "2024-01-0",
+        "2024-01-04T",
+
+        // Missing components
+        "",
+        "2024-",
+        "-05-17",
+        "2024-05",
+        "2024--17",
+        "-05-",
+
+        // Invalid year
+        "2-05-17",
+        "20-05-17",
+        "202-05-17",
+        "20245-05-17",
+        "02024-05-17",
+        "ABCD-05-17",
+        "-123-05-17",
+
+        // Invalid month
+        "2024-1-17",
+        "2024-012-17",
+        "2024-123-17",
+        "2024-00-17",
+        "2024-13-17",
+        "2024-M-17",
+        "2024-MA-17",
+
+        // Invalid day
+        "2024-05-1",
+        "2024-05-123",
+        "2024-05-012",
+        "2024-05-00",
+        "2024-05-32",
+        "2024-05-A",
+        "2024-05-AB",
+        "2024-05-ABC",
+      )
   }
 }
