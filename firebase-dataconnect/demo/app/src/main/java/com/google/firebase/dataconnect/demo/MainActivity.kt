@@ -4,7 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.dataconnect.demo.connector.DemoConnector
+import com.google.firebase.dataconnect.demo.connector.Ctrgqyawcfbm4Connector
 import com.google.firebase.dataconnect.demo.connector.execute
 import com.google.firebase.dataconnect.demo.connector.instance
 import kotlinx.coroutines.launch
@@ -15,8 +15,8 @@ class MainActivity : ComponentActivity() {
     super.onCreate(savedInstanceState)
 
     lifecycleScope.launch {
-      println("zzyzx Getting DemoConnector")
-      val connector = DemoConnector.instance
+      println("zzyzx Getting Ctrgqyawcfbm4Connector")
+      val connector = Ctrgqyawcfbm4Connector.instance
       connector.dataConnect.useEmulator()
 
       println("zzyzx Inserting person")

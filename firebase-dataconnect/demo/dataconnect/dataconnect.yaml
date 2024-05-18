@@ -8,5 +8,5 @@ schema:
       cloudSql:
         instanceId: "iidtpktdqb8gxm"
 connectorDirs: [
-  "./connector/demo",
+  "./connector",
 ]
