@@ -1,9 +1,9 @@
 {
   "project_info": {
     "project_number": "12345678901",
-    "firebase_url": "https://dataconnect-demo.firebaseio.com",
-    "project_id": "dataconnect-demo",
-    "storage_bucket": "dataconnect-demo.appspot.com"
+    "firebase_url": "https://prjh5zbv64sv6.firebaseio.com",
+    "project_id": "prjh5zbv64sv6",
+    "storage_bucket": "prjh5zbv64sv6.appspot.com"
   },
   "client": [
     {

@@ -19,7 +19,7 @@ set -euo pipefail
 readonly FIREBASE_ARGS=(
   firebase emulators:exec
   --only auth
-  --project dataconnect-demo
+  --project prjh5zbv64sv6
   ./emulator_noauth.sh
 )
 
