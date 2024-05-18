@@ -253,3 +253,19 @@ type NullableLists @table {
   dates: [Date!]
   timestamps: [Timestamp!]
 }
+
+type NonNullDate @table {
+  value: Date!
+}
+
+type NullableDate @table {
+  value: Date
+}
+
+type NonNullDateWithSchemaDefault @table {
+  value: Date! @default(value: "2112-01-31")
+}
+
+type NullableDateWithSchemaDefault @table {
+  value: Date @default(value: "1921-12-02")
+}

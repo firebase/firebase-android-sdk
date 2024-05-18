@@ -1153,3 +1153,61 @@ query GetNullableListsByKey($key: NullableLists_Key!) @auth(level: PUBLIC) {
     timestamps
   }
 }
+
+mutation InsertNonNullDate($value: Date!) @auth(level: PUBLIC) {
+  nonNullDate_insert(data: { value: $value })
+}
+
+mutation UpdateNonNullDate($key: NonNullDate_Key!, $value: Date) @auth(level: PUBLIC) {
+  nonNullDate_update(key: $key, data: { value: $value })
+}
+
+query GetNonNullDateByKey($key: NonNullDate_Key!) @auth(level: PUBLIC) {
+  value: nonNullDate(key: $key) { value }
+}
+
+mutation InsertNonNullDateWithSchemaDefault($value: Date!) @auth(level: PUBLIC) {
+  nonNullDateWithSchemaDefault_insert(data: { value: $value })
+}
+
+query GetNonNullDateWithSchemaDefaultByKey($key: NonNullDateWithSchemaDefault_Key!) @auth(level: PUBLIC) {
+  value: nonNullDateWithSchemaDefault(key: $key) { value }
+}
+
+mutation InsertNullableDate($value: Date!) @auth(level: PUBLIC) {
+  nullableDate_insert(data: { value: $value })
+}
+
+query GetNullableDateByKey($key: NullableDate_Key!) @auth(level: PUBLIC) {
+  value: nullableDate(key: $key) { value }
+}
+
+mutation InsertNullableDateWithSchemaDefault($value: Date!) @auth(level: PUBLIC) {
+  nullableDateWithSchemaDefault_insert(data: { value: $value })
+}
+
+query GetNullableDateWithSchemaDefaultByKey($key: NullableDateWithSchemaDefault_Key!) @auth(level: PUBLIC) {
+  value: nullableDateWithSchemaDefault(key: $key) { value }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
