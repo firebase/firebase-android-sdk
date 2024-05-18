@@ -1175,6 +1175,8 @@ query GetNonNullDatesWithDefaultsByKey($key: NonNullDatesWithDefaults_Key!) @aut
     valueWithVariableDefault
     valueWithSchemaDefault
     epoch
+    requestTime1
+    requestTime2
   }
 }
 
@@ -1199,5 +1201,7 @@ query GetNullableDatesWithDefaultsByKey($key: NullableDatesWithDefaults_Key!) @a
     valueWithVariableDefault
     valueWithSchemaDefault
     epoch
+    requestTime1
+    requestTime2
   }
 }

@@ -69,9 +69,23 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
+  fun insertDateNotOnExactDateBoundaryForNonNullDateField() = runTest {
+    val dateOnDateBoundary = dateFromYearMonthDayUTC(2000, 9, 14)
+    val dateOffDateBoundary = Date(dateOnDateBoundary.time + 7200)
+
+    val key = connector.insertNonNullDate.execute(dateOffDateBoundary).data.key
+    assertNonNullDateByKeyEquals(key, dateOnDateBoundary)
+  }
+
+  @Test
   fun insertNoVariablesForNonNullDateFieldsWithSchemaDefaults() = runTest {
     val key = connector.insertNonNullDatesWithDefaults.execute {}.data.key
     val queryResult = connector.getNonNullDatesWithDefaultsByKey.execute(key)
+
+    // Since we can't know the exact value of `request.time` just make sure that the exact same
+    // value is used for both fields to which it is set.
+    val expectedRequestTime = queryResult.data.nonNullDatesWithDefaults!!.requestTime1
+
     assertThat(
       queryResult.equals(
         GetNonNullDatesWithDefaultsByKeyQuery.Data(
@@ -79,6 +93,8 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
             valueWithVariableDefault = dateFromYearMonthDayUTC(6904, 11, 30),
             valueWithSchemaDefault = dateFromYearMonthDayUTC(2112, 1, 31),
             epoch = ZERO_DATE,
+            requestTime1 = expectedRequestTime,
+            requestTime2 = expectedRequestTime,
           )
         )
       )
@@ -191,6 +207,15 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
+  fun insertDateNotOnExactDateBoundaryForNullableDateField() = runTest {
+    val dateOnDateBoundary = dateFromYearMonthDayUTC(1812, 12, 22)
+    val dateOffDateBoundary = Date(dateOnDateBoundary.time + 7200)
+
+    val key = connector.insertNullableDate.execute { value = dateOffDateBoundary }.data.key
+    assertNullableDateByKeyEquals(key, dateOnDateBoundary)
+  }
+
+  @Test
   fun insertIntForNullableDateFieldShouldFail() = runTest {
     assertThrows(DataConnectException::class) {
       connector.insertNullableDate.executeWithIntVariables(999_888).data.key
@@ -210,6 +235,11 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insertNoVariablesForNullableDateFieldsWithSchemaDefaults() = runTest {
     val key = connector.insertNullableDatesWithDefaults.execute {}.data.key
     val queryResult = connector.getNullableDatesWithDefaultsByKey.execute(key)
+
+    // Since we can't know the exact value of `request.time` just make sure that the exact same
+    // value is used for both fields to which it is set.
+    val expectedRequestTime = queryResult.data.nullableDatesWithDefaults!!.requestTime1
+
     assertThat(
       queryResult.equals(
         GetNullableDatesWithDefaultsByKeyQuery.Data(
@@ -217,6 +247,8 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
             valueWithVariableDefault = dateFromYearMonthDayUTC(8113, 2, 9),
             valueWithSchemaDefault = dateFromYearMonthDayUTC(1921, 12, 2),
             epoch = ZERO_DATE,
+            requestTime1 = expectedRequestTime,
+            requestTime2 = expectedRequestTime,
           )
         )
       )

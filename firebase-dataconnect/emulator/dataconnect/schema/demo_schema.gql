@@ -266,10 +266,14 @@ type NonNullDatesWithDefaults @table {
   valueWithVariableDefault: Date!
   valueWithSchemaDefault: Date! @default(value: "2112-01-31")
   epoch: Date! @default(sql: "'epoch'::date")
+  requestTime1: Date! @default(expr: "request.time")
+  requestTime2: Date! @default(expr: "request.time")
 }
 
 type NullableDatesWithDefaults @table {
   valueWithVariableDefault: Date
   valueWithSchemaDefault: Date @default(value: "1921-12-02")
   epoch: Date @default(sql: "'epoch'::date")
+  requestTime1: Date @default(expr: "request.time")
+  requestTime2: Date @default(expr: "request.time")
 }
