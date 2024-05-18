@@ -37,6 +37,7 @@ import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
+import org.junit.Ignore
 import org.junit.Test
 
 class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -72,6 +73,112 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     val timestamp = timestampFromUTCDateAndTime(8623, 10, 11, 12, 13, 14, 123456789)
     val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
     assertNonNullTimestampByKeyEquals(key, "8623-10-11T12:13:14.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWithNoNanosecondsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+  }
+
+  @Test
+  fun insertTimestampWithZeroNanosecondsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.000000000Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+  }
+
+  @Test
+  fun insertTimestampWith1NanosecondsDigitForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.1Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.100000Z")
+  }
+
+  @Test
+  fun insertTimestampWith2NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.12Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.120000Z")
+  }
+
+  @Test
+  fun insertTimestampWith3NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123000Z")
+  }
+
+  @Test
+  fun insertTimestampWith4NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.1234Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123400Z")
+  }
+
+  @Test
+  fun insertTimestampWith5NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.12345Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123450Z")
+  }
+
+  @Test
+  fun insertTimestampWith6NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWith7NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.1234567Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWith8NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.12345678Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWith9NanosecondsDigitsForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789Z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWithPlus0TimeZoneOffsetForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789+00:00"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWithPositiveNonZeroTimeZoneOffsetForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789+01:23"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T11:22:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWithNegativeNonZeroTimeZoneOffsetForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789-01:23"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T14:08:56.123456Z")
+  }
+
+  @Test
+  @Ignore("TODO: log a bug about this")
+  fun insertTimestampWithLowercaseTandZForNonNullTimestampField() = runTest {
+    val timestamp = "2024-05-18t12:45:56.123456789z"
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
   }
 
   @Test
@@ -208,6 +315,83 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
+  fun insertTimestampWithNoNanosecondsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+  }
+
+  @Test
+  fun insertTimestampWithZeroNanosecondsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.000000000Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+  }
+
+  @Test
+  fun insertTimestampWith1NanosecondsDigitForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.1Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.100000Z")
+  }
+
+  @Test
+  fun insertTimestampWith2NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.12Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.120000Z")
+  }
+
+  @Test
+  fun insertTimestampWith3NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123000Z")
+  }
+
+  @Test
+  fun insertTimestampWith4NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.1234Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123400Z")
+  }
+
+  @Test
+  fun insertTimestampWith5NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.12345Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123450Z")
+  }
+
+  @Test
+  fun insertTimestampWith6NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWith7NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.1234567Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWith8NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.12345678Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWith9NanosecondsDigitsForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789Z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
   fun insertIntForNullableTimestampFieldShouldFail() = runTest {
     assertThrows(DataConnectException::class) {
       connector.insertNullableTimestamp.executeWithIntVariables(555_444).data.key
@@ -221,6 +405,35 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp).data.key
       }
     }
+  }
+
+  @Test
+  fun insertTimestampWithPlus0TimeZoneOffsetForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789+00:00"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWithPositiveNonZeroTimeZoneOffsetForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789+01:23"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T11:22:56.123456Z")
+  }
+
+  @Test
+  fun insertTimestampWithNegativeNonZeroTimeZoneOffsetForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18T12:45:56.123456789-01:23"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T14:08:56.123456Z")
+  }
+
+  @Test
+  @Ignore("TODO: log a bug about this")
+  fun insertTimestampWithLowercaseTandZForNullableTimestampField() = runTest {
+    val timestamp = "2024-05-18t12:45:56.123456789z"
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
   }
 
   @Test
@@ -422,6 +635,164 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
       }
     }
 
-    val invalidTimestamps = listOf("")
+    val invalidTimestamps =
+      listOf(
+        "",
+        "foobar",
+
+        // Partial timestamps
+        "2",
+        "20",
+        "202",
+        "2024",
+        "2024-",
+        "2024-0",
+        "2024-05",
+        "2024-05-",
+        "2024-05-1",
+        "2024-05-18",
+        "2024-05-18T",
+        "2024-05-18T1",
+        "2024-05-18T12",
+        "2024-05-18T12:",
+        "2024-05-18T12:4",
+        "2024-05-18T12:45",
+        "2024-05-18T12:45:",
+        "2024-05-18T12:45:5",
+
+        // Missing components
+        "-05-18T12:45:56.123456000Z",
+        "2024--18T12:45:56.123456000Z",
+        "2024-05-T12:45:56.123456000Z",
+        "2024-05-18T:45:56.123456000Z",
+        "2024-05-18T12::56.123456000Z",
+        "2024-05-18T12:45:.123456000Z",
+
+        // Invalid Year
+        "2-05-18T12:45:56.123456Z",
+        "20-05-18T12:45:56.123456Z",
+        "202-05-18T12:45:56.123456Z",
+        "20245-05-18T12:45:56.123456Z",
+        "02024-05-18T12:45:56.123456Z",
+        "ABCD-05-18T12:45:56.123456Z",
+
+        // Invalid Month
+        "2024-0-18T12:45:56.123456000Z",
+        "2024-012-18T12:45:56.123456000Z",
+        "2024-123-18T12:45:56.123456000Z",
+        "2024-00-18T12:45:56.123456000Z",
+        "2024-13-18T12:45:56.123456000Z",
+        "2024-M-18T12:45:56.123456000Z",
+        "2024-MA-18T12:45:56.123456000Z",
+
+        // Invalid Day
+        "2024-05-0T12:45:56.123456000Z",
+        "2024-05-1T12:45:56.123456000Z",
+        "2024-05-123T12:45:56.123456000Z",
+        "2024-05-00T12:45:56.123456000Z",
+        "2024-05-33T12:45:56.123456000Z",
+        "2024-05-MT12:45:56.123456000Z",
+        "2024-05-MAT12:45:56.123456000Z",
+
+        // Invalid Hour
+        // TODO: Log a bug about this: "2024-05-18T0:45:56.123456000Z",
+        // TODO: Log a bug about this: "2024-05-18T1:45:56.123456000Z",
+        "2024-05-18T012:45:56.123456000Z",
+        "2024-05-18T123:45:56.123456000Z",
+        "2024-05-18T24:45:56.123456000Z",
+        "2024-05-18TM:45:56.123456000Z",
+        "2024-05-18TMA:45:56.123456000Z",
+        "2024-05-18TMAT:45:56.123456000Z",
+
+        // Invalid Minute
+        "2024-05-18T12:0:56.123456000Z",
+        "2024-05-18T12:1:56.123456000Z",
+        "2024-05-18T12:012:56.123456000Z",
+        "2024-05-18T12:123:56.123456000Z",
+        "2024-05-18T12:60:56.123456000Z",
+        "2024-05-18T12:M:56.123456000Z",
+        "2024-05-18T12:MA:56.123456000Z",
+        "2024-05-18T12:MAT:56.123456000Z",
+
+        // Invalid Second
+        "2024-05-18T12:45:0.123456000Z",
+        "2024-05-18T12:45:1.123456000Z",
+        "2024-05-18T12:45:012.123456000Z",
+        "2024-05-18T12:45:123.123456000Z",
+        "2024-05-18T12:45:60.123456000Z",
+        "2024-05-18T12:45:M.123456000Z",
+        "2024-05-18T12:45:MA.123456000Z",
+        "2024-05-18T12:45:MAT.123456000Z",
+
+        // Invalid Nanosecond
+        "2024-05-18T12:45:56.Z",
+        // TODO: Log a bug about this: "2024-05-18T12:45:56.1234567890Z",
+        "2024-05-18T12:45:56.MZ",
+        "2024-05-18T12:45:56.MASDMASDMAZ",
+
+        // Invalid Time Zone
+        // TODO: Log a bug about this: "2024-05-18T12:45:56.123456000-00:00",
+        "2024-05-18T12:45:56.123456000ZZ",
+        "2024-05-18T12:45:56.123456000-0",
+        "2024-05-18T12:45:56.123456000-00",
+        "2024-05-18T12:45:56.123456000-:00",
+        "2024-05-18T12:45:56.123456000-3:00",
+        // TODO: Log a bug about this: "2024-05-18T12:45:56.123456000-24:00",
+        "2024-05-18T12:45:56.123456000-100:00",
+        "2024-05-18T12:45:56.123456000-010:00",
+        "2024-05-18T12:45:56.123456000-001:00",
+        "2024-05-18T12:45:56.123456000-M:00",
+        "2024-05-18T12:45:56.123456000-MA:00",
+        "2024-05-18T12:45:56.123456000-MAT:00",
+        "2024-05-18T12:45:56.123456000-02:",
+        "2024-05-18T12:45:56.123456000-02:0",
+        "2024-05-18T12:45:56.123456000-02:1",
+        "2024-05-18T12:45:56.123456000-02:010",
+        "2024-05-18T12:45:56.123456000-02:123",
+        "2024-05-18T12:45:56.123456000-02:M",
+        "2024-05-18T12:45:56.123456000-02:MA",
+        "2024-05-18T12:45:56.123456000-02:MAT",
+        "2024-05-18T12:45:56.123456000+0",
+        "2024-05-18T12:45:56.123456000+00",
+        "2024-05-18T12:45:56.123456000+:00",
+        "2024-05-18T12:45:56.123456000+3:00",
+        // TODO: Log a bug about this: "2024-05-18T12:45:56.123456000+24:00",
+        "2024-05-18T12:45:56.123456000+100:00",
+        "2024-05-18T12:45:56.123456000+010:00",
+        "2024-05-18T12:45:56.123456000+001:00",
+        "2024-05-18T12:45:56.123456000+M:00",
+        "2024-05-18T12:45:56.123456000+MA:00",
+        "2024-05-18T12:45:56.123456000+MAT:00",
+        "2024-05-18T12:45:56.123456000+02:",
+        "2024-05-18T12:45:56.123456000+02:0",
+        "2024-05-18T12:45:56.123456000+02:1",
+        "2024-05-18T12:45:56.123456000+02:010",
+        "2024-05-18T12:45:56.123456000+02:123",
+        "2024-05-18T12:45:56.123456000+02:M",
+        "2024-05-18T12:45:56.123456000+02:MA",
+        "2024-05-18T12:45:56.123456000+02:MAT",
+
+        // Bogus Characters
+        "a2024-05-18T12:45:56.123456789Z",
+        "2024-05-18T12:45:56.123456789Za",
+        "2024:05-18T12:45:56.123456789Z",
+        "2024-05:18T12:45:56.123456789Z",
+        "2024-05-18 12:45:56.123456789Z",
+        "2024-05-18T12-45:56.123456789Z",
+        "2024-05-18T12:45-56.123456789Z",
+        "2024-05-18T12:45:56-123456789Z",
+
+        // Test cases from https://scalars.graphql.org/andimarek/date-time (some omitted since they
+        // are indeed valid for Firebase Data Connect)
+        "2011-08-30T13:22:53.108-03", // The minutes of the offset are missing.
+        "2011-08-30T13:22:53.108", // No offset provided.
+        "2011-08-30", // No time provided.
+        // TODO: Log a bug about this: "2011-08-30T13:22:53.108-00:00", // Negative offset (-00:00)
+        // is not allowed
+        "2011-08-30T13:22:53.108+03:30:15", // Seconds are not allowed for the offset
+        "2011-08-30T24:22:53.108Z", // 24 is not allowed as hour of the time.
+        "2010-02-30T21:22:53.108Z", // 30th of February is not a valid date
+        "2010-02-11T21:22:53.108Z+25:11", // 25 is not a valid hour for offset
+      )
   }
 }
