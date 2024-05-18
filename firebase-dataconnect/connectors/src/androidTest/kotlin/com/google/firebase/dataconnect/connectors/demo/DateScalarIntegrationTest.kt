@@ -130,6 +130,113 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     assertNonNullDateByKeyEquals(key, date)
   }
 
+  @Test
+  fun insertTypicalValueForNullableField() = runTest {
+    val date = dateFromYearMonthDayUTC(7611, 12, 1)
+    val key = connector.insertNullableDate.execute { value = date }.data.key
+    assertNullableDateByKeyEquals(key, "7611-12-01")
+  }
+
+  @Test
+  fun insertMaxValueForNullableDateField() = runTest {
+    val key = connector.insertNullableDate.execute { value = MIN_DATE }.data.key
+    assertNullableDateByKeyEquals(key, "1583-01-01")
+  }
+
+  @Test
+  fun insertMinValueForNullableDateField() = runTest {
+    val key = connector.insertNullableDate.execute { value = MAX_DATE }.data.key
+    assertNullableDateByKeyEquals(key, "9999-12-31")
+  }
+
+  @Test
+  fun insertNullForNullableDateField() = runTest {
+    val key = connector.insertNullableDate.execute { value = null }.data.key
+    assertNullableDateByKeyEquals(key, null)
+  }
+
+  @Test
+  fun insertUndefinedForNullableDateField() = runTest {
+    val key = connector.insertNullableDate.execute {}.data.key
+    assertNullableDateByKeyEquals(key, null)
+  }
+
+  @Test
+  fun insertValueWithTimeForNullableDateField() = runTest {
+    // Use a date that, when converted to UTC, in on a different date to verify that the server does
+    // the expected thing; that is, that it _drops_ the time zone information (rather than
+    // converting the date to UTC then taking the YYYY-MM-DD of that). The server would use the date
+    // "2024-03-27" if it did the erroneous conversion to UTC before taking the YYYY-MM-DD.
+    val date = "2024-03-26T19:48:00.144-07:00"
+    val key = connector.insertNullableDate.executeWithStringVariables(date).data.key
+    assertNullableDateByKeyEquals(key, dateFromYearMonthDayUTC(2024, 3, 26))
+  }
+
+  @Test
+  fun insertIntForNullableDateFieldShouldFail() = runTest {
+    assertThrows(DataConnectException::class) {
+      connector.insertNullableDate.executeWithIntVariables(999_888).data.key
+    }
+  }
+
+  @Test
+  fun insertInvalidDatesValuesForNullableDateFieldShouldFail() = runTest {
+    for (invalidDate in invalidDates) {
+      assertThrows(DataConnectException::class) {
+        connector.insertNullableDate.executeWithStringVariables(invalidDate).data.key
+      }
+    }
+  }
+
+  @Test
+  fun updateNullableDateFieldToAnotherValidValue() = runTest {
+    val date1 = randomDate()
+    val date2 = dateFromYearMonthDayUTC(5654, 12, 1)
+    val key = connector.insertNullableDate.execute { value = date1 }.data.key
+    connector.updateNullableDate.execute(key) { value = date2 }
+    assertNullableDateByKeyEquals(key, "5654-12-01")
+  }
+
+  @Test
+  fun updateNullableDateFieldToMinValue() = runTest {
+    val date = randomDate()
+    val key = connector.insertNullableDate.execute { value = date }.data.key
+    connector.updateNullableDate.execute(key) { value = MIN_DATE }
+    assertNullableDateByKeyEquals(key, "1583-01-01")
+  }
+
+  @Test
+  fun updateNullableDateFieldToMaxValue() = runTest {
+    val date = randomDate()
+    val key = connector.insertNullableDate.execute { value = date }.data.key
+    connector.updateNullableDate.execute(key) { value = MAX_DATE }
+    assertNullableDateByKeyEquals(key, "9999-12-31")
+  }
+
+  @Test
+  fun updateNullableDateFieldToNull() = runTest {
+    val date = randomDate()
+    val key = connector.insertNullableDate.execute { value = date }.data.key
+    connector.updateNullableDate.execute(key) { value = null }
+    assertNullableDateByKeyEquals(key, null)
+  }
+
+  @Test
+  fun updateNullableDateFieldToNonNull() = runTest {
+    val date = randomDate()
+    val key = connector.insertNullableDate.execute { value = null }.data.key
+    connector.updateNullableDate.execute(key) { value = date }
+    assertNullableDateByKeyEquals(key, date)
+  }
+
+  @Test
+  fun updateNullableDateFieldToAnUndefinedValue() = runTest {
+    val date = randomDate()
+    val key = connector.insertNullableDate.execute { value = date }.data.key
+    connector.updateNullableDate.execute(key) {}
+    assertNullableDateByKeyEquals(key, date)
+  }
+
   private suspend fun assertNonNullDateByKeyEquals(key: NonNullDateKey, expected: String) {
     val queryResult =
       connector.getNonNullDateByKey
@@ -142,6 +249,20 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     val queryResult = connector.getNonNullDateByKey.execute(key)
     assertThat(queryResult.data)
       .isEqualTo(GetNonNullDateByKeyQuery.Data(GetNonNullDateByKeyQuery.Data.Value(expected)))
+  }
+
+  private suspend fun assertNullableDateByKeyEquals(key: NullableDateKey, expected: String) {
+    val queryResult =
+      connector.getNullableDateByKey
+        .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
+        .execute(key)
+    assertThat(queryResult.data).isEqualTo(GetDateByKeyQueryStringData(expected))
+  }
+
+  private suspend fun assertNullableDateByKeyEquals(key: NullableDateKey, expected: Date?) {
+    val queryResult = connector.getNullableDateByKey.execute(key)
+    assertThat(queryResult.data)
+      .isEqualTo(GetNullableDateByKeyQuery.Data(GetNullableDateByKeyQuery.Data.Value(expected)))
   }
 
   /**
@@ -184,6 +305,10 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     suspend fun <Data> GeneratedQuery<*, Data, GetNonNullDateByKeyQuery.Variables>.execute(
       key: NonNullDateKey
     ) = ref(GetNonNullDateByKeyQuery.Variables(key)).execute()
+
+    suspend fun <Data> GeneratedQuery<*, Data, GetNullableDateByKeyQuery.Variables>.execute(
+      key: NullableDateKey
+    ) = ref(GetNullableDateByKeyQuery.Variables(key)).execute()
 
     val invalidDates =
       listOf(

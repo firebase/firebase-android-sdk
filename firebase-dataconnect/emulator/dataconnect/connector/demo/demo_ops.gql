@@ -1174,8 +1174,12 @@ query GetNonNullDateWithSchemaDefaultByKey($key: NonNullDateWithSchemaDefault_Ke
   value: nonNullDateWithSchemaDefault(key: $key) { value }
 }
 
-mutation InsertNullableDate($value: Date!) @auth(level: PUBLIC) {
+mutation InsertNullableDate($value: Date) @auth(level: PUBLIC) {
   nullableDate_insert(data: { value: $value })
+}
+
+mutation UpdateNullableDate($key: NullableDate_Key!, $value: Date) @auth(level: PUBLIC) {
+  nullableDate_update(key: $key, data: { value: $value })
 }
 
 query GetNullableDateByKey($key: NullableDate_Key!) @auth(level: PUBLIC) {
