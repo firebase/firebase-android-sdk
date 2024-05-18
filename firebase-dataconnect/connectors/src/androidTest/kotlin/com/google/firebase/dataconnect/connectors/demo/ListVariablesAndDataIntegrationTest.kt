@@ -21,9 +21,9 @@ import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.MAX_DATE
 import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
-import com.google.firebase.dataconnect.testutil.MAX_VALUE
+import com.google.firebase.dataconnect.testutil.MAX_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.MIN_DATE
-import com.google.firebase.dataconnect.testutil.MIN_VALUE
+import com.google.firebase.dataconnect.testutil.MIN_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import java.util.UUID
@@ -148,7 +148,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               Long.MIN_VALUE
             ),
           dates = listOf(MIN_DATE, MAX_DATE),
-          timestamps = listOf(Timestamp.MIN_VALUE, Timestamp.MAX_VALUE),
+          timestamps = listOf(MIN_TIMESTAMP, MAX_TIMESTAMP),
         )
         .data
         .key
@@ -178,8 +178,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
             dates = listOf(MIN_DATE, MAX_DATE),
             timestamps =
               listOf(
-                Timestamp.MIN_VALUE.withMicrosecondPrecision(),
-                Timestamp.MAX_VALUE.withMicrosecondPrecision()
+                MIN_TIMESTAMP.withMicrosecondPrecision(),
+                MAX_TIMESTAMP.withMicrosecondPrecision()
               ),
           )
         )
@@ -466,7 +466,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               Long.MIN_VALUE
             )
           dates = listOf(MIN_DATE, MAX_DATE)
-          timestamps = listOf(Timestamp.MIN_VALUE, Timestamp.MAX_VALUE)
+          timestamps = listOf(MIN_TIMESTAMP, MAX_TIMESTAMP)
         }
         .data
         .key
@@ -496,8 +496,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
             dates = listOf(MIN_DATE, MAX_DATE),
             timestamps =
               listOf(
-                Timestamp.MIN_VALUE.withMicrosecondPrecision(),
-                Timestamp.MAX_VALUE.withMicrosecondPrecision()
+                MIN_TIMESTAMP.withMicrosecondPrecision(),
+                MAX_TIMESTAMP.withMicrosecondPrecision()
               ),
           )
         )

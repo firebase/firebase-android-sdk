@@ -1205,3 +1205,55 @@ query GetNullableDatesWithDefaultsByKey($key: NullableDatesWithDefaults_Key!) @a
     requestTime2
   }
 }
+
+mutation InsertNonNullTimestamp($value: Timestamp!) @auth(level: PUBLIC) {
+  nonNullTimestamp_insert(data: { value: $value })
+}
+
+mutation UpdateNonNullTimestamp($key: NonNullTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
+  nonNullTimestamp_update(key: $key, data: { value: $value })
+}
+
+query GetNonNullTimestampByKey($key: NonNullTimestamp_Key!) @auth(level: PUBLIC) {
+  value: nonNullTimestamp(key: $key) { value }
+}
+
+mutation InsertNonNullTimestampsWithDefaults($value: Timestamp! = "3575-04-12T10:11:12.541991Z") @auth(level: PUBLIC) {
+  nonNullTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query GetNonNullTimestampsWithDefaultsByKey($key: NonNullTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
+  nonNullTimestampsWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+mutation InsertNullableTimestamp($value: Timestamp) @auth(level: PUBLIC) {
+  nullableTimestamp_insert(data: { value: $value })
+}
+
+mutation UpdateNullableTimestamp($key: NullableTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
+  nullableTimestamp_update(key: $key, data: { value: $value })
+}
+
+query GetNullableTimestampByKey($key: NullableTimestamp_Key!) @auth(level: PUBLIC) {
+  value: nullableTimestamp(key: $key) { value }
+}
+
+mutation InsertNullableTimestampsWithDefaults($value: Timestamp = "2554-12-20T13:03:45.110429Z") @auth(level: PUBLIC) {
+  nullableTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query GetNullableTimestampsWithDefaultsByKey($key: NullableTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
+  nullableTimestampsWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}

@@ -68,7 +68,7 @@ fun randomDate(): Date =
 /** Generates and returns a random [Timestamp] object. */
 fun randomTimestamp(): Timestamp {
   val nanoseconds = Random.nextInt(1_000_000_000)
-  val seconds = Random.nextLong(Timestamp.MIN_VALUE.seconds, Timestamp.MAX_VALUE.seconds)
+  val seconds = Random.nextLong(MIN_TIMESTAMP.seconds, MAX_TIMESTAMP.seconds)
   return Timestamp(seconds, nanoseconds)
 }
 
@@ -78,9 +78,49 @@ fun Timestamp.withMicrosecondPrecision(): Timestamp {
 }
 
 // "1583-01-01T00:00:00.000000Z"
-val Timestamp.Companion.MIN_VALUE
+val MIN_TIMESTAMP
   get() = Timestamp(-12_212_553_600, 0)
 
 // "9999-12-31T23:59:59.999999999Z"
-val Timestamp.Companion.MAX_VALUE
+val MAX_TIMESTAMP
   get() = Timestamp(253_402_300_799, 999_999_999)
+
+val ZERO_TIMESTAMP: Timestamp
+  get() = Timestamp(0, 0)
+
+/**
+ * Creates and returns a new [Timestamp] object that represents the given date and time.
+ *
+ * @param year The year; must be between 0 and 9999, inclusive.
+ * @param month The month; must be between 1 and 12, inclusive.
+ * @param day The day of the month; must be between 1 and 31, inclusive.
+ */
+fun timestampFromUTCDateAndTime(
+  year: Int,
+  month: Int,
+  day: Int,
+  hour: Int,
+  minute: Int,
+  second: Int,
+  nanoseconds: Int
+): Timestamp {
+  require(year in 0..9999) { "year must be between 0 and 9999, inclusive" }
+  require(month in 1..12) { "month must be between 1 and 12, inclusive" }
+  require(day in 1..31) { "day must be between 1 and 31, inclusive" }
+  require(hour in 0..24) { "hour must be between 0 and 23, inclusive" }
+  require(minute in 0..59) { "minute must be between 0 and 59, inclusive" }
+  require(second in 0..59) { "second must be between 0 and 59, inclusive" }
+  require(nanoseconds in 0..999_999_999) {
+    "nanoseconds must be between 0 and 999,999,999, inclusive"
+  }
+
+  val seconds =
+    GregorianCalendar(TimeZone.getTimeZone("UTC"))
+      .apply {
+        set(year, month - 1, day, hour, minute, second)
+        set(Calendar.MILLISECOND, 0)
+      }
+      .timeInMillis / 1000
+
+  return Timestamp(seconds, nanoseconds)
+}
