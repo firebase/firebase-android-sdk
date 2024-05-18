@@ -85,23 +85,6 @@ type UUIDVariants @table {
   nullableWithNonNullValue: UUID
 }
 
-type DateVariants @table {
-  nonNullValue: Date!
-  nullableWithNullValue: Date
-  nullableWithNonNullValue: Date
-  minValue: Date
-  maxValue: Date
-  nonZeroTime: Date
-}
-
-type TimestampVariants @table {
-  nonNullValue: Timestamp!
-  nullableWithNullValue: Timestamp
-  nullableWithNonNullValue: Timestamp
-  minValue: Timestamp
-  maxValue: Timestamp
-}
-
 type SyntheticId @table {
   value: String!
 }

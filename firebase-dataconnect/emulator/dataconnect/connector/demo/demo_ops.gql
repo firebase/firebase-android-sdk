@@ -579,61 +579,6 @@ query GetUUIDVariantsByKey($key: UUIDVariants_Key!) @auth(level: PUBLIC) {
   }
 }
 
-mutation InsertTimestampVariants(
-  $nonNullValue: Timestamp!,
-  $nullableWithNullValue: Timestamp,
-  $nullableWithNonNullValue: Timestamp,
-  $minValue: Timestamp!,
-  $maxValue: Timestamp!,
-) @auth(level: PUBLIC) {
-  timestampVariants_insert(data: {
-    nonNullValue: $nonNullValue,
-    nullableWithNullValue: $nullableWithNullValue,
-    nullableWithNonNullValue: $nullableWithNonNullValue,
-    minValue: $minValue,
-    maxValue: $maxValue,
-  })
-}
-
-query GetTimestampVariantsByKey($key: TimestampVariants_Key!) @auth(level: PUBLIC) {
-  timestampVariants(key: $key) {
-    nonNullValue
-    nullableWithNullValue
-    nullableWithNonNullValue
-    minValue
-    maxValue
-  }
-}
-
-mutation InsertDateVariants(
-  $nonNullValue: Date!,
-  $nullableWithNullValue: Date,
-  $nullableWithNonNullValue: Date,
-  $minValue: Date!,
-  $maxValue: Date!,
-  $nonZeroTime: Date!,
-) @auth(level: PUBLIC) {
-  dateVariants_insert(data: {
-    nonNullValue: $nonNullValue,
-    nullableWithNullValue: $nullableWithNullValue,
-    nullableWithNonNullValue: $nullableWithNonNullValue,
-    minValue: $minValue,
-    maxValue: $maxValue,
-    nonZeroTime: $nonZeroTime,
-  })
-}
-
-query GetDateVariantsByKey($key: DateVariants_Key!) @auth(level: PUBLIC) {
-  dateVariants(key: $key) {
-    nonNullValue
-    nullableWithNullValue
-    nullableWithNonNullValue
-    minValue
-    maxValue
-    nonZeroTime
-  }
-}
-
 mutation InsertSyntheticId($value: String!) @auth(level: PUBLIC) {
   syntheticId_insert(data: { value: $value })
 }
