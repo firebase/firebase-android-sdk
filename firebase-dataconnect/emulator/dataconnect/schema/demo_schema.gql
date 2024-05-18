@@ -262,10 +262,14 @@ type NullableDate @table {
   value: Date
 }
 
-type NonNullDateWithSchemaDefault @table {
-  value: Date! @default(value: "2112-01-31")
+type NonNullDatesWithDefaults @table {
+  valueWithVariableDefault: Date!
+  valueWithSchemaDefault: Date! @default(value: "2112-01-31")
+  epoch: Date! @default(sql: "'epoch'::date")
 }
 
-type NullableDateWithSchemaDefault @table {
-  value: Date @default(value: "1921-12-02")
+type NullableDatesWithDefaults @table {
+  valueWithVariableDefault: Date
+  valueWithSchemaDefault: Date @default(value: "1921-12-02")
+  epoch: Date @default(sql: "'epoch'::date")
 }

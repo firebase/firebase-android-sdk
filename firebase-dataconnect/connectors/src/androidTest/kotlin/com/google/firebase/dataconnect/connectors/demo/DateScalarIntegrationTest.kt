@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.testutil.MAX_DATE
 import com.google.firebase.dataconnect.testutil.MIN_DATE
+import com.google.firebase.dataconnect.testutil.ZERO_DATE
 import com.google.firebase.dataconnect.testutil.assertThrows
 import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
 import com.google.firebase.dataconnect.testutil.executeWithEmptyVariables
@@ -65,6 +66,23 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     val date = "2024-03-26T19:48:00.144-07:00"
     val key = connector.insertNonNullDate.executeWithStringVariables(date).data.key
     assertNonNullDateByKeyEquals(key, dateFromYearMonthDayUTC(2024, 3, 26))
+  }
+
+  @Test
+  fun insertNoVariablesForNonNullDateFieldsWithSchemaDefaults() = runTest {
+    val key = connector.insertNonNullDatesWithDefaults.execute {}.data.key
+    val queryResult = connector.getNonNullDatesWithDefaultsByKey.execute(key)
+    assertThat(
+      queryResult.equals(
+        GetNonNullDatesWithDefaultsByKeyQuery.Data(
+          GetNonNullDatesWithDefaultsByKeyQuery.Data.NonNullDatesWithDefaults(
+            valueWithVariableDefault = dateFromYearMonthDayUTC(6904, 11, 30),
+            valueWithSchemaDefault = dateFromYearMonthDayUTC(2112, 1, 31),
+            epoch = ZERO_DATE,
+          )
+        )
+      )
+    )
   }
 
   @Test
@@ -186,6 +204,23 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         connector.insertNullableDate.executeWithStringVariables(invalidDate).data.key
       }
     }
+  }
+
+  @Test
+  fun insertNoVariablesForNullableDateFieldsWithSchemaDefaults() = runTest {
+    val key = connector.insertNullableDatesWithDefaults.execute {}.data.key
+    val queryResult = connector.getNullableDatesWithDefaultsByKey.execute(key)
+    assertThat(
+      queryResult.equals(
+        GetNullableDatesWithDefaultsByKeyQuery.Data(
+          GetNullableDatesWithDefaultsByKeyQuery.Data.NullableDatesWithDefaults(
+            valueWithVariableDefault = dateFromYearMonthDayUTC(8113, 2, 9),
+            valueWithSchemaDefault = dateFromYearMonthDayUTC(1921, 12, 2),
+            epoch = ZERO_DATE,
+          )
+        )
+      )
+    )
   }
 
   @Test

@@ -1166,12 +1166,16 @@ query GetNonNullDateByKey($key: NonNullDate_Key!) @auth(level: PUBLIC) {
   value: nonNullDate(key: $key) { value }
 }
 
-mutation InsertNonNullDateWithSchemaDefault($value: Date!) @auth(level: PUBLIC) {
-  nonNullDateWithSchemaDefault_insert(data: { value: $value })
+mutation InsertNonNullDatesWithDefaults($value: Date! = "6904-11-30") @auth(level: PUBLIC) {
+  nonNullDatesWithDefaults_insert(data: { valueWithVariableDefault: $value })
 }
 
-query GetNonNullDateWithSchemaDefaultByKey($key: NonNullDateWithSchemaDefault_Key!) @auth(level: PUBLIC) {
-  value: nonNullDateWithSchemaDefault(key: $key) { value }
+query GetNonNullDatesWithDefaultsByKey($key: NonNullDatesWithDefaults_Key!) @auth(level: PUBLIC) {
+  nonNullDatesWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+  }
 }
 
 mutation InsertNullableDate($value: Date) @auth(level: PUBLIC) {
@@ -1186,32 +1190,14 @@ query GetNullableDateByKey($key: NullableDate_Key!) @auth(level: PUBLIC) {
   value: nullableDate(key: $key) { value }
 }
 
-mutation InsertNullableDateWithSchemaDefault($value: Date!) @auth(level: PUBLIC) {
-  nullableDateWithSchemaDefault_insert(data: { value: $value })
+mutation InsertNullableDatesWithDefaults($value: Date = "8113-02-09") @auth(level: PUBLIC) {
+  nullableDatesWithDefaults_insert(data: { valueWithVariableDefault: $value })
 }
 
-query GetNullableDateWithSchemaDefaultByKey($key: NullableDateWithSchemaDefault_Key!) @auth(level: PUBLIC) {
-  value: nullableDateWithSchemaDefault(key: $key) { value }
+query GetNullableDatesWithDefaultsByKey($key: NullableDatesWithDefaults_Key!) @auth(level: PUBLIC) {
+  nullableDatesWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
