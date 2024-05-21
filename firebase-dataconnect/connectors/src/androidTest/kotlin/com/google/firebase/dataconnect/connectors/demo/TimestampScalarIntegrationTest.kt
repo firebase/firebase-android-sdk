@@ -174,6 +174,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
+  @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts leap seconds")
   fun insertTimestampWithLeapSecondStringForNonNullTimestampField() = runTest {
     val timestamp = "1990-12-31T23:59:60Z" // From RFC3339 section 5.8
     val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
@@ -188,7 +189,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  @Ignore("TODO: log a bug about this")
+  @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts lowercase T and Z")
   fun insertTimestampWithLowercaseTandZForNonNullTimestampField() = runTest {
     val timestamp = "2024-05-18t12:45:56.123456789z"
     val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
@@ -245,7 +246,20 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFail() = runTest {
     for (invalidTimestamp in invalidTimestamps) {
       assertThrows(DataConnectException::class) {
-        connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp).data.key
+        connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
+      }
+    }
+  }
+
+  @Test
+  @Ignore(
+    "TODO(b/341984878): Add these test cases back to `invalidTimestamps` once the " +
+      "emulator is fixed to correctly reject them"
+  )
+  fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFailBugs() = runTest {
+    for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
+      assertThrows(DataConnectException::class) {
+        connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
       }
     }
   }
@@ -416,9 +430,37 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFail() = runTest {
     for (invalidTimestamp in invalidTimestamps) {
       assertThrows(DataConnectException::class) {
-        connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp).data.key
+        connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
       }
     }
+  }
+
+  @Test
+  @Ignore(
+    "TODO(b/341984878): Add these test cases back to `invalidTimestamps` once the " +
+      "emulator is fixed to correctly reject them"
+  )
+  fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFailBugs() = runTest {
+    for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
+      assertThrows(DataConnectException::class) {
+        connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
+      }
+    }
+  }
+
+  @Test
+  @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts leap seconds")
+  fun insertTimestampWithLeapSecondStringForNullableTimestampField() = runTest {
+    val timestamp = "1990-12-31T23:59:60Z" // From RFC3339 section 5.8
+    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNullableTimestampByKeyEquals(key, "1990-12-31T23:59:60.000000Z")
+  }
+
+  @Test
+  fun insertTimestampWithLeapSecondDateForNullableTimestampField() = runTest {
+    val timestamp = timestampFromUTCDateAndTime(1990, 12, 31, 23, 59, 60, 0)
+    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+    assertNullableTimestampByKeyEquals(key, timestamp)
   }
 
   @Test
@@ -443,7 +485,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  @Ignore("TODO: log a bug about this")
+  @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts lowercase T and Z")
   fun insertTimestampWithLowercaseTandZForNullableTimestampField() = runTest {
     val timestamp = "2024-05-18t12:45:56.123456789z"
     val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
@@ -709,8 +751,8 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         "2024-05-MAT12:45:56.123456000Z",
 
         // Invalid Hour
-        // TODO: Log a bug about this: "2024-05-18T0:45:56.123456000Z",
-        // TODO: Log a bug about this: "2024-05-18T1:45:56.123456000Z",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T0:45:56.123456000Z",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T1:45:56.123456000Z",
         "2024-05-18T012:45:56.123456000Z",
         "2024-05-18T123:45:56.123456000Z",
         "2024-05-18T24:45:56.123456000Z",
@@ -740,18 +782,19 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
         // Invalid Nanosecond
         "2024-05-18T12:45:56.Z",
-        // TODO: Log a bug about this: "2024-05-18T12:45:56.1234567890Z",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.1234567890Z",
         "2024-05-18T12:45:56.MZ",
         "2024-05-18T12:45:56.MASDMASDMAZ",
 
         // Invalid Time Zone
-        // TODO: Log a bug about this: "2024-05-18T12:45:56.123456000-00:00",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000-00:00",
         "2024-05-18T12:45:56.123456000ZZ",
         "2024-05-18T12:45:56.123456000-0",
         "2024-05-18T12:45:56.123456000-00",
         "2024-05-18T12:45:56.123456000-:00",
         "2024-05-18T12:45:56.123456000-3:00",
-        // TODO: Log a bug about this: "2024-05-18T12:45:56.123456000-24:00",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000-24:00",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000-99:00",
         "2024-05-18T12:45:56.123456000-100:00",
         "2024-05-18T12:45:56.123456000-010:00",
         "2024-05-18T12:45:56.123456000-001:00",
@@ -763,6 +806,8 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         "2024-05-18T12:45:56.123456000-02:1",
         "2024-05-18T12:45:56.123456000-02:010",
         "2024-05-18T12:45:56.123456000-02:123",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000-02:60",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000-02:99",
         "2024-05-18T12:45:56.123456000-02:M",
         "2024-05-18T12:45:56.123456000-02:MA",
         "2024-05-18T12:45:56.123456000-02:MAT",
@@ -770,7 +815,8 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         "2024-05-18T12:45:56.123456000+00",
         "2024-05-18T12:45:56.123456000+:00",
         "2024-05-18T12:45:56.123456000+3:00",
-        // TODO: Log a bug about this: "2024-05-18T12:45:56.123456000+24:00",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000+24:00",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000+99:00",
         "2024-05-18T12:45:56.123456000+100:00",
         "2024-05-18T12:45:56.123456000+010:00",
         "2024-05-18T12:45:56.123456000+001:00",
@@ -782,6 +828,8 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         "2024-05-18T12:45:56.123456000+02:1",
         "2024-05-18T12:45:56.123456000+02:010",
         "2024-05-18T12:45:56.123456000+02:123",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000+02:60",
+        // TODO(b/341984878): Uncomment once fixed: "2024-05-18T12:45:56.123456000+02:99",
         "2024-05-18T12:45:56.123456000+02:M",
         "2024-05-18T12:45:56.123456000+02:MA",
         "2024-05-18T12:45:56.123456000+02:MAT",
@@ -820,12 +868,28 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         "2011-08-30T13:22:53.108-03", // The minutes of the offset are missing.
         "2011-08-30T13:22:53.108", // No offset provided.
         "2011-08-30", // No time provided.
-        // TODO: Log a bug about this: "2011-08-30T13:22:53.108-00:00", // Negative offset (-00:00)
-        // is not allowed
         "2011-08-30T13:22:53.108+03:30:15", // Seconds are not allowed for the offset
         "2011-08-30T24:22:53.108Z", // 24 is not allowed as hour of the time.
         "2010-02-30T21:22:53.108Z", // 30th of February is not a valid date
         "2010-02-11T21:22:53.108Z+25:11", // 25 is not a valid hour for offset
+      )
+
+    // TODO(b/341984878): Remove elements from this list as they are fixed, and uncomment them
+    //  in the list above.
+    val invalidTimestampsThatAreErroneouslyAcceptedByTheServer =
+      listOf(
+        "2024-05-18T0:45:56.123456000Z",
+        "2024-05-18T1:45:56.123456000Z",
+        "2024-05-18T12:45:56.1234567890Z",
+        "2024-05-18T12:45:56.123456000-00:00",
+        "2024-05-18T12:45:56.123456000-24:00",
+        "2024-05-18T12:45:56.123456000-99:00",
+        "2024-05-18T12:45:56.123456000+24:00",
+        "2024-05-18T12:45:56.123456000+99:00",
+        "2024-05-18T12:45:56.123456000-02:60",
+        "2024-05-18T12:45:56.123456000-02:99",
+        "2024-05-18T12:45:56.123456000+02:60",
+        "2024-05-18T12:45:56.123456000+02:99",
       )
   }
 }
