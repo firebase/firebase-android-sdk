@@ -86,6 +86,39 @@ mutation InsertStringVariants(
   })
 }
 
+mutation UpdateStringVariantsByKey(
+  $key: StringVariants_Key!,
+  $nonNullWithNonEmptyValue: String,
+  $nonNullWithEmptyValue: String,
+  $nullableWithNullValue: String,
+  $nullableWithNonNullValue: String,
+  $nullableWithEmptyValue: String,
+) @auth(level: PUBLIC) {
+  stringVariants_update(key: $key, data: {
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+  })
+}
+
+mutation InsertStringVariantsWithHardcodedDefaults(
+  $nonNullWithNonEmptyValue: String! = "pfnk98yqqs",
+  $nonNullWithEmptyValue: String! = "",
+  $nullableWithNullValue: String = null,
+  $nullableWithNonNullValue: String = "af8k72s98t",
+  $nullableWithEmptyValue: String = "",
+) @auth(level: PUBLIC) {
+  stringVariants_insert(data: {
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+  })
+}
+
 query GetStringVariantsByKey($key: StringVariants_Key!) @auth(level: PUBLIC) {
   stringVariants(key: $key) {
     nonNullWithNonEmptyValue
@@ -110,6 +143,63 @@ mutation InsertIntVariants(
   $nullableWithMinValue: Int,
 ) @auth(level: PUBLIC) {
   intVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation InsertIntVariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Int! = 0,
+  $nonNullWithPositiveValue: Int! = 819425,
+  $nonNullWithNegativeValue: Int! = -435970,
+  $nonNullWithMaxValue: Int! = 2147483647,
+  $nonNullWithMinValue: Int! = -2147483648,
+  $nullableWithNullValue: Int = null,
+  $nullableWithZeroValue: Int = 0,
+  $nullableWithPositiveValue: Int = 635166,
+  $nullableWithNegativeValue: Int = -171993,
+  $nullableWithMaxValue: Int = 2147483647,
+  $nullableWithMinValue: Int = -2147483648,
+) @auth(level: PUBLIC) {
+  intVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation UpdateIntVariantsByKey(
+  $key: IntVariants_Key!,
+  $nonNullWithZeroValue: Int,
+  $nonNullWithPositiveValue: Int,
+  $nonNullWithNegativeValue: Int,
+  $nonNullWithMaxValue: Int,
+  $nonNullWithMinValue: Int,
+  $nullableWithNullValue: Int,
+  $nullableWithZeroValue: Int,
+  $nullableWithPositiveValue: Int,
+  $nullableWithNegativeValue: Int,
+  $nullableWithMaxValue: Int,
+  $nullableWithMinValue: Int,
+) @auth(level: PUBLIC) {
+  intVariants_update(key: $key, data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -176,6 +266,79 @@ mutation InsertFloatVariants(
   })
 }
 
+mutation InsertFloatVariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Float! = 0.0,
+  $nonNullWithNegativeZeroValue: Float! = -0.0,
+  $nonNullWithPositiveValue: Float! = 750.452,
+  $nonNullWithNegativeValue: Float! = -598.351,
+  $nonNullWithMaxValue: Float! = 1.7976931348623157E308,
+  $nonNullWithMinValue: Float! = 4.9E-324,
+  $nonNullWithMaxSafeIntegerValue: Float! = 9007199254740991.0,
+  $nullableWithNullValue: Float = null,
+  $nullableWithZeroValue: Float = 0.0,
+  $nullableWithNegativeZeroValue: Float = -0.0,
+  $nullableWithPositiveValue: Float = 597.650,
+  $nullableWithNegativeValue: Float = -181.366,
+  $nullableWithMaxValue: Float = 1.7976931348623157E308,
+  $nullableWithMinValue: Float = 4.9E-324,
+  $nullableWithMaxSafeIntegerValue: Float = 9007199254740991.0,
+) @auth(level: PUBLIC) {
+  floatVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
+mutation UpdateFloatVariantsByKey(
+  $key: FloatVariants_Key!,
+  $nonNullWithZeroValue: Float,
+  $nonNullWithNegativeZeroValue: Float,
+  $nonNullWithPositiveValue: Float,
+  $nonNullWithNegativeValue: Float,
+  $nonNullWithMaxValue: Float,
+  $nonNullWithMinValue: Float,
+  $nonNullWithMaxSafeIntegerValue: Float,
+  $nullableWithNullValue: Float,
+  $nullableWithZeroValue: Float,
+  $nullableWithNegativeZeroValue: Float,
+  $nullableWithPositiveValue: Float,
+  $nullableWithNegativeValue: Float,
+  $nullableWithMaxValue: Float,
+  $nullableWithMinValue: Float,
+  $nullableWithMaxSafeIntegerValue: Float,
+) @auth(level: PUBLIC) {
+  floatVariants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
 query GetFloatVariantsByKey($key: FloatVariants_Key!) @auth(level: PUBLIC) {
   floatVariants(key: $key) {
     nonNullWithZeroValue
@@ -204,6 +367,39 @@ mutation InsertBooleanVariants(
   $nullableWithFalseValue: Boolean,
 ) @auth(level: PUBLIC) {
   booleanVariants_insert(data: {
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+mutation InsertBooleanVariantsWithHardcodedDefaults(
+  $nonNullWithTrueValue: Boolean! = true,
+  $nonNullWithFalseValue: Boolean! = false,
+  $nullableWithNullValue: Boolean = null,
+  $nullableWithTrueValue: Boolean = true,
+  $nullableWithFalseValue: Boolean = false,
+) @auth(level: PUBLIC) {
+  booleanVariants_insert(data: {
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+mutation UpdateBooleanVariantsByKey(
+  $key: BooleanVariants_Key!,
+  $nonNullWithTrueValue: Boolean,
+  $nonNullWithFalseValue: Boolean,
+  $nullableWithNullValue: Boolean,
+  $nullableWithTrueValue: Boolean,
+  $nullableWithFalseValue: Boolean,
+) @auth(level: PUBLIC) {
+  booleanVariants_update(key: $key, data: {
     nonNullWithTrueValue: $nonNullWithTrueValue,
     nonNullWithFalseValue: $nonNullWithFalseValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -250,6 +446,63 @@ mutation InsertInt64Variants(
   })
 }
 
+mutation InsertInt64VariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Int64! = 0,
+  $nonNullWithPositiveValue: Int64! = 8140262498000722655,
+  $nonNullWithNegativeValue: Int64! = -6722404680598014256,
+  $nonNullWithMaxValue: Int64! = 9223372036854775807,
+  $nonNullWithMinValue: Int64! = -9223372036854775808,
+  $nullableWithNullValue: Int64 = null,
+  $nullableWithZeroValue: Int64 = 0,
+  $nullableWithPositiveValue: Int64 = 2623421399624774761,
+  $nullableWithNegativeValue: Int64 = -1400927531111898547,
+  $nullableWithMaxValue: Int64 = 9223372036854775807,
+  $nullableWithMinValue: Int64 = -9223372036854775808,
+) @auth(level: PUBLIC) {
+  int64Variants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation UpdateInt64VariantsByKey(
+  $key: Int64Variants_Key!,
+  $nonNullWithZeroValue: Int64,
+  $nonNullWithPositiveValue: Int64,
+  $nonNullWithNegativeValue: Int64,
+  $nonNullWithMaxValue: Int64,
+  $nonNullWithMinValue: Int64,
+  $nullableWithNullValue: Int64,
+  $nullableWithZeroValue: Int64,
+  $nullableWithPositiveValue: Int64,
+  $nullableWithNegativeValue: Int64,
+  $nullableWithMaxValue: Int64,
+  $nullableWithMinValue: Int64,
+) @auth(level: PUBLIC) {
+  int64Variants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
 query GetInt64VariantsByKey($key: Int64Variants_Key!) @auth(level: PUBLIC) {
   int64Variants(key: $key) {
     nonNullWithZeroValue
@@ -278,66 +531,51 @@ mutation InsertUUIDVariants(
   })
 }
 
+# TODO(b/341070491) Uncomment this mutation and enable test "insertUUIDVariantsWithDefaultValues"
+# At the time of writing, default values for UUID variables fails to generate valid SQL.
+# Once fixed, uncomment the definition of "InsertUUIDVariantsWithHardcodedDefaults" below
+#mutation InsertUUIDVariantsWithHardcodedDefaults(
+#  $nonNullValue: UUID! = "66576fdc-1a35-4b59-8c8b-d3beb65956ca",
+#  $nullableWithNullValue: UUID = null,
+#  $nullableWithNonNullValue: UUID = "59ab3886-8b84-4233-a5e6-da58c0e8b97d",
+#) @auth(level: PUBLIC) {
+#  uUIDVariants_insert(data: {
+#    nonNullValue: $nonNullValue,
+#    nullableWithNullValue: $nullableWithNullValue,
+#    nullableWithNonNullValue: $nullableWithNonNullValue,
+#  })
+#}
+
+# TODO(b/341070491) Delete this definition of the "InsertUUIDVariantsWithHardcodedDefaults" mutation
+# and uncomment the one above once the emulator is fixed to properly handle default values for UUID
+# variables. This definition is merely here so that the codegen will generate classes so that the
+# test can still be written in Kotlin and compile, even though it is disabled.
+mutation InsertUUIDVariantsWithHardcodedDefaults @auth(level: PUBLIC) {
+  uUIDVariants_insert(data: {
+    nonNullValue: "7f385800-13d6-491a-98c8-b4dee3fb45cb",
+    nullableWithNullValue: null,
+    nullableWithNonNullValue: "ede8dc0e-600c-4093-8812-071f2cedc8db",
+  })
+}
+
+mutation UpdateUUIDVariantsByKey(
+  $key: UUIDVariants_Key!,
+  $nonNullValue: UUID,
+  $nullableWithNullValue: UUID,
+  $nullableWithNonNullValue: UUID,
+) @auth(level: PUBLIC) {
+  uUIDVariants_update(key: $key, data: {
+    nonNullValue: $nonNullValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+  })
+}
+
 query GetUUIDVariantsByKey($key: UUIDVariants_Key!) @auth(level: PUBLIC) {
   uUIDVariants(key: $key) {
     nonNullValue
     nullableWithNullValue
     nullableWithNonNullValue
-  }
-}
-
-mutation InsertTimestampVariants(
-  $nonNullValue: Timestamp!,
-  $nullableWithNullValue: Timestamp,
-  $nullableWithNonNullValue: Timestamp,
-  $minValue: Timestamp!,
-  $maxValue: Timestamp!,
-) @auth(level: PUBLIC) {
-  timestampVariants_insert(data: {
-    nonNullValue: $nonNullValue,
-    nullableWithNullValue: $nullableWithNullValue,
-    nullableWithNonNullValue: $nullableWithNonNullValue,
-    minValue: $minValue,
-    maxValue: $maxValue,
-  })
-}
-
-query GetTimestampVariantsByKey($key: TimestampVariants_Key!) @auth(level: PUBLIC) {
-  timestampVariants(key: $key) {
-    nonNullValue
-    nullableWithNullValue
-    nullableWithNonNullValue
-    minValue
-    maxValue
-  }
-}
-
-mutation InsertDateVariants(
-  $nonNullValue: Date!,
-  $nullableWithNullValue: Date,
-  $nullableWithNonNullValue: Date,
-  $minValue: Date!,
-  $maxValue: Date!,
-  $nonZeroTime: Date!,
-) @auth(level: PUBLIC) {
-  dateVariants_insert(data: {
-    nonNullValue: $nonNullValue,
-    nullableWithNullValue: $nullableWithNullValue,
-    nullableWithNonNullValue: $nullableWithNonNullValue,
-    minValue: $minValue,
-    maxValue: $maxValue,
-    nonZeroTime: $nonZeroTime,
-  })
-}
-
-query GetDateVariantsByKey($key: DateVariants_Key!) @auth(level: PUBLIC) {
-  dateVariants(key: $key) {
-    nonNullValue
-    nullableWithNullValue
-    nullableWithNonNullValue
-    minValue
-    maxValue
-    nonZeroTime
   }
 }
 
@@ -913,5 +1151,109 @@ query GetNullableListsByKey($key: NullableLists_Key!) @auth(level: PUBLIC) {
     int64s
     dates
     timestamps
+  }
+}
+
+mutation InsertNonNullDate($value: Date!) @auth(level: PUBLIC) {
+  nonNullDate_insert(data: { value: $value })
+}
+
+mutation UpdateNonNullDate($key: NonNullDate_Key!, $value: Date) @auth(level: PUBLIC) {
+  nonNullDate_update(key: $key, data: { value: $value })
+}
+
+query GetNonNullDateByKey($key: NonNullDate_Key!) @auth(level: PUBLIC) {
+  value: nonNullDate(key: $key) { value }
+}
+
+mutation InsertNonNullDatesWithDefaults($value: Date! = "6904-11-30") @auth(level: PUBLIC) {
+  nonNullDatesWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query GetNonNullDatesWithDefaultsByKey($key: NonNullDatesWithDefaults_Key!) @auth(level: PUBLIC) {
+  nonNullDatesWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+mutation InsertNullableDate($value: Date) @auth(level: PUBLIC) {
+  nullableDate_insert(data: { value: $value })
+}
+
+mutation UpdateNullableDate($key: NullableDate_Key!, $value: Date) @auth(level: PUBLIC) {
+  nullableDate_update(key: $key, data: { value: $value })
+}
+
+query GetNullableDateByKey($key: NullableDate_Key!) @auth(level: PUBLIC) {
+  value: nullableDate(key: $key) { value }
+}
+
+mutation InsertNullableDatesWithDefaults($value: Date = "8113-02-09") @auth(level: PUBLIC) {
+  nullableDatesWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query GetNullableDatesWithDefaultsByKey($key: NullableDatesWithDefaults_Key!) @auth(level: PUBLIC) {
+  nullableDatesWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+mutation InsertNonNullTimestamp($value: Timestamp!) @auth(level: PUBLIC) {
+  nonNullTimestamp_insert(data: { value: $value })
+}
+
+mutation UpdateNonNullTimestamp($key: NonNullTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
+  nonNullTimestamp_update(key: $key, data: { value: $value })
+}
+
+query GetNonNullTimestampByKey($key: NonNullTimestamp_Key!) @auth(level: PUBLIC) {
+  value: nonNullTimestamp(key: $key) { value }
+}
+
+mutation InsertNonNullTimestampsWithDefaults($value: Timestamp! = "3575-04-12T10:11:12.541991Z") @auth(level: PUBLIC) {
+  nonNullTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query GetNonNullTimestampsWithDefaultsByKey($key: NonNullTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
+  nonNullTimestampsWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+mutation InsertNullableTimestamp($value: Timestamp) @auth(level: PUBLIC) {
+  nullableTimestamp_insert(data: { value: $value })
+}
+
+mutation UpdateNullableTimestamp($key: NullableTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
+  nullableTimestamp_update(key: $key, data: { value: $value })
+}
+
+query GetNullableTimestampByKey($key: NullableTimestamp_Key!) @auth(level: PUBLIC) {
+  value: nullableTimestamp(key: $key) { value }
+}
+
+mutation InsertNullableTimestampsWithDefaults($value: Timestamp = "2554-12-20T13:03:45.110429Z") @auth(level: PUBLIC) {
+  nullableTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query GetNullableTimestampsWithDefaultsByKey($key: NullableTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
+  nullableTimestampsWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
   }
 }

@@ -85,23 +85,6 @@ type UUIDVariants @table {
   nullableWithNonNullValue: UUID
 }
 
-type DateVariants @table {
-  nonNullValue: Date!
-  nullableWithNullValue: Date
-  nullableWithNonNullValue: Date
-  minValue: Date
-  maxValue: Date
-  nonZeroTime: Date
-}
-
-type TimestampVariants @table {
-  nonNullValue: Timestamp!
-  nullableWithNullValue: Timestamp
-  nullableWithNonNullValue: Timestamp
-  minValue: Timestamp
-  maxValue: Timestamp
-}
-
 type SyntheticId @table {
   value: String!
 }
@@ -269,4 +252,52 @@ type NullableLists @table {
   int64s: [Int64!]
   dates: [Date!]
   timestamps: [Timestamp!]
+}
+
+type NonNullDate @table {
+  value: Date!
+}
+
+type NullableDate @table {
+  value: Date
+}
+
+type NonNullDatesWithDefaults @table {
+  valueWithVariableDefault: Date!
+  valueWithSchemaDefault: Date! @default(value: "2112-01-31")
+  epoch: Date! @default(sql: "'epoch'::date")
+  requestTime1: Date! @default(expr: "request.time")
+  requestTime2: Date! @default(expr: "request.time")
+}
+
+type NullableDatesWithDefaults @table {
+  valueWithVariableDefault: Date
+  valueWithSchemaDefault: Date @default(value: "1921-12-02")
+  epoch: Date @default(sql: "'epoch'::date")
+  requestTime1: Date @default(expr: "request.time")
+  requestTime2: Date @default(expr: "request.time")
+}
+
+type NonNullTimestamp @table {
+  value: Timestamp!
+}
+
+type NullableTimestamp @table {
+  value: Timestamp
+}
+
+type NonNullTimestampsWithDefaults @table {
+  valueWithVariableDefault: Timestamp!
+  valueWithSchemaDefault: Timestamp! @default(value: "6224-01-31T14:02:45.714214Z")
+  epoch: Timestamp! @default(sql: "'epoch'::timestamptz")
+  requestTime1: Timestamp! @default(expr: "request.time")
+  requestTime2: Timestamp! @default(expr: "request.time")
+}
+
+type NullableTimestampsWithDefaults @table {
+  valueWithVariableDefault: Timestamp
+  valueWithSchemaDefault: Timestamp @default(value: "1621-12-03T01:22:03.513914Z")
+  epoch: Timestamp @default(sql: "'epoch'::timestamptz")
+  requestTime1: Timestamp @default(expr: "request.time")
+  requestTime2: Timestamp @default(expr: "request.time")
 }
