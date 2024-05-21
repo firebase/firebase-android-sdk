@@ -174,6 +174,20 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
+  fun insertTimestampWithLeapSecondStringForNonNullTimestampField() = runTest {
+    val timestamp = "1990-12-31T23:59:60Z" // From RFC3339 section 5.8
+    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, "1990-12-31T23:59:60.000000Z")
+  }
+
+  @Test
+  fun insertTimestampWithLeapSecondDateForNonNullTimestampField() = runTest {
+    val timestamp = timestampFromUTCDateAndTime(1990, 12, 31, 23, 59, 60, 0)
+    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
+    assertNonNullTimestampByKeyEquals(key, timestamp)
+  }
+
+  @Test
   @Ignore("TODO: log a bug about this")
   fun insertTimestampWithLowercaseTandZForNonNullTimestampField() = runTest {
     val timestamp = "2024-05-18t12:45:56.123456789z"
@@ -781,6 +795,25 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         "2024-05-18T12-45:56.123456789Z",
         "2024-05-18T12:45-56.123456789Z",
         "2024-05-18T12:45:56-123456789Z",
+
+        // Out-of-range Values
+        "0000-01-01T12:45:56Z",
+        "2024-00-22T12:45:56Z",
+        "2024-13-22T12:45:56Z",
+        "2024-11-00T12:45:56Z",
+        "2024-01-32T12:45:56Z",
+        "2025-02-29T12:45:56Z",
+        "2024-02-30T12:45:56Z",
+        "2024-03-32T12:45:56Z",
+        "2024-04-31T12:45:56Z",
+        "2024-05-32T12:45:56Z",
+        "2024-06-31T12:45:56Z",
+        "2024-07-32T12:45:56Z",
+        "2024-08-32T12:45:56Z",
+        "2024-09-31T12:45:56Z",
+        "2024-10-32T12:45:56Z",
+        "2024-11-31T12:45:56Z",
+        "2024-12-32T12:45:56Z",
 
         // Test cases from https://scalars.graphql.org/andimarek/date-time (some omitted since they
         // are indeed valid for Firebase Data Connect)
