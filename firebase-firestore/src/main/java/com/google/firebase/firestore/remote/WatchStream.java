@@ -21,8 +21,11 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firestore.v1.FirestoreGrpc;
+import com.google.firestore.v1.InitRequest;
+import com.google.firestore.v1.InitResponse;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
+import com.google.firestore.v1.WriteRequest;
 import com.google.protobuf.ByteString;
 import java.util.Map;
 
@@ -45,11 +48,16 @@ public class WatchStream
 
   /** A callback interface for the set of events that can be emitted by the WatchStream */
   interface Callback extends AbstractStream.StreamCallback {
+
+    /** The handshake for this write stream has completed */
+    void onHandshakeComplete(ByteString dbToken, boolean clearCache);
+
     /** A new change from the watch stream. Snapshot version will ne non-null if it was set */
     void onWatchChange(SnapshotVersion snapshotVersion, WatchChange watchChange);
   }
 
   private final RemoteSerializer serializer;
+  protected boolean handshakeComplete = false;
 
   WatchStream(
       FirestoreChannel channel,
@@ -67,6 +75,37 @@ public class WatchStream
     this.serializer = serializer;
   }
 
+  @Override
+  public void start() {
+    this.handshakeComplete = false;
+    super.start();
+  }
+
+  /**
+   * Sends an InitRequest to the server.
+   */
+  void sendHandshake(ByteString dbToken) {
+    hardAssert(isOpen(), "Writing handshake requires an opened stream");
+    hardAssert(!handshakeComplete, "Handshake already completed");
+
+    InitRequest.Builder initRequest = InitRequest.newBuilder()
+            .setDbToken(dbToken);
+
+    ListenRequest.Builder request = ListenRequest.newBuilder()
+            .setDatabase(serializer.databaseName())
+            .setInitRequest(initRequest);
+
+    writeRequest(request.build());
+  }
+
+  /**
+   * Tracks whether or not a handshake has been successfully exchanged and the stream is ready to
+   * accept watch queries.
+   */
+  boolean isHandshakeComplete() {
+    return handshakeComplete;
+  }
+
   /**
    * Registers interest in the results of the given query. If the query includes a resumeToken it
    * will be included in the request. Results that affect the query will be streamed back as
@@ -74,6 +113,7 @@ public class WatchStream
    */
   public void watchQuery(TargetData targetData) {
     hardAssert(isOpen(), "Watching queries requires an open stream");
+    hardAssert(handshakeComplete, "Handshake must be complete before watching queries");
     ListenRequest.Builder request =
         ListenRequest.newBuilder()
             .setDatabase(serializer.databaseName())
@@ -100,12 +140,22 @@ public class WatchStream
   }
 
   @Override
-  public void onNext(com.google.firestore.v1.ListenResponse listenResponse) {
+  public void onNext(com.google.firestore.v1.ListenResponse response) {
     // A successful response means the stream is healthy
     backoff.reset();
 
-    WatchChange watchChange = serializer.decodeWatchChange(listenResponse);
-    SnapshotVersion snapshotVersion = serializer.decodeVersionFromListenResponse(listenResponse);
-    listener.onWatchChange(snapshotVersion, watchChange);
+    if (!handshakeComplete) {
+      hardAssert(response.hasInitResponse(), "InitResponse expected as part of Handshake response");
+
+      // The first response is the handshake response
+      handshakeComplete = true;
+
+      InitResponse initResponse = response.getInitResponse();
+      listener.onHandshakeComplete(initResponse.getDbToken(), initResponse.getClearCache());
+    } else {
+      WatchChange watchChange = serializer.decodeWatchChange(response);
+      SnapshotVersion snapshotVersion = serializer.decodeVersionFromListenResponse(response);
+      listener.onWatchChange(snapshotVersion, watchChange);
+    }
   }
 }

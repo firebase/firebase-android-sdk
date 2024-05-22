@@ -31,6 +31,8 @@ import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
+import com.google.protobuf.ByteString;
+
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -178,11 +180,11 @@ public class MockDatastore extends Datastore {
     }
 
     @Override
-    public void writeHandshake() {
+    public void sendHandshake(ByteString dbToken) {
       hardAssert(!handshakeComplete, "Handshake already completed");
       writeStreamRequestCount += 1;
       handshakeComplete = true;
-      listener.onHandshakeComplete();
+      listener.onHandshakeComplete(dbToken, false);
     }
 
     @Override

@@ -37,6 +37,8 @@ import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.protobuf.ByteString;
+
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,7 +97,7 @@ public class StreamTest {
     }
 
     @Override
-    public void onHandshakeComplete() {
+    public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
       handshakeSemaphore.release();
     }
 
@@ -127,7 +129,7 @@ public class StreamTest {
       AsyncQueue testQueue, WriteStream writeStream, StreamStatusCallback callback) {
     testQueue.enqueueAndForget(writeStream::start);
     waitFor(callback.openSemaphore);
-    testQueue.enqueueAndForget(writeStream::writeHandshake);
+    testQueue.enqueueAndForget(() -> writeStream.sendHandshake(ByteString.EMPTY));
     waitFor(callback.handshakeSemaphore);
   }
 
@@ -170,9 +172,9 @@ public class StreamTest {
     StreamStatusCallback streamCallback =
         new StreamStatusCallback() {
           @Override
-          public void onHandshakeComplete() {
+          public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
             assertThat(writeStreamWrapper[0].getLastStreamToken()).isNotEmpty();
-            super.onHandshakeComplete();
+            super.onHandshakeComplete(dbToken, clearCache);
           }
 
           @Override
@@ -192,7 +194,7 @@ public class StreamTest {
         () -> assertThrows(Throwable.class, () -> writeStream.writeMutations(mutations)));
 
     // Handshake should always be called
-    testQueue.enqueueAndForget(writeStream::writeHandshake);
+    testQueue.enqueueAndForget(() -> writeStream.sendHandshake(ByteString.EMPTY));
     waitFor(streamCallback.handshakeSemaphore);
 
     // Now writes should succeed

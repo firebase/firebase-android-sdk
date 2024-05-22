@@ -412,6 +412,14 @@ public final class LocalStore implements BundleCallback {
     return targetCache.getLastRemoteSnapshotVersion();
   }
 
+  public ByteString getDbToken() {
+    return globalsCache.getDbToken();
+  }
+
+  public void setDbToken(ByteString dbToken) {
+    globalsCache.setDbToken(dbToken);
+  }
+
   /**
    * Updates the "ground-state" (remote) documents. We assume that the remote event reflects any
    * write batches that have been acknowledged or rejected (specifically, we do not re-apply local
