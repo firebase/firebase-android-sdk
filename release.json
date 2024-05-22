@@ -1,0 +1,12 @@
+{
+    "name": "test_m148",
+    "libraries": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-vertexai"
+    ]
+}

@@ -1,0 +1,63 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "db3f24af688013b1dccb23ee9190abc0b851f33f",
+                "prId": "5986",
+                "author": "Matthew Robertson",
+                "message": "Improve cold initialization time (#5986)\n\nImprove cold initialization time by not validating the fid on init. We\r\nonly need to detect if the fid has changed on initialization, we don't\r\ncare if it's valid. Changing it, deleting it, manipulating it,\r\nwhatever... should cause the Crashlytics id to rotate. That will still\r\nhappen after this change.\r\n\r\nIn my local experiments, this improved the cold init time from about 300\r\nms to 50 ms. This does not affect warm init, when the fid and auth token\r\nare already cached. On the first report, if the auth token has not yet\r\nbeen fetched, it will get fetched at upload time. If validating the fid\r\ncaused the fid to rotate, the Crashlytics id will also rotate on the\r\nnext launch.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/db3f24af688013b1dccb23ee9190abc0b851f33f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5986"
+            },
+            {
+                "commitId": "e449bc10c01b278fb507f17f52145c4678e20a2a",
+                "prId": "5984",
+                "author": "Matthew Robertson",
+                "message": "Fix compatibility issues with Crashlytics (#5984)\n\nFix compatibility issues with Crashlytics.\r\n\r\nTested manually with a test app. Not sure why we had an old version\r\npinned with exclude rules?\r\n\r\nShould we do something with the version catalog instead? Keep all the\r\nSDK's dependencies pinned to versions, but those versions are defined\r\nconsistently with the BoM.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e449bc10c01b278fb507f17f52145c4678e20a2a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5984"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "f6f826801d3fbf00c3d4b7add6f81769d743fd48",
+                "prId": "5974",
+                "author": "Matthew Robertson",
+                "message": "Make the settings cache load lazy, improving init time (#5974)\n\nThis is part of an effort to prevent ANRs.\r\n\r\nThe Sessions sdk was blocking the main thread for a split second to load\r\nthe cache from disk. By making the cache lazy, it is still safe to fetch\r\nit anytime and assume it is loaded at any time, but it will not block\r\ninitialization, instead it will block the first read. The first time\r\nSessions reads from the cache is in a background thread, so it will be\r\nloaded then. But if we ever tried to read the cache after say a failed\r\ninitiation, we can still safely assume when we get `settingsCache` it\r\nwill have loaded from disk.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f6f826801d3fbf00c3d4b7add6f81769d743fd48",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5974"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "8f2d30ed7e56407c6379888b5ccd7f6cd379b4d6",
+                "prId": "5885",
+                "author": "argzdev",
+                "message": "openStream should not be intercepted if Firebase Perf is not initialized (#5885)\n\nProposed fix for #5584:\r\n\r\n### Issue\r\nCrash happens if a URL connection is opened e.g. `url.openStream()` when\r\n`TransportManager` has not been initialized. If developer wants to\r\nprogrammatically enable Firebase using FirebaseOptions, but have\r\nincluded the Firebase Perf plugin, the app will crash after doing a\r\nnetwork call.\r\n\r\n### Steps to reproduce\r\n1. Add Firebase perf plugin\r\n- Module `build.gradle`\r\n```\r\nplugins {\r\n    alias(libs.plugins.android.application) apply false\r\n    alias(libs.plugins.jetbrains.kotlin.android) apply false\r\n    id(\"com.google.gms.google-services\") version \"4.4.1\" apply false\r\n    id(\"com.google.firebase.firebase-perf\") version \"1.4.2\" apply false\r\n}\r\n```\r\n- App `build.gradle`\r\n```\r\nplugins {\r\n    alias(libs.plugins.android.application)\r\n    alias(libs.plugins.jetbrains.kotlin.android)\r\n    id(\"com.google.gms.google-services\")\r\n    id(\"com.google.firebase.firebase-perf\")\r\n}\r\n```\r\n2. Disable Firebase\r\n```xml\r\n        <provider\r\n            android:name=\"com.google.firebase.provider.FirebaseInitProvider\"\r\n            android:authorities=\"${applicationId}.firebaseinitprovider\"\r\n            tools:node=\"remove\"\r\n            />   \r\n```\r\n3. Do a network call\r\n```\r\nval url = URL(\"https\", \"www.amazon.com\", 443, \"\")\r\nval inputStream = url.openStream()\r\n```\r\n\r\n### Investigation\r\n1. `openStream` in `FirebasePerfUrlConnection` intercepts all urls that\r\nopens connections.\r\n5. `openStream` requires `TransportManager` to be initialized\r\n6. `TransportManager` is only initialized after `FirebasePerformance`\r\nhas been initialized\r\n\r\n### Solution\r\nIf `TransportManager` is not initialized, we should simply return the\r\nURL openStream and not intercept the connection.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f2d30ed7e56407c6379888b5ccd7f6cd379b4d6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5885"
+            }
+        ],
+        "firebase-perf/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "4d2fbfd4077a97da438419e1e81131fcacffd297",
+                "prId": "5958",
+                "author": "Rodrigo Lazo",
+                "message": "Vertex ai (#5958)\n\nCo-authored-by: David Motsonashvili <davidmotson@gmail.com>\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>\r\nCo-authored-by: Rosário P. Fernandes <rosariopf@google.com>\r\nCo-authored-by: Vinay Guthal <vguthal@google.com>\r\nCo-authored-by: VinayGuthal <vguthal109@gmail.com>\r\nCo-authored-by: emilypgoogle <110422458+emilypgoogle@users.noreply.github.com>\r\nCo-authored-by: themiswang <themisw@google.com>\r\nCo-authored-by: argzdev <alvinrustan@google.com>\r\nCo-authored-by: Ryan Wilson <wilsonryan@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4d2fbfd4077a97da438419e1e81131fcacffd297",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5958"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx"
+    ]
+}
