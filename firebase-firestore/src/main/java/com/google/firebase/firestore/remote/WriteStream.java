@@ -23,6 +23,8 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firestore.v1.FirestoreGrpc;
+import com.google.firestore.v1.InitRequest;
+import com.google.firestore.v1.InitResponse;
 import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;
 import com.google.protobuf.ByteString;
@@ -54,7 +56,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
   /** A callback interface for the set of events that can be emitted by the WriteStream */
   public interface Callback extends AbstractStream.StreamCallback {
     /** The handshake for this write stream has completed */
-    void onHandshakeComplete();
+    void onHandshakeComplete(ByteString dbToken, boolean clearCache);
 
     /** Response for the last write. */
     void onWriteResponse(SnapshotVersion commitVersion, List<MutationResult> mutationResults);
@@ -131,12 +133,18 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
    * StreamingWrite RPC work. Subsequent {@link #writeMutations} calls should wait until a response
    * has been delivered to {@link WriteStream.Callback#onHandshakeComplete}.
    */
-  void writeHandshake() {
+  void sendHandshake(ByteString dbToken) {
     hardAssert(isOpen(), "Writing handshake requires an opened stream");
     hardAssert(!handshakeComplete, "Handshake already completed");
     // TODO: Support stream resumption. We intentionally do not set the stream token on the
     // handshake, ignoring any stream token we might have.
-    WriteRequest.Builder request = WriteRequest.newBuilder().setDatabase(serializer.databaseName());
+
+    InitRequest.Builder initRequest = InitRequest.newBuilder()
+            .setDbToken(dbToken);
+
+    WriteRequest.Builder request = WriteRequest.newBuilder()
+            .setDatabase(serializer.databaseName())
+            .setInitRequest(initRequest);
 
     writeRequest(request.build());
   }
@@ -164,10 +172,13 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
     lastStreamToken = response.getStreamToken();
 
     if (!handshakeComplete) {
+      hardAssert(response.hasInitResponse(),"InitResponse expected as part of Handshake response");
+
       // The first response is the handshake response
       handshakeComplete = true;
 
-      listener.onHandshakeComplete();
+      InitResponse initResponse = response.getInitResponse();
+      listener.onHandshakeComplete(initResponse.getDbToken(), initResponse.getClearCache());
     } else {
       // A successful first write response means the stream is healthy,
       // Note, that we could consider a successful handshake healthy, however,

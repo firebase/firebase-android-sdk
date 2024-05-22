@@ -175,7 +175,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
             new WatchStream.Callback() {
               @Override
               public void onOpen() {
-                handleWatchStreamOpen();
+                watchStream.sendHandshake(localStore.getDbToken());
+              }
+
+              @Override
+              public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
+                localStore.setDbToken(dbToken);
+                handleWatchStreamHandshakeComplete();
               }
 
               @Override
@@ -194,11 +200,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
             new WriteStream.Callback() {
               @Override
               public void onOpen() {
-                writeStream.writeHandshake();
+                writeStream.sendHandshake(localStore.getDbToken());
               }
 
               @Override
-              public void onHandshakeComplete() {
+              public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
+                localStore.setDbToken(dbToken);
                 handleWriteStreamHandshakeComplete();
               }
 
@@ -365,7 +372,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     if (shouldStartWatchStream()) {
       startWatchStream();
-    } else if (watchStream.isOpen()) {
+    } else if (watchStream.isOpen() && watchStream.isHandshakeComplete()) {
       sendWatchRequest(targetData);
     }
   }
@@ -449,7 +456,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     onlineStateTracker.handleWatchStreamStart();
   }
 
-  private void handleWatchStreamOpen() {
+  private void handleWatchStreamHandshakeComplete() {
     // Restore any existing watches.
     for (TargetData targetData : listenTargets.values()) {
       sendWatchRequest(targetData);
