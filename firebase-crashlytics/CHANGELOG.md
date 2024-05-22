@@ -1,5 +1,6 @@
 # Unreleased
-
+* [changed] Improve cold initialization time.
+* [fixed] Fixed version compatibility issues with other Firebase libraries.
 
 # 19.0.0
 * [fixed] Force validation or rotation of FIDs.
