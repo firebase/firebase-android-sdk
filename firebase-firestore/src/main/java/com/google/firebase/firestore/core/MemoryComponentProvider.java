@@ -146,8 +146,8 @@ public class MemoryComponentProvider extends ComponentProvider {
     }
 
     @Override
-    public void handleClearCache() {
-      getSyncEngine().handleClearCache();
+    public void clearCacheData() {
+      getSyncEngine().clearCacheData();
     }
 
     @Override

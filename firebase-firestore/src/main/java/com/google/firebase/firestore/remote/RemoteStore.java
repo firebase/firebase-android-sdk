@@ -66,6 +66,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
+  private boolean writeStreamHandshakeInProgress;
+  private boolean watchStreamHandshakeInProgress;
 
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
@@ -109,7 +111,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     /**
      * Synchronization event that requires cache be cleared.
      */
-    void handleClearCache();
+    void clearCacheData();
 
     /**
      * Returns the set of remote document keys for the given target ID. This list includes the
@@ -176,19 +178,25 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     onlineStateTracker =
         new OnlineStateTracker(workerQueue, remoteStoreCallback::handleOnlineStateChange);
 
+    watchStreamHandshakeInProgress = false;
+    writeStreamHandshakeInProgress = false;
+
     // Create new streams (but note they're not started yet).
     watchStream =
         datastore.createWatchStream(
             new WatchStream.Callback() {
               @Override
               public void onOpen() {
-                watchStream.sendHandshake(localStore.getDbToken());
+                hardAssert(!watchStreamHandshakeInProgress, "Watch handshake already in progress.");
+                if (!writeStreamHandshakeInProgress) {
+                  watchStream.sendHandshake(localStore.getDbToken());
+                }
+                watchStreamHandshakeInProgress = true;
               }
 
               @Override
               public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
-                localStore.setDbToken(dbToken);
-                handleWatchStreamHandshakeComplete();
+                handleWatchStreamHandshakeComplete(dbToken, clearCache);
               }
 
               @Override
@@ -198,6 +206,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
               @Override
               public void onClose(Status status) {
+                watchStreamHandshakeInProgress = false;
                 handleWatchStreamClose(status);
               }
             });
@@ -207,13 +216,16 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
             new WriteStream.Callback() {
               @Override
               public void onOpen() {
-                writeStream.sendHandshake(localStore.getDbToken());
+                hardAssert(!writeStreamHandshakeInProgress, "Watch handshake already in progress.");
+                if (!watchStreamHandshakeInProgress) {
+                  writeStream.sendHandshake(localStore.getDbToken());
+                }
+                writeStreamHandshakeInProgress = true;
               }
 
               @Override
               public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
-                localStore.setDbToken(dbToken);
-                handleWriteStreamHandshakeComplete();
+                handleWriteStreamHandshakeComplete(dbToken, clearCache);
               }
 
               @Override
@@ -224,6 +236,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
               @Override
               public void onClose(Status status) {
+                writeStreamHandshakeInProgress = false;
                 handleWriteStreamClose(status);
               }
             });
@@ -463,7 +476,19 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     onlineStateTracker.handleWatchStreamStart();
   }
 
-  private void handleWatchStreamHandshakeComplete() {
+  private void handleWatchStreamHandshakeComplete(ByteString dbToken, boolean clearCache) {
+    if (clearCache) {
+      remoteStoreCallback.clearCacheData();
+    }
+    localStore.setDbToken(dbToken);
+    watchStreamHandshakeInProgress = false;
+
+    // If write stream started handshake, but was waiting for listen handshake to complete, we
+    // can continue write handshake now.
+    if (writeStreamHandshakeInProgress) {
+      writeStream.sendHandshake(dbToken);
+    }
+
     // Restore any existing watches.
     for (TargetData targetData : listenTargets.values()) {
       sendWatchRequest(targetData);
@@ -612,7 +637,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     // To prevent Limbo Resolution from sending new listen request during abort of all targets, the
     // network must be disabled. Not doing so will cause `handleRejectedListen` to start watch
     // stream.
-    hardAssert(!canUseNetwork(), "Network should be disabled during abort of all targets.");
+    hardAssert(!canUseNetwork(), "Network must be disabled during abort of all targets.");
 
     List<Integer> targetIds = new ArrayList<>();
     for (Entry<Integer, TargetData> entry : listenTargets.entrySet()) {
@@ -695,7 +720,19 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
    * Handles a successful handshake response from the server, which is our cue to send any pending
    * writes.
    */
-  private void handleWriteStreamHandshakeComplete() {
+  private void handleWriteStreamHandshakeComplete(ByteString dbToken, boolean clearCache) {
+    if (clearCache) {
+      remoteStoreCallback.clearCacheData();
+    }
+    localStore.setDbToken(dbToken);
+    writeStreamHandshakeInProgress = false;
+
+    // If listen stream started handshake, but was waiting for write handshake to complete, we
+    // can continue listen handshake now.
+    if (watchStreamHandshakeInProgress) {
+      watchStream.sendHandshake(dbToken);
+    }
+
     // Record the stream token.
     localStore.setLastStreamToken(writeStream.getLastStreamToken());
 

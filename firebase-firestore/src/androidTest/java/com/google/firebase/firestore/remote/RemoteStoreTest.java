@@ -69,7 +69,7 @@ public class RemoteStoreTest {
           }
 
           @Override
-          public void handleClearCache() {}
+          public void clearCacheData() {}
 
           @Override
           public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
