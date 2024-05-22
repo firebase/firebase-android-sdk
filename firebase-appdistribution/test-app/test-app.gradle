@@ -20,6 +20,7 @@ plugins {
 }
 
 android {
+    namespace "com.google.firebase.appdistribution.testapp"
     compileSdk 33
 
     defaultConfig {
