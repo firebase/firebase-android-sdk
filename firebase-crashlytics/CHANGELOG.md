@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Improve cold initialization time.
 
 # 19.0.0
 * [fixed] Force validation or rotation of FIDs.
