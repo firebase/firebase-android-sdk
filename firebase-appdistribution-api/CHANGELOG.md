@@ -1,7 +1,5 @@
 # Unreleased
 
-
-# 17.0.0
 * [changed] Bump internal dependencies
 
 
@@ -137,4 +135,3 @@ API-only library: `firebase-appdistribution-api-ktx`.
 This new Kotlin extensions library transitively includes the
 `firebase-appdistribution-api` library. The Kotlin extensions library has no
 additional updates.
-
