@@ -1,5 +1,51 @@
 {
     "changesByLibraryName": {
+        "firebase-appdistribution": [
+            {
+                "commitId": "374d305ffbf93fe5662b7a69dbd64e6a139cf6a7",
+                "prId": "5994",
+                "author": "Rodrigo Lazo",
+                "message": "Update appdistribution* changelog entries (#5994)\n\nWrong version header included",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/374d305ffbf93fe5662b7a69dbd64e6a139cf6a7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5994"
+            },
+            {
+                "commitId": "e3c052aaf506af01d382c02a5b61ceb02d0275a2",
+                "prId": "5988",
+                "author": "Lee Kellogg",
+                "message": "Add namespace to firebase-appdistribution/test-app/test-app.gradle (#5988)\n\nDoesn't build without this right now.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e3c052aaf506af01d382c02a5b61ceb02d0275a2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5988"
+            },
+            {
+                "commitId": "4a2b8e60a1423dd279b41945c9f24c76956a1a25",
+                "prId": "5926",
+                "author": "David Motsonashvili",
+                "message": "fix versions (#5926)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4a2b8e60a1423dd279b41945c9f24c76956a1a25",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5926"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "374d305ffbf93fe5662b7a69dbd64e6a139cf6a7",
+                "prId": "5994",
+                "author": "Rodrigo Lazo",
+                "message": "Update appdistribution* changelog entries (#5994)\n\nWrong version header included",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/374d305ffbf93fe5662b7a69dbd64e6a139cf6a7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5994"
+            },
+            {
+                "commitId": "4a2b8e60a1423dd279b41945c9f24c76956a1a25",
+                "prId": "5926",
+                "author": "David Motsonashvili",
+                "message": "fix versions (#5926)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4a2b8e60a1423dd279b41945c9f24c76956a1a25",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5926"
+            }
+        ],
+        "firebase-appdistribution-api/ktx": [
+        ],
         "firebase-crashlytics": [
             {
                 "commitId": "db3f24af688013b1dccb23ee9190abc0b851f33f",
@@ -34,6 +80,14 @@
         ],
         "firebase-perf": [
             {
+                "commitId": "6e4b0d067109c1783a0324a462586436c72e750c",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Add back missing changelog entry for perf.\n\nThe mergeback PR for m147 accidentally removed the entry.\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6e4b0d067109c1783a0324a462586436c72e750c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
                 "commitId": "8f2d30ed7e56407c6379888b5ccd7f6cd379b4d6",
                 "prId": "5885",
                 "author": "argzdev",
@@ -56,9 +110,6 @@
         ]
     },
     "changedLibrariesWithNoChangelog": [
-        ":firebase-appdistribution",
-        ":firebase-appdistribution-api",
-        ":firebase-appdistribution-api:ktx",
         ":firebase-dynamic-links",
         ":firebase-dynamic-links:ktx"
     ]
