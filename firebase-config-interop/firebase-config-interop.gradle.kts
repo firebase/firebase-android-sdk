@@ -25,13 +25,15 @@ firebaseLibrary {
 }
 
 android {
+    val compileSdkVersion : Int by rootProject
     val targetSdkVersion: Int by rootProject
+    val minSdkVersion : Int by rootProject
 
     namespace = "com.google.firebase.remoteconfiginterop"
-    compileSdk = 33
+    compileSdk = compileSdkVersion
 
     defaultConfig {
-        minSdk = 16
+        minSdk = minSdkVersion
         targetSdk = targetSdkVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

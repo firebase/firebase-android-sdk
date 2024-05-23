@@ -1,6 +1,9 @@
 # Unreleased
 
 
+# 24.0.0
+* [changed] Bump internal dependencies
+
 # 23.4.0
 * [unchanged] Updated to keep messaging SDK versions aligned.
 

@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 25.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
+
 # 24.2.3
 * [changed] Bump internal dependencies.
 

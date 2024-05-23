@@ -1,5 +1,15 @@
 # Unreleased
 
+
+# 22.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.6.3
 * [fixed] Fixed a bug that could cause a crash if the app was backgrounded
   while it was listening for real-time Remote Config updates. For more information, see #5751

@@ -26,9 +26,9 @@ firebaseLibrary {
 
 android {
     namespace "com.google.firebase.inappmessaging.display.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -40,17 +40,19 @@ android {
             srcDir 'src/test/kotlin'
         }
     }
-
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
     testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
     api(project(":firebase-inappmessaging"))
     api(project(":firebase-inappmessaging-display"))
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-    implementation("com.google.firebase:firebase-components:17.1.5")
+    implementation("com.google.firebase:firebase-components:18.0.0")
 
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {

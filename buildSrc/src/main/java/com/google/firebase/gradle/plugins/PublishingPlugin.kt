@@ -349,6 +349,13 @@ abstract class PublishingPlugin : Plugin<Project> {
               "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
           )
         }
+        for (releasingLibrary in releasinglibraries) {
+          if (!releasingLibrary.version.contains(releasingLibrary.previewMode)) {
+            throw GradleException(
+              "You are releasing a ${releasingLibrary.previewMode} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version}!"
+            )
+          }
+        }
       }
     }
 

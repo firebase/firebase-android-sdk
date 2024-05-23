@@ -24,10 +24,11 @@ firebaseLibrary {
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
   val minSdkVersion : Int by rootProject
 
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   namespace = "com.google.firebase"
   defaultConfig {
     minSdk = minSdkVersion
@@ -48,13 +49,16 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
   testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
     api(libs.kotlin.coroutines.tasks)
 
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-components:18.0.0")
     api("com.google.firebase:firebase-annotations:16.2.0")
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.futures)

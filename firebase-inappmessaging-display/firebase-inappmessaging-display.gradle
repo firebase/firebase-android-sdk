@@ -25,9 +25,9 @@ firebaseLibrary {
 
 android {
     namespace "com.google.firebase.inappmessaging.display"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName version
@@ -51,6 +51,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
 
     sourceSets {
         androidTest {
@@ -83,9 +84,9 @@ dependencies {
      }
 
     api(project(":firebase-inappmessaging"))
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api("com.google.firebase:firebase-components:17.1.5")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'

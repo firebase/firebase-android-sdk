@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 18.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-installations` library. The Kotlin extensions library has no additional
+updates.
+
 # 17.2.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-installations-ktx`
   to `com.google.firebase:firebase-installations` under the `com.google.firebase.installations` package.

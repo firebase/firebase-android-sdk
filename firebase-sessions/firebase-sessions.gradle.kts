@@ -32,12 +32,14 @@ firebaseLibrary {
 }
 
 android {
-  val targetSdkVersion: Int by rootProject
+  val compileSdkVersion : Int by rootProject
+  val targetSdkVersion : Int by rootProject
+  val minSdkVersion : Int by rootProject
 
   namespace = "com.google.firebase.sessions"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
+    minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -50,11 +52,15 @@ android {
   testOptions.unitTests.isIncludeAndroidResources = true
 }
 
-dependencies {
-  api("com.google.firebase:firebase-common:20.4.2")
-  api("com.google.firebase:firebase-common-ktx:20.4.2")
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
+  kotlinOptions.jvmTarget = "1.8"
+}
 
-  api("com.google.firebase:firebase-components:17.1.5")
+dependencies {
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common-ktx:21.0.0")
+
+  api("com.google.firebase:firebase-components:18.0.0")
   api("com.google.firebase:firebase-installations-interop:17.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
@@ -65,6 +71,7 @@ dependencies {
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
+  compileOnly(libs.errorprone.annotations)
 
   runtimeOnly("com.google.firebase:firebase-installations:17.2.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")

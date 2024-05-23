@@ -15,10 +15,11 @@
 package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.google.firebase.inappmessaging.internal.RateLimitProto.Counter;
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
@@ -84,7 +85,7 @@ public class RateLimiterClientTest {
 
     rateLimiterClient = new RateLimiterClient(storageClient, new FakeClock(NOW));
 
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(fakeRead);
+    when(storageClient.read(any(Parser.class))).thenReturn(fakeRead);
     when(storageClient.write(any(RateLimitProto.RateLimit.class))).thenReturn(fakeWrite);
   }
 
@@ -97,7 +98,7 @@ public class RateLimiterClientTest {
 
   @Test
   public void increment_noExistingCounter_writesToStorage() {
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
 
     rateLimiterClient.increment(rateLimit).subscribe();
 
@@ -117,7 +118,7 @@ public class RateLimiterClientTest {
 
   @Test
   public void increment_noExistingLimits_initializesLimits() {
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     ArgumentCaptor<RateLimitProto.RateLimit> rateLimitCaptor =
         ArgumentCaptor.forClass(RateLimitProto.RateLimit.class);
 
@@ -168,7 +169,7 @@ public class RateLimiterClientTest {
   @Test
   public void increment_noErrors_cachesInMemory() {
     rateLimiterClient.increment(rateLimit).subscribe();
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
 
     TestObserver<Boolean> testObserver = rateLimiterClient.isRateLimited(rateLimit).test();
 
@@ -181,7 +182,7 @@ public class RateLimiterClientTest {
         RateLimit.builder().setLimit(2).setLimiterKey("OTHER_KEY").setTimeToLiveMillis(TTL).build();
     when(storageClient.write(any(RateLimitProto.RateLimit.class)))
         .thenReturn(Completable.error(new IOException()));
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     rateLimiterClient.increment(otherLimit).subscribe();
     rateLimiterClient.increment(otherLimit).subscribe();
     rateLimiterClient.increment(otherLimit).subscribe();
@@ -203,7 +204,7 @@ public class RateLimiterClientTest {
 
   @Test
   public void increment_readErrors_notifiesError() {
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(Maybe.error(new IOException()));
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.error(new IOException()));
 
     TestObserver<Boolean> testObserver = rateLimiterClient.isRateLimited(rateLimit).test();
 
@@ -245,7 +246,7 @@ public class RateLimiterClientTest {
 
   @Test
   public void isRateLimited_ifNoLimits_isFalse() {
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(Maybe.empty());
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     RateLimit oneLimit =
         RateLimit.builder().setLimit(1).setLimiterKey(LIMITER_KEY).setTimeToLiveMillis(TTL).build();
 
@@ -256,12 +257,10 @@ public class RateLimiterClientTest {
 
   @Test
   public void isRateLimited_readError_notifiesError() {
-    when(storageClient.read(any(RateLimitParser.class))).thenReturn(Maybe.error(new IOException()));
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.error(new IOException()));
 
     TestObserver<Boolean> testObserver = rateLimiterClient.isRateLimited(rateLimit).test();
 
     testObserver.assertError(IOException.class);
   }
-
-  interface RateLimitParser extends Parser<RateLimitProto.RateLimit> {}
 }
