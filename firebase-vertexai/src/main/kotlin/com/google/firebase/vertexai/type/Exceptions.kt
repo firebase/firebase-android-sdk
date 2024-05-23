@@ -55,6 +55,8 @@ sealed class FirebaseVertexAIException(message: String, cause: Throwable? = null
               ResponseStoppedException(cause.response.toPublic(), cause.cause)
             is com.google.ai.client.generativeai.common.RequestTimeoutException ->
               RequestTimeoutException(cause.message ?: "", cause.cause)
+            is com.google.ai.client.generativeai.common.ServiceDisabledException ->
+              ServiceDisabledException(cause.message ?: "", cause.cause)
             is com.google.ai.client.generativeai.common.UnknownException ->
               UnknownException(cause.message ?: "", cause.cause)
             else -> UnknownException(cause.message ?: "", cause)
@@ -138,6 +140,12 @@ class RequestTimeoutException(message: String, cause: Throwable? = null) :
  */
 class InvalidLocationException(location: String, cause: Throwable? = null) :
   FirebaseVertexAIException("Invalid location \"${location}\"", cause)
+
+/**
+ * The service is not enabled for this project. Visit the Firebase Console to enable it.
+ */
+class ServiceDisabledException (message: String, cause: Throwable? = null) :
+  FirebaseVertexAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */
 class UnknownException(message: String, cause: Throwable? = null) :
