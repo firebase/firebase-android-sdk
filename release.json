@@ -9,7 +9,6 @@
         ":firebase-sessions",
         ":firebase-crashlytics:ktx",
         ":firebase-perf",
-        ":firebase-perf:ktx",
-        ":firebase-vertexai"
+        ":firebase-perf:ktx"
     ]
 }
