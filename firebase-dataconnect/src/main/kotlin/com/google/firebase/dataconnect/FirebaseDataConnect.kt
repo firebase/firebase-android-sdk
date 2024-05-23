@@ -157,7 +157,7 @@ public interface FirebaseDataConnect : AutoCloseable {
    * @param port The TCP port of the Data Connect emulator to which to connect. The default value is
    * the default port used
    */
-  public fun useEmulator(host: String = "10.0.2.2", port: Int = 9510)
+  public fun useEmulator(host: String = "10.0.2.2", port: Int = 9399)
 
   /**
    * Creates and returns a [QueryRef] for running the specified query.

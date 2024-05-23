@@ -22,6 +22,7 @@ readonly CLI_ARGS=(
   -logtostderr
   -v=9
   dev
+  -listen=127.0.0.1:9399
   -service_location=us-central1
   -config_dir=dataconnect
   -local_connection_string='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
