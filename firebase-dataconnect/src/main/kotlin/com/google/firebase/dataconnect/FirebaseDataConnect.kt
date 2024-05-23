@@ -88,7 +88,9 @@ import kotlinx.serialization.SerializationStrategy
  * ##### 16.0.0-alpha04 (not yet released)
  * - Fixed time zone issues when serializing java.util.Date objects (
  * [#5976](https://github.com/firebase/firebase-android-sdk/pull/5976))
- * - XXXX
+ * - Changed default port of useEmulator() to 9399 (was 9510); this goes with a change to the Data
+ * Connect Emulator v1.1.18 that changes the default port to 9399. (
+ * [#5996](https://github.com/firebase/firebase-android-sdk/pull/5996))
  *
  * ##### 16.0.0-alpha03 (May 15, 2024)
  * - KDoc comments added.
