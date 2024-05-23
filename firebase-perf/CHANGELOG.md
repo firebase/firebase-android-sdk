@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed an `ExceptionInInitializerError` where the `url.openStream()` causes a crash if
+  FirebasePerf is not yet initialized (Github #5584).
 
 # 21.0.0
 * [changed] Bump internal dependencies
@@ -384,4 +385,3 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
-
