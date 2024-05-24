@@ -580,6 +580,10 @@ public class AsyncQueue {
     return false;
   }
 
+  public boolean isIdle() {
+    return executor.internalExecutor.getActiveCount() == 0;
+  }
+
   /**
    * Runs some or all delayed tasks early, blocking until completion.
    *

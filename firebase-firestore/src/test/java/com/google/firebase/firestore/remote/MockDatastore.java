@@ -61,6 +61,7 @@ public class MockDatastore extends Datastore {
     @Override
     public void start() {
       hardAssert(!open, "Trying to start already started watch stream");
+      handshakeComplete = false;
       open = true;
       listener.onOpen();
     }
@@ -70,6 +71,7 @@ public class MockDatastore extends Datastore {
       super.stop();
       activeTargets.clear();
       open = false;
+      handshakeComplete = false;
     }
 
     @Override
@@ -80,6 +82,13 @@ public class MockDatastore extends Datastore {
     @Override
     public boolean isOpen() {
       return open;
+    }
+
+    @Override
+    void sendHandshake(ByteString dbToken) {
+      hardAssert(!handshakeComplete, "Handshake already completed");
+      handshakeComplete = true;
+      getWorkerQueue().enqueue(() -> listener.onHandshakeComplete(dbToken == null ? ByteString.EMPTY :dbToken, false));
     }
 
     @Override
@@ -184,7 +193,7 @@ public class MockDatastore extends Datastore {
       hardAssert(!handshakeComplete, "Handshake already completed");
       writeStreamRequestCount += 1;
       handshakeComplete = true;
-      listener.onHandshakeComplete(dbToken, false);
+      getWorkerQueue().enqueue(() -> listener.onHandshakeComplete(dbToken == null ? ByteString.EMPTY :dbToken, false));
     }
 
     @Override

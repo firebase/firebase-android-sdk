@@ -88,8 +88,8 @@ public class WatchStream
     hardAssert(isOpen(), "Writing handshake requires an opened stream");
     hardAssert(!handshakeComplete, "Handshake already completed");
 
-    InitRequest.Builder initRequest = InitRequest.newBuilder()
-            .setDbToken(dbToken);
+    InitRequest.Builder initRequest = InitRequest.newBuilder();
+    if (dbToken != null) initRequest.setDbToken(dbToken);
 
     ListenRequest.Builder request = ListenRequest.newBuilder()
             .setDatabase(serializer.databaseName())
