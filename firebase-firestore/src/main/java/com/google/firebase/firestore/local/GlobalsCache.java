@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import com.google.protobuf.ByteString;
 
 /**
- * General purpose cache for global values for user.
+ * General purpose cache for global values.
  *
  * <p>Global state that cuts across components should be saved here. Following are contained herein:
  *

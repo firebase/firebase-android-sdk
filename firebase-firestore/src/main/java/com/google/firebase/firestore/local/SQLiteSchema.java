@@ -724,7 +724,7 @@ class SQLiteSchema {
           // A table of key value pairs by user.
           db.execSQL(
               "CREATE TABLE globals ("
-                  + "global TEXT PRIMARY KEY, "
+                  + "name TEXT PRIMARY KEY, "
                   + "value BLOB)");
         });
   }
