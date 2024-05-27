@@ -52,4 +52,9 @@ import java.util.Map;
     bundles.clear();
     namedQueries.clear();
   }
+
+  @Override
+  public boolean isEmpty() {
+    return bundles.isEmpty() && namedQueries.isEmpty();
+  }
 }

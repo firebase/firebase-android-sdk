@@ -59,7 +59,7 @@ import java.util.Map.Entry;
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
  * class is not thread safe and should be only called from the worker AsyncQueue.
  */
-public final class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider {
+public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider {
 
   /** The maximum number of pending writes to allow. TODO: Negotiate this value with the backend. */
   private static final int MAX_PENDING_WRITES = 10;
@@ -630,30 +630,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         watchChangeAggregator.removeTarget(targetId);
         remoteStoreCallback.handleRejectedListen(targetId, cause);
       }
-    }
-  }
-
-  public void abortAllTargets() {
-    // To prevent Limbo Resolution from sending new listen request during abort of all targets, the
-    // network must be disabled. Not doing so will cause `handleRejectedListen` to start watch
-    // stream.
-    hardAssert(!canUseNetwork(), "Network must be disabled during abort of all targets.");
-
-    List<Integer> targetIds = new ArrayList<>();
-    for (Entry<Integer, TargetData> entry : listenTargets.entrySet()) {
-      switch (entry.getValue().getPurpose()) {
-        case LIMBO_RESOLUTION:
-          // Limbo resolutions are cleared when original listen is cleared.
-          continue;
-        case LISTEN:
-        case EXISTENCE_FILTER_MISMATCH:
-        case EXISTENCE_FILTER_MISMATCH_BLOOM:
-          targetIds.add(entry.getKey());
-      }
-    }
-    for (Integer targetId : targetIds) {
-      listenTargets.remove(targetId);
-      remoteStoreCallback.handleRejectedListen(targetId, Status.ABORTED);
     }
   }
 

@@ -16,7 +16,7 @@ package com.google.firebase.firestore.local;
 
 import com.google.protobuf.ByteString;
 
-public class SQLiteGlobalsCache implements GlobalsCache{
+public class SQLiteGlobalsCache implements GlobalsCache {
 
     private static final String DB_TOKEN = "dbToken";
     private final SQLitePersistence db;
@@ -36,18 +36,18 @@ public class SQLiteGlobalsCache implements GlobalsCache{
         set(DB_TOKEN, value.toByteArray());
     }
 
-    private byte[] get(String global) {
-        return db.query("SELECT value FROM globals WHERE global = ?")
-                .binding(global)
+    private byte[] get(String name) {
+        return db.query("SELECT value FROM globals WHERE name = ?")
+                .binding(name)
                 .firstValue(row -> row.getBlob(0));
     }
 
-    private void set(String global, byte[] value) {
+    private void set(String name, byte[] value) {
         db.execute(
                 "INSERT OR REPLACE INTO globals "
-                        + "(global, value) "
+                        + "(name, value) "
                         + "VALUES (?, ?)",
-                global,
+                name,
                 value);
     }
 }

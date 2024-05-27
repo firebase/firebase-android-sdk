@@ -205,6 +205,11 @@ class CountingQueryEngine extends QueryEngine {
         documentsReadByCollection[0] += result.size();
         return result;
       }
+
+      @Override
+      public boolean isEmpty() {
+        return subject.isEmpty();
+      }
     };
   }
 
@@ -264,6 +269,11 @@ class CountingQueryEngine extends QueryEngine {
       @Override
       public void clear() {
         subject.clear();
+      }
+
+      @Override
+      public boolean isEmpty() {
+        return subject.isEmpty();
       }
 
       private OverlayType getOverlayType(Overlay overlay) {

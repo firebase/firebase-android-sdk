@@ -110,4 +110,6 @@ interface RemoteDocumentCache {
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context);
+
+  boolean isEmpty();
 }

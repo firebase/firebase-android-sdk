@@ -525,7 +525,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       remoteStore.disableNetwork();
     }
 
-    remoteStore.abortAllTargets();
+    abortAllTargets();
     localStore.clearCacheData();
 
     if (canUseNetwork) {
@@ -838,4 +838,28 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     return false;
   }
+  @VisibleForTesting
+  public boolean isEmpty() {
+    return queryViewsByQuery.isEmpty()
+      && queriesByTarget.isEmpty()
+      && enqueuedLimboResolutions.isEmpty()
+      && activeLimboTargetsByKey.isEmpty()
+      && activeLimboResolutionsByTarget.isEmpty()
+      && limboDocumentRefs.isEmpty()
+      && mutationUserCallbacks.isEmpty()
+      && pendingWritesCallbacks.isEmpty();
+  }
+
+  public void abortAllTargets() {
+    hardAssert(!remoteStore.canUseNetwork(), "Network should be disabled during abort of all targets.");
+
+    List<Integer> targetIds = new ArrayList<>();
+    for (QueryView queryView : queryViewsByQuery.values()) {
+      targetIds.add(queryView.getTargetId());
+    }
+    for (Integer targetId : targetIds) {
+      handleRejectedListen(targetId, Status.ABORTED);
+    }
+  }
+
 }
