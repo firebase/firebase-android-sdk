@@ -82,4 +82,6 @@ public interface DocumentOverlayCache {
    * Clear overlays. This should only be done when mutation queue is cleared.
    */
   void clear();
+
+  boolean isEmpty();
 }

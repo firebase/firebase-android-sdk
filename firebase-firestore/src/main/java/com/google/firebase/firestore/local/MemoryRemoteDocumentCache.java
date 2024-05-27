@@ -147,6 +147,11 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
+  public boolean isEmpty() {
+    return docs.isEmpty();
+  }
+
+  @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);

@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
+
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -41,14 +42,21 @@ final class MemoryTargetCache implements TargetCache {
   private int highestTargetId;
 
   /** The last received snapshot version. */
-  private SnapshotVersion lastRemoteSnapshotVersion = SnapshotVersion.NONE;
+  private SnapshotVersion lastRemoteSnapshotVersion;
 
-  private long highestSequenceNumber = 0;
+  private long highestSequenceNumber;
 
   private final MemoryPersistence persistence;
 
   MemoryTargetCache(MemoryPersistence persistence) {
     this.persistence = persistence;
+    init();
+  }
+
+  private void init() {
+    highestTargetId = 0;
+    highestSequenceNumber = 0;
+    lastRemoteSnapshotVersion = SnapshotVersion.NONE;
   }
 
   @Override
@@ -170,6 +178,21 @@ final class MemoryTargetCache implements TargetCache {
   @Override
   public boolean containsKey(DocumentKey key) {
     return references.containsKey(key);
+  }
+
+  @Override
+  public void clear() {
+    targets.clear();
+    init();
+  }
+
+  @Override
+  public boolean isEmpty() {
+    return targets.isEmpty()
+      && references.isEmpty()
+      && highestTargetId == 0
+      && highestSequenceNumber == 0
+      && lastRemoteSnapshotVersion == SnapshotVersion.NONE;
   }
 
   long getByteSize(LocalSerializer serializer) {

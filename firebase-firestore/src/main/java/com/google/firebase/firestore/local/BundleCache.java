@@ -41,4 +41,6 @@ public interface BundleCache {
   void saveNamedQuery(NamedQuery query);
 
   void clear();
+
+  boolean isEmpty();
 }
