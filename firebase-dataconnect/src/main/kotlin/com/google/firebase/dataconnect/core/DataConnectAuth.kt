@@ -22,9 +22,10 @@ import com.google.firebase.dataconnect.util.nextSequenceNumber
 import com.google.firebase.internal.InternalTokenResult
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import java.util.concurrent.Executor
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.*
-import kotlinx.coroutines.tasks.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.tasks.await
 
 internal class DataConnectAuth(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
@@ -40,6 +41,7 @@ internal class DataConnectAuth(
   private var closed = false
   private var authProvider: InternalAuthProvider? = null
   private var tokenSequenceNumber = nextSequenceNumber()
+  private var forceRefresh = false
 
   init {
     // Run `whenAvailable()` on a background thread because it accesses SharedPreferences, which
@@ -80,7 +82,9 @@ internal class DataConnectAuth(
           Pair(capturedAuthProvider, tokenSequenceNumber)
         }
 
-      val accessTokenResult = capturedAuthProvider.runCatching { getAccessToken(false).await() }
+      val accessTokenResult =
+        capturedAuthProvider.runCatching { getAccessToken(forceRefresh).await() }
+      mutex.withLock { forceRefresh = false }
 
       val tokenSequenceNumberChanged =
         mutex.withLock { capturedTokenSequenceNumber != tokenSequenceNumber }
@@ -114,6 +118,10 @@ internal class DataConnectAuth(
       }
       throw exception
     }
+  }
+
+  suspend fun invalidateToken() {
+    mutex.withLock { forceRefresh = true }
   }
 
   private suspend fun onInternalAuthProviderAvailable(newAuthProvider: InternalAuthProvider) =
