@@ -6,6 +6,8 @@
         ":firebase-appdistribution-api:ktx",
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx",
         ":firebase-sessions",
         ":firebase-crashlytics:ktx",
         ":firebase-perf",
