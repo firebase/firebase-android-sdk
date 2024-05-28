@@ -352,7 +352,7 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun useEmulator_should_throw_if_invoked_too_late() = runTest {
     val app = firebaseAppFactory.newInstance()
-    val settings = DataConnectSettings(host = "10.0.2.2:9510", sslEnabled = false)
+    val settings = DataConnectSettings(host = "10.0.2.2:9399", sslEnabled = false)
     val dataConnect = FirebaseDataConnect.getInstance(app, testConnectorConfig, settings)
     dataConnect.query("GetHardcodedFoo", Unit, DataConnectUntypedData, serializer<Unit>()).execute()
 
