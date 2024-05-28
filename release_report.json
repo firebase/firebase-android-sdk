@@ -83,9 +83,9 @@
                 "commitId": "6e4b0d067109c1783a0324a462586436c72e750c",
                 "prId": "",
                 "author": "Rodrigo Lazo Paz",
-                "message": "Add back missing changelog entry for perf.\n\nThe mergeback PR for m147 accidentally removed the entry.\n",
+                "message": "Add back missing changelog entry for perf. (#9999)\n\nThe mergeback PR for m147 accidentally removed the entry.\n",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6e4b0d067109c1783a0324a462586436c72e750c",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/9999"
             },
             {
                 "commitId": "8f2d30ed7e56407c6379888b5ccd7f6cd379b4d6",
