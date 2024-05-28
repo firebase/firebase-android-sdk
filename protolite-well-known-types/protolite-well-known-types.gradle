@@ -28,9 +28,6 @@ protobuf {
     }
     generateProtoTasks {
         all().each { task ->
-
-            task.addIncludeDir(files('fix-javalite/proto'))
-
             task.builtins {
                 java {
                     option "lite"
