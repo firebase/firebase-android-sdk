@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Added deprecation annotations to the public API. See https://firebase.google.com/support/dynamic-links-faq for further context.
 
 # 22.0.0
 * [changed] Bump internal dependencies
@@ -153,4 +153,3 @@ using Google Play Services 13.2.80 and FDL SDK 16.1.0. The issue only occurred
 when creating shortening links from parameters, links created using
 preconstructed long links from `setLongLink()` were unaffected. This fix also
 addresses issues in newer versions of Google Play Services.
-
