@@ -63,5 +63,6 @@ dependencies {
         exclude group: "com.google.protobuf", module: "protobuf-java"
     }
 
+    // TODO(b/343482773): Migrate to 4.27+
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
 }
