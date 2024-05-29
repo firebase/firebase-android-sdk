@@ -23,19 +23,23 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.serializer
 import org.junit.Assert.assertThrows
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
+
+  @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
 
   @Test
   fun getInstance_without_specifying_an_app_should_use_the_default_app() {
@@ -338,23 +342,26 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun useEmulator_should_set_the_emulator_host() = runTest {
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val app = firebaseAppFactory.newInstance()
-    val settings = DataConnectSettings(host = "host_from_settings")
+    val settings = DataConnectSettings(host = "hosty63pw33994")
     val dataConnect = FirebaseDataConnect.getInstance(app, testConnectorConfig, settings)
 
-    dataConnect.useEmulator()
+    dataConnect.useEmulator(host = "127.0.0.1", port = grpcServer.port)
 
     // Verify that we can successfully execute a query; if the emulator settings did _not_ get used
     // then the query execution will fail with an exception, which will fail this test case.
-    dataConnect.query("GetHardcodedFoo", Unit, DataConnectUntypedData, serializer<Unit>()).execute()
+    dataConnect.query("qryzvfy95awha", Unit, DataConnectUntypedData, serializer<Unit>()).execute()
   }
 
   @Test
   fun useEmulator_should_throw_if_invoked_too_late() = runTest {
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
+    val host = "127.0.0.1:${grpcServer.port}"
     val app = firebaseAppFactory.newInstance()
-    val settings = DataConnectSettings(host = "10.0.2.2:9399", sslEnabled = false)
+    val settings = DataConnectSettings(host = host, sslEnabled = false)
     val dataConnect = FirebaseDataConnect.getInstance(app, testConnectorConfig, settings)
-    dataConnect.query("GetHardcodedFoo", Unit, DataConnectUntypedData, serializer<Unit>()).execute()
+    dataConnect.query("qrymgbqrc2hj9", Unit, DataConnectUntypedData, serializer<Unit>()).execute()
 
     val exception = assertThrows(IllegalStateException::class.java) { dataConnect.useEmulator() }
     assertThat(exception).hasMessageThat().ignoringCase().contains("already been initialized")
