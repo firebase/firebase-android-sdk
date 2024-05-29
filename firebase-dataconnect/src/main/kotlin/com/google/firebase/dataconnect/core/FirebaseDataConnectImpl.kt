@@ -20,6 +20,7 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import java.util.concurrent.Executor
 import kotlinx.coroutines.*
@@ -110,13 +111,11 @@ internal class FirebaseDataConnectImpl(
         }
 
       DataConnectGrpcClient(
-        context = context,
         projectId = projectId,
         connector = config,
         dataConnectAuth = dataConnectAuth.getLocked(),
-        host = host,
-        sslEnabled = sslEnabled,
-        blockingExecutor = blockingExecutor,
+        grpcRPCsFactory =
+          DataConnectGrpcRPCsFactoryImpl(context, host, sslEnabled, blockingDispatcher),
         parentLogger = logger,
       )
     }
@@ -166,58 +165,57 @@ internal class FirebaseDataConnectImpl(
       variablesSerializer = variablesSerializer,
     )
 
-  private val closeResult = MutableStateFlow<Result<Unit>?>(null)
+  private val closeJob = MutableStateFlow(NullableReference<Deferred<Unit>>(null))
 
   override fun close() {
     logger.debug { "close() called" }
+
+    coroutineScope.cancel()
+
     // Remove the reference to this `FirebaseDataConnect` instance from the
     // `FirebaseDataConnectFactory` that created it, so that the next time that `getInstance()` is
     // called with the same arguments that a new instance of `FirebaseDataConnect` will be created.
     creator.remove(this)
 
-    // Set the `closed` flag to `true`, making sure to honor the requirement that `closed` is always
-    // accessed by a coroutine that has acquired `mutex`
-    runBlocking { mutex.withLock { closed = true } }
+    runBlocking {
+      mutex.withLock { closed = true }
 
-    // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
-    // is re-entrant, this is safe even if it's already been closed.
-    dataConnectAuth.initializedValueOrNull?.close()
-
-    // If a previous attempt was successful, then just return because there is nothing to do.
-    if (closeResult.isResultSuccess) {
-      return
+      // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
+      // is re-entrant, this is safe even if it's already been closed.
+      dataConnectAuth.initializedValueOrNull?.close()
     }
 
-    // Clear the result of the previous failed attempt, since we're about to try again.
-    closeResult.clearResultUnlessSuccess()
+    while (true) {
+      val oldCloseJob = closeJob.value
 
-    // Launch an asynchronous coroutine to actually perform the remainder of the close operation,
-    // as it potentially suspends and this close() function is a "normal", non-suspending function.
-    @OptIn(DelicateCoroutinesApi::class) GlobalScope.launch { doClose() }
-  }
-
-  // TODO: Delete this function and the properties that it uses since it does not have a use case.
-  internal suspend fun awaitClose(): Unit = closeResult.filterNotNull().first().getOrThrow()
-
-  private val closingMutex = Mutex()
-
-  private suspend fun doClose() {
-    closingMutex.withLock {
-      if (closeResult.isResultSuccess) {
-        return
+      oldCloseJob.ref?.let {
+        if (!it.isCancelled) {
+          return
+        }
       }
 
-      closeResult.value =
-        kotlin
-          .runCatching {
-            logger.debug { "Closing started" }
-            lazyGrpcClient.initializedValueOrNull?.close()
-            coroutineScope.cancel()
-            logger.debug { "Closing completed" }
-          }
-          .onFailure { logger.warn(it) { "Closing failed" } }
+      @OptIn(DelicateCoroutinesApi::class)
+      val newCloseJob =
+        GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
+          lazyGrpcClient.initializedValueOrNull?.close()
+        }
+
+      newCloseJob.invokeOnCompletion { exception ->
+        if (exception === null) {
+          logger.debug { "close() completed successfully" }
+        } else {
+          logger.warn(exception) { "close() failed" }
+        }
+      }
+
+      if (closeJob.compareAndSet(oldCloseJob, NullableReference(newCloseJob))) {
+        newCloseJob.start()
+        return
+      }
     }
   }
+
+  override suspend fun awaitClose(): Unit = closeJob.map { it.ref }.filterNotNull().first().await()
 
   // The generated SDK relies on equals() and hashCode() using object identity.
   // Although you get this for free by just calling the methods of the superclass, be explicit
@@ -229,21 +227,4 @@ internal class FirebaseDataConnectImpl(
     "FirebaseDataConnect(app=${app.name}, projectId=$projectId, config=$config, settings=$settings)"
 
   private data class EmulatedServiceSettings(val host: String, val port: Int)
-
-  companion object {
-    private fun MutableStateFlow<Result<Unit>?>.clearResultUnlessSuccess() {
-      while (true) {
-        val oldValue = value
-        if (oldValue?.isSuccess == true) {
-          return
-        }
-        if (compareAndSet(oldValue, null)) {
-          return
-        }
-      }
-    }
-
-    private val MutableStateFlow<Result<Unit>?>.isResultSuccess
-      get() = value?.isSuccess == true
-  }
 }

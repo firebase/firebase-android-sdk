@@ -16,8 +16,6 @@
 
 package com.google.firebase.dataconnect.core
 
-import android.content.Context
-import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.core.DataConnectAuth.Companion.withScrubbedAccessToken
 import com.google.firebase.dataconnect.util.SuspendingLazy
@@ -28,45 +26,24 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
-import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub
 import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
-import io.grpc.ManagedChannel
-import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
-import io.grpc.android.AndroidChannelBuilder
-import java.util.concurrent.Executor
-import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
-  context: Context,
   projectId: String,
   private val connector: ConnectorConfig,
   private val dataConnectAuth: DataConnectAuth,
-  host: String,
-  sslEnabled: Boolean,
-  private val blockingExecutor: Executor,
+  grpcRPCsFactory: DataConnectGrpcRPCsFactory,
   parentLogger: Logger,
 ) {
   private val logger =
     Logger("DataConnectGrpcClient").apply {
-      debug {
-        "Created by ${parentLogger.nameWithId};" +
-          " projectId=$projectId" +
-          " connector=$connector" +
-          " host=$host" +
-          " sslEnabled=$sslEnabled"
-      }
+      debug { "Created by ${parentLogger.nameWithId}; projectId=$projectId connector=$connector" }
     }
 
   private val requestName =
@@ -75,56 +52,17 @@ internal class DataConnectGrpcClient(
       "/services/${connector.serviceId}" +
       "/connectors/${connector.connector}"
 
-  private val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
-
   private val closedMutex = Mutex()
   private var closed = false
 
-  private val lazyGrpcChannel =
-    SuspendingLazy(closedMutex, blockingDispatcher) {
+  private val lazyGrpcRPCs =
+    SuspendingLazy(closedMutex) {
       if (closed) throw IllegalStateException("DataConnectGrpcClient instance has been closed")
-
-      logger.debug { "${ManagedChannel::class.qualifiedName} initialization started" }
-
-      // Upgrade the Android security provider using Google Play Services.
-      //
-      // We need to upgrade the Security Provider before any network channels are initialized
-      // because okhttp maintains a list of supported providers that is initialized when the JVM
-      // first resolves the static dependencies of ManagedChannel.
-      //
-      // If initialization fails for any reason, then a warning is logged and the original,
-      // un-upgraded security provider is used.
-      try {
-        ProviderInstaller.installIfNeeded(context)
-      } catch (e: Exception) {
-        logger.warn(e) { "Failed to update ssl context" }
+      grpcRPCsFactory.run {
+        logger.debug { "Creating GRPC connection with host=${host} sslEnabled=${sslEnabled}" }
+        newInstance()
       }
-
-      val channel =
-        ManagedChannelBuilder.forTarget(host).let {
-          if (!sslEnabled) {
-            it.usePlaintext()
-          }
-
-          // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-          // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
-          // failsafe.
-          it.keepAliveTime(30, TimeUnit.SECONDS)
-
-          it.executor(blockingExecutor)
-
-          // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
-          // to respond more gracefully to network change events, such as switching from cellular to
-          // wifi.
-          AndroidChannelBuilder.usingBuilder(it).context(context).build()
-        }
-
-      logger.debug { "${ManagedChannel::class.qualifiedName} initialization completed" }
-
-      channel
     }
-
-  private val lazyGrpcStub = SuspendingLazy { ConnectorServiceCoroutineStub(lazyGrpcChannel.get()) }
 
   data class OperationResult(
     val data: Struct?,
@@ -148,7 +86,7 @@ internal class DataConnectGrpcClient(
         "ExecuteQueryRequest: ${request.toCompactString()}"
     }
     val response =
-      lazyGrpcStub
+      lazyGrpcRPCs
         .get()
         .runCatching { executeQuery(request, createMetadata(requestId)) }
         .onFailure {
@@ -185,7 +123,7 @@ internal class DataConnectGrpcClient(
         "ExecuteMutationRequest: ${request.toCompactString()}"
     }
     val response =
-      lazyGrpcStub
+      lazyGrpcRPCs
         .get()
         .runCatching { executeMutation(request, createMetadata(requestId)) }
         .onFailure {
@@ -204,10 +142,6 @@ internal class DataConnectGrpcClient(
       errors = response.errorsList.map { it.toDataConnectError() }
     )
   }
-
-  private val closingMutex = Mutex()
-  private var awaitTerminationJob: Deferred<Unit>? = null
-  private var closeCompleted = false
 
   private suspend fun createMetadata(requestId: String): Metadata {
     val token = dataConnectAuth.getAccessToken(requestId)
@@ -240,30 +174,7 @@ internal class DataConnectGrpcClient(
 
   suspend fun close() {
     closedMutex.withLock { closed = true }
-
-    closingMutex.withLock {
-      if (!closeCompleted) {
-        closeGrpcChannel()
-      }
-      closeCompleted = true
-    }
-  }
-
-  // This function _must_ be called by a coroutine that has acquired the lock on `closingMutex`.
-  @OptIn(DelicateCoroutinesApi::class)
-  private suspend fun closeGrpcChannel() {
-    val grpcChannel = lazyGrpcChannel.initializedValueOrNull ?: return
-
-    val job =
-      awaitTerminationJob?.let { if (it.isCancelled && it.isCompleted) null else it }
-        ?: GlobalScope.async<Unit> {
-            withContext(blockingDispatcher) {
-              grpcChannel.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
-            }
-          }
-          .also { awaitTerminationJob = it }
-
-    job.await()
+    lazyGrpcRPCs.initializedValueOrNull?.close()
   }
 
   private companion object {

@@ -21,6 +21,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.dataconnect.core.FirebaseDataConnectFactory
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
@@ -200,15 +201,36 @@ public interface FirebaseDataConnect : AutoCloseable {
    *
    * This method returns immediately, possibly before in-flight queries and mutations are completed.
    * Any future attempts to execute queries or mutations returned from [query] or [mutation] will
-   * immediately fail.
+   * immediately fail. To wait for the in-flight queries and mutations to complete, call
+   * [awaitClose].
    *
    * It is safe to call this method multiple times; subsequent invocations have no effect and return
    * as if successful.
    *
    * After this method returns, calling [FirebaseDataConnect.Companion.getInstance] with the same
    * [app] and [config] will return a new instance, rather than returning this instance.
+   *
+   * @see awaitClose
    */
   override fun close()
+
+  /**
+   * Suspends the calling coroutine until this [FirebaseDataConnect] instance is closed.
+   *
+   * The [close] method starts some asynchronous work, such as stopping in-flight queries and
+   * mutations. The [close] method will return immediately, even if that asynchronous work has not
+   * yet completed. This method allows callers to wait for the asynchronous work to complete.
+   *
+   * This method awaits the result of the most recent invocation of [close]. The calling coroutine
+   * is suspended until the asynchronous work has completed; if it completed successfully then the
+   * calling coroutine will be resumed and this method will return; otherwise, if it completed
+   * unsuccessfully, then the exception that caused the asynchronous work to fail will be thrown,
+   * which may be [CancellationException] if the asynchronous work was cancelled. If [close] is
+   * never called then the calling coroutine will be suspended indefinitely.
+   *
+   * @see close
+   */
+  public suspend fun awaitClose()
 
   /**
    * Compares this object with another object for equality, using the `===` operator.
