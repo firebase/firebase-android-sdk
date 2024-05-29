@@ -28,9 +28,8 @@ import com.google.firebase.dynamiclinks.internal.FirebaseDynamicLinksImpl;
  * with the constructed Dynamic Link.
  *
  * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
- *   service will shut down on August 25, 2025. Please see our
- *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
- *   for more guidance.
+ *   service will shut down on August 25, 2025. For more information, see
+ *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
  */
 @Deprecated
 public final class DynamicLink {
@@ -47,9 +46,8 @@ public final class DynamicLink {
    * @throws IllegalArgumentException if the FDL domain is not set. Set with {@link
    *     Builder#setDynamicLinkDomain(String)}.
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
   @Deprecated
@@ -61,9 +59,8 @@ public final class DynamicLink {
    * Builder for creating Dynamic Links.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    * */
   @Deprecated
   public static final class Builder {
@@ -125,9 +122,8 @@ public final class DynamicLink {
      *
      * @param longLink The long FDL to shorten.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -141,9 +137,8 @@ public final class DynamicLink {
      *
      * @return the long Dynamic link associated with this DynamicLink.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -163,9 +158,8 @@ public final class DynamicLink {
      *     crediting the user with a coupon, or displaying a specific welcome screen. This link must
      *     be a well-formatted URL, be properly URL-encoded, and use the HTTP or HTTPS scheme.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -179,9 +173,8 @@ public final class DynamicLink {
      *
      * @return the deep link associated with this DynamicLink.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -223,9 +216,8 @@ public final class DynamicLink {
      * @param domainUriPrefix The target project's Domain Uri Prefix. You can find this value in the
      *     Dynamic Links section of the Firebase console.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -243,9 +235,8 @@ public final class DynamicLink {
      *
      * @return the deep link set to this DynamicLink.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -259,9 +250,8 @@ public final class DynamicLink {
      * @param androidParameters The AndroidParameters from {@link
      *     AndroidParameters.Builder#build()}.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -275,9 +265,8 @@ public final class DynamicLink {
      *
      * @param iosParameters The IosParameters from {@link IosParameters.Builder#build()}.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -292,9 +281,8 @@ public final class DynamicLink {
      * @param googleAnalyticsParameters The GoogleAnalyticsParameters from {@link
      *     GoogleAnalyticsParameters.Builder#build()}.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -310,9 +298,8 @@ public final class DynamicLink {
      * @param itunesConnectAnalyticsParameters The ItunesConnectAnalyticsParameters from {@link
      *     ItunesConnectAnalyticsParameters.Builder#build()}.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -328,9 +315,8 @@ public final class DynamicLink {
      * @param socialMetaTagParameters The SocialMetaTagParameters from {@link
      *     SocialMetaTagParameters.Builder#build()}.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -346,9 +332,8 @@ public final class DynamicLink {
      * @param navigationInfoParameters The NavigationInfoParameters from {@link
      *     NavigationInfoParameters.Builder#build()}.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -364,9 +349,8 @@ public final class DynamicLink {
      * @throws IllegalArgumentException if the FDL domain is not set. Set with {@link
      *     #setDynamicLinkDomain(String)}.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -382,9 +366,8 @@ public final class DynamicLink {
      *     with {@link Builder#setDynamicLinkDomain(String)}. Ensure that google-services.json file
      *     is setup for the app if the api key is not set.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -402,9 +385,8 @@ public final class DynamicLink {
      *     with {@link Builder#setDynamicLinkDomain(String)}. Ensure that google-services.json file
      *     is setup for the app if the api key is not set.
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
     @Deprecated
@@ -425,9 +407,8 @@ public final class DynamicLink {
    * Android parameters.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Deprecated
   public static final class AndroidParameters {
@@ -450,9 +431,8 @@ public final class DynamicLink {
      * Builder for Android parameters.
      *
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @Deprecated
     public static final class Builder {
@@ -465,9 +445,8 @@ public final class DynamicLink {
        *
        * @throws IllegalStateException if FirebaseApp has not been initialized correctly.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder() {
@@ -486,9 +465,8 @@ public final class DynamicLink {
        * @param packageName The package name of the Android app to use to open the link. The app
        *     must be connected to your project from the Overview page of the Firebase console.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder(@NonNull String packageName) {
@@ -503,9 +481,8 @@ public final class DynamicLink {
        *
        * @param fallbackUrl The link to open on Android if the app is not installed.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -519,9 +496,8 @@ public final class DynamicLink {
        *
        * @return the link to open on Android if the app isn't installed.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -538,9 +514,8 @@ public final class DynamicLink {
        *
        * @param minimumVersion The minimum version.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -554,9 +529,8 @@ public final class DynamicLink {
        *
        * @return the minimum version of your app that can open the link.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public int getMinimumVersion() {
@@ -568,9 +542,8 @@ public final class DynamicLink {
        * DynamicLink.Builder#setAndroidParameters(AndroidParameters)}.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -584,9 +557,8 @@ public final class DynamicLink {
    * iOS parameters.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Deprecated
   public static final class IosParameters {
@@ -617,9 +589,8 @@ public final class DynamicLink {
      * Builder for iOS parameters.
      *
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @Deprecated
     public static final class Builder {
@@ -632,9 +603,8 @@ public final class DynamicLink {
        * @param bundleId The bundle ID of the iOS app to use to open the link. The app must be
        *     connected to your project from the Overview page of the Firebase console.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder(@NonNull String bundleId) {
@@ -649,9 +619,8 @@ public final class DynamicLink {
        *
        * @param fallbackUrl The link to open on iOS if the app is not installed.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -666,9 +635,8 @@ public final class DynamicLink {
        *
        * @param customScheme The app's custom URL scheme.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -682,9 +650,8 @@ public final class DynamicLink {
        *
        * @return the app's custom URL scheme.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -700,9 +667,8 @@ public final class DynamicLink {
        *
        * @param fallbackUrl The link to open on iPad if the app is not installed.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -716,9 +682,8 @@ public final class DynamicLink {
        *
        * @return the link to open on iPad if the app is not installed.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -736,9 +701,8 @@ public final class DynamicLink {
        *
        * @param bundleId The iPad bundle ID of the app.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -752,9 +716,8 @@ public final class DynamicLink {
        *
        * @return the iPad bundle ID of the app.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -767,9 +730,8 @@ public final class DynamicLink {
        *
        * @param appStoreId The App Store ID.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -783,9 +745,8 @@ public final class DynamicLink {
        *
        * @return the App Store ID, used to send users to the App Store when the app isn't installed.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        d.
        */
       @NonNull
@@ -799,9 +760,8 @@ public final class DynamicLink {
        *
        * @param minimumVersion The minimum version.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -815,9 +775,8 @@ public final class DynamicLink {
        *
        * @return the minimum version of your app that can open the link.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -830,9 +789,8 @@ public final class DynamicLink {
        * DynamicLink.Builder#setIosParameters(IosParameters)}.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -846,9 +804,8 @@ public final class DynamicLink {
    * Google Analytics parameters.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Deprecated
   public static final class GoogleAnalyticsParameters {
@@ -875,9 +832,8 @@ public final class DynamicLink {
      * Builder for Google Analytics parameters.
      *
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @Deprecated
     public static final class Builder {
@@ -888,9 +844,8 @@ public final class DynamicLink {
        * Create Google Analytics parameters builder.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder() {
@@ -907,9 +862,8 @@ public final class DynamicLink {
        * @param campaign The campaign name; The individual campaign name, slogan, promo code, etc.
        *     for a product.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder(@NonNull String source, @NonNull String medium, @NonNull String campaign) {
@@ -925,9 +879,8 @@ public final class DynamicLink {
        * @param source The campaign source; used to identify a search engine, newsletter, or other
        *     source.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -941,9 +894,8 @@ public final class DynamicLink {
        *
        * @return the campaign source
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -957,9 +909,8 @@ public final class DynamicLink {
        * @param medium The campaign medium; used to identify a medium such as email or
        *     cost-per-click (cpc).
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -973,9 +924,8 @@ public final class DynamicLink {
        *
        * @return the campaign medium.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -989,9 +939,8 @@ public final class DynamicLink {
        * @param campaign The campaign name; The individual campaign name, slogan, promo code, etc.
        *     for a product.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1005,9 +954,8 @@ public final class DynamicLink {
        *
        * @return the campaign name.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1020,9 +968,8 @@ public final class DynamicLink {
        *
        * @param term The campaign term; used with paid search to supply the keywords for ads.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1036,9 +983,8 @@ public final class DynamicLink {
        *
        * @return the campaign term.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1052,9 +998,8 @@ public final class DynamicLink {
        * @param content The campaign content; used for A/B testing and content-targeted ads to
        *     differentiate ads or links that point to the same URL.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1068,9 +1013,8 @@ public final class DynamicLink {
        *
        * @return the campaign content.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1083,9 +1027,8 @@ public final class DynamicLink {
        * DynamicLink.Builder#setGoogleAnalyticsParameters(GoogleAnalyticsParameters)}.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1099,9 +1042,8 @@ public final class DynamicLink {
    * iTunes Connect App Analytics parameters.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Deprecated
   public static final class ItunesConnectAnalyticsParameters {
@@ -1124,9 +1066,8 @@ public final class DynamicLink {
      * Builder for iTunes Connect App Analytics parameters.
      *
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @Deprecated
     public static final class Builder {
@@ -1137,9 +1078,8 @@ public final class DynamicLink {
        * Create iTunes Connect App Analytics parameter builder.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder() {
@@ -1152,9 +1092,8 @@ public final class DynamicLink {
        * @param providerToken The provider token that enables analytics for Dynamic Links from
        *     within iTunes Connect.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1169,9 +1108,8 @@ public final class DynamicLink {
        *
        * @return the provider token.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1184,9 +1122,8 @@ public final class DynamicLink {
        *
        * @param affiliateToken The affiliate token used to create affiliate-coded links.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1201,9 +1138,8 @@ public final class DynamicLink {
        *
        * @return the affiliate token.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1217,9 +1153,8 @@ public final class DynamicLink {
        * @param campaignToken The campaign token that developers can add to any link in order to
        *     track sales from a specific marketing campaign.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1234,9 +1169,8 @@ public final class DynamicLink {
        *
        * @return the campaign token.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1249,9 +1183,8 @@ public final class DynamicLink {
        * DynamicLink.Builder#setItunesConnectAnalyticsParameters(ItunesConnectAnalyticsParameters)}.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1265,9 +1198,8 @@ public final class DynamicLink {
    * Social meta-tag parameters.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Deprecated
   public static final class SocialMetaTagParameters {
@@ -1290,9 +1222,8 @@ public final class DynamicLink {
      * Builder for social meta-tag parameters.
      *
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @Deprecated
     public static final class Builder {
@@ -1303,9 +1234,8 @@ public final class DynamicLink {
        * Create social meta-tag parameter builder.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder() {
@@ -1317,9 +1247,8 @@ public final class DynamicLink {
        *
        * @param title The title to use when the Dynamic Link is shared in a social post.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1333,9 +1262,8 @@ public final class DynamicLink {
        *
        * @return the meta-tag title.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1348,9 +1276,8 @@ public final class DynamicLink {
        *
        * @param description The description to use when the Dynamic Link is shared in a social post.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1364,9 +1291,8 @@ public final class DynamicLink {
        *
        * @return the meta-tag description.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1379,9 +1305,8 @@ public final class DynamicLink {
        *
        * @param imageUrl The URL to an image related to this link.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1395,9 +1320,8 @@ public final class DynamicLink {
        *
        * @return the meta-tag image link.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1414,9 +1338,8 @@ public final class DynamicLink {
        * DynamicLink.Builder#setSocialMetaTagParameters(SocialMetaTagParameters)}.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated
@@ -1430,9 +1353,8 @@ public final class DynamicLink {
    * Navigation info parameters.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @Deprecated
   public static final class NavigationInfoParameters {
@@ -1451,9 +1373,8 @@ public final class DynamicLink {
      * Builder for navigation info parameters.
      *
      * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-     *   service will shut down on August 25, 2025. Please see our
-     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-     *   for more guidance.
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @Deprecated
     public static final class Builder {
@@ -1464,9 +1385,8 @@ public final class DynamicLink {
        * Create navigation info parameter builder.
        *
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @Deprecated
       public Builder() {
@@ -1480,9 +1400,8 @@ public final class DynamicLink {
        * @param forcedRedirectEnabled If true, app preview page will be disabled and there will be a
        *     redirect to the FDL. If false, go to the app preview page.
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-       *   service will shut down on August 25, 2025. Please see our
-       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-       *   for more guidance.
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
       @Deprecated

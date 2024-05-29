@@ -101,6 +101,7 @@ abstract class PomValidator : DefaultTask() {
       listOf(
         "javax.inject", // javax.inject doesn't respect SemVer and doesn't update
         "dagger", // dagger doesn't respect Semver
+        "listenablefuture", // guava's listenable future doesn't respect Semver
         "auto-service-annotations", // auto-service-annotations doesn't respect SemVer
       )
   }
