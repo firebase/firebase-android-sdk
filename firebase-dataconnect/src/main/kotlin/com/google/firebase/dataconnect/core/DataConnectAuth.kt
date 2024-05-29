@@ -30,7 +30,7 @@ internal class DataConnectAuth(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
   blockingExecutor: Executor,
   parentLogger: Logger,
-) : AutoCloseable {
+) {
   private val logger =
     Logger("DataConnectAuth").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
@@ -51,7 +51,7 @@ internal class DataConnectAuth(
     }
   }
 
-  override fun close() = runBlocking {
+  suspend fun close() {
     logger.debug { "close()" }
     mutex.withLock {
       closed = true

@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.*
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
+import kotlinx.coroutines.runBlocking
 
 /**
  * A JUnit test rule that creates instances of [FirebaseDataConnect] for use during testing, and
@@ -62,7 +63,7 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
   }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {
-    instance.close()
+    runBlocking { instance.suspendingClose() }
   }
 
   data class Params(

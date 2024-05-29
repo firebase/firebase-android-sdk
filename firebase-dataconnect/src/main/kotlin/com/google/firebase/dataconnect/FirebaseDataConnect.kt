@@ -21,6 +21,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.dataconnect.core.FirebaseDataConnectFactory
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 
@@ -86,8 +87,9 @@ import kotlinx.serialization.SerializationStrategy
  * release notes will become part of the regular Android SDK releases.
  *
  * ##### 16.0.0-alpha05 (not yet released)
- * - XXXX
- * - XXXX
+ * - Fixed [close] to _actually_ close the underlying grpc network resources; also, added
+ * [suspendingClose] to allow callers to wait for the asynchronous closing work to complete
+ * (#6003)[https://github.com/firebase/firebase-android-sdk/pull/6003])
  *
  * ##### 16.0.0-alpha04 (May 29, 2024)
  * - Fixed time zone issues when serializing java.util.Date objects (
@@ -154,8 +156,8 @@ public interface FirebaseDataConnect : AutoCloseable {
    * To start the Data Connect emulator from the command line, first install Firebase Tools as
    * documented at https://firebase.google.com/docs/emulator-suite/install_and_configure then run
    * `firebase emulators:start --only auth,dataconnect`. Enabling the "auth" emulator is only needed
-   * if using [FirebaseAuth] to authenticate users. You may also need to specify `--project
-   * <projectId>` if the Firebase tools are unable to auto-detect the project ID.
+   * if using [com.google.firebase.auth.FirebaseAuth] to authenticate users. You may also need to
+   * specify `--project <projectId>` if the Firebase tools are unable to auto-detect the project ID.
    *
    * @param host The host name or IP address of the Data Connect emulator to which to connect. The
    * default value, 10.0.2.2, is a magic IP address that the Android Emulator aliases to the host
@@ -200,15 +202,37 @@ public interface FirebaseDataConnect : AutoCloseable {
    *
    * This method returns immediately, possibly before in-flight queries and mutations are completed.
    * Any future attempts to execute queries or mutations returned from [query] or [mutation] will
-   * immediately fail.
+   * immediately fail. To wait for the in-flight queries and mutations to complete, call
+   * [suspendingClose] instead.
    *
-   * It is safe to call this method multiple times; subsequent invocations have no effect and return
-   * as if successful.
+   * It is safe to call this method multiple times. On subsequent invocations, if the previous
+   * closing attempt failed then it will be re-tried.
    *
    * After this method returns, calling [FirebaseDataConnect.Companion.getInstance] with the same
    * [app] and [config] will return a new instance, rather than returning this instance.
+   *
+   * @see suspendingClose
    */
   override fun close()
+
+  /**
+   * A version of [close] that has the same semantics, but suspends until the asynchronous work is
+   * complete.
+   *
+   * If the asynchronous work fails, then the exception from the asynchronous work is rethrown by
+   * this method.
+   *
+   * Using this method in tests may be useful to ensure that this object is fully shut down after
+   * each test case. This is especially true if tests create [FirebaseDataConnect] in rapid
+   * succession which could starve resources if they are all active simultaneously. In those cases,
+   * it may be a good idea to call [suspendingClose] instead of [close] to ensure that each instance
+   * is fully shut down before a new one is created. In normal production applications, where
+   * instances of [FirebaseDataConnect] are created infrequently, calling [close] should be
+   * sufficient, and avoids having to create a [CoroutineScope] just to close the object.
+   *
+   * @see close
+   */
+  public suspend fun suspendingClose()
 
   /**
    * Compares this object with another object for equality, using the `===` operator.
