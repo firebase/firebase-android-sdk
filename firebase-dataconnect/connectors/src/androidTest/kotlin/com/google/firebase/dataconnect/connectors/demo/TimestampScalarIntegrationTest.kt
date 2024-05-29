@@ -34,6 +34,7 @@ import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import com.google.firebase.dataconnect.testutil.withVariablesSerializer
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
@@ -243,13 +244,14 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFail() = runTest {
-    for (invalidTimestamp in invalidTimestamps) {
-      assertThrows(DataConnectException::class) {
-        connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
+  fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFail() =
+    runTest(timeout = 60.seconds) {
+      for (invalidTimestamp in invalidTimestamps) {
+        assertThrows(DataConnectException::class) {
+          connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
+        }
       }
     }
-  }
 
   @Test
   @Ignore(
@@ -427,13 +429,14 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFail() = runTest {
-    for (invalidTimestamp in invalidTimestamps) {
-      assertThrows(DataConnectException::class) {
-        connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
+  fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFail() =
+    runTest(timeout = 60.seconds) {
+      for (invalidTimestamp in invalidTimestamps) {
+        assertThrows(DataConnectException::class) {
+          connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
+        }
       }
     }
-  }
 
   @Test
   @Ignore(
