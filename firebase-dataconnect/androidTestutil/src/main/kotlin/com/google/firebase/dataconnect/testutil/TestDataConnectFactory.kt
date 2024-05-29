@@ -63,8 +63,7 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
   }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {
-    instance.close()
-    runBlocking { instance.awaitClose() }
+    runBlocking { instance.suspendingClose() }
   }
 
   data class Params(

@@ -169,7 +169,15 @@ internal class FirebaseDataConnectImpl(
 
   override fun close() {
     logger.debug { "close() called" }
+    @Suppress("DeferredResultUnused") runBlocking { nonBlockingClose() }
+  }
 
+  override suspend fun suspendingClose() {
+    logger.debug { "suspendingClose() called" }
+    nonBlockingClose().await()
+  }
+
+  private suspend fun nonBlockingClose(): Deferred<Unit> {
     coroutineScope.cancel()
 
     // Remove the reference to this `FirebaseDataConnect` instance from the
@@ -177,20 +185,19 @@ internal class FirebaseDataConnectImpl(
     // called with the same arguments that a new instance of `FirebaseDataConnect` will be created.
     creator.remove(this)
 
-    runBlocking {
-      mutex.withLock { closed = true }
+    mutex.withLock { closed = true }
 
-      // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
-      // is re-entrant, this is safe even if it's already been closed.
-      dataConnectAuth.initializedValueOrNull?.close()
-    }
+    // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
+    // is re-entrant, this is safe even if it's already been closed.
+    dataConnectAuth.initializedValueOrNull?.close()
 
+    // Start the job to asynchronously close the gRPC client.
     while (true) {
       val oldCloseJob = closeJob.value
 
       oldCloseJob.ref?.let {
         if (!it.isCancelled) {
-          return
+          return it
         }
       }
 
@@ -210,12 +217,10 @@ internal class FirebaseDataConnectImpl(
 
       if (closeJob.compareAndSet(oldCloseJob, NullableReference(newCloseJob))) {
         newCloseJob.start()
-        return
+        return newCloseJob
       }
     }
   }
-
-  override suspend fun awaitClose(): Unit = closeJob.map { it.ref }.filterNotNull().first().await()
 
   // The generated SDK relies on equals() and hashCode() using object identity.
   // Although you get this for free by just calling the methods of the superclass, be explicit
