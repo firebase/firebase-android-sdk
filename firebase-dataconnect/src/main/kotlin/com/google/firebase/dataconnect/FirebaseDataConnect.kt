@@ -87,8 +87,9 @@ import kotlinx.serialization.SerializationStrategy
  * release notes will become part of the regular Android SDK releases.
  *
  * ##### 16.0.0-alpha05 (not yet released)
- * - XXXX
- * - XXXX
+ * - Fixed [close] to _actually_ close the underlying grpc network resources; also, added
+ * [suspendingClose] to allow callers to wait for the asynchronous closing work to complete
+ * (#6003)[https://github.com/firebase/firebase-android-sdk/pull/6003])
  *
  * ##### 16.0.0-alpha04 (May 29, 2024)
  * - Fixed time zone issues when serializing java.util.Date objects (
