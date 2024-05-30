@@ -62,7 +62,8 @@ internal class DataConnectGrpcRPCsImpl(
   // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
   private val lazyGrpcChannel =
     SuspendingLazy(mutex = mutex, coroutineContext = coroutineDispatcher) {
-      check(!closed) { "DataConnectGrpcRPCsImpl is closed" }
+      check(!closed) { "DataConnectGrpcRPCsImpl ${logger.nameWithId} instance has been closed" }
+      logger.debug { "Creation of GRPC ManagedChannel starting" }
 
       // Upgrade the Android security provider using Google Play Services.
       //
@@ -78,23 +79,27 @@ internal class DataConnectGrpcRPCsImpl(
         logger.warn(e) { "Failed to update ssl context" }
       }
 
-      ManagedChannelBuilder.forTarget(host).let {
-        if (!sslEnabled) {
-          it.usePlaintext()
+      val grpcChannel =
+        ManagedChannelBuilder.forTarget(host).let {
+          if (!sslEnabled) {
+            it.usePlaintext()
+          }
+
+          // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+          // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
+          // failsafe.
+          it.keepAliveTime(30, TimeUnit.SECONDS)
+
+          it.executor(coroutineDispatcher.asExecutor())
+
+          // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
+          // to respond more gracefully to network change events, such as switching from cellular to
+          // wifi.
+          AndroidChannelBuilder.usingBuilder(it).context(context).build()
         }
 
-        // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-        // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
-        // failsafe.
-        it.keepAliveTime(30, TimeUnit.SECONDS)
-
-        it.executor(coroutineDispatcher.asExecutor())
-
-        // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
-        // to respond more gracefully to network change events, such as switching from cellular to
-        // wifi.
-        AndroidChannelBuilder.usingBuilder(it).context(context).build()
-      }
+      logger.debug { "Creation of GRPC ManagedChannel completed successfully" }
+      grpcChannel
     }
 
   private val lazyGrpcStub =

@@ -66,11 +66,8 @@ internal class DataConnectGrpcClient(
 
   private val lazyGrpcRPCs =
     SuspendingLazy(closedMutex) {
-      if (closed) throw IllegalStateException("DataConnectGrpcClient instance has been closed")
-      grpcRPCsFactory.run {
-        logger.debug { "Creating GRPC connection with host=${host} sslEnabled=${sslEnabled}" }
-        newInstance()
-      }
+      check(!closed) { "DataConnectGrpcClient ${logger.nameWithId} instance has been closed" }
+      grpcRPCsFactory.newInstance()
     }
 
   data class OperationResult(
