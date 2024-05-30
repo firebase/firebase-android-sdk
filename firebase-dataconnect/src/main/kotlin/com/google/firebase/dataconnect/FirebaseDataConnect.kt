@@ -92,6 +92,8 @@ import kotlinx.serialization.SerializationStrategy
  * [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]))
  * - Fixed a StrictMode violation upon the first network request being sent (
  * [#6005](https://github.com/firebase/firebase-android-sdk/pull/6005))
+ * - Improved debug logging of GRPC requests and responses (
+ * [#6006](https://github.com/firebase/firebase-android-sdk/pull/6006)
  *
  * ##### 16.0.0-alpha04 (May 29, 2024)
  * - Fixed time zone issues when serializing java.util.Date objects (

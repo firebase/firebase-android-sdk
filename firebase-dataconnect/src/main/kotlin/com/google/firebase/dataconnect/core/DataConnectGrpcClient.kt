@@ -17,11 +17,13 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.core.DataConnectAuth.Companion.withScrubbedAccessToken
+import com.google.firebase.dataconnect.core.DataConnectAuth.Companion.toScrubbedAccessToken
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.firebase.dataconnect.util.decodeFromStruct
 import com.google.firebase.dataconnect.util.toCompactString
 import com.google.firebase.dataconnect.util.toMap
+import com.google.firebase.dataconnect.util.toStructProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -30,6 +32,7 @@ import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.Metadata
+import io.grpc.MethodDescriptor
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
@@ -43,7 +46,13 @@ internal class DataConnectGrpcClient(
 ) {
   private val logger =
     Logger("DataConnectGrpcClient").apply {
-      debug { "Created by ${parentLogger.nameWithId}; projectId=$projectId connector=$connector" }
+      debug {
+        "Created by ${parentLogger.nameWithId};" +
+          " projectId=$projectId" +
+          " host=${grpcRPCsFactory.host}" +
+          " sslEnabled=${grpcRPCsFactory.sslEnabled}" +
+          " connector=$connector"
+      }
     }
 
   private val requestName =
@@ -79,26 +88,34 @@ internal class DataConnectGrpcClient(
       this.operationName = operationName
       this.variables = variables
     }
+    val metadata = createMetadata(requestId)
 
-    logger.debug {
-      val method = ConnectorServiceGrpc.getExecuteQueryMethod()
-      "executeQuery() [rid=$requestId] sending RPC \"${method.fullMethodName}\" with " +
-        "ExecuteQueryRequest: ${request.toCompactString()}"
-    }
+    logger.logGrpcSending(
+      requestId = requestId,
+      kotlinMethodName = "executeQuery($operationName)",
+      grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
+      metadata = metadata,
+      request = request.toStructProto(),
+      requestTypeName = "ExecuteQueryRequest",
+    )
+
     val response =
       lazyGrpcRPCs
         .get()
-        .runCatching { executeQuery(request, createMetadata(requestId)) }
+        .runCatching { executeQuery(request, metadata) }
         .onFailure {
           logger.warn(it) {
-            "executeQuery() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
+            "executeQuery($operationName) [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
           }
         }
         .getOrThrow()
-    logger.debug {
-      "executeQuery() [rid=$requestId] received: " +
-        "ExecuteQueryResponse ${response.toCompactString()}"
-    }
+
+    logger.logGrpcReceived(
+      requestId = requestId,
+      kotlinMethodName = "executeQuery($operationName)",
+      response = response.toStructProto(),
+      responseTypeName = "ExecuteQueryResponse",
+    )
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -116,26 +133,34 @@ internal class DataConnectGrpcClient(
       this.operationName = operationName
       this.variables = variables
     }
+    val metadata = createMetadata(requestId)
 
-    logger.debug {
-      val method = ConnectorServiceGrpc.getExecuteMutationMethod()
-      "executeMutation() [rid=$requestId] sending RPC \"${method.fullMethodName}\" with " +
-        "ExecuteMutationRequest: ${request.toCompactString()}"
-    }
+    logger.logGrpcSending(
+      requestId = requestId,
+      kotlinMethodName = "executeMutation($operationName)",
+      grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
+      metadata = metadata,
+      request = request.toStructProto(),
+      requestTypeName = "ExecuteMutationRequest",
+    )
+
     val response =
       lazyGrpcRPCs
         .get()
-        .runCatching { executeMutation(request, createMetadata(requestId)) }
+        .runCatching { executeMutation(request, metadata) }
         .onFailure {
           logger.warn(it) {
             "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
           }
         }
         .getOrThrow()
-    logger.debug {
-      "executeMutation() [rid=$requestId] received: " +
-        "ExecuteMutationResponse ${response.toCompactString()}"
-    }
+
+    logger.logGrpcReceived(
+      requestId = requestId,
+      kotlinMethodName = "executeMutation($operationName)",
+      response = response.toStructProto(),
+      responseTypeName = "ExecuteMutationResponse",
+    )
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -145,31 +170,12 @@ internal class DataConnectGrpcClient(
 
   private suspend fun createMetadata(requestId: String): Metadata {
     val token = dataConnectAuth.getAccessToken(requestId)
-
-    return Metadata()
-      .apply {
-        put(googRequestParamsHeader, "location=${connector.location}&frontend=data")
-        if (token !== null) {
-          put(firebaseAuthTokenHeader, token)
-        }
+    return Metadata().also {
+      it.put(googRequestParamsHeader, "location=${connector.location}&frontend=data")
+      if (token !== null) {
+        it.put(firebaseAuthTokenHeader, token)
       }
-      .also {
-        logger.debug {
-          "[rid=$requestId] Sending grpc metadata \"${googRequestParamsHeader.name()}\": " +
-            it.get(googRequestParamsHeader)
-        }
-        logger.debug {
-          it.get(firebaseAuthTokenHeader).let { authHeaderValue ->
-            if (authHeaderValue === null) {
-              "[rid=$requestId] Not sending grpc metadata \"${firebaseAuthTokenHeader.name()}\" " +
-                "because no auth token is available"
-            } else {
-              "[rid=$requestId] Sending grpc metadata \"${firebaseAuthTokenHeader.name()}\": " +
-                it.get(firebaseAuthTokenHeader)?.withScrubbedAccessToken(token ?: "")
-            }
-          }
-        }
-      }
+    }
   }
 
   suspend fun close() {
@@ -178,12 +184,71 @@ internal class DataConnectGrpcClient(
   }
 
   private companion object {
-    private val firebaseAuthTokenHeader =
+    val firebaseAuthTokenHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
 
     @Suppress("SpellCheckingInspection")
-    private val googRequestParamsHeader =
+    val googRequestParamsHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
+
+    fun Metadata.toStructProto(): Struct = buildStructProto {
+      val keys: List<Metadata.Key<String>> = run {
+        val keySet: MutableSet<String> = keys().toMutableSet()
+        // Always explicitly include the auth header in the returned string, even if it is absent.
+        keySet.add(firebaseAuthTokenHeader.name())
+        keySet.sorted().map { Metadata.Key.of(it, Metadata.ASCII_STRING_MARSHALLER) }
+      }
+
+      for (key in keys) {
+        val values = getAll(key)
+        val scrubbedValues =
+          if (values === null) listOf(null)
+          else {
+            values.map {
+              if (key.name() == firebaseAuthTokenHeader.name()) it.toScrubbedAccessToken() else it
+            }
+          }
+
+        for (scrubbedValue in scrubbedValues) {
+          put(key.name(), scrubbedValue)
+        }
+      }
+    }
+
+    fun Logger.logGrpcSending(
+      requestId: String,
+      kotlinMethodName: String,
+      grpcMethod: MethodDescriptor<*, *>,
+      metadata: Metadata,
+      request: Struct,
+      requestTypeName: String
+    ) = debug {
+      val struct = buildStructProto {
+        put("RPC", grpcMethod.fullMethodName)
+        put("Metadata", metadata.toStructProto())
+        put(requestTypeName, request)
+      }
+      // Sort the keys in the output string to be more meaningful than alphabetical.
+      val keySortSelector: (String) -> String = {
+        when (it) {
+          "RPC" -> "AAAA"
+          "Metadata" -> "AAAB"
+          requestTypeName -> "AAAC"
+          else -> it
+        }
+      }
+      "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
+    }
+
+    fun Logger.logGrpcReceived(
+      requestId: String,
+      kotlinMethodName: String,
+      response: Struct,
+      responseTypeName: String
+    ) = debug {
+      val struct = buildStructProto { put(responseTypeName, response) }
+      "$kotlinMethodName [rid=$requestId] received: ${struct.toCompactString()}"
+    }
   }
 }
 
