@@ -82,35 +82,35 @@ import kotlinx.serialization.SerializationStrategy
  *
  * ### Release Notes
  *
- * Release notes for the Firebase Data Connect Android API will be published here until it is merged
+ * Release notes for the Firebase Data Connect Android SDK will be published here until it is merged
  * into the `master` branch of https://github.com/firebase/firebase-android-sdk, at which point the
  * release notes will become part of the regular Android SDK releases.
  *
- * ##### 16.0.0-alpha05 (not yet released)
- * - Fixed [close] to _actually_ close the underlying grpc network resources; also, added
- * [suspendingClose] to allow callers to wait for the asynchronous closing work to complete (
- * [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]))
- * - Fixed a StrictMode violation upon the first network request being sent (
- * [#6005](https://github.com/firebase/firebase-android-sdk/pull/6005))
- * - Improved debug logging of GRPC requests and responses (
- * [#6006](https://github.com/firebase/firebase-android-sdk/pull/6006)
+ * #### 16.0.0-alpha05 (not yet released)
+ * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
+ * _actually_ close the underlying grpc network resources. Also, added [suspendingClose] to allow
+ * callers to wait for the asynchronous closing work to complete.
+ * - [#6005](https://github.com/firebase/firebase-android-sdk/pull/6005) Fixed a StrictMode
+ * violation upon the first network request being sent.
+ * - [#6006](https://github.com/firebase/firebase-android-sdk/pull/6006) Improved debug logging of
+ * GRPC requests and responses.
  *
- * ##### 16.0.0-alpha04 (May 29, 2024)
- * - Fixed time zone issues when serializing java.util.Date objects (
- * [#5976](https://github.com/firebase/firebase-android-sdk/pull/5976))
- * - Changed default port of useEmulator() to 9399 (was 9510); this goes with a change to the Data
- * Connect Emulator v1.1.19 (firebase-tools v13.10.2) that changes the default port to 9399. (
- * [#5996](https://github.com/firebase/firebase-android-sdk/pull/5996))
+ * #### 16.0.0-alpha04 (May 29, 2024)
+ * - [#5976](https://github.com/firebase/firebase-android-sdk/pull/5976) Fixed time zone issues when
+ * serializing java.util.Date objects
+ * - [#5996](https://github.com/firebase/firebase-android-sdk/pull/5996) Changed default port of
+ * useEmulator() to 9399 (was 9510); this goes with a change to the Data Connect Emulator v1.1.19
+ * (firebase-tools v13.10.2) that changes the default port to 9399.
  *
- * ##### 16.0.0-alpha03 (May 15, 2024)
+ * #### 16.0.0-alpha03 (May 15, 2024)
  * - KDoc comments added.
  * - OptionalVariable: fix potential NullPointerException in toString() and hashCode().
  * - TimestampSerializer: add support for time zones specified using +HH:MM or -HH:MM.
  *
- * ##### 16.0.0-alpha02 (May 13, 2024)
+ * #### 16.0.0-alpha02 (May 13, 2024)
  * - Internal code cleanup; no externally-visible changes.
  *
- * ##### 16.0.0-alpha01 (May 08, 2024)
+ * #### 16.0.0-alpha01 (May 08, 2024)
  * - Initial release.
  *
  * ### Safe for Concurrent Use
