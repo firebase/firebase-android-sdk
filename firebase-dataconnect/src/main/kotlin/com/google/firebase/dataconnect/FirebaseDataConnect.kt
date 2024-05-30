@@ -88,8 +88,10 @@ import kotlinx.serialization.SerializationStrategy
  *
  * ##### 16.0.0-alpha05 (not yet released)
  * - Fixed [close] to _actually_ close the underlying grpc network resources; also, added
- * [suspendingClose] to allow callers to wait for the asynchronous closing work to complete
- * (#6003)[https://github.com/firebase/firebase-android-sdk/pull/6003])
+ * [suspendingClose] to allow callers to wait for the asynchronous closing work to complete (
+ * [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]))
+ * - Fixed a StrictMode violation upon the first network request being sent (
+ * [#6005](https://github.com/firebase/firebase-android-sdk/pull/6005))
  *
  * ##### 16.0.0-alpha04 (May 29, 2024)
  * - Fixed time zone issues when serializing java.util.Date objects (

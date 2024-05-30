@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.util.SuspendingLazy
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
@@ -58,50 +59,59 @@ internal class DataConnectGrpcRPCsImpl(
   private val mutex = Mutex()
   private var closed = false
 
-  private val grpcChannel = run {
-    // Upgrade the Android security provider using Google Play Services.
-    //
-    // We need to upgrade the Security Provider before any network channels are initialized
-    // because okhttp maintains a list of supported providers that is initialized when the JVM
-    // first resolves the static dependencies of ManagedChannel.
-    //
-    // If initialization fails for any reason, then a warning is logged and the original,
-    // un-upgraded security provider is used.
-    try {
-      ProviderInstaller.installIfNeeded(context)
-    } catch (e: Exception) {
-      logger.warn(e) { "Failed to update ssl context" }
-    }
+  // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
+  private val lazyGrpcChannel =
+    SuspendingLazy(mutex = mutex, coroutineContext = coroutineDispatcher) {
+      check(!closed) { "DataConnectGrpcRPCsImpl is closed" }
 
-    ManagedChannelBuilder.forTarget(host).let {
-      if (!sslEnabled) {
-        it.usePlaintext()
+      // Upgrade the Android security provider using Google Play Services.
+      //
+      // We need to upgrade the Security Provider before any network channels are initialized
+      // because okhttp maintains a list of supported providers that is initialized when the JVM
+      // first resolves the static dependencies of ManagedChannel.
+      //
+      // If initialization fails for any reason, then a warning is logged and the original,
+      // un-upgraded security provider is used.
+      try {
+        ProviderInstaller.installIfNeeded(context)
+      } catch (e: Exception) {
+        logger.warn(e) { "Failed to update ssl context" }
       }
 
-      // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-      // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
-      // failsafe.
-      it.keepAliveTime(30, TimeUnit.SECONDS)
+      ManagedChannelBuilder.forTarget(host).let {
+        if (!sslEnabled) {
+          it.usePlaintext()
+        }
 
-      it.executor(coroutineDispatcher.asExecutor())
+        // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+        // the OS will usually notify gRPC when a connection dies. But not always. This acts as a
+        // failsafe.
+        it.keepAliveTime(30, TimeUnit.SECONDS)
 
-      // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
-      // to respond more gracefully to network change events, such as switching from cellular to
-      // wifi.
-      AndroidChannelBuilder.usingBuilder(it).context(context).build()
+        it.executor(coroutineDispatcher.asExecutor())
+
+        // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
+        // to respond more gracefully to network change events, such as switching from cellular to
+        // wifi.
+        AndroidChannelBuilder.usingBuilder(it).context(context).build()
+      }
     }
-  }
 
-  private val grpcStub = ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub(grpcChannel)
+  private val lazyGrpcStub =
+    SuspendingLazy(mutex) {
+      ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub(lazyGrpcChannel.getLocked())
+    }
 
   override suspend fun executeMutation(request: ExecuteMutationRequest, headers: Metadata) =
-    grpcStub.executeMutation(request, headers)
+    lazyGrpcStub.get().executeMutation(request, headers)
 
   override suspend fun executeQuery(request: ExecuteQueryRequest, headers: Metadata) =
-    grpcStub.executeQuery(request, headers)
+    lazyGrpcStub.get().executeQuery(request, headers)
 
   override suspend fun close() {
     mutex.withLock { closed = true }
+
+    val grpcChannel = lazyGrpcChannel.initializedValueOrNull ?: return
 
     // Avoid blocking the calling thread by running potentially-blocking code on the dispatcher
     // given to the constructor, which should have similar semantics to [Dispatchers.IO].
