@@ -19,7 +19,7 @@ package com.google.firebase.vertexai
 import android.graphics.Bitmap
 import android.util.Log
 import com.google.ai.client.generativeai.common.APIController
-import com.google.ai.client.generativeai.common.CountTokensRequest
+import com.google.ai.client.generativeai.common.VertexCountTokensRequest
 import com.google.ai.client.generativeai.common.GenerateContentRequest
 import com.google.ai.client.generativeai.common.HeaderProvider
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
@@ -195,7 +195,7 @@ internal constructor(
    * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
-    return controller.countTokens(constructCountTokensRequest(*prompt)).toPublic()
+    return controller.vertexCountTokens(constructCountTokensRequest(*prompt)).toPublic()
   }
 
   /**
@@ -230,7 +230,11 @@ internal constructor(
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =
-    CountTokensRequest(modelName, prompt.map { it.toInternal() })
+    VertexCountTokensRequest(
+      modelName,
+      prompt.map { it.toInternal() },
+      systemInstruction?.toInternal(),
+      tools?.map { it.toInternal() })
 
   private fun GenerateContentResponse.validate() = apply {
     if (candidates.isEmpty() && promptFeedback == null) {
