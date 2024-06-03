@@ -38,7 +38,7 @@ _logger = logging.getLogger('fireci.coverage')
 )
 @click.option(
   '--metrics-service-url',
-  default='https://api.firebase-sdk-health-metrics.com',
+  default='https://metric-service-tv5rmd4a6q-uc.a.run.app',
   help='The URL to the metrics service, which persists data and calculates diff.'
 )
 @click.option(
