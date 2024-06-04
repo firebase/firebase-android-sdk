@@ -17,6 +17,7 @@
 package com.google.firebase.gradle.plugins.ci
 
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
+import com.google.firebase.gradle.plugins.firebaseLibraryOrNull
 import com.google.gson.Gson
 import java.io.File
 import org.gradle.api.DefaultTask
@@ -54,6 +55,8 @@ abstract class ChangedModulesTask : DefaultTask() {
         .filter {
           val ext = it.extensions.findByType(FirebaseLibraryExtension::class.java)
           !onlyFirebaseSDKs || it.extensions.findByType<FirebaseLibraryExtension>() != null
+        }.filter {
+          it.firebaseLibraryOrNull?.artifactId?.get() != "protolite-well-known-types"
         }
         .map { it.path }
         .toSet()
