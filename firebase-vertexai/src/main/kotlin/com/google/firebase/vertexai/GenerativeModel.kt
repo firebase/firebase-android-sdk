@@ -19,7 +19,6 @@ package com.google.firebase.vertexai
 import android.graphics.Bitmap
 import android.util.Log
 import com.google.ai.client.generativeai.common.APIController
-import com.google.ai.client.generativeai.common.VertexCountTokensRequest
 import com.google.ai.client.generativeai.common.GenerateContentRequest
 import com.google.ai.client.generativeai.common.HeaderProvider
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
@@ -234,7 +233,8 @@ internal constructor(
       model = modelName,
       contents = prompt.map { it.toInternal() },
       systemInstruction = systemInstruction?.toInternal(),
-      tools = tools?.map { it.toInternal() })
+      tools = tools?.map { it.toInternal() }
+    )
 
   private fun GenerateContentResponse.validate() = apply {
     if (candidates.isEmpty() && promptFeedback == null) {
