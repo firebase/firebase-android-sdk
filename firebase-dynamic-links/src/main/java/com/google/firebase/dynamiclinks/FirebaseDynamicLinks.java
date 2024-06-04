@@ -47,7 +47,12 @@ import com.google.firebase.FirebaseApp;
  *
  * <p>Dynamic link data is available from the app launch intent. This data may include data for
  * dynamic link extensions such as app invites.
+ *
+ * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+ *   service will shut down on August 25, 2025. For more information, see
+ *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
  */
+@Deprecated
 public abstract class FirebaseDynamicLinks {
 
   /**
@@ -57,13 +62,26 @@ public abstract class FirebaseDynamicLinks {
    * called. See <a
    * href="https://firebase.google.com/docs/reference/android/com/google/firebase/FirebaseApp">
    * FirebaseApp</a>.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
+  @Deprecated
   public static synchronized FirebaseDynamicLinks getInstance() {
     return getInstance(FirebaseApp.getInstance());
   }
 
+  /**
+   * Returns an instance of {@link FirebaseDynamicLinks} for the provided firebaseApp.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
   @NonNull
+  @Deprecated
   public static synchronized FirebaseDynamicLinks getInstance(@NonNull FirebaseApp firebaseApp) {
     return firebaseApp.get(FirebaseDynamicLinks.class);
   }
@@ -99,8 +117,13 @@ public abstract class FirebaseDynamicLinks {
    * as this is normal processing and not an error condition.
    *
    * <p>If a dynamic link, the call will also send FirebaseAnalytics dynamic link event.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
+  @Deprecated
   public abstract Task<PendingDynamicLinkData> getDynamicLink(@Nullable Intent intent);
 
   /**
@@ -118,15 +141,23 @@ public abstract class FirebaseDynamicLinks {
    *     successfully and either a dynamic link is returned, or null if a dynamic link is not
    *     previously captured or is in the Uri.
    *     <p>{@link Task#isSuccessful()} will only be false when a processing error occurs.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
+  @Deprecated
   public abstract Task<PendingDynamicLinkData> getDynamicLink(@NonNull Uri dynamicLinkUri);
 
   /**
    * Create a long or short Dynamic Link.
    *
    * @return Builder to create the Dynamic Link.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
+  @Deprecated
   public abstract DynamicLink.Builder createDynamicLink();
 }

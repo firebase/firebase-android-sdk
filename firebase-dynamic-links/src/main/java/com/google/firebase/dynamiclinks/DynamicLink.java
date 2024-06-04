@@ -26,7 +26,12 @@ import com.google.firebase.dynamiclinks.internal.FirebaseDynamicLinksImpl;
 /**
  * Contains Builders for constructing Dynamic Links. Returned by {@link Builder#buildDynamicLink()}
  * with the constructed Dynamic Link.
+ *
+ * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+ *   service will shut down on August 25, 2025. For more information, see
+ *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
  */
+@Deprecated
 public final class DynamicLink {
 
   private final Bundle builderParameters;
@@ -40,13 +45,24 @@ public final class DynamicLink {
    *
    * @throws IllegalArgumentException if the FDL domain is not set. Set with {@link
    *     Builder#setDynamicLinkDomain(String)}.
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
+  @Deprecated
   public Uri getUri() {
     return FirebaseDynamicLinksImpl.createDynamicLink(builderParameters);
   }
 
-  /** Builder for creating Dynamic Links. */
+  /**
+   * Builder for creating Dynamic Links.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   * */
+  @Deprecated
   public static final class Builder {
 
     // Dynamic Link parameters.
@@ -105,15 +121,27 @@ public final class DynamicLink {
      * existing long FDL into a short FDL.
      *
      * @param longLink The long FDL to shorten.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setLongLink(@NonNull Uri longLink) {
       builderParameters.putParcelable(KEY_DYNAMIC_LINK, longLink);
       return this;
     }
 
-    /** @return the long Dynamic link associated with this DynamicLink. */
+    /**
+     * Return the long Dynamic link associated with this DynamicLink.
+     *
+     * @return the long Dynamic link associated with this DynamicLink.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
     @NonNull
+    @Deprecated
     public Uri getLongLink() {
       Uri longLink = fdlParameters.getParcelable(KEY_DYNAMIC_LINK);
       if (longLink == null) {
@@ -129,15 +157,27 @@ public final class DynamicLink {
      *     a link to your app's content, or a URL that initiates some app-specific logic such as
      *     crediting the user with a coupon, or displaying a specific welcome screen. This link must
      *     be a well-formatted URL, be properly URL-encoded, and use the HTTP or HTTPS scheme.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setLink(@NonNull Uri link) {
       fdlParameters.putParcelable(KEY_LINK, link);
       return this;
     }
 
-    /** @return the deep link associated with this DynamicLink. */
+    /**
+     * Return the deep link associated with this DynamicLink.
+     *
+     * @return the deep link associated with this DynamicLink.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
     @NonNull
+    @Deprecated
     public Uri getLink() {
       Uri link = fdlParameters.getParcelable(KEY_LINK);
       if (link == null) {
@@ -175,8 +215,12 @@ public final class DynamicLink {
      *
      * @param domainUriPrefix The target project's Domain Uri Prefix. You can find this value in the
      *     Dynamic Links section of the Firebase console.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setDomainUriPrefix(@NonNull String domainUriPrefix) {
       if (domainUriPrefix.matches(APP_GOO_GL_PATTERN)
           || domainUriPrefix.matches(PAGE_LINK_PATTERN)) {
@@ -186,8 +230,16 @@ public final class DynamicLink {
       return this;
     }
 
-    /** @return the deep link set to this DynamicLink. */
+    /**
+     * Returns the deep link set to this DynamicLink.
+     *
+     * @return the deep link set to this DynamicLink.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
     @NonNull
+    @Deprecated
     public String getDomainUriPrefix() {
       return builderParameters.getString(KEY_DOMAIN_URI_PREFIX, "");
     }
@@ -197,8 +249,12 @@ public final class DynamicLink {
      *
      * @param androidParameters The AndroidParameters from {@link
      *     AndroidParameters.Builder#build()}.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setAndroidParameters(@NonNull AndroidParameters androidParameters) {
       fdlParameters.putAll(androidParameters.parameters);
       return this;
@@ -208,8 +264,12 @@ public final class DynamicLink {
      * Sets the iOS parameters.
      *
      * @param iosParameters The IosParameters from {@link IosParameters.Builder#build()}.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setIosParameters(@NonNull IosParameters iosParameters) {
       fdlParameters.putAll(iosParameters.parameters);
       return this;
@@ -220,8 +280,12 @@ public final class DynamicLink {
      *
      * @param googleAnalyticsParameters The GoogleAnalyticsParameters from {@link
      *     GoogleAnalyticsParameters.Builder#build()}.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setGoogleAnalyticsParameters(
         @NonNull GoogleAnalyticsParameters googleAnalyticsParameters) {
       fdlParameters.putAll(googleAnalyticsParameters.parameters);
@@ -233,8 +297,12 @@ public final class DynamicLink {
      *
      * @param itunesConnectAnalyticsParameters The ItunesConnectAnalyticsParameters from {@link
      *     ItunesConnectAnalyticsParameters.Builder#build()}.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setItunesConnectAnalyticsParameters(
         @NonNull ItunesConnectAnalyticsParameters itunesConnectAnalyticsParameters) {
       fdlParameters.putAll(itunesConnectAnalyticsParameters.parameters);
@@ -246,8 +314,12 @@ public final class DynamicLink {
      *
      * @param socialMetaTagParameters The SocialMetaTagParameters from {@link
      *     SocialMetaTagParameters.Builder#build()}.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setSocialMetaTagParameters(
         @NonNull SocialMetaTagParameters socialMetaTagParameters) {
       fdlParameters.putAll(socialMetaTagParameters.parameters);
@@ -259,8 +331,12 @@ public final class DynamicLink {
      *
      * @param navigationInfoParameters The NavigationInfoParameters from {@link
      *     NavigationInfoParameters.Builder#build()}.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Builder setNavigationInfoParameters(
         @NonNull NavigationInfoParameters navigationInfoParameters) {
       fdlParameters.putAll(navigationInfoParameters.parameters);
@@ -272,8 +348,12 @@ public final class DynamicLink {
      *
      * @throws IllegalArgumentException if the FDL domain is not set. Set with {@link
      *     #setDynamicLinkDomain(String)}.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public DynamicLink buildDynamicLink() {
       FirebaseDynamicLinksImpl.verifyDomainUriPrefix(builderParameters);
       return new DynamicLink(builderParameters);
@@ -285,8 +365,12 @@ public final class DynamicLink {
      * @throws IllegalArgumentException if the FDL domain and api key are not set. Set FDL domain
      *     with {@link Builder#setDynamicLinkDomain(String)}. Ensure that google-services.json file
      *     is setup for the app if the api key is not set.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Task<ShortDynamicLink> buildShortDynamicLink() {
       verifyApiKey();
       return firebaseDynamicLinksImpl.createShortDynamicLink(builderParameters);
@@ -300,8 +384,12 @@ public final class DynamicLink {
      * @throws IllegalArgumentException if the FDL domain and api key are not set. Set FDL domain
      *     with {@link Builder#setDynamicLinkDomain(String)}. Ensure that google-services.json file
      *     is setup for the app if the api key is not set.
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
      */
     @NonNull
+    @Deprecated
     public Task<ShortDynamicLink> buildShortDynamicLink(@Suffix int suffix) {
       verifyApiKey();
       builderParameters.putInt(Builder.KEY_SUFFIX, suffix);
@@ -315,7 +403,14 @@ public final class DynamicLink {
     }
   }
 
-  /** Android parameters. */
+  /**
+   * Android parameters.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
+  @Deprecated
   public static final class AndroidParameters {
 
     // AndroidInfo parameters.
@@ -332,7 +427,14 @@ public final class DynamicLink {
       this.parameters = parameters;
     }
 
-    /** Builder for Android parameters. */
+    /**
+     * Builder for Android parameters.
+     *
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
+    @Deprecated
     public static final class Builder {
 
       private final Bundle parameters;
@@ -342,7 +444,11 @@ public final class DynamicLink {
        * be connected to your project from the Overview page of the Firebase console.
        *
        * @throws IllegalStateException if FirebaseApp has not been initialized correctly.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
+      @Deprecated
       public Builder() {
         if (FirebaseApp.getInstance() == null) {
           throw new IllegalStateException("FirebaseApp not initialized.");
@@ -358,7 +464,11 @@ public final class DynamicLink {
        *
        * @param packageName The package name of the Android app to use to open the link. The app
        *     must be connected to your project from the Overview page of the Firebase console.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
+      @Deprecated
       public Builder(@NonNull String packageName) {
         parameters = new Bundle();
         parameters.putString(KEY_ANDROID_PACKAGE_NAME, packageName);
@@ -370,15 +480,27 @@ public final class DynamicLink {
        * web version of the content, or display a promotional page for your app.
        *
        * @param fallbackUrl The link to open on Android if the app is not installed.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public AndroidParameters.Builder setFallbackUrl(@NonNull Uri fallbackUrl) {
         parameters.putParcelable(KEY_ANDROID_FALLBACK_LINK, fallbackUrl);
         return this;
       }
 
-      /** @return the link to open on Android if the app isn't installed. */
+      /**
+       * Returns the link to open on Android if the app isn't installed.
+       *
+       * @return the link to open on Android if the app isn't installed.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public Uri getFallbackUrl() {
         Uri fallbackUrl = parameters.getParcelable(KEY_ANDROID_FALLBACK_LINK);
         if (fallbackUrl == null) {
@@ -391,14 +513,26 @@ public final class DynamicLink {
        * Sets the versionCode of the minimum version of your app that can open the link.
        *
        * @param minimumVersion The minimum version.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public AndroidParameters.Builder setMinimumVersion(int minimumVersion) {
         parameters.putInt(KEY_ANDROID_MIN_VERSION_CODE, minimumVersion);
         return this;
       }
 
-      /** @return the minimum version of your app that can open the link. */
+      /**
+       * Returns the minimum version of your app that can open the link.
+       *
+       * @return the minimum version of your app that can open the link.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
+      @Deprecated
       public int getMinimumVersion() {
         return parameters.getInt(KEY_ANDROID_MIN_VERSION_CODE);
       }
@@ -406,15 +540,27 @@ public final class DynamicLink {
       /**
        * Build AndroidParameters for use with {@link
        * DynamicLink.Builder#setAndroidParameters(AndroidParameters)}.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public AndroidParameters build() {
         return new AndroidParameters(parameters);
       }
     }
   }
 
-  /** iOS parameters. */
+  /**
+   * iOS parameters.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
+  @Deprecated
   public static final class IosParameters {
 
     // IosInfo parameters.
@@ -439,7 +585,14 @@ public final class DynamicLink {
       this.parameters = parameters;
     }
 
-    /** Builder for iOS parameters. */
+    /**
+     * Builder for iOS parameters.
+     *
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
+    @Deprecated
     public static final class Builder {
 
       private final Bundle parameters;
@@ -449,7 +602,11 @@ public final class DynamicLink {
        *
        * @param bundleId The bundle ID of the iOS app to use to open the link. The app must be
        *     connected to your project from the Overview page of the Firebase console.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
+      @Deprecated
       public Builder(@NonNull String bundleId) {
         parameters = new Bundle();
         parameters.putString(KEY_IOS_BUNDLE_ID, bundleId);
@@ -461,8 +618,12 @@ public final class DynamicLink {
        * web version of the content, or display a promotional page for your app.
        *
        * @param fallbackUrl The link to open on iOS if the app is not installed.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public IosParameters.Builder setFallbackUrl(@NonNull Uri fallbackUrl) {
         parameters.putParcelable(KEY_IOS_FALLBACK_LINK, fallbackUrl);
         return this;
@@ -473,15 +634,27 @@ public final class DynamicLink {
        * ID.
        *
        * @param customScheme The app's custom URL scheme.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public IosParameters.Builder setCustomScheme(@NonNull String customScheme) {
         parameters.putString(KEY_IOS_CUSTOM_SCHEME, customScheme);
         return this;
       }
 
-      /** @return the app's custom URL scheme. */
+      /**
+       * Returns the app's custom URL scheme.
+       *
+       * @return the app's custom URL scheme.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getCustomScheme() {
         return parameters.getString(KEY_IOS_CUSTOM_SCHEME, "");
       }
@@ -493,15 +666,27 @@ public final class DynamicLink {
        * fallback link set by {@link IosParameters.Builder#setFallbackUrl(Uri)} on iPad.
        *
        * @param fallbackUrl The link to open on iPad if the app is not installed.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public IosParameters.Builder setIpadFallbackUrl(@NonNull Uri fallbackUrl) {
         parameters.putParcelable(KEY_IPAD_FALLBACK_LINK, fallbackUrl);
         return this;
       }
 
-      /** @return the link to open on iPad if the app is not installed. */
+      /**
+       * Returns the link to open on iPad if the app is not installed.
+       *
+       * @return the link to open on iPad if the app is not installed.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public Uri getIpadFallbackUrl() {
         Uri fallbackUrl = parameters.getParcelable(KEY_IPAD_FALLBACK_LINK);
         if (fallbackUrl == null) {
@@ -515,15 +700,27 @@ public final class DynamicLink {
        * connected to your project from the Overview page of the Firebase console.
        *
        * @param bundleId The iPad bundle ID of the app.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public IosParameters.Builder setIpadBundleId(@NonNull String bundleId) {
         parameters.putString(KEY_IPAD_BUNDLE_ID, bundleId);
         return this;
       }
 
-      /** @return the iPad bundle ID of the app. */
+      /**
+       * Returns the iPad bundle ID of the app.
+       *
+       * @return the iPad bundle ID of the app.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getIpadBundleId() {
         return parameters.getString(KEY_IPAD_BUNDLE_ID, "");
       }
@@ -532,17 +729,28 @@ public final class DynamicLink {
        * Sets the App Store ID, used to send users to the App Store when the app isn't installed.
        *
        * @param appStoreId The App Store ID.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public IosParameters.Builder setAppStoreId(@NonNull String appStoreId) {
         parameters.putString(KEY_IOS_APP_STORE_ID, appStoreId);
         return this;
       }
 
       /**
+       * Returns the App Store ID, used to send users to the App Store when the app isn't installed
+       *
        * @return the App Store ID, used to send users to the App Store when the app isn't installed.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       d.
        */
       @NonNull
+      @Deprecated
       public String getAppStoreId() {
         return parameters.getString(KEY_IOS_APP_STORE_ID, "");
       }
@@ -551,15 +759,27 @@ public final class DynamicLink {
        * Sets the minimum version of your app that can open the link.
        *
        * @param minimumVersion The minimum version.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public IosParameters.Builder setMinimumVersion(@NonNull String minimumVersion) {
         parameters.putString(KEY_IOS_MINIMUM_VERSION, minimumVersion);
         return this;
       }
 
-      /** @return the minimum version of your app that can open the link. */
+      /**
+       * Returns the minimum version of your app that can open the link.
+       *
+       * @return the minimum version of your app that can open the link.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getMinimumVersion() {
         return parameters.getString(KEY_IOS_MINIMUM_VERSION, "");
       }
@@ -567,15 +787,27 @@ public final class DynamicLink {
       /**
        * Build IosParameters for use with {@link
        * DynamicLink.Builder#setIosParameters(IosParameters)}.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public IosParameters build() {
         return new IosParameters(parameters);
       }
     }
   }
 
-  /** Google Analytics parameters. */
+  /**
+   * Google Analytics parameters.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
+  @Deprecated
   public static final class GoogleAnalyticsParameters {
 
     // GooglePlayAnalytics parameters.
@@ -596,12 +828,26 @@ public final class DynamicLink {
       this.parameters = parameters;
     }
 
-    /** Builder for Google Analytics parameters. */
+    /**
+     * Builder for Google Analytics parameters.
+     *
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
+    @Deprecated
     public static final class Builder {
 
       private final Bundle parameters;
 
-      /** Create Google Analytics parameters builder. */
+      /**
+       * Create Google Analytics parameters builder.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
+      @Deprecated
       public Builder() {
         parameters = new Bundle();
       }
@@ -615,7 +861,11 @@ public final class DynamicLink {
        *     cost-per-click (cpc).
        * @param campaign The campaign name; The individual campaign name, slogan, promo code, etc.
        *     for a product.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
+      @Deprecated
       public Builder(@NonNull String source, @NonNull String medium, @NonNull String campaign) {
         parameters = new Bundle();
         parameters.putString(KEY_UTM_SOURCE, source);
@@ -628,15 +878,27 @@ public final class DynamicLink {
        *
        * @param source The campaign source; used to identify a search engine, newsletter, or other
        *     source.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public GoogleAnalyticsParameters.Builder setSource(@NonNull String source) {
         parameters.putString(KEY_UTM_SOURCE, source);
         return this;
       }
 
-      /** @return the campaign source. */
+      /**
+       * Returns the campaign source.
+       *
+       * @return the campaign source
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getSource() {
         return parameters.getString(KEY_UTM_SOURCE, "");
       }
@@ -646,15 +908,27 @@ public final class DynamicLink {
        *
        * @param medium The campaign medium; used to identify a medium such as email or
        *     cost-per-click (cpc).
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public GoogleAnalyticsParameters.Builder setMedium(@NonNull String medium) {
         parameters.putString(KEY_UTM_MEDIUM, medium);
         return this;
       }
 
-      /** @return the campaign medium. */
+      /**
+       * Returns the campaign medium.
+       *
+       * @return the campaign medium.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getMedium() {
         return parameters.getString(KEY_UTM_MEDIUM, "");
       }
@@ -664,15 +938,27 @@ public final class DynamicLink {
        *
        * @param campaign The campaign name; The individual campaign name, slogan, promo code, etc.
        *     for a product.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public GoogleAnalyticsParameters.Builder setCampaign(@NonNull String campaign) {
         parameters.putString(KEY_UTM_CAMPAIGN, campaign);
         return this;
       }
 
-      /** @return the campaign name. */
+      /**
+       * Returns the campaign name.
+       *
+       * @return the campaign name.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getCampaign() {
         return parameters.getString(KEY_UTM_CAMPAIGN, "");
       }
@@ -681,15 +967,27 @@ public final class DynamicLink {
        * Sets the campaign term.
        *
        * @param term The campaign term; used with paid search to supply the keywords for ads.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public GoogleAnalyticsParameters.Builder setTerm(@NonNull String term) {
         parameters.putString(KEY_UTM_TERM, term);
         return this;
       }
 
-      /** @return the campaign term. */
+      /**
+       * Returns the campaign term.
+       *
+       * @return the campaign term.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getTerm() {
         return parameters.getString(KEY_UTM_TERM, "");
       }
@@ -699,15 +997,27 @@ public final class DynamicLink {
        *
        * @param content The campaign content; used for A/B testing and content-targeted ads to
        *     differentiate ads or links that point to the same URL.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public GoogleAnalyticsParameters.Builder setContent(@NonNull String content) {
         parameters.putString(KEY_UTM_CONTENT, content);
         return this;
       }
 
-      /** @return the campaign content. */
+      /**
+       * Returns the campaign content.
+       *
+       * @return the campaign content.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getContent() {
         return parameters.getString(KEY_UTM_CONTENT, "");
       }
@@ -715,15 +1025,27 @@ public final class DynamicLink {
       /**
        * Build GoogleAnalyticsParameters for use with {@link
        * DynamicLink.Builder#setGoogleAnalyticsParameters(GoogleAnalyticsParameters)}.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public GoogleAnalyticsParameters build() {
         return new GoogleAnalyticsParameters(parameters);
       }
     }
   }
 
-  /** iTunes Connect App Analytics parameters. */
+  /**
+   * iTunes Connect App Analytics parameters.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
+  @Deprecated
   public static final class ItunesConnectAnalyticsParameters {
 
     // ITunesConnectAnalytics parameters.
@@ -740,12 +1062,26 @@ public final class DynamicLink {
       this.parameters = parameters;
     }
 
-    /** Builder for iTunes Connect App Analytics parameters. */
+    /**
+     * Builder for iTunes Connect App Analytics parameters.
+     *
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
+    @Deprecated
     public static final class Builder {
 
       private final Bundle parameters;
 
-      /** Create iTunes Connect App Analytics parameter builder. */
+      /**
+       * Create iTunes Connect App Analytics parameter builder.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
+      @Deprecated
       public Builder() {
         parameters = new Bundle();
       }
@@ -755,16 +1091,28 @@ public final class DynamicLink {
        *
        * @param providerToken The provider token that enables analytics for Dynamic Links from
        *     within iTunes Connect.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public ItunesConnectAnalyticsParameters.Builder setProviderToken(
           @NonNull String providerToken) {
         parameters.putString(KEY_ITUNES_CONNECT_PT, providerToken);
         return this;
       }
 
-      /** @return the provider token. */
+      /**
+       * Returns the provider token.
+       *
+       * @return the provider token.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getProviderToken() {
         return parameters.getString(KEY_ITUNES_CONNECT_PT, "");
       }
@@ -773,16 +1121,28 @@ public final class DynamicLink {
        * Sets the affiliate token.
        *
        * @param affiliateToken The affiliate token used to create affiliate-coded links.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public ItunesConnectAnalyticsParameters.Builder setAffiliateToken(
           @NonNull String affiliateToken) {
         parameters.putString(KEY_ITUNES_CONNECT_AT, affiliateToken);
         return this;
       }
 
-      /** @return the affiliate token. */
+      /**
+       * Returns the affiliate token.
+       *
+       * @return the affiliate token.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getAffiliateToken() {
         return parameters.getString(KEY_ITUNES_CONNECT_AT, "");
       }
@@ -792,16 +1152,28 @@ public final class DynamicLink {
        *
        * @param campaignToken The campaign token that developers can add to any link in order to
        *     track sales from a specific marketing campaign.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public ItunesConnectAnalyticsParameters.Builder setCampaignToken(
           @NonNull String campaignToken) {
         parameters.putString(KEY_ITUNES_CONNECT_CT, campaignToken);
         return this;
       }
 
-      /** @return the campaign token. */
+      /**
+       * Returns the campaign token.
+       *
+       * @return the campaign token.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getCampaignToken() {
         return parameters.getString(KEY_ITUNES_CONNECT_CT, "");
       }
@@ -809,15 +1181,27 @@ public final class DynamicLink {
       /**
        * Build ItunesConnectAnalyticsParameters for use with {@link
        * DynamicLink.Builder#setItunesConnectAnalyticsParameters(ItunesConnectAnalyticsParameters)}.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public ItunesConnectAnalyticsParameters build() {
         return new ItunesConnectAnalyticsParameters(parameters);
       }
     }
   }
 
-  /** Social meta-tag parameters. */
+  /**
+   * Social meta-tag parameters.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
+  @Deprecated
   public static final class SocialMetaTagParameters {
 
     // SocialMetaTagInfo parameters.
@@ -834,12 +1218,26 @@ public final class DynamicLink {
       this.parameters = parameters;
     }
 
-    /** Builder for social meta-tag parameters. */
+    /**
+     * Builder for social meta-tag parameters.
+     *
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
+    @Deprecated
     public static final class Builder {
 
       private final Bundle parameters;
 
-      /** Create social meta-tag parameter builder. */
+      /**
+       * Create social meta-tag parameter builder.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
+      @Deprecated
       public Builder() {
         parameters = new Bundle();
       }
@@ -848,15 +1246,27 @@ public final class DynamicLink {
        * Sets the meta-tag title.
        *
        * @param title The title to use when the Dynamic Link is shared in a social post.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public SocialMetaTagParameters.Builder setTitle(@NonNull String title) {
         parameters.putString(KEY_SOCIAL_TITLE, title);
         return this;
       }
 
-      /** @return the meta-tag title. */
+      /**
+       * Returns the meta-tag title.
+       *
+       * @return the meta-tag title.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getTitle() {
         return parameters.getString(KEY_SOCIAL_TITLE, "");
       }
@@ -865,15 +1275,27 @@ public final class DynamicLink {
        * Sets the meta-tag description.
        *
        * @param description The description to use when the Dynamic Link is shared in a social post.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public SocialMetaTagParameters.Builder setDescription(@NonNull String description) {
         parameters.putString(KEY_SOCIAL_DESCRIPTION, description);
         return this;
       }
 
-      /** @return the meta-tag description. */
+      /**
+       * Returns the meta-tag description.
+       *
+       * @return the meta-tag description.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public String getDescription() {
         return parameters.getString(KEY_SOCIAL_DESCRIPTION, "");
       }
@@ -882,15 +1304,27 @@ public final class DynamicLink {
        * Sets the meta-tag image link.
        *
        * @param imageUrl The URL to an image related to this link.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public SocialMetaTagParameters.Builder setImageUrl(@NonNull Uri imageUrl) {
         parameters.putParcelable(KEY_SOCIAL_IMAGE_LINK, imageUrl);
         return this;
       }
 
-      /** @return the meta-tag image link. */
+      /**
+       * Returns the meta-tag image link.
+       *
+       * @return the meta-tag image link.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
       @NonNull
+      @Deprecated
       public Uri getImageUrl() {
         Uri imageUrl = parameters.getParcelable(KEY_SOCIAL_IMAGE_LINK);
         if (imageUrl == null) {
@@ -902,15 +1336,27 @@ public final class DynamicLink {
       /**
        * Build SocialMetaTagParameters for use with {@link
        * DynamicLink.Builder#setSocialMetaTagParameters(SocialMetaTagParameters)}.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public SocialMetaTagParameters build() {
         return new SocialMetaTagParameters(parameters);
       }
     }
   }
 
-  /** Navigation info parameters. */
+  /**
+   * Navigation info parameters.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
+  @Deprecated
   public static final class NavigationInfoParameters {
 
     // NavigationInfo parameters.
@@ -923,12 +1369,26 @@ public final class DynamicLink {
       this.parameters = parameters;
     }
 
-    /** Builder for navigation info parameters. */
+    /**
+     * Builder for navigation info parameters.
+     *
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
+    @Deprecated
     public static final class Builder {
 
       private final Bundle parameters;
 
-      /** Create navigation info parameter builder. */
+      /**
+       * Create navigation info parameter builder.
+       *
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+       */
+      @Deprecated
       public Builder() {
         parameters = new Bundle();
       }
@@ -939,8 +1399,12 @@ public final class DynamicLink {
        *
        * @param forcedRedirectEnabled If true, app preview page will be disabled and there will be a
        *     redirect to the FDL. If false, go to the app preview page.
+       * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+       *   service will shut down on August 25, 2025. For more information, see
+       *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
        */
       @NonNull
+      @Deprecated
       public NavigationInfoParameters.Builder setForcedRedirectEnabled(
           boolean forcedRedirectEnabled) {
         parameters.putInt(KEY_FORCED_REDIRECT, forcedRedirectEnabled ? 1 : 0);
@@ -954,8 +1418,11 @@ public final class DynamicLink {
       /**
        * Build NavigationInfoParameters for use with {@link
        * DynamicLink.Builder#setNavigationInfoParameters(NavigationInfoParameters)}.
+       *
+       * @deprecated
        */
       @NonNull
+      @Deprecated
       public NavigationInfoParameters build() {
         return new NavigationInfoParameters(parameters);
       }
