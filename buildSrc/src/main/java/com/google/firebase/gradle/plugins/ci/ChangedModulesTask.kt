@@ -16,17 +16,16 @@
 
 package com.google.firebase.gradle.plugins.ci
 
-import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import com.google.firebase.gradle.plugins.firebaseLibraryOrNull
 import com.google.gson.Gson
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
-import org.gradle.kotlin.dsl.findByType
 
 abstract class ChangedModulesTask : DefaultTask() {
   @get:Input
@@ -49,38 +48,45 @@ abstract class ChangedModulesTask : DefaultTask() {
 
   @TaskAction
   fun execute() {
-    val projects =
-      AffectedProjectFinder(project, changedGitPaths.toSet(), listOf())
-        .find()
-        .filter {
-          val ext = it.extensions.findByType(FirebaseLibraryExtension::class.java)
-          !onlyFirebaseSDKs || it.extensions.findByType<FirebaseLibraryExtension>() != null
-        }.filter {
-          it.firebaseLibraryOrNull?.artifactId?.get() != "protolite-well-known-types"
-        }
-        .map { it.path }
-        .toSet()
+    val changedProjects = findChangedProjects()
 
-    val result = project.rootProject.subprojects.associate { it.path to mutableSetOf<String>() }
-    project.rootProject.subprojects.forEach { p ->
-      p.configurations.forEach { c ->
-        c.dependencies.filterIsInstance<ProjectDependency>().forEach {
-          if (
-            !onlyFirebaseSDKs ||
-              it.dependencyProject.extensions.findByType<FirebaseLibraryExtension>() != null
-          ) {
-            if (!onlyFirebaseSDKs || p.extensions.findByType<FirebaseLibraryExtension>() != null) {
-              result[it.dependencyProject.path]?.add(p.path)
-            }
+    val affectedProjects = findProjectsThatDependOnThese(changedProjects)
+
+    val outputProjects = (changedProjects + affectedProjects).toSet()
+
+    val projectPaths = outputProjects.map { it.path }
+
+    outputFile.writeText(Gson().toJson(projectPaths))
+  }
+
+  private fun findChangedProjects(): List<Project> {
+    val projectFinder = AffectedProjectFinder(project, changedGitPaths.toSet(), emptyList())
+    val allChangedProjects = projectFinder.find()
+
+    return allChangedProjects.filter { it.matchesOurFilter() }
+  }
+
+  private fun findProjectsThatDependOnThese(projects: List<Project>): List<Project> {
+    val dependentProjects =
+      project.rootProject.subprojects.filter {
+        it.configurations.any {
+          it.dependencies.filterIsInstance<ProjectDependency>().any {
+            projects.contains(it.dependencyProject)
           }
         }
       }
-    }
-    val affectedProjects =
-      result
-        .flatMap { (key, value) -> if (projects.contains(key)) setOf(key) + value else setOf() }
-        .toSet()
 
-    outputFile.writeText(Gson().toJson(affectedProjects))
+    return dependentProjects.filter { it.matchesOurFilter() }
+  }
+
+  private fun Project.matchesOurFilter(): Boolean {
+    if (EXCLUDED_PROJECTS.contains(project.parent?.name)) return false
+    if (onlyFirebaseSDKs && firebaseLibraryOrNull == null) return false
+
+    return true
+  }
+
+  companion object {
+    val EXCLUDED_PROJECTS = listOf("protolite-well-known-types")
   }
 }
