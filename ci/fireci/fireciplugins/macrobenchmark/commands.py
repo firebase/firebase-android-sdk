@@ -181,7 +181,7 @@ def ci(pull_request: bool, changed_modules_file: Path, repeat: int):
     startup_time_data = {'log': log, 'ftlResults': ftl_results}
 
     if ftl_results:
-      metric_service_url = 'https://api.firebase-sdk-health-metrics.com'
+      metric_service_url = 'https://metric-service-tv5rmd4a6q-uc.a.run.app'
       access_token = ci_utils.gcloud_identity_token()
       uploader.post_report(
         test_report=startup_time_data,

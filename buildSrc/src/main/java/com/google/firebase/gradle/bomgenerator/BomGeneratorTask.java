@@ -131,6 +131,7 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "firebase-database-connection",
           "firebase-database-connection-license",
           "firebase-database-license",
+          "firebase-dataconnect",
           "firebase-datatransport",
           "firebase-appdistribution-ktx",
           "firebase-appdistribution",
