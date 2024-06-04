@@ -41,11 +41,6 @@ class MemoryIndexManager implements IndexManager {
   public void start() {}
 
   @Override
-  public void clearParents() {
-    collectionParentsIndex.clear();
-  }
-
-  @Override
   public void addToCollectionParentIndex(ResourcePath collectionPath) {
     collectionParentsIndex.add(collectionPath);
   }
@@ -124,11 +119,6 @@ class MemoryIndexManager implements IndexManager {
     // Field indices are not supported with memory persistence.
   }
 
-  @Override
-  public void clearIndexData() {
-    // Field indices are not supported with memory persistence.
-  }
-
   /**
    * Internal implementation of the collection-parent index. Also used for in-memory caching by
    * SQLiteIndexManager and initial index population in SQLiteSchema.
@@ -153,10 +143,6 @@ class MemoryIndexManager implements IndexManager {
     List<ResourcePath> getEntries(String collectionId) {
       HashSet<ResourcePath> existingParents = index.get(collectionId);
       return existingParents != null ? new ArrayList<>(existingParents) : Collections.emptyList();
-    }
-
-    void clear() {
-      index.clear();
     }
   }
 }

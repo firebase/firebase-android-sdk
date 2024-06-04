@@ -133,9 +133,4 @@ interface MutationQueue {
 
   /** Performs a consistency check, examining the mutation queue for any leaks, if possible. */
   void performConsistencyCheck();
-
-  /**
-   * Removes all mutations.
-   */
-  void clear();
 }

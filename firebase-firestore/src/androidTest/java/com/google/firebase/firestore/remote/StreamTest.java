@@ -37,6 +37,7 @@ import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firestore.v1.InitResponse;
 import com.google.protobuf.ByteString;
 
 import io.grpc.Status;
@@ -78,12 +79,23 @@ public class StreamTest {
     final Semaphore openSemaphore = new Semaphore(0);
     final Semaphore closeSemaphore = new Semaphore(0);
     final Semaphore watchChangeSemaphore = new Semaphore(0);
+    final Semaphore handshakeReadySemaphore = new Semaphore(0);
     final Semaphore handshakeSemaphore = new Semaphore(0);
     final Semaphore responseReceivedSemaphore = new Semaphore(0);
 
     @Override
+    public void onHandshake(InitResponse initResponse) {
+      handshakeSemaphore.release();
+    }
+
+    @Override
     public void onWatchChange(SnapshotVersion snapshotVersion, WatchChange watchChange) {
       watchChangeSemaphore.release();
+    }
+
+    @Override
+    public void onHandshakeReady() {
+      handshakeReadySemaphore.release();
     }
 
     @Override
@@ -94,11 +106,6 @@ public class StreamTest {
     @Override
     public void onClose(Status status) {
       closeSemaphore.release();
-    }
-
-    @Override
-    public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
-      handshakeSemaphore.release();
     }
 
     @Override
@@ -172,9 +179,9 @@ public class StreamTest {
     StreamStatusCallback streamCallback =
         new StreamStatusCallback() {
           @Override
-          public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
+          public void onHandshake(InitResponse initResponse) {
             assertThat(writeStreamWrapper[0].getLastStreamToken()).isNotEmpty();
-            super.onHandshakeComplete(dbToken, clearCache);
+            super.onHandshake(initResponse);
           }
 
           @Override

@@ -109,7 +109,7 @@ public class WatchChangeAggregator {
     }
 
     for (int targetId : documentChange.getRemovedTargetIds()) {
-      removeDocumentFromTarget(targetId, documentKey, document);
+      removeDocumentFromTarget(targetId, documentKey, documentChange.getNewDocument());
     }
   }
 

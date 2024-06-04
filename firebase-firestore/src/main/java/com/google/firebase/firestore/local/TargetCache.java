@@ -115,8 +115,4 @@ interface TargetCache {
 
   /** @return True if the document is part of any target */
   boolean containsKey(DocumentKey key);
-
-  void clear();
-
-  boolean isEmpty();
 }

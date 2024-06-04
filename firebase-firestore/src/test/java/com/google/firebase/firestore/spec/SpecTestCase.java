@@ -168,7 +168,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   private boolean useEagerGcForMemory;
   private int maxConcurrentLimboResolutions;
-  private boolean networkEnabled = true;
+  private boolean networkEnabled = false;
 
   //
   // Parts of the Firestore system that the spec tests need to control.
@@ -325,7 +325,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             datastore,
             currentUser,
             maxConcurrentLimboResolutions,
-            new FirebaseFirestoreSettings.Builder().build());
+            new FirebaseFirestoreSettings.Builder().build(),
+            null);
 
     ComponentProvider provider = initializeComponentProvider(configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
@@ -337,6 +338,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     localStore = provider.getLocalStore();
     syncEngine = provider.getSyncEngine();
     eventManager = provider.getEventManager();
+    remoteStore.enableNetwork();
   }
 
   @Override
@@ -345,8 +347,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   @Override
-  public void clearCacheData() {
-    syncEngine.clearCacheData();
+  public void handleClearPersistence(ByteString sessionToken) {
+    syncEngine.handleClearPersistence(sessionToken);
   }
 
   private List<Pair<Mutation, Task<Void>>> getCurrentOutstandingWrites() {
@@ -1295,9 +1297,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         backgroundExecutor.execute(() -> drainBackgroundQueue.setResult(null));
         waitFor(drainBackgroundQueue.getTask());
 
-        while (!queue.isIdle()) {
-          Thread.sleep(1);
-        }
+//        while (!queue.isIdle()) {
+//          Thread.sleep(1);
+//        }
 
         if (expectedSnapshotEvents != null) {
           log("      Validating expected snapshot events " + expectedSnapshotEvents);

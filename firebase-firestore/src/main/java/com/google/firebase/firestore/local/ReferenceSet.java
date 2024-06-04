@@ -42,10 +42,6 @@ public class ReferenceSet {
   private ImmutableSortedSet<DocumentReference> referencesByTarget;
 
   public ReferenceSet() {
-    init();
-  }
-
-  private void init() {
     referencesByKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
     referencesByTarget = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_TARGET);
   }
@@ -106,7 +102,9 @@ public class ReferenceSet {
 
   /** Clears all references for all IDs. */
   public void removeAllReferences() {
-    init();
+    for (DocumentReference reference : referencesByKey) {
+      removeReference(reference);
+    }
   }
 
   private void removeReference(DocumentReference ref) {

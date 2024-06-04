@@ -55,8 +55,11 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
 
   /** A callback interface for the set of events that can be emitted by the WriteStream */
   public interface Callback extends AbstractStream.StreamCallback {
+
+    void onHandshakeReady();
+
     /** The handshake for this write stream has completed */
-    void onHandshakeComplete(ByteString dbToken, boolean clearCache);
+    void onHandshake(InitResponse initResponse);
 
     /** Response for the last write. */
     void onWriteResponse(SnapshotVersion commitVersion, List<MutationResult> mutationResults);
@@ -97,6 +100,10 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
     }
   }
 
+  boolean isHandshakeInProgress() {
+    return isOpen() && !handshakeComplete;
+  }
+
   /**
    * Tracks whether or not a handshake has been successfully exchanged and the stream is ready to
    * accept mutations.
@@ -131,16 +138,16 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
   /**
    * Sends an initial streamToken to the server, performing the handshake required to make the
    * StreamingWrite RPC work. Subsequent {@link #writeMutations} calls should wait until a response
-   * has been delivered to {@link WriteStream.Callback#onHandshakeComplete}.
+   * has been delivered to {@link WriteStream.Callback#onHandshake}.
    */
-  void sendHandshake(ByteString dbToken) {
+  void sendHandshake(ByteString sessionToken) {
     hardAssert(isOpen(), "Writing handshake requires an opened stream");
     hardAssert(!handshakeComplete, "Handshake already completed");
     // TODO: Support stream resumption. We intentionally do not set the stream token on the
     // handshake, ignoring any stream token we might have.
 
-    InitRequest.Builder initRequest = InitRequest.newBuilder()
-            .setDbToken(dbToken);
+    InitRequest.Builder initRequest = InitRequest.newBuilder();
+    if (sessionToken != null) initRequest.setSessionToken(sessionToken);
 
     WriteRequest.Builder request = WriteRequest.newBuilder()
             .setDatabase(serializer.databaseName())
@@ -168,32 +175,34 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
   }
 
   @Override
+  public void onFirst(WriteResponse response) {
+    lastStreamToken = response.getStreamToken();
+
+    hardAssert(response.hasInitResponse(),"InitResponse expected as part of Handshake response");
+
+    // The first response is the handshake response
+    handshakeComplete = true;
+
+    listener.onHandshake(response.getInitResponse());
+  }
+
+  @Override
   public void onNext(WriteResponse response) {
     lastStreamToken = response.getStreamToken();
 
-    if (!handshakeComplete) {
-      hardAssert(response.hasInitResponse(),"InitResponse expected as part of Handshake response");
+    // A successful first write response means the stream is healthy,
+    // Note, that we could consider a successful handshake healthy, however,
+    // the write itself might be causing an error we want to back off from.
+    backoff.reset();
 
-      // The first response is the handshake response
-      handshakeComplete = true;
+    SnapshotVersion commitVersion = serializer.decodeVersion(response.getCommitTime());
 
-      InitResponse initResponse = response.getInitResponse();
-      listener.onHandshakeComplete(initResponse.getDbToken(), initResponse.getClearCache());
-    } else {
-      // A successful first write response means the stream is healthy,
-      // Note, that we could consider a successful handshake healthy, however,
-      // the write itself might be causing an error we want to back off from.
-      backoff.reset();
-
-      SnapshotVersion commitVersion = serializer.decodeVersion(response.getCommitTime());
-
-      int count = response.getWriteResultsCount();
-      List<MutationResult> results = new ArrayList<>(count);
-      for (int i = 0; i < count; i++) {
-        com.google.firestore.v1.WriteResult result = response.getWriteResults(i);
-        results.add(serializer.decodeMutationResult(result, commitVersion));
-      }
-      listener.onWriteResponse(commitVersion, results);
+    int count = response.getWriteResultsCount();
+    List<MutationResult> results = new ArrayList<>(count);
+    for (int i = 0; i < count; i++) {
+      com.google.firestore.v1.WriteResult result = response.getWriteResults(i);
+      results.add(serializer.decodeMutationResult(result, commitVersion));
     }
+    listener.onWriteResponse(commitVersion, results);
   }
 }

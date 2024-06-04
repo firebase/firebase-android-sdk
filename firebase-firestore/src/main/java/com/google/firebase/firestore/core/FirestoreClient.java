@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
@@ -27,6 +28,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -45,13 +47,15 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
-import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -72,33 +76,40 @@ public final class FirestoreClient {
   private final CredentialsProvider<String> appCheckProvider;
   private final AsyncQueue asyncQueue;
   private final BundleSerializer bundleSerializer;
-  private final GrpcMetadataProvider metadataProvider;
+  private final FirebaseFirestoreSettings settings;
 
   private Persistence persistence;
   private LocalStore localStore;
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+  private Consumer<ByteString> clearPersistenceCallback;
 
   // LRU-related
   @Nullable private Scheduler indexBackfillScheduler;
   @Nullable private Scheduler gcScheduler;
 
   public FirestoreClient(
-      final Context context,
       DatabaseInfo databaseInfo,
       FirebaseFirestoreSettings settings,
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
-      final AsyncQueue asyncQueue,
-      @Nullable GrpcMetadataProvider metadataProvider) {
+      AsyncQueue asyncQueue) {
     this.databaseInfo = databaseInfo;
+    this.settings = settings;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
     this.asyncQueue = asyncQueue;
-    this.metadataProvider = metadataProvider;
     this.bundleSerializer =
-        new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
+            new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
+  }
+
+  public void start(
+          Context context,
+          ComponentProvider provider,
+          Datastore datastore) {
+
+    asyncQueue.setOnShutdown(this::onAsyncQueueShutdown);
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -111,7 +122,19 @@ public final class FirestoreClient {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
-            initialize(context, initialUser, settings);
+            Logger.debug(LOG_TAG, "Initializing. user=%s", initialUser.getUid());
+            ComponentProvider.Configuration configuration =
+                    new ComponentProvider.Configuration(
+                            context,
+                            asyncQueue,
+                            databaseInfo,
+                            datastore,
+                            initialUser,
+                            MAX_CONCURRENT_LIMBO_RESOLUTIONS,
+                            settings,
+                            clearPersistenceCallback);
+            provider.initialize(configuration);
+            initialize(provider);
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
           }
@@ -139,6 +162,21 @@ public final class FirestoreClient {
         });
   }
 
+  public void setClearPersistenceCallback(Consumer<ByteString> clearPersistenceCallback) {
+    this.clearPersistenceCallback = clearPersistenceCallback;
+  }
+
+  private void onAsyncQueueShutdown() {
+    remoteStore.shutdown();
+    persistence.shutdown();
+    if (gcScheduler != null) {
+      gcScheduler.stop();
+    }
+    if (indexBackfillScheduler != null) {
+      indexBackfillScheduler.stop();
+    }
+  }
+
   public Task<Void> disableNetwork() {
     this.verifyNotTerminated();
     return asyncQueue.enqueue(() -> remoteStore.disableNetwork());
@@ -153,17 +191,8 @@ public final class FirestoreClient {
   public Task<Void> terminate() {
     authProvider.removeChangeListener();
     appCheckProvider.removeChangeListener();
-    return asyncQueue.enqueueAndInitiateShutdown(
-        () -> {
-          remoteStore.shutdown();
-          persistence.shutdown();
-          if (gcScheduler != null) {
-            gcScheduler.stop();
-          }
-          if (indexBackfillScheduler != null) {
-            indexBackfillScheduler.stop();
-          }
-        });
+    asyncQueue.enqueueAndForget(() -> eventManager.abortAllTargets());
+    return asyncQueue.shutdown();
   }
 
   /** Returns true if this client has been terminated. */
@@ -174,12 +203,15 @@ public final class FirestoreClient {
   }
 
   /** Starts listening to a query. */
-  public QueryListener listen(
-      Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
+  public ListenerRegistration listen(
+          Query query, ListenOptions options, @Nullable Activity activity, AsyncEventListener<ViewSnapshot> listener) {
     this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
-    return queryListener;
+
+    return ActivityScope.bind(
+            activity,
+            new ListenerRegistrationImpl(this, queryListener, listener));
   }
 
   /** Stops listening to a query previously listened to. */
@@ -234,13 +266,25 @@ public final class FirestoreClient {
     return source.getTask();
   }
 
-  /** Tries to execute the transaction in updateFunction. */
+  /**
+   * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
+   * updateFunction, the client can read and write values using the supplied transaction object.
+   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
+   * other client has changed any of the data referenced), then the updateFunction will be called
+   * again after a backoff. If the updateFunction still fails after all retries, then the
+   * transaction will be rejected.
+   *
+   * <p>The transaction object passed to the updateFunction contains methods for accessing documents
+   * and collections. Unlike other datastore access, data accessed with the transaction will not
+   * reflect local changes that have not been committed. For this reason, it is required that all
+   * reads are performed before any writes. Transactions must be performed while online.
+   *
+   * <p>The Task returned is resolved when the transaction is fully committed.
+   */
   public <TResult> Task<TResult> transaction(
       TransactionOptions options, Function<Transaction, Task<TResult>> updateFunction) {
     this.verifyNotTerminated();
-    return AsyncQueue.callTask(
-        asyncQueue.getExecutor(),
-        () -> syncEngine.transaction(asyncQueue, options, updateFunction));
+    return new TransactionRunner<>(asyncQueue, remoteStore, options, updateFunction).run();
   }
 
   // TODO(b/261013682): Use an explicit executor in continuations.
@@ -251,7 +295,7 @@ public final class FirestoreClient {
     final TaskCompletionSource<Map<String, Value>> result = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(
         () ->
-            syncEngine
+            remoteStore
                 .runAggregateQuery(query, aggregateFields)
                 .addOnSuccessListener(data -> result.setResult(data))
                 .addOnFailureListener(e -> result.setException(e)));
@@ -270,30 +314,10 @@ public final class FirestoreClient {
     return source.getTask();
   }
 
-  private void initialize(Context context, User user, FirebaseFirestoreSettings settings) {
+  private void initialize(ComponentProvider provider) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
     // external write/listen operations could get queued to run before that subsequent work
     // completes.
-    Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
-
-    Datastore datastore =
-        new Datastore(
-            databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
-    ComponentProvider.Configuration configuration =
-        new ComponentProvider.Configuration(
-            context,
-            asyncQueue,
-            databaseInfo,
-            datastore,
-            user,
-            MAX_CONCURRENT_LIMBO_RESOLUTIONS,
-            settings);
-
-    ComponentProvider provider =
-        settings.isPersistenceEnabled()
-            ? new SQLiteComponentProvider()
-            : new MemoryComponentProvider();
-    provider.initialize(configuration);
     persistence = provider.getPersistence();
     gcScheduler = provider.getGarbageCollectionScheduler();
     localStore = provider.getLocalStore();
@@ -312,9 +336,15 @@ public final class FirestoreClient {
     }
   }
 
-  public void addSnapshotsInSyncListener(EventListener<Void> listener) {
+  public ListenerRegistration addSnapshotsInSyncListener(AsyncEventListener<Void> listener, Activity activity) {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
+    return ActivityScope.bind(
+            activity,
+            () -> {
+              listener.mute();
+              removeSnapshotsInSyncListener(listener);
+            });
   }
 
   public void loadBundle(InputStream bundleData, LoadBundleTask resultTask) {
@@ -375,5 +405,15 @@ public final class FirestoreClient {
     if (this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");
     }
+  }
+
+  public AsyncQueue getAsyncQueue() {
+    verifyNotTerminated();
+    return asyncQueue;
+  }
+
+  public void setSessionToken(ByteString sessionToken) {
+    verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> localStore.setSessionsToken(sessionToken));
   }
 }

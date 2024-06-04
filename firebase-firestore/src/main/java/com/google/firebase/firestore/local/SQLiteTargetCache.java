@@ -28,8 +28,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import kotlin.NotImplementedError;
-
 /** Cached Queries backed by SQLite. */
 final class SQLiteTargetCache implements TargetCache {
 
@@ -311,21 +309,5 @@ final class SQLiteTargetCache implements TargetCache {
             "SELECT target_id FROM target_documents WHERE path = ? AND target_id != 0 LIMIT 1")
         .binding(path)
         .isEmpty();
-  }
-
-  @Override
-  public void clear() {
-    db.execute("DELETE FROM targets");
-    db.execute("DELETE FROM target_documents");
-    highestTargetId = 0;
-    lastListenSequenceNumber = 0;
-    lastRemoteSnapshotVersion = SnapshotVersion.NONE;
-    targetCount = 0;
-    writeMetadata();
-  }
-
-  @Override
-  public boolean isEmpty() {
-    throw new NotImplementedError();
   }
 }

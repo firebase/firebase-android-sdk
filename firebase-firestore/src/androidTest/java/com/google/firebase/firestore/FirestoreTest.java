@@ -49,6 +49,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
@@ -1132,7 +1133,7 @@ public class FirestoreTest {
 
     app.delete();
 
-    assertTrue(instance.getClient().isTerminated());
+    assertTrue(instance.callClient(FirestoreClient::isTerminated));
   }
 
   @Test

@@ -16,8 +16,6 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.SyncEngine.SyncEngineCallback;
@@ -268,9 +266,12 @@ public final class EventManager implements SyncEngineCallback {
     }
   }
 
-  @VisibleForTesting
-  public boolean isEmpty() {
-    return queries.isEmpty()
-      && snapshotsInSyncListeners.isEmpty();
+  public void abortAllTargets() {
+    for (QueryListenersInfo info : queries.values()) {
+      for (QueryListener listener : info.listeners) {
+        listener.onError(Util.exceptionFromStatus(Status.ABORTED));
+      }
+    }
+    queries.clear();
   }
 }

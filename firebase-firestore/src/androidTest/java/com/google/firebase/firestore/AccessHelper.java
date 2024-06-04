@@ -15,6 +15,9 @@
 package com.google.firebase.firestore;
 
 import android.content.Context;
+
+import androidx.core.util.Supplier;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -26,21 +29,19 @@ public final class AccessHelper {
 
   /** Makes the FirebaseFirestore constructor accessible. */
   public static FirebaseFirestore newFirebaseFirestore(
-      Context context,
-      DatabaseId databaseId,
-      String persistenceKey,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
-      AsyncQueue asyncQueue,
-      FirebaseApp firebaseApp,
-      FirebaseFirestore.InstanceRegistry instanceRegistry) {
+          Context context,
+          DatabaseId databaseId,
+          String persistenceKey,
+          Supplier<CredentialsProvider<User>> authProviderFactory,
+          Supplier<CredentialsProvider<String>> appCheckTokenProviderFactory,
+          FirebaseApp firebaseApp,
+          FirebaseFirestore.InstanceRegistry instanceRegistry) {
     return new FirebaseFirestore(
         context,
         databaseId,
         persistenceKey,
-        authProvider,
-        appCheckProvider,
-        asyncQueue,
+        authProviderFactory,
+        appCheckTokenProviderFactory,
         firebaseApp,
         instanceRegistry,
         null);

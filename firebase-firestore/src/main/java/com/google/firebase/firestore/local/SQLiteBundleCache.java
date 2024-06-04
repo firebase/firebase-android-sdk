@@ -24,8 +24,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firestore.bundle.BundledQuery;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import kotlin.NotImplementedError;
-
 class SQLiteBundleCache implements BundleCache {
   private final SQLitePersistence db;
   private final LocalSerializer serializer;
@@ -105,16 +103,5 @@ class SQLiteBundleCache implements BundleCache {
         query.getReadTime().getTimestamp().getSeconds(),
         query.getReadTime().getTimestamp().getNanoseconds(),
         bundledQuery.toByteArray());
-  }
-
-  @Override
-  public void clear() {
-    db.execute("DELETE FROM bundles");
-    db.execute("DELETE FROM named_queries");
-  }
-
-  @Override
-  public boolean isEmpty() {
-    throw new NotImplementedError();
   }
 }

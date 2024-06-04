@@ -18,7 +18,7 @@ import com.google.protobuf.ByteString;
 
 public class SQLiteGlobalsCache implements GlobalsCache {
 
-    private static final String DB_TOKEN = "dbToken";
+    private static final String SESSION_TOKEN = "sessionToken";
     private final SQLitePersistence db;
 
     public SQLiteGlobalsCache(SQLitePersistence persistence) {
@@ -26,14 +26,14 @@ public class SQLiteGlobalsCache implements GlobalsCache {
     }
 
     @Override
-    public ByteString getDbToken() {
-        byte[] bytes = get(DB_TOKEN);
+    public ByteString getSessionsToken() {
+        byte[] bytes = get(SESSION_TOKEN);
         return bytes == null ? null : ByteString.copyFrom(bytes);
     }
 
     @Override
-    public void setDbToken(ByteString value) {
-        set(DB_TOKEN, value.toByteArray());
+    public void setSessionToken(ByteString value) {
+        set(SESSION_TOKEN, value.toByteArray());
     }
 
     private byte[] get(String name) {

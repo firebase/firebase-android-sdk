@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.remote;
 
-import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
@@ -44,11 +43,11 @@ import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.InitResponse;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -66,8 +65,6 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
-  private boolean writeStreamHandshakeInProgress;
-  private boolean watchStreamHandshakeInProgress;
 
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
@@ -109,17 +106,14 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
     void handleOnlineStateChange(OnlineState onlineState);
 
     /**
-     * Synchronization event that requires cache be cleared.
-     */
-    void clearCacheData();
-
-    /**
      * Returns the set of remote document keys for the given target ID. This list includes the
      * documents that were assigned to the target when we received the last snapshot.
      *
      * <p>Returns an empty set of document keys for unknown targets.
      */
     ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
+
+    void handleClearPersistence(ByteString sessionToken);
   }
 
   private final RemoteStoreCallback remoteStoreCallback;
@@ -162,11 +156,11 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   private final Deque<MutationBatch> writePipeline;
 
   public RemoteStore(
-      RemoteStoreCallback remoteStoreCallback,
-      LocalStore localStore,
-      Datastore datastore,
-      AsyncQueue workerQueue,
-      ConnectivityMonitor connectivityMonitor) {
+          RemoteStoreCallback remoteStoreCallback,
+          LocalStore localStore,
+          Datastore datastore,
+          AsyncQueue workerQueue,
+          ConnectivityMonitor connectivityMonitor) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -178,25 +172,29 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
     onlineStateTracker =
         new OnlineStateTracker(workerQueue, remoteStoreCallback::handleOnlineStateChange);
 
-    watchStreamHandshakeInProgress = false;
-    writeStreamHandshakeInProgress = false;
-
     // Create new streams (but note they're not started yet).
     watchStream =
         datastore.createWatchStream(
             new WatchStream.Callback() {
               @Override
-              public void onOpen() {
-                hardAssert(!watchStreamHandshakeInProgress, "Watch handshake already in progress.");
-                if (!writeStreamHandshakeInProgress) {
-                  watchStream.sendHandshake(localStore.getDbToken());
+              public void onHandshakeReady() {
+                if (!writeStream.isHandshakeInProgress()) {
+                  watchStream.sendHandshake(localStore.getSessionToken());
                 }
-                watchStreamHandshakeInProgress = true;
               }
 
               @Override
-              public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
-                handleWatchStreamHandshakeComplete(dbToken, clearCache);
+              public void onHandshake(InitResponse initResponse) {
+                if (initResponse.getClearCache()) {
+                  remoteStoreCallback.handleClearPersistence(initResponse.getSessionToken());
+                } else {
+                  handleWatchStreamHandshakeComplete(initResponse.getSessionToken());
+                }
+              }
+
+              @Override
+              public void onOpen() {
+                handleWatchStreamOpen();
               }
 
               @Override
@@ -206,7 +204,6 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
               @Override
               public void onClose(Status status) {
-                watchStreamHandshakeInProgress = false;
                 handleWatchStreamClose(status);
               }
             });
@@ -215,17 +212,24 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
         datastore.createWriteStream(
             new WriteStream.Callback() {
               @Override
-              public void onOpen() {
-                hardAssert(!writeStreamHandshakeInProgress, "Watch handshake already in progress.");
-                if (!watchStreamHandshakeInProgress) {
-                  writeStream.sendHandshake(localStore.getDbToken());
+              public void onHandshakeReady() {
+                if (!watchStream.isHandshakeInProgress()) {
+                  writeStream.sendHandshake(localStore.getSessionToken());
                 }
-                writeStreamHandshakeInProgress = true;
               }
 
               @Override
-              public void onHandshakeComplete(ByteString dbToken, boolean clearCache) {
-                handleWriteStreamHandshakeComplete(dbToken, clearCache);
+              public void onHandshake(InitResponse initResponse) {
+                if (initResponse.getClearCache()) {
+                  remoteStoreCallback.handleClearPersistence(initResponse.getSessionToken());
+                } else {
+                  handleWriteStreamHandshakeComplete(initResponse.getSessionToken());
+                }
+              }
+
+              @Override
+              public void onOpen() {
+                handleWriteStreamOpen();
               }
 
               @Override
@@ -236,7 +240,6 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
               @Override
               public void onClose(Status status) {
-                writeStreamHandshakeInProgress = false;
                 handleWriteStreamClose(status);
               }
             });
@@ -335,15 +338,6 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   }
 
   /**
-   * Starts up the remote store, creating streams, restoring state from LocalStore, etc. This should
-   * called before using any other API endpoints in this class.
-   */
-  public void start() {
-    // For now, all setup is handled by enableNetwork(). We might expand on this in the future.
-    enableNetwork();
-  }
-
-  /**
    * Shuts down the remote store, tearing down connections and otherwise cleaning up. This is not
    * reversible and renders the Remote Store unusable.
    */
@@ -392,7 +386,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
     if (shouldStartWatchStream()) {
       startWatchStream();
-    } else if (watchStream.isOpen() && watchStream.isHandshakeComplete()) {
+    } else if (watchStream.isHandshakeComplete()) {
       sendWatchRequest(targetData);
     }
   }
@@ -422,7 +416,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
         targetData != null, "stopListening called on target no currently watched: %d", targetId);
 
     // The watch stream might not be started if we're in a disconnected state
-    if (watchStream.isOpen()) {
+    if (watchStream.isHandshakeComplete()) {
       sendUnwatchRequest(targetId);
     }
 
@@ -476,19 +470,21 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
     onlineStateTracker.handleWatchStreamStart();
   }
 
-  private void handleWatchStreamHandshakeComplete(ByteString dbToken, boolean clearCache) {
-    if (clearCache) {
-      remoteStoreCallback.clearCacheData();
+  private void handleWatchStreamHandshakeComplete(ByteString sessionToken) {
+    if (!sessionToken.isEmpty()) {
+      localStore.setSessionsToken(sessionToken);
+    } else {
+      sessionToken = localStore.getSessionToken();
     }
-    localStore.setDbToken(dbToken);
-    watchStreamHandshakeInProgress = false;
 
     // If write stream started handshake, but was waiting for listen handshake to complete, we
     // can continue write handshake now.
-    if (writeStreamHandshakeInProgress) {
-      writeStream.sendHandshake(dbToken);
+    if (writeStream.isHandshakeInProgress()) {
+      writeStream.sendHandshake(sessionToken);
     }
+  }
 
+  private void handleWatchStreamOpen() {
     // Restore any existing watches.
     for (TargetData targetData : listenTargets.values()) {
       sendWatchRequest(targetData);
@@ -680,7 +676,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
     writePipeline.add(mutationBatch);
 
-    if (writeStream.isOpen() && writeStream.isHandshakeComplete()) {
+    if (writeStream.isHandshakeComplete()) {
       writeStream.writeMutations(mutationBatch.getMutations());
     }
   }
@@ -696,22 +692,24 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
    * Handles a successful handshake response from the server, which is our cue to send any pending
    * writes.
    */
-  private void handleWriteStreamHandshakeComplete(ByteString dbToken, boolean clearCache) {
-    if (clearCache) {
-      remoteStoreCallback.clearCacheData();
+  private void handleWriteStreamHandshakeComplete(ByteString sessionToken) {
+    if (!sessionToken.isEmpty()) {
+      localStore.setSessionsToken(sessionToken);
+    } else {
+      sessionToken = localStore.getSessionToken();
     }
-    localStore.setDbToken(dbToken);
-    writeStreamHandshakeInProgress = false;
 
     // If listen stream started handshake, but was waiting for write handshake to complete, we
     // can continue listen handshake now.
-    if (watchStreamHandshakeInProgress) {
-      watchStream.sendHandshake(dbToken);
+    if (watchStream.isHandshakeInProgress()) {
+      watchStream.sendHandshake(sessionToken);
     }
 
     // Record the stream token.
     localStore.setLastStreamToken(writeStream.getLastStreamToken());
+  }
 
+  private void handleWriteStreamOpen() {
     // Send the write pipeline now that stream is established.
     for (MutationBatch batch : writePipeline) {
       writeStream.writeMutations(batch.getMutations());

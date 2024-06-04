@@ -305,16 +305,13 @@ public class IntegrationTestUtil {
 
     ensureStrictMode();
 
-    AsyncQueue asyncQueue = new AsyncQueue();
-
     FirebaseFirestore firestore =
         AccessHelper.newFirebaseFirestore(
             context,
             databaseId,
             persistenceKey,
-            MockCredentialsProvider.instance(),
-            new EmptyAppCheckTokenProvider(),
-            asyncQueue,
+            () -> MockCredentialsProvider.instance(),
+            () -> new EmptyAppCheckTokenProvider(),
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
     waitFor(firestore.clearPersistence());

@@ -28,6 +28,8 @@ import com.google.firebase.firestore.remote.ConnectivityMonitor;
 import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Consumer;
+import com.google.protobuf.ByteString;
 
 /**
  * Initializes and wires up all core components for Firestore.
@@ -55,6 +57,7 @@ public abstract class ComponentProvider {
     private final User initialUser;
     private final int maxConcurrentLimboResolutions;
     private final FirebaseFirestoreSettings settings;
+    private final Consumer<ByteString> clearPersistenceCallback;
 
     public Configuration(
         Context context,
@@ -63,7 +66,8 @@ public abstract class ComponentProvider {
         Datastore datastore,
         User initialUser,
         int maxConcurrentLimboResolutions,
-        FirebaseFirestoreSettings settings) {
+        FirebaseFirestoreSettings settings,
+        Consumer<ByteString> clearPersistenceCallback) {
       this.context = context;
       this.asyncQueue = asyncQueue;
       this.databaseInfo = databaseInfo;
@@ -71,6 +75,7 @@ public abstract class ComponentProvider {
       this.initialUser = initialUser;
       this.maxConcurrentLimboResolutions = maxConcurrentLimboResolutions;
       this.settings = settings;
+      this.clearPersistenceCallback = clearPersistenceCallback;
     }
 
     FirebaseFirestoreSettings getSettings() {
@@ -99,6 +104,10 @@ public abstract class ComponentProvider {
 
     Context getContext() {
       return context;
+    }
+
+    public Consumer<ByteString> getClearPersistenceCallback() {
+      return clearPersistenceCallback;
     }
   }
 
@@ -154,7 +163,6 @@ public abstract class ComponentProvider {
     syncEngine = createSyncEngine(configuration);
     eventManager = createEventManager(configuration);
     localStore.start();
-    remoteStore.start();
     garbageCollectionScheduler = createGarbageCollectionScheduler(configuration);
     indexBackfiller = createIndexBackfiller(configuration);
   }

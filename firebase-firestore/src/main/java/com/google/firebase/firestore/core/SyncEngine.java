@@ -52,6 +52,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
@@ -85,6 +86,8 @@ import java.util.Set;
  * dispatch queue.
  */
 public class SyncEngine implements RemoteStore.RemoteStoreCallback {
+
+  private final Consumer<ByteString> clearPersistenceCallback;
 
   /** Tracks a limbo resolution. */
   private static class LimboResolution {
@@ -165,10 +168,12 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       LocalStore localStore,
       RemoteStore remoteStore,
       User initialUser,
-      int maxConcurrentLimboResolutions) {
+      int maxConcurrentLimboResolutions,
+      Consumer<ByteString> clearPersistenceCallback) {
     this.localStore = localStore;
     this.remoteStore = remoteStore;
     this.maxConcurrentLimboResolutions = maxConcurrentLimboResolutions;
+    this.clearPersistenceCallback = clearPersistenceCallback;
 
     queryViewsByQuery = new HashMap<>();
     queriesByTarget = new HashMap<>();
@@ -337,33 +342,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     userTasks.put(batchId, userTask);
   }
 
-  /**
-   * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
-   * updateFunction, the client can read and write values using the supplied transaction object.
-   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
-   * other client has changed any of the data referenced), then the updateFunction will be called
-   * again after a backoff. If the updateFunction still fails after all retries, then the
-   * transaction will be rejected.
-   *
-   * <p>The transaction object passed to the updateFunction contains methods for accessing documents
-   * and collections. Unlike other datastore access, data accessed with the transaction will not
-   * reflect local changes that have not been committed. For this reason, it is required that all
-   * reads are performed before any writes. Transactions must be performed while online.
-   *
-   * <p>The Task returned is resolved when the transaction is fully committed.
-   */
-  public <TResult> Task<TResult> transaction(
-      AsyncQueue asyncQueue,
-      TransactionOptions options,
-      Function<Transaction, Task<TResult>> updateFunction) {
-    return new TransactionRunner<TResult>(asyncQueue, remoteStore, options, updateFunction).run();
-  }
-
-  public Task<Map<String, Value>> runAggregateQuery(
-      Query query, List<AggregateField> aggregateFields) {
-    return remoteStore.runAggregateQuery(query, aggregateFields);
-  }
-
   /** Called by FirestoreClient to notify us of a new remote event. */
   @Override
   public void handleRemoteEvent(RemoteEvent event) {
@@ -516,21 +494,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   @Override
-  public void clearCacheData() {
-    assertCallback("clearCacheData");
-
-    boolean canUseNetwork = remoteStore.canUseNetwork();
-
-    if (canUseNetwork) {
-      remoteStore.disableNetwork();
-    }
-
-    abortAllTargets();
-    localStore.clearCacheData();
-
-    if (canUseNetwork) {
-      remoteStore.enableNetwork();
-    }
+  public void handleClearPersistence(ByteString sessionToken) {
+    assertCallback("handleClearPersistence");
+    clearPersistenceCallback.accept(sessionToken);
   }
 
   /**
@@ -838,28 +804,4 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     return false;
   }
-  @VisibleForTesting
-  public boolean isEmpty() {
-    return queryViewsByQuery.isEmpty()
-      && queriesByTarget.isEmpty()
-      && enqueuedLimboResolutions.isEmpty()
-      && activeLimboTargetsByKey.isEmpty()
-      && activeLimboResolutionsByTarget.isEmpty()
-      && limboDocumentRefs.isEmpty()
-      && mutationUserCallbacks.isEmpty()
-      && pendingWritesCallbacks.isEmpty();
-  }
-
-  public void abortAllTargets() {
-    hardAssert(!remoteStore.canUseNetwork(), "Network should be disabled during abort of all targets.");
-
-    List<Integer> targetIds = new ArrayList<>();
-    for (QueryView queryView : queryViewsByQuery.values()) {
-      targetIds.add(queryView.getTargetId());
-    }
-    for (Integer targetId : targetIds) {
-      handleRejectedListen(targetId, Status.ABORTED);
-    }
-  }
-
 }

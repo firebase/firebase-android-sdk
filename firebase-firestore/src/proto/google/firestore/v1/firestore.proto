@@ -570,31 +570,31 @@ message RunAggregationQueryResponse {
 message InitRequest {
   // Token for synchronization.
   //
-  // The `db_token`, that was received previously as part of InitResponse, should be
+  // The `session_token`, that was received previously as part of InitResponse, should be
   // passed back in the next `InitRequest`.
   //
-  // If this is the first time SDK connects, then the `db_token` should be empty.
+  // If this is the first time SDK connects, then the `session_token` should be empty.
   //
   // The token contains database information used to determine whether SDK is out of
   // sync. Contents are opaque and can change in the future.
   //
-  // The `db_token` on the ListenStream has the same contents as the WriteStream.
-  // Whichever stream was last to receive a `db_token`, is the `db_token` that should
+  // The `session_token` on the ListenStream has the same contents as the WriteStream.
+  // Whichever stream was last to receive a `session_token`, is the `session_token` that should
   // be used as part of the InitRequest, regardless of whether it was from the other
   // stream.
   //
   // The InitResponse will signal whether to `clear_cache`.
-  bytes db_token = 1;
+  bytes session_token = 1;
 }
 
 // New message
 message InitResponse {
   // Token for synchronization
   //
-  // The `db_token` should be returned as part of the next InitRequest.
-  bytes db_token = 1;
+  // The `session_token` should be returned as part of the next InitRequest.
+  bytes session_token = 1;
 
-  // Depending on `db_token`, changes may have occurred that require SDK to clear
+  // Depending on `session_token`, changes may have occurred that require SDK to clear
   // cache.
   bool clear_cache = 2;
 }

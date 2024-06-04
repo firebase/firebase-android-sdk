@@ -47,8 +47,6 @@ import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import kotlin.NotImplementedError;
-
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   /** The number of bind args per collection group in {@link #getAll(String, IndexOffset, int)} */
   @VisibleForTesting static final int BINDS_PER_STATEMENT = 9;
@@ -111,12 +109,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     indexManager.updateIndexEntries(deletedDocs);
-  }
-
-  @Override
-  public void clear() {
-    db.execute("DELETE FROM remote_documents");
-    indexManager.clearIndexData();
   }
 
   @Override
@@ -288,11 +280,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         Integer.MAX_VALUE,
         (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
         context);
-  }
-
-  @Override
-  public boolean isEmpty() {
-    throw new NotImplementedError();
   }
 
   private MutableDocument decodeMaybeDocument(

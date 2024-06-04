@@ -22,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
@@ -49,6 +50,8 @@ import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
+import com.google.firebase.firestore.util.Consumer;
+import com.google.protobuf.ByteString;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -173,21 +176,30 @@ public class EventManagerTest {
   public void xxx() {
     Query query = Query.atPath(path("foo/bar"));
 
+    Consumer<ByteString> clearPersistenceCallback = spy(new Consumer<ByteString>() {
+      @Override
+      public void accept(ByteString value) {
+
+      }
+    });
     EventListener<ViewSnapshot> eventListener1 = mock(EventListener.class);
     EventListener<ViewSnapshot> eventListener2 = mock(EventListener.class);
 
     QueryListener listener1 = new QueryListener(query, new ListenOptions(), eventListener1);
     QueryListener listener2 = new QueryListener(query, new ListenOptions(), eventListener2);
 
+    SyncEngine syncEngine;
+    EventManager eventManager;
     RemoteStore remoteStore = mockRemoteStore();
     LocalStore localStore = createLruGcMemoryLocalStore();
-    SyncEngine syncEngine = spy(new SyncEngine(localStore, remoteStore, User.UNAUTHENTICATED, 100));
-    EventManager eventManager = new EventManager(syncEngine);
+    syncEngine = spy(new SyncEngine(localStore, remoteStore, User.UNAUTHENTICATED, 100, clearPersistenceCallback));
+    eventManager = new EventManager(syncEngine);
+    eventManager.abortAllTargets();
 
     eventManager.addQueryListener(listener1);
     eventManager.addQueryListener(listener2);
 
-    syncEngine.handleClearCache();
+    syncEngine.handleClearPersistence(ByteString.copyFromUtf8("sessionToken"));
 
     verify(syncEngine, times(1))
             .listen(
@@ -202,15 +214,13 @@ public class EventManagerTest {
     verify(eventListener2, times(1))
             .onEvent(isNull(), argThat(abortedExceptionMatcher));
 
-    Mockito.verify(remoteStore, times(1)).listen(any(TargetData.class));
-    Mockito.verify(remoteStore, atLeastOnce()).canUseNetwork();
-    Mockito.verify(remoteStore, times(1)).disableNetwork();
-    Mockito.verify(remoteStore, times(1)).enableNetwork();
-    Mockito.verifyNoMoreInteractions(remoteStore);
+    verify(clearPersistenceCallback, times(1)).accept(ByteString.copyFromUtf8("sessionToken"));
 
-    assertTrue(syncEngine.isEmpty());
-    assertTrue(eventManager.isEmpty());
-    assertTrue(localStore.isEmpty());
+    verify(remoteStore, times(1)).listen(any(TargetData.class));
+    verify(remoteStore, atLeastOnce()).canUseNetwork();
+    verify(remoteStore, times(1)).disableNetwork();
+    verify(remoteStore, times(1)).enableNetwork();
+    verifyNoMoreInteractions(remoteStore);
   }
 
   @NonNull

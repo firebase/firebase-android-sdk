@@ -31,6 +31,7 @@ import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.InitResponse;
 import com.google.protobuf.ByteString;
 
 import io.grpc.Status;
@@ -85,10 +86,14 @@ public class MockDatastore extends Datastore {
     }
 
     @Override
-    void sendHandshake(ByteString dbToken) {
+    void sendHandshake(ByteString sessionToken) {
       hardAssert(!handshakeComplete, "Handshake already completed");
       handshakeComplete = true;
-      getWorkerQueue().enqueue(() -> listener.onHandshakeComplete(dbToken == null ? ByteString.EMPTY :dbToken, false));
+      InitResponse initResponse = InitResponse.newBuilder()
+              .setSessionToken(sessionToken == null ? ByteString.EMPTY : sessionToken)
+              .setClearCache(false)
+              .build();
+      getWorkerQueue().enqueue(() -> listener.onHandshake(initResponse));
     }
 
     @Override
@@ -189,11 +194,15 @@ public class MockDatastore extends Datastore {
     }
 
     @Override
-    public void sendHandshake(ByteString dbToken) {
+    public void sendHandshake(ByteString sessionToken) {
       hardAssert(!handshakeComplete, "Handshake already completed");
       writeStreamRequestCount += 1;
       handshakeComplete = true;
-      getWorkerQueue().enqueue(() -> listener.onHandshakeComplete(dbToken == null ? ByteString.EMPTY :dbToken, false));
+      InitResponse initResponse = InitResponse.newBuilder()
+              .setSessionToken(sessionToken == null ? ByteString.EMPTY : sessionToken)
+              .setClearCache(false)
+              .build();
+      getWorkerQueue().enqueue(() -> listener.onHandshake(initResponse));
     }
 
     @Override

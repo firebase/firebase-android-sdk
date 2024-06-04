@@ -25,7 +25,6 @@ import com.google.firestore.v1.InitRequest;
 import com.google.firestore.v1.InitResponse;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
-import com.google.firestore.v1.WriteRequest;
 import com.google.protobuf.ByteString;
 import java.util.Map;
 
@@ -49,8 +48,10 @@ public class WatchStream
   /** A callback interface for the set of events that can be emitted by the WatchStream */
   interface Callback extends AbstractStream.StreamCallback {
 
+    void onHandshakeReady();
+
     /** The handshake for this write stream has completed */
-    void onHandshakeComplete(ByteString dbToken, boolean clearCache);
+    void onHandshake(InitResponse initResponse);
 
     /** A new change from the watch stream. Snapshot version will ne non-null if it was set */
     void onWatchChange(SnapshotVersion snapshotVersion, WatchChange watchChange);
@@ -84,18 +85,22 @@ public class WatchStream
   /**
    * Sends an InitRequest to the server.
    */
-  void sendHandshake(ByteString dbToken) {
+  void sendHandshake(ByteString sessionToken) {
     hardAssert(isOpen(), "Writing handshake requires an opened stream");
     hardAssert(!handshakeComplete, "Handshake already completed");
 
     InitRequest.Builder initRequest = InitRequest.newBuilder();
-    if (dbToken != null) initRequest.setDbToken(dbToken);
+    if (sessionToken != null) initRequest.setSessionToken(sessionToken);
 
     ListenRequest.Builder request = ListenRequest.newBuilder()
             .setDatabase(serializer.databaseName())
             .setInitRequest(initRequest);
 
     writeRequest(request.build());
+  }
+
+  boolean isHandshakeInProgress() {
+    return isOpen() && !handshakeComplete;
   }
 
   /**
@@ -140,22 +145,22 @@ public class WatchStream
   }
 
   @Override
-  public void onNext(com.google.firestore.v1.ListenResponse response) {
+  public void onFirst(ListenResponse response) {
+    hardAssert(response.hasInitResponse(), "InitResponse expected as part of Handshake response");
+
+    // The first response is the handshake response
+    handshakeComplete = true;
+
+    listener.onHandshake(response.getInitResponse());
+  }
+
+  @Override
+  public void onNext(ListenResponse response) {
     // A successful response means the stream is healthy
     backoff.reset();
 
-    if (!handshakeComplete) {
-      hardAssert(response.hasInitResponse(), "InitResponse expected as part of Handshake response");
-
-      // The first response is the handshake response
-      handshakeComplete = true;
-
-      InitResponse initResponse = response.getInitResponse();
-      listener.onHandshakeComplete(initResponse.getDbToken(), initResponse.getClearCache());
-    } else {
-      WatchChange watchChange = serializer.decodeWatchChange(response);
-      SnapshotVersion snapshotVersion = serializer.decodeVersionFromListenResponse(response);
-      listener.onWatchChange(snapshotVersion, watchChange);
-    }
+    WatchChange watchChange = serializer.decodeWatchChange(response);
+    SnapshotVersion snapshotVersion = serializer.decodeVersionFromListenResponse(response);
+    listener.onWatchChange(snapshotVersion, watchChange);
   }
 }

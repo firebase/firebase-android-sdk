@@ -160,11 +160,6 @@ class CountingQueryEngine extends QueryEngine {
       }
 
       @Override
-      public void clear() {
-        subject.clear();
-      }
-
-      @Override
       public MutableDocument get(DocumentKey documentKey) {
         MutableDocument result = subject.get(documentKey);
         documentsReadByKey[0] += result.isValidDocument() ? 1 : 0;
@@ -204,11 +199,6 @@ class CountingQueryEngine extends QueryEngine {
             subject.getDocumentsMatchingQuery(query, offset, mutatedKeys, context);
         documentsReadByCollection[0] += result.size();
         return result;
-      }
-
-      @Override
-      public boolean isEmpty() {
-        return subject.isEmpty();
       }
     };
   }
@@ -266,20 +256,8 @@ class CountingQueryEngine extends QueryEngine {
         return result;
       }
 
-      @Override
-      public void clear() {
-        subject.clear();
-      }
-
-      @Override
-      public boolean isEmpty() {
-        return subject.isEmpty();
-      }
-
       private OverlayType getOverlayType(Overlay overlay) {
-        if (overlay == null) {
-          return null;
-        } else if (overlay.getMutation() instanceof SetMutation) {
+        if (overlay.getMutation() instanceof SetMutation) {
           return OverlayType.Set;
         } else if (overlay.getMutation() instanceof PatchMutation) {
           return OverlayType.Patch;

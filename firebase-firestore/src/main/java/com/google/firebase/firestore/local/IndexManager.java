@@ -32,7 +32,6 @@ import java.util.List;
  * Collection Group queries.
  */
 public interface IndexManager {
-
   /** Represents the index state as it relates to a particular target. */
   enum IndexType {
     /** Indicates that no index could be found for serving the target. */
@@ -51,8 +50,6 @@ public interface IndexManager {
 
   /** Initializes the IndexManager. */
   void start();
-
-  void clearParents();
 
   /**
    * Creates an index entry mapping the collectionId (last segment of the path) to the parent path
@@ -131,6 +128,4 @@ public interface IndexManager {
 
   /** Updates the index entries for the provided documents. */
   void updateIndexEntries(ImmutableSortedMap<DocumentKey, Document> documents);
-
-  void clearIndexData();
 }

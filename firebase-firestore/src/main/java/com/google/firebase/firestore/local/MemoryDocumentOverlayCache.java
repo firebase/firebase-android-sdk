@@ -146,15 +146,4 @@ public class MemoryDocumentOverlayCache implements DocumentOverlayCache {
 
     return result;
   }
-
-  @Override
-  public void clear() {
-    overlays.clear();
-    overlayByBatchId.clear();
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return overlays.isEmpty() && overlayByBatchId.isEmpty();
-  }
 }

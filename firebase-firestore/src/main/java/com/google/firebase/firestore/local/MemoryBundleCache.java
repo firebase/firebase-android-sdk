@@ -46,15 +46,4 @@ import java.util.Map;
   public void saveNamedQuery(NamedQuery query) {
     namedQueries.put(query.getName(), query);
   }
-
-  @Override
-  public void clear() {
-    bundles.clear();
-    namedQueries.clear();
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return bundles.isEmpty() && namedQueries.isEmpty();
-  }
 }

@@ -33,6 +33,8 @@ import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
+import com.google.protobuf.ByteString;
+
 import io.grpc.Status;
 
 /**
@@ -109,7 +111,8 @@ public class MemoryComponentProvider extends ComponentProvider {
         getLocalStore(),
         getRemoteStore(),
         configuration.getInitialUser(),
-        configuration.getMaxConcurrentLimboResolutions());
+        configuration.getMaxConcurrentLimboResolutions(),
+        configuration.getClearPersistenceCallback());
   }
 
   /**
@@ -146,13 +149,13 @@ public class MemoryComponentProvider extends ComponentProvider {
     }
 
     @Override
-    public void clearCacheData() {
-      getSyncEngine().clearCacheData();
+    public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+      return getSyncEngine().getRemoteKeysForTarget(targetId);
     }
 
     @Override
-    public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
-      return getSyncEngine().getRemoteKeysForTarget(targetId);
+    public void handleClearPersistence(ByteString sessionToken) {
+      getSyncEngine().handleClearPersistence(sessionToken);
     }
   }
 }

@@ -45,6 +45,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.Transaction.Function;
+import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.Arrays;
@@ -453,7 +454,7 @@ public class ValidationTest {
     CollectionReference collection = testCollection();
 
     // Ensure the server timestamp stays uncommitted for the first half of the test
-    waitFor(collection.firestore.getClient().disableNetwork());
+    waitFor(collection.firestore.callClient(FirestoreClient::disableNetwork));
 
     TaskCompletionSource<Void> offlineCallbackDone = new TaskCompletionSource<>();
     TaskCompletionSource<Void> onlineCallbackDone = new TaskCompletionSource<>();
@@ -497,7 +498,7 @@ public class ValidationTest {
     document.set(map("timestamp", FieldValue.serverTimestamp()));
     waitFor(offlineCallbackDone.getTask());
 
-    waitFor(collection.firestore.getClient().enableNetwork());
+    waitFor(collection.firestore.enableNetwork());
     waitFor(onlineCallbackDone.getTask());
 
     listenerRegistration.remove();
