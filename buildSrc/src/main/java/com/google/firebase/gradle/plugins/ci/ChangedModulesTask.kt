@@ -56,6 +56,8 @@ abstract class ChangedModulesTask : DefaultTask() {
 
     val projectPaths = outputProjects.map { it.path }
 
+    println(projectPaths.joinToString("\n"))
+
     outputFile.writeText(Gson().toJson(projectPaths))
   }
 
