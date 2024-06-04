@@ -227,7 +227,8 @@ public class DocumentReference {
   }
 
   private Task<Void> update(@NonNull ParsedUpdateData parsedData) {
-    return firestore.callClient(client -> client.write(singletonList(parsedData.toMutation(key, Precondition.exists(true)))))
+    List<Mutation> mutations = singletonList(parsedData.toMutation(key, Precondition.exists(true)));
+    return firestore.callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -523,7 +524,8 @@ public class DocumentReference {
     AsyncEventListener<ViewSnapshot> asyncListener =
         new AsyncEventListener<>(userExecutor, viewListener);
 
-    return firestore.callClient(client -> client.listen(asQuery(), options, activity, asyncListener));
+    com.google.firebase.firestore.core.Query query = asQuery();
+    return firestore.callClient(client -> client.listen(query, options, activity, asyncListener));
   }
 
   @Override

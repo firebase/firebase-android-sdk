@@ -197,8 +197,6 @@ public class FirebaseFirestore {
     return firestore;
   }
 
-
-
   @VisibleForTesting
   FirebaseFirestore(
       Context context,

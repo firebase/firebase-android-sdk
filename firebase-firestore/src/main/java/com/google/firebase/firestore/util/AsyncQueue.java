@@ -206,6 +206,7 @@ public class AsyncQueue {
   }
 
   public Executor getExecutor() {
+    // Returns internal executor that will continue to work, even after shutdown()
     return executor.internalExecutor;
   }
 
@@ -402,7 +403,7 @@ public class AsyncQueue {
 
   /**
    * Shuts down the AsyncQueue and releases resources after which no progress will ever be made
-   * again. Attempts to use executor with throw exception.
+   * again. Attempts to use executor will throw exception.
    */
   public void terminate() {
     executor.terminate();
