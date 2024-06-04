@@ -55,9 +55,6 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
 
   /** A callback interface for the set of events that can be emitted by the WriteStream */
   public interface Callback extends AbstractStream.StreamCallback {
-
-    void onHandshakeReady();
-
     /** The handshake for this write stream has completed */
     void onHandshake(InitResponse initResponse);
 

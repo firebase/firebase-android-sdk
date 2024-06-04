@@ -111,21 +111,21 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     public void onNext(RespT response) {
       final int currentResponseCount = responseCount + 1;
       dispatcher.run(
-              () -> {
-                if (Logger.isDebugEnabled()) {
-                  Logger.debug(
-                          AbstractStream.this.getClass().getSimpleName(),
-                          "(%x) Stream received (%s): %s",
-                          System.identityHashCode(AbstractStream.this),
-                          currentResponseCount,
-                          response);
-                }
-                if (currentResponseCount == 1) {
-                  AbstractStream.this.onFirst(response);
-                } else {
-                  AbstractStream.this.onNext(response);
-                }
-              });
+          () -> {
+            if (Logger.isDebugEnabled()) {
+              Logger.debug(
+                  AbstractStream.this.getClass().getSimpleName(),
+                  "(%x) Stream received (%s): %s",
+                  System.identityHashCode(AbstractStream.this),
+                  currentResponseCount,
+                  response);
+            }
+            if (currentResponseCount == 1) {
+              AbstractStream.this.onFirst(response);
+            } else {
+              AbstractStream.this.onNext(response);
+            }
+          });
       responseCount = currentResponseCount;
     }
 

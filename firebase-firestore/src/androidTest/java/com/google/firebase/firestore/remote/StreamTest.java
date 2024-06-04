@@ -84,18 +84,8 @@ public class StreamTest {
     final Semaphore responseReceivedSemaphore = new Semaphore(0);
 
     @Override
-    public void onHandshake(InitResponse initResponse) {
-      handshakeSemaphore.release();
-    }
-
-    @Override
     public void onWatchChange(SnapshotVersion snapshotVersion, WatchChange watchChange) {
       watchChangeSemaphore.release();
-    }
-
-    @Override
-    public void onHandshakeReady() {
-      handshakeReadySemaphore.release();
     }
 
     @Override
@@ -106,6 +96,16 @@ public class StreamTest {
     @Override
     public void onClose(Status status) {
       closeSemaphore.release();
+    }
+
+    @Override
+    public void onHandshakeReady() {
+      handshakeReadySemaphore.release();
+    }
+
+    @Override
+    public void onHandshake(InitResponse initResponse) {
+      handshakeSemaphore.release();
     }
 
     @Override

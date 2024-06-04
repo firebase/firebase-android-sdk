@@ -156,11 +156,11 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   private final Deque<MutationBatch> writePipeline;
 
   public RemoteStore(
-          RemoteStoreCallback remoteStoreCallback,
-          LocalStore localStore,
-          Datastore datastore,
-          AsyncQueue workerQueue,
-          ConnectivityMonitor connectivityMonitor) {
+      RemoteStoreCallback remoteStoreCallback,
+      LocalStore localStore,
+      Datastore datastore,
+      AsyncQueue workerQueue,
+      ConnectivityMonitor connectivityMonitor) {
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -177,13 +177,6 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
         datastore.createWatchStream(
             new WatchStream.Callback() {
               @Override
-              public void onHandshakeReady() {
-                if (!writeStream.isHandshakeInProgress()) {
-                  watchStream.sendHandshake(localStore.getSessionToken());
-                }
-              }
-
-              @Override
               public void onHandshake(InitResponse initResponse) {
                 if (initResponse.getClearCache()) {
                   remoteStoreCallback.handleClearPersistence(initResponse.getSessionToken());
@@ -194,7 +187,9 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
               @Override
               public void onOpen() {
-                handleWatchStreamOpen();
+                if (!writeStream.isHandshakeInProgress()) {
+                  watchStream.sendHandshake(localStore.getSessionToken());
+                }
               }
 
               @Override
@@ -212,13 +207,6 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
         datastore.createWriteStream(
             new WriteStream.Callback() {
               @Override
-              public void onHandshakeReady() {
-                if (!watchStream.isHandshakeInProgress()) {
-                  writeStream.sendHandshake(localStore.getSessionToken());
-                }
-              }
-
-              @Override
               public void onHandshake(InitResponse initResponse) {
                 if (initResponse.getClearCache()) {
                   remoteStoreCallback.handleClearPersistence(initResponse.getSessionToken());
@@ -229,7 +217,9 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
               @Override
               public void onOpen() {
-                handleWriteStreamOpen();
+                if (!watchStream.isHandshakeInProgress()) {
+                  writeStream.sendHandshake(localStore.getSessionToken());
+                }
               }
 
               @Override
@@ -482,9 +472,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
     if (writeStream.isHandshakeInProgress()) {
       writeStream.sendHandshake(sessionToken);
     }
-  }
 
-  private void handleWatchStreamOpen() {
     // Restore any existing watches.
     for (TargetData targetData : listenTargets.values()) {
       sendWatchRequest(targetData);
@@ -617,14 +605,13 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   }
 
   private void processTargetError(WatchTargetChange targetChange) {
-    Status cause = targetChange.getCause();
-    hardAssert(cause != null, "Processing target error without a cause");
+    hardAssert(targetChange.getCause() != null, "Processing target error without a cause");
     for (Integer targetId : targetChange.getTargetIds()) {
       // Ignore targets that have been removed already.
       if (listenTargets.containsKey(targetId)) {
         listenTargets.remove(targetId);
         watchChangeAggregator.removeTarget(targetId);
-        remoteStoreCallback.handleRejectedListen(targetId, cause);
+        remoteStoreCallback.handleRejectedListen(targetId, targetChange.getCause());
       }
     }
   }
@@ -707,9 +694,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
     // Record the stream token.
     localStore.setLastStreamToken(writeStream.getLastStreamToken());
-  }
 
-  private void handleWriteStreamOpen() {
     // Send the write pipeline now that stream is established.
     for (MutationBatch batch : writePipeline) {
       writeStream.writeMutations(batch.getMutations());

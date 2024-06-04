@@ -101,7 +101,7 @@ public final class FirestoreClient {
     this.appCheckProvider = appCheckProvider;
     this.asyncQueue = asyncQueue;
     this.bundleSerializer =
-            new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
+        new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
   }
 
   public void start(
@@ -204,7 +204,7 @@ public final class FirestoreClient {
 
   /** Starts listening to a query. */
   public ListenerRegistration listen(
-          Query query, ListenOptions options, @Nullable Activity activity, AsyncEventListener<ViewSnapshot> listener) {
+      Query query, ListenOptions options, @Nullable Activity activity, AsyncEventListener<ViewSnapshot> listener) {
     this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
@@ -405,11 +405,6 @@ public final class FirestoreClient {
     if (this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");
     }
-  }
-
-  public AsyncQueue getAsyncQueue() {
-    verifyNotTerminated();
-    return asyncQueue;
   }
 
   public void setSessionToken(ByteString sessionToken) {
