@@ -1,6 +1,16 @@
 # Unreleased
 
 
+# 21.0.1
+* [fixed] Fixed an `ExceptionInInitializerError` where the `url.openStream()` causes a crash if
+  FirebasePerf is not yet initialized (Github #5584).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.0.0
 * [changed] Bump internal dependencies
 

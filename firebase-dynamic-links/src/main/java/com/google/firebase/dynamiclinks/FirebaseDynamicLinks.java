@@ -49,9 +49,8 @@ import com.google.firebase.FirebaseApp;
  * dynamic link extensions such as app invites.
  *
  * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
- *   service will shut down on August 25, 2025. Please see our
- *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
- *   for more guidance.
+ *   service will shut down on August 25, 2025. For more information, see
+ *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
  */
 @Deprecated
 public abstract class FirebaseDynamicLinks {
@@ -65,9 +64,8 @@ public abstract class FirebaseDynamicLinks {
    * FirebaseApp</a>.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
   @Deprecated
@@ -79,9 +77,8 @@ public abstract class FirebaseDynamicLinks {
    * Returns an instance of {@link FirebaseDynamicLinks} for the provided firebaseApp.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
   @Deprecated
@@ -122,9 +119,8 @@ public abstract class FirebaseDynamicLinks {
    * <p>If a dynamic link, the call will also send FirebaseAnalytics dynamic link event.
    *
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
   @Deprecated
@@ -146,9 +142,8 @@ public abstract class FirebaseDynamicLinks {
    *     previously captured or is in the Uri.
    *     <p>{@link Task#isSuccessful()} will only be false when a processing error occurs.
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
   @Deprecated
@@ -159,9 +154,8 @@ public abstract class FirebaseDynamicLinks {
    *
    * @return Builder to create the Dynamic Link.
    * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
-   *   service will shut down on August 25, 2025. Please see our
-   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links Deprecation FAQ documentation</a>
-   *   for more guidance.
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
    */
   @NonNull
   @Deprecated
