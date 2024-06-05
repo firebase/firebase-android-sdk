@@ -165,8 +165,6 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
 
     // The first response is the handshake response
     handshakeComplete = true;
-
-
   }
 
   @Override
