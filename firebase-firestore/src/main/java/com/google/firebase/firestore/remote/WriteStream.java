@@ -173,5 +173,19 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
   public void onNext(WriteResponse response) {
     lastStreamToken = response.getStreamToken();
 
+    // A successful first write response means the stream is healthy,
+    // Note, that we could consider a successful handshake healthy, however,
+    // the write itself might be causing an error we want to back off from.
+    backoff.reset();
+
+    SnapshotVersion commitVersion = serializer.decodeVersion(response.getCommitTime());
+
+    int count = response.getWriteResultsCount();
+    List<MutationResult> results = new ArrayList<>(count);
+    for (int i = 0; i < count; i++) {
+      com.google.firestore.v1.WriteResult result = response.getWriteResults(i);
+      results.add(serializer.decodeMutationResult(result, commitVersion));
+    }
+    listener.onWriteResponse(commitVersion, results);
   }
 }
