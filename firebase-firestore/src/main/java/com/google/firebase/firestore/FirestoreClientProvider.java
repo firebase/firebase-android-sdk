@@ -57,7 +57,10 @@ final class FirestoreClientProvider {
     @GuardedBy("this")
     private boolean networkEnabled = true;
 
+    @GuardedBy("this")
     @Nullable private EmulatedServiceSettings emulatorSettings;
+
+    @GuardedBy("this")
     private ByteString sessionToken;
 
     FirestoreClientProvider(
