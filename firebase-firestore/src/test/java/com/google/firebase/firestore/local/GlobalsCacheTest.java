@@ -45,7 +45,7 @@ public abstract class GlobalsCacheTest {
     @Test
     public void setAndGetDbToken() {
         ByteString value = ByteString.copyFrom("TestData", StandardCharsets.UTF_8);
-        globalsCache.setDbToken(value);
-        assertEquals(value, globalsCache.getDbToken());
+        globalsCache.setSessionToken(value);
+        assertEquals(value, globalsCache.getSessionsToken());
     }
 }

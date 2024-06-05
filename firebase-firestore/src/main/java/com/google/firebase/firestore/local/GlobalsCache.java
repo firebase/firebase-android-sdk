@@ -26,8 +26,8 @@ import com.google.protobuf.ByteString;
  */
 interface GlobalsCache {
 
-    ByteString getDbToken();
+    ByteString getSessionsToken();
 
-    void setDbToken(ByteString value);
+    void setSessionToken(ByteString value);
 
 }

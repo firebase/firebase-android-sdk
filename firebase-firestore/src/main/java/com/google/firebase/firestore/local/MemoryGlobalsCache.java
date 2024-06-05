@@ -19,15 +19,15 @@ import com.google.protobuf.ByteString;
 /** In-memory cache of global values */
 final class MemoryGlobalsCache implements GlobalsCache {
 
-    private ByteString dbToken;
+    private ByteString sessionToken;
 
     @Override
-    public ByteString getDbToken() {
-        return dbToken;
+    public ByteString getSessionsToken() {
+        return sessionToken;
     }
 
     @Override
-    public void setDbToken(ByteString value) {
-        dbToken = value;
+    public void setSessionToken(ByteString value) {
+        sessionToken = value;
     }
 }
