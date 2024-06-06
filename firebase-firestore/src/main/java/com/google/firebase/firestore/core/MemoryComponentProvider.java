@@ -111,8 +111,7 @@ public class MemoryComponentProvider extends ComponentProvider {
         getLocalStore(),
         getRemoteStore(),
         configuration.getInitialUser(),
-        configuration.getMaxConcurrentLimboResolutions(),
-        configuration.getClearPersistenceCallback());
+        configuration.getMaxConcurrentLimboResolutions());
   }
 
   /**
@@ -151,11 +150,6 @@ public class MemoryComponentProvider extends ComponentProvider {
     @Override
     public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
       return getSyncEngine().getRemoteKeysForTarget(targetId);
-    }
-
-    @Override
-    public void handleClearPersistence(ByteString sessionToken) {
-      getSyncEngine().handleClearPersistence(sessionToken);
     }
   }
 }

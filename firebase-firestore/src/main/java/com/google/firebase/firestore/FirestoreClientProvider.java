@@ -9,7 +9,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.common.base.Function;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.protobuf.ByteString;
 
 import java.util.concurrent.Executor;
 
@@ -30,23 +29,13 @@ final class FirestoreClientProvider {
         this.asyncQueue = new AsyncQueue();
     }
 
-    private synchronized void makeNewClient() {
-        client = clientFactory.apply(asyncQueue);
-    }
-
     boolean isConfigured() {
         return client != null;
     }
 
     synchronized void ensureConfigured() {
         if (!isConfigured()) {
-            makeNewClient();
-        }
-    }
-
-    synchronized void ifCurrentClient(FirestoreClient client, Runnable runnable) {
-        if (this.client == client) {
-            runnable.run();
+            client = clientFactory.apply(asyncQueue);
         }
     }
 
@@ -73,10 +62,10 @@ final class FirestoreClientProvider {
         if (client == null || client.isTerminated()) {
             return call.apply(asyncQueue.getExecutor());
         } else {
-            client.terminate();
+            client.shutdown();
             asyncQueue = asyncQueue.reincarnate();
             T result = call.apply(asyncQueue.getExecutor());
-            makeNewClient();
+            client = clientFactory.apply(asyncQueue);
             return result;
         }
     }
@@ -89,7 +78,7 @@ final class FirestoreClientProvider {
         // The client must be initialized to ensure that all subsequent API usage throws an exception.
         ensureConfigured();
 
-        Task<Void> terminate = client.terminate();
+        Task<Void> terminate = client.shutdown();
 
         // Will cause the executor to de-reference all threads, the best we can do
         asyncQueue.terminate();

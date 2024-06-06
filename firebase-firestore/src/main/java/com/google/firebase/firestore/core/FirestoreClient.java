@@ -77,7 +77,6 @@ public final class FirestoreClient {
   private final CredentialsProvider<String> appCheckProvider;
   private final AsyncQueue asyncQueue;
   private final BundleSerializer bundleSerializer;
-  private final FirebaseFirestoreSettings settings;
   private final GrpcMetadataProvider metadataProvider;
 
   private Persistence persistence;
@@ -85,35 +84,26 @@ public final class FirestoreClient {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-  private Consumer<ByteString> clearPersistenceCallback;
-
   // LRU-related
   @Nullable private Scheduler indexBackfillScheduler;
   @Nullable private Scheduler gcScheduler;
 
   public FirestoreClient(
-      DatabaseInfo databaseInfo,
-      FirebaseFirestoreSettings settings,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
-      AsyncQueue asyncQueue,
-      @Nullable GrpcMetadataProvider metadataProvider) {
+          final Context context,
+          DatabaseInfo databaseInfo,
+          FirebaseFirestoreSettings settings,
+          CredentialsProvider<User> authProvider,
+          CredentialsProvider<String> appCheckProvider,
+          AsyncQueue asyncQueue,
+          @Nullable GrpcMetadataProvider metadataProvider,
+          ComponentProvider componentProvider) {
     this.databaseInfo = databaseInfo;
-    this.settings = settings;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.bundleSerializer =
         new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
-  }
-
-  public void start(
-          Context context,
-          ComponentProvider provider) {
-
-    Datastore datastore = new Datastore(
-            databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
 
     asyncQueue.setOnShutdown(this::onAsyncQueueShutdown);
 
@@ -128,19 +118,7 @@ public final class FirestoreClient {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
-            Logger.debug(LOG_TAG, "Initializing. user=%s", initialUser.getUid());
-            ComponentProvider.Configuration configuration =
-                    new ComponentProvider.Configuration(
-                            context,
-                            asyncQueue,
-                            databaseInfo,
-                            datastore,
-                            initialUser,
-                            MAX_CONCURRENT_LIMBO_RESOLUTIONS,
-                            settings,
-                            clearPersistenceCallback);
-            provider.initialize(configuration);
-            initialize(provider);
+            initialize(context, initialUser, settings, componentProvider);
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
           }
@@ -169,7 +147,8 @@ public final class FirestoreClient {
   }
 
   public void setClearPersistenceCallback(Consumer<ByteString> clearPersistenceCallback) {
-    this.clearPersistenceCallback = clearPersistenceCallback;
+    this.verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> remoteStore.setClearPersistenceCallback(clearPersistenceCallback));
   }
 
   private void onAsyncQueueShutdown() {
@@ -194,7 +173,7 @@ public final class FirestoreClient {
   }
 
   /** Terminates this client, cancels all writes / listeners, and releases all resources. */
-  public Task<Void> terminate() {
+  public Task<Void> shutdown() {
     authProvider.removeChangeListener();
     appCheckProvider.removeChangeListener();
     asyncQueue.enqueueAndForget(() -> eventManager.abortAllTargets());
@@ -320,10 +299,25 @@ public final class FirestoreClient {
     return source.getTask();
   }
 
-  private void initialize(ComponentProvider provider) {
+  private void initialize(Context context, User user, FirebaseFirestoreSettings settings, ComponentProvider provider) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
     // external write/listen operations could get queued to run before that subsequent work
     // completes.
+    Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
+
+    Datastore datastore =
+        new Datastore(
+            databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
+    ComponentProvider.Configuration configuration =
+        new ComponentProvider.Configuration(
+            context,
+            asyncQueue,
+            databaseInfo,
+            datastore,
+            user,
+            MAX_CONCURRENT_LIMBO_RESOLUTIONS,
+            settings);
+    provider.initialize(configuration);
     persistence = provider.getPersistence();
     gcScheduler = provider.getGarbageCollectionScheduler();
     localStore = provider.getLocalStore();
@@ -416,5 +410,10 @@ public final class FirestoreClient {
   public void setSessionToken(ByteString sessionToken) {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> localStore.setSessionsToken(sessionToken));
+  }
+
+  public ByteString getSessionToken() {
+    verifyNotTerminated();
+    return localStore.getSessionToken();
   }
 }

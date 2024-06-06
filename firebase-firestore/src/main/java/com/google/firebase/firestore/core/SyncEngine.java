@@ -51,7 +51,6 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.TargetChange;
-import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
@@ -83,8 +82,6 @@ import java.util.Set;
  * dispatch queue.
  */
 public class SyncEngine implements RemoteStore.RemoteStoreCallback {
-
-  private final Consumer<ByteString> clearPersistenceCallback;
 
   /** Tracks a limbo resolution. */
   private static class LimboResolution {
@@ -165,12 +162,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       LocalStore localStore,
       RemoteStore remoteStore,
       User initialUser,
-      int maxConcurrentLimboResolutions,
-      Consumer<ByteString> clearPersistenceCallback) {
+      int maxConcurrentLimboResolutions) {
     this.localStore = localStore;
     this.remoteStore = remoteStore;
     this.maxConcurrentLimboResolutions = maxConcurrentLimboResolutions;
-    this.clearPersistenceCallback = clearPersistenceCallback;
 
     queryViewsByQuery = new HashMap<>();
     queriesByTarget = new HashMap<>();
@@ -488,12 +483,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     resolvePendingWriteTasks(batchId);
 
     emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
-  }
-
-  @Override
-  public void handleClearPersistence(ByteString sessionToken) {
-    assertCallback("handleClearPersistence");
-    clearPersistenceCallback.accept(sessionToken);
   }
 
   /**

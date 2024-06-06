@@ -325,8 +325,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             datastore,
             currentUser,
             maxConcurrentLimboResolutions,
-            new FirebaseFirestoreSettings.Builder().build(),
-            null);
+            new FirebaseFirestoreSettings.Builder().build());
 
     ComponentProvider provider = initializeComponentProvider(configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
@@ -344,11 +343,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   @Override
   public void handleOnlineStateChange(OnlineState onlineState) {
     syncEngine.handleOnlineStateChange(onlineState);
-  }
-
-  @Override
-  public void handleClearPersistence(ByteString sessionToken) {
-    syncEngine.handleClearPersistence(sessionToken);
   }
 
   private List<Pair<Mutation, Task<Void>>> getCurrentOutstandingWrites() {

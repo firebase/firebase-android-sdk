@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -79,7 +80,10 @@ import org.json.JSONObject;
  */
 public class FirebaseFirestore {
 
+  private final Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory;
   private volatile ByteString sessionToken;
+
+  @GuardedBy("clientProvider")
   private boolean networkEnabled;
 
   /**
@@ -211,6 +215,9 @@ public class FirebaseFirestore {
             persistenceKey,
             () -> new FirebaseAuthCredentialsProvider(deferredAuthProvider),
             () -> new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider),
+            settings -> settings.isPersistenceEnabled()
+                    ? new SQLiteComponentProvider()
+                    : new MemoryComponentProvider(),
             app,
             instanceRegistry,
             metadataProvider);
@@ -224,6 +231,7 @@ public class FirebaseFirestore {
       @NonNull String persistenceKey,
       @NonNull Supplier<CredentialsProvider<User>> authProviderFactory,
       @NonNull Supplier<CredentialsProvider<String>> appCheckTokenProviderFactory,
+      @NonNull Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -234,6 +242,7 @@ public class FirebaseFirestore {
     this.persistenceKey = checkNotNull(persistenceKey);
     this.authProviderFactory = checkNotNull(authProviderFactory);
     this.appCheckTokenProviderFactory = checkNotNull(appCheckTokenProviderFactory);
+    this.componentProviderFactory = checkNotNull(componentProviderFactory);
     this.clientProvider = new FirestoreClientProvider(this::newClient);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
@@ -290,43 +299,41 @@ public class FirebaseFirestore {
   }
 
   private FirestoreClient newClient(AsyncQueue asyncQueue) {
-    DatabaseInfo databaseInfo =
-        new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
+    synchronized (clientProvider) {
+      DatabaseInfo databaseInfo =
+              new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
-    FirestoreClient client =  new FirestoreClient(
-            databaseInfo,
-            settings,
-            authProviderFactory.get(),
-            appCheckTokenProviderFactory.get(),
-            asyncQueue,
-            metadataProvider);
+      FirestoreClient client = new FirestoreClient(
+              context,
+              databaseInfo,
+              settings,
+              authProviderFactory.get(),
+              appCheckTokenProviderFactory.get(),
+              asyncQueue,
+              metadataProvider,
+              componentProviderFactory.apply(settings)
+      );
 
-    client.setClearPersistenceCallback(sessionToken -> {
-      clientProvider.ifCurrentClient(client, () -> {
-        this.sessionToken = sessionToken;
-        clearPersistence();
+      client.setClearPersistenceCallback(sessionToken -> {
+        synchronized (clientProvider) {
+          if (client.isTerminated()) return;
+          this.sessionToken = sessionToken;
+          clearPersistence();
+        }
       });
-    });
 
-    client.start(
-            context,
-            newComponentProvider());
+      // Session token must be set before we enable network, since it is part of stream handshake.
+      if (sessionToken != null) {
+        client.setSessionToken(sessionToken);
+        sessionToken = null;
+      }
 
-    if (sessionToken != null) {
-      client.setSessionToken(sessionToken);
+      if (networkEnabled) {
+        client.enableNetwork();
+      }
+
+      return client;
     }
-
-    if (networkEnabled) {
-      client.enableNetwork();
-    }
-
-    return client;
-  }
-
-  private ComponentProvider newComponentProvider() {
-    return settings.isPersistenceEnabled()
-            ? new SQLiteComponentProvider()
-            : new MemoryComponentProvider();
   }
 
   private FirebaseFirestoreSettings mergeEmulatorSettings(

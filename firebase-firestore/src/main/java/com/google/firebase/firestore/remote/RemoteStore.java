@@ -41,6 +41,7 @@ import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChan
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.InitResponse;
@@ -65,6 +66,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
+  private Consumer<ByteString> clearPersistenceCallback;
 
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
@@ -112,9 +114,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
      * <p>Returns an empty set of document keys for unknown targets.
      */
     ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
-
-    void handleClearPersistence(ByteString sessionToken);
-  }
+}
 
   private final RemoteStoreCallback remoteStoreCallback;
   private final LocalStore localStore;
@@ -179,7 +179,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
               @Override
               public void onHandshake(InitResponse initResponse) {
                 if (initResponse.getClearCache()) {
-                  remoteStoreCallback.handleClearPersistence(initResponse.getSessionToken());
+                  handleClearCache(initResponse.getSessionToken());
                 } else {
                   handleWatchStreamHandshakeComplete(initResponse.getSessionToken());
                 }
@@ -209,7 +209,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
               @Override
               public void onHandshake(InitResponse initResponse) {
                 if (initResponse.getClearCache()) {
-                  remoteStoreCallback.handleClearPersistence(initResponse.getSessionToken());
+                  handleClearCache(initResponse.getSessionToken());
                 } else {
                   handleWriteStreamHandshakeComplete(initResponse.getSessionToken());
                 }
@@ -266,6 +266,18 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
                 restartNetwork();
               });
         });
+  }
+
+  private void handleClearCache(ByteString sessionToken) {
+    hardAssert(clearPersistenceCallback != null, "Cannot clear persistence without callback");
+    if (sessionToken.isEmpty()) {
+      sessionToken = localStore.getSessionToken();
+    }
+    clearPersistenceCallback.accept(sessionToken);
+  }
+
+  public void setClearPersistenceCallback(Consumer<ByteString> clearPersistenceCallback) {
+    this.clearPersistenceCallback = clearPersistenceCallback;
   }
 
   /** Re-enables the network. Only to be called as the counterpart to disableNetwork(). */
@@ -461,10 +473,10 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   }
 
   private void handleWatchStreamHandshakeComplete(ByteString sessionToken) {
-    if (!sessionToken.isEmpty()) {
-      localStore.setSessionsToken(sessionToken);
-    } else {
+    if (sessionToken.isEmpty()) {
       sessionToken = localStore.getSessionToken();
+    } else {
+      localStore.setSessionsToken(sessionToken);
     }
 
     // If write stream started handshake, but was waiting for listen handshake to complete, we
