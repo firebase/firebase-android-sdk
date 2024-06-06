@@ -30,8 +30,6 @@ import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Consumer;
-import com.google.protobuf.ByteString;
-
 import io.grpc.Status;
 import java.util.concurrent.Semaphore;
 import org.junit.Test;
@@ -74,9 +72,6 @@ public class RemoteStoreTest {
           public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
             return null;
           }
-
-          @Override
-          public void handleClearPersistence(ByteString sessionToken) {}
         };
 
     FakeConnectivityMonitor connectivityMonitor = new FakeConnectivityMonitor();
