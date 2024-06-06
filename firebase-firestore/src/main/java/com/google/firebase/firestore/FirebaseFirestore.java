@@ -80,7 +80,7 @@ import org.json.JSONObject;
 public class FirebaseFirestore {
 
   private volatile ByteString sessionToken;
-  private boolean networkEnabled = false;
+  private boolean networkEnabled;
 
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
@@ -227,6 +227,7 @@ public class FirebaseFirestore {
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
+    this.networkEnabled = true;
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
@@ -243,9 +244,7 @@ public class FirebaseFirestore {
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
   @NonNull
   public FirebaseFirestoreSettings getFirestoreSettings() {
-    synchronized (clientProvider) {
-      return settings;
-    }
+    return settings;
   }
 
   /**
