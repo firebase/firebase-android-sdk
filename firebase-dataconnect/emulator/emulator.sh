@@ -16,12 +16,16 @@
 
 set -euo pipefail
 
+readonly SELF_DIR="$(dirname "$0")"
+export DATACONNECT_EMULATOR_BINARY_PATH="${SELF_DIR}/cli_wrapper.sh"
+
 readonly FIREBASE_ARGS=(
-  firebase emulators:exec
-  --only auth
+  firebase
+  emulators:start
+  --only auth,dataconnect
   --project prjh5zbv64sv6
-  ./emulator_noauth.sh
 )
 
+echo "[$0] Set environment variable DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
 echo "[$0] Running command: ${FIREBASE_ARGS[*]}"
 exec "${FIREBASE_ARGS[@]}"

@@ -38,7 +38,6 @@ podman \
   --rm \
   --pod dataconnect_postgres \
   -e POSTGRES_HOST_AUTH_METHOD=trust \
-  --mount "type=bind,ro,src=${SCRIPT_DIR}/postgres_dbinit.sh,dst=/docker-entrypoint-initdb.d/postgres_dbinit.sh" \
   --mount "type=volume,src=dataconnect_pgdata,dst=/var/lib/postgresql/data" \
   docker.io/library/postgres:15
 
