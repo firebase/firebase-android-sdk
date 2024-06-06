@@ -43,7 +43,7 @@ public final class PersistentCacheIndexManager {
    * <p>This feature is disabled by default.
    */
   public void enableIndexAutoCreation() {
-    client.safeCallVoid(client -> client.setIndexAutoCreationEnabled(true));
+    client.procedure(client -> client.setIndexAutoCreationEnabled(true));
   }
 
   /**
@@ -51,7 +51,7 @@ public final class PersistentCacheIndexManager {
    * which have been created by calling {@link #enableIndexAutoCreation()} still take effect.
    */
   public void disableIndexAutoCreation() {
-    client.safeCallVoid(client -> client.setIndexAutoCreationEnabled(false));
+    client.procedure(client -> client.setIndexAutoCreationEnabled(false));
   }
 
   /**
@@ -59,6 +59,6 @@ public final class PersistentCacheIndexManager {
    * {@link FirebaseFirestore#setIndexConfiguration(String)}, which is deprecated.
    */
   public void deleteAllIndexes() {
-    client.safeCallVoid(FirestoreClient::deleteAllFieldIndexes);
+    client.procedure(FirestoreClient::deleteAllFieldIndexes);
   }
 }

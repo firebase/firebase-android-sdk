@@ -47,6 +47,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.Datastore;
+import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -77,6 +78,7 @@ public final class FirestoreClient {
   private final AsyncQueue asyncQueue;
   private final BundleSerializer bundleSerializer;
   private final FirebaseFirestoreSettings settings;
+  private final GrpcMetadataProvider metadataProvider;
 
   private Persistence persistence;
   private LocalStore localStore;
@@ -94,20 +96,24 @@ public final class FirestoreClient {
       FirebaseFirestoreSettings settings,
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
-      AsyncQueue asyncQueue) {
+      AsyncQueue asyncQueue,
+      @Nullable GrpcMetadataProvider metadataProvider) {
     this.databaseInfo = databaseInfo;
     this.settings = settings;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
     this.asyncQueue = asyncQueue;
+    this.metadataProvider = metadataProvider;
     this.bundleSerializer =
         new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
   }
 
   public void start(
           Context context,
-          ComponentProvider provider,
-          Datastore datastore) {
+          ComponentProvider provider) {
+
+    Datastore datastore = new Datastore(
+            databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
 
     asyncQueue.setOnShutdown(this::onAsyncQueueShutdown);
 
