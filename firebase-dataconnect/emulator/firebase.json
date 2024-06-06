@@ -10,6 +10,9 @@
     "ui": {
       "enabled": true
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "dataconnect": {
+      "port": 9399
+    }
   }
 }
