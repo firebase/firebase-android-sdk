@@ -106,7 +106,7 @@ public class WatchStream
    * accept watch queries.
    */
   boolean isHandshakeComplete() {
-    return handshakeComplete;
+    return isOpen() && handshakeComplete;
   }
 
   /**

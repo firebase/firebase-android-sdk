@@ -45,7 +45,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
 class MockCredentialsProvider extends EmptyCredentialsProvider {
@@ -70,6 +74,10 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
 
 @RunWith(AndroidJUnit4.class)
 public class StreamTest {
+
+  @Rule
+  public Timeout timeout = new Timeout(10, TimeUnit.SECONDS);
+
   /** Single mutation to send to the write stream. */
   private static final List<Mutation> mutations =
       Collections.singletonList(setMutation("foo/bar", map()));
@@ -79,7 +87,6 @@ public class StreamTest {
     final Semaphore openSemaphore = new Semaphore(0);
     final Semaphore closeSemaphore = new Semaphore(0);
     final Semaphore watchChangeSemaphore = new Semaphore(0);
-    final Semaphore handshakeReadySemaphore = new Semaphore(0);
     final Semaphore handshakeSemaphore = new Semaphore(0);
     final Semaphore responseReceivedSemaphore = new Semaphore(0);
 
@@ -96,11 +103,6 @@ public class StreamTest {
     @Override
     public void onClose(Status status) {
       closeSemaphore.release();
-    }
-
-    @Override
-    public void onHandshakeReady() {
-      handshakeReadySemaphore.release();
     }
 
     @Override

@@ -106,7 +106,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
    * accept mutations.
    */
   boolean isHandshakeComplete() {
-    return handshakeComplete;
+    return isOpen() && handshakeComplete;
   }
 
   /**
@@ -173,9 +173,8 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
 
   @Override
   public void onFirst(WriteResponse response) {
-    lastStreamToken = response.getStreamToken();
-
     hardAssert(response.hasInitResponse(),"InitResponse expected as part of Handshake response");
+    lastStreamToken = response.getStreamToken();
 
     // The first response is the handshake response
     handshakeComplete = true;
