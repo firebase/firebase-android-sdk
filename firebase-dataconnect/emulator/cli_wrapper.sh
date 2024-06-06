@@ -14,21 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Set the DATACONNECT_EMULATOR_BINARY_PATH environment variable to point to this file.
+# Then run: firebase emulators:start --only dataconnect
+
 set -euo pipefail
 
-echo "[$0] PID=$$"
-
 readonly SELF_DIR="$(dirname "$0")"
-export DATACONNECT_EMULATOR_BINARY_PATH="${SELF_DIR}/cli_wrapper.sh"
+readonly LOG_FILE="${SELF_DIR}/cli_wrapper.sh.log.txt"
+readonly CLI_BINARY="${SELF_DIR}/cli"
 
-readonly FIREBASE_ARGS=(
-  firebase
-  --debug
-  emulators:start
-  --only auth,dataconnect
-  --project prjh5zbv64sv6
+readonly args=(
+  "${CLI_BINARY}"
+  "-logtostderr"
+  "$@"
 )
 
-echo "[$0] Set environment variable DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
-echo "[$0] Running command: ${FIREBASE_ARGS[*]}"
-exec "${FIREBASE_ARGS[@]}"
+echo "$(date) pid=$$ ${args[*]}" >>"${LOG_FILE}"
+exec "${args[@]}"
