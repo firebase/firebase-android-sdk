@@ -16,10 +16,13 @@ package com.google.firebase.crashlytics;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -29,10 +32,15 @@ import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /** @hide */
 public class CrashlyticsRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-cls";
+  private final Qualified<ExecutorService> backgroundExecutorService = Qualified.qualified(Background.class, ExecutorService.class);
+  private final Qualified<ExecutorService> blockingExecutorService = Qualified.qualified(Blocking.class, ExecutorService.class);
+
 
   static {
     // Add Crashlytics as a dependency of Sessions when this class is loaded into memory.
@@ -46,6 +54,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.required(backgroundExecutorService))
+            .add(Dependency.required(blockingExecutorService))
             .add(Dependency.deferred(CrashlyticsNativeComponent.class))
             .add(Dependency.deferred(AnalyticsConnector.class))
             .add(Dependency.deferred(FirebaseRemoteConfigInterop.class))
@@ -70,6 +80,6 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
         container.getDeferred(FirebaseRemoteConfigInterop.class);
 
     return FirebaseCrashlytics.init(
-        app, firebaseInstallations, nativeComponent, analyticsConnector, remoteConfigInterop);
+        app, firebaseInstallations, nativeComponent, analyticsConnector, remoteConfigInterop, container.get(backgroundExecutorService),  container.get(blockingExecutorService));
   }
 }
