@@ -38,7 +38,6 @@ podman \
   --rm \
   --pod dataconnect_postgres \
   -e POSTGRES_HOST_AUTH_METHOD=trust \
-  --mount "type=bind,ro,src=${SCRIPT_DIR}/postgres_dbinit.sh,dst=/docker-entrypoint-initdb.d/postgres_dbinit.sh" \
   --mount "type=volume,src=dataconnect_pgdata,dst=/var/lib/postgresql/data" \
   docker.io/library/postgres:15
 
@@ -77,7 +76,7 @@ To delete the postgresql database, run
 To delete the containers, run
   podman pod rm --force dataconnect_postgres
 
-When running the Firebase Data Connect emulator, specify this argument to use this postgresql
-or set "localConnectionString" in .firebaserc:
-  -local_connection_string='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
+When running the Firebase Data Connect emulator, use this postgresql connection string
+in .firebaserc:
+  postgresql://postgres:postgres@localhost:5432?sslmode=disable
 EOF

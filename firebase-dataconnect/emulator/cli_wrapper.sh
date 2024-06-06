@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright 2024 Google LLC
 #
@@ -14,17 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is mounted in the postgresql container such that it will be run
-# on a fresh instance. Specifically, this will create the database that that the
-# dataconnect emulator expects to exist.
-# See https://hub.docker.com/_/postgres for details, especially the
-# "Initialization Scripts" section.
+# Set the DATACONNECT_EMULATOR_BINARY_PATH environment variable to point to this file.
+# Then run: firebase emulators:start --only dataconnect
 
-set -xev
+set -euo pipefail
 
-echo "POSTGRES_USER=$POSTGRES_USER"
+readonly SELF_DIR="$(dirname "$0")"
+readonly LOG_FILE="${SELF_DIR}/cli_wrapper.sh.log.txt"
+readonly CLI_BINARY="${SELF_DIR}/cli"
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
-	CREATE DATABASE "dba6g7djscd5";
-	GRANT ALL PRIVILEGES ON DATABASE "dba6g7djscd5" TO $POSTGRES_USER;
-EOSQL
+readonly args=(
+  "${CLI_BINARY}"
+  "-logtostderr"
+  "$@"
+)
+
+echo "$(date) pid=$$ ${args[*]}" >>"${LOG_FILE}"
+exec "${args[@]}"
