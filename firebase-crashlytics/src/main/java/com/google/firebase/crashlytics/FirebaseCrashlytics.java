@@ -24,6 +24,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
@@ -68,7 +70,9 @@ public class FirebaseCrashlytics {
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull Deferred<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector,
-      @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred) {
+      @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred,
+      @Background ExecutorService liteExecutorService,
+      @Blocking ExecutorService blockingExecutorService) {
 
     Context context = app.getApplicationContext();
     final String appIdentifier = context.getPackageName();
