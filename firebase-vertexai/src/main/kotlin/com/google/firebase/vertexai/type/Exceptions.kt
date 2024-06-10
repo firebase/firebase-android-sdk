@@ -141,10 +141,8 @@ class RequestTimeoutException(message: String, cause: Throwable? = null) :
 class InvalidLocationException(location: String, cause: Throwable? = null) :
   FirebaseVertexAIException("Invalid location \"${location}\"", cause)
 
-/**
- * The service is not enabled for this project. Visit the Firebase Console to enable it.
- */
-class ServiceDisabledException (message: String, cause: Throwable? = null) :
+/** The service is not enabled for this project. Visit the Firebase Console to enable it. */
+class ServiceDisabledException(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */
