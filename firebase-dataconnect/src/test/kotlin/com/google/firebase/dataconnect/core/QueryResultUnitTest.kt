@@ -18,56 +18,44 @@ package com.google.firebase.dataconnect.core
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import io.mockk.mockk
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
-import org.junit.Before
 import org.junit.Test
-import org.mockito.Mock
-import org.mockito.MockitoAnnotations
 
 @Suppress("ReplaceCallWithBinaryOperator")
 class QueryResultImplUnitTest {
 
-  @Mock(name = "mockFirebaseDataConnectInternal", stubOnly = true)
-  private lateinit var mockFirebaseDataConnectInternal: FirebaseDataConnectInternal
-  @Mock(name = "mockDataDeserializer", stubOnly = true)
-  private lateinit var mockDataDeserializer: DeserializationStrategy<TestData?>
-  @Mock(name = "mockVariablesSerializer", stubOnly = true)
-  private lateinit var mockVariablesSerializer: SerializationStrategy<TestVariables>
+  private val mockFirebaseDataConnectInternal = mockk<FirebaseDataConnectInternal>()
+  private val mockDataDeserializer = mockk<DeserializationStrategy<TestData?>>()
+  private val mockVariablesSerializer = mockk<SerializationStrategy<TestVariables>>()
 
-  private lateinit var sampleQuery: QueryRefImpl<TestData?, TestVariables>
-  private lateinit var sampleQuery1: QueryRefImpl<TestData?, TestVariables>
-  private lateinit var sampleQuery2: QueryRefImpl<TestData?, TestVariables>
+  private val sampleQuery =
+    QueryRefImpl(
+      dataConnect = mockFirebaseDataConnectInternal,
+      operationName = "sampleQueryOperationName",
+      variables = TestVariables("sampleQueryTestData"),
+      dataDeserializer = mockDataDeserializer,
+      variablesSerializer = mockVariablesSerializer,
+    )
 
-  @Before
-  fun prepareSampleQuerys() {
-    MockitoAnnotations.initMocks(this)
+  private val sampleQuery1 =
+    QueryRefImpl(
+      dataConnect = mockFirebaseDataConnectInternal,
+      operationName = "sampleQueryOperationName1",
+      variables = TestVariables("sampleQueryTestData1"),
+      dataDeserializer = mockDataDeserializer,
+      variablesSerializer = mockVariablesSerializer,
+    )
 
-    sampleQuery =
-      QueryRefImpl(
-        dataConnect = mockFirebaseDataConnectInternal,
-        operationName = "sampleQueryOperationName",
-        variables = TestVariables("sampleQueryTestData"),
-        dataDeserializer = mockDataDeserializer,
-        variablesSerializer = mockVariablesSerializer,
-      )
-    sampleQuery1 =
-      QueryRefImpl(
-        dataConnect = mockFirebaseDataConnectInternal,
-        operationName = "sampleQueryOperationName1",
-        variables = TestVariables("sampleQueryTestData1"),
-        dataDeserializer = mockDataDeserializer,
-        variablesSerializer = mockVariablesSerializer,
-      )
-    sampleQuery2 =
-      QueryRefImpl(
-        dataConnect = mockFirebaseDataConnectInternal,
-        operationName = "sampleQueryOperationName2",
-        variables = TestVariables("sampleQueryTestData2"),
-        dataDeserializer = mockDataDeserializer,
-        variablesSerializer = mockVariablesSerializer,
-      )
-  }
+  private val sampleQuery2 =
+    QueryRefImpl(
+      dataConnect = mockFirebaseDataConnectInternal,
+      operationName = "sampleQueryOperationName2",
+      variables = TestVariables("sampleQueryTestData2"),
+      dataDeserializer = mockDataDeserializer,
+      variablesSerializer = mockVariablesSerializer,
+    )
 
   @Test
   fun `'data' should be the same object given to the constructor`() {

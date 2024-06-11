@@ -18,56 +18,44 @@ package com.google.firebase.dataconnect.core
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import io.mockk.mockk
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
-import org.junit.Before
 import org.junit.Test
-import org.mockito.Mock
-import org.mockito.MockitoAnnotations
 
 @Suppress("ReplaceCallWithBinaryOperator")
 class MutationResultImplUnitTest {
 
-  @Mock(name = "mockFirebaseDataConnectInternal", stubOnly = true)
-  private lateinit var mockFirebaseDataConnectInternal: FirebaseDataConnectInternal
-  @Mock(name = "mockDataDeserializer", stubOnly = true)
-  private lateinit var mockDataDeserializer: DeserializationStrategy<TestData?>
-  @Mock(name = "mockVariablesSerializer", stubOnly = true)
-  private lateinit var mockVariablesSerializer: SerializationStrategy<TestVariables>
+  private val mockFirebaseDataConnectInternal = mockk<FirebaseDataConnectInternal>()
+  private val mockDataDeserializer = mockk<DeserializationStrategy<TestData?>>()
+  private val mockVariablesSerializer = mockk<SerializationStrategy<TestVariables>>()
 
-  private lateinit var sampleMutation: MutationRefImpl<TestData?, TestVariables>
-  private lateinit var sampleMutation1: MutationRefImpl<TestData?, TestVariables>
-  private lateinit var sampleMutation2: MutationRefImpl<TestData?, TestVariables>
+  private val sampleMutation =
+    MutationRefImpl(
+      dataConnect = mockFirebaseDataConnectInternal,
+      operationName = "sampleMutationOperationName",
+      variables = TestVariables("sampleMutationTestData"),
+      dataDeserializer = mockDataDeserializer,
+      variablesSerializer = mockVariablesSerializer,
+    )
 
-  @Before
-  fun prepareSampleMutations() {
-    MockitoAnnotations.initMocks(this)
+  private val sampleMutation1 =
+    MutationRefImpl(
+      dataConnect = mockFirebaseDataConnectInternal,
+      operationName = "sampleMutationOperationName1",
+      variables = TestVariables("sampleMutationTestData1"),
+      dataDeserializer = mockDataDeserializer,
+      variablesSerializer = mockVariablesSerializer,
+    )
 
-    sampleMutation =
-      MutationRefImpl(
-        dataConnect = mockFirebaseDataConnectInternal,
-        operationName = "sampleMutationOperationName",
-        variables = TestVariables("sampleMutationTestData"),
-        dataDeserializer = mockDataDeserializer,
-        variablesSerializer = mockVariablesSerializer,
-      )
-    sampleMutation1 =
-      MutationRefImpl(
-        dataConnect = mockFirebaseDataConnectInternal,
-        operationName = "sampleMutationOperationName1",
-        variables = TestVariables("sampleMutationTestData1"),
-        dataDeserializer = mockDataDeserializer,
-        variablesSerializer = mockVariablesSerializer,
-      )
-    sampleMutation2 =
-      MutationRefImpl(
-        dataConnect = mockFirebaseDataConnectInternal,
-        operationName = "sampleMutationOperationName2",
-        variables = TestVariables("sampleMutationTestData2"),
-        dataDeserializer = mockDataDeserializer,
-        variablesSerializer = mockVariablesSerializer,
-      )
-  }
+  private val sampleMutation2 =
+    MutationRefImpl(
+      dataConnect = mockFirebaseDataConnectInternal,
+      operationName = "sampleMutationOperationName2",
+      variables = TestVariables("sampleMutationTestData2"),
+      dataDeserializer = mockDataDeserializer,
+      variablesSerializer = mockVariablesSerializer,
+    )
 
   @Test
   fun `'data' should be the same object given to the constructor`() {
