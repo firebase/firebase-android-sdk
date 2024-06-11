@@ -16,102 +16,101 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.common.truth.Truth
-import com.google.firebase.dataconnect.ConnectorConfig
-import com.google.firebase.util.nextAlphanumericString
+import com.google.common.truth.Truth.assertThat
+import com.google.firebase.dataconnect.testutil.containsMatchWithNonAdjacentText
+import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import com.google.firebase.dataconnect.testutil.randomConnectorConfig
+import com.google.firebase.dataconnect.testutil.randomHost
+import com.google.firebase.dataconnect.testutil.randomOperationName
+import com.google.firebase.dataconnect.testutil.randomProjectId
+import com.google.firebase.dataconnect.testutil.randomRequestId
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import io.grpc.Metadata
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import java.util.regex.Pattern
 import kotlin.random.Random
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
-import org.mockito.Mock
-import org.mockito.Mockito
-import org.mockito.MockitoAnnotations
 
 class DataConnectGrpcClientUnitTest {
 
-  @Mock(name = "mockDataConnectAuth", stubOnly = true)
-  private lateinit var mockDataConnectAuth: DataConnectAuth
-  @Mock(name = "mockDataConnectGrpcRPCsFactory", stubOnly = true)
-  private lateinit var mockDataConnectGrpcRPCsFactory: DataConnectGrpcRPCsFactory
-  @Mock(name = "mockDataConnectGrpcRPCs", stubOnly = true)
-  private lateinit var mockDataConnectGrpcRPCs: DataConnectGrpcRPCs
-  @Mock(name = "mockLogger", stubOnly = true) private lateinit var mockLogger: Logger
-  @Captor private lateinit var metadataArgumentCaptor: ArgumentCaptor<Metadata>
+  private val executeQueryMetadataSlot = slot<Metadata>()
+  private val executeMutationMetadataSlot = slot<Metadata>()
 
-  private lateinit var dataConnectGrpcClient: DataConnectGrpcClient
-
-  @Before
-  fun before() {
-    MockitoAnnotations.openMocks(this).close()
-
-    Mockito.`when`(mockDataConnectGrpcRPCsFactory.host).thenReturn(randomHost())
-    Mockito.`when`(mockDataConnectGrpcRPCsFactory.sslEnabled).thenReturn(randomSslEnabled())
-    Mockito.`when`(mockDataConnectGrpcRPCsFactory.newInstance()).thenReturn(mockDataConnectGrpcRPCs)
-
-    runBlocking {
-      Mockito.`when`(mockDataConnectGrpcRPCs.executeQuery(Mockito.any(), Mockito.any()))
-        .thenReturn(ExecuteQueryResponse.getDefaultInstance())
-      Mockito.`when`(mockDataConnectGrpcRPCs.executeMutation(Mockito.any(), Mockito.any()))
-        .thenReturn(ExecuteMutationResponse.getDefaultInstance())
+  private val mockDataConnectGrpcRPCs =
+    mockk<DataConnectGrpcRPCs>(relaxed = true, name = "mockDataConnectGrpcRPCs") {
+      coEvery { executeQuery(any(), capture(executeQueryMetadataSlot)) } answers
+        {
+          ExecuteQueryResponse.getDefaultInstance()
+        }
+      coEvery { executeMutation(any(), capture(executeMutationMetadataSlot)) } answers
+        {
+          ExecuteMutationResponse.getDefaultInstance()
+        }
     }
 
-    dataConnectGrpcClient =
-      DataConnectGrpcClient(
-        projectId = randomProjectId(),
-        connector = randomConnectorConfig(),
-        dataConnectAuth = mockDataConnectAuth,
-        grpcRPCsFactory = mockDataConnectGrpcRPCsFactory,
-        parentLogger = mockLogger,
-      )
-  }
+  private val mockDataConnectGrpcRPCsFactory =
+    mockk<DataConnectGrpcRPCsFactory>(relaxed = true, name = "mockDataConnectGrpcRPCsFactory") {
+      every { host } returns (randomHost("bety6t2y5z"))
+      every { sslEnabled } returns (Random.nextBoolean())
+      every { newInstance() } returns (mockDataConnectGrpcRPCs)
+    }
+
+  private val dataConnectGrpcClient =
+    DataConnectGrpcClient(
+      projectId = randomProjectId("nywm75x5xm"),
+      connector = randomConnectorConfig("w3v2443737"),
+      dataConnectAuth = mockk<DataConnectAuth>(relaxed = true, name = "mockDataConnectAuth"),
+      grpcRPCsFactory = mockDataConnectGrpcRPCsFactory,
+      parentLogger = mockk<Logger>(relaxed = true, name = "mockLogger"),
+    )
 
   @Test
   fun `executeQuery() should include x-goog-api-client grpc header`() = runTest {
     dataConnectGrpcClient.executeQuery(
-      requestId = randomRequestId(),
-      operationName = randomOperationName(),
+      requestId = randomRequestId("dx6ecw35r7"),
+      operationName = randomOperationName("ranwgj8ys6"),
       variables = Struct.getDefaultInstance()
     )
 
-    Mockito.verify(mockDataConnectGrpcRPCs)
-      .executeQuery(Mockito.any(), metadataArgumentCaptor.capture())
-    Truth.assertThat(metadataArgumentCaptor.value.keys().toList().contains("x-goog-api-client"))
+    executeQueryMetadataSlot.captured.verifyGoogApiClientHeader()
   }
 
   @Test
   fun `executeMutation() should include x-goog-api-client grpc header`() = runTest {
     dataConnectGrpcClient.executeMutation(
-      requestId = randomRequestId(),
-      operationName = randomOperationName(),
+      requestId = randomRequestId("wt4dsrhqdw"),
+      operationName = randomOperationName("bhkeqsb4d7"),
       variables = Struct.getDefaultInstance()
     )
 
-    Mockito.verify(mockDataConnectGrpcRPCs)
-      .executeQuery(Mockito.any(), metadataArgumentCaptor.capture())
-    Truth.assertThat(metadataArgumentCaptor.value.keys().toList().contains("x-goog-api-client"))
+    executeMutationMetadataSlot.captured.verifyGoogApiClientHeader()
   }
 
   private companion object {
-    fun randomHost() = "host_" + Random.nextAlphanumericString(length = 6)
-    fun randomSslEnabled() = Random.nextBoolean()
-    fun randomProjectId() = "projectid_" + Random.nextAlphanumericString(length = 6)
-    fun randomConnector() = "connector_" + Random.nextAlphanumericString(length = 6)
-    fun randomLocation() = "location_" + Random.nextAlphanumericString(length = 6)
-    fun randomServiceId() = "serviceid_" + Random.nextAlphanumericString(length = 6)
-    fun randomRequestId() = "requestid_" + Random.nextAlphanumericString(length = 6)
-    fun randomOperationName() = "operation_" + Random.nextAlphanumericString(length = 6)
-    fun randomConnectorConfig() =
-      ConnectorConfig(
-        connector = randomConnector(),
-        location = randomLocation(),
-        serviceId = randomServiceId()
-      )
+    @Suppress("SpellCheckingInspection")
+    private val googApiClientHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
+
+    private const val versionPattern = "[\\w\\d-_.]+"
+
+    fun Metadata.verifyGoogApiClientHeader() {
+      assertThat(keys()).contains(googApiClientHeader.name())
+      val values = getAll(googApiClientHeader)
+      assertThat(values).hasSize(1)
+
+      val value = values!!.single()
+      assertThat(value)
+        .containsMatchWithNonAdjacentText(Pattern.quote("gl-kotlin/") + versionPattern)
+      assertThat(value)
+        .containsMatchWithNonAdjacentText(Pattern.quote("gl-android/") + versionPattern)
+      assertThat(value).containsMatchWithNonAdjacentText(Pattern.quote("fire/") + versionPattern)
+      assertThat(value).containsWithNonAdjacentText("grpc/")
+    }
   }
 }

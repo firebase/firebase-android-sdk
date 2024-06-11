@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import android.os.Build
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.buildStructProto
@@ -38,7 +39,7 @@ import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
   projectId: String,
-  private val connector: ConnectorConfig,
+  connector: ConnectorConfig,
   private val dataConnectAuth: DataConnectAuth,
   grpcRPCsFactory: DataConnectGrpcRPCsFactory,
   parentLogger: Logger,
@@ -59,6 +60,9 @@ internal class DataConnectGrpcClient(
       "locations/${connector.location}" +
       "/services/${connector.serviceId}" +
       "/connectors/${connector.connector}"
+
+  @Suppress("SpellCheckingInspection")
+  private val googRequestParamsHeaderValue = "location=${connector.location}&frontend=data"
 
   private val closedMutex = Mutex()
   private var closed = false
@@ -167,7 +171,8 @@ internal class DataConnectGrpcClient(
   private suspend fun createMetadata(requestId: String): Metadata {
     val token = dataConnectAuth.getAccessToken(requestId)
     return Metadata().also {
-      it.put(googRequestParamsHeader, "location=${connector.location}&frontend=data")
+      it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
+      it.put(googApiClientHeader, googApiClientHeaderValue)
       if (token !== null) {
         it.put(firebaseAuthTokenHeader, token)
       }
@@ -186,6 +191,22 @@ internal class DataConnectGrpcClient(
     @Suppress("SpellCheckingInspection")
     val googRequestParamsHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
+
+    @Suppress("SpellCheckingInspection")
+    val googApiClientHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
+
+    @Suppress("SpellCheckingInspection")
+    val googApiClientHeaderValue: String by
+      lazy(LazyThreadSafetyMode.PUBLICATION) {
+        buildList {
+            add("gl-kotlin/${KotlinVersion.CURRENT}")
+            add("gl-android/${Build.VERSION.SDK_INT}")
+            add("fire/${BuildConfig.VERSION_NAME}")
+            add("grpc/")
+          }
+          .joinToString(" ")
+      }
 
     fun Metadata.toStructProto(): Struct = buildStructProto {
       val keys: List<Metadata.Key<String>> = run {
