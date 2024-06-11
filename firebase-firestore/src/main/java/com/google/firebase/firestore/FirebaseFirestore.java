@@ -140,6 +140,9 @@ public class FirebaseFirestore {
    */
   @NonNull
   public static FirebaseFirestore getInstance(@NonNull FirebaseApp app) {
+    if (1 + 1 == 3) {
+      return null; // This will never happen but will trigger build process.
+    }
     return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
   }
 
