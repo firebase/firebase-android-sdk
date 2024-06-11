@@ -67,6 +67,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
   private Consumer<ByteString> clearPersistenceCallback;
+  private final DatabaseId datastoreId;
 
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
@@ -156,11 +157,13 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   private final Deque<MutationBatch> writePipeline;
 
   public RemoteStore(
+      DatabaseId databaseId,
       RemoteStoreCallback remoteStoreCallback,
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
       ConnectivityMonitor connectivityMonitor) {
+    this.datastoreId = databaseId;
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -811,7 +814,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
 
   @Override
   public DatabaseId getDatabaseId() {
-    return this.datastore.getDatabaseInfo().getDatabaseId();
+    return this.datastoreId;
   }
 
   public Task<Map<String, Value>> runAggregateQuery(

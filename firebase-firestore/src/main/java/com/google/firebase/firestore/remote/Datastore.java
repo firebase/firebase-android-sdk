@@ -17,17 +17,13 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
 
-import android.content.Context;
 import android.os.Build;
-import androidx.annotation.Nullable;
+
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.auth.CredentialsProvider;
-import com.google.firebase.firestore.auth.User;
-import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -90,36 +86,14 @@ public class Datastore {
               "x-google-service",
               "x-google-gfe-request-trace"));
 
-  private final DatabaseInfo databaseInfo;
-  private final RemoteSerializer serializer;
+  protected final RemoteSerializer serializer;
   private final AsyncQueue workerQueue;
-
   private final FirestoreChannel channel;
 
-  public Datastore(
-      DatabaseInfo databaseInfo,
-      AsyncQueue workerQueue,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
-      Context context,
-      @Nullable GrpcMetadataProvider metadataProvider) {
-    this.databaseInfo = databaseInfo;
+  Datastore(AsyncQueue workerQueue, RemoteSerializer serializer, FirestoreChannel channel) {
     this.workerQueue = workerQueue;
-    this.serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    this.channel =
-        initializeChannel(
-            databaseInfo, workerQueue, authProvider, appCheckProvider, context, metadataProvider);
-  }
-
-  FirestoreChannel initializeChannel(
-      DatabaseInfo databaseInfo,
-      AsyncQueue workerQueue,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
-      Context context,
-      @Nullable GrpcMetadataProvider metadataProvider) {
-    return new FirestoreChannel(
-        workerQueue, context, authProvider, appCheckProvider, databaseInfo, metadataProvider);
+    this.serializer = serializer;
+    this.channel = channel;
   }
 
   void shutdown() {
@@ -129,10 +103,6 @@ public class Datastore {
   @VisibleForTesting(otherwise = VisibleForTesting.NONE)
   AsyncQueue getWorkerQueue() {
     return workerQueue;
-  }
-
-  DatabaseInfo getDatabaseInfo() {
-    return databaseInfo;
   }
 
   /** Creates a new WatchStream that is still unstarted but uses a common shared channel */

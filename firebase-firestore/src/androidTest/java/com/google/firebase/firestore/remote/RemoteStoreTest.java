@@ -20,6 +20,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
@@ -40,14 +41,16 @@ public class RemoteStoreTest {
   @Test
   public void testRemoteStoreStreamStopsWhenNetworkUnreachable() {
     AsyncQueue testQueue = new AsyncQueue();
-    Datastore datastore =
-        new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(),
-            testQueue,
-            null,
-            null,
-            ApplicationProvider.getApplicationContext(),
-            null);
+    DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
+    RemoteSerializer serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
+    FirestoreChannel channel = new FirestoreChannel(
+        testQueue,
+        ApplicationProvider.getApplicationContext(),
+        null,
+        null,
+        databaseInfo,
+        null);
+    Datastore datastore = new Datastore(testQueue, serializer, channel);
     Semaphore networkChangeSemaphore = new Semaphore(0);
     RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {
@@ -80,7 +83,7 @@ public class RemoteStoreTest {
     persistence.start();
     LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
     RemoteStore remoteStore =
-        new RemoteStore(callback, localStore, datastore, testQueue, connectivityMonitor);
+        new RemoteStore(databaseInfo.getDatabaseId(), callback, localStore, datastore, testQueue, connectivityMonitor);
 
     waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     drain(testQueue);

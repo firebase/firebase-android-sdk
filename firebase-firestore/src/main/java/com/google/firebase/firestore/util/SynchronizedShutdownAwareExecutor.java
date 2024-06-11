@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
  * </ol>
  */
 class SynchronizedShutdownAwareExecutor implements Executor {
+    public static final String ASYNC_QUEUE_IS_SHUTDOWN = "AsyncQueue is shutdown";
     /**
      * The single threaded executor that is backing this Executor. This is also the executor used
      * when some tasks explicitly request to run after shutdown has been initiated.
@@ -115,7 +116,7 @@ class SynchronizedShutdownAwareExecutor implements Executor {
                                 Thread.currentThread().interrupt();
                             }
                         }
-                        if (t != null) {
+                        if (t != null && !ASYNC_QUEUE_IS_SHUTDOWN.equals(t.getMessage())) {
                             shutdownNow();
                             AsyncQueue.halt(t);
                         }
@@ -134,7 +135,7 @@ class SynchronizedShutdownAwareExecutor implements Executor {
 
     synchronized void verifyNotShutdown() {
         if (shutdownTask != null) {
-            throw new RejectedExecutionException("AsyncQueue is shutdown");
+            throw new RejectedExecutionException(ASYNC_QUEUE_IS_SHUTDOWN);
         }
     }
 
@@ -188,7 +189,6 @@ class SynchronizedShutdownAwareExecutor implements Executor {
                             completionSource.setResult(task.call());
                         } catch (Exception e) {
                             completionSource.setException(e);
-                            throw new RuntimeException(e);
                         }
                     });
         } catch (RejectedExecutionException e) {

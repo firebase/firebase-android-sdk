@@ -1,14 +1,12 @@
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
-
 import androidx.annotation.GuardedBy;
 import androidx.core.util.Consumer;
 
 import com.google.android.gms.tasks.Task;
-import com.google.common.base.Function;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Function;
 
 import java.util.concurrent.Executor;
 

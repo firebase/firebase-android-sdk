@@ -237,31 +237,14 @@ public class MockDatastore extends Datastore {
 
   private MockWatchStream watchStream;
   private MockWriteStream writeStream;
-  private final RemoteSerializer serializer;
-
   private int writeStreamRequestCount;
   private int watchStreamRequestCount;
 
-  public MockDatastore(DatabaseInfo databaseInfo, AsyncQueue workerQueue, Context context) {
+  public MockDatastore(DatabaseInfo databaseInfo, AsyncQueue workerQueue) {
     super(
-        databaseInfo,
         workerQueue,
-        new EmptyCredentialsProvider(),
-        new EmptyAppCheckTokenProvider(),
-        context,
+        new RemoteSerializer(databaseInfo.getDatabaseId()),
         null);
-    this.serializer = new RemoteSerializer(getDatabaseInfo().getDatabaseId());
-  }
-
-  @Override
-  FirestoreChannel initializeChannel(
-      DatabaseInfo databaseInfo,
-      AsyncQueue workerQueue,
-      CredentialsProvider<User> authCredentialsProvider,
-      CredentialsProvider<String> appCheckTokenProvider,
-      Context context,
-      @Nullable GrpcMetadataProvider metadataProvider) {
-    return null;
   }
 
   @Override

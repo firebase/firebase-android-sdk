@@ -42,8 +42,6 @@ import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
-import com.google.firebase.firestore.core.MemoryComponentProvider;
-import com.google.firebase.firestore.core.SQLiteComponentProvider;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -111,8 +109,11 @@ public class FirebaseFirestore {
   private final InstanceRegistry instanceRegistry;
   @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
-  private final FirestoreClientProvider clientProvider;
+  final FirestoreClientProvider clientProvider;
   private final GrpcMetadataProvider metadataProvider;
+
+  @VisibleForTesting
+  Function<Executor, Task<Void>> clearPersistenceMethod;
 
   @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
 
@@ -215,9 +216,7 @@ public class FirebaseFirestore {
             persistenceKey,
             () -> new FirebaseAuthCredentialsProvider(deferredAuthProvider),
             () -> new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider),
-            settings -> settings.isPersistenceEnabled()
-                    ? new SQLiteComponentProvider()
-                    : new MemoryComponentProvider(),
+            ComponentProvider::defaultFactory,
             app,
             instanceRegistry,
             metadataProvider);
@@ -248,6 +247,21 @@ public class FirebaseFirestore {
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
     this.metadataProvider = metadataProvider;
+
+    this.settings = new FirebaseFirestoreSettings.Builder().build();
+
+    this.clearPersistenceMethod = executor -> {
+      final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+      executor.execute(() -> {
+        try {
+          SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+          source.setResult(null);
+        } catch (FirebaseFirestoreException e) {
+          source.setException(e);
+        }
+      });
+      return source.getTask();
+    };
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -646,11 +660,6 @@ public class FirebaseFirestore {
     return clientProvider.call(FirestoreClient::waitForPendingWrites);
   }
 
-  @VisibleForTesting
-  AsyncQueue getAsyncQueue() {
-    return clientProvider.getAsyncQueue();
-  }
-
   /**
    * Re-enables network usage for this instance after a prior call to {@link #disableNetwork()}.
    *
@@ -716,18 +725,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> clearPersistence() {
-    return clientProvider.executeWhileShutdown(executor -> {
-      final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-      executor.execute(() -> {
-        try {
-          SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
-          source.setResult(null);
-        } catch (FirebaseFirestoreException e) {
-          source.setException(e);
-        }
-      });
-      return source.getTask();
-    });
+    return clientProvider.executeWhileShutdown(clearPersistenceMethod);
   }
 
   /**
@@ -874,7 +872,7 @@ public class FirebaseFirestore {
     return clientProvider.call(client -> client.addSnapshotsInSyncListener(asyncListener, activity));
   }
 
-  <T> T callClient(com.google.common.base.Function<FirestoreClient, T> call) {
+  <T> T callClient(Function<FirestoreClient, T> call) {
     return clientProvider.call(call);
   }
 

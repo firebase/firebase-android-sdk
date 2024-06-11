@@ -26,9 +26,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
@@ -120,14 +122,7 @@ public class StreamTest {
   /** Creates a WriteStream and gets it in a state that accepts mutations. */
   private WriteStream createAndOpenWriteStream(
       AsyncQueue testQueue, StreamStatusCallback callback) {
-    Datastore datastore =
-        new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(),
-            testQueue,
-            new EmptyCredentialsProvider(),
-            new EmptyAppCheckTokenProvider(),
-            ApplicationProvider.getApplicationContext(),
-            null);
+    Datastore datastore = createTestDatastore(testQueue, null);
     final WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);
     return writeStream;
@@ -142,18 +137,25 @@ public class StreamTest {
     waitFor(callback.handshakeSemaphore);
   }
 
+  @NonNull
+  private static Datastore createTestDatastore(AsyncQueue testQueue, GrpcMetadataProvider metadataProvider) {
+    DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
+    RemoteSerializer remoteSerializer = new RemoteSerializer(databaseInfo.getDatabaseId());
+    FirestoreChannel firestoreChannel = new FirestoreChannel(
+            testQueue,
+            ApplicationProvider.getApplicationContext(),
+            new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
+            databaseInfo,
+            metadataProvider);
+    return new Datastore(testQueue, remoteSerializer, firestoreChannel);
+  }
+
   @Test
   public void testWatchStreamStopBeforeHandshake() throws Exception {
     AsyncQueue testQueue = new AsyncQueue();
     GrpcMetadataProvider mockGrpcProvider = mock(GrpcMetadataProvider.class);
-    Datastore datastore =
-        new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(),
-            testQueue,
-            new EmptyCredentialsProvider(),
-            new EmptyAppCheckTokenProvider(),
-            ApplicationProvider.getApplicationContext(),
-            mockGrpcProvider);
+    Datastore datastore = createTestDatastore(testQueue, mockGrpcProvider);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
     final WatchStream watchStream = datastore.createWatchStream(streamCallback);
 
@@ -169,14 +171,7 @@ public class StreamTest {
   @Test
   public void testWriteStreamStopAfterHandshake() throws Exception {
     AsyncQueue testQueue = new AsyncQueue();
-    Datastore datastore =
-        new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(),
-            testQueue,
-            new EmptyCredentialsProvider(),
-            new EmptyAppCheckTokenProvider(),
-            ApplicationProvider.getApplicationContext(),
-            null);
+    Datastore datastore = createTestDatastore(testQueue, null);
     final WriteStream[] writeStreamWrapper = new WriteStream[1];
     StreamStatusCallback streamCallback =
         new StreamStatusCallback() {
@@ -217,14 +212,7 @@ public class StreamTest {
   @Test
   public void testWriteStreamStopPartial() throws Exception {
     AsyncQueue testQueue = new AsyncQueue();
-    Datastore datastore =
-        new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(),
-            testQueue,
-            new EmptyCredentialsProvider(),
-            new EmptyAppCheckTokenProvider(),
-            ApplicationProvider.getApplicationContext(),
-            null);
+    Datastore datastore = createTestDatastore(testQueue, null);
     StreamStatusCallback streamCallback = new StreamStatusCallback() {};
     final WriteStream writeStream = datastore.createWriteStream(streamCallback);
 
@@ -298,14 +286,7 @@ public class StreamTest {
   public void testStreamRefreshesTokenUponExpiration() throws Exception {
     AsyncQueue testQueue = new AsyncQueue();
     MockCredentialsProvider mockCredentialsProvider = new MockCredentialsProvider();
-    Datastore datastore =
-        new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(),
-            testQueue,
-            mockCredentialsProvider,
-            new EmptyAppCheckTokenProvider(),
-            ApplicationProvider.getApplicationContext(),
-            null);
+    Datastore datastore = createTestDatastore(testQueue, null);
     StreamStatusCallback callback = new StreamStatusCallback();
     WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);
@@ -328,14 +309,7 @@ public class StreamTest {
   public void testTokenIsNotInvalidatedOnceStreamIsHealthy() throws Exception {
     AsyncQueue testQueue = new AsyncQueue();
     MockCredentialsProvider mockCredentialsProvider = new MockCredentialsProvider();
-    Datastore datastore =
-        new Datastore(
-            IntegrationTestUtil.testEnvDatabaseInfo(),
-            testQueue,
-            mockCredentialsProvider,
-            new EmptyAppCheckTokenProvider(),
-            ApplicationProvider.getApplicationContext(),
-            null);
+    Datastore datastore = createTestDatastore(testQueue, null);
     StreamStatusCallback callback = new StreamStatusCallback();
     WriteStream writeStream = datastore.createWriteStream(callback);
     waitForWriteStreamOpen(testQueue, writeStream, callback);
