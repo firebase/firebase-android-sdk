@@ -16,23 +16,36 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.getInstance
+import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.fail
-import com.google.firebase.dataconnect.testutil.randomAlphanumericString
+import com.google.firebase.dataconnect.testutil.randomDataConnectSettings
+import io.mockk.mockk
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import org.junit.Rule
 import org.junit.Test
-import org.mockito.Mockito.mock
+import org.junit.runner.RunWith
 
-class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase() {
+@RunWith(AndroidJUnit4::class)
+class DemoConnectorCompanionUnitTest {
+
+  @get:Rule
+  val firebaseAppFactory =
+    FirebaseAppUnitTestingRule(
+      appNameKey = "ex2bk4bks2",
+      applicationIdKey = "2f2c3gdydn",
+      projectIdKey = "kzbqx23hhn"
+    )
 
   @Test
   fun instance_ShouldBeAssociatedWithTheDataConnectInstanceAssociatedWithTheDefaultApp() {
     val connector = DemoConnector.instance
-    cleanupAfterTest(connector)
 
     val defaultDataConnect = FirebaseDataConnect.getInstance(DemoConnector.config)
     assertThat(connector.dataConnect).isSameInstanceAs(defaultDataConnect)
@@ -41,9 +54,7 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun instance_ShouldAlwaysReturnTheSameInstance() {
     val connector1 = DemoConnector.instance
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.instance
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isSameInstanceAs(connector2)
   }
@@ -51,7 +62,6 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun instance_ShouldUseTheDefaultSettings() {
     val connector = DemoConnector.instance
-    cleanupAfterTest(connector)
 
     assertThat(connector.dataConnect.settings).isEqualTo(DataConnectSettings())
   }
@@ -59,10 +69,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun instance_ShouldReturnANewInstanceAfterTheUnderlyingDataConnectInstanceIsClosed() {
     val connector1 = DemoConnector.instance
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.instance
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isNotSameInstanceAs(connector2)
   }
@@ -70,10 +78,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun instance_ShouldReturnANewInstanceWithTheNewDataConnectAfterTheUnderlyingDataConnectInstanceIsClosed() {
     val connector1 = DemoConnector.instance
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.instance
-    cleanupAfterTest(connector2)
 
     assertThat(connector1.dataConnect).isNotSameInstanceAs(connector2.dataConnect)
   }
@@ -86,7 +92,6 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_NoArgs_ShouldReturnSameObjectAsInstanceProperty() {
     val connector = DemoConnector.getInstance()
-    cleanupAfterTest(connector)
 
     assertThat(connector).isSameInstanceAs(DemoConnector.instance)
   }
@@ -94,9 +99,7 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_NoArgs_ShouldAlwaysReturnTheSameInstance() {
     val connector1 = DemoConnector.getInstance()
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.getInstance()
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isSameInstanceAs(connector2)
   }
@@ -104,10 +107,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_NoArgs_ShouldReturnSameObjectAsInstancePropertyAfterTheUnderlyingDataConnectInstanceIsClosed() {
     val connector1 = DemoConnector.getInstance()
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.getInstance()
-    cleanupAfterTest(connector2)
 
     assertThat(connector2).isSameInstanceAs(DemoConnector.instance)
   }
@@ -119,9 +120,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
 
   @Test
   fun getInstance_Settings_ShouldBeAssociatedWithTheDataConnectInstanceAssociatedWithTheDefaultApp() {
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("ma6w24rxs4")
     val connector = DemoConnector.getInstance(settings)
-    cleanupAfterTest(connector)
 
     val defaultDataConnect = FirebaseDataConnect.getInstance(DemoConnector.config, settings)
     assertThat(connector.dataConnect).isSameInstanceAs(defaultDataConnect)
@@ -129,46 +129,39 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
 
   @Test
   fun getInstance_Settings_ShouldAlwaysReturnTheSameInstance() {
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("bpn9zdtrz6")
     val connector1 = DemoConnector.getInstance(settings)
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.getInstance(settings)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isSameInstanceAs(connector2)
   }
 
   @Test
   fun getInstance_Settings_ShouldUseTheSpecifiedSettings() {
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("gcdzkbxezs")
     val connector = DemoConnector.getInstance(settings)
-    cleanupAfterTest(connector)
 
     assertThat(connector.dataConnect.settings).isSameInstanceAs(settings)
   }
 
   @Test
   fun getInstance_Settings_ShouldReturnANewInstanceAfterTheUnderlyingDataConnectInstanceIsClosed() {
-    val settings1 = randomDataConnectSettings()
-    val settings2 = randomDataConnectSettings()
+    val settings1 = randomDataConnectSettings("th7rvb7pwz")
+    val settings2 = randomDataConnectSettings("cdhhcnejyz")
     val connector1 = DemoConnector.getInstance(settings1)
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.getInstance(settings2)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isNotSameInstanceAs(connector2)
   }
 
   @Test
   fun getInstance_Settings_ShouldReturnANewInstanceWithTheNewDataConnectAfterTheUnderlyingDataConnectInstanceIsClosed() {
-    val settings1 = randomDataConnectSettings()
-    val settings2 = randomDataConnectSettings()
+    val settings1 = randomDataConnectSettings("marmvzw4hy")
+    val settings2 = randomDataConnectSettings("da683rksvr")
     val connector1 = DemoConnector.getInstance(settings1)
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.getInstance(settings2)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1.dataConnect).isNotSameInstanceAs(connector2.dataConnect)
     assertThat(connector1.dataConnect.settings).isEqualTo(settings1)
@@ -177,7 +170,7 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
 
   @Test
   fun getInstance_Settings_CanBeCalledConcurrently() {
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("4s7g3xcbrc")
     getInstanceConcurrentTest { DemoConnector.getInstance(settings) }
   }
 
@@ -185,7 +178,6 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   fun getInstance_FirebaseApp_ShouldBeAssociatedWithTheDataConnectInstanceAssociatedWithTheSpecifiedApp() {
     val firebaseApp = firebaseAppFactory.newInstance()
     val connector = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector)
 
     val expectedDataConnect = FirebaseDataConnect.getInstance(firebaseApp, DemoConnector.config)
     assertThat(connector.dataConnect).isSameInstanceAs(expectedDataConnect)
@@ -195,9 +187,7 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   fun getInstance_FirebaseApp_ShouldAlwaysReturnTheSameInstance() {
     val firebaseApp = firebaseAppFactory.newInstance()
     val connector1 = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isSameInstanceAs(connector2)
   }
@@ -206,7 +196,6 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   fun getInstance_FirebaseApp_ShouldUseTheDefaultSettings() {
     val firebaseApp = firebaseAppFactory.newInstance()
     val connector = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector)
 
     assertThat(connector.dataConnect.settings).isEqualTo(DataConnectSettings())
   }
@@ -215,10 +204,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   fun getInstance_FirebaseApp_ShouldReturnANewInstanceAfterTheUnderlyingDataConnectInstanceIsClosed() {
     val firebaseApp = firebaseAppFactory.newInstance()
     val connector1 = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isNotSameInstanceAs(connector2)
   }
@@ -227,10 +214,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   fun getInstance_FirebaseApp_ShouldReturnANewInstanceWithTheNewDataConnectAfterTheUnderlyingDataConnectInstanceIsClosed() {
     val firebaseApp = firebaseAppFactory.newInstance()
     val connector1 = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.getInstance(firebaseApp)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1.dataConnect).isNotSameInstanceAs(connector2.dataConnect)
   }
@@ -244,9 +229,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_FirebaseApp_Settings_ShouldBeAssociatedWithTheDataConnectInstanceAssociatedWithTheSpecifiedApp() {
     val firebaseApp = firebaseAppFactory.newInstance()
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("jskhwf9eex")
     val connector = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector)
 
     val expectedDataConnect =
       FirebaseDataConnect.getInstance(firebaseApp, DemoConnector.config, settings)
@@ -256,11 +240,9 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_FirebaseApp_Settings_ShouldAlwaysReturnTheSameInstance() {
     val firebaseApp = firebaseAppFactory.newInstance()
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("6teq95kn7p")
     val connector1 = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isSameInstanceAs(connector2)
   }
@@ -268,9 +250,8 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_FirebaseApp_Settings_ShouldUseTheSpecifiedSettings() {
     val firebaseApp = firebaseAppFactory.newInstance()
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("t5rz7675kf")
     val connector = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector)
 
     assertThat(connector.dataConnect.settings).isEqualTo(settings)
   }
@@ -278,12 +259,10 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_FirebaseApp_Settings_ShouldReturnANewInstanceAfterTheUnderlyingDataConnectInstanceIsClosed() {
     val firebaseApp = firebaseAppFactory.newInstance()
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("gz5xbdkpje")
     val connector1 = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isNotSameInstanceAs(connector2)
   }
@@ -291,56 +270,47 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun getInstance_FirebaseApp_Settings_ShouldReturnANewInstanceWithTheNewDataConnectAfterTheUnderlyingDataConnectInstanceIsClosed() {
     val firebaseApp = firebaseAppFactory.newInstance()
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("svydpf2csv")
     val connector1 = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector1)
     connector1.dataConnect.close()
     val connector2 = DemoConnector.getInstance(firebaseApp, settings)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1.dataConnect).isNotSameInstanceAs(connector2.dataConnect)
   }
 
   @Test
   fun getInstance_FirebaseDataConnect_ShouldBeAssociatedWithTheDataConnectInstanceAssociatedWithTheSpecifiedApp() {
-    val dataConnect = mock(FirebaseDataConnect::class.java)
+    val dataConnect = mockk<FirebaseDataConnect>()
     val connector = DemoConnector.getInstance(dataConnect)
-    cleanupAfterTest(connector)
 
     assertThat(connector.dataConnect).isSameInstanceAs(dataConnect)
   }
 
   @Test
   fun getInstance_FirebaseDataConnect_ShouldAlwaysReturnTheSameInstance() {
-    val dataConnect = mock(FirebaseDataConnect::class.java)
+    val dataConnect = mockk<FirebaseDataConnect>()
     val connector1 = DemoConnector.getInstance(dataConnect)
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.getInstance(dataConnect)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isSameInstanceAs(connector2)
   }
 
   @Test
   fun getInstance_FirebaseDataConnect_ShouldReturnADistinctConnectorForADistinctDataConnect() {
-    val dataConnect1 = mock(FirebaseDataConnect::class.java)
-    val dataConnect2 = mock(FirebaseDataConnect::class.java)
+    val dataConnect1 = mockk<FirebaseDataConnect>()
+    val dataConnect2 = mockk<FirebaseDataConnect>()
     val connector1 = DemoConnector.getInstance(dataConnect1)
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.getInstance(dataConnect2)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1).isNotSameInstanceAs(connector2)
   }
 
   @Test
   fun getInstance_FirebaseDataConnect_ShouldReturnADistinctConnectorWithTheDistinctDataConnect() {
-    val dataConnect1 = mock(FirebaseDataConnect::class.java)
-    val dataConnect2 = mock(FirebaseDataConnect::class.java)
+    val dataConnect1 = mockk<FirebaseDataConnect>()
+    val dataConnect2 = mockk<FirebaseDataConnect>()
     val connector1 = DemoConnector.getInstance(dataConnect1)
-    cleanupAfterTest(connector1)
     val connector2 = DemoConnector.getInstance(dataConnect2)
-    cleanupAfterTest(connector2)
 
     assertThat(connector1.dataConnect).isSameInstanceAs(dataConnect1)
     assertThat(connector2.dataConnect).isSameInstanceAs(dataConnect2)
@@ -348,14 +318,14 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
 
   @Test
   fun getInstance_FirebaseDataConnect_CanBeAccessedConcurrently() {
-    val dataConnect = mock(FirebaseDataConnect::class.java)
+    val dataConnect = FirebaseDataConnect.getInstance(DemoConnector.config)
     getInstanceConcurrentTest { DemoConnector.getInstance(dataConnect) }
   }
 
   @Test
   fun getInstance_FirebaseApp_Settings_CanBeAccessedConcurrently() {
     val firebaseApp = firebaseAppFactory.newInstance()
-    val settings = randomDataConnectSettings()
+    val settings = randomDataConnectSettings("rwvr8jp4cp")
     getInstanceConcurrentTest { DemoConnector.getInstance(firebaseApp, settings) }
   }
 
@@ -368,7 +338,6 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
         executor
           .submit {
             val connector = block()
-            cleanupAfterTest(connector)
             val size =
               synchronized(connectors) {
                 connectors.add(connector)
@@ -398,19 +367,4 @@ class DemoConnectorCompanionIntegrationTest : DemoConnectorIntegrationTestBase()
       }
     }
   }
-
-  /**
-   * Ensures that the [FirebaseDataConnect] instance encapsulated by the given [DemoConnector] is
-   * closed when this test completes. This method should be called immediately after all calls of
-   * [com.google.firebase.dataconnect.connectors.demo.getInstance] and
-   * [com.google.firebase.dataconnect.connectors.demo.instance] to ensure that the instance doesn't
-   * leak into other tests.
-   */
-  private fun cleanupAfterTest(connector: DemoConnector) {
-    dataConnectFactory.adoptInstance(connector.dataConnect)
-  }
-
-  private fun randomHost() = randomAlphanumericString(prefix = "Host")
-
-  private fun randomDataConnectSettings() = DataConnectSettings(host = randomHost())
 }

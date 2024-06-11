@@ -317,7 +317,7 @@ public fun FirebaseDataConnect.Companion.getInstance(
   config: ConnectorConfig,
   settings: DataConnectSettings = DataConnectSettings(),
 ): FirebaseDataConnect =
-  app.get(FirebaseDataConnectFactory::class.java).run { get(config = config, settings = settings) }
+  app.get(FirebaseDataConnectFactory::class.java).get(config = config, settings = settings)
 
 /**
  * Returns the instance of [FirebaseDataConnect] associated with the default [FirebaseApp] and the

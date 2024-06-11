@@ -30,18 +30,14 @@ abstract class FactoryTestRule<T, P> : ExternalResource() {
   private val instances = CopyOnWriteArrayList<T>()
 
   fun newInstance(params: P? = null): T {
-    if (!active.get()) {
-      throw IllegalStateException("newInstance() may only be called during the test's execution")
-    }
+    check(active.get()) { "newInstance() may only be called during the test's execution" }
     val instance = createInstance(params)
     instances.add(instance)
     return instance
   }
 
   fun adoptInstance(instance: T) {
-    if (!active.get()) {
-      throw IllegalStateException("adoptInstance() may only be called during the test's execution")
-    }
+    check(active.get()) { "adoptInstance() may only be called during the test's execution" }
     instances.add(instance)
   }
 

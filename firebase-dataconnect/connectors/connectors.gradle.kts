@@ -44,6 +44,21 @@ android {
     }
   }
   kotlinOptions { jvmTarget = "1.8" }
+
+  @Suppress("UnstableApiUsage")
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      isReturnDefaultValues = true
+    }
+  }
+
+  packaging {
+    resources {
+      excludes.add("META-INF/LICENSE.md")
+      excludes.add("META-INF/LICENSE-notice.md")
+    }
+  }
 }
 
 dependencies {
@@ -52,8 +67,9 @@ dependencies {
   api(libs.kotlinx.serialization.core)
 
   testImplementation(project(":firebase-dataconnect:testutil"))
+  testImplementation(libs.androidx.test.junit)
   testImplementation(libs.kotlin.coroutines.test)
-  testImplementation(libs.mockito.core)
+  testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
 
@@ -66,7 +82,6 @@ dependencies {
   androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.kotlin.coroutines.test)
-  androidTestImplementation(libs.mockito.android)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
   androidTestImplementation(libs.turbine)

@@ -55,7 +55,20 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
 
-  testOptions.unitTests.isReturnDefaultValues = true
+  @Suppress("UnstableApiUsage")
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      isReturnDefaultValues = true
+    }
+  }
+
+  packaging {
+    resources {
+      excludes.add("META-INF/LICENSE.md")
+      excludes.add("META-INF/LICENSE-notice.md")
+    }
+  }
 }
 
 protobuf {
@@ -122,7 +135,7 @@ dependencies {
 
   testCompileOnly(libs.protobuf.java)
   testImplementation(project(":firebase-dataconnect:testutil"))
-  testImplementation(libs.mockito.core)
+  testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
   testImplementation(libs.truth.liteproto.extension)

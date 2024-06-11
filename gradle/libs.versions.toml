@@ -68,9 +68,9 @@ androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-
 androidx-test-runner = { module = "androidx.test:runner", version = "1.5.2" }
 junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-mockito-android = { module = "org.mockito:mockito-android", version = "5.2.0" }
 mockito-core = { module = "org.mockito:mockito-core", version = "5.2.0" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
+mockk = { module = "io.mockk:mockk", version = "1.13.11" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 truth-liteproto-extension = { module = "com.google.truth.extensions:truth-liteproto-extension", version.ref = "truth" }
