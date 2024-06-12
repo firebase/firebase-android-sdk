@@ -1,2 +1,0 @@
-
-ocom.google.cloud.datastore.backend.integration.firestorev1.FirestoreV1QueryTest.namespace_returnSingleNamespace

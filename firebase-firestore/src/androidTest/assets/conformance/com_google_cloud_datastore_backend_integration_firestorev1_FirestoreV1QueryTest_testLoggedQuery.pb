@@ -1,2 +1,0 @@
-
-_com.google.cloud.datastore.backend.integration.firestorev1.FirestoreV1QueryTest.testLoggedQuery

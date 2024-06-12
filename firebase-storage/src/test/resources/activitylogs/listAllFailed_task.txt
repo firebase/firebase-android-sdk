@@ -1,4 +1,0 @@
-
-listAll:
-  onComplete:Success=false
-done.

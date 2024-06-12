@@ -1,6 +1,0 @@
-
-doInBackground:
-  exceptionMessage:<none>
-  bytesDownloaded:0
-  totalBytes:1076408
-done.

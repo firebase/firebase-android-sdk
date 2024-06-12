@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <item name="dialogHeightPct" format="float" type="dimen">0.80</item>
-    <item name="dialogWidthPct" format="float" type="dimen">0.75</item>
-</resources>
