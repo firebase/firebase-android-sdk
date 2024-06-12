@@ -88,7 +88,7 @@ internal class FirebaseDataConnectImpl(
   private val dataConnectAuth =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      DataConnectAuth(deferredAuthProvider, blockingExecutor, logger)
+      DataConnectAuthImpl(deferredAuthProvider, blockingExecutor, logger)
     }
 
   override val lazyGrpcClient =

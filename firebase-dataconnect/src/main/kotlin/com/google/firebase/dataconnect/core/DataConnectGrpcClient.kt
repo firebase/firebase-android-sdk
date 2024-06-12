@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.core.DataConnectAuth.Companion.toScrubbedAccessToken
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.firebase.dataconnect.util.decodeFromStruct

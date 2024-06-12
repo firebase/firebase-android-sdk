@@ -22,17 +22,23 @@ import com.google.firebase.dataconnect.util.nextSequenceNumber
 import com.google.firebase.internal.InternalTokenResult
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
 import java.util.concurrent.Executor
-import kotlinx.coroutines.*
-import kotlinx.coroutines.sync.*
-import kotlinx.coroutines.tasks.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.tasks.await
 
-internal class DataConnectAuth(
+internal interface DataConnectAuth {
+
+  suspend fun getAccessToken(requestId: String): String?
+}
+
+internal class DataConnectAuthImpl(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
   blockingExecutor: Executor,
   parentLogger: Logger,
-) {
+) : DataConnectAuth {
   private val logger =
-    Logger("DataConnectAuth").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+    Logger("DataConnectAuthImpl").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
   private val idTokenListener = IdTokenListener { runBlocking { onIdTokenChanged(it) } }
 
@@ -60,7 +66,7 @@ internal class DataConnectAuth(
     }
   }
 
-  suspend fun getAccessToken(requestId: String): String? {
+  override suspend fun getAccessToken(requestId: String): String? {
     while (true) {
       val (capturedAuthProvider, capturedTokenSequenceNumber) =
         mutex.withLock {
@@ -147,42 +153,27 @@ internal class DataConnectAuth(
     }
     mutex.withLock { tokenSequenceNumber = nextSequenceNumber() }
   }
-
-  companion object {
-
-    /**
-     * Returns a new string that is equal to this string but only includes a chunk from the
-     * beginning and the end.
-     *
-     * This method assumes that the contents of this string are an access token. The returned string
-     * will have enough information to reason about the access token in logs without giving its
-     * value away.
-     */
-    fun String.toScrubbedAccessToken(): String =
-      if (length < 30) {
-        "<redacted>"
-      } else {
-        buildString {
-          append(this@toScrubbedAccessToken, 0, 6)
-          append("<redacted>")
-          append(
-            this@toScrubbedAccessToken,
-            this@toScrubbedAccessToken.length - 6,
-            this@toScrubbedAccessToken.length
-          )
-        }
-      }
-
-    /**
-     * Returns a new string that is equal to this string but with all occurrences of the given
-     * access token with replaced with only the first and last 6 characters. This allows logging the
-     * access token without completely giving it away.
-     */
-    fun String.withScrubbedAccessToken(accessToken: String): String =
-      if (accessToken.isEmpty()) {
-        this
-      } else {
-        replace(accessToken, accessToken.toScrubbedAccessToken())
-      }
-  }
 }
+
+/**
+ * Returns a new string that is equal to this string but only includes a chunk from the beginning
+ * and the end.
+ *
+ * This method assumes that the contents of this string are an access token. The returned string
+ * will have enough information to reason about the access token in logs without giving its value
+ * away.
+ */
+internal fun String.toScrubbedAccessToken(): String =
+  if (length < 30) {
+    "<redacted>"
+  } else {
+    buildString {
+      append(this@toScrubbedAccessToken, 0, 6)
+      append("<redacted>")
+      append(
+        this@toScrubbedAccessToken,
+        this@toScrubbedAccessToken.length - 6,
+        this@toScrubbedAccessToken.length
+      )
+    }
+  }
