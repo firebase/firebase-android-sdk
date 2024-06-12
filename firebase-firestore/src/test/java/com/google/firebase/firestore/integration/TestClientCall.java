@@ -21,23 +21,20 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
 
 /**
- * Construct a ClientCall test harness.
+ * ClientCall test harness.
  */
 public class TestClientCall<ReqT, RespT> extends ClientCall<ReqT, RespT> {
 
     public Metadata headers;
     public Listener<RespT> listener;
-    private int sentIndex = -1;
-    private List<TaskCompletionSource<ReqT>> requests = new ArrayList<>();
-    private TaskCompletionSource<TestClientCall<ReqT, RespT>> startTask = new TaskCompletionSource<>();
-    private TaskCompletionSource<Pair<String, Throwable>> cancelTask = new TaskCompletionSource<>();
+
+    private final AsyncTaskAccumulator<ReqT> requests;
+    private final TaskCompletionSource<TestClientCall<ReqT, RespT>> startTask;
+    private final TaskCompletionSource<Pair<String, Throwable>> cancelTask = new TaskCompletionSource<>();
 
     /**
      * Construct a ClientCall test harness.
@@ -49,6 +46,7 @@ public class TestClientCall<ReqT, RespT> extends ClientCall<ReqT, RespT> {
      */
     public TestClientCall(TaskCompletionSource<TestClientCall<ReqT, RespT>> startTask) {
         this.startTask = startTask;
+        this.requests = new AsyncTaskAccumulator<>();
     }
 
     @Override
@@ -73,25 +71,10 @@ public class TestClientCall<ReqT, RespT> extends ClientCall<ReqT, RespT> {
 
     @Override
     public void sendMessage(ReqT message) {
-        final TaskCompletionSource<ReqT> sourceTask;
-        synchronized (requests) {
-            sentIndex++;
-            if (requests.size() > sentIndex) {
-                sourceTask = requests.get(sentIndex);
-            } else {
-                sourceTask = new TaskCompletionSource<>();
-                requests.add(sourceTask);
-            }
-        }
-        sourceTask.setResult(message);
+        requests.onResult(message);
     }
 
     public Task<ReqT> getRequest(int index) {
-        synchronized (requests) {
-            while (requests.size() <= index) {
-                requests.add(new TaskCompletionSource<>());
-            }
-            return requests.get(index).getTask();
-        }
+        return requests.get(index);
     }
 }

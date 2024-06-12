@@ -21,6 +21,8 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -51,7 +53,6 @@ public abstract class ComponentProvider {
   private EventManager eventManager;
   @Nullable private IndexBackfiller indexBackfiller;
   @Nullable private Scheduler garbageCollectionScheduler;
-  private AsyncQueue asyncQueue;
 
   @NonNull
   public static ComponentProvider defaultFactory(@NonNull FirebaseFirestoreSettings settings) {
@@ -98,13 +99,10 @@ public abstract class ComponentProvider {
     }
   }
 
+  @VisibleForTesting
   public void setRemoteProvider(RemoteComponenetProvider remoteProvider) {
     hardAssert(remoteStore == null, "cannot set remoteProvider after initialize");
     this.remoteProvider = remoteProvider;
-  }
-
-  public AsyncQueue getAsyncQueue() {
-    return hardAssertNonNull(asyncQueue, "asyncQueue not initialized yet");
   }
 
   public RemoteSerializer getRemoteSerializer() {
@@ -159,7 +157,6 @@ public abstract class ComponentProvider {
      *
      * <p>To catch incorrect order, all getX methods have runtime check for null.
      */
-    asyncQueue = configuration.asyncQueue;
     remoteProvider.initialize(configuration);
     persistence = createPersistence(configuration);
     persistence.start();

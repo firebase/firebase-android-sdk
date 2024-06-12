@@ -119,7 +119,6 @@ public class FirebaseFirestoreTest {
         firestore.collection("col");
 
         FirebaseFirestoreTestFactory.Instance first = waitForResult(factory.instances.get(0));
-        waitForSuccess(first.initializeCompleteTask);
 
         AsyncQueue firstAsyncQueue = first.configuration.asyncQueue;
 
@@ -167,7 +166,7 @@ public class FirebaseFirestoreTest {
         FirebaseFirestoreTestFactory.Instance first = waitForResult(factory.instances.get(0));
 
         // Wait for Listen CallClient to be created.
-        TestClientCall<ListenRequest, ListenResponse> callback1 = waitForResult(first.listens.get(0));
+        TestClientCall<ListenRequest, ListenResponse> callback1 = waitForResult(first.getListenClient(0));
 
         // Wait for ListenRequest handshake.
         // We expect an empty init request because the database is fresh.
@@ -184,7 +183,7 @@ public class FirebaseFirestoreTest {
         waitForSuccess(first.enqueue(() -> callback1.listener.onClose(Status.NOT_FOUND, new Metadata())));
 
         // We expect client to reconnect Listen stream.
-        TestClientCall<ListenRequest, ListenResponse> callback2 = waitForResult(first.listens.get(1));
+        TestClientCall<ListenRequest, ListenResponse> callback2 = waitForResult(first.getListenClient(1));
 
         // Wait for ListenRequest.
         // We expect FirestoreClient to send InitRequest with previous token.
@@ -218,7 +217,7 @@ public class FirebaseFirestoreTest {
         FirebaseFirestoreTestFactory.Instance second = waitForResult(factory.instances.get(1));
 
         // Wait for Listen CallClient to be created.
-        TestClientCall<ListenRequest, ListenResponse> callback3 = waitForResult(second.listens.get(0));
+        TestClientCall<ListenRequest, ListenResponse> callback3 = waitForResult(second.getListenClient(0));
 
         // Wait for ListenRequest.
         // We expect FirestoreClient to send InitRequest with previous token.
@@ -240,7 +239,7 @@ public class FirebaseFirestoreTest {
         FirebaseFirestoreTestFactory.Instance first = waitForResult(factory.instances.get(0));
 
         // Wait for Listen CallClient to be created.
-        TestClientCall<WriteRequest, WriteResponse> callback1 = waitForResult(first.writes.get(0));
+        TestClientCall<WriteRequest, WriteResponse> callback1 = waitForResult(first.getWriteClient(0));
 
         // Wait for WriteRequest handshake.
         // We expect an empty init request because the database is fresh.
