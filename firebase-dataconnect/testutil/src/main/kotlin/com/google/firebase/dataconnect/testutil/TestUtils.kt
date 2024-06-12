@@ -42,7 +42,7 @@ import org.junit.Assert
  * in the string being checked without being "mashed" into adjacent text.
  */
 fun StringSubject.containsWithNonAdjacentText(text: String, ignoreCase: Boolean = false) =
-  containsMatchWithNonAdjacentText(Pattern.quote(text))
+  containsMatchWithNonAdjacentText(Pattern.quote(text), ignoreCase = ignoreCase)
 
 /**
  * Asserts that a string contains a pattern, verifying that the character immediately preceding the
