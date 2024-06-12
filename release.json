@@ -1,0 +1,9 @@
+{
+    "name": "m149",
+    "libraries": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx"
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "6c61dfd2264a6547112f6c20374cee3675c77c6b",
+                "prId": "6022",
+                "author": "Anit Das",
+                "message": "Changing caught exception type to fail safely on any exception type. (#6022)\n\nAddressing issue #6001. This will avoid failing on the early upload and\r\ninstead report the errors with either the next scheduled time by\r\nFirelog, or the next app launch",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6c61dfd2264a6547112f6c20374cee3675c77c6b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6022"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "b770489c9e368ea9aace93574d29182e3fc9ba7e",
+                "prId": "5785",
+                "author": "Matthew Robertson",
+                "message": "Update libcrashlytics to support 16 kb page sizes (#5785)\n\nUpdate libcrashlytics to support 16 kb page sizes.\r\n\r\nTested using the instructions in [Verifying Your\r\nApp](https://docs.google.com/document/d/11EG6_7vqIxvi517mivD34tBV_3k5SmpaTzaqMElvPXI/edit?resourcekey=0-rUve940xNkPV9DkvYgVBGw&tab=t.0#bookmark=id.rmsr6g9is475)\r\n\r\n1. ```bash\r\n    $ adb shell getconf PAGE_SIZE\r\n    16384\r\n    ```\r\n2. ```bash\r\n    out/lib/arm64-v8a/libcrashlytics-handler.so: ALIGNED (2**14)\r\n    out/lib/arm64-v8a/libapp.so: ALIGNED (2**14)\r\n    out/lib/arm64-v8a/libcrashlytics.so: ALIGNED (2**14)\r\n    out/lib/arm64-v8a/libcrashlytics-trampoline.so: ALIGNED (2**14)\r\n    out/lib/arm64-v8a/libcrashlytics-common.so: ALIGNED (2**14)\r\n    ```\r\n3. ```bash\r\n$\r\n/google/src/head/depot/google3/third_party/java/android/android_sdk_linux/platform-tools/zipalign\r\n-c -P 16 -v 4 app-test.apk\r\n    ...\r\n    11172592 resources.arsc (OK)\r\n    Verification succesful\r\n    ```\r\n\r\nAlso tested on emulator with Android API VanillaIceCream (Google APIs\r\nPage Size 16KB) image. And tested on a physical device, though not 16k,\r\nfor regressions.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b770489c9e368ea9aace93574d29182e3fc9ba7e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5785"
+            }
+        ],
+        "firebase-sessions": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-vertexai"
+    ]
+}
