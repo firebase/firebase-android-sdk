@@ -39,7 +39,7 @@ import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
   projectId: String,
-  private val connector: ConnectorConfig,
+  connector: ConnectorConfig,
   private val dataConnectAuth: DataConnectAuth,
   grpcRPCsFactory: DataConnectGrpcRPCsFactory,
   parentLogger: Logger,
@@ -60,6 +60,9 @@ internal class DataConnectGrpcClient(
       "locations/${connector.location}" +
       "/services/${connector.serviceId}" +
       "/connectors/${connector.connector}"
+
+  @Suppress("SpellCheckingInspection")
+  private val googRequestParamsHeaderValue = "location=${connector.location}&frontend=data"
 
   private val closedMutex = Mutex()
   private var closed = false
@@ -168,7 +171,7 @@ internal class DataConnectGrpcClient(
   private suspend fun createMetadata(requestId: String): Metadata {
     val token = dataConnectAuth.getAccessToken(requestId)
     return Metadata().also {
-      it.put(googRequestParamsHeader, "location=${connector.location}&frontend=data")
+      it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
       if (token !== null) {
         it.put(firebaseAuthTokenHeader, token)
       }
