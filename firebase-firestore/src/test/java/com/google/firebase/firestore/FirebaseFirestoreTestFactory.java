@@ -1,3 +1,17 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+//
+// You may obtain a copy of the License at
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.firestore;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -27,7 +41,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 import io.grpc.ClientCall;
-import io.grpc.MockClientCall;
+import com.google.firebase.firestore.integration.TestClientCall;
 
 public final class FirebaseFirestoreTestFactory {
 
@@ -39,10 +53,10 @@ public final class FirebaseFirestoreTestFactory {
     public static class Instance {
         public ComponentProvider componentProvider;
         public GrpcCallProvider mockGrpcCallProvider;
-        private TaskCompletionSource<MockClientCall<ListenRequest, ListenResponse>> nextListenClientCallback;
-        public final List<Task<MockClientCall<ListenRequest, ListenResponse>>> listenClientCallbacks = new ArrayList<>();
-        private TaskCompletionSource<MockClientCall<WriteRequest, WriteResponse>> nextWriteClientCallback;
-        public final List<Task<MockClientCall<WriteRequest, WriteResponse>>> writeClientCallbacks = new ArrayList<>();
+        private TaskCompletionSource<TestClientCall<ListenRequest, ListenResponse>> nextListen;
+        public final List<Task<TestClientCall<ListenRequest, ListenResponse>>> listens = new ArrayList<>();
+        private TaskCompletionSource<TestClientCall<WriteRequest, WriteResponse>> nextWrite;
+        public final List<Task<TestClientCall<WriteRequest, WriteResponse>>> writes = new ArrayList<>();
 
         private final TaskCompletionSource<Void> initializeComplete;
         public final Task<Void> initializeCompleteTask;
@@ -54,36 +68,28 @@ public final class FirebaseFirestoreTestFactory {
         public ComponentProvider.Configuration configuration;
 
         public Instance() {
-            prepareListenClientCallbacks();
-            prepareWriteClientCallbacks();
+            nextListen = new TaskCompletionSource<>();
+            listens.add(nextListen.getTask());
+            nextWrite = new TaskCompletionSource<>();
+            writes.add(nextWrite.getTask());
             initializeComplete = new TaskCompletionSource<>();
             initializeCompleteTask = initializeComplete.getTask();
         }
 
-        private void prepareWriteClientCallbacks() {
-            nextWriteClientCallback = new TaskCompletionSource<>();
-            writeClientCallbacks.add(nextWriteClientCallback.getTask());
-        }
-
-        private void prepareListenClientCallbacks() {
-            nextListenClientCallback = new TaskCompletionSource<>();
-            listenClientCallbacks.add(nextListenClientCallback.getTask());
-        }
-
         private Task<ClientCall<ListenRequest, ListenResponse>> createListenCallback() {
-            synchronized (listenClientCallbacks) {
-                MockClientCall<ListenRequest, ListenResponse> mock = new MockClientCall<>();
-                nextListenClientCallback.setResult(mock);
-                prepareListenClientCallbacks();
+            synchronized (listens) {
+                TestClientCall<ListenRequest, ListenResponse> mock = new TestClientCall<>(nextListen);
+                nextListen = new TaskCompletionSource<>();
+                listens.add(nextListen.getTask());
                 return Tasks.forResult(mock);
             }
         }
 
         private Task<ClientCall<WriteRequest, WriteResponse>> createWriteCallback() {
-            synchronized (writeClientCallbacks) {
-                MockClientCall<WriteRequest, WriteResponse> mock = new MockClientCall<>();
-                nextWriteClientCallback.setResult(mock);
-                prepareWriteClientCallbacks();
+            synchronized (writes) {
+                TestClientCall<WriteRequest, WriteResponse> mock = new TestClientCall<>(nextWrite);
+                nextWrite = new TaskCompletionSource<>();
+                writes.add(nextWrite.getTask());
                 return Tasks.forResult(mock);
             }
         }
