@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 
+import java.util.Iterator;
+
 import io.grpc.ClientCall;
 import io.grpc.Metadata;
 
@@ -67,6 +69,7 @@ public class TestClientCall<ReqT, RespT> extends ClientCall<ReqT, RespT> {
 
     @Override
     public void halfClose() {
+        requests.onException(new RuntimeException("halfClose"));
     }
 
     @Override
@@ -76,5 +79,9 @@ public class TestClientCall<ReqT, RespT> extends ClientCall<ReqT, RespT> {
 
     public Task<ReqT> getRequest(int index) {
         return requests.get(index);
+    }
+
+    public Iterator<Task<ReqT>> requestIterator() {
+        return requests.iterator();
     }
 }

@@ -33,16 +33,26 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreTestFactory;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.UserDataReader;
+import com.google.firebase.firestore.core.UserData;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.mutation.FieldTransform;
+import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.model.mutation.SetMutation;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firestore.v1.InitRequest;
 import com.google.firestore.v1.InitResponse;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
+import com.google.firestore.v1.Write;
 import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;
+import com.google.firestore.v1.WriteResult;
 import com.google.protobuf.ByteString;
 
+import org.bouncycastle.util.Arrays;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,11 +61,15 @@ import org.mockito.Mockito;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import io.grpc.ClientCall;
 import io.grpc.Metadata;
 import io.grpc.Status;
 
@@ -75,7 +89,9 @@ public class FirebaseFirestoreTest {
     }
 
     private static Exception waitForException(Task<?> task) throws InterruptedException {
-        return waitFor(task).getException();
+        Exception exception = waitFor(task).getException();
+        assertThat(exception).isNotNull();
+        return exception;
     }
 
     @NonNull
@@ -89,7 +105,7 @@ public class FirebaseFirestoreTest {
         task.addOnSuccessListener(BACKGROUND_EXECUTOR, t -> countDownLatch.countDown());
         task.addOnFailureListener(BACKGROUND_EXECUTOR, e -> countDownLatch.countDown());
         task.addOnCanceledListener(BACKGROUND_EXECUTOR, () -> countDownLatch.countDown());
-        countDownLatch.await(900, TimeUnit.SECONDS);
+        countDownLatch.await(15, TimeUnit.SECONDS);
         return task;
     }
 
@@ -157,10 +173,8 @@ public class FirebaseFirestoreTest {
         // Create a snapshot listener that will be active during handshake clearing of cache.
         TestEventListener<QuerySnapshot> snapshotListener1 = new TestEventListener<>();
         firestore.collection("col").addSnapshotListener(BACKGROUND_EXECUTOR, snapshotListener1);
-        Iterator<Task<QuerySnapshot>> snapshots1 = snapshotListener1.iterator();
-
-        // First snapshot will be from cache.
-        assertTrue(waitForResult(snapshots1.next()).getMetadata().isFromCache());
+        Iterator<Task<QuerySnapshot>> snapshots = snapshotListener1.iterator();
+        Task<QuerySnapshot> firstSnapshot = snapshots.next();
 
         // Wait for first FirestoreClient to instantiate
         FirebaseFirestoreTestFactory.Instance first = waitForResult(factory.instances.get(0));
@@ -179,8 +193,15 @@ public class FirebaseFirestoreTest {
         // We expect previous addSnapshotListener to cause a, AddTarget request.
         assertTrue(waitForResult(callback1.getRequest(1)).hasAddTarget());
 
+        // TODO(does this make sense?)
+        // We have a 10 second timeout on raising snapshot from Cache, that is triggered when Listen connection is closed.
+        assertFalse(firstSnapshot.isComplete());
+
         // Simulate Database deletion by closing connection with NOT_FOUND.
         waitForSuccess(first.enqueue(() -> callback1.listener.onClose(Status.NOT_FOUND, new Metadata())));
+
+        // First snapshot is raised from cache immediately after connection is closed.
+        assertTrue(waitForResult(firstSnapshot).getMetadata().isFromCache());
 
         // We expect client to reconnect Listen stream.
         TestClientCall<ListenRequest, ListenResponse> callback2 = waitForResult(first.getListenClient(1));
@@ -189,7 +210,6 @@ public class FirebaseFirestoreTest {
         // We expect FirestoreClient to send InitRequest with previous token.
         assertThat(waitForResult(callback2.getRequest(0)))
                 .isEqualTo(listenRequest(initRequest("token1")));
-
 
         // This task will complete when clearPersistence is invoked on FirebaseFirestore.
         Task<Void> clearPersistenceTask = setupClearPersistenceTask();
@@ -206,14 +226,14 @@ public class FirebaseFirestoreTest {
         verify(first.mockGrpcCallProvider, times(1)).shutdown();
 
         // Snapshot listeners should fail with ABORTED
-        FirebaseFirestoreException exception = waitForException(snapshots1.next(), FirebaseFirestoreException.class);
+        FirebaseFirestoreException exception = waitForException(snapshots.next(), FirebaseFirestoreException.class);
         assertThat(exception.getCode()).isEqualTo(FirebaseFirestoreException.Code.ABORTED);
 
         // Start another snapshot listener
         TestEventListener<QuerySnapshot> snapshotListener2 = new TestEventListener<>();
         firestore.collection("col").addSnapshotListener(BACKGROUND_EXECUTOR, snapshotListener2);
 
-        // Wait for first FirestoreClient to instantiate
+        // Wait for second FirestoreClient to instantiate
         FirebaseFirestoreTestFactory.Instance second = waitForResult(factory.instances.get(1));
 
         // Wait for Listen CallClient to be created.
@@ -235,24 +255,226 @@ public class FirebaseFirestoreTest {
         doc2.set(map("foo", "B"));
         doc3.set(map("foo", "C"));
 
-        // Wait for first FirestoreClient to instantiate
-        FirebaseFirestoreTestFactory.Instance first = waitForResult(factory.instances.get(0));
+        // 1st FirestoreClient instance.
+        {
+            // Wait for first FirestoreClient to instantiate
+            FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(0));
+            RemoteSerializer serializer = instance.componentProvider.getRemoteSerializer();
 
-        // Wait for Listen CallClient to be created.
-        TestClientCall<WriteRequest, WriteResponse> callback1 = waitForResult(first.getWriteClient(0));
+            // First Write stream connection
+            {
+                // Wait for Write CallClient to be created.
+                TestClientCall<WriteRequest, WriteResponse> callback = waitForResult(instance.getWriteClient(0));
+                Iterator<Task<WriteRequest>> requests = callback.requestIterator();
 
-        // Wait for WriteRequest handshake.
-        // We expect an empty init request because the database is fresh.
-        assertThat(waitForResult(callback1.getRequest(0)))
+                // Wait for WriteRequest handshake.
+                // We expect an empty init request because the database is fresh.
+                assertThat(waitForResult(requests.next()))
+                        .isEqualTo(writeRequest(InitRequest.getDefaultInstance()));
+
+                // Simulate a successful InitResponse from server.
+                waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(initResponse("token1")))));
+
+                // Expect first write request.
+                Write write1 = serializer.encodeMutation(setMutation(doc1, map("foo", "A")));
+                assertThat(waitForResult(requests.next()))
+                        .isEqualTo(writeRequest(write1));
+
+                // Simulate write acknowledgement.
+                waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(WriteResult.getDefaultInstance()))));
+
+                // Expect second write request.
+                Write write2 = serializer.encodeMutation(setMutation(doc2, map("foo", "B")));
+                assertThat(waitForResult(requests.next()))
+                        .isEqualTo(writeRequest(write2));
+
+                // Simulate NOT_FOUND error that was NOT due to database name reuse. (
+                waitForSuccess(instance.enqueue(() -> callback.listener.onClose(Status.NOT_FOUND, new Metadata())));
+            }
+
+            // Second Write Stream connection
+            // Previous connection was closed by server with NOT_FOUND error.
+            {
+                // Wait for Write CallClient to be created.
+                TestClientCall<WriteRequest, WriteResponse> callback = waitForResult(instance.getWriteClient(1));
+                Iterator<Task<WriteRequest>> requests = callback.requestIterator();
+
+                // Wait for WriteRequest handshake.
+                // We expect FirestoreClient to send InitRequest with previous token.
+                assertThat(waitForResult(requests.next()))
+                        .isEqualTo(writeRequest(initRequest("token1")));
+
+                // Simulate a successful InitResponse from server.
+                waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(initResponse("token2")))));
+
+                // Expect second write to be retried.
+                Write write2 = serializer.encodeMutation(setMutation(doc2, map("foo", "B")));
+                assertThat(waitForResult(requests.next()))
+                        .isEqualTo(writeRequest(write2));
+
+                // Simulate write acknowledgement.
+                waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(WriteResult.getDefaultInstance()))));
+
+                // Simulate NOT_FOUND error. This time we will clear cache.
+                waitForSuccess(instance.enqueue(() -> callback.listener.onClose(Status.NOT_FOUND, new Metadata())));
+            }
+
+
+            // Third Write Stream connection
+            // Previous connection was closed by server with NOT_FOUND error.
+            {
+                // Wait for Write CallClient to be created.
+                TestClientCall<WriteRequest, WriteResponse> callback = waitForResult(instance.getWriteClient(2));
+                Iterator<Task<WriteRequest>> requests = callback.requestIterator();
+
+                // Wait for WriteRequest.
+                // We expect FirestoreClient to send InitRequest with previous token.
+                assertThat(waitForResult(requests.next()))
+                        .isEqualTo(writeRequest(initRequest("token2")));
+
+                // Simulate a clear cache InitResponse from server.
+                waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(initResponse("token3", true)))));
+            }
+        }
+
+        // Interaction with 2nd FirestoreClient instance.
+        // Previous instance was shutdown due to clear cache command from server.
+        {
+            // Wait for second FirestoreClient to instantiate
+            FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(1));
+            RemoteSerializer serializer = instance.componentProvider.getRemoteSerializer();
+
+            // The writes should have been cleared, so we will have to create a new one.
+            DocumentReference doc4 = col.document();
+            doc4.set(map("foo", "D"));
+
+            // Wait for Write CallClient to be created.
+            TestClientCall<WriteRequest, WriteResponse> callback = waitForResult(instance.getWriteClient(0));
+            Iterator<Task<WriteRequest>> requests = callback.requestIterator();
+
+            // Wait for WriteRequest.
+            // We expect FirestoreClient to send InitRequest with previous token.
+            assertThat(waitForResult(requests.next()))
+                    .isEqualTo(writeRequest(initRequest("token3")));
+
+            // Simulate a successful InitResponse from server.
+            waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(initResponse("token4")))));
+
+            // Expect the new write request.
+            Write write4 = serializer.encodeMutation(setMutation(doc4, map("foo", "D")));
+            assertThat(waitForResult(requests.next()))
+                    .isEqualTo(writeRequest(write4));
+
+            // Simulate write acknowledgement.
+            waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(WriteResult.getDefaultInstance()))));
+        }
+    }
+
+    @Test
+    public void listenHandshakeMustWaitForWriteHandshakeToComplete() throws Exception {
+        CollectionReference col = firestore.collection("col");
+
+        // Wait for FirestoreClient to instantiate
+        FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(0));
+
+        // Trigger Write Stream First
+        col.document().set(map("foo", "A"));
+
+        TestClientCall<WriteRequest, WriteResponse> write = waitForResult(instance.getWriteClient(0));
+        ClientCall.Listener<WriteResponse> writeResponses = write.listener;
+        Iterator<Task<WriteRequest>> writeRequests = write.requestIterator();
+
+        // Then Trigger Listen Stream;
+        TestEventListener<QuerySnapshot> snapshotListener = new TestEventListener<>();
+        firestore.collection("col").addSnapshotListener(BACKGROUND_EXECUTOR, snapshotListener);
+        Iterator<Task<QuerySnapshot>> snapshots = snapshotListener.iterator();
+
+        TestClientCall<ListenRequest, ListenResponse> listen = waitForResult(instance.getListenClient(0));
+        Iterator<Task<ListenRequest>> listenRequests = listen.requestIterator();
+        ClientCall.Listener<ListenResponse> listenResponses = listen.listener;
+
+        // Prepare
+        Task<WriteRequest> writeInitRequest = writeRequests.next();
+        Task<ListenRequest> listenInitRequest = listenRequests.next();
+
+        // Expect empty InitRequest from Write stream.
+        assertThat(waitForResult(writeInitRequest))
                 .isEqualTo(writeRequest(InitRequest.getDefaultInstance()));
+
+        // No request should have come from Listen stream yet.
+        assertFalse(listenInitRequest.isComplete());
+
+        // Simulate a successful InitResponse from server.
+        waitForSuccess(instance.enqueue(() -> writeResponses.onMessage(writeResponse(initResponse("token1")))));
+
+        // Now that Write handshake is complete, the Listen stream should send a InitRequest with token from Write handshake.
+        assertThat(waitForResult(listenInitRequest))
+                .isEqualTo(listenRequest(initRequest("token1")));
     }
 
-    private static ListenResponse listenResponse(InitResponse initResponse) {
-    return ListenResponse.newBuilder()
-            .setInitResponse(initResponse)
-            .build();
+    @Test
+    public void writeHandshakeMustWaitForListenHandshakeToComplete() throws Exception {
+        CollectionReference col = firestore.collection("col");
+
+        // Wait for FirestoreClient to instantiate
+        FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(0));
+
+        // Trigger Listen Stream First
+        TestEventListener<QuerySnapshot> snapshotListener = new TestEventListener<>();
+        firestore.collection("col").addSnapshotListener(BACKGROUND_EXECUTOR, snapshotListener);
+        Iterator<Task<QuerySnapshot>> snapshots = snapshotListener.iterator();
+
+        TestClientCall<ListenRequest, ListenResponse> listen = waitForResult(instance.getListenClient(0));
+        Iterator<Task<ListenRequest>> listenRequests = listen.requestIterator();
+        ClientCall.Listener<ListenResponse> listenResponses = listen.listener;
+
+        // Then Trigger Write Stream;
+        col.document().set(map("foo", "A"));
+
+        TestClientCall<WriteRequest, WriteResponse> write = waitForResult(instance.getWriteClient(0));
+        ClientCall.Listener<WriteResponse> writeResponses = write.listener;
+        Iterator<Task<WriteRequest>> writeRequests = write.requestIterator();
+
+        // Prepare
+        Task<WriteRequest> writeInitRequest = writeRequests.next();
+        Task<ListenRequest> listenInitRequest = listenRequests.next();
+
+        // Expect empty InitRequest from Listen stream.
+        assertThat(waitForResult(listenInitRequest))
+                .isEqualTo(listenRequest(InitRequest.getDefaultInstance()));
+
+        // No request should have come from Listen stream yet.
+        assertFalse(writeInitRequest.isComplete());
+
+        // Simulate a successful InitResponse from server.
+        waitForSuccess(instance.enqueue(() -> listenResponses.onMessage(listenResponse(initResponse("token1")))));
+
+        // Now that Write handshake is complete, the Listen stream should send a InitRequest with token from Write handshake.
+        assertThat(waitForResult(writeInitRequest))
+                .isEqualTo(writeRequest(initRequest("token1")));
+
     }
 
+    @NonNull
+    private DocumentKey key(DocumentReference doc) {
+        return DocumentKey.fromPathString(doc.getPath());
+    }
+
+    @NonNull
+    public SetMutation setMutation(DocumentReference doc, Map<String, Object> values) {
+        UserDataReader dataReader = new UserDataReader(factory.databaseId);
+        UserData.ParsedSetData parsed = dataReader.parseSetData(values);
+
+        // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
+        // order.
+        ArrayList<FieldTransform> fieldTransforms = new ArrayList<>(parsed.getFieldTransforms());
+        Collections.sort(
+                fieldTransforms, (ft1, ft2) -> ft1.getFieldPath().compareTo(ft2.getFieldPath()));
+
+        return new SetMutation(key(doc), parsed.getData(), Precondition.NONE, fieldTransforms);
+    }
+
+    @NonNull
     private ListenRequest listenRequest(InitRequest initRequest) {
         return ListenRequest.newBuilder()
                 .setDatabase(getResourcePrefixValue(factory.databaseId))
@@ -260,6 +482,14 @@ public class FirebaseFirestoreTest {
                 .build();
     }
 
+    @NonNull
+    private static ListenResponse listenResponse(InitResponse initResponse) {
+        return ListenResponse.newBuilder()
+            .setInitResponse(initResponse)
+            .build();
+    }
+
+    @NonNull
     private WriteRequest writeRequest(InitRequest initRequest) {
         return WriteRequest.newBuilder()
                 .setDatabase(getResourcePrefixValue(factory.databaseId))
@@ -267,12 +497,34 @@ public class FirebaseFirestoreTest {
                 .build();
     }
 
+    @NonNull
+    private WriteRequest writeRequest(Write... writes) {
+        return WriteRequest.newBuilder()
+                .addAllWrites(() -> new Arrays.Iterator<>(writes))
+                .build();
+    }
+
+    @NonNull
+    private static WriteResponse writeResponse(InitResponse initResponse) {
+        return WriteResponse.newBuilder()
+                .setInitResponse(initResponse)
+                .build();
+    }
+
+    @NonNull
+    private static WriteResponse writeResponse(WriteResult... writeResults) {
+        return WriteResponse.newBuilder()
+                .addAllWriteResults(() -> new Arrays.Iterator<>(writeResults))
+                .build();
+    }
+    @NonNull
     private static InitResponse initResponse(String token) {
         return InitResponse.newBuilder()
                 .setSessionToken(ByteString.copyFromUtf8(token))
                 .build();
     }
 
+    @NonNull
     private static InitResponse initResponse(String token, boolean clearCache) {
         return InitResponse.newBuilder()
                 .setSessionToken(ByteString.copyFromUtf8(token))
@@ -280,6 +532,7 @@ public class FirebaseFirestoreTest {
                 .build();
     }
 
+    @NonNull
     private static InitRequest initRequest(String token) {
         return InitRequest.newBuilder()
                 .setSessionToken(ByteString.copyFromUtf8(token))
