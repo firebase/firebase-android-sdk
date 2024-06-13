@@ -75,7 +75,7 @@ firebase-android-sdk$ ./gradlew :firebase-perf:e2e-app:devicecheck
 There are differences in terms of Firebase projects when running this command in different scenarios.
 
 1. **CI Run**: These tests are run under Firebase Test Lab of the unified Firebase project 
-(according to [this](https://github.com/firebase/firebase-android-sdk/blob/master/buildSrc/src/main/java/com/google/firebase/gradle/plugins/ci/device/FirebaseTestServer.java)) 
+(according to [this](https://github.com/firebase/firebase-android-sdk/blob/main/buildSrc/src/main/java/com/google/firebase/gradle/plugins/ci/device/FirebaseTestServer.java)) 
 but the performance events are sent to a different project with which apps are configured with 
 (see `copyRootGoogleServices` task) 
 and the Prow Configuration in tg/831643). 
