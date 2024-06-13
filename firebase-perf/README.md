@@ -28,11 +28,11 @@ export ANDROID_SDK_ROOT=~/Android/Sdk
 
 ## Build Firebase Performance SDK
 
-### Fetch master branch
+### Fetch vguthal-main branch
 
 ```
-firebase-android-sdk$ git fetch origin master:master
-firebase-android-sdk$ git checkout master
+firebase-android-sdk$ git fetch origin vguthal-main:vguthal-main
+firebase-android-sdk$ git checkout vguthal-main
 ```
 
 ### Build SDK
@@ -65,7 +65,7 @@ Similar mechanism applies to `ClassName` as well.
 
 ## Run Integration Tests
 
-Follow the instructions [here](https://github.com/firebase/firebase-android-sdk/blob/master/README.md#integration-testing) 
+Follow the instructions [here](https://github.com/firebase/firebase-android-sdk/blob/vguthal-main/README.md#integration-testing) 
 for the initial one time setup.
 
 ### Running Integration Tests on Local Emulator
