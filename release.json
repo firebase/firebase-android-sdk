@@ -4,6 +4,7 @@
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",
-        ":firebase-crashlytics:ktx"
+        ":firebase-crashlytics:ktx",
+        ":firebase-vertexai"
     ]
 }

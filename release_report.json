@@ -23,13 +23,38 @@
         "firebase-sessions": [
         ],
         "firebase-crashlytics/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "aa3e5678b2eefe497515a140a4b39145402b7069",
+                "prId": "6033",
+                "author": "Daymon",
+                "message": "Fix JSON literal parsing in VertexAI (#6033)\n\nPer [b/346811894](https://b.corp.google.com/issues/346811894),\n\nThis fixes an issue with the VertexAI SDK failing to decode json\nliterals. More specifically, the fix was applied to\n`generativeai:common` with `0.7.1`, and this PR bumps said dependency to\nbring in the change.\n\nFixes #6028\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/aa3e5678b2eefe497515a140a4b39145402b7069",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6033"
+            },
+            {
+                "commitId": "7a313c35145f584152335a33f6a0a481ecfd11a4",
+                "prId": "6013",
+                "author": "David Motsonashvili",
+                "message": "Make default schema objects explicitly non-nullable, and add helpers … (#6013)\n\n…to arr and obj\r\n\r\n---------\r\n\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7a313c35145f584152335a33f6a0a481ecfd11a4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6013"
+            },
+            {
+                "commitId": "809d17f98ec41d9902dc185eda8f3087af4c0f0f",
+                "prId": "5971",
+                "author": "David Motsonashvili",
+                "message": "wire through new exception type from common (#5971)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/809d17f98ec41d9902dc185eda8f3087af4c0f0f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5971"
+            }
         ]
     },
     "changedLibrariesWithNoChangelog": [
         ":firebase-dynamic-links",
         ":firebase-dynamic-links:ktx",
         ":firebase-firestore",
-        ":firebase-firestore:ktx",
-        ":firebase-vertexai"
+        ":firebase-firestore:ktx"
     ]
 }
