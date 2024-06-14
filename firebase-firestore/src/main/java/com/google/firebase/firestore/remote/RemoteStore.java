@@ -65,6 +65,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
 
+  private final DatabaseId databaseId;
+
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
     /**
@@ -153,11 +155,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final Deque<MutationBatch> writePipeline;
 
   public RemoteStore(
+      DatabaseId databaseId,
       RemoteStoreCallback remoteStoreCallback,
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
       ConnectivityMonitor connectivityMonitor) {
+    this.databaseId = databaseId;
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -443,7 +447,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     hardAssert(
         shouldStartWatchStream(),
         "startWatchStream() called when shouldStartWatchStream() is false.");
-    watchChangeAggregator = new WatchChangeAggregator(this);
+    watchChangeAggregator = new WatchChangeAggregator(databaseId, this);
     watchStream.start();
 
     onlineStateTracker.handleWatchStreamStart();
@@ -760,11 +764,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return this.listenTargets.get(targetId);
-  }
-
-  @Override
-  public DatabaseId getDatabaseId() {
-    return this.datastore.getDatabaseInfo().getDatabaseId();
   }
 
   public Task<Map<String, Value>> runAggregateQuery(

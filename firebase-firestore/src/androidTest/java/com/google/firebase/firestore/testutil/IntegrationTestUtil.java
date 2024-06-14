@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.os.StrictMode;
+
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -36,12 +38,15 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.MemoryCacheSettings;
+import com.google.firebase.firestore.MemoryEagerGcSettings;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
 import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
@@ -86,6 +91,25 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
 
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
+
+  @NonNull
+  public static ComponentProvider.Configuration testConfiguration(AsyncQueue testQueue) {
+      return new ComponentProvider.Configuration(
+              ApplicationProvider.getApplicationContext(),
+              testQueue,
+              testEnvDatabaseInfo(),
+              User.UNAUTHENTICATED,
+              100,
+              new FirebaseFirestoreSettings.Builder()
+                      .setLocalCacheSettings(MemoryCacheSettings.newBuilder()
+                              .setGcSettings(MemoryEagerGcSettings.newBuilder().build())
+                              .build())
+                      .build(),
+              new EmptyCredentialsProvider(),
+              new EmptyAppCheckTokenProvider(),
+              null
+      );
+  }
 
   public enum TargetBackend {
     EMULATOR,
@@ -170,12 +194,18 @@ public class IntegrationTestUtil {
     }
   }
 
+  @NonNull
   public static DatabaseInfo testEnvDatabaseInfo() {
     return new DatabaseInfo(
-        DatabaseId.forProject(provider.projectId()),
+        testEnvDatabaseId(),
         "test-persistenceKey",
         getFirestoreHost(),
         getSslEnabled());
+  }
+
+  @NonNull
+  public static DatabaseId testEnvDatabaseId() {
+    return DatabaseId.forProject(provider.projectId());
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
@@ -315,6 +345,7 @@ public class IntegrationTestUtil {
             MockCredentialsProvider.instance(),
             new EmptyAppCheckTokenProvider(),
             asyncQueue,
+            ComponentProvider::defaultFactory,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
     waitFor(firestore.clearPersistence());
