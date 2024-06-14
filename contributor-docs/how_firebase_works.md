@@ -53,7 +53,7 @@ There are multiple considerations that lead to the current design of how Firebas
 1. Certain SDKs need to initialize at app startup.
 2. SDKs have optional dependencies on other products that get enabled when the developer adds the dependency to their app.
 
-To enable this functionality, Firebase uses a runtime discovery and dependency injection framework [firebase-components](https://github.com/firebase/firebase-android-sdk/tree/master/firebase-components).
+To enable this functionality, Firebase uses a runtime discovery and dependency injection framework [firebase-components](https://github.com/firebase/firebase-android-sdk/tree/main/firebase-components).
 
 To integrate with this framework SDKs register the components they provide via a `ComponentRegistrar` and declare any dependencies they need to initialize, e.g.
 
