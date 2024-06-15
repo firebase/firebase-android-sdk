@@ -73,6 +73,8 @@ public class Trace extends AppStateUpdateHandler
   private Timer startTime;
   private Timer endTime;
 
+  private boolean isCanceled;
+
   /** @hide */
   @Override
   public void updateSession(PerfSession session) {
@@ -82,7 +84,7 @@ public class Trace extends AppStateUpdateHandler
       return;
     }
 
-    if (hasStarted() && !isStopped()) {
+    if (isActive()) {
       sessions.add(session);
     }
   }
@@ -190,6 +192,7 @@ public class Trace extends AppStateUpdateHandler
     in.readMap(counterNameToCounterMap, Counter.class.getClassLoader());
     startTime = in.readParcelable(Timer.class.getClassLoader());
     endTime = in.readParcelable(Timer.class.getClassLoader());
+    isCanceled = in.readByte() != 0;
     sessions = Collections.synchronizedList(new ArrayList<PerfSession>());
     in.readList(sessions, PerfSession.class.getClassLoader());
     if (isDataOnly) {
@@ -250,6 +253,10 @@ public class Trace extends AppStateUpdateHandler
       logger.error("Trace '%s' has already stopped, should not stop again!", name);
       return;
     }
+    if (isCanceled()) {
+      logger.error("Trace '%s' has already been canceled so unable to stop!", name);
+      return;
+    }
 
     SessionManager.getInstance().unregisterForSessionUpdates(sessionAwareObject);
 
@@ -267,6 +274,31 @@ public class Trace extends AppStateUpdateHandler
       } else {
         logger.error("Trace name is empty, no log is sent to server");
       }
+    }
+  }
+
+  /** Cancels this trace, can be useful when we want discard started trace. */
+  @Keep
+  public void cancel() {
+    if (!hasStarted()) {
+      logger.error("Trace '%s' has not been started so unable to cancel!", name);
+      return;
+    }
+    if (isStopped()) {
+      logger.error("Trace '%s' has already stopped, cannot be canceled!", name);
+      return;
+    }
+    if (isCanceled()) {
+      logger.error("Trace '%s' has already been canceled, cannot be canceled again!", name);
+      return;
+    }
+    isCanceled = true;
+
+    SessionManager.getInstance().unregisterForSessionUpdates(sessionAwareObject);
+    unregisterForAppState();
+
+    for (Trace child : subtraces) {
+      child.cancel();
     }
   }
 
@@ -345,6 +377,12 @@ public class Trace extends AppStateUpdateHandler
           metricName, name);
       return;
     }
+    if (isCanceled()) {
+      logger.warn(
+          "Cannot increment metric '%s' for trace '%s' because it's been canceled",
+          metricName, name);
+      return;
+    }
     // Make a copy of input metricName so it does not hold onto the reference which is
     // thread-safer
     Counter counter = obtainOrCreateCounterByName(metricName.trim());
@@ -400,6 +438,12 @@ public class Trace extends AppStateUpdateHandler
     if (isStopped()) {
       logger.warn(
           "Cannot set value for metric '%s' for trace '%s' because it's been stopped",
+          metricName, name);
+      return;
+    }
+    if (isCanceled()) {
+      logger.warn(
+          "Cannot set value for metric '%s' for trace '%s' because it's been canceled",
           metricName, name);
       return;
     }
@@ -542,6 +586,11 @@ public class Trace extends AppStateUpdateHandler
     return endTime != null;
   }
 
+  @VisibleForTesting
+  boolean isCanceled() {
+    return isCanceled;
+  }
+
   /**
    * non-zero startTime indicates that Trace's start() method has been called
    *
@@ -561,7 +610,7 @@ public class Trace extends AppStateUpdateHandler
    */
   @VisibleForTesting
   boolean isActive() {
-    return hasStarted() && !isStopped();
+    return hasStarted() && !isStopped() && !isCanceled();
   }
 
   /**
@@ -579,6 +628,7 @@ public class Trace extends AppStateUpdateHandler
     out.writeMap(counterNameToCounterMap);
     out.writeParcelable(startTime, 0);
     out.writeParcelable(endTime, 0);
+    out.writeByte(((byte) (isCanceled ? 1 : 0)));
     synchronized (sessions) {
       out.writeList(sessions);
     }
@@ -633,6 +683,10 @@ public class Trace extends AppStateUpdateHandler
       throw new IllegalArgumentException(
           String.format(Locale.ENGLISH, "Trace '%s' has been stopped", name));
     }
+    if (isCanceled()) {
+      throw new IllegalArgumentException(
+          String.format(Locale.ENGLISH, "Trace '%s' has been canceled", name));
+    }
 
     if (!customAttributesMap.containsKey(key)
         && customAttributesMap.size() >= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES) {
@@ -656,6 +710,10 @@ public class Trace extends AppStateUpdateHandler
   public void removeAttribute(@NonNull String attribute) {
     if (isStopped()) {
       logger.error("Can't remove a attribute from a Trace that's stopped.");
+      return;
+    }
+    if (isCanceled()) {
+      logger.error("Can't remove a attribute from a Trace that's cancelled.");
       return;
     }
     customAttributesMap.remove(attribute);
