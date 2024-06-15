@@ -15,6 +15,8 @@
 package com.google.firebase.firestore.model;
 
 import androidx.annotation.NonNull;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firestore.v1.Value;
 
 /**
@@ -163,6 +165,7 @@ public final class MutableDocument implements Document {
     return this;
   }
 
+  @CanIgnoreReturnValue
   public MutableDocument setReadTime(SnapshotVersion readTime) {
     this.readTime = readTime;
     return this;

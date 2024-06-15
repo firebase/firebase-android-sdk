@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.internal.time.Clock;
 import com.google.firebase.inappmessaging.model.Action;
@@ -79,6 +80,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
     return wasImpressed;
   }
 
+  @CanIgnoreReturnValue
   @Override
   public Task<Void> impressionDetected() {
 
