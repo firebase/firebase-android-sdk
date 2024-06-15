@@ -177,6 +177,7 @@ internal fun <T> com.google.firebase.vertexai.type.Schema<T>.toInternal(): Schem
     type.name,
     description,
     format,
+    nullable,
     enum,
     properties?.mapValues { it.value.toInternal() },
     required,
