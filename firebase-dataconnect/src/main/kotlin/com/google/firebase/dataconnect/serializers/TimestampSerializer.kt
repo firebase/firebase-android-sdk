@@ -108,7 +108,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
     val hours = strUppercase.substring(position.index + 1, position.index + 3).toInt()
     val minutes = strUppercase.substring(position.index + 4, position.index + 6).toInt()
     val timeZoneDiffer = hours * 3600 + minutes * 60
-    return Timestamp(seconds + if (addTimeDiffer) timeZoneDiffer else -timeZoneDiffer, nanoseconds)
+    return Timestamp(seconds + if (addTimeDiffer) -timeZoneDiffer else timeZoneDiffer, nanoseconds)
   }
 
   override fun serialize(encoder: Encoder, value: Timestamp) {
