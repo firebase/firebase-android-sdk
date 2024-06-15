@@ -37,6 +37,7 @@ package com.google.firebase.remoteconfig {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setConfigSettingsAsync(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@NonNull java.util.Map<java.lang.String,java.lang.Object>);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setDefaultsAsync(@XmlRes int);
+    method public void useEmulator(@NonNull String, int);
     field public static final boolean DEFAULT_VALUE_FOR_BOOLEAN = false;
     field public static final byte[] DEFAULT_VALUE_FOR_BYTE_ARRAY;
     field public static final double DEFAULT_VALUE_FOR_DOUBLE = 0.0;
