@@ -38,8 +38,6 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.MemoryCacheSettings;
-import com.google.firebase.firestore.MemoryEagerGcSettings;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -91,25 +89,6 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
 
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
-
-  @NonNull
-  public static ComponentProvider.Configuration testConfiguration(AsyncQueue testQueue) {
-      return new ComponentProvider.Configuration(
-              ApplicationProvider.getApplicationContext(),
-              testQueue,
-              testEnvDatabaseInfo(),
-              User.UNAUTHENTICATED,
-              100,
-              new FirebaseFirestoreSettings.Builder()
-                      .setLocalCacheSettings(MemoryCacheSettings.newBuilder()
-                              .setGcSettings(MemoryEagerGcSettings.newBuilder().build())
-                              .build())
-                      .build(),
-              new EmptyCredentialsProvider(),
-              new EmptyAppCheckTokenProvider(),
-              null
-      );
-  }
 
   public enum TargetBackend {
     EMULATOR,
