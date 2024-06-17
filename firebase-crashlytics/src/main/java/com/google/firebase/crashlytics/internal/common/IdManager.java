@@ -113,8 +113,9 @@ public class IdManager implements InstallIdProvider {
     // We only look at the FID if Crashlytics data collection is enabled, since querying it can
     // result in a network call that registers the FID with Firebase.
     if (dataCollectionArbiter.isAutomaticDataCollectionEnabled()) {
-      FirebaseInstallationId trueFid = fetchTrueFid();
-      Logger.getLogger().v("Fetched Firebase Installation ID: " + trueFid);
+      // We don't need an auth token here, we just need to detect if the fid has changed.
+      FirebaseInstallationId trueFid = fetchTrueFid(/* validate= */ false);
+      Logger.getLogger().v("Fetched Firebase Installation ID: " + trueFid.getFid());
 
       if (trueFid.getFid() == null) {
         // This shouldn't happen often. We will assume the cached FID is valid, if it exists.
@@ -177,15 +178,17 @@ public class IdManager implements InstallIdProvider {
    * <p>If either call fails for any reason, logs a warning and sets a null value for that field.
    */
   @NonNull
-  public FirebaseInstallationId fetchTrueFid() {
+  public FirebaseInstallationId fetchTrueFid(boolean validate) {
     String fid = null;
     String authToken = null;
 
-    // Fetch the auth token first, so the fid will be validated.
-    try {
-      authToken = awaitEvenIfOnMainThread(firebaseInstallations.getToken(false)).getToken();
-    } catch (Exception ex) {
-      Logger.getLogger().w("Error getting Firebase authentication token.", ex);
+    if (validate) {
+      // Fetch the auth token first when requested, so the fid will be validated.
+      try {
+        authToken = awaitEvenIfOnMainThread(firebaseInstallations.getToken(false)).getToken();
+      } catch (Exception ex) {
+        Logger.getLogger().w("Error getting Firebase authentication token.", ex);
+      }
     }
     try {
       fid = awaitEvenIfOnMainThread(firebaseInstallations.getId());

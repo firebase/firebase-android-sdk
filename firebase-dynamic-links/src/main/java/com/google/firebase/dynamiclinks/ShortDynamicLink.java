@@ -26,19 +26,45 @@ import java.util.List;
 /**
  * Response from {@link Builder#buildShortDynamicLink()} that returns the shortened Dynamic Link,
  * link flow chart, and warnings from the requested Dynamic Link.
+ *
+ * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+ *   service will shut down on August 25, 2025. For more information, see
+ *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
  */
+@Deprecated
 public interface ShortDynamicLink {
 
-  /** Gets the short Dynamic Link value. */
+  /**
+   * Gets the short Dynamic Link value.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
   @Nullable
+  @Deprecated
   Uri getShortLink();
 
-  /** Gets the preview link to show the link flow chart. */
+  /**
+   * Gets the preview link to show the link flow chart.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
   @Nullable
+  @Deprecated
   Uri getPreviewLink();
 
-  /** Gets information about potential warnings on link creation. */
+  /**
+   * Gets information about potential warnings on link creation.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
   @NonNull
+  @Deprecated
   List<? extends Warning> getWarnings();
 
   /** Path generation option for short Dynamic Link length */
@@ -62,7 +88,14 @@ public interface ShortDynamicLink {
     int SHORT = 2;
   }
 
-  /** Information about potential warnings on short Dynamic Link creation. */
+  /**
+   * Information about potential warnings on short Dynamic Link creation.
+   *
+   * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+   *   service will shut down on August 25, 2025. For more information, see
+   *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+   */
+  @Deprecated
   interface Warning {
 
     /**
@@ -75,8 +108,15 @@ public interface ShortDynamicLink {
     @Nullable
     String getCode();
 
-    /** Gets the warning message to help developers improve their requests. */
+    /**
+     * Gets the warning message to help developers improve their requests.
+     *
+     * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
+     *   service will shut down on August 25, 2025. For more information, see
+     *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
+     */
     @Nullable
+    @Deprecated
     String getMessage();
   }
 }

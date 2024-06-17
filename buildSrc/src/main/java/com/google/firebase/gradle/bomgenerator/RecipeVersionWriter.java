@@ -68,6 +68,12 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
+            "Vertex AI for Firebase",
+            "vertex-dependency",
+            "com.google.firebase:firebase-vertexai"));
+    outputBuilder.append(
+        generateVersionVariable(
+            depsByArtifactId,
             "Cloud Messaging",
             "messaging-dependency",
             "com.google.firebase:firebase-messaging"));

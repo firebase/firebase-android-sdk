@@ -233,17 +233,17 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   /**
-   * Ensure reportToSend has a populated fid.
+   * Ensure reportToSend has a populated fid and auth token.
    *
    * <p>This is needed because it's possible to capture reports while data collection is disabled,
    * and then upload the report later by calling sendUnsentReports or enabling data collection.
    */
   private CrashlyticsReportWithSessionId ensureHasFid(CrashlyticsReportWithSessionId reportToSend) {
-    // Only do the update if the fid is already missing from the report.
+    // Only do the update if the fid or auth token is already missing from the report.
     if (reportToSend.getReport().getFirebaseInstallationId() == null
         || reportToSend.getReport().getFirebaseAuthenticationToken() == null) {
       // Fetch the true fid, regardless of automatic data collection since it's uploading.
-      FirebaseInstallationId firebaseInstallationId = idManager.fetchTrueFid();
+      FirebaseInstallationId firebaseInstallationId = idManager.fetchTrueFid(/* validate= */ true);
       return CrashlyticsReportWithSessionId.create(
           reportToSend
               .getReport()
