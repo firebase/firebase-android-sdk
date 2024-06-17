@@ -37,7 +37,9 @@ public class SQLiteSpecTest extends SpecTestCase {
 
   @Override
   protected SQLiteComponentProvider initializeComponentProvider(
-     RemoteComponenetProvider remoteProvider, ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled) {
+      RemoteComponenetProvider remoteProvider,
+      ComponentProvider.Configuration configuration,
+      boolean garbageCollectionEnabled) {
     SQLiteComponentProvider provider = new SQLiteComponentProvider();
     provider.setRemoteProvider(remoteProvider);
     provider.initialize(configuration);

@@ -263,7 +263,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   //
 
   protected abstract ComponentProvider initializeComponentProvider(
-          RemoteComponenetProvider remoteProvider, ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled);
+      RemoteComponenetProvider remoteProvider,
+      ComponentProvider.Configuration configuration,
+      boolean garbageCollectionEnabled);
 
   private boolean shouldRun(Set<String> tags) {
     for (String tag : tags) {
@@ -331,7 +333,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             new FirebaseFirestoreSettings.Builder().build(),
             new EmptyCredentialsProvider(),
             new EmptyAppCheckTokenProvider(),
-           null
+            null
         );
 
     RemoteComponenetProvider remoteProvider = new RemoteComponenetProvider() {

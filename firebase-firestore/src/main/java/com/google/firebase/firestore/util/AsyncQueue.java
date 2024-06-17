@@ -197,6 +197,7 @@ public class AsyncQueue {
   public AsyncQueue() {
     this(new SynchronizedShutdownAwareExecutor());
   }
+
   private AsyncQueue(SynchronizedShutdownAwareExecutor executor) {
     this.executor = executor;
   }

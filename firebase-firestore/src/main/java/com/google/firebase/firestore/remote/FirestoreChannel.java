@@ -17,7 +17,6 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.content.Context;
-
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.BuildConfig;
@@ -108,15 +107,15 @@ public class FirestoreChannel {
             "projects/%s/databases/%s", databaseId.getProjectId(), databaseId.getDatabaseId());
   }
 
-    private static GrpcCallProvider getGrpcCallProvider(
-        AsyncQueue asyncQueue, Context context, CredentialsProvider<User> authProvider,
-        CredentialsProvider<String> appCheckProvider, DatabaseInfo databaseInfo) {
-      FirestoreCallCredentials firestoreHeaders =
-            new FirestoreCallCredentials(authProvider, appCheckProvider);
-      return new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
-    }
+  private static GrpcCallProvider getGrpcCallProvider(
+      AsyncQueue asyncQueue, Context context, CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider, DatabaseInfo databaseInfo) {
+    FirestoreCallCredentials firestoreHeaders =
+          new FirestoreCallCredentials(authProvider, appCheckProvider);
+    return new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
+  }
 
-    /**
+  /**
    * Shuts down the grpc channel. This is not reversible and renders the FirestoreChannel unusable.
    */
   public void shutdown() {

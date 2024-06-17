@@ -29,10 +29,8 @@ import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.Scheduler;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteStore;
-
 import io.grpc.Status;
 
 /**
@@ -76,8 +74,7 @@ public class MemoryComponentProvider extends ComponentProvider {
   @Override
   protected Persistence createPersistence(Configuration configuration) {
     if (isMemoryLruGcEnabled(configuration.settings)) {
-      LocalSerializer serializer =
-          new LocalSerializer(getRemoteSerializer());
+      LocalSerializer serializer = new LocalSerializer(getRemoteSerializer());
       LruGarbageCollector.Params params =
           LruGarbageCollector.Params.WithCacheSizeBytes(
               configuration.settings.getCacheSizeBytes());

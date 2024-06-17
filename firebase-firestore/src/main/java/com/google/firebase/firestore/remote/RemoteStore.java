@@ -67,7 +67,9 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
   private Consumer<ByteString> clearPersistenceCallback;
-  private final DatabaseId datastoreId;
+
+  /** The database ID of the Firestore instance. */
+  private final DatabaseId databaseId;
 
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
@@ -115,7 +117,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
      * <p>Returns an empty set of document keys for unknown targets.
      */
     ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId);
-}
+  }
 
   private final RemoteStoreCallback remoteStoreCallback;
   private final LocalStore localStore;
@@ -163,7 +165,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
       Datastore datastore,
       AsyncQueue workerQueue,
       ConnectivityMonitor connectivityMonitor) {
-    this.datastoreId = databaseId;
+    this.databaseId = databaseId;
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -469,7 +471,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
     hardAssert(
         shouldStartWatchStream(),
         "startWatchStream() called when shouldStartWatchStream() is false.");
-    watchChangeAggregator = new WatchChangeAggregator(this);
+    watchChangeAggregator = new WatchChangeAggregator(databaseId, this);
     watchStream.start();
 
     onlineStateTracker.handleWatchStreamStart();
@@ -810,11 +812,6 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return this.listenTargets.get(targetId);
-  }
-
-  @Override
-  public DatabaseId getDatabaseId() {
-    return this.datastoreId;
   }
 
   public Task<Map<String, Value>> runAggregateQuery(

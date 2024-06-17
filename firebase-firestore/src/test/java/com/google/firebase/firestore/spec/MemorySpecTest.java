@@ -20,8 +20,6 @@ import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
-import com.google.firebase.firestore.remote.Datastore;
-import com.google.firebase.firestore.remote.MockDatastore;
 import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import java.util.Set;
 import org.junit.runner.RunWith;
@@ -55,12 +53,7 @@ public class MemorySpecTest extends SpecTestCase {
             }
           }
         };
-    provider.setRemoteProvider(new RemoteComponenetProvider() {
-      @Override
-      protected Datastore createDatastore(ComponentProvider.Configuration configuration) {
-          return new MockDatastore(configuration.databaseInfo, configuration.asyncQueue);
-      }
-    });
+    provider.setRemoteProvider(remoteProvider);
     provider.initialize(configuration);
     return provider;
   }

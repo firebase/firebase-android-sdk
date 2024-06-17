@@ -88,6 +88,7 @@ public class Datastore {
 
   protected final RemoteSerializer serializer;
   private final AsyncQueue workerQueue;
+
   private final FirestoreChannel channel;
 
   Datastore(AsyncQueue workerQueue, RemoteSerializer serializer, FirestoreChannel channel) {

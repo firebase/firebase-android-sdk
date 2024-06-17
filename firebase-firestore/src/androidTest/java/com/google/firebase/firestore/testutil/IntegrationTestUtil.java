@@ -170,12 +170,18 @@ public class IntegrationTestUtil {
     }
   }
 
+  @NonNull
   public static DatabaseInfo testEnvDatabaseInfo() {
     return new DatabaseInfo(
-        DatabaseId.forProject(provider.projectId()),
+        testEnvDatabaseId(),
         "test-persistenceKey",
         getFirestoreHost(),
         getSslEnabled());
+  }
+
+  @NonNull
+  public static DatabaseId testEnvDatabaseId() {
+    return DatabaseId.forProject(provider.projectId());
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {

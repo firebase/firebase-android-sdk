@@ -41,16 +41,8 @@ public class RemoteStoreTest {
   @Test
   public void testRemoteStoreStreamStopsWhenNetworkUnreachable() {
     AsyncQueue testQueue = new AsyncQueue();
-    DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
-    RemoteSerializer serializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    FirestoreChannel channel = new FirestoreChannel(
-        testQueue,
-        ApplicationProvider.getApplicationContext(),
-        null,
-        null,
-        databaseInfo,
-        null);
-    Datastore datastore = new Datastore(testQueue, serializer, channel);
+    RemoteSerializer serializer = new RemoteSerializer(IntegrationTestUtil.testEnvDatabaseId());
+    Datastore datastore = new Datastore(testQueue, serializer, null);
     Semaphore networkChangeSemaphore = new Semaphore(0);
     RemoteStore.RemoteStoreCallback callback =
         new RemoteStore.RemoteStoreCallback() {
@@ -78,12 +70,11 @@ public class RemoteStoreTest {
         };
 
     FakeConnectivityMonitor connectivityMonitor = new FakeConnectivityMonitor();
-    QueryEngine queryEngine = new QueryEngine();
     Persistence persistence = MemoryPersistence.createEagerGcMemoryPersistence();
     persistence.start();
-    LocalStore localStore = new LocalStore(persistence, queryEngine, User.UNAUTHENTICATED);
+    LocalStore localStore = new LocalStore(persistence, new QueryEngine(), User.UNAUTHENTICATED);
     RemoteStore remoteStore =
-        new RemoteStore(databaseInfo.getDatabaseId(), callback, localStore, datastore, testQueue, connectivityMonitor);
+        new RemoteStore(IntegrationTestUtil.testEnvDatabaseId(), callback, localStore, datastore, testQueue, connectivityMonitor);
 
     waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     drain(testQueue);

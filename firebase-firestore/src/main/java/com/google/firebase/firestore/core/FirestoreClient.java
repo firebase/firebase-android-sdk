@@ -86,14 +86,14 @@ public final class FirestoreClient {
   @Nullable private Scheduler gcScheduler;
 
   public FirestoreClient(
-          final Context context,
-          DatabaseInfo databaseInfo,
-          FirebaseFirestoreSettings settings,
-          CredentialsProvider<User> authProvider,
-          CredentialsProvider<String> appCheckProvider,
-          AsyncQueue asyncQueue,
-          @Nullable GrpcMetadataProvider metadataProvider,
-          ComponentProvider componentProvider) {
+      final Context context,
+      DatabaseInfo databaseInfo,
+      FirebaseFirestoreSettings settings,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
+      AsyncQueue asyncQueue,
+      @Nullable GrpcMetadataProvider metadataProvider,
+      ComponentProvider componentProvider) {
     this.databaseInfo = databaseInfo;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
