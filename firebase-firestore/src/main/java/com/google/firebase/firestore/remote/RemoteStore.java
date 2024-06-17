@@ -65,6 +65,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
 
+  /** The database ID of the Firestore instance. */
   private final DatabaseId databaseId;
 
   /** A callback interface for events from RemoteStore. */

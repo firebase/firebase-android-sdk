@@ -17,8 +17,14 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.hardAssertNonNull;
 
 import com.google.firebase.firestore.core.ComponentProvider;
-import com.google.firebase.firestore.util.AsyncQueue;
 
+/**
+ * Initializes and wires up remote components for Firestore.
+ *
+ * <p>Implementations provide custom components by overriding the `createX()` methods.
+ * <p>The RemoteComponentProvider is located in the same package as the components in order to have
+ * package-private access to the components.
+ */
 public class RemoteComponenetProvider {
 
 

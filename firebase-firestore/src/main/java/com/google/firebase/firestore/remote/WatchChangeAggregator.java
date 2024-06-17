@@ -17,8 +17,6 @@ package com.google.firebase.firestore.remote;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.provider.ContactsContract;
-
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
