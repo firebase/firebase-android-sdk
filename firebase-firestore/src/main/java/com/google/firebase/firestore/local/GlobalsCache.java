@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import androidx.annotation.NonNull;
+
 import com.google.protobuf.ByteString;
 
 /**
@@ -21,13 +23,14 @@ import com.google.protobuf.ByteString;
  *
  * <p>Global state that cuts across components should be saved here. Following are contained herein:
  *
- * <p>`db_token` tracks server interaction across Listen and Write streams. This facilitates cache
+ * <p>`sessionToken` tracks server interaction across Listen and Write streams. This facilitates cache
  * synchronization and invalidation.
  */
 interface GlobalsCache {
 
+    @NonNull
     ByteString getSessionsToken();
 
-    void setSessionToken(ByteString value);
+    void setSessionToken(@NonNull ByteString value);
 
 }
