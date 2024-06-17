@@ -24,6 +24,14 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 
+/**
+ * Collects asynchronous `onResult` and `onException` callback invocations.
+ *
+ * <p> As part of a test, a callback can be asynchronously invoked many times. This class retains
+ * all callback invocations as a List of Task. The test code can await a future callback.
+ *
+ * <p> Just like a stream, no more results are expected after an exception.
+ */
 public class AsyncTaskAccumulator<T> implements Iterable<Task<T>> {
 
     private int eventCount;
@@ -34,14 +42,24 @@ public class AsyncTaskAccumulator<T> implements Iterable<Task<T>> {
         events = new ArrayList<>();
     }
 
+    /**
+     * Callback for next `onResult` or `onException`. Calling this method repeatedly will
+     * provide callbacks further into the future. Each callback should only be exactly once.
+     */
     public synchronized TaskCompletionSource<T> next() {
         return computeIfAbsentIndex(eventCount++);
     }
 
+    /**
+     * Callback that can be invoked as part of test code.
+     */
     public void onResult(T result) {
         next().setResult(result);
     }
 
+    /**
+     * Callback that can be invoked as part of test code.
+     */
     public void onException(Exception e) {
         next().setException(e);
     }
