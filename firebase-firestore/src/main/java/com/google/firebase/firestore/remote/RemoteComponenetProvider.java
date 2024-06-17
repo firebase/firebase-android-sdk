@@ -27,7 +27,6 @@ import com.google.firebase.firestore.core.ComponentProvider;
  */
 public class RemoteComponenetProvider {
 
-
     private GrpcCallProvider grpcCallProvider;
     private RemoteSerializer remoteSerializer;
     private FirestoreChannel firestoreChannel;
