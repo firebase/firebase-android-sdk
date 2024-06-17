@@ -71,7 +71,9 @@ public object TimestampSerializer : KSerializer<Timestamp> {
     val regex =
       Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{0,9})?(Z|[+-]\\d{2}:\\d{2})$")
 
-    require(strUppercase.matches(regex)) { "Timestamp string: (str=$str) format doesn't support." }
+    require(strUppercase.matches(regex)) {
+      "Value does not conform to the RFC3339 specification with up to 9 digits of time-secfrac precision (str=$str)."
+    }
 
     val position = ParsePosition(0)
     val seconds = run {
