@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai.type
 
-import com.google.firebase.vertexai.type.Schema.Companion.double
 import org.json.JSONObject
 
 /**
@@ -26,11 +25,8 @@ import org.json.JSONObject
  * @see [defineFunction] for how to create an instance of this class.
  */
 class NoParameterFunction
-internal constructor(
-  name: String,
-  description: String,
-  val function: suspend () -> JSONObject,
-) : FunctionDeclaration(name, description) {
+internal constructor(name: String, description: String, val function: suspend () -> JSONObject) :
+  FunctionDeclaration(name, description) {
   override fun getParameters() = listOf<Schema<Any>>()
 
   suspend fun execute() = function()
@@ -158,14 +154,14 @@ abstract class FunctionDeclaration(val name: String, val description: String) {
  * @property name: The name of the parameter
  * @property description: The description of what the parameter should contain or represent
  * @property format: format information for the parameter, this can include bitlength in the case of
- * int/float or keywords like "enum" for the string type
+ *   int/float or keywords like "enum" for the string type
  * @property enum: contains the enum values for a string enum
  * @property type: contains the type info and parser
  * @property properties: if type is OBJECT, then this contains the description of the fields of the
- * object by name
+ *   object by name
  * @property required: if type is OBJECT, then this contains the list of required keys
  * @property items: if the type is ARRAY, then this contains a description of the objects in the
- * array
+ *   array
  */
 class Schema<T>(
   val name: String,
@@ -213,6 +209,7 @@ class Schema<T>(
         type = FunctionType.STRING,
         nullable = false,
       )
+
     /** Registers a schema for a boolean */
     fun bool(name: String, description: String) =
       Schema<Boolean>(
@@ -225,7 +222,7 @@ class Schema<T>(
     /** Registers a schema for a floating point number */
     @Deprecated(
       message = "this is being renamed to double",
-      replaceWith = ReplaceWith("double(name, description)")
+      replaceWith = ReplaceWith("double(name, description)"),
     )
     fun num(name: String, description: String) =
       Schema<Double>(
@@ -258,6 +255,7 @@ class Schema<T>(
 
     /**
      * Registers a schema for an array.
+     *
      * @param items can be used to specify the type of the array
      */
     fun arr(name: String, description: String, items: Schema<out Any>? = null) =
