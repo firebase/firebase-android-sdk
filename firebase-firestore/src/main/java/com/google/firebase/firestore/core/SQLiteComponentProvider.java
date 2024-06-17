@@ -21,7 +21,6 @@ import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.local.Scheduler;
-import com.google.firebase.firestore.remote.RemoteSerializer;
 
 /** Provides all components needed for Firestore with SQLite persistence. */
 public class SQLiteComponentProvider extends MemoryComponentProvider {
