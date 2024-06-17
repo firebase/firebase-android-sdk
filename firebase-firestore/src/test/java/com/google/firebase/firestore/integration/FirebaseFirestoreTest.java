@@ -32,7 +32,6 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreIntegrationTestFactory;
-import com.google.firebase.firestore.FirebaseFirestoreTestFactory;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.UserData;
@@ -156,10 +155,10 @@ public class FirebaseFirestoreTest {
 
             // Wait for WriteRequest handshake.
             // We expect an empty init request because the database is fresh.
-            assertThat(waitForResult(requests.next())).isEqualTo(writeRequestHandshake());
+            assertThat(waitForResult(requests.next())).isEqualTo(writeRequest(InitRequest.getDefaultInstance()));
 
             // Simulate a successful InitResponse from server.
-            waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse())));
+            waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(initResponse("token1")))));
 
             // Expect first write request.
             Write write1 = serializer.encodeMutation(setMutation(doc1, map("foo", "A")));
@@ -185,10 +184,10 @@ public class FirebaseFirestoreTest {
 
             // Wait for WriteRequest handshake.
             // We expect FirestoreClient to send InitRequest with previous token.
-            assertThat(waitForResult(requests.next())).isEqualTo(writeRequestHandshake());
+            assertThat(waitForResult(requests.next())).isEqualTo(writeRequest(initRequest("token1")));
 
             // Simulate a successful InitResponse from server.
-            waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse())));
+            waitForSuccess(instance.enqueue(() -> callback.listener.onMessage(writeResponse(initResponse("token2")))));
 
             // Expect second write to be retried.
             Write write2 = serializer.encodeMutation(setMutation(doc2, map("foo", "B")));
@@ -210,7 +209,7 @@ public class FirebaseFirestoreTest {
         // Trigger instantiation of FirestoreClient
         firestore.collection("col");
 
-        FirebaseFirestoreTestFactory.Instance first = waitForResult(factory.instances.get(0));
+        FirebaseFirestoreIntegrationTestFactory.Instance first = waitForResult(factory.instances.get(0));
 
         AsyncQueue firstAsyncQueue = first.configuration.asyncQueue;
 
@@ -220,7 +219,7 @@ public class FirebaseFirestoreTest {
         waitForSuccess(firestore.clearPersistence());
 
         // Now we have a history of 2 instances.
-        FirebaseFirestoreTestFactory.Instance second = waitForResult(factory.instances.get(1));
+        FirebaseFirestoreIntegrationTestFactory.Instance second = waitForResult(factory.instances.get(1));
         AsyncQueue secondAsyncQueue = second.configuration.asyncQueue;
 
         assertEquals(firstAsyncQueue.getExecutor(), secondAsyncQueue.getExecutor());
@@ -253,7 +252,7 @@ public class FirebaseFirestoreTest {
         Task<QuerySnapshot> firstSnapshot = snapshots.next();
 
         // Wait for first FirestoreClient to instantiate
-        FirebaseFirestoreTestFactory.Instance first = waitForResult(factory.instances.get(0));
+        FirebaseFirestoreIntegrationTestFactory.Instance first = waitForResult(factory.instances.get(0));
 
         // Wait for Listen CallClient to be created.
         TestClientCall<ListenRequest, ListenResponse> callback1 = waitForResult(first.getListenClient(0));
@@ -310,7 +309,7 @@ public class FirebaseFirestoreTest {
         firestore.collection("col").addSnapshotListener(BACKGROUND_EXECUTOR, snapshotListener2);
 
         // Wait for second FirestoreClient to instantiate
-        FirebaseFirestoreTestFactory.Instance second = waitForResult(factory.instances.get(1));
+        FirebaseFirestoreIntegrationTestFactory.Instance second = waitForResult(factory.instances.get(1));
 
         // Wait for Listen CallClient to be created.
         TestClientCall<ListenRequest, ListenResponse> callback3 = waitForResult(second.getListenClient(0));
@@ -334,7 +333,7 @@ public class FirebaseFirestoreTest {
         // 1st FirestoreClient instance.
         {
             // Wait for first FirestoreClient to instantiate
-            FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(0));
+            FirebaseFirestoreIntegrationTestFactory.Instance instance = waitForResult(factory.instances.get(0));
             RemoteSerializer serializer = instance.componentProvider.getRemoteSerializer();
 
             // First Write stream connection
@@ -417,7 +416,7 @@ public class FirebaseFirestoreTest {
         // Previous instance was shutdown due to clear cache command from server.
         {
             // Wait for second FirestoreClient to instantiate
-            FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(1));
+            FirebaseFirestoreIntegrationTestFactory.Instance instance = waitForResult(factory.instances.get(1));
             RemoteSerializer serializer = instance.componentProvider.getRemoteSerializer();
 
             // The writes should have been cleared, so we will have to create a new one.
@@ -451,7 +450,7 @@ public class FirebaseFirestoreTest {
         CollectionReference col = firestore.collection("col");
 
         // Wait for FirestoreClient to instantiate
-        FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(0));
+        FirebaseFirestoreIntegrationTestFactory.Instance instance = waitForResult(factory.instances.get(0));
 
         // Trigger Write Stream First
         col.document().set(map("foo", "A"));
@@ -493,7 +492,7 @@ public class FirebaseFirestoreTest {
         CollectionReference col = firestore.collection("col");
 
         // Wait for FirestoreClient to instantiate
-        FirebaseFirestoreTestFactory.Instance instance = waitForResult(factory.instances.get(0));
+        FirebaseFirestoreIntegrationTestFactory.Instance instance = waitForResult(factory.instances.get(0));
 
         // Trigger Listen Stream First
         TestEventListener<QuerySnapshot> snapshotListener = new TestEventListener<>();
@@ -552,7 +551,7 @@ public class FirebaseFirestoreTest {
     @NonNull
     private ListenRequest listenRequest(InitRequest initRequest) {
         return ListenRequest.newBuilder()
-                .setDatabase(getResourcePrefixValue(factory.databaseId))
+                .setDatabase(getResourcePrefixValue(databaseId))
                 .setInitRequest(initRequest)
                 .build();
     }
@@ -567,7 +566,7 @@ public class FirebaseFirestoreTest {
     @NonNull
     private WriteRequest writeRequest(InitRequest initRequest) {
         return WriteRequest.newBuilder()
-                .setDatabase(getResourcePrefixValue(factory.databaseId))
+                .setDatabase(getResourcePrefixValue(databaseId))
                 .setInitRequest(initRequest)
                 .build();
     }

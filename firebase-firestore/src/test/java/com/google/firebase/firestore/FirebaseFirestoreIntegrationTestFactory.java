@@ -31,6 +31,7 @@ import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Function;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
@@ -38,6 +39,8 @@ import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;
 
 import com.google.firebase.firestore.integration.TestClientCall;
+
+import java.util.concurrent.Executor;
 
 /**
  * Factory for producing FirebaseFirestore instances that has mocked gRPC layer.
@@ -72,6 +75,9 @@ public final class FirebaseFirestoreIntegrationTestFactory {
         /** Every write stream created is captured here. */
         private final AsyncTaskAccumulator<TestClientCall<WriteRequest, WriteResponse>> writes = new AsyncTaskAccumulator<>();
 
+        /** Mockito mock of GrpcCallProvider. */
+        public GrpcCallProvider mockGrpcCallProvider;
+
         private Instance(ComponentProvider componentProvider) {
             this.componentProvider = componentProvider;
         }
@@ -92,7 +98,7 @@ public final class FirebaseFirestoreIntegrationTestFactory {
          * `FirebaseFirestoreIntegrationTestFactory` will set `Instance.configuration` from within
          * the ComponentProvider override.
          */
-        private ComponentProvider.Configuration configuration;
+        public ComponentProvider.Configuration configuration;
 
         /** Every listen stream created */
         public Task<TestClientCall<ListenRequest, ListenResponse>> getListenClient(int i) {
@@ -122,9 +128,8 @@ public final class FirebaseFirestoreIntegrationTestFactory {
                 ApplicationProvider.getApplicationContext(),
                 databaseId,
                 "k",
-                new EmptyCredentialsProvider(),
-                new EmptyAppCheckTokenProvider(),
-                new AsyncQueue(),
+                EmptyCredentialsProvider::new,
+                EmptyAppCheckTokenProvider::new,
                 this::componentProvider,
                 null,
                 instanceRegistry,
@@ -138,12 +143,17 @@ public final class FirebaseFirestoreIntegrationTestFactory {
         firestore.setFirestoreSettings(builder.build());
     }
 
+    public void setClearPersistenceMethod(Function<Executor, Task<Void>> clearPersistenceMethod) {
+        firestore.clearPersistenceMethod = clearPersistenceMethod;
+    }
+
     private GrpcCallProvider mockGrpcCallProvider(Instance instance) {
         GrpcCallProvider mockGrpcCallProvider = mock(GrpcCallProvider.class);
         when(mockGrpcCallProvider.createClientCall(eq(FirestoreGrpc.getListenMethod())))
                 .thenAnswer(invocation -> Tasks.forResult(new TestClientCall<>(instance.listens.next())));
         when(mockGrpcCallProvider.createClientCall(eq(FirestoreGrpc.getWriteMethod())))
                 .thenAnswer(invocation -> Tasks.forResult(new TestClientCall<>(instance.writes.next())));
+        instance.mockGrpcCallProvider = mockGrpcCallProvider;
         return mockGrpcCallProvider;
     }
 
