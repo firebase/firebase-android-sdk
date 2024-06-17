@@ -48,4 +48,10 @@ public abstract class GlobalsCacheTest {
         globalsCache.setSessionToken(value);
         assertEquals(value, globalsCache.getSessionsToken());
     }
+
+    @Test
+    public void setAndGetEmptyDbToken() {
+        globalsCache.setSessionToken(ByteString.EMPTY);
+        assertEquals(ByteString.EMPTY, globalsCache.getSessionsToken());
+    }
 }
