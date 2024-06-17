@@ -16,6 +16,7 @@
 
 package com.google.firebase.vertexai.type
 
+import com.google.firebase.vertexai.type.Schema.Companion.double
 import org.json.JSONObject
 
 /**
@@ -218,6 +219,19 @@ class Schema<T>(
         name = name,
         description = description,
         type = FunctionType.BOOLEAN,
+        nullable = false,
+      )
+
+    /** Registers a schema for a floating point number */
+    @Deprecated(
+      message = "this is being renamed to double",
+      replaceWith = ReplaceWith("double(name, description)")
+    )
+    fun num(name: String, description: String) =
+      Schema<Double>(
+        name = name,
+        description = description,
+        type = FunctionType.NUMBER,
         nullable = false,
       )
 
