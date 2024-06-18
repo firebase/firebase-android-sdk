@@ -29,6 +29,7 @@ import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.GraphqlError
+import google.firebase.dataconnect.proto.SourceLocation
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.Metadata
@@ -278,8 +279,19 @@ internal fun ListValue.toPathSegment() =
     }
   }
 
+internal fun List<SourceLocation>.toSourceLocations(): List<DataConnectError.SourceLocation> =
+  buildList {
+    this@toSourceLocations.forEach {
+      add(DataConnectError.SourceLocation(line = it.line, column = it.column))
+    }
+  }
+
 internal fun GraphqlError.toDataConnectError() =
-  DataConnectError(message = message, path = path.toPathSegment(), extensions = emptyMap())
+  DataConnectError(
+    message = message,
+    path = path.toPathSegment(),
+    this.locationsList.toSourceLocations()
+  )
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
   dataDeserializer: DeserializationStrategy<T>

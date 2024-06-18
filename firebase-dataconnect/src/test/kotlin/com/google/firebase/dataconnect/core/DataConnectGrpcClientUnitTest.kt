@@ -34,10 +34,10 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlinx.coroutines.test.runTest
-import org.junit.Test
 import java.util.regex.Pattern
 import kotlin.random.Random
+import kotlinx.coroutines.test.runTest
+import org.junit.Test
 
 class DataConnectGrpcClientUnitTest {
 
