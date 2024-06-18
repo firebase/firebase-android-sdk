@@ -73,59 +73,79 @@ internal class DataConnectAuth(
     }
   }
 
+  private sealed interface GetAccessTokenResult {
+    object Closed : GetAccessTokenResult
+    object NullAuthProvider : GetAccessTokenResult
+    object TokenSequenceNumberChanged : GetAccessTokenResult
+    object NoUserSignedIn : GetAccessTokenResult
+    data class Error(val throwable: Throwable) : GetAccessTokenResult
+    data class AccessToken(val value: String?) : GetAccessTokenResult
+  }
+
+  private suspend fun getAccessTokenOnce(): GetAccessTokenResult {
+    val (capturedAuthProvider, capturedTokenSequenceNumber) =
+      mutex.withLock {
+        val capturedAuthProvider = authProvider
+        if (closed) {
+          return GetAccessTokenResult.Closed
+        } else if (capturedAuthProvider === null) {
+          return GetAccessTokenResult.NullAuthProvider
+        }
+        Pair(capturedAuthProvider, tokenSequenceNumber)
+      }
+
+    val accessTokenResult = capturedAuthProvider.runCatching { getAccessToken(false).await() }
+
+    mutex.withLock {
+      if (capturedTokenSequenceNumber != tokenSequenceNumber) {
+        return GetAccessTokenResult.TokenSequenceNumberChanged
+      }
+    }
+
+    return accessTokenResult.fold(
+      onSuccess = { GetAccessTokenResult.AccessToken(it.token) },
+      onFailure = {
+        if (it is FirebaseNoSignedInUserException) {
+          GetAccessTokenResult.NoUserSignedIn
+        } else {
+          GetAccessTokenResult.Error(it)
+        }
+      }
+    )
+  }
+
   suspend fun getAccessToken(requestId: String): String? {
     while (true) {
-      val (capturedAuthProvider, capturedTokenSequenceNumber) =
-        mutex.withLock {
-          val capturedAuthProvider = authProvider
-          if (closed) {
-            logger.debug {
-              "[rid=$requestId] DataConnectAuth is closed; returning null access token"
-            }
-            return null
-          } else if (capturedAuthProvider === null) {
-            logger.debug {
-              "[rid=$requestId] FirebaseAuth is not (yet?) available; " +
-                "returning null access token"
-            }
-            return null
-          }
-          Pair(capturedAuthProvider, tokenSequenceNumber)
-        }
-
-      val accessTokenResult = capturedAuthProvider.runCatching { getAccessToken(false).await() }
-
-      val tokenSequenceNumberChanged =
-        mutex.withLock { capturedTokenSequenceNumber != tokenSequenceNumber }
-      if (tokenSequenceNumberChanged) {
-        logger.debug { "[rid=$requestId] token sequence number changed during fetch; re-fetching" }
-        continue
-      }
-
-      if (accessTokenResult.isSuccess) {
-        val accessToken = accessTokenResult.getOrNull()?.token
-        if (accessToken === null) {
+      when (val result = getAccessTokenOnce()) {
+        is GetAccessTokenResult.AccessToken -> {
           logger.debug {
-            "[rid=$requestId] returning null access token as provided by FirebaseAuth"
+            "[rid=$requestId] returning access token as" +
+              " provided by FirebaseAuth: ${result.value?.toScrubbedAccessToken()}"
           }
-          return null
+          return result.value
         }
-        logger.debug { "[rid=$requestId] got access token: ${accessToken.toScrubbedAccessToken()}" }
-        return accessToken
-      }
-
-      val exception = accessTokenResult.exceptionOrNull()!!
-      if (exception is FirebaseNoSignedInUserException) {
-        logger.debug {
-          "[rid=$requestId] FirebaseAuth has no signed-in user; returning null access token"
+        is GetAccessTokenResult.TokenSequenceNumberChanged -> {
+          logger.debug {
+            "[rid=$requestId] token sequence number changed during auth token fetch; re-fetching"
+          }
+          continue
         }
-        return null
+        is GetAccessTokenResult.Error -> {
+          logger.warn(result.throwable) { "[rid=$requestId] failed to get auth token" }
+          throw result.throwable
+        }
+        is GetAccessTokenResult.Closed ->
+          logger.debug { "[rid=$requestId] DataConnectAuth is closed; returning null access token" }
+        is GetAccessTokenResult.NullAuthProvider ->
+          logger.debug {
+            "[rid=$requestId] FirebaseAuth is not (yet?) available; returning null access token"
+          }
+        is GetAccessTokenResult.NoUserSignedIn ->
+          logger.debug {
+            "[rid=$requestId] FirebaseAuth has no signed-in user; returning null access token"
+          }
       }
-
-      logger.warn(exception) {
-        "[rid=$requestId] getting access token failed for an unknown reason"
-      }
-      throw exception
+      return null
     }
   }
 
