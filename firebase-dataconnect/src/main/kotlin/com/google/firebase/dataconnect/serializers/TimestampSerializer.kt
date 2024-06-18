@@ -72,7 +72,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
       Regex("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{0,9})?(Z|[+-]\\d{2}:\\d{2})$")
 
     require(strUppercase.matches(regex)) {
-      "Value does not conform to the RFC3339 specification (str=$str)"
+      "Value does not conform to the RFC3339 specification with up to 9 digits of time-secfrac precision (str=$str)."
     }
 
     val position = ParsePosition(0)
@@ -108,7 +108,7 @@ public object TimestampSerializer : KSerializer<Timestamp> {
     val hours = strUppercase.substring(position.index + 1, position.index + 3).toInt()
     val minutes = strUppercase.substring(position.index + 4, position.index + 6).toInt()
     val timeZoneDiffer = hours * 3600 + minutes * 60
-    return Timestamp(seconds + if (addTimeDiffer) timeZoneDiffer else -timeZoneDiffer, nanoseconds)
+    return Timestamp(seconds + if (addTimeDiffer) -timeZoneDiffer else timeZoneDiffer, nanoseconds)
   }
 
   override fun serialize(encoder: Encoder, value: Timestamp) {

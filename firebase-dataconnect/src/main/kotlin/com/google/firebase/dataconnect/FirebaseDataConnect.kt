@@ -94,6 +94,8 @@ import kotlinx.serialization.SerializationStrategy
  * violation upon the first network request being sent.
  * - [#6006](https://github.com/firebase/firebase-android-sdk/pull/6006) Improved debug logging of
  * GRPC requests and responses.
+ * - [#6038](https://github.com/firebase/firebase-android-sdk/pull/6038) Fixed an bug with incorrect
+ * Timestamp serialization due to miscalculation in timezone decoding.
  *
  * #### 16.0.0-alpha04 (May 29, 2024)
  * - [#5976](https://github.com/firebase/firebase-android-sdk/pull/5976) Fixed time zone issues when
