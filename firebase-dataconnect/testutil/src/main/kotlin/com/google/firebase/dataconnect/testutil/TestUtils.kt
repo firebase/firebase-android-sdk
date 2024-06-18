@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.common.truth.StringSubject
 import com.google.firebase.FirebaseApp
-import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.util.nextAlphanumericString
@@ -159,31 +158,15 @@ fun randomDataConnectSettings(hostKey: String) =
   DataConnectSettings(host = randomHost(hostKey), sslEnabled = randomSslEnabled())
 
 /**
- * Generates and returns a random, valid string suitable for [ConnectorConfig.connector].
- * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "tmw55bmmtz").
- */
-fun randomConnector(key: String) = "connector_${key}_${Random.nextAlphanumericString(length = 8)}"
-
-/**
- * Generates and returns a random, valid string suitable for [ConnectorConfig.location].
- * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "wfnz4ptjyx").
- */
-fun randomLocation(key: String) = "location_${key}_${Random.nextAlphanumericString(length = 8)}"
-
-/**
- * Generates and returns a random, valid string suitable for [ConnectorConfig.serviceId].
- * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (e.g. "84b8b6jt49").
- */
-fun randomServiceId(key: String) = "serviceId_${key}_${Random.nextAlphanumericString(length = 8)}"
-
-/**
  * Generates and returns a random, valid string suitable for a "request ID".
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
  * for correlating the application ID with its call site (e.g. "9p6dyyr2zp").
  */
+@Deprecated(
+  "use Arb.requestId() from Arbs.kt instead",
+  replaceWith =
+    ReplaceWith("Arb.requestId(key).next()", "com.google.firebase.dataconnect.testutil.requestId")
+)
 fun randomRequestId(key: String) = "requestId_${key}_${Random.nextAlphanumericString(length = 8)}"
 
 /**
@@ -193,15 +176,3 @@ fun randomRequestId(key: String) = "requestId_${key}_${Random.nextAlphanumericSt
  */
 fun randomOperationName(key: String) =
   "operation_${key}_${Random.nextAlphanumericString(length = 8)}"
-
-/**
- * Generates and returns a new [ConnectorConfig] with random values.
- * @param key A hardcoded random string that will be incorporated into the strings of the returned
- * object; useful for correlating the application ID with its call site (e.g. "th53n9e6jr").
- */
-fun randomConnectorConfig(key: String) =
-  ConnectorConfig(
-    connector = randomConnector(key),
-    location = randomLocation(key),
-    serviceId = randomServiceId(key)
-  )

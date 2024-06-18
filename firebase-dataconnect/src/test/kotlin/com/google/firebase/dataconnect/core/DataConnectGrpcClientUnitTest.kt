@@ -17,25 +17,27 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.containsMatchWithNonAdjacentText
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
-import com.google.firebase.dataconnect.testutil.randomConnectorConfig
 import com.google.firebase.dataconnect.testutil.randomHost
 import com.google.firebase.dataconnect.testutil.randomOperationName
 import com.google.firebase.dataconnect.testutil.randomProjectId
-import com.google.firebase.dataconnect.testutil.randomRequestId
+import com.google.firebase.dataconnect.testutil.requestId
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import io.grpc.Metadata
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import java.util.regex.Pattern
-import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import java.util.regex.Pattern
+import kotlin.random.Random
 
 class DataConnectGrpcClientUnitTest {
 
@@ -64,7 +66,7 @@ class DataConnectGrpcClientUnitTest {
   private val dataConnectGrpcClient =
     DataConnectGrpcClient(
       projectId = randomProjectId("nywm75x5xm"),
-      connector = randomConnectorConfig("w3v2443737"),
+      connector = Arb.connectorConfig("w3v2443737").next(),
       dataConnectAuth = mockk<DataConnectAuth>(relaxed = true, name = "mockDataConnectAuth"),
       grpcRPCsFactory = mockDataConnectGrpcRPCsFactory,
       parentLogger = mockk<Logger>(relaxed = true, name = "mockLogger"),
@@ -73,7 +75,7 @@ class DataConnectGrpcClientUnitTest {
   @Test
   fun `executeQuery() should include x-goog-api-client grpc header`() = runTest {
     dataConnectGrpcClient.executeQuery(
-      requestId = randomRequestId("dx6ecw35r7"),
+      requestId = Arb.requestId("dx6ecw35r7").next(),
       operationName = randomOperationName("ranwgj8ys6"),
       variables = Struct.getDefaultInstance()
     )
@@ -84,7 +86,7 @@ class DataConnectGrpcClientUnitTest {
   @Test
   fun `executeMutation() should include x-goog-api-client grpc header`() = runTest {
     dataConnectGrpcClient.executeMutation(
-      requestId = randomRequestId("wt4dsrhqdw"),
+      requestId = Arb.requestId("wt4dsrhqdw").next(),
       operationName = randomOperationName("bhkeqsb4d7"),
       variables = Struct.getDefaultInstance()
     )
