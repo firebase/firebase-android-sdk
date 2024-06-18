@@ -27,18 +27,13 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 
-internal interface DataConnectAuth {
-
-  suspend fun getAccessToken(requestId: String): String?
-}
-
-internal class DataConnectAuthImpl(
+internal class DataConnectAuth(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
   blockingExecutor: Executor,
   parentLogger: Logger,
-) : DataConnectAuth {
+) {
   private val logger =
-    Logger("DataConnectAuthImpl").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+    Logger("DataConnectAuth").apply { debug { "Created by ${parentLogger.nameWithId}" } }
 
   private val idTokenListener = IdTokenListener { runBlocking { onIdTokenChanged(it) } }
 
@@ -76,7 +71,7 @@ internal class DataConnectAuthImpl(
     }
   }
 
-  override suspend fun getAccessToken(requestId: String): String? {
+  suspend fun getAccessToken(requestId: String): String? {
     while (true) {
       val (capturedAuthProvider, capturedTokenSequenceNumber) =
         mutex.withLock {
