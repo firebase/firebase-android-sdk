@@ -154,14 +154,14 @@ abstract class FunctionDeclaration(val name: String, val description: String) {
  * @property name: The name of the parameter
  * @property description: The description of what the parameter should contain or represent
  * @property format: format information for the parameter, this can include bitlength in the case of
- *   int/float or keywords like "enum" for the string type
+ * int/float or keywords like "enum" for the string type
  * @property enum: contains the enum values for a string enum
  * @property type: contains the type info and parser
  * @property properties: if type is OBJECT, then this contains the description of the fields of the
- *   object by name
+ * object by name
  * @property required: if type is OBJECT, then this contains the list of required keys
  * @property items: if the type is ARRAY, then this contains a description of the objects in the
- *   array
+ * array
  */
 class Schema<T>(
   val name: String,
