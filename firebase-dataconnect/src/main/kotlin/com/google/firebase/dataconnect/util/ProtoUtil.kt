@@ -24,10 +24,12 @@ import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
 import com.google.protobuf.listValueOrNull
 import com.google.protobuf.structValueOrNull
+import google.firebase.dataconnect.proto.EmulatorInfo
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.ServiceInfo
 import java.io.BufferedWriter
 import java.io.CharArrayWriter
 import java.io.DataOutputStream
@@ -305,6 +307,16 @@ internal fun ExecuteMutationResponse.toCompactString(): String = toStructProto()
 internal fun ExecuteMutationResponse.toStructProto(): Struct = buildStructProto {
   if (hasData()) put("data", data)
   putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
+}
+
+internal fun EmulatorInfo.toStructProto(): Struct = buildStructProto {
+  put("version", version)
+  putList("services") { servicesList.forEach { add(it.toStructProto()) } }
+}
+
+internal fun ServiceInfo.toStructProto(): Struct = buildStructProto {
+  put("service_id", serviceId)
+  put("connection_string", connectionString)
 }
 
 internal fun Struct.toMap(): Map<String, Any?> {

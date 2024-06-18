@@ -26,8 +26,10 @@ import com.google.firebase.dataconnect.oldquerymgr.OldQueryManager
 import com.google.firebase.dataconnect.oldquerymgr.RegisteredDataDeserialzer
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
+import kotlin.random.Random
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.*
@@ -100,11 +102,24 @@ internal class FirebaseDataConnectImpl(
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
 
-      val hostAndPortFromSettings = Pair(settings.host, settings.sslEnabled)
-      val hostAndPortFromEmulatorSettings = emulatorSettings?.run { Pair("$host:$port", false) }
-      val (host, sslEnabled) =
-        if (hostAndPortFromEmulatorSettings == null) {
-          hostAndPortFromSettings
+      data class DataConnectBackendInfo(
+        val host: String,
+        val sslEnabled: Boolean,
+        val isEmulator: Boolean
+      )
+      val backendInfoFromSettings =
+        DataConnectBackendInfo(
+          host = settings.host,
+          sslEnabled = settings.sslEnabled,
+          isEmulator = false
+        )
+      val backendInfoFromEmulatorSettings =
+        emulatorSettings?.run {
+          DataConnectBackendInfo(host = "$host:$port", sslEnabled = false, isEmulator = true)
+        }
+      val backendInfo =
+        if (backendInfoFromEmulatorSettings == null) {
+          backendInfoFromSettings
         } else {
           if (!settings.isDefaultHost()) {
             logger.warn(
@@ -112,23 +127,43 @@ internal class FirebaseDataConnectImpl(
                 "emulator host will be used."
             )
           }
-          hostAndPortFromEmulatorSettings
+          backendInfoFromEmulatorSettings
         }
 
+      logger.debug { "connecting to Data Connect backend: $backendInfo" }
       val grpcMetadata =
         DataConnectGrpcMetadata.forSystemVersions(
           dataConnectAuth = dataConnectAuth.getLocked(),
           connectorLocation = config.location,
           parentLogger = logger,
         )
-      DataConnectGrpcRPCs(
-        context = context,
-        host = host,
-        sslEnabled = sslEnabled,
-        blockingCoroutineDispatcher = blockingDispatcher,
-        grpcMetadata = grpcMetadata,
-        parentLogger = logger,
-      )
+      val dataConnectGrpcRPCs =
+        DataConnectGrpcRPCs(
+          context = context,
+          host = backendInfo.host,
+          sslEnabled = backendInfo.sslEnabled,
+          blockingCoroutineDispatcher = blockingDispatcher,
+          grpcMetadata = grpcMetadata,
+          parentLogger = logger,
+        )
+
+      if (backendInfo.isEmulator) {
+        val requestId = "gei" + Random.nextAlphanumericString(length = 6)
+        val result = dataConnectGrpcRPCs.runCatching { getEmulatorInfo(requestId) }
+        result.onSuccess { emulatorInfo ->
+          logger.debug { "Data Connect Emulator version: ${emulatorInfo.version}" }
+          logger.debug { "Data Connect Emulator services (${emulatorInfo.servicesCount}): " }
+          emulatorInfo.servicesList.forEachIndexed { index, serviceInfo ->
+            logger.debug {
+              " service #${index+1}:" +
+                " serviceId=${serviceInfo.serviceId}" +
+                " connectionString=${serviceInfo.connectionString}"
+            }
+          }
+        }
+      }
+
+      dataConnectGrpcRPCs
     }
 
   override val lazyGrpcClient =

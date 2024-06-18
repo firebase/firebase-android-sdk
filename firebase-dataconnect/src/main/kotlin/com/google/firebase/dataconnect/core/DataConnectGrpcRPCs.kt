@@ -26,10 +26,14 @@ import com.google.firebase.dataconnect.util.toStructProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
+import google.firebase.dataconnect.proto.EmulatorInfo
+import google.firebase.dataconnect.proto.EmulatorServiceGrpc
+import google.firebase.dataconnect.proto.EmulatorServiceGrpcKt
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.GetEmulatorInfoRequest
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
@@ -109,7 +113,14 @@ internal class DataConnectGrpcRPCs(
 
   private val lazyGrpcStub =
     SuspendingLazy(mutex) {
+      check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
       ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub(lazyGrpcChannel.getLocked())
+    }
+
+  private val lazyEmulatorGrpcStub =
+    SuspendingLazy(mutex) {
+      check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
+      EmulatorServiceGrpcKt.EmulatorServiceCoroutineStub(lazyGrpcChannel.getLocked())
     }
 
   suspend fun executeMutation(
@@ -136,6 +147,38 @@ internal class DataConnectGrpcRPCs(
         kotlinMethodName = kotlinMethodName,
         response = it.toStructProto(),
         responseTypeName = "ExecuteMutationResponse",
+      )
+    }
+    result.onFailure {
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        it,
+      )
+    }
+
+    return result.getOrThrow()
+  }
+
+  suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
+    val request = GetEmulatorInfoRequest.getDefaultInstance()
+    val metadata = Metadata()
+    val kotlinMethodName = "getEmulatorInfo()"
+
+    logger.logGrpcSending(
+      requestId = requestId,
+      kotlinMethodName = kotlinMethodName,
+      grpcMethod = EmulatorServiceGrpc.getGetEmulatorInfoMethod(),
+    )
+
+    val result = lazyEmulatorGrpcStub.get().runCatching { getEmulatorInfo(request, metadata) }
+
+    result.onSuccess {
+      logger.logGrpcReceived(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        response = it.toStructProto(),
+        responseTypeName = "EmulatorInfo",
       )
     }
     result.onFailure {
@@ -222,6 +265,12 @@ internal class DataConnectGrpcRPCs(
       }
       "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
     }
+
+    fun Logger.logGrpcSending(
+      requestId: String,
+      kotlinMethodName: String,
+      grpcMethod: MethodDescriptor<*, *>,
+    ) = debug { "$kotlinMethodName [rid=$requestId] starting ${grpcMethod.fullMethodName}" }
 
     fun Logger.logGrpcReceived(
       requestId: String,
