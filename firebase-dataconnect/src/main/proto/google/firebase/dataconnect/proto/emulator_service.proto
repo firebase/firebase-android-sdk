@@ -30,6 +30,9 @@ option java_multiple_files = true;
 service EmulatorService {
   rpc GetEmulatorInfo(GetEmulatorInfoRequest) returns (EmulatorInfo) {
   }
+
+  rpc StreamEmulatorIssues(StreamEmulatorIssuesRequest) returns (stream EmulatorIssuesResponse) {
+  }
 }
 
 message GetEmulatorInfoRequest {}
@@ -46,4 +49,31 @@ message ServiceInfo {
   string service_id = 1;
   // The Postgres connection string for the emulated service.
   string connection_string = 2;
+}
+
+message StreamEmulatorIssuesRequest {
+  // Optional query parameter. Default to the local service in dataconnect.yaml.
+  string service_id = 1;
+}
+
+message EmulatorIssuesResponse {
+  repeated EmulatorIssue issues = 1;
+}
+
+message EmulatorIssue {
+  enum Kind {
+    KIND_UNSPECIFIED = 0;
+    SQL_CONNECTION = 1;
+    SQL_MIGRATION = 2;
+    VERTEX_AI = 3;
+  }
+  Kind kind = 1;
+  enum Severity {
+    SEVERITY_UNSPECIFIED = 0;
+    DEBUG = 1;
+    NOTICE = 2;
+    ALERT = 3;
+  }
+  Severity severity = 2;
+  string message = 3;
 }

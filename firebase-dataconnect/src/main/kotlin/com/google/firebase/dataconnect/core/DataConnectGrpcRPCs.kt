@@ -27,6 +27,7 @@ import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
 import google.firebase.dataconnect.proto.EmulatorInfo
+import google.firebase.dataconnect.proto.EmulatorIssuesResponse
 import google.firebase.dataconnect.proto.EmulatorServiceGrpc
 import google.firebase.dataconnect.proto.EmulatorServiceGrpcKt
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
@@ -34,13 +35,19 @@ import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GetEmulatorInfoRequest
+import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -160,38 +167,6 @@ internal class DataConnectGrpcRPCs(
     return result.getOrThrow()
   }
 
-  suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
-    val request = GetEmulatorInfoRequest.getDefaultInstance()
-    val metadata = Metadata()
-    val kotlinMethodName = "getEmulatorInfo()"
-
-    logger.logGrpcSending(
-      requestId = requestId,
-      kotlinMethodName = kotlinMethodName,
-      grpcMethod = EmulatorServiceGrpc.getGetEmulatorInfoMethod(),
-    )
-
-    val result = lazyEmulatorGrpcStub.get().runCatching { getEmulatorInfo(request, metadata) }
-
-    result.onSuccess {
-      logger.logGrpcReceived(
-        requestId = requestId,
-        kotlinMethodName = kotlinMethodName,
-        response = it.toStructProto(),
-        responseTypeName = "EmulatorInfo",
-      )
-    }
-    result.onFailure {
-      logger.logGrpcFailed(
-        requestId = requestId,
-        kotlinMethodName = kotlinMethodName,
-        it,
-      )
-    }
-
-    return result.getOrThrow()
-  }
-
   suspend fun executeQuery(requestId: String, request: ExecuteQueryRequest): ExecuteQueryResponse {
     val metadata = grpcMetadata.get(requestId)
     val kotlinMethodName = "executeQuery(${request.operationName})"
@@ -224,6 +199,75 @@ internal class DataConnectGrpcRPCs(
     }
 
     return result.getOrThrow()
+  }
+
+  suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
+    val request = GetEmulatorInfoRequest.getDefaultInstance()
+    val kotlinMethodName = "getEmulatorInfo()"
+
+    logger.logGrpcStarting(
+      requestId = requestId,
+      kotlinMethodName = kotlinMethodName,
+      grpcMethod = EmulatorServiceGrpc.getGetEmulatorInfoMethod(),
+    )
+
+    val result = lazyEmulatorGrpcStub.get().runCatching { getEmulatorInfo(request) }
+
+    result.onSuccess {
+      logger.logGrpcReceived(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        response = it.toStructProto(),
+        responseTypeName = "EmulatorInfo",
+      )
+    }
+    result.onFailure {
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        it,
+      )
+    }
+
+    return result.getOrThrow()
+  }
+
+  suspend fun streamEmulatorIssues(
+    requestId: String,
+    serviceId: String
+  ): Flow<EmulatorIssuesResponse> {
+    val request = StreamEmulatorIssuesRequest.newBuilder().setServiceId(serviceId).build()
+    val kotlinMethodName = "streamEmulatorIssues(serviceId=$serviceId)"
+
+    val flow = lazyEmulatorGrpcStub.get().streamEmulatorIssues(request)
+
+    return flow
+      .onStart {
+        logger.logGrpcStarting(
+          requestId = requestId,
+          kotlinMethodName = kotlinMethodName,
+          grpcMethod = EmulatorServiceGrpc.getStreamEmulatorIssuesMethod(),
+        )
+      }
+      .onEach { response ->
+        logger.logGrpcReceived(
+          requestId = requestId,
+          kotlinMethodName = kotlinMethodName,
+          response = response.toStructProto(),
+          responseTypeName = "EmulatorIssuesResponse"
+        )
+      }
+      .onCompletion { exception ->
+        if (exception === null || exception is CancellationException) {
+          logger.logGrpcCompleted(requestId = requestId, kotlinMethodName = kotlinMethodName)
+        } else {
+          logger.logGrpcFailed(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            throwable = exception,
+          )
+        }
+      }
   }
 
   suspend fun close() {
@@ -266,11 +310,16 @@ internal class DataConnectGrpcRPCs(
       "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
     }
 
-    fun Logger.logGrpcSending(
+    fun Logger.logGrpcStarting(
       requestId: String,
       kotlinMethodName: String,
       grpcMethod: MethodDescriptor<*, *>,
     ) = debug { "$kotlinMethodName [rid=$requestId] starting ${grpcMethod.fullMethodName}" }
+
+    fun Logger.logGrpcCompleted(
+      requestId: String,
+      kotlinMethodName: String,
+    ) = debug { "$kotlinMethodName [rid=$requestId] completed" }
 
     fun Logger.logGrpcReceived(
       requestId: String,

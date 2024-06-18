@@ -25,6 +25,8 @@ import com.google.protobuf.Value.KindCase
 import com.google.protobuf.listValueOrNull
 import com.google.protobuf.structValueOrNull
 import google.firebase.dataconnect.proto.EmulatorInfo
+import google.firebase.dataconnect.proto.EmulatorIssue
+import google.firebase.dataconnect.proto.EmulatorIssuesResponse
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
@@ -317,6 +319,16 @@ internal fun EmulatorInfo.toStructProto(): Struct = buildStructProto {
 internal fun ServiceInfo.toStructProto(): Struct = buildStructProto {
   put("service_id", serviceId)
   put("connection_string", connectionString)
+}
+
+internal fun EmulatorIssuesResponse.toStructProto(): Struct = buildStructProto {
+  putList("issues") { issuesList.forEach { add(it.toStructProto()) } }
+}
+
+internal fun EmulatorIssue.toStructProto(): Struct = buildStructProto {
+  put("kind", kind.name)
+  put("severity", severity.name)
+  put("message", message)
 }
 
 internal fun Struct.toMap(): Map<String, Any?> {
