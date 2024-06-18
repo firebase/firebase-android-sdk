@@ -25,6 +25,7 @@ import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import com.google.firebase.dataconnect.testutil.newInstance
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
@@ -346,8 +347,9 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
     val app = firebaseAppFactory.newInstance()
     val settings = DataConnectSettings(host = "hosty63pw33994")
     val dataConnect = FirebaseDataConnect.getInstance(app, testConnectorConfig, settings)
+    dataConnectFactory.adoptInstance(dataConnect)
 
-    dataConnect.useEmulator(host = "127.0.0.1", port = grpcServer.port)
+    dataConnect.useEmulator(host = "127.0.0.1", port = grpcServer.server.port)
 
     // Verify that we can successfully execute a query; if the emulator settings did _not_ get used
     // then the query execution will fail with an exception, which will fail this test case.
@@ -357,10 +359,8 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun useEmulator_should_throw_if_invoked_too_late() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
-    val host = "127.0.0.1:${grpcServer.port}"
-    val app = firebaseAppFactory.newInstance()
-    val settings = DataConnectSettings(host = host, sslEnabled = false)
-    val dataConnect = FirebaseDataConnect.getInstance(app, testConnectorConfig, settings)
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
+
     dataConnect.query("qrymgbqrc2hj9", Unit, DataConnectUntypedData, serializer<Unit>()).execute()
 
     val exception = assertThrows(IllegalStateException::class.java) { dataConnect.useEmulator() }

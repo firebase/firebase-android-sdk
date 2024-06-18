@@ -27,18 +27,15 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 
-internal interface DataConnectAuth {
-
-  suspend fun getAccessToken(requestId: String): String?
-}
-
-internal class DataConnectAuthImpl(
+internal class DataConnectAuth(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
   blockingExecutor: Executor,
   parentLogger: Logger,
-) : DataConnectAuth {
+) {
   private val logger =
-    Logger("DataConnectAuthImpl").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+    Logger("DataConnectAuth").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+  val instanceId: String
+    get() = logger.nameWithId
 
   private val idTokenListener = IdTokenListener { runBlocking { onIdTokenChanged(it) } }
 
@@ -61,12 +58,22 @@ internal class DataConnectAuthImpl(
     logger.debug { "close()" }
     mutex.withLock {
       closed = true
-      authProvider?.removeIdTokenListener(idTokenListener)
+
+      try {
+        authProvider?.removeIdTokenListener(idTokenListener)
+      } catch (e: IllegalStateException) {
+        // Work around a race condition where addIdTokenListener() throws if the FirebaseApp is
+        // deleted during or before its invocation.
+        if (e.message != "FirebaseApp was deleted") {
+          throw e
+        }
+      }
+
       authProvider = null
     }
   }
 
-  override suspend fun getAccessToken(requestId: String): String? {
+  suspend fun getAccessToken(requestId: String): String? {
     while (true) {
       val (capturedAuthProvider, capturedTokenSequenceNumber) =
         mutex.withLock {
@@ -144,7 +151,16 @@ internal class DataConnectAuthImpl(
 
       logger.debug { "onInternalAuthProviderAvailable($newId) setting InternalAuthProvider" }
       authProvider = newAuthProvider
-      newAuthProvider.addIdTokenListener(idTokenListener)
+
+      try {
+        newAuthProvider.addIdTokenListener(idTokenListener)
+      } catch (e: IllegalStateException) {
+        // Work around a race condition where addIdTokenListener() throws if the FirebaseApp is
+        // deleted during or before its invocation.
+        if (e.message != "FirebaseApp was deleted") {
+          throw e
+        }
+      }
     }
 
   private suspend fun onIdTokenChanged(result: InternalTokenResult) {

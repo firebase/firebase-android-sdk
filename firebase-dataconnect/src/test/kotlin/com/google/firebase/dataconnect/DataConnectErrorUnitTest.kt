@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.DataConnectError.PathSegment
+import com.google.firebase.dataconnect.DataConnectError.SourceLocation
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
 import org.junit.Test
 
@@ -27,7 +28,7 @@ class DataConnectErrorUnitTest {
   fun `message should be the same object given to the constructor`() {
     val message = "This is the test message"
     val dataConnectError =
-      DataConnectError(message = message, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = message, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.message).isSameInstanceAs(message)
   }
 
@@ -35,23 +36,24 @@ class DataConnectErrorUnitTest {
   fun `path should be the same object given to the constructor`() {
     val path = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42))
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.path).isSameInstanceAs(path)
   }
 
   @Test
-  fun `extensions should be the same object given to the constructor`() {
-    val extensions = mapOf("foo" to 42, "bar" to "BAR")
+  fun `locations should be the same object given to the constructor`() {
+    val locations =
+      listOf(SourceLocation(line = 0, column = -1), SourceLocation(line = 5, column = 6))
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = extensions)
-    assertThat(dataConnectError.extensions).isSameInstanceAs(extensions)
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = locations)
+    assertThat(dataConnectError.locations).isSameInstanceAs(locations)
   }
 
   @Test
   fun `toString() should incorporate the message`() {
     val message = "This is the test message"
     val dataConnectError =
-      DataConnectError(message = message, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = message, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.toString()).containsWithNonAdjacentText(message)
   }
 
@@ -59,7 +61,7 @@ class DataConnectErrorUnitTest {
   fun `toString() should incorporate the fields from the path separated by dots`() {
     val path = listOf(PathSegment.Field("foo"), PathSegment.Field("bar"), PathSegment.Field("baz"))
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.toString()).containsWithNonAdjacentText("foo.bar.baz")
   }
 
@@ -68,7 +70,7 @@ class DataConnectErrorUnitTest {
     val path =
       listOf(PathSegment.ListIndex(42), PathSegment.ListIndex(99), PathSegment.ListIndex(1))
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.toString()).containsWithNonAdjacentText("[42][99][1]")
   }
 
@@ -83,31 +85,24 @@ class DataConnectErrorUnitTest {
         PathSegment.ListIndex(33)
       )
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.toString()).containsWithNonAdjacentText("foo[99].bar[22][33]")
   }
 
   @Test
-  fun `toString() should incorporate the extensions`() {
-    val extensions = mapOf("foo" to 42, "bar" to "zzyzx")
+  fun `toString() should incorporate the locations`() {
+    val locations =
+      listOf(SourceLocation(line = 1, column = 2), SourceLocation(line = -1, column = -2))
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = extensions)
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("foo=42")
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("bar=zzyzx")
-  }
-
-  @Test
-  fun `toString() should sort the extensions by key, lexicographically`() {
-    val extensions = mapOf("bbb" to "zzyzx", "ccc" to false, "aaa" to 42)
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = extensions)
-    assertThat(dataConnectError.toString()).containsMatch("aaa=.*bbb=.*ccc=.*")
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = locations)
+    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("1:2")
+    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("-1:-2")
   }
 
   @Test
   fun `equals() should return true for the exact same instance`() {
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.equals(dataConnectError)).isTrue()
   }
 
@@ -117,13 +112,15 @@ class DataConnectErrorUnitTest {
       DataConnectError(
         message = "Test Message",
         path = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42)),
-        extensions = mapOf<String, Any>("foo" to 42, "bar" to "BAR")
+        locations =
+          listOf(SourceLocation(line = 36, column = 32), SourceLocation(line = 4, column = 5))
       )
     val dataConnectError2 =
       DataConnectError(
         message = "Test Message",
         path = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42)),
-        extensions = mapOf<String, Any>("foo" to 42, "bar" to "BAR")
+        locations =
+          listOf(SourceLocation(line = 36, column = 32), SourceLocation(line = 4, column = 5))
       )
     assertThat(dataConnectError1.equals(dataConnectError2)).isTrue()
   }
@@ -131,40 +128,32 @@ class DataConnectErrorUnitTest {
   @Test
   fun `equals() should return false for null`() {
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.equals(null)).isFalse()
   }
 
   @Test
   fun `equals() should return false for a different type`() {
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError.equals(listOf("foo"))).isFalse()
   }
 
   @Test
   fun `equals() should return false when only message differs`() {
     val dataConnectError1 =
-      DataConnectError(
-        message = "Test Message1",
-        path = SAMPLE_PATH,
-        extensions = SAMPLE_EXTENSIONS
-      )
+      DataConnectError(message = "Test Message1", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     val dataConnectError2 =
-      DataConnectError(
-        message = "Test Message2",
-        path = SAMPLE_PATH,
-        extensions = SAMPLE_EXTENSIONS
-      )
+      DataConnectError(message = "Test Message2", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
   }
 
   @Test
   fun `equals() should return false when message differs only in character case`() {
     val dataConnectError1 =
-      DataConnectError(message = "A", path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = "A", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     val dataConnectError2 =
-      DataConnectError(message = "a", path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = "a", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
   }
 
@@ -174,13 +163,13 @@ class DataConnectErrorUnitTest {
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.Field("a")),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     val dataConnectError2 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.Field("z")),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
   }
@@ -191,13 +180,13 @@ class DataConnectErrorUnitTest {
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.ListIndex(1)),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     val dataConnectError2 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.ListIndex(2)),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
   }
@@ -208,47 +197,30 @@ class DataConnectErrorUnitTest {
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.ListIndex(1)),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     val dataConnectError2 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.Field("foo")),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
   }
 
   @Test
-  fun `equals() should return false when extensions differs in values only`() {
+  fun `equals() should return false when locations differ`() {
     val dataConnectError1 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = SAMPLE_PATH,
-        extensions = mapOf("foo" to 42)
+        locations = listOf(SourceLocation(line = 36, column = 32))
       )
     val dataConnectError2 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = SAMPLE_PATH,
-        extensions = mapOf("foo" to 43)
-      )
-    assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
-  }
-
-  @Test
-  fun `equals() should return false when extensions differs in keys only`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = SAMPLE_PATH,
-        extensions = mapOf("foo" to 42)
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = SAMPLE_PATH,
-        extensions = mapOf("bar" to 42)
+        locations = listOf(SourceLocation(line = 32, column = 36))
       )
     assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
   }
@@ -256,7 +228,7 @@ class DataConnectErrorUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() {
     val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     val hashCode = dataConnectError.hashCode()
     assertThat(dataConnectError.hashCode()).isEqualTo(hashCode)
     assertThat(dataConnectError.hashCode()).isEqualTo(hashCode)
@@ -266,26 +238,18 @@ class DataConnectErrorUnitTest {
   @Test
   fun `hashCode() should return the same value on equal objects`() {
     val dataConnectError1 =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     val dataConnectError2 =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, extensions = SAMPLE_EXTENSIONS)
+      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError1.hashCode()).isEqualTo(dataConnectError2.hashCode())
   }
 
   @Test
   fun `hashCode() should return a different value if message is different`() {
     val dataConnectError1 =
-      DataConnectError(
-        message = "Test Message 1",
-        path = SAMPLE_PATH,
-        extensions = SAMPLE_EXTENSIONS
-      )
+      DataConnectError(message = "Test Message 1", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     val dataConnectError2 =
-      DataConnectError(
-        message = "Test Message 2",
-        path = SAMPLE_PATH,
-        extensions = SAMPLE_EXTENSIONS
-      )
+      DataConnectError(message = "Test Message 2", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
     assertThat(dataConnectError1.hashCode()).isNotEqualTo(dataConnectError2.hashCode())
   }
 
@@ -295,35 +259,38 @@ class DataConnectErrorUnitTest {
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.Field("foo")),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     val dataConnectError2 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = listOf(PathSegment.ListIndex(42)),
-        extensions = SAMPLE_EXTENSIONS
+        locations = SAMPLE_LOCATIONS
       )
     assertThat(dataConnectError1.hashCode()).isNotEqualTo(dataConnectError2.hashCode())
   }
 
   @Test
-  fun `hashCode() should return a different value if extensions is different`() {
+  fun `hashCode() should return a different value if locations is different`() {
     val dataConnectError1 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = SAMPLE_PATH,
-        extensions = mapOf("foo" to 42)
+        locations = listOf(SourceLocation(line = 81, column = 18))
       )
     val dataConnectError2 =
       DataConnectError(
         message = SAMPLE_MESSAGE,
         path = SAMPLE_PATH,
-        extensions = mapOf("bar" to 24)
+        locations = listOf(SourceLocation(line = 18, column = 81))
       )
     assertThat(dataConnectError1.hashCode()).isNotEqualTo(dataConnectError2.hashCode())
   }
-}
 
-private val SAMPLE_MESSAGE = "This is a sample message"
-private val SAMPLE_PATH = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42))
-private val SAMPLE_EXTENSIONS = mapOf<String, Any>("foo" to 42, "bar" to "BAR")
+  private companion object {
+    val SAMPLE_MESSAGE = "This is a sample message"
+    val SAMPLE_PATH = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42))
+    val SAMPLE_LOCATIONS =
+      listOf(SourceLocation(line = 42, column = 24), SourceLocation(line = 91, column = 19))
+  }
+}

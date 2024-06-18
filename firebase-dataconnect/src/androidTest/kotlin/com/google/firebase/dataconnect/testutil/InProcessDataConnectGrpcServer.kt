@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.util.buildStructProto
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
@@ -25,27 +26,58 @@ import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.executeMutationResponse
 import google.firebase.dataconnect.proto.executeQueryResponse
 import io.grpc.InsecureServerCredentials
+import io.grpc.Metadata
 import io.grpc.Server
+import io.grpc.ServerCall
+import io.grpc.ServerCallHandler
+import io.grpc.ServerInterceptor
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
+import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * A JUnit test rule that creates a GRPC server that listens on a local port and can be used in lieu
  * of a real GRPC server.
  */
-class InProcessDataConnectGrpcServer : FactoryTestRule<Server, Nothing>() {
+class InProcessDataConnectGrpcServer :
+  FactoryTestRule<InProcessDataConnectGrpcServer.ServerInfo, Nothing>() {
 
-  override fun createInstance(params: Nothing?): Server {
+  override fun createInstance(params: Nothing?): ServerInfo {
+    val serverInterceptor = ServerInterceptorImpl()
     val grpcServer =
       OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
         .addService(ConnectorServiceImpl())
+        .intercept(serverInterceptor)
         .build()
     grpcServer.start()
-    return grpcServer
+
+    return ServerInfo(grpcServer, serverInterceptor.metadatas)
   }
 
-  override fun destroyInstance(instance: Server) {
-    instance.shutdownNow()
+  override fun destroyInstance(instance: ServerInfo) {
+    instance.server.shutdownNow()
+  }
+
+  data class ServerInfo(val server: Server, val metadatas: Flow<Metadata>)
+
+  private class ServerInterceptorImpl : ServerInterceptor {
+
+    private val _metadatas =
+      MutableSharedFlow<Metadata>(replay = Int.MAX_VALUE, onBufferOverflow = DROP_OLDEST)
+
+    val metadatas = _metadatas.asSharedFlow()
+
+    override fun <ReqT : Any?, RespT : Any?> interceptCall(
+      call: ServerCall<ReqT, RespT>,
+      headers: Metadata,
+      next: ServerCallHandler<ReqT, RespT>
+    ): ServerCall.Listener<ReqT> {
+      check(_metadatas.tryEmit(headers)) { "_metadatas.tryEmit(headers) failed" }
+      return next.startCall(call, headers)
+    }
   }
 
   private class ConnectorServiceImpl : ConnectorServiceGrpc.ConnectorServiceImplBase() {
@@ -66,3 +98,10 @@ class InProcessDataConnectGrpcServer : FactoryTestRule<Server, Nothing>() {
     }
   }
 }
+
+fun TestDataConnectFactory.newInstance(server: Server): FirebaseDataConnect =
+  newInstance(DataConnectBackend.Custom(host = "127.0.0.1:${server.port}", sslEnabled = false))
+
+fun TestDataConnectFactory.newInstance(
+  serverInfo: InProcessDataConnectGrpcServer.ServerInfo
+): FirebaseDataConnect = newInstance(serverInfo.server)

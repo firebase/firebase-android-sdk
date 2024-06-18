@@ -25,7 +25,6 @@ readonly CLI_BINARY="${SELF_DIR}/cli"
 
 readonly args=(
   "${CLI_BINARY}"
-  "-logtostderr"
   "$@"
 )
 

@@ -16,63 +16,57 @@
 
 package com.google.firebase.dataconnect
 
+import java.util.Objects
+
 // See https://spec.graphql.org/draft/#sec-Errors
-internal class DataConnectError private constructor(private val impl: Impl) {
+internal class DataConnectError(
+  val message: String,
+  val path: List<PathSegment>,
+  val locations: List<SourceLocation>,
+) {
 
-  internal constructor(
-    message: String,
-    path: List<PathSegment>,
-    extensions: Map<String, Any?>
-  ) : this(Impl(message = message, path = path, extensions = extensions))
+  override fun hashCode(): Int = Objects.hash(message, path, locations)
 
-  val message: String
-    get() = impl.message
-  val path: List<PathSegment>
-    get() = impl.path
-  val extensions: Map<String, Any?>
-    get() = impl.extensions
+  override fun equals(other: Any?): Boolean =
+    (other is DataConnectError) &&
+      other.message == message &&
+      other.path == path &&
+      other.locations == locations
 
-  override fun hashCode(): Int = impl.hashCode()
-
-  override fun equals(other: Any?): Boolean = (other is DataConnectError) && other.impl == impl
-
-  override fun toString(): String {
-    val sb = StringBuilder()
-
-    if (path.isNotEmpty()) {
-      path.forEachIndexed { segmentIndex, segment ->
-        when (segment) {
-          is PathSegment.Field -> {
-            if (segmentIndex != 0) {
-              sb.append('.')
+  override fun toString(): String =
+    StringBuilder()
+      .also { sb ->
+        path.forEachIndexed { segmentIndex, segment ->
+          when (segment) {
+            is PathSegment.Field -> {
+              if (segmentIndex != 0) {
+                sb.append('.')
+              }
+              sb.append(segment.field)
             }
-            sb.append(segment.field)
-          }
-          is PathSegment.ListIndex -> {
-            sb.append('[')
-            sb.append(segment.index)
-            sb.append(']')
+            is PathSegment.ListIndex -> {
+              sb.append('[')
+              sb.append(segment.index)
+              sb.append(']')
+            }
           }
         }
-      }
-      sb.append(": ")
-    }
 
-    sb.append(message)
-
-    if (extensions.isNotEmpty()) {
-      sb.append(" (")
-      extensions.keys.sorted().forEachIndexed { keyIndex, key ->
-        if (keyIndex != 0) {
-          sb.append(", ")
+        if (locations.isNotEmpty()) {
+          if (sb.isNotEmpty()) {
+            sb.append(' ')
+          }
+          sb.append("at ")
+          sb.append(locations.joinToString(", "))
         }
-        sb.append(key).append('=').append(extensions[key])
-      }
-      sb.append(')')
-    }
 
-    return sb.toString()
-  }
+        if (path.isNotEmpty() || locations.isNotEmpty()) {
+          sb.append(": ")
+        }
+
+        sb.append(message)
+      }
+      .toString()
 
   sealed interface PathSegment {
     @JvmInline
@@ -86,9 +80,10 @@ internal class DataConnectError private constructor(private val impl: Impl) {
     }
   }
 
-  private data class Impl(
-    val message: String,
-    val path: List<PathSegment>,
-    val extensions: Map<String, Any?>,
-  )
+  class SourceLocation(val line: Int, val column: Int) {
+    override fun hashCode(): Int = Objects.hash(line, column)
+    override fun equals(other: Any?): Boolean =
+      other is SourceLocation && other.line == line && other.column == column
+    override fun toString(): String = "$line:$column"
+  }
 }

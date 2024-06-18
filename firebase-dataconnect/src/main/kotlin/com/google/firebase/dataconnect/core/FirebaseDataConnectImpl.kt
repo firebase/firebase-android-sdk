@@ -20,8 +20,13 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.oldquerymgr.LiveQueries
+import com.google.firebase.dataconnect.oldquerymgr.LiveQuery
+import com.google.firebase.dataconnect.oldquerymgr.OldQueryManager
+import com.google.firebase.dataconnect.oldquerymgr.RegisteredDataDeserialzer
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -88,10 +93,10 @@ internal class FirebaseDataConnectImpl(
   private val dataConnectAuth =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      DataConnectAuthImpl(deferredAuthProvider, blockingExecutor, logger)
+      DataConnectAuth(deferredAuthProvider, blockingExecutor, logger)
     }
 
-  override val lazyGrpcClient =
+  private val lazyGrpcRPCs =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
 
@@ -110,12 +115,28 @@ internal class FirebaseDataConnectImpl(
           hostAndPortFromEmulatorSettings
         }
 
+      val grpcMetadata =
+        DataConnectGrpcMetadata.forSystemVersions(
+          dataConnectAuth = dataConnectAuth.getLocked(),
+          connectorLocation = config.location,
+          parentLogger = logger,
+        )
+      DataConnectGrpcRPCs(
+        context = context,
+        host = host,
+        sslEnabled = sslEnabled,
+        blockingCoroutineDispatcher = blockingDispatcher,
+        grpcMetadata = grpcMetadata,
+        parentLogger = logger,
+      )
+    }
+
+  override val lazyGrpcClient =
+    SuspendingLazy(mutex) {
       DataConnectGrpcClient(
         projectId = projectId,
         connector = config,
-        dataConnectAuth = dataConnectAuth.getLocked(),
-        grpcRPCsFactory =
-          DataConnectGrpcRPCsFactoryImpl(context, host, sslEnabled, blockingDispatcher),
+        grpcRPCs = lazyGrpcRPCs.getLocked(),
         parentLogger = logger,
       )
     }
@@ -123,7 +144,41 @@ internal class FirebaseDataConnectImpl(
   override val lazyQueryManager =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      OldQueryManager(this)
+      val grpcClient = lazyGrpcClient.getLocked()
+
+      val registeredDataDeserialzerFactory =
+        object : LiveQuery.RegisteredDataDeserialzerFactory {
+          override fun <T> newInstance(
+            dataDeserializer: DeserializationStrategy<T>,
+            parentLogger: Logger
+          ) =
+            RegisteredDataDeserialzer<T>(
+              dataDeserializer = dataDeserializer,
+              blockingCoroutineDispatcher = blockingDispatcher,
+              parentLogger = parentLogger,
+            )
+        }
+      val liveQueryFactory =
+        object : LiveQueries.LiveQueryFactory {
+          override fun newLiveQuery(
+            key: LiveQuery.Key,
+            operationName: String,
+            variables: Struct,
+            parentLogger: Logger
+          ) =
+            LiveQuery(
+              key = key,
+              operationName = operationName,
+              variables = variables,
+              parentCoroutineScope = coroutineScope,
+              nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
+              grpcClient = grpcClient,
+              registeredDataDeserialzerFactory = registeredDataDeserialzerFactory,
+              parentLogger = parentLogger,
+            )
+        }
+      val liveQueries = LiveQueries(liveQueryFactory, parentLogger = logger)
+      OldQueryManager(liveQueries)
     }
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {
@@ -204,7 +259,7 @@ internal class FirebaseDataConnectImpl(
       @OptIn(DelicateCoroutinesApi::class)
       val newCloseJob =
         GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
-          lazyGrpcClient.initializedValueOrNull?.close()
+          lazyGrpcRPCs.initializedValueOrNull?.close()
         }
 
       newCloseJob.invokeOnCompletion { exception ->

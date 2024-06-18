@@ -26,7 +26,6 @@ readonly FIREBASE_ARGS=(
   --debug
   emulators:start
   --only auth,dataconnect
-  --project prjh5zbv64sv6
 )
 
 echo "[$0] Set environment variable DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"

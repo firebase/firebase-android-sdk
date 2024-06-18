@@ -20,6 +20,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.assertThrows
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
@@ -39,7 +40,9 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
   private val personSchema by lazy { PersonSchema(dataConnectFactory) }
 
   private val auth: FirebaseAuth by lazy {
-    dataConnectFactory.backend.authBackend.getFirebaseAuth(personSchema.dataConnect.app)
+    DataConnectBackend.fromInstrumentationArguments()
+      .authBackend
+      .getFirebaseAuth(personSchema.dataConnect.app)
   }
 
   @Test

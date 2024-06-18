@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   id("firebase-library")
   id("kotlin-android")
-  id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
+  alias(libs.plugins.kotlinx.serialization)
 }
 
 android {
@@ -61,6 +61,7 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
+  implementation(libs.kotest.property)
   implementation(libs.mockk)
   implementation(libs.androidx.test.junit)
   implementation(libs.robolectric)
