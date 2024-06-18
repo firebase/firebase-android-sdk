@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.connectors.testutil
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.generated.*
+import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.FactoryTestRule
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
@@ -37,7 +38,8 @@ abstract class TestConnectorFactory<T : GeneratedConnector>(
   override fun createInstance(params: Nothing?): T {
     val firebaseApp = firebaseAppFactory.newInstance()
 
-    val connector = createConnector(firebaseApp, dataConnectFactory.backend.dataConnectSettings)
+    val dataConnectSettings = DataConnectBackend.fromInstrumentationArguments().dataConnectSettings
+    val connector = createConnector(firebaseApp, dataConnectSettings)
 
     // Get the instance of `FirebaseDataConnect` from the `TestDataConnectFactory` so that it will
     // register the instance and set any settings required for talking to the backend.
