@@ -25,11 +25,8 @@ import org.json.JSONObject
  * @see [defineFunction] for how to create an instance of this class.
  */
 class NoParameterFunction
-internal constructor(
-  name: String,
-  description: String,
-  val function: suspend () -> JSONObject,
-) : FunctionDeclaration(name, description) {
+internal constructor(name: String, description: String, val function: suspend () -> JSONObject) :
+  FunctionDeclaration(name, description) {
   override fun getParameters() = listOf<Schema<Any>>()
 
   suspend fun execute() = function()
@@ -185,12 +182,22 @@ class Schema<T>(
   fun fromString(value: String?) = type.parse(value)
 
   companion object {
-    /** Registers a schema for an integer number */
+    /** Registers a schema for a 32 bit integer number */
     fun int(name: String, description: String) =
+      Schema<Int>(
+        name = name,
+        description = description,
+        format = "int32",
+        type = FunctionType.INTEGER,
+        nullable = false,
+      )
+
+    /** Registers a schema for a 64 bit integer number */
+    fun long(name: String, description: String) =
       Schema<Long>(
         name = name,
         description = description,
-        type = FunctionType.INTEGER,
+        type = FunctionType.LONG,
         nullable = false,
       )
 
@@ -213,7 +220,20 @@ class Schema<T>(
       )
 
     /** Registers a schema for a floating point number */
+    @Deprecated(
+      message = "this is being renamed to double",
+      replaceWith = ReplaceWith("double(name, description)"),
+    )
     fun num(name: String, description: String) =
+      Schema<Double>(
+        name = name,
+        description = description,
+        type = FunctionType.NUMBER,
+        nullable = false,
+      )
+
+    /** Registers a schema for a floating point number */
+    fun double(name: String, description: String) =
       Schema<Double>(
         name = name,
         description = description,
@@ -235,6 +255,7 @@ class Schema<T>(
 
     /**
      * Registers a schema for an array.
+     *
      * @param items can be used to specify the type of the array
      */
     fun arr(name: String, description: String, items: Schema<out Any>? = null) =
