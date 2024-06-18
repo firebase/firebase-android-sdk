@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Breaking Change: renamed `Schema.int` to `Schema.long` and added a 32 bit int type
+* [changed] Breaking Change: renamed `Schema.num` to `Schema.double`
 * [fixed] Fixed an issue with decoding JSON literals (#6028).
 
 # 16.0.0-beta01
