@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   id("firebase-library")
   id("kotlin-android")
-  id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
+  alias(libs.plugins.kotlinx.serialization)
 }
 
 android {

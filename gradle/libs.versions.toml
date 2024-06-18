@@ -10,6 +10,7 @@ grpc = "1.57.2"
 grpcKotlin = "1.4.0"
 javalite = "3.24.0"
 kotlin = "1.8.22"
+serialization-plugin = "1.8.22"
 protoc = "3.24.0"
 truth = "1.4.2"
 robolectric = "4.12"
@@ -84,3 +85,7 @@ turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property"]
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
+
+[plugins]
+dokka = { id = "org.jetbrains.dokka", version = "1.9.10" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }

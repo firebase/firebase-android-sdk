@@ -24,8 +24,8 @@ plugins {
   id("kotlin-android")
   id("com.google.protobuf")
   id("copy-google-services")
-  id("org.jetbrains.dokka") version "1.9.10"
-  id("org.jetbrains.kotlin.plugin.serialization") version "1.8.0"
+  alias(libs.plugins.dokka)
+  alias(libs.plugins.kotlinx.serialization)
 }
 
 firebaseLibrary {
