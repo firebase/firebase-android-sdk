@@ -34,7 +34,7 @@ internal class DataConnectGrpcClient(
   private val grpcRPCs: DataConnectGrpcRPCs,
   parentLogger: Logger,
 ) {
-  init {
+  private val logger =
     Logger("DataConnectGrpcClient").apply {
       debug {
         "Created by ${parentLogger.nameWithId};" +
@@ -43,7 +43,8 @@ internal class DataConnectGrpcClient(
           " grpcRPCs=${grpcRPCs.instanceId}"
       }
     }
-  }
+  val instanceId: String
+    get() = logger.nameWithId
 
   private val requestName =
     "projects/$projectId/" +

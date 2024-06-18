@@ -20,8 +20,13 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.oldquerymgr.LiveQueries
+import com.google.firebase.dataconnect.oldquerymgr.LiveQuery
+import com.google.firebase.dataconnect.oldquerymgr.OldQueryManager
+import com.google.firebase.dataconnect.oldquerymgr.RegisteredDataDeserialzer
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -139,7 +144,41 @@ internal class FirebaseDataConnectImpl(
   override val lazyQueryManager =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      OldQueryManager(this)
+      val grpcClient = lazyGrpcClient.getLocked()
+
+      val registeredDataDeserialzerFactory =
+        object : LiveQuery.RegisteredDataDeserialzerFactory {
+          override fun <T> newInstance(
+            dataDeserializer: DeserializationStrategy<T>,
+            parentLogger: Logger
+          ) =
+            RegisteredDataDeserialzer<T>(
+              dataDeserializer = dataDeserializer,
+              blockingCoroutineDispatcher = blockingDispatcher,
+              parentLogger = parentLogger,
+            )
+        }
+      val liveQueryFactory =
+        object : LiveQueries.LiveQueryFactory {
+          override fun newLiveQuery(
+            key: LiveQuery.Key,
+            operationName: String,
+            variables: Struct,
+            parentLogger: Logger
+          ) =
+            LiveQuery(
+              key = key,
+              operationName = operationName,
+              variables = variables,
+              parentCoroutineScope = coroutineScope,
+              nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
+              grpcClient = grpcClient,
+              registeredDataDeserialzerFactory = registeredDataDeserialzerFactory,
+              parentLogger = parentLogger,
+            )
+        }
+      val liveQueries = LiveQueries(liveQueryFactory, parentLogger = logger)
+      OldQueryManager(liveQueries)
     }
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {
