@@ -16,8 +16,8 @@
 
 package com.google.firebase.dataconnect.core
 
-import android.os.Build
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.firebase.dataconnect.util.decodeFromStruct
@@ -41,7 +41,7 @@ import kotlinx.serialization.DeserializationStrategy
 internal class DataConnectGrpcClient(
   projectId: String,
   connector: ConnectorConfig,
-  private val dataConnectAuth: DataConnectAuth,
+  dataConnectAuth: DataConnectAuth,
   grpcRPCsFactory: DataConnectGrpcRPCsFactory,
   parentLogger: Logger,
 ) {
@@ -62,8 +62,21 @@ internal class DataConnectGrpcClient(
       "/services/${connector.serviceId}" +
       "/connectors/${connector.connector}"
 
-  @Suppress("SpellCheckingInspection")
-  private val googRequestParamsHeaderValue = "location=${connector.location}&frontend=data"
+  private val metadataProvider =
+    DataConnectGrpcMetadata.forSystemVersions(
+        dataConnectAuth = dataConnectAuth,
+        connectorLocation = connector.location
+      )
+      .apply {
+        logger.debug {
+          "DataConnectGrpcMetadata created with" +
+            " connectorLocation=$connectorLocation" +
+            " kotlinVersion=$kotlinVersion" +
+            " androidVersion=$androidVersion" +
+            " dataConnectSdkVersion=$dataConnectSdkVersion" +
+            " grpcVersion=$grpcVersion"
+        }
+      }
 
   private val closedMutex = Mutex()
   private var closed = false
@@ -89,7 +102,7 @@ internal class DataConnectGrpcClient(
       this.operationName = operationName
       this.variables = variables
     }
-    val metadata = createMetadata(requestId)
+    val metadata = metadataProvider.get(requestId)
 
     logger.logGrpcSending(
       requestId = requestId,
@@ -134,7 +147,7 @@ internal class DataConnectGrpcClient(
       this.operationName = operationName
       this.variables = variables
     }
-    val metadata = createMetadata(requestId)
+    val metadata = metadataProvider.get(requestId)
 
     logger.logGrpcSending(
       requestId = requestId,
@@ -169,70 +182,12 @@ internal class DataConnectGrpcClient(
     )
   }
 
-  private suspend fun createMetadata(requestId: String): Metadata {
-    val token = dataConnectAuth.getAccessToken(requestId)
-    return Metadata().also {
-      it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
-      it.put(googApiClientHeader, googApiClientHeaderValue)
-      if (token !== null) {
-        it.put(firebaseAuthTokenHeader, token)
-      }
-    }
-  }
-
   suspend fun close() {
     closedMutex.withLock { closed = true }
     lazyGrpcRPCs.initializedValueOrNull?.close()
   }
 
   private companion object {
-    val firebaseAuthTokenHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
-
-    @Suppress("SpellCheckingInspection")
-    val googRequestParamsHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
-
-    @Suppress("SpellCheckingInspection")
-    val googApiClientHeader: Metadata.Key<String> =
-      Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
-
-    @Suppress("SpellCheckingInspection")
-    val googApiClientHeaderValue: String by
-      lazy(LazyThreadSafetyMode.PUBLICATION) {
-        buildList {
-            add("gl-kotlin/${KotlinVersion.CURRENT}")
-            add("gl-android/${Build.VERSION.SDK_INT}")
-            add("fire/${BuildConfig.VERSION_NAME}")
-            add("grpc/")
-          }
-          .joinToString(" ")
-      }
-
-    fun Metadata.toStructProto(): Struct = buildStructProto {
-      val keys: List<Metadata.Key<String>> = run {
-        val keySet: MutableSet<String> = keys().toMutableSet()
-        // Always explicitly include the auth header in the returned string, even if it is absent.
-        keySet.add(firebaseAuthTokenHeader.name())
-        keySet.sorted().map { Metadata.Key.of(it, Metadata.ASCII_STRING_MARSHALLER) }
-      }
-
-      for (key in keys) {
-        val values = getAll(key)
-        val scrubbedValues =
-          if (values === null) listOf(null)
-          else {
-            values.map {
-              if (key.name() == firebaseAuthTokenHeader.name()) it.toScrubbedAccessToken() else it
-            }
-          }
-
-        for (scrubbedValue in scrubbedValues) {
-          put(key.name(), scrubbedValue)
-        }
-      }
-    }
-
     fun Logger.logGrpcSending(
       requestId: String,
       kotlinMethodName: String,
