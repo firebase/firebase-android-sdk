@@ -121,6 +121,7 @@ class DataConnectGrpcMetadataUnitTest {
       DataConnectGrpcMetadata.forSystemVersions(
         dataConnectAuth = dataConnectAuth,
         connectorLocation = connectorLocation,
+        parentLogger = mockk(relaxed = true),
       )
 
     metadata.asClue {
@@ -152,6 +153,7 @@ class DataConnectGrpcMetadataUnitTest {
         androidVersion = androidVersion,
         dataConnectSdkVersion = dataConnectSdkVersion,
         grpcVersion = grpcVersion,
+        parentLogger = mockk(relaxed = true),
       )
 
     companion object {

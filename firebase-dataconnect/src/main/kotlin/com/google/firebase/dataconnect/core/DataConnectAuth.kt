@@ -34,6 +34,8 @@ internal class DataConnectAuth(
 ) {
   private val logger =
     Logger("DataConnectAuth").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+  val instanceId: String
+    get() = logger.nameWithId
 
   private val idTokenListener = IdTokenListener { runBlocking { onIdTokenChanged(it) } }
 

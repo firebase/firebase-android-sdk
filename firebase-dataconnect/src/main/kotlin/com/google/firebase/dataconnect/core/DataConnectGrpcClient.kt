@@ -17,75 +17,39 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
-import com.google.firebase.dataconnect.util.SuspendingLazy
-import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.firebase.dataconnect.util.decodeFromStruct
-import com.google.firebase.dataconnect.util.toCompactString
 import com.google.firebase.dataconnect.util.toMap
-import com.google.firebase.dataconnect.util.toStructProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.SourceLocation
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
-import io.grpc.Metadata
-import io.grpc.MethodDescriptor
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
   projectId: String,
   connector: ConnectorConfig,
-  dataConnectAuth: DataConnectAuth,
-  grpcRPCsFactory: DataConnectGrpcRPCsFactory,
+  private val grpcRPCs: DataConnectGrpcRPCs,
   parentLogger: Logger,
 ) {
-  private val logger =
+  init {
     Logger("DataConnectGrpcClient").apply {
       debug {
         "Created by ${parentLogger.nameWithId};" +
           " projectId=$projectId" +
-          " host=${grpcRPCsFactory.host}" +
-          " sslEnabled=${grpcRPCsFactory.sslEnabled}" +
-          " connector=$connector"
+          " connector=$connector" +
+          " grpcRPCs=${grpcRPCs.instanceId}"
       }
     }
+  }
 
   private val requestName =
     "projects/$projectId/" +
       "locations/${connector.location}" +
       "/services/${connector.serviceId}" +
       "/connectors/${connector.connector}"
-
-  private val metadataProvider =
-    DataConnectGrpcMetadata.forSystemVersions(
-        dataConnectAuth = dataConnectAuth,
-        connectorLocation = connector.location
-      )
-      .apply {
-        logger.debug {
-          "DataConnectGrpcMetadata created with" +
-            " connectorLocation=$connectorLocation" +
-            " kotlinVersion=$kotlinVersion" +
-            " androidVersion=$androidVersion" +
-            " dataConnectSdkVersion=$dataConnectSdkVersion" +
-            " grpcVersion=$grpcVersion"
-        }
-      }
-
-  private val closedMutex = Mutex()
-  private var closed = false
-
-  private val lazyGrpcRPCs =
-    SuspendingLazy(closedMutex) {
-      check(!closed) { "DataConnectGrpcClient ${logger.nameWithId} instance has been closed" }
-      grpcRPCsFactory.newInstance()
-    }
 
   data class OperationResult(
     val data: Struct?,
@@ -102,34 +66,8 @@ internal class DataConnectGrpcClient(
       this.operationName = operationName
       this.variables = variables
     }
-    val metadata = metadataProvider.get(requestId)
 
-    logger.logGrpcSending(
-      requestId = requestId,
-      kotlinMethodName = "executeQuery($operationName)",
-      grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
-      metadata = metadata,
-      request = request.toStructProto(),
-      requestTypeName = "ExecuteQueryRequest",
-    )
-
-    val response =
-      lazyGrpcRPCs
-        .get()
-        .runCatching { executeQuery(request, metadata) }
-        .onFailure {
-          logger.warn(it) {
-            "executeQuery($operationName) [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
-          }
-        }
-        .getOrThrow()
-
-    logger.logGrpcReceived(
-      requestId = requestId,
-      kotlinMethodName = "executeQuery($operationName)",
-      response = response.toStructProto(),
-      responseTypeName = "ExecuteQueryResponse",
-    )
+    val response = grpcRPCs.executeQuery(requestId, request)
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -147,81 +85,13 @@ internal class DataConnectGrpcClient(
       this.operationName = operationName
       this.variables = variables
     }
-    val metadata = metadataProvider.get(requestId)
 
-    logger.logGrpcSending(
-      requestId = requestId,
-      kotlinMethodName = "executeMutation($operationName)",
-      grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
-      metadata = metadata,
-      request = request.toStructProto(),
-      requestTypeName = "ExecuteMutationRequest",
-    )
-
-    val response =
-      lazyGrpcRPCs
-        .get()
-        .runCatching { executeMutation(request, metadata) }
-        .onFailure {
-          logger.warn(it) {
-            "executeMutation() [rid=$requestId] grpc call FAILED with ${it::class.qualifiedName}"
-          }
-        }
-        .getOrThrow()
-
-    logger.logGrpcReceived(
-      requestId = requestId,
-      kotlinMethodName = "executeMutation($operationName)",
-      response = response.toStructProto(),
-      responseTypeName = "ExecuteMutationResponse",
-    )
+    val response = grpcRPCs.executeMutation(requestId, request)
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
       errors = response.errorsList.map { it.toDataConnectError() }
     )
-  }
-
-  suspend fun close() {
-    closedMutex.withLock { closed = true }
-    lazyGrpcRPCs.initializedValueOrNull?.close()
-  }
-
-  private companion object {
-    fun Logger.logGrpcSending(
-      requestId: String,
-      kotlinMethodName: String,
-      grpcMethod: MethodDescriptor<*, *>,
-      metadata: Metadata,
-      request: Struct,
-      requestTypeName: String
-    ) = debug {
-      val struct = buildStructProto {
-        put("RPC", grpcMethod.fullMethodName)
-        put("Metadata", metadata.toStructProto())
-        put(requestTypeName, request)
-      }
-      // Sort the keys in the output string to be more meaningful than alphabetical.
-      val keySortSelector: (String) -> String = {
-        when (it) {
-          "RPC" -> "AAAA"
-          "Metadata" -> "AAAB"
-          requestTypeName -> "AAAC"
-          else -> it
-        }
-      }
-      "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
-    }
-
-    fun Logger.logGrpcReceived(
-      requestId: String,
-      kotlinMethodName: String,
-      response: Struct,
-      responseTypeName: String
-    ) = debug {
-      val struct = buildStructProto { put(responseTypeName, response) }
-      "$kotlinMethodName [rid=$requestId] received: ${struct.toCompactString()}"
-    }
   }
 }
 

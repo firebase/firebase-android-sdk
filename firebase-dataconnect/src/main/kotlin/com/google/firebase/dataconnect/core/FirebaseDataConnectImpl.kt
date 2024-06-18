@@ -91,7 +91,7 @@ internal class FirebaseDataConnectImpl(
       DataConnectAuth(deferredAuthProvider, blockingExecutor, logger)
     }
 
-  override val lazyGrpcClient =
+  private val lazyGrpcRPCs =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
 
@@ -110,12 +110,28 @@ internal class FirebaseDataConnectImpl(
           hostAndPortFromEmulatorSettings
         }
 
+      val grpcMetadata =
+        DataConnectGrpcMetadata.forSystemVersions(
+          dataConnectAuth = dataConnectAuth.getLocked(),
+          connectorLocation = config.location,
+          parentLogger = logger,
+        )
+      DataConnectGrpcRPCs(
+        context = context,
+        host = host,
+        sslEnabled = sslEnabled,
+        blockingCoroutineDispatcher = blockingDispatcher,
+        grpcMetadata = grpcMetadata,
+        parentLogger = logger,
+      )
+    }
+
+  override val lazyGrpcClient =
+    SuspendingLazy(mutex) {
       DataConnectGrpcClient(
         projectId = projectId,
         connector = config,
-        dataConnectAuth = dataConnectAuth.getLocked(),
-        grpcRPCsFactory =
-          DataConnectGrpcRPCsFactoryImpl(context, host, sslEnabled, blockingDispatcher),
+        grpcRPCs = lazyGrpcRPCs.getLocked(),
         parentLogger = logger,
       )
     }
@@ -204,7 +220,7 @@ internal class FirebaseDataConnectImpl(
       @OptIn(DelicateCoroutinesApi::class)
       val newCloseJob =
         GlobalScope.async<Unit>(start = CoroutineStart.LAZY) {
-          lazyGrpcClient.initializedValueOrNull?.close()
+          lazyGrpcRPCs.initializedValueOrNull?.close()
         }
 
       newCloseJob.invokeOnCompletion { exception ->

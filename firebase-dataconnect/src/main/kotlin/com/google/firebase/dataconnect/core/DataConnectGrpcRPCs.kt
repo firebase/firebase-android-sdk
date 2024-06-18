@@ -18,7 +18,13 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.firebase.dataconnect.util.buildStructProto
+import com.google.firebase.dataconnect.util.toCompactString
+import com.google.firebase.dataconnect.util.toStructProto
+import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
@@ -26,6 +32,7 @@ import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
+import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineDispatcher
@@ -34,36 +41,34 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-internal interface DataConnectGrpcRPCs {
-
-  suspend fun executeMutation(
-    request: ExecuteMutationRequest,
-    headers: Metadata
-  ): ExecuteMutationResponse
-
-  suspend fun executeQuery(request: ExecuteQueryRequest, headers: Metadata): ExecuteQueryResponse
-
-  suspend fun close()
-}
-
-internal class DataConnectGrpcRPCsImpl(
+internal class DataConnectGrpcRPCs(
   context: Context,
   host: String,
   sslEnabled: Boolean,
-  private val coroutineDispatcher: CoroutineDispatcher,
-) : DataConnectGrpcRPCs {
-
+  private val blockingCoroutineDispatcher: CoroutineDispatcher,
+  private val grpcMetadata: DataConnectGrpcMetadata,
+  parentLogger: Logger,
+) {
   private val logger =
-    Logger("DataConnectGrpcRPCsImpl").apply { debug { "host=$host sslEnabled=$sslEnabled" } }
+    Logger("DataConnectGrpcRPCs").apply {
+      debug {
+        "created by ${parentLogger.nameWithId} with" +
+          " host=$host" +
+          " sslEnabled=$sslEnabled" +
+          " grpcMetadata=${grpcMetadata.instanceId}"
+      }
+    }
+  val instanceId: String
+    get() = logger.nameWithId
 
   private val mutex = Mutex()
   private var closed = false
 
   // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
   private val lazyGrpcChannel =
-    SuspendingLazy(mutex = mutex, coroutineContext = coroutineDispatcher) {
-      check(!closed) { "DataConnectGrpcRPCsImpl ${logger.nameWithId} instance has been closed" }
-      logger.debug { "Creation of GRPC ManagedChannel starting" }
+    SuspendingLazy(mutex = mutex, coroutineContext = blockingCoroutineDispatcher) {
+      check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
+      logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled" }
 
       // Upgrade the Android security provider using Google Play Services.
       //
@@ -90,7 +95,7 @@ internal class DataConnectGrpcRPCsImpl(
           // failsafe.
           it.keepAliveTime(30, TimeUnit.SECONDS)
 
-          it.executor(coroutineDispatcher.asExecutor())
+          it.executor(blockingCoroutineDispatcher.asExecutor())
 
           // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel
           // to respond more gracefully to network change events, such as switching from cellular to
@@ -98,7 +103,7 @@ internal class DataConnectGrpcRPCsImpl(
           AndroidChannelBuilder.usingBuilder(it).context(context).build()
         }
 
-      logger.debug { "Creation of GRPC ManagedChannel completed successfully" }
+      logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled done" }
       grpcChannel
     }
 
@@ -107,40 +112,131 @@ internal class DataConnectGrpcRPCsImpl(
       ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub(lazyGrpcChannel.getLocked())
     }
 
-  override suspend fun executeMutation(request: ExecuteMutationRequest, headers: Metadata) =
-    lazyGrpcStub.get().executeMutation(request, headers)
+  suspend fun executeMutation(
+    requestId: String,
+    request: ExecuteMutationRequest
+  ): ExecuteMutationResponse {
+    val metadata = grpcMetadata.get(requestId)
+    val kotlinMethodName = "executeMutation(${request.operationName})"
 
-  override suspend fun executeQuery(request: ExecuteQueryRequest, headers: Metadata) =
-    lazyGrpcStub.get().executeQuery(request, headers)
+    logger.logGrpcSending(
+      requestId = requestId,
+      kotlinMethodName = kotlinMethodName,
+      grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
+      metadata = metadata,
+      request = request.toStructProto(),
+      requestTypeName = "ExecuteMutationRequest",
+    )
 
-  override suspend fun close() {
+    val result = lazyGrpcStub.get().runCatching { executeMutation(request, metadata) }
+
+    result.onSuccess {
+      logger.logGrpcReceived(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        response = it.toStructProto(),
+        responseTypeName = "ExecuteMutationResponse",
+      )
+    }
+    result.onFailure {
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        it,
+      )
+    }
+
+    return result.getOrThrow()
+  }
+
+  suspend fun executeQuery(requestId: String, request: ExecuteQueryRequest): ExecuteQueryResponse {
+    val metadata = grpcMetadata.get(requestId)
+    val kotlinMethodName = "executeQuery(${request.operationName})"
+
+    logger.logGrpcSending(
+      requestId = requestId,
+      kotlinMethodName = kotlinMethodName,
+      grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
+      metadata = metadata,
+      request = request.toStructProto(),
+      requestTypeName = "ExecuteQueryRequest",
+    )
+
+    val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
+
+    result.onSuccess {
+      logger.logGrpcReceived(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        response = it.toStructProto(),
+        responseTypeName = "ExecuteQueryResponse",
+      )
+    }
+    result.onFailure {
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        it,
+      )
+    }
+
+    return result.getOrThrow()
+  }
+
+  suspend fun close() {
+    logger.debug { "close()" }
     mutex.withLock { closed = true }
 
     val grpcChannel = lazyGrpcChannel.initializedValueOrNull ?: return
 
     // Avoid blocking the calling thread by running potentially-blocking code on the dispatcher
     // given to the constructor, which should have similar semantics to [Dispatchers.IO].
-    withContext(coroutineDispatcher) {
+    withContext(blockingCoroutineDispatcher) {
       grpcChannel.shutdownNow()
       grpcChannel.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
     }
   }
-}
 
-internal interface DataConnectGrpcRPCsFactory {
+  private companion object {
+    fun Logger.logGrpcSending(
+      requestId: String,
+      kotlinMethodName: String,
+      grpcMethod: MethodDescriptor<*, *>,
+      metadata: Metadata,
+      request: Struct,
+      requestTypeName: String
+    ) = debug {
+      val struct = buildStructProto {
+        put("RPC", grpcMethod.fullMethodName)
+        put("Metadata", metadata.toStructProto())
+        put(requestTypeName, request)
+      }
+      // Sort the keys in the output string to be more meaningful than alphabetical.
+      val keySortSelector: (String) -> String = {
+        when (it) {
+          "RPC" -> "AAAA"
+          "Metadata" -> "AAAB"
+          requestTypeName -> "AAAC"
+          else -> it
+        }
+      }
+      "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
+    }
 
-  val host: String
-  val sslEnabled: Boolean
+    fun Logger.logGrpcReceived(
+      requestId: String,
+      kotlinMethodName: String,
+      response: Struct,
+      responseTypeName: String
+    ) = debug {
+      val struct = buildStructProto { put(responseTypeName, response) }
+      "$kotlinMethodName [rid=$requestId] received: ${struct.toCompactString()}"
+    }
 
-  fun newInstance(): DataConnectGrpcRPCs
-}
-
-internal class DataConnectGrpcRPCsFactoryImpl(
-  private val context: Context,
-  override val host: String,
-  override val sslEnabled: Boolean,
-  private val coroutineDispatcher: CoroutineDispatcher,
-) : DataConnectGrpcRPCsFactory {
-  override fun newInstance() =
-    DataConnectGrpcRPCsImpl(context, host, sslEnabled, coroutineDispatcher)
+    fun Logger.logGrpcFailed(
+      requestId: String,
+      kotlinMethodName: String,
+      throwable: Throwable,
+    ) = warn(throwable) { "$kotlinMethodName [rid=$requestId] FAILED: $throwable" }
+  }
 }

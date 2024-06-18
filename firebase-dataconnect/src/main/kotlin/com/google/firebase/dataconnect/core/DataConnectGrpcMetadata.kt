@@ -29,7 +29,23 @@ internal class DataConnectGrpcMetadata(
   val androidVersion: Int,
   val dataConnectSdkVersion: String,
   val grpcVersion: String,
+  val parentLogger: Logger,
 ) {
+  private val logger =
+    Logger("DataConnectGrpcMetadata").apply {
+      debug {
+        "created by ${parentLogger.nameWithId} with " +
+          " dataConnectAuth=${dataConnectAuth.instanceId} "
+        " connectorLocation=$connectorLocation "
+        " kotlinVersion=$kotlinVersion "
+        " androidVersion=$androidVersion "
+        " dataConnectSdkVersion=$dataConnectSdkVersion "
+        " grpcVersion=$grpcVersion"
+      }
+    }
+  val instanceId: String
+    get() = logger.nameWithId
+
   @Suppress("SpellCheckingInspection")
   private val googRequestParamsHeaderValue = "location=${connectorLocation}&frontend=data"
 
@@ -87,6 +103,7 @@ internal class DataConnectGrpcMetadata(
     fun forSystemVersions(
       dataConnectAuth: DataConnectAuth,
       connectorLocation: String,
+      parentLogger: Logger,
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
         dataConnectAuth = dataConnectAuth,
@@ -94,7 +111,8 @@ internal class DataConnectGrpcMetadata(
         kotlinVersion = "${KotlinVersion.CURRENT}",
         androidVersion = Build.VERSION.SDK_INT,
         dataConnectSdkVersion = BuildConfig.VERSION_NAME,
-        grpcVersion = "", // no way to get the grpc version at runtime
+        grpcVersion = "", // no way to get the grpc version at runtime,
+        parentLogger = parentLogger,
       )
   }
 }
