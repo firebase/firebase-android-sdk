@@ -61,6 +61,7 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
+  implementation(libs.kotest.property)
   implementation(libs.mockk)
   implementation(libs.androidx.test.junit)
   implementation(libs.robolectric)

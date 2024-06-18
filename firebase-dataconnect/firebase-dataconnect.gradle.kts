@@ -135,6 +135,8 @@ dependencies {
 
   testCompileOnly(libs.protobuf.java)
   testImplementation(project(":firebase-dataconnect:testutil"))
+  testImplementation(libs.kotest.assertions)
+  testImplementation(libs.kotest.property)
   testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
@@ -154,6 +156,7 @@ dependencies {
   androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.kotlin.coroutines.test)
+  androidTestImplementation(libs.kotest.assertions)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
   androidTestImplementation(libs.turbine)
