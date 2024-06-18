@@ -48,7 +48,7 @@ class SQLiteSchema {
    * The version of the schema. Increase this by one for each migration added to runMigrations
    * below.
    */
-  static final int VERSION = 16;
+  static final int VERSION = 17;
 
   /**
    * The batch size for data migrations.
@@ -177,6 +177,10 @@ class SQLiteSchema {
 
     if (fromVersion < 16 && toVersion >= 16) {
       createFieldIndex();
+    }
+
+    if (fromVersion < 17 && toVersion >= 17) {
+      createGlobalsTable();
     }
 
     /*
@@ -711,6 +715,18 @@ class SQLiteSchema {
     db.execSQL(
         "INSERT OR IGNORE INTO data_migrations (migration_name) VALUES (?)",
         new String[] {migration});
+  }
+
+  private void createGlobalsTable() {
+    ifTablesDontExist(
+        new String[] {"globals"},
+        () -> {
+          // A table of key value pairs by user.
+          db.execSQL(
+              "CREATE TABLE globals ("
+                  + "name TEXT PRIMARY KEY, "
+                  + "value BLOB)");
+        });
   }
 
   private boolean tableExists(String table) {
