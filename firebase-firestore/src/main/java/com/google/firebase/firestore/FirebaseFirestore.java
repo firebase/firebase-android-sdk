@@ -347,6 +347,8 @@ public class FirebaseFirestore {
       }
 
       return client;
+
+      return client;
     }
   }
 
@@ -867,9 +869,8 @@ public class FirebaseFirestore {
           hardAssert(error == null, "snapshots-in-sync listeners should never get errors.");
           runnable.run();
         };
-    AsyncEventListener<Void> asyncListener =
-        new AsyncEventListener<Void>(userExecutor, eventListener);
-    return clientProvider.call(client -> client.addSnapshotsInSyncListener(asyncListener, activity));
+    AsyncEventListener<Void> asyncListener = new AsyncEventListener<>(userExecutor, eventListener);
+    return clientProvider.call(client -> client.addSnapshotsInSyncListener(activity, asyncListener));
   }
 
   <T> T callClient(Function<FirestoreClient, T> call) {

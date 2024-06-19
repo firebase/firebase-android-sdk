@@ -24,7 +24,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.AggregateField;
-import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
@@ -185,24 +184,18 @@ public final class FirestoreClient {
 
   /** Starts listening to a query. */
   public ListenerRegistration listen(
-      Query query, ListenOptions options, @Nullable Activity activity, AsyncEventListener<ViewSnapshot> listener) {
+      Query query,
+      ListenOptions options,
+      @Nullable Activity activity, AsyncEventListener<ViewSnapshot> listener) {
     this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
-
     return ActivityScope.bind(
-            activity,
-            new ListenerRegistrationImpl(this, queryListener, listener));
-  }
-
-  /** Stops listening to a query previously listened to. */
-  public void stopListening(QueryListener listener) {
-    // Checks for terminate but does not raise error, allowing it to be a no-op if client is already
-    // terminated.
-    if (this.isTerminated()) {
-      return;
-    }
-    asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
+        activity,
+        () -> {
+          listener.mute();
+          asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(queryListener));
+        });
   }
 
   // TODO(b/261013682): Use an explicit executor in continuations.
@@ -336,15 +329,17 @@ public final class FirestoreClient {
     }
   }
 
-  public ListenerRegistration addSnapshotsInSyncListener(AsyncEventListener<Void> listener, Activity activity) {
+  public ListenerRegistration addSnapshotsInSyncListener(
+      Activity activity,
+      AsyncEventListener<Void> listener) {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
     return ActivityScope.bind(
-            activity,
-            () -> {
-              listener.mute();
-              removeSnapshotsInSyncListener(listener);
-            });
+        activity,
+        () -> {
+          listener.mute();
+          asyncQueue.enqueueAndForget(() -> eventManager.removeSnapshotsInSyncListener(listener));
+        });
   }
 
   public void loadBundle(InputStream bundleData, LoadBundleTask resultTask) {
@@ -391,14 +386,6 @@ public final class FirestoreClient {
   public void deleteAllFieldIndexes() {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> localStore.deleteAllFieldIndexes());
-  }
-
-  public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
-    // Checks for shutdown but does not raise error, allowing remove after shutdown to be a no-op.
-    if (isTerminated()) {
-      return;
-    }
-    asyncQueue.enqueueAndForget(() -> eventManager.removeSnapshotsInSyncListener(listener));
   }
 
   private void verifyNotTerminated() {

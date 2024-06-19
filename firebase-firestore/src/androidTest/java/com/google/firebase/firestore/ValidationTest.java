@@ -454,7 +454,7 @@ public class ValidationTest {
     CollectionReference collection = testCollection();
 
     // Ensure the server timestamp stays uncommitted for the first half of the test
-    waitFor(collection.firestore.callClient(FirestoreClient::disableNetwork));
+    waitFor(collection.firestore.disableNetwork());
 
     TaskCompletionSource<Void> offlineCallbackDone = new TaskCompletionSource<>();
     TaskCompletionSource<Void> onlineCallbackDone = new TaskCompletionSource<>();
