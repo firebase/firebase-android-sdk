@@ -30,7 +30,8 @@ import org.json.JSONObject
 class FunctionType<T>(val name: String, val parse: (String?) -> T?) {
   companion object {
     val STRING = FunctionType<String>("STRING") { it }
-    val INTEGER = FunctionType<Long>("INTEGER") { it?.toLongOrNull() }
+    val INTEGER = FunctionType<Int>("INTEGER") { it?.toIntOrNull() }
+    val LONG = FunctionType<Long>("INTEGER") { it?.toLongOrNull() }
     val NUMBER = FunctionType<Double>("NUMBER") { it?.toDoubleOrNull() }
     val BOOLEAN = FunctionType<Boolean>("BOOLEAN") { it?.toBoolean() }
     val ARRAY =
