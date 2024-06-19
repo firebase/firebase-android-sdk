@@ -347,8 +347,6 @@ public class FirebaseFirestore {
       }
 
       return client;
-
-      return client;
     }
   }
 
