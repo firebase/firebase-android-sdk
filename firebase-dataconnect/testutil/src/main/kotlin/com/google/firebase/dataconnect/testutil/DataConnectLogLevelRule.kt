@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.LogLevel
+import com.google.firebase.dataconnect.logLevel
 import org.junit.rules.ExternalResource
 
 /**
