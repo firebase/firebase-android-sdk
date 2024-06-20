@@ -72,7 +72,7 @@ public class FirebaseCrashlytics {
       @NonNull Deferred<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector,
       @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred,
-      @Background ExecutorService bacgroundExecutorService,
+      @Background ExecutorService backgroundExecutorService,
       @Blocking ExecutorService blockingExecutorService) {
 
     Context context = app.getApplicationContext();
@@ -153,7 +153,7 @@ public class FirebaseCrashlytics {
     Logger.getLogger().v("Installer package name is: " + appData.installerPackageName);
 
     final Executor threadPoolExecutor =
-        ExecutorUtils.buildSequentialExecutor(bacgroundExecutorService);
+        ExecutorUtils.buildSequentialExecutor(backgroundExecutorService);
 
     final SettingsController settingsController =
         SettingsController.create(
