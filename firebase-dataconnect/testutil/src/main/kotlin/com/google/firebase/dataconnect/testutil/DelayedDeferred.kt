@@ -19,42 +19,48 @@ package com.google.firebase.dataconnect.testutil
 import com.google.firebase.inject.Deferred
 import com.google.firebase.inject.Provider
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
- * An implementation of {@link Deferred} whose provider is initially unavailable, then becomes
- * available when {@link #setInstance} is invoked.
+ * An implementation of [Deferred] whose provider is initially unavailable, then becomes available
+ * when [makeAvailable] is invoked.
+ *
+ * The callback registered with [whenAvailable] is _always_ called back asynchronously, even if the
+ * instance has already been registered.
  */
-class DelayedDeferred<T> : Deferred<T> {
-
-  @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-  private val singleThreadDispatcher = newSingleThreadContext("UnavailableDeferredThread")
-
-  private val handlers: MutableList<Deferred.DeferredHandler<T>> = mutableListOf()
-
-  private lateinit var provider: Provider<T>
+@OptIn(DelicateCoroutinesApi::class)
+class DelayedDeferred<T>(instance: T) : Deferred<T> {
+  private val provider = Provider { instance }
+  private val mutex = Mutex()
+  private var provided = false
+  private val handlers = mutableListOf<Deferred.DeferredHandler<T>>()
 
   override fun whenAvailable(handler: Deferred.DeferredHandler<T>) {
-    runBlocking {
-      withContext(singleThreadDispatcher) {
-        if (this@DelayedDeferred::provider.isInitialized) {
-          handler.handle(provider)
-        } else {
-          handlers.add(handler)
+    GlobalScope.launch(Dispatchers.Default) {
+      val notifyHandler =
+        mutex.withLock {
+          if (provided) {
+            true
+          } else {
+            handlers.add(handler)
+            false
+          }
         }
+      if (notifyHandler) {
+        handler.handle(provider)
       }
     }
   }
 
-  fun setInstance(instance: T) {
-    runBlocking {
-      withContext(singleThreadDispatcher) {
-        if (this@DelayedDeferred::provider.isInitialized) {
-          throw IllegalStateException("setInstance() has already been invoked")
-        }
-
-        provider = Provider { instance }
-        handlers.forEach { it.handle(provider) }
+  suspend fun makeAvailable() {
+    val capturedHandlers =
+      mutex.withLock {
+        provided = true
+        val capturedHandlers = handlers.toList()
+        handlers.clear()
+        capturedHandlers
       }
-    }
+    GlobalScope.launch(Dispatchers.Default) { capturedHandlers.forEach { it.handle(provider) } }
   }
 }
