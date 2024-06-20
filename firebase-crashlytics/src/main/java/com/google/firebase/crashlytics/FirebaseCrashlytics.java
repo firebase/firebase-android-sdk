@@ -48,6 +48,7 @@ import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -71,7 +72,7 @@ public class FirebaseCrashlytics {
       @NonNull Deferred<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector,
       @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred,
-      @Background ExecutorService liteExecutorService,
+      @Background ExecutorService backgroundExecutorService,
       @Blocking ExecutorService blockingExecutorService) {
 
     Context context = app.getApplicationContext();
@@ -151,8 +152,8 @@ public class FirebaseCrashlytics {
 
     Logger.getLogger().v("Installer package name is: " + appData.installerPackageName);
 
-    final ExecutorService threadPoolExecutor =
-        ExecutorUtils.buildSingleThreadExecutorService("com.google.firebase.crashlytics.startup");
+    final Executor threadPoolExecutor =
+        ExecutorUtils.buildSequentialExecutor(backgroundExecutorService);
 
     final SettingsController settingsController =
         SettingsController.create(
@@ -182,17 +183,9 @@ public class FirebaseCrashlytics {
 
     final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);
 
-    Tasks.call(
-        threadPoolExecutor,
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            if (finishCoreInBackground) {
-              core.doBackgroundInitializationAsync(settingsController);
-            }
-            return null;
-          }
-        });
+    if (finishCoreInBackground) {
+      core.doBackgroundInitializationAsync(settingsController);
+    }
 
     return new FirebaseCrashlytics(core);
   }
