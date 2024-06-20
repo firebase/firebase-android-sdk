@@ -174,5 +174,13 @@ fun randomRequestId(key: String) = "requestId_${key}_${Random.nextAlphanumericSt
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
  * for correlating the application ID with its call site (e.g. "sc4kc7mqba").
  */
+@Deprecated(
+  "use Arb.requestId() from Arbs.kt instead",
+  replaceWith =
+    ReplaceWith(
+      "Arb.operationName(key).next()",
+      "com.google.firebase.dataconnect.testutil.requestId"
+    )
+)
 fun randomOperationName(key: String) =
   "operation_${key}_${Random.nextAlphanumericString(length = 8)}"
