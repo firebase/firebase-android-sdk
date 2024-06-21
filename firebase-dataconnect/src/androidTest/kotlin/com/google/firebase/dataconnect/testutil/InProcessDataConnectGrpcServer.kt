@@ -16,8 +16,8 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.util.buildStructProto
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
@@ -31,6 +31,8 @@ import io.grpc.Server
 import io.grpc.ServerCall
 import io.grpc.ServerCallHandler
 import io.grpc.ServerInterceptor
+import io.grpc.Status
+import io.grpc.StatusException
 import io.grpc.okhttp.OkHttpServerBuilder
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.channels.BufferOverflow.DROP_OLDEST
@@ -43,18 +45,57 @@ import kotlinx.coroutines.flow.asSharedFlow
  * of a real GRPC server.
  */
 class InProcessDataConnectGrpcServer :
-  FactoryTestRule<InProcessDataConnectGrpcServer.ServerInfo, Nothing>() {
+  FactoryTestRule<
+    InProcessDataConnectGrpcServer.ServerInfo, InProcessDataConnectGrpcServer.Params
+  >() {
 
-  override fun createInstance(params: Nothing?): ServerInfo {
-    val serverInterceptor = ServerInterceptorImpl()
+  fun newInstance(
+    errors: List<Status>? = null,
+    executeQueryResponse: ExecuteQueryResponse? = null,
+    executeMutationResponse: ExecuteMutationResponse? = null
+  ): ServerInfo =
+    createInstance(
+      errors = errors,
+      executeQueryResponse = executeQueryResponse,
+      executeMutationResponse = executeMutationResponse
+    )
+
+  override fun createInstance(params: Params?): ServerInfo {
+    return createInstance(
+      params?.errors,
+      params?.executeQueryResponse,
+      params?.executeMutationResponse
+    )
+  }
+
+  private fun createInstance(
+    errors: List<Status>? = null,
+    executeQueryResponse: ExecuteQueryResponse? = null,
+    executeMutationResponse: ExecuteMutationResponse? = null
+  ): ServerInfo {
+    val serverInterceptor = ServerInterceptorImpl(errors ?: Params.defaults.errors)
+    val connectorService =
+      ConnectorServiceImpl(
+        executeQueryResponse ?: Params.defaults.executeQueryResponse,
+        executeMutationResponse ?: Params.defaults.executeMutationResponse
+      )
     val grpcServer =
       OkHttpServerBuilder.forPort(0, InsecureServerCredentials.create())
-        .addService(ConnectorServiceImpl())
+        .addService(connectorService)
         .intercept(serverInterceptor)
         .build()
     grpcServer.start()
-
     return ServerInfo(grpcServer, serverInterceptor.metadatas)
+  }
+
+  data class Params(
+    val errors: List<Status> = emptyList(),
+    val executeQueryResponse: ExecuteQueryResponse? = null,
+    val executeMutationResponse: ExecuteMutationResponse? = null
+  ) {
+    companion object {
+      val defaults = Params()
+    }
   }
 
   override fun destroyInstance(instance: ServerInfo) {
@@ -63,7 +104,9 @@ class InProcessDataConnectGrpcServer :
 
   data class ServerInfo(val server: Server, val metadatas: Flow<Metadata>)
 
-  private class ServerInterceptorImpl : ServerInterceptor {
+  private class ServerInterceptorImpl(errors: List<Status> = emptyList()) : ServerInterceptor {
+
+    private val errors = errors.toList().iterator()
 
     private val _metadatas =
       MutableSharedFlow<Metadata>(replay = Int.MAX_VALUE, onBufferOverflow = DROP_OLDEST)
@@ -76,16 +119,27 @@ class InProcessDataConnectGrpcServer :
       next: ServerCallHandler<ReqT, RespT>
     ): ServerCall.Listener<ReqT> {
       check(_metadatas.tryEmit(headers)) { "_metadatas.tryEmit(headers) failed" }
+
+      synchronized(errors) {
+        if (errors.hasNext()) {
+          throw StatusException(errors.next())
+        }
+      }
+
       return next.startCall(call, headers)
     }
   }
 
-  private class ConnectorServiceImpl : ConnectorServiceGrpc.ConnectorServiceImplBase() {
+  private class ConnectorServiceImpl(
+    val executeQueryResponse: ExecuteQueryResponse? = null,
+    val executeMutationResponse: ExecuteMutationResponse? = null
+  ) : ConnectorServiceGrpc.ConnectorServiceImplBase() {
     override fun executeQuery(
       request: ExecuteQueryRequest,
       responseObserver: StreamObserver<ExecuteQueryResponse>
     ) {
-      responseObserver.onNext(executeQueryResponse { data = buildStructProto {} })
+      val response = executeQueryResponse ?: ExecuteQueryResponse.getDefaultInstance()
+      responseObserver.onNext(response)
       responseObserver.onCompleted()
     }
 
@@ -93,15 +147,27 @@ class InProcessDataConnectGrpcServer :
       request: ExecuteMutationRequest,
       responseObserver: StreamObserver<ExecuteMutationResponse>
     ) {
-      responseObserver.onNext(executeMutationResponse { data = buildStructProto {} })
+      val response = executeMutationResponse ?: ExecuteMutationResponse.getDefaultInstance()
+      responseObserver.onNext(response)
       responseObserver.onCompleted()
     }
   }
 }
 
-fun TestDataConnectFactory.newInstance(server: Server): FirebaseDataConnect =
-  newInstance(DataConnectBackend.Custom(host = "127.0.0.1:${server.port}", sslEnabled = false))
+fun TestDataConnectFactory.Params.copy(
+  serverInfo: InProcessDataConnectGrpcServer.ServerInfo
+): TestDataConnectFactory.Params =
+  copy(
+    backend =
+      DataConnectBackend.Custom(host = "127.0.0.1:${serverInfo.server.port}", sslEnabled = false)
+  )
 
 fun TestDataConnectFactory.newInstance(
   serverInfo: InProcessDataConnectGrpcServer.ServerInfo
-): FirebaseDataConnect = newInstance(serverInfo.server)
+): FirebaseDataConnect = newInstance(TestDataConnectFactory.Params().copy(serverInfo))
+
+fun TestDataConnectFactory.newInstance(
+  firebaseApp: FirebaseApp,
+  serverInfo: InProcessDataConnectGrpcServer.ServerInfo
+): FirebaseDataConnect =
+  newInstance(TestDataConnectFactory.Params(firebaseApp = firebaseApp).copy(serverInfo))

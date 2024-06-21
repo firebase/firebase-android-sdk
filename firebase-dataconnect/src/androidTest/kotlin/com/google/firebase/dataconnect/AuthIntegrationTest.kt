@@ -22,20 +22,49 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.assertThrows
+import com.google.firebase.dataconnect.testutil.newInstance
+import com.google.firebase.dataconnect.testutil.operationName
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
+import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
+import google.firebase.dataconnect.proto.executeMutationResponse
+import google.firebase.dataconnect.proto.executeQueryResponse
+import io.grpc.Metadata
 import io.grpc.Status
+import io.grpc.StatusException
+import io.kotest.assertions.asClue
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldHaveAtLeastSize
+import io.kotest.matchers.collections.shouldNotContainNull
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.next
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class AuthIntegrationTest : DataConnectIntegrationTestBase() {
+
+  private val key = "e6w33rw36t"
+  private val rs = RandomSource.default()
+
+  @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
 
   private val personSchema by lazy { PersonSchema(dataConnectFactory) }
 
@@ -92,6 +121,95 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     assertThat(exception.status.code).isEqualTo(Status.UNAUTHENTICATED.code)
   }
 
+  @Test
+  fun queryShouldRetryOnUnauthenticated() = runTest {
+    signIn()
+    val responseData = buildStructProto { put("foo", key) }
+    val executeQueryResponse = executeQueryResponse { data = responseData }
+    val grpcServer =
+      inProcessDataConnectGrpcServer.newInstance(
+        errors = listOf(Status.UNAUTHENTICATED),
+        executeQueryResponse = executeQueryResponse
+      )
+    val authTokens = CopyOnWriteArrayList<String?>()
+    backgroundScope.launch {
+      grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
+    }
+    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val operationName = Arb.operationName(key).next(rs)
+    val queryRef =
+      dataConnect.query(operationName, Unit, serializer<TestData>(), serializer<Unit>())
+
+    val actualResponse = queryRef.execute()
+
+    actualResponse.asClue { it.data shouldBe TestData(key) }
+    withClue("authTokens") {
+      authTokens.shouldNotContainNull()
+      authTokens.shouldHaveAtLeastSize(2)
+    }
+  }
+
+  @Test
+  fun mutationShouldRetryOnUnauthenticated() = runTest {
+    signIn()
+    val responseData = buildStructProto { put("foo", key) }
+    val executeMutationResponse = executeMutationResponse { data = responseData }
+    val grpcServer =
+      inProcessDataConnectGrpcServer.newInstance(
+        errors = listOf(Status.UNAUTHENTICATED),
+        executeMutationResponse = executeMutationResponse
+      )
+    val authTokens = CopyOnWriteArrayList<String?>()
+    backgroundScope.launch {
+      grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
+    }
+    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val operationName = Arb.operationName(key).next(rs)
+    val mutationRef =
+      dataConnect.mutation(operationName, Unit, serializer<TestData>(), serializer<Unit>())
+
+    val actualResponse = mutationRef.execute()
+
+    actualResponse.asClue { it.data shouldBe TestData(key) }
+    withClue("authTokens") {
+      authTokens.shouldNotContainNull()
+      authTokens.shouldHaveAtLeastSize(2)
+    }
+  }
+
+  @Test
+  fun queryShouldOnlyRetryOnUnauthenticatedOnce() = runTest {
+    signIn()
+    val grpcServer =
+      inProcessDataConnectGrpcServer.newInstance(
+        errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
+      )
+    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val operationName = Arb.operationName(key).next(rs)
+    val queryRef = dataConnect.query(operationName, Unit, serializer<Unit>(), serializer<Unit>())
+
+    val thrownException = shouldThrow<StatusException> { queryRef.execute() }
+
+    thrownException.asClue { it.status shouldBe Status.UNAUTHENTICATED }
+  }
+
+  @Test
+  fun mutationShouldOnlyRetryOnUnauthenticatedOnce() = runTest {
+    signIn()
+    val grpcServer =
+      inProcessDataConnectGrpcServer.newInstance(
+        errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
+      )
+    val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    val operationName = Arb.operationName(key).next(rs)
+    val mutationRef =
+      dataConnect.mutation(operationName, Unit, serializer<Unit>(), serializer<Unit>())
+
+    val thrownException = shouldThrow<StatusException> { mutationRef.execute() }
+
+    thrownException.asClue { it.status shouldBe Status.UNAUTHENTICATED }
+  }
+
   private suspend fun signIn() {
     val authResult = auth.run { signInAnonymously().await() }
     assertWithMessage("authResult.user").that(authResult.user).isNotNull()
@@ -99,5 +217,12 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   private fun signOut() {
     auth.run { signOut() }
+  }
+
+  @Serializable data class TestData(val foo: String)
+
+  private companion object {
+    private val firebaseAuthTokenHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
   }
 }
