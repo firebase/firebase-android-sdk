@@ -15,16 +15,17 @@
  */
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectError
+import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.iterator
-import com.google.firebase.dataconnect.testutil.randomOperationName
-import com.google.firebase.dataconnect.testutil.randomProjectId
+import com.google.firebase.dataconnect.testutil.newMockLogger
+import com.google.firebase.dataconnect.testutil.operationName
+import com.google.firebase.dataconnect.testutil.projectId
 import com.google.firebase.dataconnect.testutil.requestId
 import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.protobuf.ListValue
-import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
@@ -32,14 +33,11 @@ import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.SourceLocation
-import google.firebase.dataconnect.proto.executeMutationResponse
-import google.firebase.dataconnect.proto.executeQueryResponse
-import io.kotest.assertions.asClue
-import io.kotest.assertions.assertSoftly
+import io.grpc.Status
+import io.grpc.StatusException
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
@@ -49,268 +47,184 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
-import io.mockk.CapturingSlot
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
-import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 
 class DataConnectGrpcClientUnitTest {
 
+  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+
+  private val key = "3sw2m4vkbg"
+  private val rs = RandomSource.default()
+  private val projectId = Arb.projectId(key).next(rs)
+  private val connectorConfig = Arb.connectorConfig(key).next(rs)
+  private val requestId = Arb.requestId(key).next(rs)
+  private val operationName = Arb.operationName(key).next(rs)
+  private val variables = buildStructProto { put("dhxpwjtb6s", key) }
+
+  private val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs =
+    mockk(relaxed = true, name = "mockDataConnectGrpcRPCs-$key") {
+      coEvery { executeQuery(any(), any()) } returns ExecuteQueryResponse.getDefaultInstance()
+      coEvery { executeMutation(any(), any()) } returns ExecuteMutationResponse.getDefaultInstance()
+    }
+
+  private val mockLogger = newMockLogger(key)
+
+  private val dataConnectGrpcClient =
+    DataConnectGrpcClient(
+      projectId = projectId,
+      connector = connectorConfig,
+      grpcRPCs = mockDataConnectGrpcRPCs,
+      logger = mockLogger,
+    )
+
   @Test
   fun `executeQuery() should send the right request`() = runTest {
-    val key = "3sw2m4vkbg"
-    val testValues = TestValues.fromKey(key)
-    val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
-    val requestId = Arb.requestId(key).next()
-    val operationName = randomOperationName(key)
-    val variables = buildStructProto { put("foo", key) }
-
     dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
 
-    testValues.executeQueryRequestIdSlot.asClue { slot ->
-      slot.isCaptured shouldBe true
-      slot.captured shouldBe requestId
-    }
-    testValues.executeQueryRequestSlot.asClue { slot ->
-      slot.isCaptured shouldBe true
-      assertSoftly(slot.captured) {
-        name shouldBe
-          ("projects/${testValues.projectId}" +
-            "/locations/${testValues.connectorConfig.location}" +
-            "/services/${testValues.connectorConfig.serviceId}" +
-            "/connectors/${testValues.connectorConfig.connector}")
-        operationName shouldBe operationName
-        variables shouldBe variables
-      }
-    }
+    val expectedName =
+      "projects/${projectId}" +
+        "/locations/${connectorConfig.location}" +
+        "/services/${connectorConfig.serviceId}" +
+        "/connectors/${connectorConfig.connector}"
+    val expectedRequest =
+      ExecuteQueryRequest.newBuilder()
+        .setName(expectedName)
+        .setOperationName(operationName)
+        .setVariables(variables)
+        .build()
+    coVerify { mockDataConnectGrpcRPCs.executeQuery(requestId, expectedRequest) }
   }
 
   @Test
   fun `executeMutation() should send the right request`() = runTest {
-    val key = "hbfkfxw5z8"
-    val testValues = TestValues.fromKey(key)
-    val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
-    val requestId = Arb.requestId(key).next()
-    val operationName = randomOperationName(key)
-    val variables = buildStructProto { put("foo", key) }
+    dataConnectGrpcClient.executeMutation(requestId, operationName, variables)
 
-    dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
-
-    testValues.executeQueryRequestIdSlot.asClue { slot ->
-      slot.isCaptured shouldBe true
-      slot.captured shouldBe requestId
-    }
-    testValues.executeQueryRequestSlot.asClue { slot ->
-      slot.isCaptured shouldBe true
-      assertSoftly(slot.captured) {
-        name shouldBe
-          ("projects/${testValues.projectId}" +
-            "/locations/${testValues.connectorConfig.location}" +
-            "/services/${testValues.connectorConfig.serviceId}" +
-            "/connectors/${testValues.connectorConfig.connector}")
-        operationName shouldBe operationName
-        variables shouldBe variables
-      }
-    }
+    val expectedName =
+      "projects/${projectId}" +
+        "/locations/${connectorConfig.location}" +
+        "/services/${connectorConfig.serviceId}" +
+        "/connectors/${connectorConfig.connector}"
+    val expectedRequest =
+      ExecuteMutationRequest.newBuilder()
+        .setName(expectedName)
+        .setOperationName(operationName)
+        .setVariables(variables)
+        .build()
+    coVerify { mockDataConnectGrpcRPCs.executeMutation(requestId, expectedRequest) }
   }
 
   @Test
   fun `executeQuery() should return null data and empty errors if response is empty`() = runTest {
-    val key = "nja9w9mpcv"
-    val testValues = TestValues.fromKey(key)
-    val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
-    coEvery { testValues.dataConnectGrpcRPCs.executeQuery(any(), any()) } returns
+    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any()) } returns
       ExecuteQueryResponse.getDefaultInstance()
 
-    val operationResult =
-      dataConnectGrpcClient.executeQuery(
-        Arb.requestId(key).next(),
-        randomOperationName(key),
-        Struct.getDefaultInstance()
-      )
+    val operationResult = dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
 
-    operationResult.asClue {
-      assertSoftly(operationResult) {
-        data.shouldBeNull()
-        errors.shouldBeEmpty()
-      }
-    }
+    operationResult shouldBe OperationResult(data = null, errors = emptyList())
   }
 
   @Test
   fun `executeMutation() should return null data and empty errors if response is empty`() =
     runTest {
-      val key = "bph4vbkf2q"
-      val testValues = TestValues.fromKey(key)
-      val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
-      coEvery { testValues.dataConnectGrpcRPCs.executeMutation(any(), any()) } returns
+      coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any()) } returns
         ExecuteMutationResponse.getDefaultInstance()
 
       val operationResult =
-        dataConnectGrpcClient.executeMutation(
-          Arb.requestId(key).next(),
-          randomOperationName(key),
-          Struct.getDefaultInstance()
-        )
+        dataConnectGrpcClient.executeMutation(requestId, operationName, variables)
 
-      operationResult.asClue {
-        assertSoftly(operationResult) {
-          data.shouldBeNull()
-          errors.shouldBeEmpty()
-        }
-      }
+      operationResult shouldBe OperationResult(data = null, errors = emptyList())
     }
 
   @Test
   fun `executeQuery() should return data and errors`() = runTest {
-    val key = "r8pj9yy6h9"
-    val testValues = TestValues.fromKey(key)
-    val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
     val responseData = buildStructProto { put("foo", key) }
     val responseErrors = List(3) { GraphqlErrorInfo.random(RandomSource.default()) }
-    coEvery { testValues.dataConnectGrpcRPCs.executeQuery(any(), any()) } returns
-      executeQueryResponse {
-        this.data = responseData
-        this.errors.addAll(responseErrors.map { it.graphqlError })
-      }
+    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any()) } returns
+      ExecuteQueryResponse.newBuilder()
+        .setData(responseData)
+        .addAllErrors(responseErrors.map { it.graphqlError })
+        .build()
 
-    val operationResult =
-      dataConnectGrpcClient.executeQuery(
-        Arb.requestId(key).next(),
-        randomOperationName(key),
-        Struct.getDefaultInstance()
-      )
+    val operationResult = dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
 
-    operationResult.asClue {
-      assertSoftly(operationResult) {
-        data shouldBe responseData
-        errors shouldBe responseErrors.map { it.dataConnectError }
-      }
-    }
+    operationResult shouldBe
+      OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
   }
 
   @Test
   fun `executeMutation() should return data and errors`() = runTest {
-    val key = "7vv52na427"
-    val testValues = TestValues.fromKey(key)
-    val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
     val responseData = buildStructProto { put("foo", key) }
     val responseErrors = List(3) { GraphqlErrorInfo.random(RandomSource.default()) }
-    coEvery { testValues.dataConnectGrpcRPCs.executeMutation(any(), any()) } returns
-      executeMutationResponse {
-        this.data = responseData
-        this.errors.addAll(responseErrors.map { it.graphqlError })
-      }
+    coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any()) } returns
+      ExecuteMutationResponse.newBuilder()
+        .setData(responseData)
+        .addAllErrors(responseErrors.map { it.graphqlError })
+        .build()
 
-    val operationResult =
-      dataConnectGrpcClient.executeMutation(
-        Arb.requestId(key).next(),
-        randomOperationName(key),
-        Struct.getDefaultInstance()
-      )
+    val operationResult = dataConnectGrpcClient.executeMutation(requestId, operationName, variables)
 
-    operationResult.asClue {
-      assertSoftly(operationResult) {
-        data shouldBe responseData
-        errors shouldBe responseErrors.map { it.dataConnectError }
-      }
-    }
+    operationResult shouldBe
+      OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
   }
 
   @Test
-  fun `executeQuery() should propagate exceptions from grpc`() = runTest {
-    val key = "kxba2fg2gz"
-    val testValues = TestValues.fromKey(key)
-    val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
-    val grpcException = TestException(key)
-    coEvery { testValues.dataConnectGrpcRPCs.executeQuery(any(), any()) } throws grpcException
+  fun `executeQuery() should propagate non-grpc exceptions`() = runTest {
+    val exception = TestException(key)
+    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any()) } throws exception
 
-    val exception =
+    val thrownException =
       shouldThrow<TestException> {
-        dataConnectGrpcClient.executeQuery(
-          Arb.requestId(key).next(),
-          randomOperationName(key),
-          Struct.getDefaultInstance()
-        )
+        dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
       }
 
-    exception shouldBe grpcException
+    thrownException shouldBe exception
   }
 
   @Test
-  fun `executeMutation() should propagate exceptions from grpc`() = runTest {
-    val key = "q9v42fqv2t"
-    val testValues = TestValues.fromKey(key)
-    val dataConnectGrpcClient = testValues.newDataConnectGrpcClient()
-    val grpcException = TestException(key)
-    coEvery { testValues.dataConnectGrpcRPCs.executeMutation(any(), any()) } throws grpcException
+  fun `executeMutation() should propagate non-grpc exceptions`() = runTest {
+    val exception = TestException(key)
+    coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any()) } throws exception
 
-    val exception =
+    val thrownException =
       shouldThrow<TestException> {
-        dataConnectGrpcClient.executeMutation(
-          Arb.requestId(key).next(),
-          randomOperationName(key),
-          Struct.getDefaultInstance()
-        )
+        dataConnectGrpcClient.executeMutation(requestId, operationName, variables)
       }
 
-    exception shouldBe grpcException
+    thrownException shouldBe exception
+  }
+
+  @Test
+  fun `executeQuery() should propagate grpc exceptions`() = runTest {
+    val exception = StatusException(Status.UNAUTHENTICATED)
+    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any()) } throws exception
+
+    val thrownException =
+      shouldThrow<StatusException> {
+        dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
+      }
+
+    thrownException shouldBeSameInstanceAs exception
+  }
+
+  @Test
+  fun `executeMutation() should propagate grpc exceptions`() = runTest {
+    val exception = StatusException(Status.UNAUTHENTICATED)
+    coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any()) } throws exception
+
+    val thrownException =
+      shouldThrow<StatusException> {
+        dataConnectGrpcClient.executeMutation(requestId, operationName, variables)
+      }
+
+    thrownException shouldBeSameInstanceAs exception
   }
 
   private class TestException(message: String) : Exception(message)
-
-  private data class TestValues(
-    val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
-    val projectId: String,
-    val connectorConfig: ConnectorConfig,
-    val executeQueryRequestIdSlot: CapturingSlot<String>,
-    val executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest>,
-    val executeMutationRequestIdSlot: CapturingSlot<String>,
-    val executeMutationRequestSlot: CapturingSlot<ExecuteMutationRequest>,
-  ) {
-    fun newDataConnectGrpcClient(): DataConnectGrpcClient =
-      DataConnectGrpcClient(
-        projectId = projectId,
-        connector = connectorConfig,
-        grpcRPCs = dataConnectGrpcRPCs,
-        parentLogger = mockk(relaxed = true)
-      )
-    companion object {
-      fun fromKey(key: String, rs: RandomSource = RandomSource.default()): TestValues {
-        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk(relaxed = true)
-
-        val executeQueryRequestIdSlot = slot<String>()
-        val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
-        coEvery {
-          dataConnectGrpcRPCs.executeQuery(
-            capture(executeQueryRequestIdSlot),
-            capture(executeQueryRequestSlot)
-          )
-        } returns ExecuteQueryResponse.getDefaultInstance()
-
-        val executeMutationRequestIdSlot = slot<String>()
-        val executeMutationRequestSlot = slot<ExecuteMutationRequest>()
-        coEvery {
-          dataConnectGrpcRPCs.executeMutation(
-            capture(executeMutationRequestIdSlot),
-            capture(executeMutationRequestSlot)
-          )
-        } returns ExecuteMutationResponse.getDefaultInstance()
-
-        return TestValues(
-          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-          projectId = randomProjectId(key),
-          connectorConfig = Arb.connectorConfig(key).next(rs),
-          executeQueryRequestIdSlot = executeQueryRequestIdSlot,
-          executeQueryRequestSlot = executeQueryRequestSlot,
-          executeMutationRequestIdSlot = executeMutationRequestIdSlot,
-          executeMutationRequestSlot = executeMutationRequestSlot,
-        )
-      }
-    }
-  }
 
   private data class GraphqlErrorInfo(
     val graphqlError: GraphqlError,

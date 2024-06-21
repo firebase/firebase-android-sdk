@@ -168,7 +168,7 @@ internal class FirebaseDataConnectImpl(
         projectId = projectId,
         connector = config,
         grpcRPCs = lazyGrpcRPCs.getLocked(),
-        parentLogger = logger,
+        logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
       )
     }
 
