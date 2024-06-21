@@ -96,6 +96,9 @@ import kotlinx.serialization.SerializationStrategy
  * GRPC requests and responses.
  * - [#6038](https://github.com/firebase/firebase-android-sdk/pull/6038) Fixed an bug with incorrect
  * Timestamp serialization due to miscalculation in timezone decoding.
+ * - [#6052](https://github.com/firebase/firebase-android-sdk/pull/6052) Automatically retry
+ * operations (executing queries and mutations) that fail due to an expired authentication token,
+ * with a new authentication token.
  *
  * #### 16.0.0-alpha04 (May 29, 2024)
  * - [#5976](https://github.com/firebase/firebase-android-sdk/pull/5976) Fixed time zone issues when
