@@ -69,6 +69,8 @@ internal class FirebaseDataConnectImpl(
           "config=$config, settings=$settings"
       }
     }
+  val instanceId: String
+    get() = logger.nameWithId
 
   override val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
   override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
@@ -77,7 +79,7 @@ internal class FirebaseDataConnectImpl(
     CoroutineScope(
       SupervisorJob() +
         nonBlockingDispatcher +
-        CoroutineName(logger.nameWithId) +
+        CoroutineName(instanceId) +
         CoroutineExceptionHandler { _, throwable ->
           logger.warn(throwable) { "uncaught exception from a coroutine" }
         }
@@ -92,14 +94,14 @@ internal class FirebaseDataConnectImpl(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  private val dataConnectAuth =
+  private val lazyDataConnectAuth =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
       DataConnectAuth(
         deferredAuthProvider = deferredAuthProvider,
         parentCoroutineScope = coroutineScope,
         blockingDispatcher = blockingDispatcher,
-        logger = Logger("DataConnectAuth").apply { debug { "created by ${logger.nameWithId}" } },
+        logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
       )
     }
 
@@ -138,7 +140,7 @@ internal class FirebaseDataConnectImpl(
       logger.debug { "connecting to Data Connect backend: $backendInfo" }
       val grpcMetadata =
         DataConnectGrpcMetadata.forSystemVersions(
-          dataConnectAuth = dataConnectAuth.getLocked(),
+          dataConnectAuth = lazyDataConnectAuth.getLocked(),
           connectorLocation = config.location,
           parentLogger = logger,
         )
@@ -323,7 +325,7 @@ internal class FirebaseDataConnectImpl(
 
     // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
     // is re-entrant, this is safe even if it's already been closed.
-    dataConnectAuth.initializedValueOrNull?.close()
+    lazyDataConnectAuth.initializedValueOrNull?.close()
 
     // Start the job to asynchronously close the gRPC client.
     while (true) {
