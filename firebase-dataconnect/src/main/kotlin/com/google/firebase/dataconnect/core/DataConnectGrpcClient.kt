@@ -26,12 +26,15 @@ import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.SourceLocation
 import google.firebase.dataconnect.proto.executeMutationRequest
 import google.firebase.dataconnect.proto.executeQueryRequest
+import io.grpc.Status
+import io.grpc.StatusException
 import kotlinx.serialization.DeserializationStrategy
 
 internal class DataConnectGrpcClient(
   projectId: String,
   connector: ConnectorConfig,
   private val grpcRPCs: DataConnectGrpcRPCs,
+  private val dataConnectAuth: DataConnectAuth,
   parentLogger: Logger,
 ) {
   private val logger =
@@ -68,7 +71,10 @@ internal class DataConnectGrpcClient(
       this.variables = variables
     }
 
-    val response = grpcRPCs.executeQuery(requestId, request)
+    val response =
+      grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") {
+        executeQuery(requestId, request)
+      }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
@@ -87,12 +93,35 @@ internal class DataConnectGrpcClient(
       this.variables = variables
     }
 
-    val response = grpcRPCs.executeMutation(requestId, request)
+    val response =
+      grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeMutation") {
+        executeMutation(requestId, request)
+      }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
       errors = response.errorsList.map { it.toDataConnectError() }
     )
+  }
+
+  private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
+    requestId: String,
+    kotlinMethodName: String,
+    block: T.() -> R
+  ): R {
+    return try {
+      block()
+    } catch (e: StatusException) {
+      if (e.status != Status.UNAUTHENTICATED) {
+        throw e
+      }
+      logger.warn(e) {
+        "$kotlinMethodName() [rid=$requestId]" +
+          " retrying with fresh auth token due to UNAUTHENTICATED error"
+      }
+      dataConnectAuth.forceRefresh()
+      block()
+    }
   }
 }
 

@@ -92,7 +92,7 @@ internal class FirebaseDataConnectImpl(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  private val dataConnectAuth =
+  private val lazyDataConnectAuth =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
       DataConnectAuth(
@@ -138,7 +138,7 @@ internal class FirebaseDataConnectImpl(
       logger.debug { "connecting to Data Connect backend: $backendInfo" }
       val grpcMetadata =
         DataConnectGrpcMetadata.forSystemVersions(
-          dataConnectAuth = dataConnectAuth.getLocked(),
+          dataConnectAuth = lazyDataConnectAuth.getLocked(),
           connectorLocation = config.location,
           parentLogger = logger,
         )
@@ -166,6 +166,7 @@ internal class FirebaseDataConnectImpl(
         projectId = projectId,
         connector = config,
         grpcRPCs = lazyGrpcRPCs.getLocked(),
+        dataConnectAuth = lazyDataConnectAuth.getLocked(),
         parentLogger = logger,
       )
     }
@@ -323,7 +324,7 @@ internal class FirebaseDataConnectImpl(
 
     // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
     // is re-entrant, this is safe even if it's already been closed.
-    dataConnectAuth.initializedValueOrNull?.close()
+    lazyDataConnectAuth.initializedValueOrNull?.close()
 
     // Start the job to asynchronously close the gRPC client.
     while (true) {

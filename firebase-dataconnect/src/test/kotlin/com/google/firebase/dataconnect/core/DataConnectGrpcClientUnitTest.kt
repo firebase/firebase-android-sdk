@@ -220,6 +220,7 @@ class DataConnectGrpcClientUnitTest {
 
   private data class TestValues(
     val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs,
+    val mockDataConnectAuth: DataConnectAuth,
     val projectId: String,
     val connectorConfig: ConnectorConfig,
   ) {
@@ -228,10 +229,13 @@ class DataConnectGrpcClientUnitTest {
         projectId = projectId,
         connector = connectorConfig,
         grpcRPCs = mockDataConnectGrpcRPCs,
+        dataConnectAuth = mockDataConnectAuth,
         parentLogger = mockk(relaxed = true)
       )
     companion object {
       fun fromKey(key: String, rs: RandomSource = RandomSource.default()): TestValues {
+        val mockDataConnectAuth: DataConnectAuth = mockk(relaxed = true)
+
         val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk(relaxed = true)
 
         coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any()) } returns
@@ -242,6 +246,7 @@ class DataConnectGrpcClientUnitTest {
 
         return TestValues(
           mockDataConnectGrpcRPCs = mockDataConnectGrpcRPCs,
+          mockDataConnectAuth = mockDataConnectAuth,
           projectId = randomProjectId(key),
           connectorConfig = Arb.connectorConfig(key).next(rs),
         )
