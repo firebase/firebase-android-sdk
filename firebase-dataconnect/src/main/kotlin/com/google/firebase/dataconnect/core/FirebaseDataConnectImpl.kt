@@ -69,6 +69,8 @@ internal class FirebaseDataConnectImpl(
           "config=$config, settings=$settings"
       }
     }
+  val instanceId: String
+    get() = logger.nameWithId
 
   override val blockingDispatcher = blockingExecutor.asCoroutineDispatcher()
   override val nonBlockingDispatcher = nonBlockingExecutor.asCoroutineDispatcher()
@@ -77,7 +79,7 @@ internal class FirebaseDataConnectImpl(
     CoroutineScope(
       SupervisorJob() +
         nonBlockingDispatcher +
-        CoroutineName(logger.nameWithId) +
+        CoroutineName(instanceId) +
         CoroutineExceptionHandler { _, throwable ->
           logger.warn(throwable) { "uncaught exception from a coroutine" }
         }
@@ -99,7 +101,7 @@ internal class FirebaseDataConnectImpl(
         deferredAuthProvider = deferredAuthProvider,
         parentCoroutineScope = coroutineScope,
         blockingDispatcher = blockingDispatcher,
-        logger = Logger("DataConnectAuth").apply { debug { "created by ${logger.nameWithId}" } },
+        logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
       )
     }
 
@@ -167,7 +169,7 @@ internal class FirebaseDataConnectImpl(
         connector = config,
         grpcRPCs = lazyGrpcRPCs.getLocked(),
         dataConnectAuth = lazyDataConnectAuth.getLocked(),
-        parentLogger = logger,
+        logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
       )
     }
 

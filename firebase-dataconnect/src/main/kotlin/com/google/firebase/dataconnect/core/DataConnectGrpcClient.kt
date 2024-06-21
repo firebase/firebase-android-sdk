@@ -35,17 +35,8 @@ internal class DataConnectGrpcClient(
   connector: ConnectorConfig,
   private val grpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
-  parentLogger: Logger,
+  private val logger: Logger,
 ) {
-  private val logger =
-    Logger("DataConnectGrpcClient").apply {
-      debug {
-        "Created by ${parentLogger.nameWithId};" +
-          " projectId=$projectId" +
-          " connector=$connector" +
-          " grpcRPCs=${grpcRPCs.instanceId}"
-      }
-    }
   val instanceId: String
     get() = logger.nameWithId
 
