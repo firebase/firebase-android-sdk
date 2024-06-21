@@ -167,9 +167,7 @@ internal class DataConnectAuth(
           activeJob
         }
 
-      println("zzyzx attemptSequenceNumber=$attemptSequenceNumber AA")
       val jobResult = job.runCatching { await() }
-      println("zzyzx attemptSequenceNumber=$attemptSequenceNumber BB")
       jobResult.onFailure { exception ->
         if (exception is CancellationException) {
           logger.debug {
