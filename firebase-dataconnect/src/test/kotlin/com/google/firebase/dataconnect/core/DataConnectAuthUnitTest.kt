@@ -13,8 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalKotest::class)
-
 package com.google.firebase.dataconnect.core
 
 import com.google.android.gms.tasks.Task
@@ -23,41 +21,39 @@ import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
-import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DelayedDeferred
 import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.accessToken
+import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.requestId
+import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
+import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
+import com.google.firebase.dataconnect.testutil.shouldNotHaveLoggedAnyMessagesContaining
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
-import io.kotest.assertions.all
-import io.kotest.assertions.any
 import io.kotest.assertions.asClue
+import io.kotest.assertions.nondeterministic.continually
 import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
-import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.throwable.shouldHaveMessage
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.next
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import io.mockk.spyk
 import io.mockk.verify
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
@@ -81,21 +77,14 @@ class DataConnectAuthUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
-  private val accessTokenGenerator = Arb.accessToken("qqddxntcwk")
-  private val accessToken: String = accessTokenGenerator.next()
-  private val requestId = Arb.requestId("qqddxntcwk").next()
+  private val key = "qqddxntcwk"
+  private val rs = RandomSource.default()
+  private val accessTokenGenerator = Arb.accessToken(key)
+  private val accessToken: String = accessTokenGenerator.next(rs)
+  private val requestId = Arb.requestId(key).next(rs)
   private val mockInternalAuthProvider: InternalAuthProvider =
-    mockk(relaxed = true, name = "qqddxntcwk")
-  private val logMessages = CopyOnWriteArrayList<LoggedMessage>()
-  private val mockLogger: Logger =
-    spyk(Logger("qqddxntcwk"), name = "qqddxntcwk") {
-      every { log(any(), any(), any()) } answers
-        {
-          logMessages.add(LoggedMessage(arg(0), arg(1), arg(2)))
-        }
-    }
-
-  data class LoggedMessage(val exception: Throwable?, val level: LogLevel, val message: String)
+    mockk(relaxed = true, name = "mockInternalAuthProvider-$key")
+  private val mockLogger = newMockLogger(key)
 
   @Test
   fun `close() should log a message`() = runTest {
@@ -103,7 +92,7 @@ class DataConnectAuthUnitTest {
 
     dataConnectAuth.close()
 
-    verifyMessageLoggedThatContains("close()")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("close()")
   }
 
   @Test
@@ -121,9 +110,9 @@ class DataConnectAuthUnitTest {
     val exception = shouldThrow<DataConnectException> { dataConnectAuth.getAccessToken(requestId) }
 
     exception shouldHaveMessage "DataConnectAuth was closed"
-    verifyMessageLoggedThatContains(requestId)
-    verifyMessageLoggedThatContains("throws DataConnectAuthClosedException")
-    verifyMessageLoggedThatContains("closed during token fetch")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("throws DataConnectAuthClosedException")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("closed during token fetch")
   }
 
   @Test
@@ -165,9 +154,9 @@ class DataConnectAuthUnitTest {
     val result = dataConnectAuth.getAccessToken(requestId)
 
     withClue("result=$result") { result.shouldBeNull() }
-    verifyMessageLoggedThatContains(requestId)
-    verifyMessageLoggedThatContains("returns null")
-    verifyMessageLoggedThatContains("FirebaseAuth is not (yet?) available")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("returns null")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("FirebaseAuth is not (yet?) available")
   }
 
   @Test
@@ -178,9 +167,9 @@ class DataConnectAuthUnitTest {
     val exception = shouldThrow<DataConnectException> { dataConnectAuth.getAccessToken(requestId) }
 
     exception shouldHaveMessage "DataConnectAuth was closed"
-    verifyMessageLoggedThatContains(requestId)
-    verifyMessageLoggedThatContains("throws DataConnectAuthClosedException")
-    verifyMessageLoggedThatContains("has been closed")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("throws DataConnectAuthClosedException")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("has been closed")
   }
 
   @Test
@@ -192,9 +181,9 @@ class DataConnectAuthUnitTest {
     val result = dataConnectAuth.getAccessToken(requestId)
 
     withClue("result=$result") { result.shouldBeNull() }
-    verifyMessageLoggedThatContains(requestId)
-    verifyMessageLoggedThatContains("returns null")
-    verifyMessageLoggedThatContains("FirebaseAuth reports no signed-in user")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("returns null")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("FirebaseAuth reports no signed-in user")
   }
 
   @Test
@@ -205,9 +194,11 @@ class DataConnectAuthUnitTest {
     val result = dataConnectAuth.getAccessToken(requestId)
 
     withClue("result=$result") { result shouldBe accessToken }
-    verifyMessageLoggedThatContains(requestId)
-    verifyMessageLoggedThatContains("returns ${accessToken.toScrubbedAccessToken()}")
-    verifyNoMessageLoggedThatContains(accessToken)
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+      "returns ${accessToken.toScrubbedAccessToken()}"
+    )
+    mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
   }
 
   @Test
@@ -223,8 +214,11 @@ class DataConnectAuthUnitTest {
       val result = dataConnectAuth.runCatching { getAccessToken(requestId) }
 
       result.asClue { it.exceptionOrNull() shouldBeSameInstanceAs exception }
-      verifyMessageLoggedThatContains(requestId)
-      verifyMessageLoggedThatContains("re-throws exception from FirebaseAuth", exception)
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+        "re-throws exception from FirebaseAuth",
+        exception
+      )
     }
 
   @Test
@@ -239,8 +233,11 @@ class DataConnectAuthUnitTest {
       val result = dataConnectAuth.runCatching { getAccessToken(requestId) }
 
       result.asClue { it.exceptionOrNull() shouldBeSameInstanceAs exception }
-      verifyMessageLoggedThatContains(requestId)
-      verifyMessageLoggedThatContains("re-throws exception from FirebaseAuth", exception)
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+        "re-throws exception from FirebaseAuth",
+        exception
+      )
     }
 
   @Test
@@ -253,13 +250,14 @@ class DataConnectAuthUnitTest {
       val result = dataConnectAuth.getAccessToken(requestId)
 
       withClue("result=$result") { result shouldBe accessToken }
-      verifyMessageLoggedThatContains(requestId)
-      verifyMessageLoggedThatContains("getAccessToken(forceRefresh=true)")
-      verifyMessageLoggedThatContains("returns ${accessToken.toScrubbedAccessToken()}")
-      verifyNoMessageLoggedThatContains(accessToken)
-      val forceRefresh = slot<Boolean>()
-      verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(capture(forceRefresh)) }
-      forceRefresh.captured shouldBe true
+      verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(true) }
+      verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(false) }
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining("getAccessToken(forceRefresh=true)")
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+        "returns ${accessToken.toScrubbedAccessToken()}"
+      )
+      mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
     }
 
   @Test
@@ -270,10 +268,9 @@ class DataConnectAuthUnitTest {
 
       dataConnectAuth.getAccessToken(requestId)
 
-      verifyMessageLoggedThatContains("getAccessToken(forceRefresh=false)")
-      val forceRefresh = slot<Boolean>()
-      verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(capture(forceRefresh)) }
-      forceRefresh.captured shouldBe false
+      verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(false) }
+      verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(true) }
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining("getAccessToken(forceRefresh=false)")
     }
 
   @Test
@@ -287,11 +284,10 @@ class DataConnectAuthUnitTest {
       dataConnectAuth.getAccessToken(requestId)
       dataConnectAuth.getAccessToken(requestId)
 
-      verifyMessageLoggedThatContains("getAccessToken(forceRefresh=true)")
-      verifyMessageLoggedThatContains("getAccessToken(forceRefresh=false)")
-      val forceRefreshes = mutableListOf<Boolean>()
-      verify(exactly = 3) { mockInternalAuthProvider.getAccessToken(capture(forceRefreshes)) }
-      forceRefreshes.shouldContainExactly(true, false, false)
+      verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(false) }
+      verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(true) }
+      mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("getAccessToken(forceRefresh=false)")
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining("getAccessToken(forceRefresh=true)")
     }
 
   @Test
@@ -362,12 +358,11 @@ class DataConnectAuthUnitTest {
     val result = dataConnectAuth.getAccessToken(requestId)
 
     withClue("result=$result") { result shouldBe tokens.last() }
-    verifyMessageLoggedThatContains("force refresh requested; retrying")
-    verifyMessageLoggedThatContains("getAccessToken(forceRefresh=true)")
-    verifyMessageLoggedThatContains("getAccessToken(forceRefresh=false)")
-    val forceRefreshes = mutableListOf<Boolean>()
-    verify(exactly = 3) { mockInternalAuthProvider.getAccessToken(capture(forceRefreshes)) }
-    forceRefreshes.shouldContainExactly(false, true, true)
+    verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(true) }
+    verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(false) }
+    mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("force refresh requested; retrying")
+    mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("getAccessToken(forceRefresh=true)")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("getAccessToken(forceRefresh=false)")
   }
 
   @Test
@@ -396,10 +391,9 @@ class DataConnectAuthUnitTest {
 
     withClue("result1=$result1") { result1 shouldBe tokens[0] }
     withClue("result2=$result2") { result2 shouldBe tokens[1] }
-    verifyMessageLoggedThatContains("got an old result; retrying")
-    val forceRefreshes = mutableListOf<Boolean>()
-    verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(capture(forceRefreshes)) }
-    forceRefreshes.shouldContainExactly(false, false)
+    verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(false) }
+    verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(true) }
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("got an old result; retrying")
   }
 
   @Test
@@ -417,10 +411,10 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.close()
 
     withClue("result=$result") { result.shouldBeNull() }
-    verifyMessageLoggedThatContains("$testException")
-    verifyMessageLoggedThatContains("k6rwgqg9gh")
-    verifyMessageLoggedThatContains("deferredAuthProvider.whenAvailable")
-    verifyMessageLoggedThatContains("FirebaseAuth is not (yet?) available")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("$testException")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("k6rwgqg9gh")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("deferredAuthProvider.whenAvailable")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("FirebaseAuth is not (yet?) available")
   }
 
   @Test
@@ -437,7 +431,7 @@ class DataConnectAuthUnitTest {
 
       deferredInternalAuthProviderHandlerSlot.captured.handle { mockInternalAuthProvider }
 
-      repeat(100) {
+      continually(duration = 500.milliseconds) {
         confirmVerified(deferredInternalAuthProvider)
         yield()
       }
@@ -463,7 +457,9 @@ class DataConnectAuthUnitTest {
       eventually(`check every 100 milliseconds for 2 seconds`) {
         verify { mockInternalAuthProvider.removeIdTokenListener(idTokenListener) }
       }
-      verifyMessageLoggedThatContains("unregistering IdTokenListener that was just added")
+      mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+        "unregistering IdTokenListener that was just added"
+      )
     }
 
   @Test
@@ -475,7 +471,9 @@ class DataConnectAuthUnitTest {
       val dataConnectAuth = newDataConnectAuth()
 
       eventually(`check every 100 milliseconds for 2 seconds`) {
-        verifyMessageLoggedThatContains("ignoring exception: $firebaseAppDeletedException")
+        mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+          "ignoring exception: $firebaseAppDeletedException"
+        )
       }
       val result = dataConnectAuth.getAccessToken(requestId)
       withClue("result=$result") { result shouldBe accessToken }
@@ -491,7 +489,9 @@ class DataConnectAuthUnitTest {
       dataConnectAuth.close()
 
       eventually(`check every 100 milliseconds for 2 seconds`) {
-        verifyMessageLoggedThatContains("ignoring exception: $firebaseAppDeletedException")
+        mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+          "ignoring exception: $firebaseAppDeletedException"
+        )
       }
     }
 
@@ -507,30 +507,6 @@ class DataConnectAuthUnitTest {
       logger = logger
     )
 
-  private suspend fun verifyMessageLoggedThatContains(
-    expected: String,
-    exception: Throwable? = sentinelException
-  ) {
-    withClue("logMessages") {
-      logMessages.shouldNotBeEmpty()
-      any {
-        logMessages.forEach {
-          it.message shouldContain expected
-          if (exception !== sentinelException) {
-            it.exception shouldBeSameInstanceAs exception
-          }
-        }
-      }
-    }
-  }
-
-  private suspend fun verifyNoMessageLoggedThatContains(expected: String) {
-    withClue("logMessages") {
-      logMessages.shouldNotBeEmpty()
-      all { logMessages.forEach { it.message shouldNotContain expected } }
-    }
-  }
-
   private companion object {
     val `check every 100 milliseconds for 2 seconds` = eventuallyConfig {
       duration = 2.seconds
@@ -539,8 +515,6 @@ class DataConnectAuthUnitTest {
 
     val firebaseAppDeletedException
       get() = java.lang.IllegalStateException("FirebaseApp was deleted")
-
-    val sentinelException = Throwable("a9ypnw4fcw")
 
     fun taskForToken(token: String?): Task<GetTokenResult> =
       Tasks.forResult(mockk(relaxed = true) { every { getToken() } returns token })
