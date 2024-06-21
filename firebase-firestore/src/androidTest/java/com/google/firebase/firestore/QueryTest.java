@@ -536,12 +536,12 @@ public class QueryTest {
     assertFalse(querySnapshot.getMetadata().isFromCache());
 
     // offline event with fromCache=true
-    waitFor(collection.firestore.getClient().disableNetwork());
+    waitFor(collection.firestore.disableNetwork());
     querySnapshot = accum.await();
     assertTrue(querySnapshot.getMetadata().isFromCache());
 
     // back online event with fromCache=false
-    waitFor(collection.firestore.getClient().enableNetwork());
+    waitFor(collection.firestore.enableNetwork());
     querySnapshot = accum.await();
     assertFalse(querySnapshot.getMetadata().isFromCache());
 

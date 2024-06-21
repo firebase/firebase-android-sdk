@@ -124,7 +124,6 @@ public final class FirebaseFirestoreIntegrationTestFactory {
                 "k",
                 new EmptyCredentialsProvider(),
                 new EmptyAppCheckTokenProvider(),
-                new AsyncQueue(),
                 this::componentProvider,
                 null,
                 instanceRegistry,
