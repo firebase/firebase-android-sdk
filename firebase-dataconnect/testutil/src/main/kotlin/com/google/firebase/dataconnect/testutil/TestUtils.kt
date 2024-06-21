@@ -138,6 +138,11 @@ fun randomApplicationId(key: String) = "appId-$key-${Random.nextAlphanumericStri
  * @param key A hardcoded random string that will be incorporated into the returned string; useful
  * for correlating the application ID with its call site (e.g. "ncdd6n863r").
  */
+@Deprecated(
+  "use Arb.projectId() from Arbs.kt instead",
+  replaceWith =
+    ReplaceWith("Arb.projectId(key).next()", "com.google.firebase.dataconnect.testutil.projectId")
+)
 fun randomProjectId(key: String) = "projId-$key-${Random.nextAlphanumericString(length = 8)}"
 
 /**

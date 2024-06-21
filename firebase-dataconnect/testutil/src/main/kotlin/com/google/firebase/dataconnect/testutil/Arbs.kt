@@ -52,3 +52,5 @@ fun Arb.Companion.accessToken(key: String): Arb<String> =
 fun Arb.Companion.requestId(key: String): Arb<String> = keyedString("requestId", key)
 
 fun Arb.Companion.operationName(key: String): Arb<String> = keyedString("operation", key)
+
+fun Arb.Companion.projectId(key: String): Arb<String> = keyedString("project", key)
