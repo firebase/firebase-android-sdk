@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.local;
 
+import androidx.annotation.NonNull;
+
 import com.google.protobuf.ByteString;
 
 public class SQLiteGlobalsCache implements GlobalsCache {
@@ -25,24 +27,25 @@ public class SQLiteGlobalsCache implements GlobalsCache {
         this.db = persistence;
     }
 
+    @NonNull
     @Override
     public ByteString getSessionsToken() {
         byte[] bytes = get(SESSION_TOKEN);
-        return bytes == null ? null : ByteString.copyFrom(bytes);
+        return bytes == null ? ByteString.EMPTY : ByteString.copyFrom(bytes);
     }
 
     @Override
-    public void setSessionToken(ByteString value) {
+    public void setSessionToken(@NonNull ByteString value) {
         set(SESSION_TOKEN, value.toByteArray());
     }
 
-    private byte[] get(String name) {
+    private byte[] get(@NonNull String name) {
         return db.query("SELECT value FROM globals WHERE name = ?")
                 .binding(name)
                 .firstValue(row -> row.getBlob(0));
     }
 
-    private void set(String name, byte[] value) {
+    private void set(@NonNull String name, @NonNull byte[] value) {
         db.execute(
                 "INSERT OR REPLACE INTO globals "
                         + "(name, value) "

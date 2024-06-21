@@ -684,6 +684,12 @@ public class SQLiteSchemaTest {
   }
 
   @Test
+  public void createsGlobalsTable() {
+    schema.runSchemaUpgrades(0, 17);
+    assertTableExists("globals");
+  }
+
+  @Test
   public void createsOverlaysAndMigrationTable() {
     // 14 is the version we enable Overlay
     schema.runSchemaUpgrades(0, 14);
