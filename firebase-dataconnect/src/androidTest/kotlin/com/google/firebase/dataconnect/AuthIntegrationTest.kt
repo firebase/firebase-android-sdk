@@ -17,13 +17,10 @@
 package com.google.firebase.dataconnect
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
-import com.google.firebase.dataconnect.testutil.assertThrows
 import com.google.firebase.dataconnect.testutil.newInstance
 import com.google.firebase.dataconnect.testutil.operationName
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
@@ -41,6 +38,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.collections.shouldNotContainNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
@@ -86,7 +84,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     personSchema.createPersonAuth(id = person3Id, name = "TestName3", age = 44).execute()
     val queryResult = personSchema.getPersonAuth(id = person2Id).execute()
 
-    assertThat(queryResult.data.person).isEqualTo(GetPersonAuthQuery.Data.Person("TestName2", 43))
+    queryResult.asClue { it.data.person shouldBe GetPersonAuthQuery.Data.Person("TestName2", 43) }
   }
 
   @Test
@@ -96,12 +94,10 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     personSchema.getPersonAuth(id = "foo").execute()
     signOut()
 
-    val exception =
-      assertThrows(io.grpc.StatusException::class) {
-        personSchema.getPersonAuth(id = "foo").execute()
-      }
+    val thrownException =
+      shouldThrow<StatusException> { personSchema.getPersonAuth(id = "foo").execute() }
 
-    assertThat(exception.status.code).isEqualTo(Status.UNAUTHENTICATED.code)
+    thrownException.asClue { it.status.code shouldBe Status.UNAUTHENTICATED.code }
   }
 
   @Test
@@ -111,14 +107,14 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     personSchema.createPersonAuth(id = Random.nextAlphanumericString(20), name = "foo").execute()
     signOut()
 
-    val exception =
-      assertThrows(io.grpc.StatusException::class) {
+    val thrownException =
+      shouldThrow<StatusException> {
         personSchema
           .createPersonAuth(id = Random.nextAlphanumericString(20), name = "foo")
           .execute()
       }
 
-    assertThat(exception.status.code).isEqualTo(Status.UNAUTHENTICATED.code)
+    thrownException.asClue { it.status.code shouldBe Status.UNAUTHENTICATED.code }
   }
 
   @Test
@@ -212,7 +208,9 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   private suspend fun signIn() {
     val authResult = auth.run { signInAnonymously().await() }
-    assertWithMessage("authResult.user").that(authResult.user).isNotNull()
+    withClue("authResult.user returned from signInAnonymously()") {
+      authResult.user.shouldNotBeNull()
+    }
   }
 
   private fun signOut() {

@@ -96,6 +96,11 @@ fun fail(message: String): Nothing {
 }
 
 /** Calls the given block and asserts that it throws the given exception. */
+@Deprecated(
+  message = "use io.kotest.assertions.throwables.shouldThrow instead",
+  replaceWith =
+    ReplaceWith(expression = "shouldThrow<E> {...}", "io.kotest.assertions.throwables.shouldThrow")
+)
 inline fun <T, R, E : Any> T.assertThrows(expectedException: KClass<E>, block: T.() -> R): E =
   runCatching { block() }
     .fold(
