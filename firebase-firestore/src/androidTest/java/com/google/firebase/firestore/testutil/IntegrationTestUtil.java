@@ -22,8 +22,6 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.os.StrictMode;
-
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -48,7 +46,6 @@ import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
-import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
@@ -314,16 +311,13 @@ public class IntegrationTestUtil {
 
     ensureStrictMode();
 
-    AsyncQueue asyncQueue = new AsyncQueue();
-
     FirebaseFirestore firestore =
         AccessHelper.newFirebaseFirestore(
             context,
             databaseId,
             persistenceKey,
-            MockCredentialsProvider.instance(),
-            new EmptyAppCheckTokenProvider(),
-            asyncQueue,
+            MockCredentialsProvider::instance,
+            EmptyAppCheckTokenProvider::new,
             ComponentProvider::defaultFactory,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});

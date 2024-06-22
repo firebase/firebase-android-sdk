@@ -40,12 +40,19 @@ import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firestore.v1.InitResponse;
+import com.google.protobuf.ByteString;
+
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
 class MockCredentialsProvider extends EmptyCredentialsProvider {
@@ -70,6 +77,10 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
 
 @RunWith(AndroidJUnit4.class)
 public class StreamTest {
+
+  @Rule
+  public Timeout timeout = new Timeout(10, TimeUnit.SECONDS);
+
   /** Single mutation to send to the write stream. */
   private static final List<Mutation> mutations =
       Collections.singletonList(setMutation("foo/bar", map()));
@@ -98,7 +109,7 @@ public class StreamTest {
     }
 
     @Override
-    public void onHandshakeComplete() {
+    public void onHandshake(InitResponse initResponse) {
       handshakeSemaphore.release();
     }
 
@@ -132,7 +143,7 @@ public class StreamTest {
       AsyncQueue testQueue, WriteStream writeStream, StreamStatusCallback callback) {
     testQueue.enqueueAndForget(writeStream::start);
     waitFor(callback.openSemaphore);
-    testQueue.enqueueAndForget(writeStream::writeHandshake);
+    testQueue.enqueueAndForget(() -> writeStream.sendHandshake(ByteString.EMPTY));
     waitFor(callback.handshakeSemaphore);
   }
 
@@ -179,9 +190,9 @@ public class StreamTest {
     StreamStatusCallback streamCallback =
         new StreamStatusCallback() {
           @Override
-          public void onHandshakeComplete() {
+          public void onHandshake(InitResponse initResponse) {
             assertThat(writeStreamWrapper[0].getLastStreamToken()).isNotEmpty();
-            super.onHandshakeComplete();
+            super.onHandshake(initResponse);
           }
 
           @Override
@@ -201,7 +212,7 @@ public class StreamTest {
         () -> assertThrows(Throwable.class, () -> writeStream.writeMutations(mutations)));
 
     // Handshake should always be called
-    testQueue.enqueueAndForget(writeStream::writeHandshake);
+    testQueue.enqueueAndForget(() -> writeStream.sendHandshake(ByteString.EMPTY));
     waitFor(streamCallback.handshakeSemaphore);
 
     // Now writes should succeed

@@ -20,10 +20,12 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import androidx.annotation.GuardedBy;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.util.Supplier;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -55,6 +57,8 @@ import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Logger.Level;
 import com.google.firebase.firestore.util.Preconditions;
 import com.google.firebase.inject.Deferred;
+import com.google.protobuf.ByteString;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -75,6 +79,10 @@ import org.json.JSONObject;
 public class FirebaseFirestore {
 
   private final Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory;
+  private volatile ByteString sessionToken;
+
+  @GuardedBy("clientProvider")
+  private boolean networkEnabled;
 
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
@@ -92,8 +100,8 @@ public class FirebaseFirestore {
   // databaseId itself that needs locking; it just saves us creating a separate lock object.
   private final DatabaseId databaseId;
   private final String persistenceKey;
-  private final CredentialsProvider<User> authProvider;
-  private final CredentialsProvider<String> appCheckProvider;
+  private final Supplier<CredentialsProvider<User>> authProviderFactory;
+  private final Supplier<CredentialsProvider<String>> appCheckTokenProviderFactory;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
@@ -103,6 +111,9 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   final FirestoreClientProvider clientProvider;
   private final GrpcMetadataProvider metadataProvider;
+
+  @VisibleForTesting
+  Function<Executor, Task<Void>> clearPersistenceMethod;
 
   @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
 
@@ -192,46 +203,44 @@ public class FirebaseFirestore {
     }
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, database);
 
-    CredentialsProvider<User> authProvider =
-        new FirebaseAuthCredentialsProvider(deferredAuthProvider);
-    CredentialsProvider<String> appCheckProvider =
-        new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider);
-
     // Firestore uses a different database for each app name. Note that we don't use
     // app.getPersistenceKey() here because it includes the application ID which is related
     // to the project ID. We already include the project ID when resolving the database,
     // so there is no need to include it in the persistence key.
     String persistenceKey = app.getName();
 
-    return new FirebaseFirestore(
-        context,
-        databaseId,
-        persistenceKey,
-        authProvider,
-        appCheckProvider,
-        ComponentProvider::defaultFactory,
-        app,
-        instanceRegistry,
-        metadataProvider);
+    FirebaseFirestore firestore =
+        new FirebaseFirestore(
+            context,
+            databaseId,
+            persistenceKey,
+            () -> new FirebaseAuthCredentialsProvider(deferredAuthProvider),
+            () -> new FirebaseAppCheckTokenProvider(deferredAppCheckTokenProvider),
+            ComponentProvider::defaultFactory,
+            app,
+            instanceRegistry,
+            metadataProvider);
+    return firestore;
   }
 
   @VisibleForTesting
   FirebaseFirestore(
       Context context,
       DatabaseId databaseId,
-      String persistenceKey,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
+      @NonNull String persistenceKey,
+      @NonNull Supplier<CredentialsProvider<User>> authProviderFactory,
+      @NonNull Supplier<CredentialsProvider<String>> appCheckTokenProviderFactory,
       @NonNull Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
+    this.networkEnabled = true;
     this.context = checkNotNull(context);
     this.databaseId = checkNotNull(checkNotNull(databaseId));
     this.userDataReader = new UserDataReader(databaseId);
     this.persistenceKey = checkNotNull(persistenceKey);
-    this.authProvider = checkNotNull(authProvider);
-    this.appCheckProvider = checkNotNull(appCheckProvider);
+    this.authProviderFactory = checkNotNull(authProviderFactory);
+    this.appCheckTokenProviderFactory = checkNotNull(appCheckTokenProviderFactory);
     this.componentProviderFactory = checkNotNull(componentProviderFactory);
     this.clientProvider = new FirestoreClientProvider(this::newClient);
     // NOTE: We allow firebaseApp to be null in tests only.
@@ -240,6 +249,19 @@ public class FirebaseFirestore {
     this.metadataProvider = metadataProvider;
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
+
+    this.clearPersistenceMethod = executor -> {
+      final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+      executor.execute(() -> {
+        try {
+          SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+          source.setResult(null);
+        } catch (FirebaseFirestoreException e) {
+          source.setException(e);
+        }
+      });
+      return source.getTask();
+    };
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -293,17 +315,36 @@ public class FirebaseFirestore {
   private FirestoreClient newClient(AsyncQueue asyncQueue) {
     synchronized (clientProvider) {
       DatabaseInfo databaseInfo =
-          new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
+              new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
       FirestoreClient client = new FirestoreClient(
               context,
               databaseInfo,
               settings,
-              authProvider,
-              appCheckProvider,
+              authProviderFactory.get(),
+              appCheckTokenProviderFactory.get(),
               asyncQueue,
               metadataProvider,
-              componentProviderFactory.apply(settings));
+              componentProviderFactory.apply(settings)
+      );
+
+      client.setClearPersistenceCallback(sessionToken -> {
+        synchronized (clientProvider) {
+          if (client.isTerminated()) return;
+          this.sessionToken = sessionToken;
+          clearPersistence();
+        }
+      });
+
+      // Session token must be set before we enable network, since it is part of stream handshake.
+      if (sessionToken != null) {
+        client.setSessionToken(sessionToken);
+        sessionToken = null;
+      }
+
+      if (networkEnabled) {
+        client.enableNetwork();
+      }
 
       return client;
     }
@@ -626,7 +667,14 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> enableNetwork() {
-    return clientProvider.call(FirestoreClient::enableNetwork);
+    synchronized (clientProvider) {
+      networkEnabled = true;
+      if (clientProvider.isConfigured()) {
+        return clientProvider.call(FirestoreClient::enableNetwork);
+      } else {
+        return Tasks.forResult(null);
+      }
+    }
   }
 
   /**
@@ -638,7 +686,14 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> disableNetwork() {
-    return clientProvider.call(FirestoreClient::disableNetwork);
+    synchronized (clientProvider) {
+      networkEnabled = false;
+      if (clientProvider.isConfigured()) {
+        return clientProvider.call(FirestoreClient::disableNetwork);
+      } else {
+        return Tasks.forResult(null);
+      }
+    }
   }
 
   /** Globally enables / disables Cloud Firestore logging for the SDK. */
@@ -670,22 +725,8 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> clearPersistence() {
-    return clientProvider.executeWhileShutdown(this::clearPersistence);
+    return clientProvider.executeWhileShutdown(clearPersistenceMethod);
   }
-
-  @NonNull
-  private Task<Void> clearPersistence(Executor executor) {
-    final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-    executor.execute(() -> {
-      try {
-        SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
-        source.setResult(null);
-      } catch (FirebaseFirestoreException e) {
-        source.setException(e);
-      }
-    });
-    return source.getTask();
-  };
 
   /**
    * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that

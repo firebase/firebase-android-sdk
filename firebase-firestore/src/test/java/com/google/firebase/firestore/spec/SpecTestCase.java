@@ -172,7 +172,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   private boolean useEagerGcForMemory;
   private int maxConcurrentLimboResolutions;
-  private boolean networkEnabled = true;
+  private boolean networkEnabled = false;
 
   //
   // Parts of the Firestore system that the spec tests need to control.
@@ -352,6 +352,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     localStore = provider.getLocalStore();
     syncEngine = provider.getSyncEngine();
     eventManager = provider.getEventManager();
+    remoteStore.enableNetwork();
   }
 
   @Override
@@ -1304,6 +1305,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         TaskCompletionSource<Void> drainBackgroundQueue = new TaskCompletionSource<>();
         backgroundExecutor.execute(() -> drainBackgroundQueue.setResult(null));
         waitFor(drainBackgroundQueue.getTask());
+
+//        while (!queue.isIdle()) {
+//          Thread.sleep(1);
+//        }
 
         if (expectedSnapshotEvents != null) {
           log("      Validating expected snapshot events " + expectedSnapshotEvents);

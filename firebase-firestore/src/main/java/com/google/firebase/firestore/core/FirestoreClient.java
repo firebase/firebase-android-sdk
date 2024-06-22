@@ -49,9 +49,12 @@ import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Consumer;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.Value;
+import com.google.protobuf.ByteString;
+
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +80,6 @@ public final class FirestoreClient {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
-
   // LRU-related
   @Nullable private Scheduler indexBackfillScheduler;
   @Nullable private Scheduler gcScheduler;
@@ -97,6 +99,8 @@ public final class FirestoreClient {
     this.asyncQueue = asyncQueue;
     this.bundleSerializer =
         new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
+
+    asyncQueue.setOnShutdown(this::onAsyncQueueShutdown);
 
     TaskCompletionSource<User> firstUser = new TaskCompletionSource<>();
     final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -137,6 +141,22 @@ public final class FirestoreClient {
         });
   }
 
+  public void setClearPersistenceCallback(Consumer<ByteString> clearPersistenceCallback) {
+    this.verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> remoteStore.setClearPersistenceCallback(clearPersistenceCallback));
+  }
+
+  private void onAsyncQueueShutdown() {
+    remoteStore.shutdown();
+    persistence.shutdown();
+    if (gcScheduler != null) {
+      gcScheduler.stop();
+    }
+    if (indexBackfillScheduler != null) {
+      indexBackfillScheduler.stop();
+    }
+  }
+
   public Task<Void> disableNetwork() {
     this.verifyNotTerminated();
     return asyncQueue.enqueue(() -> remoteStore.disableNetwork());
@@ -148,20 +168,11 @@ public final class FirestoreClient {
   }
 
   /** Terminates this client, cancels all writes / listeners, and releases all resources. */
-  public Task<Void> terminate() {
+  public Task<Void> shutdown() {
     authProvider.removeChangeListener();
     appCheckProvider.removeChangeListener();
-    return asyncQueue.enqueueAndInitiateShutdown(
-        () -> {
-          remoteStore.shutdown();
-          persistence.shutdown();
-          if (gcScheduler != null) {
-            gcScheduler.stop();
-          }
-          if (indexBackfillScheduler != null) {
-            indexBackfillScheduler.stop();
-          }
-        });
+    asyncQueue.enqueueAndForget(() -> eventManager.abortAllTargets());
+    return asyncQueue.shutdown();
   }
 
   /** Returns true if this client has been terminated. */
@@ -175,8 +186,7 @@ public final class FirestoreClient {
   public ListenerRegistration listen(
       Query query,
       ListenOptions options,
-      @Nullable Activity activity,
-      AsyncEventListener<ViewSnapshot> listener) {
+      @Nullable Activity activity, AsyncEventListener<ViewSnapshot> listener) {
     this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
@@ -230,13 +240,25 @@ public final class FirestoreClient {
     return source.getTask();
   }
 
-  /** Tries to execute the transaction in updateFunction. */
+  /**
+   * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
+   * updateFunction, the client can read and write values using the supplied transaction object.
+   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
+   * other client has changed any of the data referenced), then the updateFunction will be called
+   * again after a backoff. If the updateFunction still fails after all retries, then the
+   * transaction will be rejected.
+   *
+   * <p>The transaction object passed to the updateFunction contains methods for accessing documents
+   * and collections. Unlike other datastore access, data accessed with the transaction will not
+   * reflect local changes that have not been committed. For this reason, it is required that all
+   * reads are performed before any writes. Transactions must be performed while online.
+   *
+   * <p>The Task returned is resolved when the transaction is fully committed.
+   */
   public <TResult> Task<TResult> transaction(
       TransactionOptions options, Function<Transaction, Task<TResult>> updateFunction) {
     this.verifyNotTerminated();
-    return AsyncQueue.callTask(
-        asyncQueue.getExecutor(),
-        () -> syncEngine.transaction(asyncQueue, options, updateFunction));
+    return new TransactionRunner<>(asyncQueue, remoteStore, options, updateFunction).run();
   }
 
   // TODO(b/261013682): Use an explicit executor in continuations.
@@ -247,7 +269,7 @@ public final class FirestoreClient {
     final TaskCompletionSource<Map<String, Value>> result = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(
         () ->
-            syncEngine
+            remoteStore
                 .runAggregateQuery(query, aggregateFields)
                 .addOnSuccessListener(data -> result.setResult(data))
                 .addOnFailureListener(e -> result.setException(e)));
@@ -370,5 +392,15 @@ public final class FirestoreClient {
     if (this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");
     }
+  }
+
+  public void setSessionToken(ByteString sessionToken) {
+    verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> localStore.setSessionsToken(sessionToken));
+  }
+
+  public ByteString getSessionToken() {
+    verifyNotTerminated();
+    return localStore.getSessionToken();
   }
 }

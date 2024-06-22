@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import android.content.Context;
+import androidx.core.util.Supplier;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -31,9 +32,8 @@ public final class AccessHelper {
       Context context,
       DatabaseId databaseId,
       String persistenceKey,
-      CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider,
-      AsyncQueue asyncQueue,
+      Supplier<CredentialsProvider<User>> authProviderFactory,
+      Supplier<CredentialsProvider<String>> appCheckTokenProviderFactory,
       Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
       FirebaseApp firebaseApp,
       FirebaseFirestore.InstanceRegistry instanceRegistry) {
@@ -41,9 +41,8 @@ public final class AccessHelper {
         context,
         databaseId,
         persistenceKey,
-        authProvider,
-        appCheckProvider,
-        asyncQueue,
+        authProviderFactory,
+        appCheckTokenProviderFactory,
         componentProviderFactory,
         firebaseApp,
         instanceRegistry,
@@ -51,6 +50,6 @@ public final class AccessHelper {
   }
 
   public static AsyncQueue getAsyncQueue(FirebaseFirestore firestore) {
-    return firestore.getAsyncQueue();
+    return firestore.clientProvider.getAsyncQueue();
   }
 }

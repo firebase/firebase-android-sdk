@@ -265,4 +265,13 @@ public final class EventManager implements SyncEngineCallback {
       raiseSnapshotsInSyncEvent();
     }
   }
+
+  public void abortAllTargets() {
+    for (QueryListenersInfo info : queries.values()) {
+      for (QueryListener listener : info.listeners) {
+        listener.onError(Util.exceptionFromStatus(Status.ABORTED));
+      }
+    }
+    queries.clear();
+  }
 }
