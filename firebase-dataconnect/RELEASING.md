@@ -179,6 +179,11 @@ replacing `...` with the absolute path to the local checkout of the Git reposito
 `api(project(":firebase-dataconnect"))` to
 `api("com.google.firebase:firebase-dataconnect:16.0.0-alpha04")` in each file (using the
 version number of the release that you want to test)
+* `firebase-dataconnect/connectors/connectors.gradle.kts`: add the line
+`id("copy-google-services")` into the "plugins" section.
+* Copy `firebase-dataconnect/google-services.json` to
+`firebase-dataconnect/connectors/google-services.json` and replace
+`com.google.firebase.dataconnect` with `com.google.firebase.dataconnect.connectors`.
 
 Now, create a new directory `firebase-dataconnect/m2`. Download the "release_artifacts" from the
 completed "Build Release Artifacts" action into this directory. The download link can be found at
