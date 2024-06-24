@@ -86,7 +86,7 @@ import kotlinx.serialization.SerializationStrategy
  * into the `master` branch of https://github.com/firebase/firebase-android-sdk, at which point the
  * release notes will become part of the regular Android SDK releases.
  *
- * #### 16.0.0-alpha05 (not yet released)
+ * #### 16.0.0-alpha05 (June 24, 2024)
  * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
  * _actually_ close the underlying grpc network resources. Also, added [suspendingClose] to allow
  * callers to wait for the asynchronous closing work to complete, such as in integration tests.
