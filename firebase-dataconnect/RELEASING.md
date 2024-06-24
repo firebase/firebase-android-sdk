@@ -94,7 +94,7 @@ Commit the Changes to `FirebaseDataConnect.kt` and `gradle.properties` in a comm
 like this:
 
 ```
-Bump firebase-dataconnect version to 16.0.0-alpha05-dev and prepare the release notes section.
+Bump firebase-dataconnect version to 16.0.0-alpha05-dev and add "unreleased" section to release notes.
 ```
 
 ### Merge the Release Commit into the Release Branch
