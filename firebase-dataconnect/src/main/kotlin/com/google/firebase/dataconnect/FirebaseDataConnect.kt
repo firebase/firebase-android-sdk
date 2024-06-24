@@ -89,16 +89,16 @@ import kotlinx.serialization.SerializationStrategy
  * #### 16.0.0-alpha05 (not yet released)
  * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
  * _actually_ close the underlying grpc network resources. Also, added [suspendingClose] to allow
- * callers to wait for the asynchronous closing work to complete.
+ * callers to wait for the asynchronous closing work to complete, such as in integration tests.
  * - [#6005](https://github.com/firebase/firebase-android-sdk/pull/6005) Fixed a StrictMode
  * violation upon the first network request being sent.
  * - [#6006](https://github.com/firebase/firebase-android-sdk/pull/6006) Improved debug logging of
  * GRPC requests and responses.
- * - [#6038](https://github.com/firebase/firebase-android-sdk/pull/6038) Fixed an bug with incorrect
+ * - [#6038](https://github.com/firebase/firebase-android-sdk/pull/6038) Fixed a bug with incorrect
  * Timestamp serialization due to miscalculation in timezone decoding.
  * - [#6052](https://github.com/firebase/firebase-android-sdk/pull/6052) Automatically retry
- * operations (executing queries and mutations) that fail due to an expired authentication token,
- * with a new authentication token.
+ * operations (queries and mutations) that fail due to an expired authentication token, with a new
+ * authentication token.
  *
  * #### 16.0.0-alpha04 (May 29, 2024)
  * - [#5976](https://github.com/firebase/firebase-android-sdk/pull/5976) Fixed time zone issues when
