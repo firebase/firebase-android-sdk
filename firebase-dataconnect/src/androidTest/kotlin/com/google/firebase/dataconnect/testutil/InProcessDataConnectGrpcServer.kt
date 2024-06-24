@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.util.buildStructProto
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
@@ -138,7 +139,9 @@ class InProcessDataConnectGrpcServer :
       request: ExecuteQueryRequest,
       responseObserver: StreamObserver<ExecuteQueryResponse>
     ) {
-      val response = executeQueryResponse ?: ExecuteQueryResponse.getDefaultInstance()
+      val responseData = buildStructProto { put("foo", "prj5hbhqcw") }
+      val response =
+        executeQueryResponse ?: ExecuteQueryResponse.newBuilder().setData(responseData).build()
       responseObserver.onNext(response)
       responseObserver.onCompleted()
     }
@@ -147,7 +150,10 @@ class InProcessDataConnectGrpcServer :
       request: ExecuteMutationRequest,
       responseObserver: StreamObserver<ExecuteMutationResponse>
     ) {
-      val response = executeMutationResponse ?: ExecuteMutationResponse.getDefaultInstance()
+      val responseData = buildStructProto { put("foo", "weevgvyecf") }
+      val response =
+        executeMutationResponse
+          ?: ExecuteMutationResponse.newBuilder().setData(responseData).build()
       responseObserver.onNext(response)
       responseObserver.onCompleted()
     }
