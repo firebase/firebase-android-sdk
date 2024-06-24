@@ -17,7 +17,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-  id("firebase-library")
+  id("com.android.library")
   id("kotlin-android")
 }
 
