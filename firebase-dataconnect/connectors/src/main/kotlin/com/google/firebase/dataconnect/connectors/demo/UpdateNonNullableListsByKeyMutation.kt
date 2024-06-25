@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,155 +7,148 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface UpdateNonNullableListsByKeyMutation :
-    GeneratedMutation<
-      DemoConnector,
-      UpdateNonNullableListsByKeyMutation.Data,
-      UpdateNonNullableListsByKeyMutation.Variables
-    >
-{
-  
-    @Serializable
+  GeneratedMutation<
+    DemoConnector,
+    UpdateNonNullableListsByKeyMutation.Data,
+    UpdateNonNullableListsByKeyMutation.Variables
+  > {
+
+  @Serializable
   public data class Variables(
-  
-    val key:
-    NonNullableListsKey,
-    val strings:
-    OptionalVariable<List<String>?>,
-    val ints:
-    OptionalVariable<List<Int>?>,
-    val floats:
-    OptionalVariable<List<Double>?>,
-    val booleans:
-    OptionalVariable<List<Boolean>?>,
-    val uuids:
-    OptionalVariable<List<java.util.UUID>?>,
-    val int64s:
-    OptionalVariable<List<Long>?>,
-    val dates:
-    OptionalVariable<List<java.util.Date>?>,
-    val timestamps:
-    OptionalVariable<List<com.google.firebase.Timestamp>?>
+    val key: NonNullableListsKey,
+    val strings: OptionalVariable<List<String>?>,
+    val ints: OptionalVariable<List<Int>?>,
+    val floats: OptionalVariable<List<Double>?>,
+    val booleans: OptionalVariable<List<Boolean>?>,
+    val uuids: OptionalVariable<List<java.util.UUID>?>,
+    val int64s: OptionalVariable<List<Long>?>,
+    val dates: OptionalVariable<List<java.util.Date>?>,
+    val timestamps: OptionalVariable<List<com.google.firebase.Timestamp>?>
   ) {
-    
-    
-      
-      @DslMarker public annotation class BuilderDsl
 
-      @BuilderDsl
-      public interface Builder {
-        public var key: NonNullableListsKey
-        public var strings: List<String>?
-        public var ints: List<Int>?
-        public var floats: List<Double>?
-        public var booleans: List<Boolean>?
-        public var uuids: List<java.util.UUID>?
-        public var int64s: List<Long>?
-        public var dates: List<java.util.Date>?
-        public var timestamps: List<com.google.firebase.Timestamp>?
-        
-      }
+    @DslMarker public annotation class BuilderDsl
 
-      public companion object {
-        @Suppress("NAME_SHADOWING")
-        public fun build(
-          key: NonNullableListsKey,
-          block_: Builder.() -> Unit
-        ): Variables {
-          var key= key
-            var strings: OptionalVariable<List<String>?> = OptionalVariable.Undefined
-            var ints: OptionalVariable<List<Int>?> = OptionalVariable.Undefined
-            var floats: OptionalVariable<List<Double>?> = OptionalVariable.Undefined
-            var booleans: OptionalVariable<List<Boolean>?> = OptionalVariable.Undefined
-            var uuids: OptionalVariable<List<java.util.UUID>?> = OptionalVariable.Undefined
-            var int64s: OptionalVariable<List<Long>?> = OptionalVariable.Undefined
-            var dates: OptionalVariable<List<java.util.Date>?> = OptionalVariable.Undefined
-            var timestamps: OptionalVariable<List<com.google.firebase.Timestamp>?> = OptionalVariable.Undefined
-            
+    @BuilderDsl
+    public interface Builder {
+      public var key: NonNullableListsKey
+      public var strings: List<String>?
+      public var ints: List<Int>?
+      public var floats: List<Double>?
+      public var booleans: List<Boolean>?
+      public var uuids: List<java.util.UUID>?
+      public var int64s: List<Long>?
+      public var dates: List<java.util.Date>?
+      public var timestamps: List<com.google.firebase.Timestamp>?
+    }
 
-          return object : Builder {
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(key: NonNullableListsKey, block_: Builder.() -> Unit): Variables {
+        var key = key
+        var strings: OptionalVariable<List<String>?> = OptionalVariable.Undefined
+        var ints: OptionalVariable<List<Int>?> = OptionalVariable.Undefined
+        var floats: OptionalVariable<List<Double>?> = OptionalVariable.Undefined
+        var booleans: OptionalVariable<List<Boolean>?> = OptionalVariable.Undefined
+        var uuids: OptionalVariable<List<java.util.UUID>?> = OptionalVariable.Undefined
+        var int64s: OptionalVariable<List<Long>?> = OptionalVariable.Undefined
+        var dates: OptionalVariable<List<java.util.Date>?> = OptionalVariable.Undefined
+        var timestamps: OptionalVariable<List<com.google.firebase.Timestamp>?> =
+          OptionalVariable.Undefined
+
+        return object : Builder {
             override var key: NonNullableListsKey
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { key = value_ }
-              
+              set(value_) {
+                key = value_
+              }
+
             override var strings: List<String>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { strings = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                strings = OptionalVariable.Value(value_)
+              }
+
             override var ints: List<Int>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { ints = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                ints = OptionalVariable.Value(value_)
+              }
+
             override var floats: List<Double>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { floats = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                floats = OptionalVariable.Value(value_)
+              }
+
             override var booleans: List<Boolean>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { booleans = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                booleans = OptionalVariable.Value(value_)
+              }
+
             override var uuids: List<java.util.UUID>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { uuids = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                uuids = OptionalVariable.Value(value_)
+              }
+
             override var int64s: List<Long>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { int64s = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                int64s = OptionalVariable.Value(value_)
+              }
+
             override var dates: List<java.util.Date>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { dates = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                dates = OptionalVariable.Value(value_)
+              }
+
             override var timestamps: List<com.google.firebase.Timestamp>?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { timestamps = OptionalVariable.Value(value_) }
-              
-            
-          }.apply(block_)
+              set(value_) {
+                timestamps = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
           .let {
             Variables(
-              key=key,strings=strings,ints=ints,floats=floats,booleans=booleans,uuids=uuids,int64s=int64s,dates=dates,timestamps=timestamps,
+              key = key,
+              strings = strings,
+              ints = ints,
+              floats = floats,
+              booleans = booleans,
+              uuids = uuids,
+              int64s = int64s,
+              dates = dates,
+              timestamps = timestamps,
             )
           }
-        }
       }
-    
+    }
   }
-  
 
-  
-    @Serializable
-  public data class Data(
-  @SerialName("nonNullableLists_update")
-    val key:
-    NonNullableListsKey?
-  ) {
-    
-    
-  }
-  
+  @Serializable
+  public data class Data(@SerialName("nonNullableLists_update") val key: NonNullableListsKey?) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -167,44 +159,18 @@ public interface UpdateNonNullableListsByKeyMutation :
 }
 
 public fun UpdateNonNullableListsByKeyMutation.ref(
-  
-    key: NonNullableListsKey,
-  
-    block_: UpdateNonNullableListsByKeyMutation.Variables.Builder.() -> Unit
-  
+  key: NonNullableListsKey,
+  block_: UpdateNonNullableListsByKeyMutation.Variables.Builder.() -> Unit
 ): MutationRef<
-    UpdateNonNullableListsByKeyMutation.Data,
-    UpdateNonNullableListsByKeyMutation.Variables
-  > =
-  ref(
-    
-      UpdateNonNullableListsByKeyMutation.Variables.build(
-        key=key,
-  
-    block_
-      )
-    
-  )
+  UpdateNonNullableListsByKeyMutation.Data, UpdateNonNullableListsByKeyMutation.Variables
+> = ref(UpdateNonNullableListsByKeyMutation.Variables.build(key = key, block_))
 
 public suspend fun UpdateNonNullableListsByKeyMutation.execute(
-  
-    key: NonNullableListsKey,
-  
-    block_: UpdateNonNullableListsByKeyMutation.Variables.Builder.() -> Unit
-  
-  ): MutationResult<
-    UpdateNonNullableListsByKeyMutation.Data,
-    UpdateNonNullableListsByKeyMutation.Variables
-  > =
-  ref(
-    
-      key=key,
-  
-    block_
-    
-  ).execute()
-
-
+  key: NonNullableListsKey,
+  block_: UpdateNonNullableListsByKeyMutation.Variables.Builder.() -> Unit
+): MutationResult<
+  UpdateNonNullableListsByKeyMutation.Data, UpdateNonNullableListsByKeyMutation.Variables
+> = ref(key = key, block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

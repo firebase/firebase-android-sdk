@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,60 +7,32 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface InsertPrimaryKeyIsInt64Mutation :
-    GeneratedMutation<
-      DemoConnector,
-      InsertPrimaryKeyIsInt64Mutation.Data,
-      InsertPrimaryKeyIsInt64Mutation.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val foo:
-    Long,
-    val value:
-    String
-  ) {
-    
-    
-  }
-  
+  GeneratedMutation<
+    DemoConnector, InsertPrimaryKeyIsInt64Mutation.Data, InsertPrimaryKeyIsInt64Mutation.Variables
+  > {
 
-  
-    @Serializable
-  public data class Data(
-  @SerialName("primaryKeyIsInt64_upsert")
-    val key:
-    PrimaryKeyIsInt64Key
-  ) {
-    
-    
-  }
-  
+  @Serializable public data class Variables(val foo: Long, val value: String) {}
+
+  @Serializable
+  public data class Data(@SerialName("primaryKeyIsInt64_upsert") val key: PrimaryKeyIsInt64Key) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -72,40 +43,25 @@ public interface InsertPrimaryKeyIsInt64Mutation :
 }
 
 public fun InsertPrimaryKeyIsInt64Mutation.ref(
-  
-    foo: Long,value: String,
-  
-  
-): MutationRef<
-    InsertPrimaryKeyIsInt64Mutation.Data,
-    InsertPrimaryKeyIsInt64Mutation.Variables
-  > =
+  foo: Long,
+  value: String,
+): MutationRef<InsertPrimaryKeyIsInt64Mutation.Data, InsertPrimaryKeyIsInt64Mutation.Variables> =
   ref(
-    
-      InsertPrimaryKeyIsInt64Mutation.Variables(
-        foo=foo,value=value,
-  
-      )
-    
+    InsertPrimaryKeyIsInt64Mutation.Variables(
+      foo = foo,
+      value = value,
+    )
   )
 
 public suspend fun InsertPrimaryKeyIsInt64Mutation.execute(
-  
-    foo: Long,value: String,
-  
-  
-  ): MutationResult<
-    InsertPrimaryKeyIsInt64Mutation.Data,
-    InsertPrimaryKeyIsInt64Mutation.Variables
-  > =
+  foo: Long,
+  value: String,
+): MutationResult<InsertPrimaryKeyIsInt64Mutation.Data, InsertPrimaryKeyIsInt64Mutation.Variables> =
   ref(
-    
-      foo=foo,value=value,
-  
-    
-  ).execute()
-
-
+      foo = foo,
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

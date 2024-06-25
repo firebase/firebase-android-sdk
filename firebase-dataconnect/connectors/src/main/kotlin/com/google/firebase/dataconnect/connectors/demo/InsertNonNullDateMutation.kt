@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,102 +7,55 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface InsertNonNullDateMutation :
-    GeneratedMutation<
-      DemoConnector,
-      InsertNonNullDateMutation.Data,
-      InsertNonNullDateMutation.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val value:
-    java.util.Date
-  ) {
-    
-    
-  }
-  
+  GeneratedMutation<
+    DemoConnector, InsertNonNullDateMutation.Data, InsertNonNullDateMutation.Variables
+  > {
 
-  
-    @Serializable
-  public data class Data(
-  @SerialName("nonNullDate_insert")
-    val key:
-    NonNullDateKey
-  ) {
-    
-    
-  }
-  
+  @Serializable public data class Variables(val value: java.util.Date) {}
+
+  @Serializable public data class Data(@SerialName("nonNullDate_insert") val key: NonNullDateKey) {}
 
   public companion object {
-    @Suppress("ConstPropertyName")
-    public const val operationName: String = "InsertNonNullDate"
+    @Suppress("ConstPropertyName") public const val operationName: String = "InsertNonNullDate"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
 public fun InsertNonNullDateMutation.ref(
-  
-    value: java.util.Date,
-  
-  
-): MutationRef<
-    InsertNonNullDateMutation.Data,
-    InsertNonNullDateMutation.Variables
-  > =
+  value: java.util.Date,
+): MutationRef<InsertNonNullDateMutation.Data, InsertNonNullDateMutation.Variables> =
   ref(
-    
-      InsertNonNullDateMutation.Variables(
-        value=value,
-  
-      )
-    
+    InsertNonNullDateMutation.Variables(
+      value = value,
+    )
   )
 
 public suspend fun InsertNonNullDateMutation.execute(
-  
-    value: java.util.Date,
-  
-  
-  ): MutationResult<
-    InsertNonNullDateMutation.Data,
-    InsertNonNullDateMutation.Variables
-  > =
+  value: java.util.Date,
+): MutationResult<InsertNonNullDateMutation.Data, InsertNonNullDateMutation.Variables> =
   ref(
-    
-      value=value,
-  
-    
-  ).execute()
-
-
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

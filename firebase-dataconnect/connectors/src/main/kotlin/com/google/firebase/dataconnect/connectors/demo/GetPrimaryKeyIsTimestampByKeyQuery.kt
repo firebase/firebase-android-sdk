@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,76 +7,43 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.serializer
-
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
-
-  import kotlinx.coroutines.flow.Flow
-  import kotlinx.coroutines.flow.filter
-  import kotlinx.coroutines.flow.map
-
-import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-
-import kotlinx.serialization.UseSerializers
 import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.serializer
 
 public interface GetPrimaryKeyIsTimestampByKeyQuery :
-    GeneratedQuery<
-      DemoConnector,
-      GetPrimaryKeyIsTimestampByKeyQuery.Data,
-      GetPrimaryKeyIsTimestampByKeyQuery.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val key:
-    PrimaryKeyIsTimestampKey
-  ) {
-    
-    
-  }
-  
+  GeneratedQuery<
+    DemoConnector,
+    GetPrimaryKeyIsTimestampByKeyQuery.Data,
+    GetPrimaryKeyIsTimestampByKeyQuery.Variables
+  > {
 
-  
+  @Serializable public data class Variables(val key: PrimaryKeyIsTimestampKey) {}
+
+  @Serializable
+  public data class Data(val primaryKeyIsTimestamp: PrimaryKeyIsTimestamp?) {
+
     @Serializable
-  public data class Data(
-  
-    val primaryKeyIsTimestamp:
-    PrimaryKeyIsTimestamp?
-  ) {
-    
-      
-        @Serializable
-  public data class PrimaryKeyIsTimestamp(
-  
-    val foo:
-    com.google.firebase.Timestamp,
-    val value:
-    String
-  ) {
-    
-    
+    public data class PrimaryKeyIsTimestamp(
+      val foo: com.google.firebase.Timestamp,
+      val value: String
+    ) {}
   }
-      
-    
-    
-  }
-  
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -88,55 +54,34 @@ public interface GetPrimaryKeyIsTimestampByKeyQuery :
 }
 
 public fun GetPrimaryKeyIsTimestampByKeyQuery.ref(
-  
-    key: PrimaryKeyIsTimestampKey,
-  
-  
-): QueryRef<
-    GetPrimaryKeyIsTimestampByKeyQuery.Data,
-    GetPrimaryKeyIsTimestampByKeyQuery.Variables
-  > =
+  key: PrimaryKeyIsTimestampKey,
+): QueryRef<GetPrimaryKeyIsTimestampByKeyQuery.Data, GetPrimaryKeyIsTimestampByKeyQuery.Variables> =
   ref(
-    
-      GetPrimaryKeyIsTimestampByKeyQuery.Variables(
-        key=key,
-  
-      )
-    
+    GetPrimaryKeyIsTimestampByKeyQuery.Variables(
+      key = key,
+    )
   )
 
 public suspend fun GetPrimaryKeyIsTimestampByKeyQuery.execute(
-  
-    key: PrimaryKeyIsTimestampKey,
-  
-  
-  ): QueryResult<
-    GetPrimaryKeyIsTimestampByKeyQuery.Data,
-    GetPrimaryKeyIsTimestampByKeyQuery.Variables
-  > =
+  key: PrimaryKeyIsTimestampKey,
+): QueryResult<
+  GetPrimaryKeyIsTimestampByKeyQuery.Data, GetPrimaryKeyIsTimestampByKeyQuery.Variables
+> =
   ref(
-    
-      key=key,
-  
-    
-  ).execute()
+      key = key,
+    )
+    .execute()
 
-
-  public fun GetPrimaryKeyIsTimestampByKeyQuery.flow(
-    
-      key: PrimaryKeyIsTimestampKey,
-  
-    
-    ): Flow<GetPrimaryKeyIsTimestampByKeyQuery.Data> =
-    ref(
-        
-          key=key,
-  
-        
-      ).subscribe().flow.filter { it.result.isSuccess }.map { querySubscriptionResult ->
-        querySubscriptionResult.result.getOrThrow().data
-    }
-
+public fun GetPrimaryKeyIsTimestampByKeyQuery.flow(
+  key: PrimaryKeyIsTimestampKey,
+): Flow<GetPrimaryKeyIsTimestampByKeyQuery.Data> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
+    .filter { it.result.isSuccess }
+    .map { querySubscriptionResult -> querySubscriptionResult.result.getOrThrow().data }
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

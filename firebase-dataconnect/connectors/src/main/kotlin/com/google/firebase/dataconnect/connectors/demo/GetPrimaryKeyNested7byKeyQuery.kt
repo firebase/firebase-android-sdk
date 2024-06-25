@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,202 +7,68 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.serializer
-
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
-
-  import kotlinx.coroutines.flow.Flow
-  import kotlinx.coroutines.flow.filter
-  import kotlinx.coroutines.flow.map
-
-import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-
-import kotlinx.serialization.UseSerializers
 import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.serializer
 
 public interface GetPrimaryKeyNested7byKeyQuery :
-    GeneratedQuery<
-      DemoConnector,
-      GetPrimaryKeyNested7byKeyQuery.Data,
-      GetPrimaryKeyNested7byKeyQuery.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val key:
-    PrimaryKeyNested7Key
-  ) {
-    
-    
-  }
-  
+  GeneratedQuery<
+    DemoConnector, GetPrimaryKeyNested7byKeyQuery.Data, GetPrimaryKeyNested7byKeyQuery.Variables
+  > {
 
-  
+  @Serializable public data class Variables(val key: PrimaryKeyNested7Key) {}
+
+  @Serializable
+  public data class Data(val primaryKeyNested7: PrimaryKeyNested7?) {
+
     @Serializable
-  public data class Data(
-  
-    val primaryKeyNested7:
-    PrimaryKeyNested7?
-  ) {
-    
-      
-        @Serializable
-  public data class PrimaryKeyNested7(
-  
-    val value:
-    String,
-    val nested5a:
-    Nested5a,
-    val nested5b:
-    Nested5b,
-    val nested6:
-    Nested6
-  ) {
-    
-      
-        @Serializable
-  public data class Nested5a(
-  
-    val value:
-    String,
-    val nested1:
-    Nested1,
-    val nested2:
-    Nested2
-  ) {
-    
-      
-        @Serializable
-  public data class Nested1(
-  
-    val id:
-    java.util.UUID,
-    val value:
-    String
-  ) {
-    
-    
+    public data class PrimaryKeyNested7(
+      val value: String,
+      val nested5a: Nested5a,
+      val nested5b: Nested5b,
+      val nested6: Nested6
+    ) {
+
+      @Serializable
+      public data class Nested5a(val value: String, val nested1: Nested1, val nested2: Nested2) {
+
+        @Serializable public data class Nested1(val id: java.util.UUID, val value: String) {}
+
+        @Serializable public data class Nested2(val id: java.util.UUID, val value: String) {}
+      }
+
+      @Serializable
+      public data class Nested5b(val value: String, val nested1: Nested1, val nested2: Nested2) {
+
+        @Serializable public data class Nested1(val id: java.util.UUID, val value: String) {}
+
+        @Serializable public data class Nested2(val id: java.util.UUID, val value: String) {}
+      }
+
+      @Serializable
+      public data class Nested6(val value: String, val nested3: Nested3, val nested4: Nested4) {
+
+        @Serializable public data class Nested3(val id: java.util.UUID, val value: String) {}
+
+        @Serializable public data class Nested4(val id: java.util.UUID, val value: String) {}
+      }
+    }
   }
-      
-        @Serializable
-  public data class Nested2(
-  
-    val id:
-    java.util.UUID,
-    val value:
-    String
-  ) {
-    
-    
-  }
-      
-    
-    
-  }
-      
-        @Serializable
-  public data class Nested5b(
-  
-    val value:
-    String,
-    val nested1:
-    Nested1,
-    val nested2:
-    Nested2
-  ) {
-    
-      
-        @Serializable
-  public data class Nested1(
-  
-    val id:
-    java.util.UUID,
-    val value:
-    String
-  ) {
-    
-    
-  }
-      
-        @Serializable
-  public data class Nested2(
-  
-    val id:
-    java.util.UUID,
-    val value:
-    String
-  ) {
-    
-    
-  }
-      
-    
-    
-  }
-      
-        @Serializable
-  public data class Nested6(
-  
-    val value:
-    String,
-    val nested3:
-    Nested3,
-    val nested4:
-    Nested4
-  ) {
-    
-      
-        @Serializable
-  public data class Nested3(
-  
-    val id:
-    java.util.UUID,
-    val value:
-    String
-  ) {
-    
-    
-  }
-      
-        @Serializable
-  public data class Nested4(
-  
-    val id:
-    java.util.UUID,
-    val value:
-    String
-  ) {
-    
-    
-  }
-      
-    
-    
-  }
-      
-    
-    
-  }
-      
-    
-    
-  }
-  
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -214,55 +79,32 @@ public interface GetPrimaryKeyNested7byKeyQuery :
 }
 
 public fun GetPrimaryKeyNested7byKeyQuery.ref(
-  
-    key: PrimaryKeyNested7Key,
-  
-  
-): QueryRef<
-    GetPrimaryKeyNested7byKeyQuery.Data,
-    GetPrimaryKeyNested7byKeyQuery.Variables
-  > =
+  key: PrimaryKeyNested7Key,
+): QueryRef<GetPrimaryKeyNested7byKeyQuery.Data, GetPrimaryKeyNested7byKeyQuery.Variables> =
   ref(
-    
-      GetPrimaryKeyNested7byKeyQuery.Variables(
-        key=key,
-  
-      )
-    
+    GetPrimaryKeyNested7byKeyQuery.Variables(
+      key = key,
+    )
   )
 
 public suspend fun GetPrimaryKeyNested7byKeyQuery.execute(
-  
-    key: PrimaryKeyNested7Key,
-  
-  
-  ): QueryResult<
-    GetPrimaryKeyNested7byKeyQuery.Data,
-    GetPrimaryKeyNested7byKeyQuery.Variables
-  > =
+  key: PrimaryKeyNested7Key,
+): QueryResult<GetPrimaryKeyNested7byKeyQuery.Data, GetPrimaryKeyNested7byKeyQuery.Variables> =
   ref(
-    
-      key=key,
-  
-    
-  ).execute()
+      key = key,
+    )
+    .execute()
 
-
-  public fun GetPrimaryKeyNested7byKeyQuery.flow(
-    
-      key: PrimaryKeyNested7Key,
-  
-    
-    ): Flow<GetPrimaryKeyNested7byKeyQuery.Data> =
-    ref(
-        
-          key=key,
-  
-        
-      ).subscribe().flow.filter { it.result.isSuccess }.map { querySubscriptionResult ->
-        querySubscriptionResult.result.getOrThrow().data
-    }
-
+public fun GetPrimaryKeyNested7byKeyQuery.flow(
+  key: PrimaryKeyNested7Key,
+): Flow<GetPrimaryKeyNested7byKeyQuery.Data> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
+    .filter { it.result.isSuccess }
+    .map { querySubscriptionResult -> querySubscriptionResult.result.getOrThrow().data }
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

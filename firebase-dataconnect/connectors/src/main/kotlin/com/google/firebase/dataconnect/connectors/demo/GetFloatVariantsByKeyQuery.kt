@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,161 +7,89 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.serializer
-
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
-
-  import kotlinx.coroutines.flow.Flow
-  import kotlinx.coroutines.flow.filter
-  import kotlinx.coroutines.flow.map
-
-import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-
-import kotlinx.serialization.UseSerializers
 import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.serializer
 
 public interface GetFloatVariantsByKeyQuery :
-    GeneratedQuery<
-      DemoConnector,
-      GetFloatVariantsByKeyQuery.Data,
-      GetFloatVariantsByKeyQuery.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val key:
-    FloatVariantsKey
-  ) {
-    
-    
-  }
-  
+  GeneratedQuery<
+    DemoConnector, GetFloatVariantsByKeyQuery.Data, GetFloatVariantsByKeyQuery.Variables
+  > {
 
-  
+  @Serializable public data class Variables(val key: FloatVariantsKey) {}
+
+  @Serializable
+  public data class Data(val floatVariants: FloatVariants?) {
+
     @Serializable
-  public data class Data(
-  
-    val floatVariants:
-    FloatVariants?
-  ) {
-    
-      
-        @Serializable
-  public data class FloatVariants(
-  
-    val nonNullWithZeroValue:
-    Double,
-    val nonNullWithNegativeZeroValue:
-    Double,
-    val nonNullWithPositiveValue:
-    Double,
-    val nonNullWithNegativeValue:
-    Double,
-    val nonNullWithMaxValue:
-    Double,
-    val nonNullWithMinValue:
-    Double,
-    val nonNullWithMaxSafeIntegerValue:
-    Double,
-    val nullableWithNullValue:
-    Double?,
-    val nullableWithZeroValue:
-    Double?,
-    val nullableWithNegativeZeroValue:
-    Double?,
-    val nullableWithPositiveValue:
-    Double?,
-    val nullableWithNegativeValue:
-    Double?,
-    val nullableWithMaxValue:
-    Double?,
-    val nullableWithMinValue:
-    Double?,
-    val nullableWithMaxSafeIntegerValue:
-    Double?
-  ) {
-    
-    
+    public data class FloatVariants(
+      val nonNullWithZeroValue: Double,
+      val nonNullWithNegativeZeroValue: Double,
+      val nonNullWithPositiveValue: Double,
+      val nonNullWithNegativeValue: Double,
+      val nonNullWithMaxValue: Double,
+      val nonNullWithMinValue: Double,
+      val nonNullWithMaxSafeIntegerValue: Double,
+      val nullableWithNullValue: Double?,
+      val nullableWithZeroValue: Double?,
+      val nullableWithNegativeZeroValue: Double?,
+      val nullableWithPositiveValue: Double?,
+      val nullableWithNegativeValue: Double?,
+      val nullableWithMaxValue: Double?,
+      val nullableWithMinValue: Double?,
+      val nullableWithMaxSafeIntegerValue: Double?
+    ) {}
   }
-      
-    
-    
-  }
-  
 
   public companion object {
-    @Suppress("ConstPropertyName")
-    public const val operationName: String = "GetFloatVariantsByKey"
+    @Suppress("ConstPropertyName") public const val operationName: String = "GetFloatVariantsByKey"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
 public fun GetFloatVariantsByKeyQuery.ref(
-  
-    key: FloatVariantsKey,
-  
-  
-): QueryRef<
-    GetFloatVariantsByKeyQuery.Data,
-    GetFloatVariantsByKeyQuery.Variables
-  > =
+  key: FloatVariantsKey,
+): QueryRef<GetFloatVariantsByKeyQuery.Data, GetFloatVariantsByKeyQuery.Variables> =
   ref(
-    
-      GetFloatVariantsByKeyQuery.Variables(
-        key=key,
-  
-      )
-    
+    GetFloatVariantsByKeyQuery.Variables(
+      key = key,
+    )
   )
 
 public suspend fun GetFloatVariantsByKeyQuery.execute(
-  
-    key: FloatVariantsKey,
-  
-  
-  ): QueryResult<
-    GetFloatVariantsByKeyQuery.Data,
-    GetFloatVariantsByKeyQuery.Variables
-  > =
+  key: FloatVariantsKey,
+): QueryResult<GetFloatVariantsByKeyQuery.Data, GetFloatVariantsByKeyQuery.Variables> =
   ref(
-    
-      key=key,
-  
-    
-  ).execute()
+      key = key,
+    )
+    .execute()
 
-
-  public fun GetFloatVariantsByKeyQuery.flow(
-    
-      key: FloatVariantsKey,
-  
-    
-    ): Flow<GetFloatVariantsByKeyQuery.Data> =
-    ref(
-        
-          key=key,
-  
-        
-      ).subscribe().flow.filter { it.result.isSuccess }.map { querySubscriptionResult ->
-        querySubscriptionResult.result.getOrThrow().data
-    }
-
+public fun GetFloatVariantsByKeyQuery.flow(
+  key: FloatVariantsKey,
+): Flow<GetFloatVariantsByKeyQuery.Data> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
+    .filter { it.result.isSuccess }
+    .map { querySubscriptionResult -> querySubscriptionResult.result.getOrThrow().data }
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

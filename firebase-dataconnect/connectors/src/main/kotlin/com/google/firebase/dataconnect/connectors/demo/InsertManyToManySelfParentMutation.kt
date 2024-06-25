@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,60 +7,40 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface InsertManyToManySelfParentMutation :
-    GeneratedMutation<
-      DemoConnector,
-      InsertManyToManySelfParentMutation.Data,
-      InsertManyToManySelfParentMutation.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val child1:
-    ManyToManySelfChildKey,
-    val child2:
-    ManyToManySelfChildKey
-  ) {
-    
-    
-  }
-  
+  GeneratedMutation<
+    DemoConnector,
+    InsertManyToManySelfParentMutation.Data,
+    InsertManyToManySelfParentMutation.Variables
+  > {
 
-  
-    @Serializable
+  @Serializable
+  public data class Variables(
+    val child1: ManyToManySelfChildKey,
+    val child2: ManyToManySelfChildKey
+  ) {}
+
+  @Serializable
   public data class Data(
-  @SerialName("manyToManySelfParent_insert")
-    val key:
-    ManyToManySelfParentKey
-  ) {
-    
-    
-  }
-  
+    @SerialName("manyToManySelfParent_insert") val key: ManyToManySelfParentKey
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -72,40 +51,29 @@ public interface InsertManyToManySelfParentMutation :
 }
 
 public fun InsertManyToManySelfParentMutation.ref(
-  
-    child1: ManyToManySelfChildKey,child2: ManyToManySelfChildKey,
-  
-  
+  child1: ManyToManySelfChildKey,
+  child2: ManyToManySelfChildKey,
 ): MutationRef<
-    InsertManyToManySelfParentMutation.Data,
-    InsertManyToManySelfParentMutation.Variables
-  > =
+  InsertManyToManySelfParentMutation.Data, InsertManyToManySelfParentMutation.Variables
+> =
   ref(
-    
-      InsertManyToManySelfParentMutation.Variables(
-        child1=child1,child2=child2,
-  
-      )
-    
+    InsertManyToManySelfParentMutation.Variables(
+      child1 = child1,
+      child2 = child2,
+    )
   )
 
 public suspend fun InsertManyToManySelfParentMutation.execute(
-  
-    child1: ManyToManySelfChildKey,child2: ManyToManySelfChildKey,
-  
-  
-  ): MutationResult<
-    InsertManyToManySelfParentMutation.Data,
-    InsertManyToManySelfParentMutation.Variables
-  > =
+  child1: ManyToManySelfChildKey,
+  child2: ManyToManySelfChildKey,
+): MutationResult<
+  InsertManyToManySelfParentMutation.Data, InsertManyToManySelfParentMutation.Variables
+> =
   ref(
-    
-      child1=child1,child2=child2,
-  
-    
-  ).execute()
-
-
+      child1 = child1,
+      child2 = child2,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,131 +7,117 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface UpdateStringVariantsByKeyMutation :
-    GeneratedMutation<
-      DemoConnector,
-      UpdateStringVariantsByKeyMutation.Data,
-      UpdateStringVariantsByKeyMutation.Variables
-    >
-{
-  
-    @Serializable
+  GeneratedMutation<
+    DemoConnector,
+    UpdateStringVariantsByKeyMutation.Data,
+    UpdateStringVariantsByKeyMutation.Variables
+  > {
+
+  @Serializable
   public data class Variables(
-  
-    val key:
-    StringVariantsKey,
-    val nonNullWithNonEmptyValue:
-    OptionalVariable<String?>,
-    val nonNullWithEmptyValue:
-    OptionalVariable<String?>,
-    val nullableWithNullValue:
-    OptionalVariable<String?>,
-    val nullableWithNonNullValue:
-    OptionalVariable<String?>,
-    val nullableWithEmptyValue:
-    OptionalVariable<String?>
+    val key: StringVariantsKey,
+    val nonNullWithNonEmptyValue: OptionalVariable<String?>,
+    val nonNullWithEmptyValue: OptionalVariable<String?>,
+    val nullableWithNullValue: OptionalVariable<String?>,
+    val nullableWithNonNullValue: OptionalVariable<String?>,
+    val nullableWithEmptyValue: OptionalVariable<String?>
   ) {
-    
-    
-      
-      @DslMarker public annotation class BuilderDsl
 
-      @BuilderDsl
-      public interface Builder {
-        public var key: StringVariantsKey
-        public var nonNullWithNonEmptyValue: String?
-        public var nonNullWithEmptyValue: String?
-        public var nullableWithNullValue: String?
-        public var nullableWithNonNullValue: String?
-        public var nullableWithEmptyValue: String?
-        
-      }
+    @DslMarker public annotation class BuilderDsl
 
-      public companion object {
-        @Suppress("NAME_SHADOWING")
-        public fun build(
-          key: StringVariantsKey,
-          block_: Builder.() -> Unit
-        ): Variables {
-          var key= key
-            var nonNullWithNonEmptyValue: OptionalVariable<String?> = OptionalVariable.Undefined
-            var nonNullWithEmptyValue: OptionalVariable<String?> = OptionalVariable.Undefined
-            var nullableWithNullValue: OptionalVariable<String?> = OptionalVariable.Undefined
-            var nullableWithNonNullValue: OptionalVariable<String?> = OptionalVariable.Undefined
-            var nullableWithEmptyValue: OptionalVariable<String?> = OptionalVariable.Undefined
-            
+    @BuilderDsl
+    public interface Builder {
+      public var key: StringVariantsKey
+      public var nonNullWithNonEmptyValue: String?
+      public var nonNullWithEmptyValue: String?
+      public var nullableWithNullValue: String?
+      public var nullableWithNonNullValue: String?
+      public var nullableWithEmptyValue: String?
+    }
 
-          return object : Builder {
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(key: StringVariantsKey, block_: Builder.() -> Unit): Variables {
+        var key = key
+        var nonNullWithNonEmptyValue: OptionalVariable<String?> = OptionalVariable.Undefined
+        var nonNullWithEmptyValue: OptionalVariable<String?> = OptionalVariable.Undefined
+        var nullableWithNullValue: OptionalVariable<String?> = OptionalVariable.Undefined
+        var nullableWithNonNullValue: OptionalVariable<String?> = OptionalVariable.Undefined
+        var nullableWithEmptyValue: OptionalVariable<String?> = OptionalVariable.Undefined
+
+        return object : Builder {
             override var key: StringVariantsKey
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { key = value_ }
-              
+              set(value_) {
+                key = value_
+              }
+
             override var nonNullWithNonEmptyValue: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { nonNullWithNonEmptyValue = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                nonNullWithNonEmptyValue = OptionalVariable.Value(value_)
+              }
+
             override var nonNullWithEmptyValue: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { nonNullWithEmptyValue = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                nonNullWithEmptyValue = OptionalVariable.Value(value_)
+              }
+
             override var nullableWithNullValue: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { nullableWithNullValue = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                nullableWithNullValue = OptionalVariable.Value(value_)
+              }
+
             override var nullableWithNonNullValue: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { nullableWithNonNullValue = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                nullableWithNonNullValue = OptionalVariable.Value(value_)
+              }
+
             override var nullableWithEmptyValue: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { nullableWithEmptyValue = OptionalVariable.Value(value_) }
-              
-            
-          }.apply(block_)
+              set(value_) {
+                nullableWithEmptyValue = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
           .let {
             Variables(
-              key=key,nonNullWithNonEmptyValue=nonNullWithNonEmptyValue,nonNullWithEmptyValue=nonNullWithEmptyValue,nullableWithNullValue=nullableWithNullValue,nullableWithNonNullValue=nullableWithNonNullValue,nullableWithEmptyValue=nullableWithEmptyValue,
+              key = key,
+              nonNullWithNonEmptyValue = nonNullWithNonEmptyValue,
+              nonNullWithEmptyValue = nonNullWithEmptyValue,
+              nullableWithNullValue = nullableWithNullValue,
+              nullableWithNonNullValue = nullableWithNonNullValue,
+              nullableWithEmptyValue = nullableWithEmptyValue,
             )
           }
-        }
       }
-    
+    }
   }
-  
 
-  
-    @Serializable
-  public data class Data(
-  @SerialName("stringVariants_update")
-    val key:
-    StringVariantsKey?
-  ) {
-    
-    
-  }
-  
+  @Serializable
+  public data class Data(@SerialName("stringVariants_update") val key: StringVariantsKey?) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -143,44 +128,18 @@ public interface UpdateStringVariantsByKeyMutation :
 }
 
 public fun UpdateStringVariantsByKeyMutation.ref(
-  
-    key: StringVariantsKey,
-  
-    block_: UpdateStringVariantsByKeyMutation.Variables.Builder.() -> Unit
-  
+  key: StringVariantsKey,
+  block_: UpdateStringVariantsByKeyMutation.Variables.Builder.() -> Unit
 ): MutationRef<
-    UpdateStringVariantsByKeyMutation.Data,
-    UpdateStringVariantsByKeyMutation.Variables
-  > =
-  ref(
-    
-      UpdateStringVariantsByKeyMutation.Variables.build(
-        key=key,
-  
-    block_
-      )
-    
-  )
+  UpdateStringVariantsByKeyMutation.Data, UpdateStringVariantsByKeyMutation.Variables
+> = ref(UpdateStringVariantsByKeyMutation.Variables.build(key = key, block_))
 
 public suspend fun UpdateStringVariantsByKeyMutation.execute(
-  
-    key: StringVariantsKey,
-  
-    block_: UpdateStringVariantsByKeyMutation.Variables.Builder.() -> Unit
-  
-  ): MutationResult<
-    UpdateStringVariantsByKeyMutation.Data,
-    UpdateStringVariantsByKeyMutation.Variables
-  > =
-  ref(
-    
-      key=key,
-  
-    block_
-    
-  ).execute()
-
-
+  key: StringVariantsKey,
+  block_: UpdateStringVariantsByKeyMutation.Variables.Builder.() -> Unit
+): MutationResult<
+  UpdateStringVariantsByKeyMutation.Data, UpdateStringVariantsByKeyMutation.Variables
+> = ref(key = key, block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

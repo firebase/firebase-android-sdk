@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,60 +7,32 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface InsertPrimaryKeyIsFloatMutation :
-    GeneratedMutation<
-      DemoConnector,
-      InsertPrimaryKeyIsFloatMutation.Data,
-      InsertPrimaryKeyIsFloatMutation.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val foo:
-    Double,
-    val value:
-    String
-  ) {
-    
-    
-  }
-  
+  GeneratedMutation<
+    DemoConnector, InsertPrimaryKeyIsFloatMutation.Data, InsertPrimaryKeyIsFloatMutation.Variables
+  > {
 
-  
-    @Serializable
-  public data class Data(
-  @SerialName("primaryKeyIsFloat_upsert")
-    val key:
-    PrimaryKeyIsFloatKey
-  ) {
-    
-    
-  }
-  
+  @Serializable public data class Variables(val foo: Double, val value: String) {}
+
+  @Serializable
+  public data class Data(@SerialName("primaryKeyIsFloat_upsert") val key: PrimaryKeyIsFloatKey) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -72,40 +43,25 @@ public interface InsertPrimaryKeyIsFloatMutation :
 }
 
 public fun InsertPrimaryKeyIsFloatMutation.ref(
-  
-    foo: Double,value: String,
-  
-  
-): MutationRef<
-    InsertPrimaryKeyIsFloatMutation.Data,
-    InsertPrimaryKeyIsFloatMutation.Variables
-  > =
+  foo: Double,
+  value: String,
+): MutationRef<InsertPrimaryKeyIsFloatMutation.Data, InsertPrimaryKeyIsFloatMutation.Variables> =
   ref(
-    
-      InsertPrimaryKeyIsFloatMutation.Variables(
-        foo=foo,value=value,
-  
-      )
-    
+    InsertPrimaryKeyIsFloatMutation.Variables(
+      foo = foo,
+      value = value,
+    )
   )
 
 public suspend fun InsertPrimaryKeyIsFloatMutation.execute(
-  
-    foo: Double,value: String,
-  
-  
-  ): MutationResult<
-    InsertPrimaryKeyIsFloatMutation.Data,
-    InsertPrimaryKeyIsFloatMutation.Variables
-  > =
+  foo: Double,
+  value: String,
+): MutationResult<InsertPrimaryKeyIsFloatMutation.Data, InsertPrimaryKeyIsFloatMutation.Variables> =
   ref(
-    
-      foo=foo,value=value,
-  
-    
-  ).execute()
-
-
+      foo = foo,
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

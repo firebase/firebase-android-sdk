@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,147 +7,91 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface UpdateFoosByBarMutation :
-    GeneratedMutation<
-      DemoConnector,
-      UpdateFoosByBarMutation.Data,
-      UpdateFoosByBarMutation.Variables
-    >
-{
-  
-    @Serializable
+  GeneratedMutation<
+    DemoConnector, UpdateFoosByBarMutation.Data, UpdateFoosByBarMutation.Variables
+  > {
+
+  @Serializable
   public data class Variables(
-  
-    val oldBar:
-    OptionalVariable<String?>,
-    val newBar:
-    OptionalVariable<String?>
+    val oldBar: OptionalVariable<String?>,
+    val newBar: OptionalVariable<String?>
   ) {
-    
-    
-      
-      @DslMarker public annotation class BuilderDsl
 
-      @BuilderDsl
-      public interface Builder {
-        public var oldBar: String?
-        public var newBar: String?
-        
-      }
+    @DslMarker public annotation class BuilderDsl
 
-      public companion object {
-        @Suppress("NAME_SHADOWING")
-        public fun build(
-          
-          block_: Builder.() -> Unit
-        ): Variables {
-          var oldBar: OptionalVariable<String?> = OptionalVariable.Undefined
-            var newBar: OptionalVariable<String?> = OptionalVariable.Undefined
-            
+    @BuilderDsl
+    public interface Builder {
+      public var oldBar: String?
+      public var newBar: String?
+    }
 
-          return object : Builder {
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(block_: Builder.() -> Unit): Variables {
+        var oldBar: OptionalVariable<String?> = OptionalVariable.Undefined
+        var newBar: OptionalVariable<String?> = OptionalVariable.Undefined
+
+        return object : Builder {
             override var oldBar: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { oldBar = OptionalVariable.Value(value_) }
-              
+              set(value_) {
+                oldBar = OptionalVariable.Value(value_)
+              }
+
             override var newBar: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { newBar = OptionalVariable.Value(value_) }
-              
-            
-          }.apply(block_)
+              set(value_) {
+                newBar = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
           .let {
             Variables(
-              oldBar=oldBar,newBar=newBar,
+              oldBar = oldBar,
+              newBar = newBar,
             )
           }
-        }
       }
-    
+    }
   }
-  
 
-  
-    @Serializable
-  public data class Data(
-  @SerialName("foo_updateMany")
-    val count:
-    Int
-  ) {
-    
-    
-  }
-  
+  @Serializable public data class Data(@SerialName("foo_updateMany") val count: Int) {}
 
   public companion object {
-    @Suppress("ConstPropertyName")
-    public const val operationName: String = "UpdateFoosByBar"
+    @Suppress("ConstPropertyName") public const val operationName: String = "UpdateFoosByBar"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
 public fun UpdateFoosByBarMutation.ref(
-  
-    
-  
-    block_: UpdateFoosByBarMutation.Variables.Builder.() -> Unit
-  
-): MutationRef<
-    UpdateFoosByBarMutation.Data,
-    UpdateFoosByBarMutation.Variables
-  > =
-  ref(
-    
-      UpdateFoosByBarMutation.Variables.build(
-        
-  
-    block_
-      )
-    
-  )
+  block_: UpdateFoosByBarMutation.Variables.Builder.() -> Unit
+): MutationRef<UpdateFoosByBarMutation.Data, UpdateFoosByBarMutation.Variables> =
+  ref(UpdateFoosByBarMutation.Variables.build(block_))
 
 public suspend fun UpdateFoosByBarMutation.execute(
-  
-    
-  
-    block_: UpdateFoosByBarMutation.Variables.Builder.() -> Unit
-  
-  ): MutationResult<
-    UpdateFoosByBarMutation.Data,
-    UpdateFoosByBarMutation.Variables
-  > =
-  ref(
-    
-      
-  
-    block_
-    
-  ).execute()
-
-
+  block_: UpdateFoosByBarMutation.Variables.Builder.() -> Unit
+): MutationResult<UpdateFoosByBarMutation.Data, UpdateFoosByBarMutation.Variables> =
+  ref(block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the
