@@ -57,12 +57,12 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
     val childBKeys = List(3) { connector.insertManyToManyChildB.execute().data.key }
     repeat(3) { connector.insertManyToManyParent.execute(childAKey, childBKeys[it]).data.key }
 
-    val queryResult = connector.getManyToManyChildAbyKey.execute(childAKey)
+    val queryResult = connector.getManyToManyChildAByKey.execute(childAKey)
 
     assertThat(queryResult.data.manyToManyChildA?.manyToManyChildBS_via_ManyToManyParent)
       .containsExactlyElementsIn(
         childBKeys.map {
-          GetManyToManyChildAbyKeyQuery.Data.ManyToManyChildA
+          GetManyToManyChildAByKeyQuery.Data.ManyToManyChildA
             .ManyToManyChildBsViaManyToManyParentItem(it.id)
         }
       )
