@@ -56,18 +56,17 @@ class SuspendingCountDownLatch(count: Int) {
    * If the current count is greater than zero then it is decremented. If the new count is zero then
    * all waiting coroutines are re-enabled for scheduling on their respective dispatchers.
    *
-   * If the current count equals zero then nothing happens.
+   * @return returns this object, to make it easy to chain it with [await].
+   * @throws IllegalStateException if called when the count has already reached zero.
    */
-  fun countDown() {
+  fun countDown(): SuspendingCountDownLatch {
     while (true) {
       val oldValue = _count.value
-      if (oldValue == 0) {
-        break
-      }
+      check(oldValue > 0) { "countDown() called too many times (oldValue=$oldValue)" }
 
       val newValue = oldValue - 1
       if (_count.compareAndSet(oldValue, newValue)) {
-        break
+        return this
       }
     }
   }
