@@ -46,9 +46,9 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val key = connector.insertPrimaryKeyIsUuid.execute(id = id, value = value).data.key
 
-    val queryResult = connector.getPrimaryKeyIsUuidbyKey.execute(key)
+    val queryResult = connector.getPrimaryKeyIsUuidByKey.execute(key)
     assertThat(queryResult.data.primaryKeyIsUUID)
-      .isEqualTo(GetPrimaryKeyIsUuidbyKeyQuery.Data.PrimaryKeyIsUuid(id = id, value = value))
+      .isEqualTo(GetPrimaryKeyIsUuidByKeyQuery.Data.PrimaryKeyIsUuid(id = id, value = value))
   }
 
   @Test
