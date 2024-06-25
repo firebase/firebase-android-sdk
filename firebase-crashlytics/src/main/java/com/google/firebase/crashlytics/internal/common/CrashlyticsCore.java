@@ -321,7 +321,19 @@ public class CrashlyticsCore {
    * safe to invoke this method from the main thread.
    */
   public void logException(@NonNull Throwable throwable) {
-    controller.writeNonFatalException(Thread.currentThread(), throwable);
+    logException(throwable, null);
+  }
+
+  /**
+   * Logs a non-fatal Throwable on the Crashlytics servers. Crashlytics will analyze the Throwable
+   * and create a new issue or add it to an existing issue, as appropriate.
+   *
+   * <p>To ensure accurate reporting, this method must be invoked from the thread on which the
+   * Throwable was thrown. The Throwable will always be processed on a background thread, so it is
+   * safe to invoke this method from the main thread.
+   */
+  public void logException(@NonNull Throwable throwable, Map<String, String> extraInfo) {
+    controller.writeNonFatalException(Thread.currentThread(), throwable, extraInfo);
   }
 
   /**
