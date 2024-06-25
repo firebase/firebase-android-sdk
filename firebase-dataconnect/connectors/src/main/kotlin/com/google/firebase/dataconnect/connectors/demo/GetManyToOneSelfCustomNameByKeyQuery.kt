@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,90 +7,43 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.serializer
-
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
-
-  import kotlinx.coroutines.flow.Flow
-  import kotlinx.coroutines.flow.filter
-  import kotlinx.coroutines.flow.map
-
-import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-
-import kotlinx.serialization.UseSerializers
 import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.serializer
 
 public interface GetManyToOneSelfCustomNameByKeyQuery :
-    GeneratedQuery<
-      DemoConnector,
-      GetManyToOneSelfCustomNameByKeyQuery.Data,
-      GetManyToOneSelfCustomNameByKeyQuery.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val key:
-    ManyToOneSelfCustomNameKey
-  ) {
-    
-    
-  }
-  
+  GeneratedQuery<
+    DemoConnector,
+    GetManyToOneSelfCustomNameByKeyQuery.Data,
+    GetManyToOneSelfCustomNameByKeyQuery.Variables
+  > {
 
-  
+  @Serializable public data class Variables(val key: ManyToOneSelfCustomNameKey) {}
+
+  @Serializable
+  public data class Data(val manyToOneSelfCustomName: ManyToOneSelfCustomName?) {
+
     @Serializable
-  public data class Data(
-  
-    val manyToOneSelfCustomName:
-    ManyToOneSelfCustomName?
-  ) {
-    
-      
-        @Serializable
-  public data class ManyToOneSelfCustomName(
-  
-    val id:
-    java.util.UUID,
-    val ref:
-    Ref?
-  ) {
-    
-      
-        @Serializable
-  public data class Ref(
-  
-    val id:
-    java.util.UUID,
-    val refId:
-    java.util.UUID?
-  ) {
-    
-    
+    public data class ManyToOneSelfCustomName(val id: java.util.UUID, val ref: Ref?) {
+
+      @Serializable public data class Ref(val id: java.util.UUID, val refId: java.util.UUID?) {}
+    }
   }
-      
-    
-    
-  }
-      
-    
-    
-  }
-  
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -102,55 +54,36 @@ public interface GetManyToOneSelfCustomNameByKeyQuery :
 }
 
 public fun GetManyToOneSelfCustomNameByKeyQuery.ref(
-  
-    key: ManyToOneSelfCustomNameKey,
-  
-  
+  key: ManyToOneSelfCustomNameKey,
 ): QueryRef<
-    GetManyToOneSelfCustomNameByKeyQuery.Data,
-    GetManyToOneSelfCustomNameByKeyQuery.Variables
-  > =
+  GetManyToOneSelfCustomNameByKeyQuery.Data, GetManyToOneSelfCustomNameByKeyQuery.Variables
+> =
   ref(
-    
-      GetManyToOneSelfCustomNameByKeyQuery.Variables(
-        key=key,
-  
-      )
-    
+    GetManyToOneSelfCustomNameByKeyQuery.Variables(
+      key = key,
+    )
   )
 
 public suspend fun GetManyToOneSelfCustomNameByKeyQuery.execute(
-  
-    key: ManyToOneSelfCustomNameKey,
-  
-  
-  ): QueryResult<
-    GetManyToOneSelfCustomNameByKeyQuery.Data,
-    GetManyToOneSelfCustomNameByKeyQuery.Variables
-  > =
+  key: ManyToOneSelfCustomNameKey,
+): QueryResult<
+  GetManyToOneSelfCustomNameByKeyQuery.Data, GetManyToOneSelfCustomNameByKeyQuery.Variables
+> =
   ref(
-    
-      key=key,
-  
-    
-  ).execute()
+      key = key,
+    )
+    .execute()
 
-
-  public fun GetManyToOneSelfCustomNameByKeyQuery.flow(
-    
-      key: ManyToOneSelfCustomNameKey,
-  
-    
-    ): Flow<GetManyToOneSelfCustomNameByKeyQuery.Data> =
-    ref(
-        
-          key=key,
-  
-        
-      ).subscribe().flow.filter { it.result.isSuccess }.map { querySubscriptionResult ->
-        querySubscriptionResult.result.getOrThrow().data
-    }
-
+public fun GetManyToOneSelfCustomNameByKeyQuery.flow(
+  key: ManyToOneSelfCustomNameKey,
+): Flow<GetManyToOneSelfCustomNameByKeyQuery.Data> =
+  ref(
+      key = key,
+    )
+    .subscribe()
+    .flow
+    .filter { it.result.isSuccess }
+    .map { querySubscriptionResult -> querySubscriptionResult.result.getOrThrow().data }
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

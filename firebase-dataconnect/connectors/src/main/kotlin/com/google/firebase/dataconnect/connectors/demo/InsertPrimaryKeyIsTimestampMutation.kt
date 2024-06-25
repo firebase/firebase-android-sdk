@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,60 +7,37 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface InsertPrimaryKeyIsTimestampMutation :
-    GeneratedMutation<
-      DemoConnector,
-      InsertPrimaryKeyIsTimestampMutation.Data,
-      InsertPrimaryKeyIsTimestampMutation.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val foo:
-    com.google.firebase.Timestamp,
-    val value:
-    String
-  ) {
-    
-    
-  }
-  
+  GeneratedMutation<
+    DemoConnector,
+    InsertPrimaryKeyIsTimestampMutation.Data,
+    InsertPrimaryKeyIsTimestampMutation.Variables
+  > {
 
-  
-    @Serializable
+  @Serializable
+  public data class Variables(val foo: com.google.firebase.Timestamp, val value: String) {}
+
+  @Serializable
   public data class Data(
-  @SerialName("primaryKeyIsTimestamp_upsert")
-    val key:
-    PrimaryKeyIsTimestampKey
-  ) {
-    
-    
-  }
-  
+    @SerialName("primaryKeyIsTimestamp_upsert") val key: PrimaryKeyIsTimestampKey
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -72,40 +48,29 @@ public interface InsertPrimaryKeyIsTimestampMutation :
 }
 
 public fun InsertPrimaryKeyIsTimestampMutation.ref(
-  
-    foo: com.google.firebase.Timestamp,value: String,
-  
-  
+  foo: com.google.firebase.Timestamp,
+  value: String,
 ): MutationRef<
-    InsertPrimaryKeyIsTimestampMutation.Data,
-    InsertPrimaryKeyIsTimestampMutation.Variables
-  > =
+  InsertPrimaryKeyIsTimestampMutation.Data, InsertPrimaryKeyIsTimestampMutation.Variables
+> =
   ref(
-    
-      InsertPrimaryKeyIsTimestampMutation.Variables(
-        foo=foo,value=value,
-  
-      )
-    
+    InsertPrimaryKeyIsTimestampMutation.Variables(
+      foo = foo,
+      value = value,
+    )
   )
 
 public suspend fun InsertPrimaryKeyIsTimestampMutation.execute(
-  
-    foo: com.google.firebase.Timestamp,value: String,
-  
-  
-  ): MutationResult<
-    InsertPrimaryKeyIsTimestampMutation.Data,
-    InsertPrimaryKeyIsTimestampMutation.Variables
-  > =
+  foo: com.google.firebase.Timestamp,
+  value: String,
+): MutationResult<
+  InsertPrimaryKeyIsTimestampMutation.Data, InsertPrimaryKeyIsTimestampMutation.Variables
+> =
   ref(
-    
-      foo=foo,value=value,
-  
-    
-  ).execute()
-
-
+      foo = foo,
+      value = value,
+    )
+    .execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,172 +7,91 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.serializer
-
+import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QueryResult
-
-  import kotlinx.coroutines.flow.Flow
-  import kotlinx.coroutines.flow.filter
-  import kotlinx.coroutines.flow.map
-
-import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-
-import kotlinx.serialization.UseSerializers
 import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.UseSerializers
+import kotlinx.serialization.serializer
 
 public interface GetFoosByBarQuery :
-    GeneratedQuery<
-      DemoConnector,
-      GetFoosByBarQuery.Data,
-      GetFoosByBarQuery.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val bar:
-    OptionalVariable<String?>
-  ) {
-    
-    
-      
-      @DslMarker public annotation class BuilderDsl
+  GeneratedQuery<DemoConnector, GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables> {
 
-      @BuilderDsl
-      public interface Builder {
-        public var bar: String?
-        
-      }
+  @Serializable
+  public data class Variables(val bar: OptionalVariable<String?>) {
 
-      public companion object {
-        @Suppress("NAME_SHADOWING")
-        public fun build(
-          
-          block_: Builder.() -> Unit
-        ): Variables {
-          var bar: OptionalVariable<String?> = OptionalVariable.Undefined
-            
+    @DslMarker public annotation class BuilderDsl
 
-          return object : Builder {
+    @BuilderDsl
+    public interface Builder {
+      public var bar: String?
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(block_: Builder.() -> Unit): Variables {
+        var bar: OptionalVariable<String?> = OptionalVariable.Undefined
+
+        return object : Builder {
             override var bar: String?
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { bar = OptionalVariable.Value(value_) }
-              
-            
-          }.apply(block_)
+              set(value_) {
+                bar = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
           .let {
             Variables(
-              bar=bar,
+              bar = bar,
             )
           }
-        }
       }
-    
+    }
   }
-  
 
-  
-    @Serializable
-  public data class Data(
-  
-    val foos:
-    List<FoosItem>
-  ) {
-    
-      
-        @Serializable
-  public data class FoosItem(
-  
-    val id:
-    String
-  ) {
-    
-    
+  @Serializable
+  public data class Data(val foos: List<FoosItem>) {
+
+    @Serializable public data class FoosItem(val id: String) {}
   }
-      
-    
-    
-  }
-  
 
   public companion object {
-    @Suppress("ConstPropertyName")
-    public const val operationName: String = "GetFoosByBar"
+    @Suppress("ConstPropertyName") public const val operationName: String = "GetFoosByBar"
     public val dataDeserializer: DeserializationStrategy<Data> = serializer()
     public val variablesSerializer: SerializationStrategy<Variables> = serializer()
   }
 }
 
 public fun GetFoosByBarQuery.ref(
-  
-    
-  
-    block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
-  
-): QueryRef<
-    GetFoosByBarQuery.Data,
-    GetFoosByBarQuery.Variables
-  > =
-  ref(
-    
-      GetFoosByBarQuery.Variables.build(
-        
-  
-    block_
-      )
-    
-  )
+  block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
+): QueryRef<GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables> =
+  ref(GetFoosByBarQuery.Variables.build(block_))
 
 public suspend fun GetFoosByBarQuery.execute(
-  
-    
-  
-    block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
-  
-  ): QueryResult<
-    GetFoosByBarQuery.Data,
-    GetFoosByBarQuery.Variables
-  > =
-  ref(
-    
-      
-  
-    block_
-    
-  ).execute()
+  block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
+): QueryResult<GetFoosByBarQuery.Data, GetFoosByBarQuery.Variables> = ref(block_).execute()
 
-
-  public fun GetFoosByBarQuery.flow(
-    
-      
-  
-    block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
-    
-    ): Flow<GetFoosByBarQuery.Data> =
-    ref(
-        
-          
-  
-    block_
-        
-      ).subscribe().flow.filter { it.result.isSuccess }.map { querySubscriptionResult ->
-        querySubscriptionResult.result.getOrThrow().data
-    }
-
+public fun GetFoosByBarQuery.flow(
+  block_: GetFoosByBarQuery.Variables.Builder.() -> Unit
+): Flow<GetFoosByBarQuery.Data> =
+  ref(block_)
+    .subscribe()
+    .flow
+    .filter { it.result.isSuccess }
+    .map { querySubscriptionResult -> querySubscriptionResult.result.getOrThrow().data }
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

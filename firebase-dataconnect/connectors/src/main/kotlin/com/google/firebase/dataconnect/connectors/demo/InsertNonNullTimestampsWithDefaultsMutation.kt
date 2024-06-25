@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,91 +7,67 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.OptionalVariable
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface InsertNonNullTimestampsWithDefaultsMutation :
-    GeneratedMutation<
-      DemoConnector,
-      InsertNonNullTimestampsWithDefaultsMutation.Data,
-      InsertNonNullTimestampsWithDefaultsMutation.Variables
-    >
-{
-  
-    @Serializable
-  public data class Variables(
-  
-    val value:
-    OptionalVariable<com.google.firebase.Timestamp>
-  ) {
-    
-    
-      
-      @DslMarker public annotation class BuilderDsl
+  GeneratedMutation<
+    DemoConnector,
+    InsertNonNullTimestampsWithDefaultsMutation.Data,
+    InsertNonNullTimestampsWithDefaultsMutation.Variables
+  > {
 
-      @BuilderDsl
-      public interface Builder {
-        public var value: com.google.firebase.Timestamp
-        
-      }
+  @Serializable
+  public data class Variables(val value: OptionalVariable<com.google.firebase.Timestamp>) {
 
-      public companion object {
-        @Suppress("NAME_SHADOWING")
-        public fun build(
-          
-          block_: Builder.() -> Unit
-        ): Variables {
-          var value: OptionalVariable<com.google.firebase.Timestamp> = OptionalVariable.Undefined
-            
+    @DslMarker public annotation class BuilderDsl
 
-          return object : Builder {
+    @BuilderDsl
+    public interface Builder {
+      public var value: com.google.firebase.Timestamp
+    }
+
+    public companion object {
+      @Suppress("NAME_SHADOWING")
+      public fun build(block_: Builder.() -> Unit): Variables {
+        var value: OptionalVariable<com.google.firebase.Timestamp> = OptionalVariable.Undefined
+
+        return object : Builder {
             override var value: com.google.firebase.Timestamp
               get() = throw UnsupportedOperationException("getting builder values is not supported")
-              set(value_) { value = OptionalVariable.Value(value_) }
-              
-            
-          }.apply(block_)
+              set(value_) {
+                value = OptionalVariable.Value(value_)
+              }
+          }
+          .apply(block_)
           .let {
             Variables(
-              value=value,
+              value = value,
             )
           }
-        }
       }
-    
+    }
   }
-  
 
-  
-    @Serializable
+  @Serializable
   public data class Data(
-  @SerialName("nonNullTimestampsWithDefaults_insert")
-    val key:
-    NonNullTimestampsWithDefaultsKey
-  ) {
-    
-    
-  }
-  
+    @SerialName("nonNullTimestampsWithDefaults_insert") val key: NonNullTimestampsWithDefaultsKey
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -103,44 +78,18 @@ public interface InsertNonNullTimestampsWithDefaultsMutation :
 }
 
 public fun InsertNonNullTimestampsWithDefaultsMutation.ref(
-  
-    
-  
-    block_: InsertNonNullTimestampsWithDefaultsMutation.Variables.Builder.() -> Unit
-  
+  block_: InsertNonNullTimestampsWithDefaultsMutation.Variables.Builder.() -> Unit
 ): MutationRef<
-    InsertNonNullTimestampsWithDefaultsMutation.Data,
-    InsertNonNullTimestampsWithDefaultsMutation.Variables
-  > =
-  ref(
-    
-      InsertNonNullTimestampsWithDefaultsMutation.Variables.build(
-        
-  
-    block_
-      )
-    
-  )
+  InsertNonNullTimestampsWithDefaultsMutation.Data,
+  InsertNonNullTimestampsWithDefaultsMutation.Variables
+> = ref(InsertNonNullTimestampsWithDefaultsMutation.Variables.build(block_))
 
 public suspend fun InsertNonNullTimestampsWithDefaultsMutation.execute(
-  
-    
-  
-    block_: InsertNonNullTimestampsWithDefaultsMutation.Variables.Builder.() -> Unit
-  
-  ): MutationResult<
-    InsertNonNullTimestampsWithDefaultsMutation.Data,
-    InsertNonNullTimestampsWithDefaultsMutation.Variables
-  > =
-  ref(
-    
-      
-  
-    block_
-    
-  ).execute()
-
-
+  block_: InsertNonNullTimestampsWithDefaultsMutation.Variables.Builder.() -> Unit
+): MutationResult<
+  InsertNonNullTimestampsWithDefaultsMutation.Data,
+  InsertNonNullTimestampsWithDefaultsMutation.Variables
+> = ref(block_).execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the

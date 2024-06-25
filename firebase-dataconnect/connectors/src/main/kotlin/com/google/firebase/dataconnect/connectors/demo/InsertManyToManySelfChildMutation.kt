@@ -1,4 +1,3 @@
-
 @file:Suppress(
   "KotlinRedundantDiagnosticSuppress",
   "LocalVariableName",
@@ -8,48 +7,30 @@
   "LocalVariableName",
   "unused",
 )
-
 @file:UseSerializers(DateSerializer::class, UUIDSerializer::class, TimestampSerializer::class)
 
 package com.google.firebase.dataconnect.connectors.demo
 
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.serializers.DateSerializer
+import com.google.firebase.dataconnect.serializers.TimestampSerializer
+import com.google.firebase.dataconnect.serializers.UUIDSerializer
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.UseSerializers
 import kotlinx.serialization.serializer
 
-import com.google.firebase.dataconnect.MutationRef
-import com.google.firebase.dataconnect.MutationResult
-
-import com.google.firebase.dataconnect.OptionalVariable
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-
-import kotlinx.serialization.UseSerializers
-import com.google.firebase.dataconnect.serializers.DateSerializer
-import com.google.firebase.dataconnect.serializers.UUIDSerializer
-import com.google.firebase.dataconnect.serializers.TimestampSerializer
-
 public interface InsertManyToManySelfChildMutation :
-    GeneratedMutation<
-      DemoConnector,
-      InsertManyToManySelfChildMutation.Data,
-      Unit
-    >
-{
-  
+  GeneratedMutation<DemoConnector, InsertManyToManySelfChildMutation.Data, Unit> {
 
-  
-    @Serializable
+  @Serializable
   public data class Data(
-  @SerialName("manyToManySelfChild_insert")
-    val key:
-    ManyToManySelfChildKey
-  ) {
-    
-    
-  }
-  
+    @SerialName("manyToManySelfChild_insert") val key: ManyToManySelfChildKey
+  ) {}
 
   public companion object {
     @Suppress("ConstPropertyName")
@@ -59,29 +40,11 @@ public interface InsertManyToManySelfChildMutation :
   }
 }
 
-public fun InsertManyToManySelfChildMutation.ref(
-  
-): MutationRef<
-    InsertManyToManySelfChildMutation.Data,
-    Unit
-  > =
-  ref(
-    
-      Unit
-    
-  )
+public fun InsertManyToManySelfChildMutation.ref():
+  MutationRef<InsertManyToManySelfChildMutation.Data, Unit> = ref(Unit)
 
-public suspend fun InsertManyToManySelfChildMutation.execute(
-  
-  ): MutationResult<
-    InsertManyToManySelfChildMutation.Data,
-    Unit
-  > =
-  ref(
-    
-  ).execute()
-
-
+public suspend fun InsertManyToManySelfChildMutation.execute():
+  MutationResult<InsertManyToManySelfChildMutation.Data, Unit> = ref().execute()
 
 // The lines below are used by the code generator to ensure that this file is deleted if it is no
 // longer needed. Any files in this directory that contain the lines below will be deleted by the
