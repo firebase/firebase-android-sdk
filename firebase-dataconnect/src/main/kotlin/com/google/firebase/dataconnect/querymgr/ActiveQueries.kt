@@ -16,35 +16,56 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
-import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.debug
-import com.google.firebase.dataconnect.util.ReferenceCountedSet
-import com.google.firebase.dataconnect.util.toCompactString
+import com.google.firebase.dataconnect.LockFreeConcurrentMap
+import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.util.buildStructProto
+import com.google.firebase.dataconnect.util.calculateSha512
+import com.google.firebase.dataconnect.util.encodeToStruct
+import com.google.firebase.dataconnect.util.toAlphaNumericString
+import com.google.protobuf.Struct
+import kotlinx.serialization.SerializationStrategy
 
-internal class ActiveQueries(val dataConnect: FirebaseDataConnectImpl, parentLogger: Logger) :
-  ReferenceCountedSet<ActiveQueryKey, ActiveQuery>() {
+internal class ActiveQueries {
 
-  private val logger =
-    Logger("ActiveQueries").apply { debug { "Created by ${parentLogger.nameWithId}" } }
+  private val activeQueryByVariablesHash = LockFreeConcurrentMap<ActiveQuery>()
 
-  override fun valueForKey(key: ActiveQueryKey) =
-    ActiveQuery(
-      dataConnect = dataConnect,
-      operationName = key.operationName,
-      variables = key.variables,
-      parentLogger = logger,
-    )
-
-  override fun onAllocate(entry: Entry<ActiveQueryKey, ActiveQuery>) {
-    logger.debug(
-      "Registered ${entry.value.logger.nameWithId} (" +
-        "operationName=${entry.key.operationName}, " +
-        "variables=${entry.key.variables.toCompactString()})"
-    )
+  suspend fun <R> useActiveQuery(
+    operationName: String,
+    variables: Struct,
+    block: suspend (ActiveQuery) -> R
+  ): R {
+    val keyStruct = buildStructProto {
+      put("operationName", operationName)
+      put("variables", variables)
+    }
+    val key = keyStruct.calculateSha512().toAlphaNumericString()
+    val activeQuery = activeQueryByVariablesHash.acquire(key) { ActiveQuery() }
+    try {
+      return block(activeQuery)
+    } finally {
+      activeQueryByVariablesHash.release(key)
+    }
   }
+}
 
-  override fun onFree(entry: Entry<ActiveQueryKey, ActiveQuery>) {
-    logger.debug("Unregistered ${entry.value.logger.nameWithId}")
-  }
+internal suspend fun <V, R> ActiveQueries.useActiveQuery(
+  operationName: String,
+  variables: V,
+  variablesSerializer: SerializationStrategy<V>,
+  block: suspend (ActiveQuery) -> R
+): R {
+  val serializedVariables = encodeToStruct(variablesSerializer, variables)
+  return useActiveQuery(operationName, serializedVariables, block)
+}
+
+internal suspend fun <V, R> ActiveQueries.useActiveQuery(
+  queryRef: QueryRef<*, V>,
+  block: suspend (ActiveQuery) -> R
+): R {
+  return useActiveQuery(
+    queryRef.operationName,
+    queryRef.variables,
+    queryRef.variablesSerializer,
+    block
+  )
 }

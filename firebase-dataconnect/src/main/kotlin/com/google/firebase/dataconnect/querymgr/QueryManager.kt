@@ -17,45 +17,26 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
-import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.debug
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.withAcquiredValue
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 // TODO: Rename "NewQueryManager" to just "QueryManager" once "OldQueryManager" is deleted.
-internal class NewQueryManager(val dataConnect: FirebaseDataConnectImpl) {
-
-  private val logger =
-    Logger("NewQueryManager").apply { debug { "Created by ${dataConnect.logger.nameWithId}" } }
-
-  private val activeQueries = ActiveQueries(dataConnect, parentLogger = logger)
+internal class NewQueryManager(private val activeQueries: ActiveQueries) {
 
   suspend fun <Data, Variables> execute(
     query: QueryRef<Data, Variables>
   ): SequencedReference<Result<Data>> =
-    withActiveQuery(query) { execute(query.dataDeserializer) }.toSequencedDataResult()
+    activeQueries.useActiveQuery(query) {
+      withContext(Dispatchers.Default) { delay(1.seconds) }
+      TODO("not implemented")
+    }
 
   suspend fun <Data, Variables> subscribe(
     query: QueryRef<Data, Variables>,
     executeQuery: Boolean,
     callback: suspend (SequencedReference<Result<Data>>) -> Unit,
-  ): Nothing =
-    withActiveQuery(query) {
-      subscribe(query.dataDeserializer, executeQuery) { activeQueryResult ->
-        callback(activeQueryResult.toSequencedDataResult())
-      }
-    }
-
-  private suspend fun <Data, Variables, ReturnType> withActiveQuery(
-    query: QueryRef<Data, Variables>,
-    callback: suspend ActiveQuery.() -> ReturnType
-  ): ReturnType {
-    require(query.dataConnect === dataConnect) {
-      "The given query belongs to a different FirebaseDataConnect; " +
-        "query belongs to ${query.dataConnect}, but expected ${dataConnect}"
-    }
-    val key = ActiveQueryKey.forQueryRef(query)
-    return activeQueries.withAcquiredValue(key) { callback(it) }
-  }
+  ): Nothing = activeQueries.useActiveQuery(query) { TODO("not implemented") }
 }
