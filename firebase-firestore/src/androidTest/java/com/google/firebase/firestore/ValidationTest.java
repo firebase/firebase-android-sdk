@@ -52,6 +52,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -60,8 +61,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ValidationTest {
 
-  @After
-  public void tearDown() {
+  @AfterClass
+  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 

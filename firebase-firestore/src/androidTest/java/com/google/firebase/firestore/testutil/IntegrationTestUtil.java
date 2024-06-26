@@ -317,7 +317,6 @@ public class IntegrationTestUtil {
             asyncQueue,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
-    waitFor(firestore.clearPersistence());
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);
 
@@ -326,10 +325,11 @@ public class IntegrationTestUtil {
 
   public static void tearDown() {
     try {
+      ArrayList<Task<Void>> tasks = new ArrayList<>();
       for (FirebaseFirestore firestore : firestoreStatus.keySet()) {
-        Task<Void> result = firestore.terminate();
-        waitFor(result);
+        tasks.add(firestore.terminate().continueWithTask(command -> firestore.clearPersistence()));
       }
+      waitFor(Tasks.whenAll(tasks));
     } finally {
       firestoreStatus.clear();
     }

@@ -28,6 +28,7 @@ import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,8 +59,12 @@ public class NumericTransformsTest {
   }
 
   @After
-  public void tearDown() {
+  public void after() {
     listenerRegistration.remove();
+  }
+
+  @AfterClass
+  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 

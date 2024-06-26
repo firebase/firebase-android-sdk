@@ -36,6 +36,7 @@ import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,12 +81,16 @@ public class ServerTimestampTest {
   }
 
   @After
-  public void tearDown() {
+  public void after() {
     listenerRegistration.remove();
+  }
+
+  @AfterClass
+  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
-  // Returns the expected data, with an arbitrary timestamp substituted in.
+    // Returns the expected data, with an arbitrary timestamp substituted in.
   private Map<String, Object> expectedDataWithTimestamp(Object timestamp) {
     return map("a", 42L, "when", timestamp, "deep", map("when", timestamp));
   }

@@ -24,6 +24,9 @@ import static org.junit.Assert.assertEquals;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,6 +45,11 @@ public class ArrayTransformsServerApplicationTest {
   @Before
   public void setUp() {
     docRef = testDocument();
+  }
+
+  @AfterClass
+  public static void tearDown() {
+    IntegrationTestUtil.tearDown();
   }
 
   @Test

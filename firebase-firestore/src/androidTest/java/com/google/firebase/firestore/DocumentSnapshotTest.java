@@ -23,13 +23,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class DocumentSnapshotTest {
-  @After
-  public void tearDown() {
+  @AfterClass
+  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
