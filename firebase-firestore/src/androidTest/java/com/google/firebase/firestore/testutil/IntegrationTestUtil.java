@@ -58,7 +58,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 class MockCredentialsProvider extends EmptyCredentialsProvider {
 
@@ -121,7 +120,7 @@ public class IntegrationTestUtil {
   private static final FirestoreProvider provider = new FirestoreProvider();
 
   private static boolean strictModeEnabled = false;
-  private static AtomicBoolean backendPrimed = new AtomicBoolean(false);
+  private static boolean backendPrimed = false;
 
   // FirebaseOptions needed to create a test FirebaseApp.
   private static final FirebaseOptions OPTIONS =
@@ -210,8 +209,9 @@ public class IntegrationTestUtil {
     return firestore;
   }
 
-  private static void primeBackend() {
-    if (backendPrimed.compareAndSet(false, true)) {
+  private static synchronized void primeBackend() {
+    if (!backendPrimed) {
+      backendPrimed = true;
       TaskCompletionSource<Void> watchInitialized = new TaskCompletionSource<>();
       TaskCompletionSource<Void> watchUpdateReceived = new TaskCompletionSource<>();
       DocumentReference docRef = testDocument();
