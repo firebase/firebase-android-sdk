@@ -66,6 +66,7 @@ dependencies {
   implementation(libs.androidx.test.junit)
   implementation(libs.robolectric)
   implementation(libs.truth)
+  implementation(libs.kotlin.coroutines.test)
 }
 
 tasks.withType<KotlinCompile>().all {

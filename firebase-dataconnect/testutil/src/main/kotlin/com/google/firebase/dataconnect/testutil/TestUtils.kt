@@ -23,14 +23,20 @@ import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.util.nextAlphanumericString
 import java.util.UUID
 import java.util.regex.Pattern
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.random.Random
 import kotlin.reflect.KClass
 import kotlin.reflect.safeCast
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.withContext
 import org.junit.Assert
 
@@ -194,3 +200,34 @@ fun randomRequestId(key: String) = "requestId_${key}_${Random.nextAlphanumericSt
 )
 fun randomOperationName(key: String) =
   "operation_${key}_${Random.nextAlphanumericString(length = 8)}"
+
+/**
+ * Create and return a new [CoroutineScope] that behaves exactly like [TestScope.backgroundScope]
+ * except that the jobs that it enqueues _are_ advanced by calls to
+ * [TestCoroutineScheduler.advanceUntilIdle()].
+ *
+ * Normally, coroutines started by [TestScope.backgroundScope] run independently and are _not_
+ * advanced by calls to [TestCoroutineScheduler.advanceUntilIdle()]. But sometimes it is _desirable_
+ * that background jobs are advanced by [TestCoroutineScheduler.advanceUntilIdle()] yet maintain the
+ * other qualities of coroutines registered with the `backgroundScope`, such as being automatically
+ * cancelled upon test completion.
+ */
+fun TestScope.newBackgroundScopeThatAdvancesLikeForeground(): CoroutineScope {
+  TestCoroutineScheduler
+  // Find the `BackgroundWork` coroutine context element and create a new context that is the same
+  // as the `backgroundScope` context but lacks the `BackgroundWork` element.
+  val backgroundWorkClass = Class.forName("kotlinx.coroutines.test.BackgroundWork").kotlin
+  val backgroundContextWithoutBackgroundWork =
+    backgroundScope.coroutineContext.fold<CoroutineContext>(EmptyCoroutineContext) {
+      newCoroutineContext,
+      elem ->
+      if (elem::class != backgroundWorkClass) {
+        newCoroutineContext + elem
+      } else {
+        newCoroutineContext
+      }
+    }
+  return CoroutineScope(
+    backgroundContextWithoutBackgroundWork + Job(backgroundContextWithoutBackgroundWork[Job])
+  )
+}

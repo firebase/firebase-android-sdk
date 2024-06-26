@@ -18,10 +18,15 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.Logger
-import io.mockk.*
+import io.mockk.Matcher
+import io.mockk.MockKMatcherScope
+import io.mockk.every
+import io.mockk.excludeRecords
+import io.mockk.spyk
+import io.mockk.verify
 import java.util.regex.Pattern
 
-internal fun newMockLogger(key: String): Logger {
+internal fun newMockLogger(key: String, emit: (String) -> Unit = {}): Logger {
   val name = "mockLogger-$key"
   return spyk(Logger(name), name = name) {
     every { log(any(), any(), any()) } answers
@@ -30,11 +35,16 @@ internal fun newMockLogger(key: String): Logger {
         val level: LogLevel = secondArg()
         val message: String = thirdArg()
         if (exception === null) {
-          println("$name [$level] $message")
+          emit("$name [$level] $message")
         } else {
-          println("$name [$level] $message ($exception)")
+          emit("$name [$level] $message ($exception)")
         }
       }
+    excludeRecords {
+      this@spyk.name
+      this@spyk.nameWithId
+      this@spyk.toString()
+    }
   }
 }
 

@@ -2,8 +2,10 @@
 
 Created on May 30, 2024 by @dconeybe
 
+Last updated June 25, 2024 by @dconeybe
+
 This document outlines the steps for releasing _alpha_ versions of the Firebase Data Connect Android
-SDK. At the time of writing (May 30, 2024) the Data Connect SDK lives in a branch named
+SDK. At the time of writing (June 25, 2024) the Data Connect SDK lives in a branch named
 `dataconnect`. Once the `dataconnect` branch is merged into the `master` branch, these steps will be
 obsolete and will need to be updated.
 
@@ -14,13 +16,13 @@ in a text editor and find the "Release Notes" section in the class documentation
 subsection named something like
 
 ```
-##### 16.0.0-alpha04 (not yet released)
+##### 16.0.0-alpha05 (not yet released)
 ```
 
 Replace "(not yet released)" with the anticipated release date, like this:
 
 ```
-##### 16.0.0-alpha04 (May 29, 2024)
+##### 16.0.0-alpha05 (June 24, 2024)
 ```
 
 ### Remove "-dev" Version Suffix in gradle.properties
@@ -28,16 +30,16 @@ Replace "(not yet released)" with the anticipated release date, like this:
 Open [gradle.properties](https://github.com/firebase/firebase-android-sdk/blob/dataconnect/firebase-dataconnect/gradle.properties)
 in a text editor and remove the `-dev` suffix from the version number.
 
-For example, for the `16.0.0-alpha04` release, change
+For example, for the `16.0.0-alpha05` release, change
 
 ```
-version=16.0.0-alpha04-dev
+version=16.0.0-alpha05-dev
 ```
 
 to
 
 ```
-version=16.0.0-alpha04
+version=16.0.0-alpha05
 ```
 
 ### Commit the Changes to FirebaseDataConnect.kt and gradle.properties
@@ -46,7 +48,7 @@ Commit the Changes to `FirebaseDataConnect.kt` and `gradle.properties` in a comm
 like this:
 
 ```
-Release firebase-dataconnect version 16.0.0-alpha04
+Release firebase-dataconnect version 16.0.0-alpha05
 ```
 
 Make note of the hash of this commit, as it will be used later as this will be the commit upon which
@@ -59,10 +61,10 @@ in a text editor and find the "Release Notes" section in the class documentation
 subsection for the new version, so that release notes can be added here and accumulated until the
 next release.
 
-For example, if the next release would be `16.0.0-alpha05`, add this section:
+For example, if the next release would be `16.0.0-alpha06`, add this section:
 
 ```
-##### 16.0.0-alpha05 (not yet released)
+##### 16.0.0-alpha06 (not yet released)
 ```
 
 ### Bump Version and Add "-dev" Suffix in gradle.properties
@@ -70,16 +72,16 @@ For example, if the next release would be `16.0.0-alpha05`, add this section:
 Open [gradle.properties](https://github.com/firebase/firebase-android-sdk/blob/dataconnect/firebase-dataconnect/gradle.properties)
 in a text editor and bump the version number and add the `-dev` suffix from the version number.
 
-For example, if the next release would be `16.0.0-alpha05`, change:
+For example, if the next release would be `16.0.0-alpha06`, change:
 
 ```
-version=16.0.0-alpha04
+version=16.0.0-alpha05
 ```
 
 to
 
 ```
-version=16.0.0-alpha05-dev
+version=16.0.0-alpha06-dev
 ```
 
 The philosophy is that at all times during development the version in `gradle.properties` reflects
@@ -94,7 +96,7 @@ Commit the Changes to `FirebaseDataConnect.kt` and `gradle.properties` in a comm
 like this:
 
 ```
-Bump firebase-dataconnect version to 16.0.0-alpha05-dev and add "unreleased" section to release notes.
+Bump firebase-dataconnect version to 16.0.0-alpha06-dev and add "unreleased" section to release notes.
 ```
 
 ### Merge the Release Commit into the Release Branch
@@ -200,7 +202,7 @@ unzip m2repository.zip
 This should create a directory that matches the release that you want to test, for example
 
 ```
-com/google/firebase/firebase-dataconnect/16.0.0-alpha04
+com/google/firebase/firebase-dataconnect/16.0.0-alpha05
 ```
 
 Finally, run the "connectors" integration tests as you normally would, which can be done from the
@@ -219,24 +221,26 @@ with permissions to deploy. To do this, post a message to the chat room
 "The REAL Firebase Android Contrib" asking for the release, and providing the URL of the
 "Build Release Artifacts" action. Here is an example:
 
-> Can you please publish 16.0.0-alpha04 of firebase-dataconnect: https://github.com/firebase/firebase-android-sdk/actions/runs/9279002255
+> Can you please publish 16.0.0-alpha05 of firebase-dataconnect: https://github.com/firebase/firebase-android-sdk/actions/runs/9647143328
+
+(e.g. https://chat.google.com/room/AAAAlocx6vc/sE8gyvofp5E)
 
 The artifact will usually be posted on the same day and will be visible in Google's Maven server,
-for example: https://maven.google.com/web/index.html#com.google.firebase:firebase-dataconnect:16.0.0-alpha04
+for example: https://maven.google.com/web/index.html#com.google.firebase:firebase-dataconnect:16.0.0-alpha05
 
 ### Announce the New Version
 
 Announce the newly-release Android SDK version in the Google Group and Chat Room for the Data
 Connect gated preview participants.
 
-Here are examples from the `16.0.0-alpha04` release:
-* https://groups.google.com/a/google.com/g/firebase-data-connect-eap-external/c/6XnYVu5WiJU/m/nadsPhMeCgAJ
-* https://chat.google.com/room/AAAAkBgPAcc/RnpYB51B2dg
+Here are examples from the `16.0.0-alpha05` release:
+* https://groups.google.com/a/google.com/g/firebase-data-connect-eap-external/c/_xrxTAr4bxU
+* https://chat.google.com/room/AAAAkBgPAcc/ouTpxUCdMc4
 
 ### Update the DevSite
 
 Open a changelist to change the devsite to use the new version in sample code.
-Here is an example: cl/638388298
+Here is an example: cl/646679734
 
 ### That's It!
 
