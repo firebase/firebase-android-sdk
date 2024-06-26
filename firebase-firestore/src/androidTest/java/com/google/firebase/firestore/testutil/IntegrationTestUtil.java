@@ -58,6 +58,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class MockCredentialsProvider extends EmptyCredentialsProvider {
 
@@ -120,7 +121,7 @@ public class IntegrationTestUtil {
   private static final FirestoreProvider provider = new FirestoreProvider();
 
   private static boolean strictModeEnabled = false;
-  private static boolean backendPrimed = false;
+  private static AtomicBoolean backendPrimed = new AtomicBoolean(false);
 
   // FirebaseOptions needed to create a test FirebaseApp.
   private static final FirebaseOptions OPTIONS =
@@ -210,19 +211,22 @@ public class IntegrationTestUtil {
   }
 
   private static void primeBackend() {
-    if (!backendPrimed) {
-      backendPrimed = true;
+    if (backendPrimed.compareAndSet(false, true)) {
       TaskCompletionSource<Void> watchInitialized = new TaskCompletionSource<>();
       TaskCompletionSource<Void> watchUpdateReceived = new TaskCompletionSource<>();
       DocumentReference docRef = testDocument();
       ListenerRegistration listenerRegistration =
           docRef.addSnapshotListener(
               (snapshot, error) -> {
-                assertNull(error);
-                if ("done".equals(snapshot.get("value"))) {
-                  watchUpdateReceived.setResult(null);
+                if (error == null) {
+                  if ("done".equals(snapshot.get("value"))) {
+                    watchUpdateReceived.setResult(null);
+                  } else {
+                    watchInitialized.setResult(null);
+                  }
                 } else {
-                  watchInitialized.setResult(null);
+                  watchUpdateReceived.trySetException(error);
+                  watchInitialized.trySetException(error);
                 }
               });
 
@@ -230,13 +234,13 @@ public class IntegrationTestUtil {
       waitFor(watchInitialized.getTask());
 
       // Use a transaction to perform a write without triggering any local events.
-      docRef
+      waitFor(docRef
           .getFirestore()
           .runTransaction(
               transaction -> {
                 transaction.set(docRef, map("value", "done"));
                 return null;
-              });
+              }));
 
       // Wait to see the write on the watch stream.
       waitFor(watchUpdateReceived.getTask(), PRIMING_TIMEOUT_MS);
