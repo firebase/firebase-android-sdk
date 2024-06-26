@@ -27,6 +27,7 @@ import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.accessToken
+import com.google.firebase.dataconnect.testutil.newBackgroundScopeThatAdvancesLikeForeground
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.requestId
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
@@ -52,6 +53,7 @@ import io.kotest.property.arbitrary.next
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
+import io.mockk.excludeRecords
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
@@ -63,6 +65,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -83,7 +86,9 @@ class DataConnectAuthUnitTest {
   private val accessToken: String = accessTokenGenerator.next(rs)
   private val requestId = Arb.requestId(key).next(rs)
   private val mockInternalAuthProvider: InternalAuthProvider =
-    mockk(relaxed = true, name = "mockInternalAuthProvider-$key")
+    mockk(relaxed = true, name = "mockInternalAuthProvider-$key") {
+      excludeRecords { this@mockk.toString() }
+    }
   private val mockLogger = newMockLogger(key)
 
   @Test
@@ -109,10 +114,11 @@ class DataConnectAuthUnitTest {
 
     val exception = shouldThrow<DataConnectException> { dataConnectAuth.getAccessToken(requestId) }
 
-    exception shouldHaveMessage "DataConnectAuth was closed"
+    exception shouldHaveMessage "getAccessToken() was cancelled, likely by close()"
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("throws DataConnectAuthClosedException")
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("closed during token fetch")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+      "throws GetAccessTokenCancelledException"
+    )
   }
 
   @Test
@@ -196,7 +202,7 @@ class DataConnectAuthUnitTest {
     withClue("result=$result") { result shouldBe accessToken }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-      "returns ${accessToken.toScrubbedAccessToken()}"
+      "returns value obtained from FirebaseAuth: ${accessToken.toScrubbedAccessToken()}"
     )
     mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
   }
@@ -216,7 +222,7 @@ class DataConnectAuthUnitTest {
       result.asClue { it.exceptionOrNull() shouldBeSameInstanceAs exception }
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-        "re-throws exception from FirebaseAuth",
+        "getAccessToken() failed unexpectedly",
         exception
       )
     }
@@ -235,7 +241,7 @@ class DataConnectAuthUnitTest {
       result.asClue { it.exceptionOrNull() shouldBeSameInstanceAs exception }
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-        "re-throws exception from FirebaseAuth",
+        "getAccessToken() failed unexpectedly",
         exception
       )
     }
@@ -255,7 +261,7 @@ class DataConnectAuthUnitTest {
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining("getAccessToken(forceRefresh=true)")
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-        "returns ${accessToken.toScrubbedAccessToken()}"
+        "returns value obtained from FirebaseAuth: ${accessToken.toScrubbedAccessToken()}"
       )
       mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
     }
@@ -360,19 +366,21 @@ class DataConnectAuthUnitTest {
     withClue("result=$result") { result shouldBe tokens.last() }
     verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(true) }
     verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(false) }
-    mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("force refresh requested; retrying")
+    mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("retrying due to needs token refresh")
     mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("getAccessToken(forceRefresh=true)")
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("getAccessToken(forceRefresh=false)")
   }
 
   @Test
+  @OptIn(ExperimentalCoroutinesApi::class)
   fun `getAccessToken() should ignore results with lower sequence number`() = runTest {
     val dataConnectAuth = newDataConnectAuth()
     val invocationCount = AtomicInteger(0)
     val tokens = CopyOnWriteArrayList<String>()
     val getAccessTokenJob2 =
-      backgroundScope.async(start = CoroutineStart.LAZY) {
-        dataConnectAuth.getAccessToken(requestId)
+      async(start = CoroutineStart.LAZY) {
+        val accessToken = dataConnectAuth.getAccessToken(requestId)
+        accessToken
       }
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } coAnswers
       {
@@ -380,9 +388,10 @@ class DataConnectAuthUnitTest {
           // Simulate a concurrent call to forceRefresh() while
           // InternalAuthProvider.getAccessToken() is in-flight.
           getAccessTokenJob2.start()
-          @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
+          advanceUntilIdle()
         }
-        taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
+        val rv = taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
+        rv
       }
 
     val result1 = dataConnectAuth.getAccessToken(requestId)
@@ -443,7 +452,7 @@ class DataConnectAuthUnitTest {
       val deferredInternalAuthProvider = DelayedDeferred(mockInternalAuthProvider)
       val dataConnectAuth =
         newDataConnectAuth(deferredInternalAuthProvider = deferredInternalAuthProvider)
-      every { mockInternalAuthProvider.addIdTokenListener(any()) } coAnswers
+      every { mockInternalAuthProvider.addIdTokenListener(any()) } answers
         {
           dataConnectAuth.close()
         }
@@ -498,14 +507,22 @@ class DataConnectAuthUnitTest {
   private fun TestScope.newDataConnectAuth(
     deferredInternalAuthProvider: DeferredInternalAuthProvider =
       ImmediateDeferred(mockInternalAuthProvider),
-    logger: Logger = mockLogger
-  ): DataConnectAuth =
-    DataConnectAuth(
-      deferredAuthProvider = deferredInternalAuthProvider,
-      parentCoroutineScope = this@newDataConnectAuth.backgroundScope,
-      blockingDispatcher = Dispatchers.IO,
-      logger = logger
-    )
+    logger: Logger = mockLogger,
+  ): DataConnectAuth {
+    val parentCoroutineScope = newBackgroundScopeThatAdvancesLikeForeground()
+    val dataConnectAuth =
+      DataConnectAuth(
+        deferredAuthProvider = deferredInternalAuthProvider,
+        parentCoroutineScope = parentCoroutineScope,
+        blockingDispatcher =
+          StandardTestDispatcher(testScheduler, name = "4jg7adscn6_DataConnectAuth_TestDispatcher"),
+        logger = logger
+      )
+
+    @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
+
+    return dataConnectAuth
+  }
 
   private companion object {
     val `check every 100 milliseconds for 2 seconds` = eventuallyConfig {
