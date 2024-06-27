@@ -196,6 +196,7 @@ public class IntegrationTestUtil {
 
   /** Initializes a new Firestore instance that uses the default project. */
   public static FirebaseFirestore testFirestore() {
+    Arrays.com
     return testFirestore(newTestSettings());
   }
 
@@ -204,49 +205,7 @@ public class IntegrationTestUtil {
    * provided settings.
    */
   public static FirebaseFirestore testFirestore(FirebaseFirestoreSettings settings) {
-    FirebaseFirestore firestore = testFirestore(provider.projectId(), Level.DEBUG, settings);
-    primeBackend();
-    return firestore;
-  }
-
-  private static synchronized void primeBackend() {
-    if (!backendPrimed) {
-      backendPrimed = true;
-      TaskCompletionSource<Void> watchInitialized = new TaskCompletionSource<>();
-      TaskCompletionSource<Void> watchUpdateReceived = new TaskCompletionSource<>();
-      DocumentReference docRef = testDocument();
-      ListenerRegistration listenerRegistration =
-          docRef.addSnapshotListener(
-              (snapshot, error) -> {
-                if (error == null) {
-                  if ("done".equals(snapshot.get("value"))) {
-                    watchUpdateReceived.setResult(null);
-                  } else {
-                    watchInitialized.setResult(null);
-                  }
-                } else {
-                  watchUpdateReceived.trySetException(error);
-                  watchInitialized.trySetException(error);
-                }
-              });
-
-      // Wait for watch to initialize and deliver first event.
-      waitFor(watchInitialized.getTask());
-
-      // Use a transaction to perform a write without triggering any local events.
-      waitFor(docRef
-          .getFirestore()
-          .runTransaction(
-              transaction -> {
-                transaction.set(docRef, map("value", "done"));
-                return null;
-              }));
-
-      // Wait to see the write on the watch stream.
-      waitFor(watchUpdateReceived.getTask(), PRIMING_TIMEOUT_MS);
-
-      listenerRegistration.remove();
-    }
+    return testFirestore(provider.projectId(), Level.DEBUG, settings);
   }
 
   /** Initializes a new Firestore instance that uses a non-existing default project. */
