@@ -196,7 +196,6 @@ public class IntegrationTestUtil {
 
   /** Initializes a new Firestore instance that uses the default project. */
   public static FirebaseFirestore testFirestore() {
-    Arrays.com
     return testFirestore(newTestSettings());
   }
 
