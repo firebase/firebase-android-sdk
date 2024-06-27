@@ -119,7 +119,7 @@ jobs:
           cache: gradle
 
       - name: Pull genai-common
-        if: matrix.module == ":firebase-vertexai"
+        if: matrix.module == ':firebase-vertexai'
         run: |
           git clone https://github.com/google-gemini/generative-ai-android.git
           ./generative-ai-android/gradlew :common:publishToMavenLocal
