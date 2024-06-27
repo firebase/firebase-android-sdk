@@ -66,6 +66,7 @@ class FunctionResponsePart(val name: String, val response: JSONObject) : Part
  * `"gs://bucket-name/path/image.jpg"`
  * @param mimeType an IANA standard MIME type. For supported MIME type values see the
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements)
+ * .
  */
 class FileDataPart(val uri: String, val mimeType: String) : Part
 
