@@ -77,6 +77,8 @@ internal constructor(
     )
   }
 
+  //extra comment to trigger change
+
   companion object {
     /** The [FirebaseVertexAI] instance for the default [FirebaseApp] */
     @JvmStatic
