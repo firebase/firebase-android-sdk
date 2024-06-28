@@ -100,7 +100,12 @@ public class WatchStream
   }
 
   @Override
-  public void onNext(com.google.firestore.v1.ListenResponse listenResponse) {
+  public void onFirst(ListenResponse listenResponse) {
+    onNext(listenResponse);
+  }
+
+  @Override
+  public void onNext(ListenResponse listenResponse) {
     // A successful response means the stream is healthy
     backoff.reset();
 
