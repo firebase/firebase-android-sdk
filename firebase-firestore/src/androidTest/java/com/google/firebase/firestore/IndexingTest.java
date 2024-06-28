@@ -28,7 +28,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.testutil.Assert;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.ExecutionException;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;

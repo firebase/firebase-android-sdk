@@ -36,7 +36,6 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;

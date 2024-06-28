@@ -90,7 +90,7 @@ public class ServerTimestampTest {
     IntegrationTestUtil.tearDown();
   }
 
-    // Returns the expected data, with an arbitrary timestamp substituted in.
+  // Returns the expected data, with an arbitrary timestamp substituted in.
   private Map<String, Object> expectedDataWithTimestamp(Object timestamp) {
     return map("a", 42L, "when", timestamp, "deep", map("when", timestamp));
   }

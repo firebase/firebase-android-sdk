@@ -30,7 +30,6 @@ import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
