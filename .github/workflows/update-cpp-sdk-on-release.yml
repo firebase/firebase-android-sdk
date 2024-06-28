@@ -7,7 +7,7 @@ on:
   push:
     branches:
       # Change the below line if the main branch is renamed.
-      - 'master'
+      - 'main'
     paths:
       # Only run this if a gradle.properties file is touched.
       - '**/gradle.properties'

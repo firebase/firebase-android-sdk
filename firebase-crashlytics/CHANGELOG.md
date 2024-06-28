@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Changing caught exception type to fail safely on any exception type. 
 
 
 # 19.0.1
