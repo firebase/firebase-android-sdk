@@ -61,7 +61,7 @@ jobs:
         run: |
           git clone https://github.com/google-gemini/generative-ai-android.git
           cd generative-ai-android
-          ./gradlew :common:publishToMavenLocal
+          ./gradlew :common:updateVersion common:publishToMavenLocal
           cd ..
 
       - name: Add google-services.json
