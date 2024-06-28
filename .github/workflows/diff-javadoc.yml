@@ -31,18 +31,18 @@ jobs:
       - name: Move branch docs to diff directory
         run: mv build ~/diff/modified
 
-      - name: Checkout master
+      - name: Checkout main
         uses: actions/checkout@v4.1.1
         with:
           ref: ${{ github.base_ref }}
 
-      - name: Generate docs for Master
+      - name: Generate docs for main
         run: ./gradlew kotlindoc
 
-      - name: Move master docs to diff directory
+      - name: Move main docs to diff directory
         run: mv build ~/diff/original
 
-      - name: Get diff between Master and Branch docs
+      - name: Get diff between main and Branch docs
         run: >
           `# Recursively diff directories, including new files, git style, with 3 lines of context`
           diff -wEburN ~/diff/original ~/diff/modified
