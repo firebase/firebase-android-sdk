@@ -518,8 +518,9 @@ public class ValidationTest {
 
   @Test
   public void queryOrderByKeyBoundsMustBeStringsWithoutSlashes() {
-    Query query = testFirestore().collection("collection").orderBy(FieldPath.documentId());
-    Query cgQuery = testFirestore().collectionGroup("collection").orderBy(FieldPath.documentId());
+    FirebaseFirestore firestore = testFirestore();
+    Query query = firestore.collection("collection").orderBy(FieldPath.documentId());
+    Query cgQuery = firestore.collectionGroup("collection").orderBy(FieldPath.documentId());
     expectError(
         () -> query.startAt(1),
         "Invalid query. Expected a string for document ID in startAt(), but got 1.");

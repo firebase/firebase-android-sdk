@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testInMemoryFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -62,7 +63,7 @@ public class ArrayTransformsServerApplicationTest {
   @Test
   public void updateWithNoCachedBaseDoc() {
     // Write an initial document in an isolated Firestore instance so it's not stored in our cache.
-    waitFor(testFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
+    waitFor(testInMemoryFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
 
     waitFor(docRef.update(map("array", FieldValue.arrayUnion(1L, 2L))));
 
@@ -74,7 +75,7 @@ public class ArrayTransformsServerApplicationTest {
   @Test
   public void mergeSetWithNoCachedBaseDoc() {
     // Write an initial document in an isolated Firestore instance so it's not stored in our cache.
-    waitFor(testFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
+    waitFor(testInMemoryFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
 
     waitFor(docRef.set(map("array", FieldValue.arrayUnion(1L, 2L)), SetOptions.merge()));
 

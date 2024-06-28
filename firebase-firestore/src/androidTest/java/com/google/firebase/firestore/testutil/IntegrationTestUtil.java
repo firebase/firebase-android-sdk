@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.os.StrictMode;
+
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -36,6 +38,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.MemoryCacheSettings;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -186,6 +189,15 @@ public class IntegrationTestUtil {
     return settings.build();
   }
 
+  public static FirebaseFirestoreSettings newInMemoryTestSettings() {
+    Logger.debug("IntegrationTestUtil", "target backend is: %s", backend.name());
+    FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
+    settings.setHost(getFirestoreHost());
+    settings.setSslEnabled(getSslEnabled());
+    settings.setLocalCacheSettings(MemoryCacheSettings.newBuilder().build());
+    return settings.build();
+  }
+
   public static FirebaseApp testFirebaseApp() {
     try {
       return FirebaseApp.getInstance(FirebaseApp.DEFAULT_APP_NAME);
@@ -203,13 +215,18 @@ public class IntegrationTestUtil {
    * Initializes a new Firestore instance that uses the default project, customized with the
    * provided settings.
    */
-  public static FirebaseFirestore testFirestore(FirebaseFirestoreSettings settings) {
+  private static FirebaseFirestore testFirestore(FirebaseFirestoreSettings settings) {
     return testFirestore(provider.projectId(), Level.DEBUG, settings);
   }
 
   /** Initializes a new Firestore instance that uses a non-existing default project. */
   public static FirebaseFirestore testAlternateFirestore() {
     return testFirestore(BAD_PROJECT_ID, Level.DEBUG, newTestSettings());
+  }
+
+  /** Initializes a new Firestore instance that uses the default project and InMemoryCache. */
+  public static @NonNull FirebaseFirestore testInMemoryFirestore() {
+    return testFirestore(newInMemoryTestSettings());
   }
 
   /**
@@ -289,7 +306,11 @@ public class IntegrationTestUtil {
     try {
       ArrayList<Task<Void>> tasks = new ArrayList<>();
       for (FirebaseFirestore firestore : firestoreStatus.keySet()) {
-        tasks.add(firestore.terminate().continueWithTask(command -> firestore.clearPersistence()));
+        Task<Void> task = firestore.terminate();
+        if (firestore.getFirestoreSettings().isPersistenceEnabled()) {
+          task = task.continueWithTask(command -> firestore.clearPersistence());
+        }
+        tasks.add(task);
       }
       waitFor(Tasks.whenAll(tasks));
     } finally {
@@ -317,7 +338,7 @@ public class IntegrationTestUtil {
 
   public static CollectionReference testCollectionWithDocs(Map<String, Map<String, Object>> docs) {
     CollectionReference collection = testCollection();
-    CollectionReference writer = testFirestore().collection(collection.getId());
+    CollectionReference writer = testInMemoryFirestore().collection(collection.getId());
     writeAllDocs(writer, docs);
     return collection;
   }
