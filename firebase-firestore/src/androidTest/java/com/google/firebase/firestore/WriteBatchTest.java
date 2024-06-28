@@ -36,15 +36,15 @@ import com.google.firebase.firestore.util.Util;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class WriteBatchTest {
 
-  @After
-  public void tearDown() {
+  @AfterClass
+  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
