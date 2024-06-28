@@ -32,7 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -229,8 +229,8 @@ public class POJOTest {
     }
   }
 
-  @After
-  public void tearDown() {
+  @AfterClass
+  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
