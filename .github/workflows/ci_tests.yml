@@ -56,6 +56,14 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Pull genai-common
+        if: matrix.module == ':firebase-vertexai'
+        run: |
+          git clone https://github.com/google-gemini/generative-ai-android.git
+          cd generative-ai-android
+          ./gradlew :common:updateVersion common:publishToMavenLocal
+          cd ..
+
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
