@@ -290,10 +290,8 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@Nullable String value) {
-    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
-      return startAt(PushIdGenerator.successor(value));
-    }
-    return startAt(value, ChildKey.getMaxName().asString());
+    Node node = value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
+    return startAfter(node, null);
   }
 
   /**
@@ -306,7 +304,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(double value) {
-    return startAt(value, ChildKey.getMaxName().asString());
+    return startAfter(new DoubleNode(value, PriorityUtilities.NullPriority()), null);
   }
 
   /**
@@ -319,7 +317,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(boolean value) {
-    return startAt(value, ChildKey.getMaxName().asString());
+    return startAfter(new BooleanNode(value, PriorityUtilities.NullPriority()), null);
   }
 
   /**
@@ -334,9 +332,6 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@Nullable String value, @Nullable String key) {
-    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
-      value = PushIdGenerator.successor(value);
-    }
     Node node =
         value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
     return startAfter(node, key);
@@ -373,7 +368,7 @@ public class Query {
   }
 
   private Query startAfter(Node node, String key) {
-    return startAt(node, PushIdGenerator.successor(key));
+    return startAt(node, key, false);
   }
 
   /**
@@ -426,7 +421,7 @@ public class Query {
   public Query startAt(@Nullable String value, @Nullable String key) {
     Node node =
         value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
-    return startAt(node, key);
+    return startAt(node, key, true);
   }
 
   /**
@@ -440,7 +435,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(double value, @Nullable String key) {
-    return startAt(new DoubleNode(value, PriorityUtilities.NullPriority()), key);
+    return startAt(new DoubleNode(value, PriorityUtilities.NullPriority()), key, true);
   }
 
   /**
@@ -455,10 +450,10 @@ public class Query {
    */
   @NonNull
   public Query startAt(boolean value, @Nullable String key) {
-    return startAt(new BooleanNode(value, PriorityUtilities.NullPriority()), key);
+    return startAt(new BooleanNode(value, PriorityUtilities.NullPriority()), key, true);
   }
 
-  private Query startAt(Node node, String key) {
+  private Query startAt(Node node, String key, Boolean isInclusive) {
     Validation.validateNullableKey(key);
     if (!(node.isLeafNode() || node.isEmpty())) {
       throw new IllegalArgumentException(
@@ -478,7 +473,7 @@ public class Query {
         childKey = ChildKey.fromString(key);
       }
     }
-    QueryParams newParams = params.startAt(node, childKey);
+    QueryParams newParams = isInclusive ? params.startAt(node, childKey) : params.startAfter(node, childKey);
     validateLimit(newParams);
     validateQueryEndpoints(newParams);
     hardAssert(newParams.isValid());
@@ -495,10 +490,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@Nullable String value) {
-    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
-      return endAt(PushIdGenerator.predecessor(value));
-    }
-    return endAt(value, ChildKey.getMinName().asString());
+    return endBefore(value, null);
   }
 
   /**
@@ -511,7 +503,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(double value) {
-    return endAt(value, ChildKey.getMinName().asString());
+    return endAt(value, null);
   }
 
   /**
@@ -524,7 +516,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(boolean value) {
-    return endAt(value, ChildKey.getMinName().asString());
+    return endBefore(value, null);
   }
 
   /**
@@ -539,9 +531,6 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@Nullable String value, @Nullable String key) {
-    if (value != null && params.getIndex().equals(KeyIndex.getInstance())) {
-      value = PushIdGenerator.predecessor(value);
-    }
     Node node =
         value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
     return endBefore(node, key);
@@ -578,7 +567,7 @@ public class Query {
   }
 
   private Query endBefore(Node node, String key) {
-    return endAt(node, PushIdGenerator.predecessor(key));
+    return endAt(node, key, false);
   }
 
   /**
@@ -631,7 +620,7 @@ public class Query {
   public Query endAt(@Nullable String value, @Nullable String key) {
     Node node =
         value != null ? new StringNode(value, PriorityUtilities.NullPriority()) : EmptyNode.Empty();
-    return endAt(node, key);
+    return endAt(node, key, true);
   }
 
   /**
@@ -645,7 +634,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(double value, @Nullable String key) {
-    return endAt(new DoubleNode(value, PriorityUtilities.NullPriority()), key);
+    return endAt(new DoubleNode(value, PriorityUtilities.NullPriority()), key, true);
   }
 
   /**
@@ -660,10 +649,10 @@ public class Query {
    */
   @NonNull
   public Query endAt(boolean value, @Nullable String key) {
-    return endAt(new BooleanNode(value, PriorityUtilities.NullPriority()), key);
+    return endAt(new BooleanNode(value, PriorityUtilities.NullPriority()), key, true);
   }
 
-  private Query endAt(Node node, String key) {
+  private Query endAt(Node node, String key, Boolean isInclusive) {
     Validation.validateNullableKey(key);
     if (!(node.isLeafNode() || node.isEmpty())) {
       throw new IllegalArgumentException("Can only use simple values for endAt()");
@@ -672,7 +661,7 @@ public class Query {
     if (params.hasEnd()) {
       throw new IllegalArgumentException("Can't call endAt() or equalTo() multiple times");
     }
-    QueryParams newParams = params.endAt(node, childKey);
+    QueryParams newParams = isInclusive ? params.endAt(node, childKey) : params.endBefore(node, childKey);
     validateLimit(newParams);
     validateQueryEndpoints(newParams);
     hardAssert(newParams.isValid());
