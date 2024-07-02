@@ -53,7 +53,9 @@ import java.util.List;
  */
 public class FileStore {
   private static final String CRASHLYTICS_PATH_V1 = ".com.google.firebase.crashlytics.files.v1";
-  private static final String CRASHLYTICS_PATH_V2 = ".com.google.firebase.crashlytics.files.v2";
+  // Android has a maximum length for folder sizes. If this string is too long,
+  // the folder can end up too long because we append the app process name to it
+  private static final String CRASHLYTICS_PATH_V2 = ".crashlytics.v2";
   private static final String SESSIONS_PATH = "open-sessions";
   private static final String NATIVE_SESSION_SUBDIR = "native";
   private static final String REPORTS_PATH = "reports";
