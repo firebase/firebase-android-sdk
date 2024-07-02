@@ -14,14 +14,12 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
-import android.annotation.SuppressLint;
-import android.app.Application;
 import android.content.Context;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.ProcessDetailsProvider;
+import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.Arrays;
@@ -54,12 +52,14 @@ import java.util.List;
 public class FileStore {
   private static final String CRASHLYTICS_PATH_V1 = ".com.google.firebase.crashlytics.files.v1";
   private static final String CRASHLYTICS_PATH_V2 = ".com.google.firebase.crashlytics.files.v2";
+  private static final String CRASHLYTICS_PATH_V3 = ".crashlytics.v3";
   private static final String SESSIONS_PATH = "open-sessions";
   private static final String NATIVE_SESSION_SUBDIR = "native";
   private static final String REPORTS_PATH = "reports";
   private static final String PRIORITY_REPORTS_PATH = "priority-reports";
   private static final String NATIVE_REPORTS_PATH = "native-reports";
 
+  final String processName;
   private final File filesDir;
   private final File crashlyticsDir;
   private final File sessionsDir;
@@ -68,10 +68,12 @@ public class FileStore {
   private final File nativeReportsDir;
 
   public FileStore(Context context) {
+    processName =
+        ProcessDetailsProvider.INSTANCE.getCurrentProcessDetails(context).getProcessName();
     filesDir = context.getFilesDir();
     String crashlyticsPath =
-        useV2FileSystem()
-            ? CRASHLYTICS_PATH_V2 + File.pathSeparator + sanitizeName(Application.getProcessName())
+        useV3FileSystem()
+            ? CRASHLYTICS_PATH_V3 + File.pathSeparator + sanitizeName(processName)
             : CRASHLYTICS_PATH_V1;
     crashlyticsDir = prepareBaseDir(new File(filesDir, crashlyticsPath));
     sessionsDir = prepareBaseDir(new File(crashlyticsDir, SESSIONS_PATH));
@@ -91,9 +93,10 @@ public class FileStore {
     cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics"));
     cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics-ndk"));
 
-    // Clean up v1 file system.
-    if (useV2FileSystem()) {
+    // Clean up old file systems.
+    if (useV3FileSystem()) {
       cleanupDir(new File(filesDir, CRASHLYTICS_PATH_V1));
+      cleanupDir(new File(filesDir, CRASHLYTICS_PATH_V2));
     }
   }
 
@@ -206,14 +209,21 @@ public class FileStore {
     return (array == null) ? Collections.emptyList() : Arrays.asList(array);
   }
 
-  @SuppressLint("AnnotateVersionCheck")
-  private static boolean useV2FileSystem() {
-    return VERSION.SDK_INT >= VERSION_CODES.P;
+  private boolean useV3FileSystem() {
+    // If the process name is known, use the v3 file system.
+    return !processName.isEmpty();
   }
 
-  /** Replace potentially unsafe chars with underscores to make a safe file name. */
+  /**
+   * Replace potentially unsafe chars with underscores to make a safe file name.
+   *
+   * <p>If the filename is too long, hash it to a short name.
+   */
   @VisibleForTesting
   static String sanitizeName(String filename) {
+    if (filename.length() > 40) {
+      return CommonUtils.sha1(filename);
+    }
     return filename.replaceAll("[^a-zA-Z0-9.]", "_");
   }
 }
