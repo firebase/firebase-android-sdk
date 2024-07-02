@@ -45,6 +45,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
 import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
@@ -173,12 +174,18 @@ public class IntegrationTestUtil {
     }
   }
 
+  @NonNull
   public static DatabaseInfo testEnvDatabaseInfo() {
     return new DatabaseInfo(
-        DatabaseId.forProject(provider.projectId()),
+        testEnvDatabaseId(),
         "test-persistenceKey",
         getFirestoreHost(),
         getSslEnabled());
+  }
+
+  @NonNull
+  public static DatabaseId testEnvDatabaseId() {
+    return DatabaseId.forProject(provider.projectId());
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
@@ -294,6 +301,7 @@ public class IntegrationTestUtil {
             MockCredentialsProvider.instance(),
             new EmptyAppCheckTokenProvider(),
             asyncQueue,
+            ComponentProvider::defaultFactory,
             /*firebaseApp=*/ null,
             /*instanceRegistry=*/ (dbId) -> {});
     firestore.setFirestoreSettings(settings);

@@ -39,6 +39,7 @@ import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
+import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
@@ -74,6 +75,8 @@ import org.json.JSONObject;
  * code that does so.
  */
 public class FirebaseFirestore {
+
+  private final Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory;
 
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
@@ -205,18 +208,17 @@ public class FirebaseFirestore {
     // so there is no need to include it in the persistence key.
     String persistenceKey = app.getName();
 
-    FirebaseFirestore firestore =
-        new FirebaseFirestore(
-            context,
-            databaseId,
-            persistenceKey,
-            authProvider,
-            appCheckProvider,
-            queue,
-            app,
-            instanceRegistry,
-            metadataProvider);
-    return firestore;
+    return new FirebaseFirestore(
+        context,
+        databaseId,
+        persistenceKey,
+        authProvider,
+        appCheckProvider,
+        queue,
+        ComponentProvider::defaultFactory,
+        app,
+        instanceRegistry,
+        metadataProvider);
   }
 
   @VisibleForTesting
@@ -227,6 +229,7 @@ public class FirebaseFirestore {
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
       AsyncQueue asyncQueue,
+      @NonNull Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -237,6 +240,7 @@ public class FirebaseFirestore {
     this.authProvider = checkNotNull(authProvider);
     this.appCheckProvider = checkNotNull(appCheckProvider);
     this.asyncQueue = checkNotNull(asyncQueue);
+    this.componentProviderFactory = checkNotNull(componentProviderFactory);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
@@ -256,10 +260,9 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    settings = mergeEmulatorSettings(settings, this.emulatorSettings);
-
+    checkNotNull(settings, "Provided settings must not be null.");
     synchronized (databaseId) {
-      checkNotNull(settings, "Provided settings must not be null.");
+      settings = mergeEmulatorSettings(settings, emulatorSettings);
 
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
@@ -288,8 +291,8 @@ public class FirebaseFirestore {
           "Cannot call useEmulator() after instance has already been initialized.");
     }
 
-    this.emulatorSettings = new EmulatedServiceSettings(host, port);
-    this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
+    emulatorSettings = new EmulatedServiceSettings(host, port);
+    settings = mergeEmulatorSettings(settings, emulatorSettings);
   }
 
   private void ensureClientConfigured() {
@@ -312,7 +315,8 @@ public class FirebaseFirestore {
               authProvider,
               appCheckProvider,
               asyncQueue,
-              metadataProvider);
+              metadataProvider,
+              componentProviderFactory.apply(settings));
     }
   }
 

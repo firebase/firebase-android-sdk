@@ -59,9 +59,6 @@ public class WatchChangeAggregator {
      */
     @Nullable
     TargetData getTargetDataForTarget(int targetId);
-
-    /** Returns the database ID of the Firestore instance. */
-    DatabaseId getDatabaseId();
   }
 
   private final TargetMetadataProvider targetMetadataProvider;
@@ -81,6 +78,8 @@ public class WatchChangeAggregator {
    */
   private Map<Integer, QueryPurpose> pendingTargetResets = new HashMap<>();
 
+  private final DatabaseId databaseId;
+
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "WatchChangeAggregator";
 
@@ -91,7 +90,8 @@ public class WatchChangeAggregator {
     FALSE_POSITIVE
   }
 
-  public WatchChangeAggregator(TargetMetadataProvider targetMetadataProvider) {
+  public WatchChangeAggregator(DatabaseId databaseId, TargetMetadataProvider targetMetadataProvider) {
+    this.databaseId = databaseId;
     this.targetMetadataProvider = targetMetadataProvider;
   }
 
@@ -240,7 +240,7 @@ public class WatchChangeAggregator {
                   TestingHooks.ExistenceFilterMismatchInfo.from(
                       currentSize,
                       watchChange.getExistenceFilter(),
-                      targetMetadataProvider.getDatabaseId(),
+                      databaseId,
                       bloomFilter,
                       status));
         }
@@ -299,15 +299,13 @@ public class WatchChangeAggregator {
     ImmutableSortedSet<DocumentKey> existingKeys =
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     int removalCount = 0;
+    String rootDocumentsPath = "projects/"
+            + databaseId.getProjectId()
+            + "/databases/"
+            + databaseId.getDatabaseId()
+            + "/documents/";
     for (DocumentKey key : existingKeys) {
-      DatabaseId databaseId = targetMetadataProvider.getDatabaseId();
-      String documentPath =
-          "projects/"
-              + databaseId.getProjectId()
-              + "/databases/"
-              + databaseId.getDatabaseId()
-              + "/documents/"
-              + key.getPath().canonicalString();
+      String documentPath = rootDocumentsPath + key.getPath().canonicalString();
       if (!bloomFilter.mightContain(documentPath)) {
         this.removeDocumentFromTarget(targetId, key, /*updatedDocument=*/ null);
         removalCount++;

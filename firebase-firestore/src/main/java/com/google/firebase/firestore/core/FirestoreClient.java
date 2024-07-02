@@ -44,7 +44,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.mutation.Mutation;
-import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
@@ -72,8 +71,6 @@ public final class FirestoreClient {
   private final CredentialsProvider<String> appCheckProvider;
   private final AsyncQueue asyncQueue;
   private final BundleSerializer bundleSerializer;
-  private final GrpcMetadataProvider metadataProvider;
-
   private Persistence persistence;
   private LocalStore localStore;
   private RemoteStore remoteStore;
@@ -90,13 +87,13 @@ public final class FirestoreClient {
       FirebaseFirestoreSettings settings,
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
-      final AsyncQueue asyncQueue,
-      @Nullable GrpcMetadataProvider metadataProvider) {
+      AsyncQueue asyncQueue,
+      @Nullable GrpcMetadataProvider metadataProvider,
+      ComponentProvider componentProvider) {
     this.databaseInfo = databaseInfo;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
     this.asyncQueue = asyncQueue;
-    this.metadataProvider = metadataProvider;
     this.bundleSerializer =
         new BundleSerializer(new RemoteSerializer(databaseInfo.getDatabaseId()));
 
@@ -111,7 +108,7 @@ public final class FirestoreClient {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
-            initialize(context, initialUser, settings);
+            initialize(context, initialUser, settings, componentProvider, metadataProvider);
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
           }
@@ -270,29 +267,28 @@ public final class FirestoreClient {
     return source.getTask();
   }
 
-  private void initialize(Context context, User user, FirebaseFirestoreSettings settings) {
+  private void initialize(
+      Context context,
+      User user,
+      FirebaseFirestoreSettings settings,
+      ComponentProvider provider,
+      GrpcMetadataProvider metadataProvider) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
     // external write/listen operations could get queued to run before that subsequent work
     // completes.
     Logger.debug(LOG_TAG, "Initializing. user=%s", user.getUid());
 
-    Datastore datastore =
-        new Datastore(
-            databaseInfo, asyncQueue, authProvider, appCheckProvider, context, metadataProvider);
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
             context,
             asyncQueue,
             databaseInfo,
-            datastore,
             user,
             MAX_CONCURRENT_LIMBO_RESOLUTIONS,
-            settings);
-
-    ComponentProvider provider =
-        settings.isPersistenceEnabled()
-            ? new SQLiteComponentProvider()
-            : new MemoryComponentProvider();
+            settings,
+            authProvider,
+            appCheckProvider,
+            metadataProvider);
     provider.initialize(configuration);
     persistence = provider.getPersistence();
     gcScheduler = provider.getGarbageCollectionScheduler();

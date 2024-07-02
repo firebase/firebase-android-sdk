@@ -160,29 +160,32 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
   }
 
   @Override
+  public void onFirst(WriteResponse response) {
+    lastStreamToken = response.getStreamToken();
+
+    // The first response is the handshake response
+    handshakeComplete = true;
+
+    listener.onHandshakeComplete();
+  }
+
+  @Override
   public void onNext(WriteResponse response) {
     lastStreamToken = response.getStreamToken();
 
-    if (!handshakeComplete) {
-      // The first response is the handshake response
-      handshakeComplete = true;
+    // A successful first write response means the stream is healthy,
+    // Note, that we could consider a successful handshake healthy, however,
+    // the write itself might be causing an error we want to back off from.
+    backoff.reset();
 
-      listener.onHandshakeComplete();
-    } else {
-      // A successful first write response means the stream is healthy,
-      // Note, that we could consider a successful handshake healthy, however,
-      // the write itself might be causing an error we want to back off from.
-      backoff.reset();
+    SnapshotVersion commitVersion = serializer.decodeVersion(response.getCommitTime());
 
-      SnapshotVersion commitVersion = serializer.decodeVersion(response.getCommitTime());
-
-      int count = response.getWriteResultsCount();
-      List<MutationResult> results = new ArrayList<>(count);
-      for (int i = 0; i < count; i++) {
-        com.google.firestore.v1.WriteResult result = response.getWriteResults(i);
-        results.add(serializer.decodeMutationResult(result, commitVersion));
-      }
-      listener.onWriteResponse(commitVersion, results);
+    int count = response.getWriteResultsCount();
+    List<MutationResult> results = new ArrayList<>(count);
+    for (int i = 0; i < count; i++) {
+      com.google.firestore.v1.WriteResult result = response.getWriteResults(i);
+      results.add(serializer.decodeMutationResult(result, commitVersion));
     }
+    listener.onWriteResponse(commitVersion, results);
   }
 }

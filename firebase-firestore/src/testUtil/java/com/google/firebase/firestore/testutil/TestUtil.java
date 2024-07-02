@@ -441,7 +441,7 @@ public class TestUtil {
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
 
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+    WatchChangeAggregator aggregator = new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
 
     WatchChange.WatchTargetChange watchChange =
         new WatchChange.WatchTargetChange(
@@ -462,7 +462,7 @@ public class TestUtil {
     testTargetMetadataProvider.setSyncedKeys(targetData, syncedKeys);
 
     ExistenceFilter existenceFilter = new ExistenceFilter(remoteCount);
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+    WatchChangeAggregator aggregator = new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
 
     WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
         new WatchChange.ExistenceFilterWatchChange(targetId, existenceFilter);
@@ -478,6 +478,7 @@ public class TestUtil {
 
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
+            TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
               public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
@@ -488,11 +489,6 @@ public class TestUtil {
               public TargetData getTargetDataForTarget(int targetId) {
                 ResourcePath collectionPath = docs.get(0).getKey().getCollectionPath();
                 return targetData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
-              }
-
-              @Override
-              public DatabaseId getDatabaseId() {
-                return TEST_PROJECT;
               }
             });
 
@@ -529,6 +525,7 @@ public class TestUtil {
         new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
+            TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
               public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
@@ -540,11 +537,6 @@ public class TestUtil {
                 return activeTargets.contains(targetId)
                     ? targetData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
                     : null;
-              }
-
-              @Override
-              public DatabaseId getDatabaseId() {
-                return TEST_PROJECT;
               }
             });
     aggregator.handleDocumentChange(change);

@@ -30,8 +30,6 @@ import java.util.Map;
 public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetMetadataProvider {
   final Map<Integer, ImmutableSortedSet<DocumentKey>> syncedKeys = new HashMap<>();
   final Map<Integer, TargetData> queryData = new HashMap<>();
-  DatabaseId databaseId = DatabaseId.forProject("test-project");
-
   @Override
   public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
     return syncedKeys.get(targetId) != null ? syncedKeys.get(targetId) : DocumentKey.emptyKeySet();
@@ -41,16 +39,6 @@ public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetM
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return queryData.get(targetId);
-  }
-
-  @Override
-  public DatabaseId getDatabaseId() {
-    return databaseId;
-  }
-
-  /** Replaces the default project ID and database ID. */
-  public void setDatabaseId(String projectId, String databaseId) {
-    this.databaseId = DatabaseId.forDatabase(projectId, databaseId);
   }
 
   /** Sets or replaces the local state for the provided query data. */
