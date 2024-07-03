@@ -71,8 +71,10 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.model.mutation.MutationResult;
+import com.google.firebase.firestore.remote.Datastore;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.MockDatastore;
+import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
@@ -83,6 +85,8 @@ import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChan
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.remote.WatchStream;
+import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
+import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
 import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.AsyncQueue;
@@ -259,7 +263,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   //
 
   protected abstract ComponentProvider initializeComponentProvider(
-      ComponentProvider.Configuration configuration, boolean garbageCollectionEnabled);
+      RemoteComponenetProvider remoteProvider,
+      ComponentProvider.Configuration configuration,
+      boolean garbageCollectionEnabled);
 
   private boolean shouldRun(Set<String> tags) {
     for (String tag : tags) {
@@ -315,19 +321,28 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    */
   private void initClient() {
     queue = new AsyncQueue();
-    datastore = new MockDatastore(databaseInfo, queue, ApplicationProvider.getApplicationContext());
+    datastore = new MockDatastore(databaseInfo, queue);
 
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
             ApplicationProvider.getApplicationContext(),
             queue,
             databaseInfo,
-            datastore,
             currentUser,
             maxConcurrentLimboResolutions,
-            new FirebaseFirestoreSettings.Builder().build());
+            new FirebaseFirestoreSettings.Builder().build(),
+            new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
+            null
+        );
 
-    ComponentProvider provider = initializeComponentProvider(configuration, useEagerGcForMemory);
+    RemoteComponenetProvider remoteProvider = new RemoteComponenetProvider() {
+      @Override
+      protected Datastore createDatastore(ComponentProvider.Configuration configuration) {
+        return datastore;
+      }
+    };
+    ComponentProvider provider = initializeComponentProvider(remoteProvider, configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
     if (localPersistence.getReferenceDelegate() instanceof LruDelegate) {
       lruGarbageCollector =

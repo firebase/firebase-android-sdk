@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Update the internal file system to handle long file names.
 
 # 19.0.2
 * [changed] Changing caught exception type to fail safely on any exception type.
