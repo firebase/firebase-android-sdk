@@ -142,7 +142,7 @@ public class CompositeIndexQueryTest {
     AggregateQuerySnapshot snapshot =
         waitFor(
             testHelper
-                .query(db.collectionGroup(collectionGroup))
+                .query(db.collectionGroup(COMPOSITE_INDEX_TEST_COLLECTION))
                 .aggregate(AggregateField.count(), sum("a"), average("a"))
                 .get(AggregateSource.SERVER));
     assertEquals(
