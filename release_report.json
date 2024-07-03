@@ -1,0 +1,112 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "d11959ba735a72fbfedc031ce26491dad7605725",
+                "prId": "6072",
+                "author": "Matthew Robertson",
+                "message": "Fix more tests (#6072)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d11959ba735a72fbfedc031ce26491dad7605725",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6072"
+            },
+            {
+                "commitId": "a985c4a7916d3c357c40910127e3fe4ecc60408a",
+                "prId": "6071",
+                "author": "Matthew Robertson",
+                "message": "Fix tests on lower api levels (#6071)\n\nI noticed tests were failing when testing on api 21 for the file system\r\nchange. They were failing because the `ApplicationExitInfo` class isn't\r\navailable until Android 11, that's api level 30.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a985c4a7916d3c357c40910127e3fe4ecc60408a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6071"
+            },
+            {
+                "commitId": "2bf11d23c13f3e54e716a12356e20ab71a51f0ca",
+                "prId": "6069",
+                "author": "Matthew Robertson",
+                "message": "New Crashlytics file system v3 to avoid long file names (#6069)\n\nNew Crashlytics file system v3 to avoid long file names. Shorten the\r\nCrashlytics folder name itself. If a file name is longer than 40 chars,\r\nhash it to a 40 char hash. Also use the new `ProcessDetailsProvider` to\r\nget the process name on older Android versions so they can take\r\nadvantage of the process-aware file system.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2bf11d23c13f3e54e716a12356e20ab71a51f0ca",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6069"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-sessions": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "d6a6383b6d228395576f784d04732619f31f09f8",
+                "prId": "6036",
+                "author": "Vinay Guthal",
+                "message": "Change references from master to main (#6036)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6a6383b6d228395576f784d04732619f31f09f8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6036"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "829eb695a4d3b8ec91c4886b4dd3c834b7f62da1",
+                "prId": "6060",
+                "author": "emilypgoogle",
+                "message": "Update Vertex docs in line with m149 (#6060)\n\nThese were the changes Rachel requested",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/829eb695a4d3b8ec91c4886b4dd3c834b7f62da1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6060"
+            },
+            {
+                "commitId": "e75232851a4d040b1ba26eb57d1636eb51985f32",
+                "prId": "6046",
+                "author": "Rodrigo Lazo",
+                "message": "Update vertexAI changelog entries around schema changes (#6046)\n\nWe are being more explicit about the changes, as only one change is\r\ntruly breaking. There's a single breaking API change, while the other\r\nis marking as deprecated, but not removing, another API.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e75232851a4d040b1ba26eb57d1636eb51985f32",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6046"
+            },
+            {
+                "commitId": "1aebbd347c9e2b6cd1121efe48972acff2b31f27",
+                "prId": "6041",
+                "author": "David Motsonashvili",
+                "message": "fix int type, add long type, rename double type (#6041)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1aebbd347c9e2b6cd1121efe48972acff2b31f27",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6041"
+            },
+            {
+                "commitId": "0a8de634b1d6fa5d45bde4de6e6986f78ed9f256",
+                "prId": "6045",
+                "author": "Rodrigo Lazo",
+                "message": "Update vertexai changelog (#6045)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0a8de634b1d6fa5d45bde4de6e6986f78ed9f256",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6045"
+            },
+            {
+                "commitId": "c42ba4578edbf88de514ade4e835dd1715dcaeb8",
+                "prId": "6033",
+                "author": "Daymon",
+                "message": "Fix JSON literal parsing in VertexAI (#6033)\n\nPer [b/346811894](https://b.corp.google.com/issues/346811894),\r\n\r\nThis fixes an issue with the VertexAI SDK failing to decode json\r\nliterals. More specifically, the fix was applied to\r\n`generativeai:common` with `0.7.1`, and this PR bumps said dependency to\r\nbring in the change.\r\n\r\nFixes #6028",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c42ba4578edbf88de514ade4e835dd1715dcaeb8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6033"
+            },
+            {
+                "commitId": "dc3082560d5f556560e534dc739e048e4d4dae95",
+                "prId": "6031",
+                "author": "David Motsonashvili",
+                "message": "bump genai common (#6031)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dc3082560d5f556560e534dc739e048e4d4dae95",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6031"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-components",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-storage",
+        ":firebase-storage:ktx"
+    ]
+}
