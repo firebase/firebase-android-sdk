@@ -24,7 +24,7 @@ firebaseLibrary {
     publishSources = true
     testLab {
         enabled = true
-        timeout = '30m'
+        timeout = '45m'
     }
 }
 
@@ -66,9 +66,6 @@ android {
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        testOptions {
-            execution = "HOST"
-        }
         consumerProguardFiles 'proguard.txt'
 
         // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
