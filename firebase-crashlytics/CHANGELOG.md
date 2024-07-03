@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Update the internal file system to handle long file names.
 
 # 19.0.1
 * [changed] Improve cold initialization time.

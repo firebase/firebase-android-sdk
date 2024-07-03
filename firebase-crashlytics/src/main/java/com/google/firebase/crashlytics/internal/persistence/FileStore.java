@@ -50,9 +50,16 @@ import java.util.List;
  * convention, any use of new File(...) or similar outside of this class is a code smell.
  */
 public class FileStore {
+
+  /** Deprecated old file system for systems that are not process aware. */
   private static final String CRASHLYTICS_PATH_V1 = ".com.google.firebase.crashlytics.files.v1";
+
+  /** Deprecated old file system, process aware. Use v3, there is no use for this system anymore. */
   private static final String CRASHLYTICS_PATH_V2 = ".com.google.firebase.crashlytics.files.v2";
+
+  /** Current file system, avoids long file names. */
   private static final String CRASHLYTICS_PATH_V3 = ".crashlytics.v3";
+
   private static final String SESSIONS_PATH = "open-sessions";
   private static final String NATIVE_SESSION_SUBDIR = "native";
   private static final String REPORTS_PATH = "reports";
@@ -73,7 +80,7 @@ public class FileStore {
     filesDir = context.getFilesDir();
     String crashlyticsPath =
         useV3FileSystem()
-            ? CRASHLYTICS_PATH_V3 + File.pathSeparator + sanitizeName(processName)
+            ? CRASHLYTICS_PATH_V3 + File.separator + sanitizeName(processName)
             : CRASHLYTICS_PATH_V1;
     crashlyticsDir = prepareBaseDir(new File(filesDir, crashlyticsPath));
     sessionsDir = prepareBaseDir(new File(crashlyticsDir, SESSIONS_PATH));
@@ -90,19 +97,32 @@ public class FileStore {
   /** Clean up files from previous file systems. */
   public void cleanupPreviousFileSystems() {
     // Clean up pre-versioned file systems.
-    cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics"));
-    cleanupDir(new File(filesDir, ".com.google.firebase.crashlytics-ndk"));
+    cleanupFileSystemDir(".com.google.firebase.crashlytics");
+    cleanupFileSystemDir(".com.google.firebase.crashlytics-ndk");
 
-    // Clean up old file systems.
+    // Clean up old versioned file systems.
     if (useV3FileSystem()) {
-      cleanupDir(new File(filesDir, CRASHLYTICS_PATH_V1));
-      cleanupDir(new File(filesDir, CRASHLYTICS_PATH_V2));
+      cleanupFileSystemDir(CRASHLYTICS_PATH_V1);
+      // The v2 file system named dirs like ".com....v2:process_name"
+      cleanupFileSystemDirs(CRASHLYTICS_PATH_V2 + File.pathSeparator);
     }
   }
 
-  private void cleanupDir(File dir) {
+  private void cleanupFileSystemDir(String child) {
+    File dir = new File(filesDir, child);
     if (dir.exists() && recursiveDelete(dir)) {
       Logger.getLogger().d("Deleted previous Crashlytics file system: " + dir.getPath());
+    }
+  }
+
+  private void cleanupFileSystemDirs(String prefix) {
+    if (filesDir.exists()) {
+      String[] list = filesDir.list((dir, name) -> name.startsWith(prefix));
+      if (list != null) {
+        for (String child : list) {
+          cleanupFileSystemDir(child);
+        }
+      }
     }
   }
 
@@ -116,12 +136,16 @@ public class FileStore {
     return fileOrDirectory.delete();
   }
 
-  /** @return internal File used by Crashlytics, that is not specific to a session */
+  /**
+   * @return internal File used by Crashlytics, that is not specific to a session
+   */
   public File getCommonFile(String filename) {
     return new File(crashlyticsDir, filename);
   }
 
-  /** @return all common (non session specific) files matching the given filter. */
+  /**
+   * @return all common (non session specific) files matching the given filter.
+   */
   public List<File> getCommonFiles(FilenameFilter filter) {
     return safeArrayToList(crashlyticsDir.listFiles(filter));
   }
