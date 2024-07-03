@@ -1,6 +1,15 @@
 # Unreleased
 * [changed] Update the internal file system to handle long file names.
 
+# 19.0.2
+* [changed] Changing caught exception type to fail safely on any exception type.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
 # 19.0.1
 * [changed] Improve cold initialization time.
 * [fixed] Fixed version compatibility issues with other Firebase libraries.
