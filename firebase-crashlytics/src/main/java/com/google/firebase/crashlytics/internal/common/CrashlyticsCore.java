@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -98,6 +99,8 @@ public class CrashlyticsCore {
 
   private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
 
+  @Background private final ExecutorService commonBackgroundExecutorService;
+
   // region Constructors
 
   public CrashlyticsCore(
@@ -109,6 +112,7 @@ public class CrashlyticsCore {
       AnalyticsEventLogger analyticsEventLogger,
       FileStore fileStore,
       ExecutorService crashHandlerExecutor,
+      @Background ExecutorService backgroundExecutorService,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
       RemoteConfigDeferredProxy remoteConfigDeferredProxy) {
     this.app = app;
@@ -123,6 +127,7 @@ public class CrashlyticsCore {
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
     this.sessionsSubscriber = sessionsSubscriber;
     this.remoteConfigDeferredProxy = remoteConfigDeferredProxy;
+    this.commonBackgroundExecutorService = backgroundExecutorService;
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
@@ -151,7 +156,7 @@ public class CrashlyticsCore {
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata =
-          new UserMetadata(sessionIdentifier, fileStore, backgroundWorker);
+          new UserMetadata(sessionIdentifier, fileStore, commonBackgroundExecutorService);
       final LogFileManager logFileManager = new LogFileManager(fileStore);
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(
@@ -186,7 +191,8 @@ public class CrashlyticsCore {
               sessionReportingCoordinator,
               nativeComponent,
               analyticsEventLogger,
-              sessionsSubscriber);
+              sessionsSubscriber,
+              commonBackgroundExecutorService);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.

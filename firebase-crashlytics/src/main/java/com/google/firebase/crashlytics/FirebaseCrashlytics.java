@@ -115,6 +115,7 @@ public class FirebaseCrashlytics {
             analyticsDeferredProxy.getAnalyticsEventLogger(),
             fileStore,
             crashHandlerExecutor,
+            backgroundExecutorService,
             sessionsSubscriber,
             remoteConfigDeferredProxy);
 

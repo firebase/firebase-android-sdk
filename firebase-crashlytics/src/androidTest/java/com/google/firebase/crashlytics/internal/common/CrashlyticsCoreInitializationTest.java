@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 
 public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
@@ -143,6 +144,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
           new UnavailableAnalyticsEventLogger(),
           fileStore,
           crashHandlerExecutor,
+          TestOnlyExecutors.background(),
           mock(CrashlyticsAppQualitySessionsSubscriber.class),
           mock(RemoteConfigDeferredProxy.class));
     }
