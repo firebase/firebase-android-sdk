@@ -128,6 +128,11 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       return this;
     }
 
+    public CoreBuilder setFileStore(FileStore fileStore) {
+      this.fileStore = fileStore;
+      return this;
+    }
+
     public CrashlyticsCore build() {
       return new CrashlyticsCore(
           app,
@@ -230,7 +235,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   public void testOnPreExecute_didCrashOnPreviousExecution() throws Exception {
-    final CrashlyticsCore crashlyticsCore = builder().build();
+    // Use the same file store for core as the crash marker.
+    CrashlyticsCore crashlyticsCore = builder().setFileStore(fileStore).build();
     setupBuildIdRequired(String.valueOf(false));
     setupAppData(BUILD_ID);
     setupCrashMarker();
