@@ -28,6 +28,7 @@ import android.app.ApplicationExitInfo;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
@@ -175,7 +176,8 @@ public class CrashlyticsControllerRobolectricTest {
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class),
-            mock(CrashlyticsAppQualitySessionsSubscriber.class));
+            mock(CrashlyticsAppQualitySessionsSubscriber.class),
+            TestOnlyExecutors.background());
     controller.openSession(SESSION_ID);
     return controller;
   }

@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
@@ -49,6 +50,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.mockito.Mockito;
 
@@ -428,6 +430,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
               new UnavailableAnalyticsEventLogger(),
               new FileStore(context),
               new SameThreadExecutorService(),
+              TestOnlyExecutors.background(),
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
               mock(RemoteConfigDeferredProxy.class));
       return crashlyticsCore;

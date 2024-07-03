@@ -29,6 +29,7 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
@@ -52,6 +53,7 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
@@ -114,20 +116,23 @@ class CrashlyticsController {
   // A token to make sure that checkForUnsentReports only gets called once.
   final AtomicBoolean checkForUnsentReportsCalled = new AtomicBoolean(false);
 
+  @Background final ExecutorService commonBackgroundExecutorService;
+
   CrashlyticsController(
-      Context context,
-      CrashlyticsBackgroundWorker backgroundWorker,
-      IdManager idManager,
-      DataCollectionArbiter dataCollectionArbiter,
-      FileStore fileStore,
-      CrashlyticsFileMarker crashMarker,
-      AppData appData,
-      UserMetadata userMetadata,
-      LogFileManager logFileManager,
-      SessionReportingCoordinator sessionReportingCoordinator,
-      CrashlyticsNativeComponent nativeComponent,
-      AnalyticsEventLogger analyticsEventLogger,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
+          Context context,
+          CrashlyticsBackgroundWorker backgroundWorker,
+          IdManager idManager,
+          DataCollectionArbiter dataCollectionArbiter,
+          FileStore fileStore,
+          CrashlyticsFileMarker crashMarker,
+          AppData appData,
+          UserMetadata userMetadata,
+          LogFileManager logFileManager,
+          SessionReportingCoordinator sessionReportingCoordinator,
+          CrashlyticsNativeComponent nativeComponent,
+          AnalyticsEventLogger analyticsEventLogger,
+          CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
+          @Background ExecutorService commonBackgroundExecutorService) {
     this.context = context;
     this.backgroundWorker = backgroundWorker;
     this.idManager = idManager;
@@ -141,6 +146,7 @@ class CrashlyticsController {
     this.analyticsEventLogger = analyticsEventLogger;
     this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
+    this.commonBackgroundExecutorService = commonBackgroundExecutorService;
   }
 
   private Context getContext() {
@@ -934,7 +940,7 @@ class CrashlyticsController {
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
-            UserMetadata.loadFromExistingSession(sessionId, fileStore, backgroundWorker);
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, commonBackgroundExecutorService);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

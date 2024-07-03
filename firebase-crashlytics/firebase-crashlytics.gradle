@@ -93,6 +93,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.3'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation(project(":integ-testing"))
 
     androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
     androidTestImplementation 'androidx.test:runner:1.4.0'
@@ -106,4 +107,5 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(project(":integ-testing"))
 }

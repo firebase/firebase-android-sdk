@@ -34,6 +34,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
@@ -179,7 +180,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               sessionReportingCoordinator,
               nativeComponent,
               analyticsEventLogger,
-              mock(CrashlyticsAppQualitySessionsSubscriber.class));
+              mock(CrashlyticsAppQualitySessionsSubscriber.class),
+              TestOnlyExecutors.background());
       return controller;
     }
   }
