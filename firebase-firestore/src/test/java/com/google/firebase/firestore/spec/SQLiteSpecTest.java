@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.spec;
 
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.SQLiteComponentProvider;
 import com.google.firebase.firestore.remote.RemoteComponenetProvider;
@@ -40,7 +41,7 @@ public class SQLiteSpecTest extends SpecTestCase {
       RemoteComponenetProvider remoteProvider,
       ComponentProvider.Configuration configuration,
       boolean garbageCollectionEnabled) {
-    SQLiteComponentProvider provider = new SQLiteComponentProvider();
+    SQLiteComponentProvider provider = new SQLiteComponentProvider(new FirebaseFirestoreSettings.Builder().build());
     provider.setRemoteProvider(remoteProvider);
     provider.initialize(configuration);
     return provider;

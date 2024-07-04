@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.spec;
 
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.MemoryComponentProvider;
 import com.google.firebase.firestore.local.LocalSerializer;
@@ -41,7 +42,7 @@ public class MemorySpecTest extends SpecTestCase {
   protected MemoryComponentProvider initializeComponentProvider(
           RemoteComponenetProvider remoteProvider, ComponentProvider.Configuration configuration, boolean useEagerGc) {
     MemoryComponentProvider provider =
-        new MemoryComponentProvider() {
+        new MemoryComponentProvider(new FirebaseFirestoreSettings.Builder().build()) {
           @Override
           protected Persistence createPersistence(Configuration configuration) {
             if (useEagerGc) {
