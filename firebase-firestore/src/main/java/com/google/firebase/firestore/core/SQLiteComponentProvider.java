@@ -26,11 +26,11 @@ import com.google.firebase.firestore.local.Scheduler;
 /** Provides all components needed for Firestore with SQLite persistence. */
 public class SQLiteComponentProvider extends MemoryComponentProvider {
 
-    public SQLiteComponentProvider(FirebaseFirestoreSettings settings) {
-        super(settings);
-    }
+  public SQLiteComponentProvider(FirebaseFirestoreSettings settings) {
+    super(settings);
+  }
 
-    @Override
+  @Override
   protected Scheduler createGarbageCollectionScheduler(Configuration configuration) {
     LruDelegate lruDelegate = ((SQLitePersistence) getPersistence()).getReferenceDelegate();
     LruGarbageCollector gc = lruDelegate.getGarbageCollector();
