@@ -32,15 +32,14 @@ firebaseLibrary {
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.sessions"
   compileSdk = compileSdkVersion
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -50,6 +49,7 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
   testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions.targetSdk = targetSdkVersion
 }
 
 tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
@@ -65,7 +65,7 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  implementation("androidx.datastore:datastore-preferences:1.0.0")
+  implementation(libs.androidx.datastore.preferences)
   implementation("com.google.android.datatransport:transport-api:3.0.0")
   api("com.google.firebase:firebase-annotations:16.2.0")
   api("com.google.firebase:firebase-encoders:17.0.0")

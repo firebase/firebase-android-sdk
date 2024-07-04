@@ -5,6 +5,7 @@ android-lint = "31.3.2"
 autovalue = "1.10.1"
 coroutines = "1.6.4"
 dagger = "2.43.2"
+datastore-preferences = "1.1.1"
 grpc = "1.62.2"
 javalite = "3.21.11"
 kotlin = "1.8.22"
@@ -26,6 +27,7 @@ android-lint-tests = { module = "com.android.tools.lint:lint-tests", version.ref
 android-lint-testutils = { module = "com.android.tools:testutils", version.ref = "android-lint" }
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
 androidx-core = { module = "androidx.core:core", version = "1.2.0" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore-preferences" }
 androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
