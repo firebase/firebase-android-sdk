@@ -114,8 +114,7 @@ class SessionsSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -156,8 +155,7 @@ class SessionsSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -204,8 +202,7 @@ class SessionsSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 

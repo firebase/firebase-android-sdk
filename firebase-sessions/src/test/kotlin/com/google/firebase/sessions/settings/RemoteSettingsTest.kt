@@ -65,8 +65,7 @@ class RemoteSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -104,8 +103,7 @@ class RemoteSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -145,8 +143,7 @@ class RemoteSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -197,8 +194,7 @@ class RemoteSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -248,10 +244,7 @@ class RemoteSettingsTest {
       val context = firebaseApp.applicationContext
       val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
       val fakeFetcherWithDelay =
-        FakeRemoteConfigFetcher(
-          JSONObject(VALID_RESPONSE),
-          networkDelay = 3.seconds,
-        )
+        FakeRemoteConfigFetcher(JSONObject(VALID_RESPONSE), networkDelay = 3.seconds)
 
       fakeFetcherWithDelay.responseJSONObject
         .getJSONObject("app_quality")
@@ -265,8 +258,7 @@ class RemoteSettingsTest {
           configsFetcher = fakeFetcherWithDelay,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -299,11 +291,7 @@ class RemoteSettingsTest {
         TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
         baseUrl = "this.url.is.invalid",
       )
-      .doConfigFetch(
-        headerOptions = emptyMap(),
-        onSuccess = {},
-        onFailure = { failure = it },
-      )
+      .doConfigFetch(headerOptions = emptyMap(), onSuccess = {}, onFailure = { failure = it })
 
     assertThat(failure).isNotNull()
   }
