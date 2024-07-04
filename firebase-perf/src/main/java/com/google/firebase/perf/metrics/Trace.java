@@ -206,7 +206,7 @@ public class Trace extends AppStateUpdateHandler
 
   /** Starts this trace. */
   @Keep
-  public void start() {
+  public void start(Timer startTime) {
     if (!ConfigResolver.getInstance().isPerformanceMonitoringEnabled()) {
       logger.debug("Trace feature is disabled.");
       return;
@@ -224,7 +224,7 @@ public class Trace extends AppStateUpdateHandler
       return;
     }
 
-    startTime = clock.getTime();
+    this.startTime = startTime;
 
     registerForAppState();
 
@@ -237,6 +237,12 @@ public class Trace extends AppStateUpdateHandler
     if (perfSession.isGaugeAndEventCollectionEnabled()) {
       gaugeManager.collectGaugeMetricOnce(perfSession.getTimer());
     }
+  }
+
+  /** Starts this trace. */
+  @Keep
+  public void start() {
+      start(clock.getTime());
   }
 
   /** Stops this trace. */
