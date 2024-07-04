@@ -85,7 +85,6 @@ public final class FirestoreClient {
   public FirestoreClient(
       final Context context,
       DatabaseInfo databaseInfo,
-      FirebaseFirestoreSettings settings,
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
       AsyncQueue asyncQueue,
@@ -109,7 +108,7 @@ public final class FirestoreClient {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
-            initialize(context, initialUser, settings, componentProvider, metadataProvider);
+            initialize(context, initialUser, componentProvider, metadataProvider);
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
           }
@@ -269,7 +268,6 @@ public final class FirestoreClient {
   private void initialize(
       Context context,
       User user,
-      FirebaseFirestoreSettings settings,
       ComponentProvider provider,
       GrpcMetadataProvider metadataProvider) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
@@ -284,7 +282,6 @@ public final class FirestoreClient {
             databaseInfo,
             user,
             MAX_CONCURRENT_LIMBO_RESOLUTIONS,
-            settings,
             authProvider,
             appCheckProvider,
             metadataProvider);

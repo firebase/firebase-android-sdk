@@ -210,7 +210,6 @@ public class FirebaseFirestore {
         authProvider,
         appCheckProvider,
         ComponentProvider::defaultFactory,
-        ComponentProvider::defaultFactory,
         app,
         instanceRegistry,
         metadataProvider);
@@ -224,7 +223,6 @@ public class FirebaseFirestore {
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
       @NonNull Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
-      @NonNull Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -236,7 +234,6 @@ public class FirebaseFirestore {
     this.appCheckProvider = checkNotNull(appCheckProvider);
     this.componentProviderFactory = checkNotNull(componentProviderFactory);
     this.clientProvider = new FirestoreClientProvider(this::newClient);
-    this.componentProviderFactory = checkNotNull(componentProviderFactory);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
@@ -298,10 +295,9 @@ public class FirebaseFirestore {
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
-      FirestoreClient client = new FirestoreClient(
+      return new FirestoreClient(
               context,
               databaseInfo,
-              settings,
               authProvider,
               appCheckProvider,
               asyncQueue,

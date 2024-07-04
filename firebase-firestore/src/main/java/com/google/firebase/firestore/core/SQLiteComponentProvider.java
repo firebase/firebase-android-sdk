@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -25,7 +26,11 @@ import com.google.firebase.firestore.local.Scheduler;
 /** Provides all components needed for Firestore with SQLite persistence. */
 public class SQLiteComponentProvider extends MemoryComponentProvider {
 
-  @Override
+    public SQLiteComponentProvider(FirebaseFirestoreSettings settings) {
+        super(settings);
+    }
+
+    @Override
   protected Scheduler createGarbageCollectionScheduler(Configuration configuration) {
     LruDelegate lruDelegate = ((SQLitePersistence) getPersistence()).getReferenceDelegate();
     LruGarbageCollector gc = lruDelegate.getGarbageCollector();
@@ -42,8 +47,7 @@ public class SQLiteComponentProvider extends MemoryComponentProvider {
     LocalSerializer serializer =
         new LocalSerializer(getRemoteSerializer());
     LruGarbageCollector.Params params =
-        LruGarbageCollector.Params.WithCacheSizeBytes(
-            configuration.settings.getCacheSizeBytes());
+        LruGarbageCollector.Params.WithCacheSizeBytes(settings.getCacheSizeBytes());
     return new SQLitePersistence(
         configuration.context,
         configuration.databaseInfo.getPersistenceKey(),

@@ -330,7 +330,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             databaseInfo,
             currentUser,
             maxConcurrentLimboResolutions,
-            new FirebaseFirestoreSettings.Builder().build(),
             new EmptyCredentialsProvider(),
             new EmptyAppCheckTokenProvider(),
             null

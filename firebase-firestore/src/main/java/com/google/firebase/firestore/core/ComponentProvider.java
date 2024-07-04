@@ -45,6 +45,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
  */
 public abstract class ComponentProvider {
 
+  protected final FirebaseFirestoreSettings settings;
   private RemoteComponenetProvider remoteProvider = new RemoteComponenetProvider();
   private Persistence persistence;
   private LocalStore localStore;
@@ -54,11 +55,15 @@ public abstract class ComponentProvider {
   @Nullable private IndexBackfiller indexBackfiller;
   @Nullable private Scheduler garbageCollectionScheduler;
 
+  public ComponentProvider(FirebaseFirestoreSettings settings) {
+    this.settings = settings;
+  }
+
   @NonNull
   public static ComponentProvider defaultFactory(@NonNull FirebaseFirestoreSettings settings) {
     return settings.isPersistenceEnabled()
-            ? new SQLiteComponentProvider()
-            : new MemoryComponentProvider();
+            ? new SQLiteComponentProvider(settings)
+            : new MemoryComponentProvider(settings);
   }
 
   /** Configuration options for the component provider. */
@@ -69,7 +74,6 @@ public abstract class ComponentProvider {
     public final DatabaseInfo databaseInfo;
     public final User initialUser;
     public final int maxConcurrentLimboResolutions;
-    public final FirebaseFirestoreSettings settings;
     public final CredentialsProvider<User> authProvider;
     public final CredentialsProvider<String> appCheckProvider;
 
@@ -82,7 +86,6 @@ public abstract class ComponentProvider {
         DatabaseInfo databaseInfo,
         User initialUser,
         int maxConcurrentLimboResolutions,
-        FirebaseFirestoreSettings settings,
         CredentialsProvider<User> authProvider,
         CredentialsProvider<String> appCheckProvider,
         @Nullable GrpcMetadataProvider metadataProvider
@@ -92,7 +95,6 @@ public abstract class ComponentProvider {
       this.databaseInfo = databaseInfo;
       this.initialUser = initialUser;
       this.maxConcurrentLimboResolutions = maxConcurrentLimboResolutions;
-      this.settings = settings;
       this.authProvider = authProvider;
       this.appCheckProvider = appCheckProvider;
       this.metadataProvider = metadataProvider;

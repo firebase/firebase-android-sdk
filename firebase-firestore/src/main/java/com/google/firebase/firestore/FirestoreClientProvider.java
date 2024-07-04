@@ -92,4 +92,8 @@ final class FirestoreClientProvider {
 
         return terminate;
     }
+
+    AsyncQueue getAsyncQueue() {
+        return asyncQueue;
+    }
 }

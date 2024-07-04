@@ -742,7 +742,7 @@ public class CompositeIndexQueryTest {
     assertEquals(2L, snapshot1.size());
     assertFalse(snapshot1.getMetadata().isFromCache());
 
-    waitFor(collection.firestore.getClient().disableNetwork());
+    waitFor(collection.firestore.disableNetwork());
 
     QuerySnapshot snapshot2 = waitFor(query.get());
     assertEquals(2L, snapshot2.size());
