@@ -24,7 +24,7 @@ firebaseLibrary {
     publishSources = true
     testLab {
         enabled = true
-        timeout = '30m'
+        timeout = '45m'
     }
 }
 

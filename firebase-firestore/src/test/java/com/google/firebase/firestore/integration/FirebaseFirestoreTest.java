@@ -39,7 +39,6 @@ import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;
 import com.google.firestore.v1.WriteResult;
 
-import org.bouncycastle.util.Arrays;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -205,15 +204,19 @@ public class FirebaseFirestoreTest {
 
     @NonNull
     private WriteRequest writeRequest(Write... writes) {
-        return WriteRequest.newBuilder()
-                .addAllWrites(() -> new Arrays.Iterator<>(writes))
-                .build();
+        WriteRequest.Builder builder = WriteRequest.newBuilder();
+        for (Write write : writes) {
+            builder.addWrites(write);
+        }
+        return builder.build();
     }
 
     @NonNull
     private static WriteResponse writeResponse(WriteResult... writeResults) {
-        return WriteResponse.newBuilder()
-                .addAllWriteResults(() -> new Arrays.Iterator<>(writeResults))
-                .build();
+        WriteResponse.Builder builder = WriteResponse.newBuilder();
+        for (WriteResult writeResult : writeResults) {
+            builder.addWriteResults(writeResult);
+        }
+        return builder.build();
     }
 }
