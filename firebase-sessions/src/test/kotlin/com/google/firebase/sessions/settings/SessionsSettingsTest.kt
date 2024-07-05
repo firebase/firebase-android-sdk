@@ -22,7 +22,6 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.concurrent.TestOnlyExecutors
-import com.google.firebase.sessions.SessionDataStoreConfigs
 import com.google.firebase.sessions.SessionEvents
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
@@ -114,8 +113,7 @@ class SessionsSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -156,8 +154,7 @@ class SessionsSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -204,8 +201,7 @@ class SessionsSettingsTest {
           fakeFetcher,
           dataStore =
             PreferenceDataStoreFactory.create(
-              scope = this,
-              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) },
+              produceFile = { context.preferencesDataStoreFile(SESSION_TEST_CONFIGS_NAME) }
             ),
         )
 
@@ -225,11 +221,6 @@ class SessionsSettingsTest {
 
       remoteSettings.clearCachedSettings()
     }
-
-  @Test
-  fun sessionSettings_dataStorePreferencesNameIsFilenameSafe() {
-    assertThat(SessionDataStoreConfigs.SESSIONS_CONFIG_NAME).matches("^[a-zA-Z0-9_=]+\$")
-  }
 
   @After
   fun cleanUp() {

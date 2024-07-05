@@ -1,5 +1,9 @@
 # Unreleased
 
+* [changed] Bump datastore-preferences dependency to 1.1.1, to support multi-process.
+
+# 1.2.4
+
 * [fixed] Handled datastore writes when device has full internal memory more gracefully.
   (GitHub [#5859](https://github.com/firebase/firebase-android-sdk/issues/5859))
 * [fixed] Safely unbind malfunctioning session lifecycle service to release service connections.

@@ -29,7 +29,6 @@ import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
 import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
-import com.google.firebase.sessions.SessionDataStoreConfigs
 import com.google.firebase.sessions.SessionEvents
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
@@ -53,11 +52,7 @@ internal class SessionsSettings(
         backgroundDispatcher,
         firebaseInstallationsApi,
         appInfo,
-        configsFetcher =
-          RemoteSettingsFetcher(
-            appInfo,
-            blockingDispatcher,
-          ),
+        configsFetcher = RemoteSettingsFetcher(appInfo, blockingDispatcher),
         dataStore = context.dataStore,
       ),
   )
@@ -141,13 +136,14 @@ internal class SessionsSettings(
 
   internal companion object {
     private const val TAG = "SessionsSettings"
+    private const val SETTINGS_CONFIG_NAME = "firebase_session_settings"
 
     val instance: SessionsSettings
       get() = Firebase.app[SessionsSettings::class.java]
 
     private val Context.dataStore: DataStore<Preferences> by
       preferencesDataStore(
-        name = SessionDataStoreConfigs.SETTINGS_CONFIG_NAME,
+        name = SETTINGS_CONFIG_NAME,
         corruptionHandler =
           ReplaceFileCorruptionHandler { ex ->
             Log.w(TAG, "CorruptionException in settings DataStore in ${getProcessName()}.", ex)

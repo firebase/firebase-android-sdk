@@ -90,10 +90,7 @@ internal class SessionDatastoreImpl(
           preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
         }
       } catch (e: IOException) {
-        Log.w(
-          TAG,
-          "Failed to update session Id: $e",
-        )
+        Log.w(TAG, "Failed to update session Id: $e")
       }
     }
   }
@@ -101,16 +98,15 @@ internal class SessionDatastoreImpl(
   override fun getCurrentSessionId() = currentSessionFromDatastore.get()?.sessionId
 
   private fun mapSessionsData(preferences: Preferences): FirebaseSessionsData =
-    FirebaseSessionsData(
-      preferences[FirebaseSessionDataKeys.SESSION_ID],
-    )
+    FirebaseSessionsData(preferences[FirebaseSessionDataKeys.SESSION_ID])
 
   private companion object {
     private const val TAG = "FirebaseSessionsRepo"
+    private const val SESSIONS_CONFIG_NAME = "firebase_session_data"
 
     private val Context.dataStore: DataStore<Preferences> by
       preferencesDataStore(
-        name = SessionDataStoreConfigs.SESSIONS_CONFIG_NAME,
+        name = SESSIONS_CONFIG_NAME,
         corruptionHandler =
           ReplaceFileCorruptionHandler { ex ->
             Log.w(TAG, "CorruptionException in sessions DataStore in ${getProcessName()}.", ex)
