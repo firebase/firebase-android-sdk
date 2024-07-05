@@ -72,6 +72,11 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     storeUnderTest = new MetaDataStore(fileStore);
   }
 
+  @Override
+  public void tearDown() throws Exception {
+    fileStore.deleteAllCrashlyticsFiles();
+  }
+
   private UserMetadata metadataWithUserId(String sessionId) {
     return metadataWithUserId(sessionId, USER_ID);
   }
@@ -193,32 +198,42 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
-  public void testUpdateSessionId_notPersistUserIdToNewSessionIfNoUserIdSet() {
+  public void testUpdateSessionId_notPersistUserIdToNewSessionIfNoUserIdSet() throws Exception {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
-        .isFalse();
+
+    backgroundExecutor.execute(() ->{
+      assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
+              .isFalse();
+    });
+    backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
   }
 
   @Test
-  public void testUpdateSessionId_notPersistCustomKeysToNewSessionIfNoCustomKeysSet() {
+  public void testUpdateSessionId_notPersistCustomKeysToNewSessionIfNoCustomKeysSet() throws Exception {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
-        .isFalse();
+    backgroundExecutor.execute(() ->{
+      assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+              .isFalse();
+    });
+    backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
   }
 
   @Test
-  public void testUpdateSessionId_notPersistRolloutsToNewSessionIfNoRolloutsSet() {
+  public void testUpdateSessionId_notPersistRolloutsToNewSessionIfNoRolloutsSet() throws Exception {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(
-            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
-        .isFalse();
+    backgroundExecutor.execute(() ->{
+      assertThat(
+              fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+              .isFalse();
+    });
+    backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
   }
 
   @Test
-  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() {
+  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() throws Exception {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -230,37 +245,53 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
         };
     userMetadata.setCustomKeys(keys);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
-        .isTrue();
+    backgroundExecutor.execute(() ->{
+      assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+              .isTrue();
+    });
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    assertThat(metaDataStore.readKeyData(SESSION_ID_2)).isEqualTo(keys);
+    backgroundExecutor.execute(() ->{
+      assertThat(metaDataStore.readKeyData(SESSION_ID_2)).isEqualTo(keys);
+    });
+
+    backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
   }
 
   @Test
-  public void testUpdateSessionId_persistUserIdToNewSessionIfUserIdSet() {
+  public void testUpdateSessionId_persistUserIdToNewSessionIfUserIdSet() throws Exception {
     String userId = "ThemisWang";
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
     userMetadata.setUserId(userId);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
-        .isTrue();
+    backgroundExecutor.execute(() ->{
+      assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
+              .isTrue();
+    });
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    assertThat(metaDataStore.readUserId(SESSION_ID_2)).isEqualTo(userId);
+    backgroundExecutor.execute(() ->{
+      assertThat(metaDataStore.readUserId(SESSION_ID_2)).isEqualTo(userId);
+    });
+    backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
   }
 
   @Test
-  public void testUpdateSessionId_persistRolloutsToNewSessionIfRolloutsSet() {
+  public void testUpdateSessionId_persistRolloutsToNewSessionIfRolloutsSet() throws Exception {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
     userMetadata.updateRolloutsState(ROLLOUTS_STATE);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(
-            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
-        .isTrue();
+    backgroundExecutor.execute(() ->{
+      assertThat(
+              fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+              .isTrue();
+    });
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    assertThat(metaDataStore.readRolloutsState(SESSION_ID_2)).isEqualTo(ROLLOUTS_STATE);
+    backgroundExecutor.execute(() ->{
+      assertThat(metaDataStore.readRolloutsState(SESSION_ID_2)).isEqualTo(ROLLOUTS_STATE);
+    });
+    backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
   }
 
   // Keys
