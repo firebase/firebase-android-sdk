@@ -71,6 +71,20 @@ public class DataCollectionArbiter {
     }
   }
 
+  public synchronized boolean isCrashlyticsCollectionEnabled() {
+    Boolean dataCollectionEnabled = getDataCollectionValueFromSharedPreferences();
+    if (dataCollectionEnabled != null) {
+      return dataCollectionEnabled;
+    }
+
+    Boolean manifestValue = getDataCollectionValueFromManifest(firebaseApp.getApplicationContext());
+    if (manifestValue != null) {
+      return manifestValue;
+    }
+
+    return isFirebaseDataCollectionDefaultEnabled();
+  }
+
   public synchronized boolean isAutomaticDataCollectionEnabled() {
     final boolean dataCollectionEnabled =
         crashlyticsDataCollectionEnabled != null
