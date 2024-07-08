@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.Filter.lessThanOrEqualTo;
 import static com.google.firebase.firestore.Filter.notEqualTo;
 import static com.google.firebase.firestore.Filter.notInArray;
 import static com.google.firebase.firestore.Filter.or;
+import static com.google.firebase.firestore.testutil.CompositeIndexTestHelper.COMPOSITE_INDEX_TEST_COLLECTION;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
@@ -41,7 +42,7 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.CompositeIndexTestHelper;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -64,8 +65,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class CompositeIndexQueryTest {
 
-  @After
-  public void tearDown() {
+  @AfterClass
+  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
@@ -113,7 +114,6 @@ public class CompositeIndexQueryTest {
   @Test
   public void testCanRunAggregateCollectionGroupQuery() {
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
-    String collectionGroup = testHelper.withTestCollection().getId();
 
     FirebaseFirestore db = testFirestore();
 
@@ -134,7 +134,7 @@ public class CompositeIndexQueryTest {
     WriteBatch batch = db.batch();
     for (String path : docPaths) {
       batch.set(
-          db.document(path.replace("${collectionGroup}", collectionGroup)),
+          db.document(path.replace("${collectionGroup}", COMPOSITE_INDEX_TEST_COLLECTION)),
           testHelper.addTestSpecificFieldsToDoc(map("a", 2)));
     }
     waitFor(batch.commit());
@@ -142,7 +142,7 @@ public class CompositeIndexQueryTest {
     AggregateQuerySnapshot snapshot =
         waitFor(
             testHelper
-                .query(db.collectionGroup(collectionGroup))
+                .query(db.collectionGroup(COMPOSITE_INDEX_TEST_COLLECTION))
                 .aggregate(AggregateField.count(), sum("a"), average("a"))
                 .get(AggregateSource.SERVER));
     assertEquals(
