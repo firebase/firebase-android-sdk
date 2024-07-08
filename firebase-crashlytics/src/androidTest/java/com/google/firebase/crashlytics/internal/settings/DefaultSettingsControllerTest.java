@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
@@ -124,7 +124,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     await(controller.loadSettingsData(networkExecutor));
     assertEquals(cachedSettings, controller.getSettingsSync());
 
-    verifyZeroInteractions(mockSettingsSpiCall);
+    verifyNoMoreInteractions(mockSettingsSpiCall);
     verify(mockCachedSettingsIo).readCachedSettings();
     verify(mockSettingsJsonParser).parseSettingsJson(cachedJson);
     verify(mockCurrentTimeProvider, times(2)).getCurrentTimeMillis();
@@ -239,7 +239,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     controller.loadSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION, networkExecutor);
     assertEquals(cachedSettings, controller.getSettingsSync());
 
-    verifyZeroInteractions(mockSettingsSpiCall);
+    verifyNoMoreInteractions(mockSettingsSpiCall);
     verify(mockCachedSettingsIo).readCachedSettings();
     verify(mockSettingsJsonParser).parseSettingsJson(cachedJson);
     verify(mockCurrentTimeProvider, times(2)).getCurrentTimeMillis();
@@ -376,7 +376,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
 
     verify(mockSettingsSpiCall).invoke(any(SettingsRequest.class), eq(true));
     verify(mockCachedSettingsIo, times(2)).readCachedSettings();
-    verifyZeroInteractions(mockSettingsJsonParser);
+    verifyNoMoreInteractions(mockSettingsJsonParser);
     verify(mockCurrentTimeProvider).getCurrentTimeMillis();
   }
 
