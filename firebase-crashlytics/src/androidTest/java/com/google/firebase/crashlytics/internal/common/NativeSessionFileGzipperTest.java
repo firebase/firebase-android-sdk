@@ -17,6 +17,7 @@ package com.google.firebase.crashlytics.internal.common;
 import static java.util.Arrays.stream;
 
 import android.content.Context;
+import androidx.test.filters.SdkSuppress;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -59,6 +60,7 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 24) // streams
   public void testProcessNativeSessions_putsFilesInCorrectLocation() {
     String fileBackedSessionName = "file";
     String byteBackedSessionName = "byte";
@@ -78,6 +80,7 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = 24) // streams
   public void testProcessNativeSessionsWhenDataIsNull_putsFilesInCorrectLocation() {
     String fileBackedSessionName = "file";
     String byteBackedSessionName = "byte";

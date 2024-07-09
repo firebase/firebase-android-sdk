@@ -137,5 +137,6 @@ fun convertToMetadata(string: String) =
       ReleaseNotesMetadata("{{app_check}} Debug Testing", "appcheck-debug-testing", false)
     "firebase-appcheck-playintegrity" ->
       ReleaseNotesMetadata("{{app_check}} Play integrity", "appcheck-playintegrity", false)
+    "firebase-vertexai" -> ReleaseNotesMetadata("{{firebase_vertexai}}", "vertex-ai", false)
     else -> throw StopActionException("No metadata mapping found for project: $string")
   }

@@ -78,7 +78,7 @@ public class FirebaseTestServer extends TestServer {
         "--type=instrumentation",
         "--app=" + testedApkPath,
         "--test=" + testApk,
-        "--timeout=30m",
+        "--timeout=45m",
         "--use-orchestrator",
         "--no-auto-google-login",
         "--no-record-video",

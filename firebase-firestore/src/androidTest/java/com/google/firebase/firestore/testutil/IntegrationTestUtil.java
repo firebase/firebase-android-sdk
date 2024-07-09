@@ -124,7 +124,6 @@ public class IntegrationTestUtil {
   private static final FirestoreProvider provider = new FirestoreProvider();
 
   private static boolean strictModeEnabled = false;
-  private static boolean backendPrimed = false;
 
   // FirebaseOptions needed to create a test FirebaseApp.
   private static final FirebaseOptions OPTIONS =

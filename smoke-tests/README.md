@@ -15,7 +15,7 @@ is a work in progress, and the following list shows what is complete:
 # Running the Tests
 
 The tests may be run locally with the command `../gradlew
-connectedCombinedDebugCheck`. The combined flavor includes all supported test
+connectedDebugAndroidTest`. The combined flavor includes all supported test
 cases. Optionally, other flavors (explained below) may be used to run a subset
 of the tests. Additionally, the test suite uses a Bill of Materials to specify
 Firebase versions. This may be configured using the `-Pfirebase-bom`
