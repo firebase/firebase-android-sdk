@@ -5,9 +5,6 @@
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",
         ":firebase-crashlytics:ktx",
-        ":firebase-messaging",
-        ":firebase-messaging-directboot",
-        ":firebase-messaging:ktx",
         ":firebase-vertexai"
     ]
 }

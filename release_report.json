@@ -48,20 +48,6 @@
         ],
         "firebase-crashlytics/ktx": [
         ],
-        "firebase-messaging": [
-            {
-                "commitId": "d6a6383b6d228395576f784d04732619f31f09f8",
-                "prId": "6036",
-                "author": "Vinay Guthal",
-                "message": "Change references from master to main (#6036)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6a6383b6d228395576f784d04732619f31f09f8",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6036"
-            }
-        ],
-        "firebase-messaging-directboot": [
-        ],
-        "firebase-messaging/ktx": [
-        ],
         "firebase-vertexai": [
             {
                 "commitId": "829eb695a4d3b8ec91c4886b4dd3c834b7f62da1",
