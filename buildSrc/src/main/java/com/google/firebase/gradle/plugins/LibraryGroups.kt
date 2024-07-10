@@ -33,18 +33,18 @@ fun computeLibraryGroups(project: Project): Map<String, List<FirebaseLibraryExte
     )
   }
   val libraryGroups =
-    project.subprojects.mapNotNull { it.firebaseLibraryOrNull }.groupBy { it.libraryGroupName }
+    project.subprojects.mapNotNull { it.firebaseLibraryOrNull }.groupBy { it.libraryGroup.get() }
 
   return libraryGroups
 }
 
 fun fixLibraryGroupVersions(libraryGroups: Map<String, List<FirebaseLibraryExtension>>) {
-  for ((name, libraryGroup) in libraryGroups) {
+  for ((_, libraryGroup) in libraryGroups) {
     val maxVersion =
       libraryGroup.mapNotNull { it.moduleVersion }.maxOrNull()?.toString() ?: continue
     for (firebaseExtension in libraryGroup) {
-      if (ModuleVersion.fromStringOrNull(firebaseExtension.project.version.toString()) == null) {
-        firebaseExtension.project.version = maxVersion.toString()
+      if (ModuleVersion.fromStringOrNull(firebaseExtension.project.get().version.toString()) == null) {
+        firebaseExtension.project.get().version = maxVersion
       }
     }
   }
@@ -68,8 +68,8 @@ fun expandWithLibraryGroup(
   libraryGroups: Map<String, List<FirebaseLibraryExtension>>
 ) =
   libraries
-    .flatMap { libraryGroups.getOrDefault(it.libraryGroupName, emptyList()) }
+    .flatMap { libraryGroups.getOrDefault(it.libraryGroup, emptyList()) }
     .distinctBy { it.artifactId.get() }
 
 val FirebaseLibraryExtension.moduleVersion: ModuleVersion?
-  get() = ModuleVersion.fromStringOrNull(version)
+  get() = ModuleVersion.fromStringOrNull(version.get())

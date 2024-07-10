@@ -197,8 +197,8 @@ abstract class ReleaseGenerator : DefaultTask() {
       .filter {
         checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "${getRelativeDir(it)}/")
       }
-      .flatMap { libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroupName, emptyList()) }
-      .map { it.path }
+      .flatMap { libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroup.get(), emptyList()) }
+      .map { it.path.get() }
       .toSet()
 
   private fun getChangedChangelogs(
@@ -217,9 +217,9 @@ abstract class ReleaseGenerator : DefaultTask() {
         )
       }
       .flatMap {
-        libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroupName, listOf(it.firebaseLibrary))
+        libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroup.get(), listOf(it.firebaseLibrary))
       }
-      .map { it.project }
+      .map { it.project.get() }
       .toSet()
 
   private fun checkDirChanges(

@@ -122,7 +122,7 @@ abstract class DackkaPlugin : Plugin<Project> {
 
     // TODO(b/270576405): remove afterEvalutate after fixed
     project.afterEvaluate {
-      if (weShouldPublish(this)) {
+      if (weShouldPublish(this).get()) {
         val dackkaOutputDirectory = provider { fileFromBuildDir("dackkaRawOutput") }
         val transformedFilesDirectory = provider { fileFromBuildDir("dackkaTransformedFiles") }
 

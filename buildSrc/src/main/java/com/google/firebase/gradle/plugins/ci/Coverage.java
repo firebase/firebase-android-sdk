@@ -30,7 +30,7 @@ public final class Coverage {
   private Coverage() {}
 
   public static void apply(FirebaseLibraryExtension firebaseLibrary) {
-    Project project = firebaseLibrary.project;
+    Project project = firebaseLibrary.getProject().get();
     project.apply(ImmutableMap.of("plugin", "jacoco"));
     File reportsDir = new File(project.getBuildDir(), "/reports/jacoco");
     JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
@@ -97,12 +97,12 @@ public final class Coverage {
                     reports
                         .getHtml()
                         .setDestination(
-                            new File(reportsDir, firebaseLibrary.artifactId.get() + "/html"));
+                            new File(reportsDir, firebaseLibrary.getArtifactId().get() + "/html"));
                     reports.getXml().getRequired().set(true);
                     reports
                         .getXml()
                         .setDestination(
-                            new File(reportsDir, firebaseLibrary.artifactId.get() + ".xml"));
+                            new File(reportsDir, firebaseLibrary.getArtifactId().get() + ".xml"));
                   });
               task.getOutputs().upToDateWhen(t -> false);
             });
