@@ -1,5 +1,7 @@
 # Unreleased
 * [changed] Update the internal file system to handle long file names.
+* [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is enabled. 
+  ([Github #5919](//github.com/firebase/firebase-android-sdk/issues/5919))
 
 # 19.0.2
 * [changed] Changing caught exception type to fail safely on any exception type.
