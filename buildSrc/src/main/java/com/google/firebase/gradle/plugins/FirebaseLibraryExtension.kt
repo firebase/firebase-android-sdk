@@ -33,6 +33,7 @@ import org.gradle.kotlin.dsl.invoke
 // TODO(b/XXXX): Identify proper property usage
 // TODO(b/XXXX): Ensure correct downstream property usage
 // TODO(b/XXXX): Move functions and extra variables to proper location
+// TODO(): Re-add documentation, and maybe new docs for newly added stuff
 abstract class FirebaseLibraryExtension {
   abstract val project: Property<Project>
   abstract val type: Property<LibraryType>
