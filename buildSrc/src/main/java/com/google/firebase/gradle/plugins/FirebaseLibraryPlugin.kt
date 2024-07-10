@@ -60,7 +60,9 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupAndroidLibraryExtension(project: Project) {
     val firebaseLibrary =
-      project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary",)
+      project.extensions.create<FirebaseLibraryExtension>(
+        "firebaseLibrary",
+      )
     val android = project.extensions.getByType<LibraryExtension>()
     android.compileOptions {
       sourceCompatibility = JavaVersion.VERSION_1_8

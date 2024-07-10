@@ -83,7 +83,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     if (oldContent == updatedContent)
       throw RuntimeException(
         "Expected the following project level dependencies, but found none: " +
-                dependenciesToChange.joinToString("\n") { it.mavenName.get()}
+          dependenciesToChange.joinToString("\n") { it.mavenName.get() }
       )
 
     val diff = oldContent.diff(updatedContent)

@@ -264,7 +264,8 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     return releaseConfigFile?.let {
       val releaseConfig = ReleaseConfig.fromFile(it)
-      val librariesToRelease = allFirebaseLibraries.filter { it.path.get() in releaseConfig.libraries }
+      val librariesToRelease =
+        allFirebaseLibraries.filter { it.path.get() in releaseConfig.libraries }
 
       val missingLibrariesToRelease =
         computeMissingLibrariesToRelease(librariesToRelease, libraryGroups)
@@ -560,7 +561,10 @@ abstract class PublishingPlugin : Plugin<Project> {
     project.tasks.register(PUBLISH_ALL_TO_BUILD_TASK) {
       for (firebaseLibrary in allFirebaseLibraries) {
         val publishTask =
-          firebaseLibrary.project.get().tasks.named("publishMavenAarPublicationToBuildDirRepository")
+          firebaseLibrary.project
+            .get()
+            .tasks
+            .named("publishMavenAarPublicationToBuildDirRepository")
 
         dependsOn(publishTask)
       }

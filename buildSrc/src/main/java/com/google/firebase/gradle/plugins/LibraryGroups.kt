@@ -43,7 +43,9 @@ fun fixLibraryGroupVersions(libraryGroups: Map<String, List<FirebaseLibraryExten
     val maxVersion =
       libraryGroup.mapNotNull { it.moduleVersion }.maxOrNull()?.toString() ?: continue
     for (firebaseExtension in libraryGroup) {
-      if (ModuleVersion.fromStringOrNull(firebaseExtension.project.get().version.toString()) == null) {
+      if (
+        ModuleVersion.fromStringOrNull(firebaseExtension.project.get().version.toString()) == null
+      ) {
         firebaseExtension.project.get().version = maxVersion
       }
     }

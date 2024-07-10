@@ -217,7 +217,10 @@ abstract class ReleaseGenerator : DefaultTask() {
         )
       }
       .flatMap {
-        libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroup.get(), listOf(it.firebaseLibrary))
+        libraryGroups.getOrDefault(
+          it.firebaseLibrary.libraryGroup.get(),
+          listOf(it.firebaseLibrary)
+        )
       }
       .map { it.project.get() }
       .toSet()

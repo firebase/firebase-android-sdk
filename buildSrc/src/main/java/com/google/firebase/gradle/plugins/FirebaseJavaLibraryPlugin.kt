@@ -47,8 +47,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
   }
 
   private fun setupFirebaseLibraryExtension(project: Project) {
-    val firebaseLibrary =
-      project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary")
+    val firebaseLibrary = project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary")
 
     firebaseLibrary.commonConfiguration(project, JAVA)
     setupStaticAnalysis(project, firebaseLibrary)
@@ -74,17 +73,19 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       aarAndroidFile.value(false)
       filePath.value(project.file("semver/previous.jar").absolutePath)
     }
-    val currentJarFile = firebaseLibrary.artifactId.flatMap { artifactId ->
-      firebaseLibrary.version.map { version ->
-        project.file("build/libs/$artifactId-$version").absolutePath
+    val currentJarFile =
+      firebaseLibrary.artifactId.flatMap { artifactId ->
+        firebaseLibrary.version.map { version ->
+          project.file("build/libs/$artifactId-$version").absolutePath
+        }
       }
-    }
     val previousJarFile = project.file("semver/previous.jar").absolutePath
-    val previousVersion = firebaseLibrary.artifactId.flatMap { artifactId ->
-      firebaseLibrary.groupId.map { groupId ->
-        GmavenHelper(groupId, artifactId).getLatestReleasedVersion()
+    val previousVersion =
+      firebaseLibrary.artifactId.flatMap { artifactId ->
+        firebaseLibrary.groupId.map { groupId ->
+          GmavenHelper(groupId, artifactId).getLatestReleasedVersion()
+        }
       }
-    }
     project.tasks.register<ApiDiffer>("semverCheck") {
       currentJar.value(currentJarFile)
       previousJar.value(previousJarFile)
