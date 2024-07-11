@@ -28,6 +28,7 @@ import com.google.firebase.vertexai.type.ResponseStoppedException
 import com.google.firebase.vertexai.type.SerializationException
 import com.google.firebase.vertexai.type.ServerException
 import com.google.firebase.vertexai.type.ServiceDisabledException
+import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.UnsupportedUserLocationException
 import com.google.firebase.vertexai.util.goldenUnaryFile
 import com.google.firebase.vertexai.util.shouldNotBeNullOrEmpty
@@ -37,10 +38,12 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldNotBeEmpty
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import org.json.JSONArray
 import org.junit.Test
 
 internal class UnarySnapshotTests {
@@ -195,6 +198,26 @@ internal class UnarySnapshotTests {
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.promptTokenCount shouldBe 6
         response.usageMetadata?.totalTokenCount shouldBe 0
+      }
+    }
+
+  @Test
+  fun `properly translates json text`() =
+    goldenUnaryFile("success-constraint-decoding-json.json") {
+      val response = model.generateContent("prompt")
+
+      response.candidates.isEmpty() shouldBe false
+      with(response.candidates.first().content.parts.first().shouldBeInstanceOf<TextPart>()) {
+        shouldNotBeNull()
+        val jsonArr = JSONArray(text)
+        jsonArr.length() shouldBe 3
+        for (i in 0 until jsonArr.length()) {
+          with(jsonArr.getJSONObject(i)) {
+            shouldNotBeNull()
+            getString("name").shouldNotBeEmpty()
+            getJSONArray("colors").length() shouldBe 5
+          }
+        }
       }
     }
 
