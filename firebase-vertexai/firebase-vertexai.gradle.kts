@@ -49,7 +49,10 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   kotlinOptions { jvmTarget = "1.8" }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    unitTests.isIncludeAndroidResources = true
+    unitTests.isReturnDefaultValues = true
+  }
 }
 
 dependencies {
@@ -71,8 +74,11 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0-alpha03")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
 
+  val ktorVersion = "2.3.2"
   testImplementation("io.kotest:kotest-assertions-core:5.5.5")
   testImplementation("io.kotest:kotest-assertions-core-jvm:5.5.5")
+  testImplementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+  testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)
