@@ -79,6 +79,7 @@ dependencies {
   testImplementation("io.kotest:kotest-assertions-core-jvm:5.5.5")
   testImplementation("io.ktor:ktor-client-okhttp:$ktorVersion")
   testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
+  testImplementation("org.json:json:20240303")
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)
