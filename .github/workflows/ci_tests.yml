@@ -104,7 +104,7 @@ jobs:
   integ_tests:
     name: "Instrumentation Tests"
     # only run on post submit or PRs not originating from forks.
-    if: ((github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && !contains(fromJSON(needs.determine_changed.outputs.modules), ':firebase-firestore')
+    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-22.04
     needs:
       - determine_changed
@@ -112,6 +112,8 @@ jobs:
       fail-fast: false
       matrix:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
+        exclude:
+          - module: :firebase-firestore
 
     steps:
       - uses: actions/checkout@v4.1.1

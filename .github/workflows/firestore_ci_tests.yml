@@ -42,8 +42,6 @@ jobs:
       - determine_changed
     strategy:
       fail-fast: false
-      matrix:
-        module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
       - uses: actions/checkout@v4.1.1
@@ -73,7 +71,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
-      - name: ${{ matrix.module }} Integ Tests
+      - name: firebase-firestore Integ Tests
         uses: reactivecircus/android-emulator-runner@v2
         env:
           FIREBASE_CI: 1
@@ -82,7 +80,7 @@ jobs:
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         with:
           api-level: 29
-          script: ./gradlew ${{matrix.module}}:connectedCheck withErrorProne -PtargetBackend="prod"
+          script: ./gradlew :firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
 
 
   firestore_custom_integ_tests:
@@ -210,4 +208,4 @@ jobs:
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         with:
           api-level: 29
-          script: ./gradlew firebase-firestore:deviceCheck withErrorProne -PtargetBackend="nightly"
+          script: ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly"
