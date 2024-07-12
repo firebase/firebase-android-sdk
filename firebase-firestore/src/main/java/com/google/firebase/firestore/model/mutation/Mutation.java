@@ -17,6 +17,8 @@ package com.google.firebase.firestore.model.mutation;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
+
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -161,6 +163,7 @@ public abstract class Mutation {
    *     a part of.
    * @return A {@code FieldMask} representing the fields that are changed by applying this mutation.
    */
+  @CanIgnoreReturnValue
   public abstract @Nullable FieldMask applyToLocalView(
       MutableDocument document, @Nullable FieldMask previousMask, Timestamp localWriteTime);
 
