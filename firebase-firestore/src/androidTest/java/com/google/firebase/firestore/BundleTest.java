@@ -187,7 +187,7 @@ public class BundleTest {
     verifySuccessProgress(result);
 
     // Read a different collection. This will trigger GC.
-    Tasks.await(db.collection("coll-other").get());
+    Tasks.await(db.collection("coll-other").get(Source.CACHE));
 
     // Read the loaded documents, expecting them to exist in cache. With memory GC, the documents
     // would get GC-ed if we did not hold the document keys in an "umbrella" target. See
