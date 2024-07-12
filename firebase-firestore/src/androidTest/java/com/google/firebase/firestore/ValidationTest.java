@@ -471,16 +471,16 @@ public class ValidationTest {
                 DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
 
                 if (snapshot.getMetadata().hasPendingWrites()) {
-                  // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able
+                  // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be
+                  // able
                   // to query by it.
                   assertThrows(
-                          IllegalArgumentException.class,
-                          () ->
-                                  collection
-                                          .orderBy("timestamp")
-                                          .endAt(docSnap)
-                                          .addSnapshotListener((snapshot2, error2) -> {
-                                          }));
+                      IllegalArgumentException.class,
+                      () ->
+                          collection
+                              .orderBy("timestamp")
+                              .endAt(docSnap)
+                              .addSnapshotListener((snapshot2, error2) -> {}));
                   // Use `trySetResult` since the callbacks fires twice if the WatchStream
                   // acknowledges the Write before the WriteStream.
                   offlineCallbackDone.trySetResult(null);
@@ -488,10 +488,9 @@ public class ValidationTest {
                   // Online snapshot. Since the server timestamp is committed, we should be able to
                   // query by it.
                   collection
-                          .orderBy("timestamp")
-                          .endAt(docSnap)
-                          .addSnapshotListener((snapshot2, error2) -> {
-                          });
+                      .orderBy("timestamp")
+                      .endAt(docSnap)
+                      .addSnapshotListener((snapshot2, error2) -> {});
                   onlineCallbackDone.trySetResult(null);
                 }
               } catch (Exception e) {
@@ -790,7 +789,7 @@ public class ValidationTest {
 
   /** Performs a write using each write API and makes sure it succeeds. */
   private static void expectWriteSuccess(Object data) {
-    expectWriteSuccess(data, /*includeSets=*/ true, /*includeUpdates=*/ true);
+    expectWriteSuccess(data, /* includeSets= */ true, /* includeUpdates= */ true);
   }
 
   /**
@@ -845,17 +844,17 @@ public class ValidationTest {
 
   /** Performs a write using each write API and makes sure it fails with the expected reason. */
   private static void expectWriteError(Object data, String reason) {
-    expectWriteError(data, reason, /*includeSets=*/ true, /*includeUpdates=*/ true);
+    expectWriteError(data, reason, /* includeSets= */ true, /* includeUpdates= */ true);
   }
 
   /** Performs a write using each update API and makes sure it fails with the expected reason. */
   private static void expectUpdateError(Map<String, Object> data, String reason) {
-    expectWriteError(data, reason, /*includeSets=*/ false, /*includeUpdates=*/ true);
+    expectWriteError(data, reason, /* includeSets= */ false, /* includeUpdates= */ true);
   }
 
   /** Performs a write using each set API and makes sure it fails with the expected reason. */
   private static void expectSetError(Object data, String reason) {
-    expectWriteError(data, reason, /*includeSets=*/ true, /*includeUpdates=*/ false);
+    expectWriteError(data, reason, /* includeSets= */ true, /* includeUpdates= */ false);
   }
 
   /**

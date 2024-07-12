@@ -70,7 +70,8 @@ public class CompositeIndexTestHelper {
   // Runs a test with specified documents in the COMPOSITE_INDEX_TEST_COLLECTION.
   @NonNull
   public CollectionReference withTestDocs(@NonNull Map<String, Map<String, Object>> docs) {
-    CollectionReference writer = testInMemoryFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
+    CollectionReference writer =
+        testInMemoryFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
     writeAllDocs(writer, prepareTestDocuments(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;
