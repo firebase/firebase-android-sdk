@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.os.StrictMode;
+
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -121,6 +123,8 @@ public class IntegrationTestUtil {
   private static final FirestoreProvider provider = new FirestoreProvider();
 
   private static boolean strictModeEnabled = false;
+
+  private static boolean backendPrimed = false;
 
   // FirebaseOptions needed to create a test FirebaseApp.
   private static final FirebaseOptions OPTIONS =
