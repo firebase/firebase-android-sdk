@@ -35,26 +35,17 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
-/**
- * Rpc based on Google Play Service.
- */
+/** Rpc based on Google Play Service. */
 class GmsRpc {
-
   static final String TAG = FirebaseMessaging.TAG;
 
-  /**
-   * Normal response from GMS
-   */
+  /** Normal response from GMS */
   private static final String EXTRA_REGISTRATION_ID = "registration_id";
 
-  /**
-   * Extra used to indicate that the application has been unregistered.
-   */
+  /** Extra used to indicate that the application has been unregistered. */
   private static final String EXTRA_UNREGISTERED = "unregistered";
 
-  /**
-   * Returned by GMS in case of error.
-   */
+  /** Returned by GMS in case of error. */
   private static final String EXTRA_ERROR = "error";
 
   /**
@@ -64,20 +55,15 @@ class GmsRpc {
    */
   static final String ERROR_SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
 
-  /**
-   * Another server error besides ERROR_SERVICE_NOT_AVAILABLE that we retry on.
-   */
+  /** Another server error besides ERROR_SERVICE_NOT_AVAILABLE that we retry on. */
   static final String ERROR_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
 
-  /**
-   * A server error that represents hitting topic subscription quota. Trying again here may continue
-   * to fail, but as long as we use exponential backoff its okay to retry.
+  /** A server error that represents hitting topic subscription quota. Trying again here may
+   * continue to fail, but as long as we use exponential backoff its okay to retry.
    */
   static final String TOO_MANY_SUBSCRIBERS = "TOO_MANY_SUBSCRIBERS";
 
-  /**
-   * Heartbeat tag for firebase iid.
-   */
+  /** Heartbeat tag for firebase iid. */
   static final String FIREBASE_IID_HEARTBEAT_TAG = "fire-iid";
 
   /**
@@ -91,79 +77,49 @@ class GmsRpc {
   private static final String TOPIC_PREFIX = "/topics/";
 
   // LINT.IfChange
-  /**
-   * InstanceId should be reset. Can be a duplicate, or deleted.
-   */
+  /** InstanceId should be reset. Can be a duplicate, or deleted. */
   static final String ERROR_INSTANCE_ID_RESET = "INSTANCE_ID_RESET";
   // LINT.ThenChange(//depot/google3/firebase/instance_id/client/cpp/src/android/instance_id.cc)
 
   // --- List of parameters sent to the /register3 servlet
 
-  /**
-   * Internal parameter used to indicate a 'subtype'. Will not be stored in DB for Nacho.
-   */
+  /** Internal parameter used to indicate a 'subtype'. Will not be stored in DB for Nacho. */
   private static final String EXTRA_SUBTYPE = "subtype";
-  /**
-   * Extra used to indicate which senders (Google API project IDs) can send messages to the app
-   */
+  /** Extra used to indicate which senders (Google API project IDs) can send messages to the app */
   private static final String EXTRA_SENDER = "sender";
 
   private static final String EXTRA_SCOPE = "scope";
 
-  /**
-   * Extra sent to http endpoint to indicate delete request
-   */
+  /** Extra sent to http endpoint to indicate delete request */
   private static final String EXTRA_DELETE = "delete";
 
-  /**
-   * Currently we only support the (gdpr) 'delete' operation
-   */
+  /** Currently we only support the (gdpr) 'delete' operation */
   private static final String EXTRA_IID_OPERATION = "iid-operation";
 
-  /**
-   * key id - sha of public key truncated to 8 bytes, with 0x9 prefix
-   */
+  /** key id - sha of public key truncated to 8 bytes, with 0x9 prefix */
   private static final String PARAM_INSTANCE_ID = "appid";
 
-  /**
-   * key id - user agent string published by firebase-common
-   */
+  /** key id - user agent string published by firebase-common */
   private static final String PARAM_USER_AGENT = "Firebase-Client";
 
-  /**
-   * key id - heartbeat code published by firebase-common
-   */
+  /** key id - heartbeat code published by firebase-common */
   private static final String PARAM_HEARTBEAT_CODE = "Firebase-Client-Log-Type";
 
-  /**
-   * Version of the client library. String like: "fcm-112233"
-   */
+  /** Version of the client library. String like: "fcm-112233" */
   private static final String PARAM_CLIENT_VER = "cliv";
-  /**
-   * gmp_app_id (application identifier in firebase). String
-   */
+  /** gmp_app_id (application identifier in firebase). String */
   private static final String PARAM_GMP_APP_ID = "gmp_app_id";
-  /**
-   * version of the gms package. Integer.toString()
-   */
+  /** version of the gms package. Integer.toString() */
   private static final String PARAM_GMS_VER = "gmsv";
-  /**
-   * android build version. Integer.toString()
-   */
+  /** android build version. Integer.toString() */
   private static final String PARAM_OS_VER = "osv";
-  /**
-   * package version code. Integer.toString()
-   */
+  /** package version code. Integer.toString() */
   private static final String PARAM_APP_VER_CODE = "app_ver";
-  /**
-   * package version name. Integer.toString()
-   */
+  /** package version name. Integer.toString() */
   private static final String PARAM_APP_VER_NAME = "app_ver_name";
 
   private static final String PARAM_FIS_AUTH_TOKEN = "Goog-Firebase-Installations-Auth";
-  /**
-   * hashed value of developer chosen (nick)name of Firebase Core SDK (a.k.a. FirebaseApp)
-   */
+  /** hashed value of developer chosen (nick)name of Firebase Core SDK (a.k.a. FirebaseApp) */
   private static final String PARAM_FIREBASE_APP_NAME_HASH = "firebase-app-name-hash";
 
   // --- End of the params for /register3
@@ -175,14 +131,10 @@ class GmsRpc {
    */
   static final String CMD_RST_FULL = "RST_FULL";
 
-  /**
-   * Value included in a GCM message from IID, indicating an identity reset.
-   */
+  /** Value included in a GCM message from IID, indicating an identity reset. */
   static final String CMD_RST = "RST";
 
-  /**
-   * Value included in a GCM message from IID, indicating a token sync reset.
-   */
+  /** Value included in a GCM message from IID, indicating a token sync reset. */
   static final String CMD_SYNC = "SYNC";
 
   private static final String SCOPE_ALL = "*";
