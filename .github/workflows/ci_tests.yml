@@ -32,6 +32,7 @@ jobs:
         run: |
           git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json
           echo modules=$(cat modules.json) >> $GITHUB_OUTPUT
+          cat modules.json
 
   unit_tests:
     name: "Unit Tests"
@@ -61,7 +62,8 @@ jobs:
         run: |
           git clone https://github.com/google-gemini/generative-ai-android.git
           cd generative-ai-android
-          ./gradlew :common:updateVersion common:publishToMavenLocal
+          ./gradlew :common:updateVersion 
+          ./gradlew :common:publishToMavenLocal
           cd ..
 
       - name: Clone mock responses
@@ -130,6 +132,15 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
+
+      - name: Pull genai-common
+        if: matrix.module == ':firebase-vertexai'
+        run: |
+          git clone https://github.com/google-gemini/generative-ai-android.git
+          cd generative-ai-android
+          ./gradlew :common:updateVersion 
+          ./gradlew :common:publishToMavenLocal
+          cd ..
 
       - name: Add google-services.json
         env:

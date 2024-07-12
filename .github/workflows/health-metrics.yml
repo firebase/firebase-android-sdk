@@ -69,6 +69,13 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
+      - name: Pull genai-common
+        run: |
+          git clone https://github.com/google-gemini/generative-ai-android.git
+          cd generative-ai-android
+          ./gradlew :common:updateVersion 
+          ./gradlew :common:publishToMavenLocal
+          cd ..
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
@@ -105,6 +112,13 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
+      - name: Pull genai-common
+        run: |
+          git clone https://github.com/google-gemini/generative-ai-android.git
+          cd generative-ai-android
+          ./gradlew :common:updateVersion 
+          ./gradlew :common:publishToMavenLocal
+          cd ..
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
