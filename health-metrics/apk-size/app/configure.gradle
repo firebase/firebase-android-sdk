@@ -14,6 +14,7 @@
 
 
 repositories {
+    mavenLocal()
     maven {
         url '../../../build/m2repository/'
     }
