@@ -11,7 +11,7 @@ on:
 jobs:
   determine_changed:
     name: "Determine changed modules"
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || github.event_name == 'pull_request'
     outputs:
       modules: ${{ steps.changed-modules.outputs.modules }}
@@ -34,10 +34,10 @@ jobs:
           echo modules=$(cat modules.json) >> $GITHUB_OUTPUT
 
   integ_tests:
-    name: "Firestore Instrumentation Tests"
+    name: "Firestore System Tests"
     # only run on post submit or PRs not originating from forks.
     if: ((github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && contains(fromJSON(needs.determine_changed.outputs.modules), ':firebase-firestore')
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs:
       - determine_changed
     strategy:
@@ -86,9 +86,9 @@ jobs:
           script: ./gradlew :firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
 
 
-  firestore_custom_integ_tests:
-    name: "Firestore Custom Instrumentation Tests Against Named DB"
-    runs-on: ubuntu-22.04
+  named_integ_tests:
+    name: "Firestore System Tests With Named DB"
+    runs-on: ubuntu-latest
     needs:
       - determine_changed
     # only run on post submit or PRs not originating from forks.
@@ -167,8 +167,8 @@ jobs:
           script: ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PtargetDatabaseId="test-db"
 
   firestore_nightly_integ_tests:
-    name: "Firestore Instrumentation Tests Against Nightly Environment"
-    runs-on: ubuntu-22.04
+    name: "Firestore System Tests Against Nightly"
+    runs-on: ubuntu-latest
     needs:
       - determine_changed
     # only run on post submit or PRs not originating from forks.
@@ -218,3 +218,13 @@ jobs:
           ram-size: 4096M
           heap-size: 4096M
           script: ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly"
+
+  check-required-tests:
+    runs-on: ubuntu-latest
+    if: always()
+    name: Check all required tests results
+    needs: [integ_tests, named_integ_tests]
+    steps:
+      - name: Check test matrix
+        if: needs.integ_tests.result == 'failure' || needs.named_integ_tests.result == 'failure'
+        run: exit 1
