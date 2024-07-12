@@ -15,14 +15,12 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static com.google.common.truth.Truth.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.firebase.FirebaseApp;
@@ -38,68 +36,75 @@ public class DataCollectionArbiterRobolectricTest {
   private Context testContext;
   private FirebaseApp firebaseApp;
 
-  private SharedPreferences sharedPreferences;
-
   private static final String FIREBASE_CRASHLYTICS_COLLECTION_ENABLED =
           "firebase_crashlytics_collection_enabled";
-
-  private DataCollectionArbiter arbiter;
 
   @Before
   public void setUp() {
     testContext = getApplicationContext();
     firebaseApp = mock(FirebaseApp.class);
     when(firebaseApp.getApplicationContext()).thenReturn(testContext);
+  }
 
-    arbiter = new DataCollectionArbiter(firebaseApp);
-
-    sharedPreferences = CommonUtils.getSharedPrefs(testContext);
+  private DataCollectionArbiter getDataCollectionArbiter(FirebaseApp app) {
+    return new DataCollectionArbiter(app);
   }
 
   @Test
-  public void testIsCrashlyticsCollectionEnabled_withSharedPreferenceValue() {
+  public void testSetCrashlyticsDataCollectionEnabled_overridesOtherSettings() {
+    // Ensure that Manifest metadata is set to false.
+    editManifestApplicationMetadata(testContext)
+            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, false);
+
+    // Mock FirebaseApp to return default data collection as false.
+    when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(false);
+
+    DataCollectionArbiter arbiter = getDataCollectionArbiter(firebaseApp);
+
+    // Setting explicitly to true should override both manifest and default settings.
     arbiter.setCrashlyticsDataCollectionEnabled(true);
-    assertTrue(arbiter.isCrashlyticsCollectionEnabled());
+    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isTrue();
 
+    // Setting explicitly to false should also override the previous value
     arbiter.setCrashlyticsDataCollectionEnabled(false);
-    assertFalse(arbiter.isCrashlyticsCollectionEnabled());
+    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
+
+    arbiter.setCrashlyticsDataCollectionEnabled(null);
+    //Expecting `false` result since manifest metadata value is `false`
+    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
   }
 
   @Test
-  public void testIsCrashlyticsCollectionEnabled_withManifestValue() {
-    //Disable preference
-    removeSharedPreferenceData();
+  public void testManifestMetadata_respectedWhenNoOverride() {
+    editManifestApplicationMetadata(testContext)
+            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
+
+    DataCollectionArbiter arbiter = getDataCollectionArbiter(firebaseApp);
+
+    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isTrue();
 
     editManifestApplicationMetadata(testContext)
-            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED,true);
-    assertTrue(arbiter.isCrashlyticsCollectionEnabled());
+            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, false);
 
-    editManifestApplicationMetadata(testContext)
-            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED,false);
-    assertFalse(arbiter.isCrashlyticsCollectionEnabled());
+    arbiter = getDataCollectionArbiter(firebaseApp);
+
+    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
   }
 
   @Test
-  public void testIsCrashlyticsCollectionEnabled_withFirebaseDefaultValue() {
-    //Disable preference
-    removeSharedPreferenceData();
-    //Disable manifest
+  public void testDefaultDataCollection_usedWhenNoOverrideOrManifestSetting() {
     editManifestApplicationMetadata(testContext)
             .remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
 
+    DataCollectionArbiter arbiter = getDataCollectionArbiter(firebaseApp);
+
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(true);
-    assertTrue(arbiter.isCrashlyticsCollectionEnabled());
+    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isTrue();
 
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(false);
-    assertFalse(arbiter.isCrashlyticsCollectionEnabled());
-  }
+    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
 
-  private void removeSharedPreferenceData() {
-    SharedPreferences.Editor editor = sharedPreferences.edit();
-    if(sharedPreferences.contains(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED)) {
-      editor.remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
-      editor.apply();
-    }
+    //No Test of `null` return for firebaseApp.isDataCollectionDefaultEnabled(), since it will never return `null` value
   }
 
   private Bundle editManifestApplicationMetadata(Context context) {
