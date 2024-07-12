@@ -25,6 +25,14 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Pull genai-common
+        run: |
+          git clone https://github.com/google-gemini/generative-ai-android.git
+          cd generative-ai-android
+          ./gradlew :common:updateversion
+          ./gradlew :common:publishToMavenLocal
+          cd ..
+
       - name: Generate docs for PR branch
         run: ./gradlew kotlindoc
 

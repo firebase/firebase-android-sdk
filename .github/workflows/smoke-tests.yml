@@ -22,6 +22,14 @@ jobs:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v2
 
+      - name: Pull genai-common
+        run: |
+          git clone https://github.com/google-gemini/generative-ai-android.git
+          cd generative-ai-android
+          ./gradlew :common:updateversion
+          ./gradlew :common:publishToMavenLocal
+          cd ..
+
       # TODO(yifany): make it a fireci plugin and remove the separately distributed jar file
       - name: Download smoke tests runner
         run: |

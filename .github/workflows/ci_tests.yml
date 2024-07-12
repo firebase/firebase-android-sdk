@@ -61,7 +61,8 @@ jobs:
         run: |
           git clone https://github.com/google-gemini/generative-ai-android.git
           cd generative-ai-android
-          ./gradlew :common:updateVersion common:publishToMavenLocal
+          ./gradlew :common:updateVersion
+          ./gradlew :common:publishToMavenLocal
           cd ..
 
       - name: Add google-services.json
@@ -125,6 +126,15 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
+
+      - name: Pull genai-common
+        if: matrix.module == ':firebase-vertexai'
+        run: |
+          git clone https://github.com/google-gemini/generative-ai-android.git
+          cd generative-ai-android
+          ./gradlew :common:updateversion
+          ./gradlew :common:publishToMavenLocal
+          cd ..
 
       - name: Add google-services.json
         env:
