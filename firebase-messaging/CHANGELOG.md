@@ -5,6 +5,8 @@
 * [changed] Switched Firelog to use the new TransportBackend.
 * [changed] Log analytics for notifications displayed by Google Play services on
   behalf of the app.
+* [changed] Retry Topic Subscribe/Unsubscribe operations with exponential 
+  backoff if they hit a quota error.
 
 
 ## Kotlin
