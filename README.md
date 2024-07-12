@@ -212,21 +212,11 @@ your app module's build.gradle.
 
 ### Code Formatting
 
-#### Java
+Java and Kotlin are both formatted using `spotless`.
 
-N/A for now
-
-
-#### Kotlin
-
-Kotlin code in this repo is formatted with the `ktfmt` tool. You can enable
-this formatting in Android Studio by downloading and installing the
-[ktfmt plugin](https://plugins.jetbrains.com/plugin/14912-ktfmt).
-Enable the plugin in Preferences | Editor | ktfmt Settings. and set code style to Google (internal).
-
-To run formatting on your entire project you can run
+To run formatting on a project, run
 ```bash
-./gradlew :<firebase-project>:ktfmtFormat
+./gradlew :<firebase-project>:spotlessApply
 ```
 
 ### Contributing
