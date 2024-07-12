@@ -80,6 +80,8 @@ jobs:
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         with:
           api-level: 29
+          ram-size: 4096M
+          heap-size: 4096M
           script: ./gradlew :firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
 
 
@@ -158,6 +160,8 @@ jobs:
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         with:
           api-level: 29
+          ram-size: 4096M
+          heap-size: 4096M
           script: ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PtargetDatabaseId="test-db"
 
   firestore_nightly_integ_tests:
@@ -208,4 +212,6 @@ jobs:
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         with:
           api-level: 29
+          ram-size: 4096M
+          heap-size: 4096M
           script: ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly"
