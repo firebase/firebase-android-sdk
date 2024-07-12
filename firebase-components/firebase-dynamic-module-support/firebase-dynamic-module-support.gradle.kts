@@ -22,6 +22,11 @@ firebaseLibrary {
   testLab.enabled = false
   publishSources = true
   publishJavadoc = false
+  releaseNotes {
+    name.set("Dynamic feature modules support")
+    versionName.set("dynamic-feature-modules-support")
+    hasKTX.set(false)
+  }
 }
 
 android {
