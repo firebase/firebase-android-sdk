@@ -26,7 +26,6 @@ import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,12 +59,8 @@ public class ArrayTransformsTest {
   }
 
   @After
-  public void after() {
+  public void tearDown() {
     listenerRegistration.remove();
-  }
-
-  @AfterClass
-  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 

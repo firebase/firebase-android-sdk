@@ -38,7 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -85,8 +85,8 @@ public class BundleTest {
     db = testFirestore();
   }
 
-  @AfterClass
-  public static void tearDown() {
+  @After
+  public void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
@@ -176,7 +176,10 @@ public class BundleTest {
   public void testLoadedDocumentsShouldNotBeGarbageCollectedRightAway() throws Exception {
     // This test really only makes sense with memory persistence, as SQLite persistence only ever
     // lazily deletes data
-    db.setFirestoreSettings(IntegrationTestUtil.newInMemoryTestSettings());
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build());
 
     InputStream bundle = new ByteArrayInputStream(createBundle());
     LoadBundleTask bundleTask = db.loadBundle(bundle); // Test the InputStream overload
