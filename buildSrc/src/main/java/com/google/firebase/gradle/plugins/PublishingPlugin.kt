@@ -80,7 +80,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       val releaseMetadata = computeReleaseMetadata(project, allFirebaseLibraries, libraryGroups)
 
       val releasingFirebaseLibraries = releaseMetadata?.releasingLibraries.orEmpty()
-      val releasingProjects = releasingFirebaseLibraries.map { it.project }
+      val releasingProjects = releasingFirebaseLibraries.map { it.project.get() }
 
       val generateBom = registerGenerateBomTask(project)
       val validatePomForRelease = registerValidatePomForReleaseTask(project, releasingProjects)
@@ -244,7 +244,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     val libraryGroupsToRelease =
       inputProjects
         .flatMap { it.resolveProjectLevelDependencies() + it }
-        .map { it.libraryGroupName }
+        .map { it.libraryGroup.get() }
     val projectsToRelease =
       libraryGroups
         .filterKeys { it in libraryGroupsToRelease }
@@ -264,7 +264,8 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     return releaseConfigFile?.let {
       val releaseConfig = ReleaseConfig.fromFile(it)
-      val librariesToRelease = allFirebaseLibraries.filter { it.path in releaseConfig.libraries }
+      val librariesToRelease =
+        allFirebaseLibraries.filter { it.path.get() in releaseConfig.libraries }
 
       val missingLibrariesToRelease =
         computeMissingLibrariesToRelease(librariesToRelease, libraryGroups)
@@ -350,9 +351,9 @@ abstract class PublishingPlugin : Plugin<Project> {
           )
         }
         for (releasingLibrary in releasinglibraries) {
-          if (!releasingLibrary.version.contains(releasingLibrary.previewMode)) {
+          if (!releasingLibrary.version.get().contains(releasingLibrary.previewMode.get())) {
             throw GradleException(
-              "You are releasing a ${releasingLibrary.previewMode} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version}!"
+              "You are releasing a ${releasingLibrary.previewMode.get()} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version.get()}!"
             )
           }
         }
@@ -425,7 +426,7 @@ abstract class PublishingPlugin : Plugin<Project> {
   ) =
     project.tasks.register(GENERATE_KOTLINDOC_FOR_RELEASE_TASK) {
       for (releasingLibrary in releasingLibraries) {
-        val kotlindocTask = releasingLibrary.project.tasks.named("kotlindoc")
+        val kotlindocTask = releasingLibrary.project.get().tasks.named("kotlindoc")
 
         dependsOn(kotlindocTask)
 
@@ -560,7 +561,10 @@ abstract class PublishingPlugin : Plugin<Project> {
     project.tasks.register(PUBLISH_ALL_TO_BUILD_TASK) {
       for (firebaseLibrary in allFirebaseLibraries) {
         val publishTask =
-          firebaseLibrary.project.tasks.named("publishMavenAarPublicationToBuildDirRepository")
+          firebaseLibrary.project
+            .get()
+            .tasks
+            .named("publishMavenAarPublicationToBuildDirRepository")
 
         dependsOn(publishTask)
       }

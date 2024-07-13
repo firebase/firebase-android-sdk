@@ -60,7 +60,9 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupAndroidLibraryExtension(project: Project) {
     val firebaseLibrary =
-      project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, ANDROID)
+      project.extensions.create<FirebaseLibraryExtension>(
+        "firebaseLibrary",
+      )
     val android = project.extensions.getByType<LibraryExtension>()
     android.compileOptions {
       sourceCompatibility = JavaVersion.VERSION_1_8
@@ -84,6 +86,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       it.systemProperty("javax.net.ssl.trustStoreType", "JKS")
     }
 
+    firebaseLibrary.commonConfiguration(project, ANDROID)
     setupApiInformationAnalysis(project, android)
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
@@ -94,10 +97,10 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
+      groupId.value(firebaseLibrary.groupId)
+      artifactId.value(firebaseLibrary.artifactId)
       version.value(firebaseLibrary.version)
-      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
     project.mkdir("semver")
     project.mkdir("semver/previous-version")
@@ -105,15 +108,16 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       dependsOn("bundleReleaseAar")
       project.file("semver/previous.aar").delete()
 
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
+      groupId.value(firebaseLibrary.groupId)
+      artifactId.value(firebaseLibrary.artifactId)
       aarAndroidFile.value(true)
       filePath.value(project.file("semver/previous.aar").absolutePath)
     }
-    val artifact = firebaseLibrary.artifactId.get()
-    val releaseAar = if (artifact.contains("-ktx")) "ktx-release.aar" else "${artifact}-release.aar"
     project.tasks.register<Copy>("extractCurrentClasses") {
       dependsOn("bundleReleaseAar")
+
+      val artifact = firebaseLibrary.artifactId.get()
+      val releaseAar = if (artifact.contains("-ktx")) "ktx-release.aar" else "$artifact-release.aar"
 
       from(project.zipTree("build/outputs/aar/${releaseAar}"))
       into(project.file("semver/current-version"))

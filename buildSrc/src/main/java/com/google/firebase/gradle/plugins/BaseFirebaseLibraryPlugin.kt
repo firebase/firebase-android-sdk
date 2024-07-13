@@ -138,9 +138,9 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
               firebaseLibrary.artifactId.get() // these dont get populated until afterEvaluate :(
             groupId = firebaseLibrary.groupId.get()
 
-            firebaseLibrary.applyPomCustomization(pom)
+            firebaseLibrary.customizePom(pom)
             firebaseLibrary.applyPomTransformations(pom)
-            from(components.findByName(firebaseLibrary.type.componentName))
+            from(components.findByName(firebaseLibrary.type.get().componentName))
           }
         }
       }
@@ -209,7 +209,9 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveAndroidDependencies() =
   resolveExternalAndroidLibraries() +
-    resolveProjectLevelDependencies().filter { it.type == LibraryType.ANDROID }.map { it.mavenName }
+    resolveProjectLevelDependencies()
+      .filter { it.type.get() == LibraryType.ANDROID }
+      .map { it.mavenName.get() }
 
 /**
  * A list of project level dependencies.
@@ -221,8 +223,10 @@ fun FirebaseLibraryExtension.resolveAndroidDependencies() =
  */
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
-  project.configurations
-    .getByName(runtimeClasspath)
+  project
+    .get()
+    .configurations
+    .getByName(runtimeClasspath.get())
     .allDependencies
     .mapNotNull { it as? ProjectDependency }
     .map {
@@ -245,8 +249,10 @@ fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
  */
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveExternalAndroidLibraries() =
-  project.configurations
-    .getByName(runtimeClasspath)
+  project
+    .get()
+    .configurations
+    .getByName(runtimeClasspath.get())
     .incoming
     .artifactView { attributes { attribute("artifactType", "aar") } }
     .artifacts
@@ -296,5 +302,5 @@ val FirebaseLibraryExtension.latestVersion: ModuleVersion
  */
 val FirebaseLibraryExtension.namespace: String
   get() =
-    project.extensions.getByType<LibraryExtension>().namespace
-      ?: throw RuntimeException("Project doesn't have a defined namespace: ${project.path}")
+    project.get().extensions.getByType<LibraryExtension>().namespace
+      ?: throw RuntimeException("Project doesn't have a defined namespace: ${project.get().path}")

@@ -47,9 +47,9 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
   }
 
   private fun setupFirebaseLibraryExtension(project: Project) {
-    val firebaseLibrary =
-      project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, JAVA)
+    val firebaseLibrary = project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary")
 
+    firebaseLibrary.commonConfiguration(project, JAVA)
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
@@ -59,33 +59,38 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
+      groupId.value(firebaseLibrary.groupId)
+      artifactId.value(firebaseLibrary.artifactId)
       version.value(firebaseLibrary.version)
-      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
     project.mkdir("semver")
     project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
       dependsOn("jar")
       project.file("semver/previous.jar").delete()
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
+      groupId.value(firebaseLibrary.groupId)
+      artifactId.value(firebaseLibrary.artifactId)
       aarAndroidFile.value(false)
       filePath.value(project.file("semver/previous.jar").absolutePath)
     }
     val currentJarFile =
-      project
-        .file("build/libs/${firebaseLibrary.artifactId.get()}-${firebaseLibrary.version}.jar")
-        .absolutePath
+      firebaseLibrary.artifactId.flatMap { artifactId ->
+        firebaseLibrary.version.map { version ->
+          project.file("build/libs/$artifactId-$version").absolutePath
+        }
+      }
     val previousJarFile = project.file("semver/previous.jar").absolutePath
+    val previousVersion =
+      firebaseLibrary.artifactId.flatMap { artifactId ->
+        firebaseLibrary.groupId.map { groupId ->
+          GmavenHelper(groupId, artifactId).getLatestReleasedVersion()
+        }
+      }
     project.tasks.register<ApiDiffer>("semverCheck") {
       currentJar.value(currentJarFile)
       previousJar.value(previousJarFile)
       version.value(firebaseLibrary.version)
-      previousVersionString.value(
-        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
-          .getLatestReleasedVersion()
-      )
+      previousVersionString.value(previousVersion)
 
       dependsOn("copyPreviousArtifacts")
     }

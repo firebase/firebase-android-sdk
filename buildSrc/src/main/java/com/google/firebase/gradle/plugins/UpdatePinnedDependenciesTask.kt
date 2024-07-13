@@ -83,14 +83,14 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     if (oldContent == updatedContent)
       throw RuntimeException(
         "Expected the following project level dependencies, but found none: " +
-          "${dependenciesToChange.joinToString("\n") { it.mavenName }}"
+          dependenciesToChange.joinToString("\n") { it.mavenName.get() }
       )
 
     val diff = oldContent.diff(updatedContent)
     val changedLines = diff.mapNotNull { it.first ?: it.second }
 
     val (librariesCorrectlyChanged, linesChangedIncorrectly) =
-      dependenciesToChange.partition { lib -> changedLines.any { it.contains(lib.path) } }
+      dependenciesToChange.partition { lib -> changedLines.any { it.contains(lib.path.get()) } }
 
     val librariesNotChanged = dependenciesToChange - librariesCorrectlyChanged
 
@@ -101,7 +101,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
     if (librariesNotChanged.isNotEmpty())
       throw RuntimeException(
-        "The following libraries were not found, but should have been:\n ${librariesNotChanged.joinToString("\n") { it.mavenName }}"
+        "The following libraries were not found, but should have been:\n ${librariesNotChanged.joinToString("\n") { it.mavenName.get() }}"
       )
 
     if (librariesCorrectlyChanged.size > dependenciesToChange.size)
@@ -114,11 +114,11 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     libraryGroups: Map<String, List<FirebaseLibraryExtension>>
   ) =
     with(project.firebaseLibrary) {
-      projectLevelDependencies - libraryGroups.getOrDefault(libraryGroupName, emptyList())
+      projectLevelDependencies - libraryGroups.getOrDefault(libraryGroup.get(), emptyList()).toSet()
     }
 
   private val FirebaseLibraryExtension.projectLevelDependencies: List<FirebaseLibraryExtension>
-    get() = resolveProjectLevelDependencies().filterNot { it.path in DEPENDENCIES_TO_IGNORE }
+    get() = resolveProjectLevelDependencies().filterNot { it.path.get() in DEPENDENCIES_TO_IGNORE }
 
   private fun replaceProjectLevelDependencies(
     buildFileContent: List<String>,
@@ -126,10 +126,10 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   ) =
     buildFileContent.replaceMatches(DEPENDENCY_REGEX) {
       val projectName = it.firstCapturedValue
-      val projectToChange = libraries.find { it.path == projectName }
+      val projectToChange = libraries.find { it.path.get() == projectName }
       val latestVersion = projectToChange?.latestVersion
 
-      latestVersion?.let { "\"${projectToChange.mavenName}:$latestVersion\"" }
+      latestVersion?.let { "\"${projectToChange.mavenName.get()}:$latestVersion\"" }
     }
 
   companion object {

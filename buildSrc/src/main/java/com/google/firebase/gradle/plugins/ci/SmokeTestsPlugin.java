@@ -58,8 +58,8 @@ public class SmokeTestsPlugin implements Plugin<Project> {
                       return;
                     }
 
-                    String groupId = firebaseLibrary.groupId.get();
-                    String artifactId = firebaseLibrary.artifactId.get();
+                    String groupId = firebaseLibrary.getGroupId().get();
+                    String artifactId = firebaseLibrary.getArtifactId().get();
                     String artifact =
                         String.format("%s:%s:%s", groupId, artifactId, sub.getVersion());
                     allArtifacts.add(artifact);
@@ -125,7 +125,7 @@ public class SmokeTestsPlugin implements Plugin<Project> {
 
       // Find all (head) dependencies to other projects in this repository.
       DependencySet all =
-          p.getConfigurations().getByName(library.getRuntimeClasspath()).getAllDependencies();
+          p.getConfigurations().getByName(library.getRuntimeClasspath().get()).getAllDependencies();
       Set<Project> affected =
           all.stream()
               .filter(it -> it instanceof ProjectDependency)

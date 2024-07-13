@@ -92,7 +92,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     val version = project.version.toString()
     val skipMissing = skipMissingEntries.getOrElse(false)
 
-    if (!project.firebaseLibrary.publishReleaseNotes)
+    if (project.firebaseLibrary.publishReleaseNotes.get())
       throw StopActionException("No release notes required for ${project.name}")
 
     if (!unreleased.hasContent()) {
