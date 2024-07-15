@@ -24,6 +24,10 @@ firebaseLibrary {
         enabled = true
         device 'model=panther,version=33'
     }
+    releaseNotes {
+        name.set("{{crashlytics}}")
+        versionName.set("crashlytics")
+    }
 }
 
 android {

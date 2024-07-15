@@ -87,18 +87,22 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
    * Ensures the entry is only created if the library has a KTX lib to begin with, and adds template
    * subtext if it lacks any changes.
    *
-   * @see convertToMetadata
+   * @see ReleaseNotesConfigurationExtension
    * @see KTXTransitiveReleaseText
    */
   private fun createEntryForKTX(release: ReleaseEntry): ReleaseContent? {
-    val metadata = convertToMetadata(project.name)
+    val releaseNotesConfig = project.firebaseLibrary.releaseNotes
 
     val nonEmptyKTXContent = release.ktx?.takeIf { it.hasContent() }
 
     val ktxContent =
-      nonEmptyKTXContent ?: ReleaseContent(KTXTransitiveReleaseText(project.name), emptyList())
+      nonEmptyKTXContent
+        ?: ReleaseContent(
+          KTXTransitiveReleaseText(releaseNotesConfig.artifactName.get()),
+          emptyList()
+        )
 
-    return ktxContent.takeIf { metadata.hasKTX }
+    return ktxContent.takeIf { releaseNotesConfig.hasKTX.get() }
   }
 
   private fun configure() {
