@@ -95,8 +95,6 @@ public class StorageException extends FirebaseException {
 
   @NonNull
   public static StorageException fromErrorStatus(@NonNull Status status) {
-    Preconditions.checkNotNull(status);
-    Preconditions.checkArgument(!status.isSuccess());
     return new StorageException(calculateErrorCode(status), null, 0);
   }
 
