@@ -64,6 +64,11 @@ jobs:
           ./gradlew :common:updateVersion common:publishToMavenLocal
           cd ..
 
+      - name: Clone mock responses
+        if: matrix.module == ':firebase-vertexai'
+        run: |
+          firebase-vertexai/update_responses.sh
+
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
