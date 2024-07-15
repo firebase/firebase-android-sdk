@@ -83,7 +83,17 @@ jobs:
           arch: x86_64
           ram-size: 4096M
           heap-size: 4096M
-          script: ./gradlew :firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
+          script: |
+            adb logcat -v time > logcat.txt &
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: logcat.txt
+          path: logcat.txt
+          retention-days: 7
+          if-no-files-found: ignore
 
 
   named_integ_tests:
@@ -153,6 +163,7 @@ jobs:
         continue-on-error: true
 
       - name: Firestore Named DB Integ Tests
+        timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@v2
         env:
           FIREBASE_CI: 1
@@ -164,7 +175,17 @@ jobs:
           arch: x86_64
           ram-size: 4096M
           heap-size: 4096M
-          script: ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PtargetDatabaseId="test-db"
+          script: |
+            adb logcat -v time > logcat.txt &
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: named-db-logcat.txt
+          path: logcat.txt
+          retention-days: 7
+          if-no-files-found: ignore
 
   firestore_nightly_integ_tests:
     name: "System Tests Against Nightly"
@@ -217,7 +238,17 @@ jobs:
           arch: x86_64
           ram-size: 4096M
           heap-size: 4096M
-          script: ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly"
+          script: |
+            adb logcat -v time > logcat.txt &
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly"
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: nightly-logcat.txt
+          path: logcat.txt
+          retention-days: 7
+          if-no-files-found: ignore
 
   check-required-tests:
     runs-on: ubuntu-latest
