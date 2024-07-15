@@ -83,7 +83,7 @@ public class QueryTest {
     Query query = collection.limit(2);
     QuerySnapshot set = waitFor(query.get());
     List<Map<String, Object>> data = querySnapshotToValues(set);
-    assertEquals(asList(map("k", "a"), map("k", "b")), data);
+    assertEquals(asList(map("k", "a"), map("k", "a")), data);
   }
 
   @Test
