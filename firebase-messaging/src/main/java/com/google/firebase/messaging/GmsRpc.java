@@ -58,7 +58,8 @@ class GmsRpc {
   /** Another server error besides ERROR_SERVICE_NOT_AVAILABLE that we retry on. */
   static final String ERROR_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
 
-  /** A server error that represents hitting topic subscription quota. Trying again here may
+  /**
+   * A server error that represents hitting topic subscription quota. Trying again here may
    * continue to fail, but as long as we use exponential backoff its okay to retry.
    */
   static final String TOO_MANY_SUBSCRIBERS = "TOO_MANY_SUBSCRIBERS";
