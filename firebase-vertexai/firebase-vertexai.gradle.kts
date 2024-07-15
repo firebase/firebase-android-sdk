@@ -26,6 +26,11 @@ firebaseLibrary {
   publishSources = true
   publishJavadoc = true
   previewMode = "beta"
+  releaseNotes {
+    name.set("{{firebase_vertexai}}")
+    versionName.set("vertex-ai")
+    hasKTX.set(false)
+  }
 }
 
 android {
