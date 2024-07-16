@@ -20,6 +20,10 @@ plugins {
 
 firebaseLibrary {
     libraryGroup "installations"
+    releaseNotes {
+        name.set("{{firebase_installations}}")
+        versionName.set("installations")
+    }
 }
 
 android {

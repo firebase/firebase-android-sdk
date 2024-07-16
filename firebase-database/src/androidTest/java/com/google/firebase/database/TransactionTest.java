@@ -174,7 +174,10 @@ public class TransactionTest {
 
   @Test
   public void setDataReconnectDoTransactionThatAbortsVerifyCorrectEvents()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
 
@@ -292,7 +295,10 @@ public class TransactionTest {
 
   @Test
   public void useTransactionToUpdateOneOfTwoExistingChildNodes()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -435,7 +441,10 @@ public class TransactionTest {
 
   @Test
   public void setCancelsPendingTransactionsAndRerunsAffectedTransactions()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     // We do 3 transactions: 1) At /foo, 2) At /, and 3) At /bar.
     // Only #1 is sent to the server immediately (since 2 depends on 1 and 3 depends on 2).
@@ -1930,7 +1939,10 @@ public class TransactionTest {
   // See https://app.asana.com/0/15566422264127/23303789496881
   @Test
   public void outOfOrderRemoveWritesAreHandledCorrectly()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TestFailure,
           TimeoutException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 

@@ -16,7 +16,6 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testDocument;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testInMemoryFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -25,9 +24,6 @@ import static org.junit.Assert.assertEquals;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.testutil.IntegrationTestUtil;
-
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,11 +44,6 @@ public class ArrayTransformsServerApplicationTest {
     docRef = testDocument();
   }
 
-  @AfterClass
-  public static void tearDown() {
-    IntegrationTestUtil.tearDown();
-  }
-
   @Test
   public void setWithNoCachedBaseDoc() {
     waitFor(docRef.set(map("array", FieldValue.arrayUnion(1L, 2L))));
@@ -63,7 +54,7 @@ public class ArrayTransformsServerApplicationTest {
   @Test
   public void updateWithNoCachedBaseDoc() {
     // Write an initial document in an isolated Firestore instance so it's not stored in our cache.
-    waitFor(testInMemoryFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
+    waitFor(testFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
 
     waitFor(docRef.update(map("array", FieldValue.arrayUnion(1L, 2L))));
 
@@ -75,7 +66,7 @@ public class ArrayTransformsServerApplicationTest {
   @Test
   public void mergeSetWithNoCachedBaseDoc() {
     // Write an initial document in an isolated Firestore instance so it's not stored in our cache.
-    waitFor(testInMemoryFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
+    waitFor(testFirestore().document(docRef.getPath()).set(map("array", asList(42L))));
 
     waitFor(docRef.set(map("array", FieldValue.arrayUnion(1L, 2L)), SetOptions.merge()));
 

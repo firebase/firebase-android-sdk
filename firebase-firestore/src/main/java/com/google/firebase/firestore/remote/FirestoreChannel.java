@@ -86,8 +86,13 @@ public class FirestoreChannel {
       CredentialsProvider<String> appCheckProvider,
       DatabaseInfo databaseInfo,
       GrpcMetadataProvider metadataProvider) {
-    this(asyncQueue, authProvider, appCheckProvider, databaseInfo.getDatabaseId(), metadataProvider,
-            getGrpcCallProvider(asyncQueue, context, authProvider, appCheckProvider, databaseInfo));
+    this(
+        asyncQueue,
+        authProvider,
+        appCheckProvider,
+        databaseInfo.getDatabaseId(),
+        metadataProvider,
+        getGrpcCallProvider(asyncQueue, context, authProvider, appCheckProvider, databaseInfo));
   }
 
   FirestoreChannel(
@@ -108,10 +113,13 @@ public class FirestoreChannel {
   }
 
   private static GrpcCallProvider getGrpcCallProvider(
-      AsyncQueue asyncQueue, Context context, CredentialsProvider<User> authProvider,
-      CredentialsProvider<String> appCheckProvider, DatabaseInfo databaseInfo) {
+      AsyncQueue asyncQueue,
+      Context context,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
+      DatabaseInfo databaseInfo) {
     FirestoreCallCredentials firestoreHeaders =
-          new FirestoreCallCredentials(authProvider, appCheckProvider);
+        new FirestoreCallCredentials(authProvider, appCheckProvider);
     return new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
   }
 
