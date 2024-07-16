@@ -32,7 +32,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,8 +40,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public final class SourceTest {
 
-  @AfterClass
-  public static void tearDown() {
+  @After
+  public void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
