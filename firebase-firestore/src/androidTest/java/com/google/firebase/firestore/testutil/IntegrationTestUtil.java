@@ -22,7 +22,6 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.os.StrictMode;
-
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
@@ -177,10 +176,7 @@ public class IntegrationTestUtil {
   @NonNull
   public static DatabaseInfo testEnvDatabaseInfo() {
     return new DatabaseInfo(
-        testEnvDatabaseId(),
-        "test-persistenceKey",
-        getFirestoreHost(),
-        getSslEnabled());
+        testEnvDatabaseId(), "test-persistenceKey", getFirestoreHost(), getSslEnabled());
   }
 
   @NonNull
@@ -326,8 +322,8 @@ public class IntegrationTestUtil {
             new EmptyAppCheckTokenProvider(),
             asyncQueue,
             ComponentProvider::defaultFactory,
-            /*firebaseApp=*/ null,
-            /*instanceRegistry=*/ (dbId) -> {});
+            /* firebaseApp= */ null,
+            /* instanceRegistry= */ (dbId) -> {});
     waitFor(firestore.clearPersistence());
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);

@@ -441,7 +441,8 @@ public class TestUtil {
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
 
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
+    WatchChangeAggregator aggregator =
+        new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
 
     WatchChange.WatchTargetChange watchChange =
         new WatchChange.WatchTargetChange(
@@ -462,7 +463,8 @@ public class TestUtil {
     testTargetMetadataProvider.setSyncedKeys(targetData, syncedKeys);
 
     ExistenceFilter existenceFilter = new ExistenceFilter(remoteCount);
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
+    WatchChangeAggregator aggregator =
+        new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
 
     WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
         new WatchChange.ExistenceFilterWatchChange(targetId, existenceFilter);
@@ -705,6 +707,7 @@ public class TestUtil {
       };
     };
   }
+
   /**
    * Asserts that the actual set is equal to the expected one.
    *
@@ -754,7 +757,7 @@ public class TestUtil {
   // TODO: We could probably do some de-duplication between assertFails / expectError.
   /** Expects runnable to throw an exception with a specific error message. */
   public static void expectError(Runnable runnable, String exceptionMessage) {
-    expectError(runnable, exceptionMessage, /*context=*/ null);
+    expectError(runnable, exceptionMessage, /* context= */ null);
   }
 
   /**

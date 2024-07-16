@@ -17,41 +17,39 @@ package com.google.firebase.firestore.local;
 import static org.junit.Assert.assertEquals;
 
 import com.google.protobuf.ByteString;
-
+import java.nio.charset.StandardCharsets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.charset.StandardCharsets;
-
 public abstract class GlobalsCacheTest {
 
-    private Persistence persistence;
-    private GlobalsCache globalsCache;
+  private Persistence persistence;
+  private GlobalsCache globalsCache;
 
-    @Before
-    public void setUp() {
-        persistence = getPersistence();
-        globalsCache = persistence.getGlobalsCache();
-    }
+  @Before
+  public void setUp() {
+    persistence = getPersistence();
+    globalsCache = persistence.getGlobalsCache();
+  }
 
-    @After
-    public void tearDown() {
-        persistence.shutdown();
-    }
+  @After
+  public void tearDown() {
+    persistence.shutdown();
+  }
 
-    abstract Persistence getPersistence();
+  abstract Persistence getPersistence();
 
-    @Test
-    public void setAndGetDbToken() {
-        ByteString value = ByteString.copyFrom("TestData", StandardCharsets.UTF_8);
-        globalsCache.setSessionToken(value);
-        assertEquals(value, globalsCache.getSessionsToken());
-    }
+  @Test
+  public void setAndGetDbToken() {
+    ByteString value = ByteString.copyFrom("TestData", StandardCharsets.UTF_8);
+    globalsCache.setSessionToken(value);
+    assertEquals(value, globalsCache.getSessionsToken());
+  }
 
-    @Test
-    public void setAndGetEmptyDbToken() {
-        globalsCache.setSessionToken(ByteString.EMPTY);
-        assertEquals(ByteString.EMPTY, globalsCache.getSessionsToken());
-    }
+  @Test
+  public void setAndGetEmptyDbToken() {
+    globalsCache.setSessionToken(ByteString.EMPTY);
+    assertEquals(ByteString.EMPTY, globalsCache.getSessionsToken());
+  }
 }

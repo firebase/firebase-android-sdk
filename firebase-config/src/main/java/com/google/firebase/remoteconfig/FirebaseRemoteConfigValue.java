@@ -25,6 +25,7 @@ public interface FirebaseRemoteConfigValue {
    * @throws IllegalArgumentException If the value cannot be converted to a <code>long</code>.
    */
   long asLong() throws IllegalArgumentException;
+
   /**
    * Gets the value as a <code>double</code>.
    *
@@ -48,6 +49,7 @@ public interface FirebaseRemoteConfigValue {
    */
   @NonNull
   byte[] asByteArray();
+
   /**
    * Gets the value as a <code>boolean</code>.
    *
