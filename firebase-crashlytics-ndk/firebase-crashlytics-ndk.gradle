@@ -23,6 +23,11 @@ firebaseLibrary {
         enabled = true
         device 'model=panther,version=33' // Pixel7
     }
+    releaseNotes {
+        name.set("{{crashlytics}} NDK")
+        versionName.set("crashlytics-ndk")
+        hasKTX.set(false)
+    }
     testLab.enabled = true
     publishJavadoc = false
 }

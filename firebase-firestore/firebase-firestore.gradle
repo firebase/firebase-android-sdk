@@ -26,6 +26,10 @@ firebaseLibrary {
         enabled = true
         timeout = '45m'
     }
+    releaseNotes {
+        name.set("{{firestore}}")
+        versionName.set("firestore")
+    }
 }
 
 protobuf {

@@ -55,6 +55,10 @@ protobuf {
 firebaseLibrary {
     libraryGroup "messaging"
     testLab.enabled = false
+    releaseNotes {
+        name.set("{{messaging_longer}}")
+        versionName.set("messaging")
+    }
 }
 
 android {

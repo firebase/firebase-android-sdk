@@ -36,7 +36,6 @@ import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -81,12 +80,8 @@ public class ServerTimestampTest {
   }
 
   @After
-  public void after() {
+  public void tearDown() {
     listenerRegistration.remove();
-  }
-
-  @AfterClass
-  public static void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 

@@ -27,6 +27,11 @@ firebaseLibrary {
     // Disabling Test Lab as there are no instrumentation tests for the SDK currently.
     // When we add instrumentation tests in the future, this needs to be enabled.
     testLab.enabled = false // Runs SDK Instrumentation Tests on Firebase Test Lab.
+    releaseNotes {
+        name.set("{{perfmon}}")
+        versionName.set("performance")
+        artifactName.set("firebase-performance")
+    }
 }
 
 protobuf {

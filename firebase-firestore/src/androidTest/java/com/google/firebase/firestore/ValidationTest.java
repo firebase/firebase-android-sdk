@@ -51,7 +51,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -60,8 +60,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ValidationTest {
 
-  @AfterClass
-  public static void tearDown() {
+  @After
+  public void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
@@ -461,42 +461,35 @@ public class ValidationTest {
     ListenerRegistration listenerRegistration =
         collection.addSnapshotListener(
             (snapshot, error) -> {
-              try {
-                assertNotNull(snapshot);
+              assertNotNull(snapshot);
 
-                // Skip the initial empty snapshot.
-                if (snapshot.isEmpty()) return;
+              // Skip the initial empty snapshot.
+              if (snapshot.isEmpty()) return;
 
-                assertThat(snapshot.getDocuments()).hasSize(1);
-                DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
+              assertThat(snapshot.getDocuments()).hasSize(1);
+              DocumentSnapshot docSnap = snapshot.getDocuments().get(0);
 
-                if (snapshot.getMetadata().hasPendingWrites()) {
-                  // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able
-                  // to query by it.
-                  assertThrows(
-                          IllegalArgumentException.class,
-                          () ->
-                                  collection
-                                          .orderBy("timestamp")
-                                          .endAt(docSnap)
-                                          .addSnapshotListener((snapshot2, error2) -> {
-                                          }));
-                  // Use `trySetResult` since the callbacks fires twice if the WatchStream
-                  // acknowledges the Write before the WriteStream.
-                  offlineCallbackDone.trySetResult(null);
-                } else {
-                  // Online snapshot. Since the server timestamp is committed, we should be able to
-                  // query by it.
-                  collection
-                          .orderBy("timestamp")
-                          .endAt(docSnap)
-                          .addSnapshotListener((snapshot2, error2) -> {
-                          });
-                  onlineCallbackDone.trySetResult(null);
-                }
-              } catch (Exception e) {
-                offlineCallbackDone.trySetException(e);
-                onlineCallbackDone.trySetException(e);
+              if (snapshot.getMetadata().hasPendingWrites()) {
+                // Offline snapshot. Since the server timestamp is uncommitted, we shouldn't be able
+                // to query by it.
+                assertThrows(
+                    IllegalArgumentException.class,
+                    () ->
+                        collection
+                            .orderBy("timestamp")
+                            .endAt(docSnap)
+                            .addSnapshotListener((snapshot2, error2) -> {}));
+                // Use `trySetResult` since the callbacks fires twice if the WatchStream
+                // acknowledges the Write before the WriteStream.
+                offlineCallbackDone.trySetResult(null);
+              } else {
+                // Online snapshot. Since the server timestamp is committed, we should be able to
+                // query by it.
+                collection
+                    .orderBy("timestamp")
+                    .endAt(docSnap)
+                    .addSnapshotListener((snapshot2, error2) -> {});
+                onlineCallbackDone.trySetResult(null);
               }
             });
 
@@ -524,9 +517,8 @@ public class ValidationTest {
 
   @Test
   public void queryOrderByKeyBoundsMustBeStringsWithoutSlashes() {
-    FirebaseFirestore firestore = testFirestore();
-    Query query = firestore.collection("collection").orderBy(FieldPath.documentId());
-    Query cgQuery = firestore.collectionGroup("collection").orderBy(FieldPath.documentId());
+    Query query = testFirestore().collection("collection").orderBy(FieldPath.documentId());
+    Query cgQuery = testFirestore().collectionGroup("collection").orderBy(FieldPath.documentId());
     expectError(
         () -> query.startAt(1),
         "Invalid query. Expected a string for document ID in startAt(), but got 1.");

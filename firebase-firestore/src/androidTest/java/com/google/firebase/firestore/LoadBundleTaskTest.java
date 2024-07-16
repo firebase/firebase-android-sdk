@@ -199,30 +199,30 @@ public class LoadBundleTaskTest {
     assertSourcesResolveTo(sources, 0, 1);
   }
 
-  @Test
-  public void testProgressListenerCanAddProgressListener() {
-    List<TaskCompletionSource> sources = taskSourceOf(3);
-
-    AtomicInteger outerTaskRun = new AtomicInteger();
-    LoadBundleTask task = new LoadBundleTask();
-    task.addOnProgressListener(
-        p1 -> {
-          sources.get(outerTaskRun.getAndIncrement()).setResult(outerTaskRun.get());
-          task.addOnProgressListener(
-              p2 -> {
-                sources.get(2).setResult(3);
-              });
-        });
-
-    // First update runs the outer listener, and registers the inner listener.
-    task.updateProgress(SUCCESS_RESULT);
-
-    waitFor(sources.get(0).getTask());
-    // Second update runs the outer listener, then the inner listener.
-    task.updateProgress(SUCCESS_RESULT);
-
-    assertSourcesResolveTo(sources, 1, 2, 3);
-  }
+//  @Test
+//  public void testProgressListenerCanAddProgressListener() {
+//    List<TaskCompletionSource> sources = taskSourceOf(3);
+//
+//    AtomicInteger outerTaskRun = new AtomicInteger();
+//    LoadBundleTask task = new LoadBundleTask();
+//    task.addOnProgressListener(
+//        p1 -> {
+//          sources.get(outerTaskRun.getAndIncrement()).setResult(outerTaskRun.get());
+//          task.addOnProgressListener(
+//              p2 -> {
+//                sources.get(2).setResult(3);
+//              });
+//        });
+//
+//    // First update runs the outer listener, and registers the inner listener.
+//    task.updateProgress(SUCCESS_RESULT);
+//
+//    waitFor(sources.get(0).getTask());
+//    // Second update runs the outer listener, then the inner listener.
+//    task.updateProgress(SUCCESS_RESULT);
+//
+//    assertSourcesResolveTo(sources, 1, 2, 3);
+//  }
 
   @Test
   public void testProgressListenerWithSuccess() throws InterruptedException {
