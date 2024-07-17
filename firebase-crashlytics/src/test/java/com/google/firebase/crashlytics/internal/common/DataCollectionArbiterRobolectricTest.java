@@ -63,15 +63,15 @@ public class DataCollectionArbiterRobolectricTest {
 
     // Setting explicitly to true should override both manifest and default settings.
     arbiter.setCrashlyticsDataCollectionEnabled(true);
-    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isTrue();
+    assertThat(arbiter.isAutomaticDataCollectionEnabled()).isTrue();
 
     // Setting explicitly to false should also override the previous value
     arbiter.setCrashlyticsDataCollectionEnabled(false);
-    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
+    assertThat(arbiter.isAutomaticDataCollectionEnabled()).isFalse();
 
     arbiter.setCrashlyticsDataCollectionEnabled(null);
     //Expecting `false` result since manifest metadata value is `false`
-    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
+    assertThat(arbiter.isAutomaticDataCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -81,14 +81,14 @@ public class DataCollectionArbiterRobolectricTest {
 
     DataCollectionArbiter arbiter = getDataCollectionArbiter(firebaseApp);
 
-    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isTrue();
+    assertThat(arbiter.isAutomaticDataCollectionEnabled()).isTrue();
 
     editManifestApplicationMetadata(testContext)
             .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, false);
 
     arbiter = getDataCollectionArbiter(firebaseApp);
 
-    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
+    assertThat(arbiter.isAutomaticDataCollectionEnabled()).isFalse();
   }
 
   @Test
@@ -99,10 +99,10 @@ public class DataCollectionArbiterRobolectricTest {
     DataCollectionArbiter arbiter = getDataCollectionArbiter(firebaseApp);
 
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(true);
-    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isTrue();
+    assertThat(arbiter.isAutomaticDataCollectionEnabled()).isTrue();
 
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(false);
-    assertThat(arbiter.isCrashlyticsCollectionEnabled()).isFalse();
+    assertThat(arbiter.isAutomaticDataCollectionEnabled()).isFalse();
 
     //No Test of `null` return for firebaseApp.isDataCollectionDefaultEnabled(), since it will never return `null` value
   }

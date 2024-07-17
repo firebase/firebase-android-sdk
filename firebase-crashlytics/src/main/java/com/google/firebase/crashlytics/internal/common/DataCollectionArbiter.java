@@ -71,10 +71,6 @@ public class DataCollectionArbiter {
     }
   }
 
-  public synchronized boolean isCrashlyticsCollectionEnabled() {
-    return isAutomaticDataCollectionEnabled();
-  }
-
   public synchronized boolean isAutomaticDataCollectionEnabled() {
     final boolean dataCollectionEnabled =
         crashlyticsDataCollectionEnabled != null
