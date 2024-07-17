@@ -42,6 +42,9 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
+          token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
+          committer: google-oss-bot <google-oss-bot@google.com>
+          assignees: ${{ github.actor }}
           base: 'releases/${{ inputs.name }}'
           branch: 'releases/${{ inputs.name }}.release'
           add-paths: release.json,release_report.md,release_report.json
