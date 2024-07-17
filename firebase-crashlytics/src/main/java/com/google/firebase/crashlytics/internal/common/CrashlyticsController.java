@@ -864,7 +864,7 @@ class CrashlyticsController {
 
   private static boolean firebaseCrashExists() {
     try {
-      final Class clazz = Class.forName("com.google.firebase.crash.FirebaseCrash");
+      final Class<?> clazz = Class.forName("com.google.firebase.crash.FirebaseCrash");
       return true;
     } catch (ClassNotFoundException e) {
       return false;
