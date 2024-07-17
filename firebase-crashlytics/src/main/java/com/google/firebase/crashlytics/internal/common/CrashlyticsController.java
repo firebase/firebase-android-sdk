@@ -498,7 +498,7 @@ class CrashlyticsController {
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            doOpenSession(sessionIdentifier, /*isOnDemand=*/ false);
+            doOpenSession(sessionIdentifier, /* isOnDemand= */ false);
             return null;
           }
         });

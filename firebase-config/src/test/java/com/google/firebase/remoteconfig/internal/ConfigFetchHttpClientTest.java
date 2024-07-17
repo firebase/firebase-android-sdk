@@ -42,7 +42,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.Build;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;

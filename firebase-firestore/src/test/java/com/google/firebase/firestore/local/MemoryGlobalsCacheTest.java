@@ -22,8 +22,8 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class MemoryGlobalsCacheTest extends GlobalsCacheTest {
 
-    @Override
-    Persistence getPersistence() {
-        return PersistenceTestHelpers.createEagerGCMemoryPersistence();
-    }
+  @Override
+  Persistence getPersistence() {
+    return PersistenceTestHelpers.createEagerGCMemoryPersistence();
+  }
 }

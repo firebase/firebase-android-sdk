@@ -29,16 +29,18 @@ buildscript {
                 artifact()
             }
         }
-
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
 
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.4'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:3.1.0'
         classpath 'com.google.gms:google-services:4.3.15'
-        classpath "com.ncorti.ktfmt.gradle:plugin:0.11.0"
         classpath 'com.google.firebase:firebase-appdistribution-gradle:5.0.0'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.5'
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:7.0.0.BETA1"
     }
 }
 
@@ -83,10 +85,17 @@ configure(subprojects) {
         }
     }
 
-    apply plugin: "com.ncorti.ktfmt.gradle"
+    apply plugin: "com.diffplug.spotless"
 
-    ktfmt {
-        googleStyle()
+    spotless {
+        java {
+            target 'src/**/*.java'
+            googleJavaFormat('1.22.0').reorderImports(false).skipJavadocFormatting()
+        }
+        kotlin {
+            target 'src/**/*.kt'
+            ktfmt('0.41').googleStyle()
+        }
     }
 }
 

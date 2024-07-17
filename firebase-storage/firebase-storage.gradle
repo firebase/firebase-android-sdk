@@ -24,6 +24,10 @@ firebaseLibrary {
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true
+    releaseNotes {
+        name.set("{{firebase_storage_full}}")
+        versionName.set("storage")
+    }
 }
 
 android {

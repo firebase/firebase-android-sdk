@@ -147,8 +147,7 @@ public class ImpressionStorageClientTest {
         CampaignImpressionList.getDefaultInstance();
     when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     impressionStorageClient.storeImpression(campaignImpression).subscribe();
-    when(storageClient.read(any(Parser.class)))
-        .thenReturn(Maybe.just(otherCampaignImpressionList));
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.just(otherCampaignImpressionList));
 
     TestSubscriber<CampaignImpressionList> subscriber =
         impressionStorageClient.getAllImpressions().toFlowable().test();
@@ -167,8 +166,7 @@ public class ImpressionStorageClientTest {
         .thenReturn(Completable.error(new IOException()));
     when(storageClient.read(any(Parser.class))).thenReturn(Maybe.empty());
     impressionStorageClient.storeImpression(campaignImpression).subscribe();
-    when(storageClient.read(any(Parser.class)))
-        .thenReturn(Maybe.just(otherCampaignImpressionList));
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.just(otherCampaignImpressionList));
 
     TestSubscriber<CampaignImpressionList> subscriber =
         impressionStorageClient.getAllImpressions().toFlowable().test();
@@ -189,8 +187,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void storeImpression_readErrors_notifiesError() {
-    when(storageClient.read(any(Parser.class)))
-        .thenReturn(Maybe.error(new IOException()));
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.error(new IOException()));
 
     TestSubscriber<Object> subscriber =
         impressionStorageClient.storeImpression(campaignImpression).toFlowable().test();
@@ -208,8 +205,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void getAllImpressions_readError_notifiesError() {
-    when(storageClient.read(any(Parser.class)))
-        .thenReturn(Maybe.error(new IOException()));
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.error(new IOException()));
 
     TestSubscriber<CampaignImpressionList> subscriber =
         impressionStorageClient.getAllImpressions().toFlowable().test();
@@ -270,8 +266,7 @@ public class ImpressionStorageClientTest {
 
   @Test
   public void isImpressed_onError_notifiesError() {
-    when(storageClient.read(any(Parser.class)))
-        .thenReturn(Maybe.error(new IOException()));
+    when(storageClient.read(any(Parser.class))).thenReturn(Maybe.error(new IOException()));
 
     TestSubscriber<Boolean> subscriber =
         impressionStorageClient.isImpressed(vanillaCampaign).toFlowable().test();
