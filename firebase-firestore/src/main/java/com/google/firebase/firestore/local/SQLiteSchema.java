@@ -722,10 +722,7 @@ class SQLiteSchema {
         new String[] {"globals"},
         () -> {
           // A table of key value pairs by user.
-          db.execSQL(
-              "CREATE TABLE globals ("
-                  + "name TEXT PRIMARY KEY, "
-                  + "value BLOB)");
+          db.execSQL("CREATE TABLE globals (" + "name TEXT PRIMARY KEY, " + "value BLOB)");
         });
   }
 

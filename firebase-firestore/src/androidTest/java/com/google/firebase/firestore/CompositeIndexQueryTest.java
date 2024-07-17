@@ -42,7 +42,7 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.CompositeIndexTestHelper;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -65,8 +65,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class CompositeIndexQueryTest {
 
-  @AfterClass
-  public static void tearDown() {
+  @After
+  public void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 

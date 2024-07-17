@@ -21,6 +21,11 @@ firebaseLibrary {
     libraryGroup "appdistribution"
     publishJavadoc = false
     previewMode = "beta"
+    releaseNotes {
+        name.set("{{appdistro}}")
+        versionName.set("app-distro")
+        hasKTX.set(false)
+    }
 }
 
 android {

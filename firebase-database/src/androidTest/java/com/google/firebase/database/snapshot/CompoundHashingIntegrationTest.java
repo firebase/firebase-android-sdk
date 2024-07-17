@@ -47,7 +47,7 @@ public class CompoundHashingIntegrationTest {
   static {
     int numKeys = 20;
     keys = new ChildKey[numKeys];
-    Generator<ChildKey> keyGen = new ChildKeyGenerator(25, /*includePriority=*/ false);
+    Generator<ChildKey> keyGen = new ChildKeyGenerator(25, /* includePriority= */ false);
     for (int i = 0; i < numKeys; i++) {
       keys[i] = keyGen.next();
     }
@@ -151,7 +151,7 @@ public class CompoundHashingIntegrationTest {
     Node currentState = initialState;
     SynchronousConnection conn = new SynchronousConnection(IntegrationTestValues.getDatabaseUrl());
     conn.connect();
-    conn.setValue(Path.getEmptyPath(), initialState, /*wait=*/ false);
+    conn.setValue(Path.getEmptyPath(), initialState, /* wait= */ false);
     int numUpdates = random.nextInt(30);
     for (int i = 0; i < numUpdates; i++) {
       Path randomPath;
@@ -164,7 +164,7 @@ public class CompoundHashingIntegrationTest {
         randomLeaf = randomLeaf(isPriority, true);
       } while (isPriority && currentState.getChild(randomPath.getParent()).isEmpty());
       currentState = currentState.updateChild(randomPath, randomLeaf);
-      conn.setValue(randomPath, randomLeaf, /*wait=*/ false);
+      conn.setValue(randomPath, randomLeaf, /* wait= */ false);
     }
 
     CompoundHash hash =

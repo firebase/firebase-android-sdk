@@ -15,22 +15,21 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.NonNull;
-
 import com.google.protobuf.ByteString;
 
 /** In-memory cache of global values */
 final class MemoryGlobalsCache implements GlobalsCache {
 
-    private ByteString sessionToken = ByteString.EMPTY;
+  private ByteString sessionToken = ByteString.EMPTY;
 
-    @NonNull
-    @Override
-    public ByteString getSessionsToken() {
-        return sessionToken;
-    }
+  @NonNull
+  @Override
+  public ByteString getSessionsToken() {
+    return sessionToken;
+  }
 
-    @Override
-    public void setSessionToken(@NonNull ByteString value) {
-        sessionToken = value;
-    }
+  @Override
+  public void setSessionToken(@NonNull ByteString value) {
+    sessionToken = value;
+  }
 }

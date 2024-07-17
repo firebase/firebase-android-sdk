@@ -14,12 +14,11 @@
 
 package com.google.firebase.testing.integ;
 
-import org.junit.internal.Throwables;
-
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.internal.Throwables;
 
 public class MultipleViolationsException extends Exception {
   private final List<Throwable> errors;

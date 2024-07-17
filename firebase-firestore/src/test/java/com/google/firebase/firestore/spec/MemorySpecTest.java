@@ -40,7 +40,9 @@ public class MemorySpecTest extends SpecTestCase {
 
   @Override
   protected MemoryComponentProvider initializeComponentProvider(
-          RemoteComponenetProvider remoteProvider, ComponentProvider.Configuration configuration, boolean useEagerGc) {
+      RemoteComponenetProvider remoteProvider,
+      ComponentProvider.Configuration configuration,
+      boolean useEagerGc) {
     MemoryComponentProvider provider =
         new MemoryComponentProvider(new FirebaseFirestoreSettings.Builder().build()) {
           @Override

@@ -726,7 +726,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -740,7 +740,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(Object... fieldValues) {
-    Bound bound = boundFromFields("startAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("startAt", fieldValues, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -754,7 +754,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -769,7 +769,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(Object... fieldValues) {
-    Bound bound = boundFromFields("startAfter", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("startAfter", fieldValues, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -783,7 +783,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -797,7 +797,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(Object... fieldValues) {
-    Bound bound = boundFromFields("endBefore", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("endBefore", fieldValues, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -811,7 +811,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -825,7 +825,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(Object... fieldValues) {
-    Bound bound = boundFromFields("endAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("endAt", fieldValues, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 

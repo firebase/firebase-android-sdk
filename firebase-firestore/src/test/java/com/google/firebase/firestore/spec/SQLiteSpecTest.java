@@ -18,7 +18,6 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.SQLiteComponentProvider;
 import com.google.firebase.firestore.remote.RemoteComponenetProvider;
-
 import java.util.Set;
 import org.json.JSONObject;
 import org.junit.runner.RunWith;

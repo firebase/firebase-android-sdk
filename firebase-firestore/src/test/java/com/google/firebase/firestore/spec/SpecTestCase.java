@@ -332,16 +332,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             maxConcurrentLimboResolutions,
             new EmptyCredentialsProvider(),
             new EmptyAppCheckTokenProvider(),
-            null
-        );
+            null);
 
-    RemoteComponenetProvider remoteProvider = new RemoteComponenetProvider() {
-      @Override
-      protected Datastore createDatastore(ComponentProvider.Configuration configuration) {
-        return datastore;
-      }
-    };
-    ComponentProvider provider = initializeComponentProvider(remoteProvider, configuration, useEagerGcForMemory);
+    RemoteComponenetProvider remoteProvider =
+        new RemoteComponenetProvider() {
+          @Override
+          protected Datastore createDatastore(ComponentProvider.Configuration configuration) {
+            return datastore;
+          }
+        };
+    ComponentProvider provider =
+        initializeComponentProvider(remoteProvider, configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
     if (localPersistence.getReferenceDelegate() instanceof LruDelegate) {
       lruGarbageCollector =

@@ -33,8 +33,10 @@ public class IndexBackfiller {
 
   /** How long we wait to try running index backfill after SDK initialization. */
   private static final long INITIAL_BACKFILL_DELAY_MS = TimeUnit.SECONDS.toMillis(15);
+
   /** Minimum amount of time between backfill checks, after the first one. */
   private static final long REGULAR_BACKFILL_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
+
   /** The maximum number of documents to process each time backfill() is called. */
   private static final int MAX_DOCUMENTS_TO_PROCESS = 50;
 
