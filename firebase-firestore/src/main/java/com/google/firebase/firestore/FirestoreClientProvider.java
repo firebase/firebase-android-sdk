@@ -68,12 +68,14 @@ final class FirestoreClientProvider {
     call.accept(client);
   }
 
-  synchronized <T> T executeWhileShutdown(Function<Executor, T> call) {
-    if (client != null && !client.isTerminated()) {
-      client.terminate();
-    }
+  synchronized <T> T executeIfShutdown(
+      Function<Executor, T> callIf, Function<Executor, T> callElse) {
     Executor executor = command -> asyncQueue.enqueueAndForgetEvenAfterShutdown(command);
-    return call.apply(executor);
+    if (client == null || client.isTerminated()) {
+      return callIf.apply(executor);
+    } else {
+      return callElse.apply(executor);
+    }
   }
 
   /**

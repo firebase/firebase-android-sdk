@@ -667,7 +667,13 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> clearPersistence() {
-    return clientProvider.executeWhileShutdown(this::clearPersistence);
+    return clientProvider.executeIfShutdown(
+        this::clearPersistence,
+        executor ->
+            Tasks.forException(
+                new FirebaseFirestoreException(
+                    "Persistence cannot be cleared while the firestore instance is running.",
+                    FirebaseFirestoreException.Code.FAILED_PRECONDITION)));
   }
 
   @NonNull
