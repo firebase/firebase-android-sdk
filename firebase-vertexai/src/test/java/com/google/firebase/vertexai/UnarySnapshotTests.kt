@@ -292,4 +292,10 @@ internal class UnarySnapshotTests {
         callPart.args["current"] shouldBe "true"
       }
     }
+
+  @Test
+  fun `countTokens fails with model not found`() =
+    goldenUnaryFile("failure-model-not-found.json", HttpStatusCode.NotFound) {
+      withTimeout(testTimeout) { shouldThrow<ServerException> { model.countTokens("prompt") } }
+    }
 }
