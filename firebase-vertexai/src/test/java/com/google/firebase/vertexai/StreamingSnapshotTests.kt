@@ -87,6 +87,17 @@ internal class StreamingSnapshotTests {
     }
 
   @Test
+  fun `unknown enum in finish reason`() =
+    goldenStreamingFile("failure-unknown-finish-enum.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) {
+        val exception = shouldThrow<ResponseStoppedException> { responses.collect() }
+        exception.response.candidates.first().finishReason shouldBe FinishReason.UNKNOWN
+      }
+    }
+
+  @Test
   fun `quotes escaped`() =
     goldenStreamingFile("success-quotes-escaped.txt") {
       val responses = model.generateContentStream("prompt")
@@ -183,5 +194,21 @@ internal class StreamingSnapshotTests {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<InvalidAPIKeyException> { responses.collect() } }
+    }
+
+  @Test
+  fun `invalid json`() =
+    goldenStreamingFile("failure-invalid-json.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) { shouldThrow<SerializationException> { responses.collect() } }
+    }
+
+  @Test
+  fun `malformed content`() =
+    goldenStreamingFile("failure-malformed-content.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) { shouldThrow<SerializationException> { responses.collect() } }
     }
 }
