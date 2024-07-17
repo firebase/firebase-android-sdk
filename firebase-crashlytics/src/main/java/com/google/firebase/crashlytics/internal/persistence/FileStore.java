@@ -74,6 +74,7 @@ public class FileStore {
   private final File priorityReportsDir;
   private final File nativeReportsDir;
 
+  @SuppressWarnings("KotlinInternal")
   public FileStore(Context context) {
     processName =
         ProcessDetailsProvider.INSTANCE.getCurrentProcessDetails(context).getProcessName();
