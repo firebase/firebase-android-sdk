@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Checked for notification_open duplicate logging based on message ID
+  instead of the Activity's Intent.
 
 
 # 24.0.0

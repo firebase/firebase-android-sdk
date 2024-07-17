@@ -63,6 +63,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.iid.FirebaseInstanceIdReceiver;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
+import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.FakeConnectorComponent;
@@ -612,6 +613,7 @@ public class FirebaseMessagingServiceRoboTest {
     // Robo manifest doesn't have a default activity, so set click action so that we get a
     // click pending intent.
     builder.addData(DisplayNotificationRoboTest.KEY_CLICK_ACTION, "click_action");
+    builder.addData(MessagePayloadKeys.MSGID, "msg_id");
     AnalyticsTestHelper.addAnalyticsExtras(builder);
     startServiceViaReceiver(builder.buildIntent());
   }
