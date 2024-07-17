@@ -16,12 +16,10 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.GuardedBy;
 import androidx.core.util.Consumer;
-
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -29,71 +27,72 @@ import java.util.concurrent.Executor;
  */
 final class FirestoreClientProvider {
 
-    private final Function<AsyncQueue, FirestoreClient> clientFactory;
-    @GuardedBy("this")
-    private FirestoreClient client;
+  private final Function<AsyncQueue, FirestoreClient> clientFactory;
 
-    @GuardedBy("this")
-    private AsyncQueue asyncQueue;
+  @GuardedBy("this")
+  private FirestoreClient client;
 
-    FirestoreClientProvider(Function<AsyncQueue, FirestoreClient> clientFactory) {
-        this.clientFactory = clientFactory;
-        this.asyncQueue = new AsyncQueue();
+  @GuardedBy("this")
+  private AsyncQueue asyncQueue;
+
+  FirestoreClientProvider(Function<AsyncQueue, FirestoreClient> clientFactory) {
+    this.clientFactory = clientFactory;
+    this.asyncQueue = new AsyncQueue();
+  }
+
+  boolean isConfigured() {
+    return client != null;
+  }
+
+  synchronized void ensureConfigured() {
+    if (!isConfigured()) {
+      client = clientFactory.apply(asyncQueue);
     }
+  }
 
-    boolean isConfigured() {
-        return client != null;
+  /**
+   * To facilitate calls to FirestoreClient without risk of FirestoreClient being terminated
+   * or restarted mid call.
+   */
+  synchronized <T> T call(Function<FirestoreClient, T> call) {
+    ensureConfigured();
+    return call.apply(client);
+  }
+
+  /**
+   * To facilitate calls to FirestoreClient without risk of FirestoreClient being terminated
+   * or restarted mid call.
+   */
+  synchronized void procedure(Consumer<FirestoreClient> call) {
+    ensureConfigured();
+    call.accept(client);
+  }
+
+  synchronized <T> T executeWhileShutdown(Function<Executor, T> call) {
+    if (client != null && !client.isTerminated()) {
+      client.terminate();
     }
+    Executor executor = command -> asyncQueue.enqueueAndForgetEvenAfterShutdown(command);
+    return call.apply(executor);
+  }
 
-    synchronized void ensureConfigured() {
-        if (!isConfigured()) {
-            client = clientFactory.apply(asyncQueue);
-        }
-    }
+  /**
+   * Shuts down the AsyncQueue and releases resources after which no progress will ever be made
+   * again.
+   */
+  synchronized Task<Void> terminate() {
+    // The client must be initialized to ensure that all subsequent API usage throws an exception.
+    ensureConfigured();
 
-    /**
-     * To facilitate calls to FirestoreClient without risk of FirestoreClient being terminated
-     * or restarted mid call.
-     */
-    synchronized <T> T call(Function<FirestoreClient, T> call) {
-        ensureConfigured();
-        return call.apply(client);
-    }
+    Task<Void> terminate = client.terminate();
 
-    /**
-     * To facilitate calls to FirestoreClient without risk of FirestoreClient being terminated
-     * or restarted mid call.
-     */
-    synchronized void procedure(Consumer<FirestoreClient> call) {
-        ensureConfigured();
-        call.accept(client);
-    }
+    // Will cause the executor to de-reference all threads, the best we can do
+    asyncQueue.shutdown();
 
-    synchronized <T> T executeWhileShutdown(Function<Executor, T> call) {
-        if (client != null && !client.isTerminated()) {
-            client.terminate();
-        }
-        Executor executor = command -> asyncQueue.enqueueAndForgetEvenAfterShutdown(command);
-        return call.apply(executor);
-    }
+    return terminate;
+  }
 
-    /**
-     * Shuts down the AsyncQueue and releases resources after which no progress will ever be made
-     * again.
-     */
-    synchronized Task<Void> terminate() {
-        // The client must be initialized to ensure that all subsequent API usage throws an exception.
-        ensureConfigured();
-
-        Task<Void> terminate = client.terminate();
-
-        // Will cause the executor to de-reference all threads, the best we can do
-        asyncQueue.shutdown();
-
-        return terminate;
-    }
-
-    AsyncQueue getAsyncQueue() {
-        return asyncQueue;
-    }
+  AsyncQueue getAsyncQueue() {
+    return asyncQueue;
+  }
 }

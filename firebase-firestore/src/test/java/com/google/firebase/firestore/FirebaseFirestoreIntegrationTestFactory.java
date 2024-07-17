@@ -30,7 +30,6 @@ import com.google.firebase.firestore.remote.GrpcCallProvider;
 import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
-import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
@@ -117,17 +116,18 @@ public final class FirebaseFirestoreIntegrationTestFactory {
   public final FirebaseFirestore.InstanceRegistry instanceRegistry =
       mock(FirebaseFirestore.InstanceRegistry.class);
 
-    public FirebaseFirestoreIntegrationTestFactory(DatabaseId databaseId) {
-        firestore = new FirebaseFirestore(
-                ApplicationProvider.getApplicationContext(),
-                databaseId,
-                "k",
-                new EmptyCredentialsProvider(),
-                new EmptyAppCheckTokenProvider(),
-                this::componentProvider,
-                null,
-                instanceRegistry,
-                null);
+  public FirebaseFirestoreIntegrationTestFactory(DatabaseId databaseId) {
+    firestore =
+        new FirebaseFirestore(
+            ApplicationProvider.getApplicationContext(),
+            databaseId,
+            "k",
+            new EmptyCredentialsProvider(),
+            new EmptyAppCheckTokenProvider(),
+            this::componentProvider,
+            null,
+            instanceRegistry,
+            null);
   }
 
   public void useMemoryCache() {

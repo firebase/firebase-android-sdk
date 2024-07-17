@@ -40,7 +40,8 @@ public class SQLiteSpecTest extends SpecTestCase {
       RemoteComponenetProvider remoteProvider,
       ComponentProvider.Configuration configuration,
       boolean garbageCollectionEnabled) {
-    SQLiteComponentProvider provider = new SQLiteComponentProvider(new FirebaseFirestoreSettings.Builder().build());
+    SQLiteComponentProvider provider =
+        new SQLiteComponentProvider(new FirebaseFirestoreSettings.Builder().build());
     provider.setRemoteProvider(remoteProvider);
     provider.initialize(configuration);
     return provider;

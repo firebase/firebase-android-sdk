@@ -40,7 +40,6 @@ import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -165,7 +164,8 @@ public class DocumentReference {
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
             : firestore.getUserDataReader().parseSetData(data);
     List<Mutation> mutations = singletonList(parsed.toMutation(key, Precondition.NONE));
-    return firestore.callClient(client -> client.write(mutations))
+    return firestore
+        .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -228,7 +228,8 @@ public class DocumentReference {
 
   private Task<Void> update(@NonNull ParsedUpdateData parsedData) {
     List<Mutation> mutations = singletonList(parsedData.toMutation(key, Precondition.exists(true)));
-    return firestore.callClient(client -> client.write(mutations))
+    return firestore
+        .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -240,7 +241,8 @@ public class DocumentReference {
   @NonNull
   public Task<Void> delete() {
     List<Mutation> mutations = singletonList(new DeleteMutation(key, Precondition.NONE));
-    return firestore.callClient(client -> client.write(mutations))
+    return firestore
+        .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -269,7 +271,8 @@ public class DocumentReference {
   @NonNull
   public Task<DocumentSnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
-      return firestore.callClient(client -> client.getDocumentFromLocalCache(key))
+      return firestore
+          .callClient(client -> client.getDocumentFromLocalCache(key))
           .continueWith(
               Executors.DIRECT_EXECUTOR,
               (Task<Document> task) -> {

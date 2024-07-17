@@ -296,13 +296,13 @@ public class FirebaseFirestore {
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
       return new FirestoreClient(
-              context,
-              databaseInfo,
-              authProvider,
-              appCheckProvider,
-              asyncQueue,
-              metadataProvider,
-              componentProviderFactory.apply(settings));
+          context,
+          databaseInfo,
+          authProvider,
+          appCheckProvider,
+          asyncQueue,
+          metadataProvider,
+          componentProviderFactory.apply(settings));
     }
   }
 
@@ -673,16 +673,18 @@ public class FirebaseFirestore {
   @NonNull
   private Task<Void> clearPersistence(Executor executor) {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-    executor.execute(() -> {
-      try {
-        SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
-        source.setResult(null);
-      } catch (FirebaseFirestoreException e) {
-        source.setException(e);
-      }
-    });
+    executor.execute(
+        () -> {
+          try {
+            SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+            source.setResult(null);
+          } catch (FirebaseFirestoreException e) {
+            source.setException(e);
+          }
+        });
     return source.getTask();
-  };
+  }
+  ;
 
   /**
    * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
@@ -793,7 +795,8 @@ public class FirebaseFirestore {
   // TODO(b/261013682): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public @NonNull Task<Query> getNamedQuery(@NonNull String name) {
-    return clientProvider.call(client -> client.getNamedQuery(name))
+    return clientProvider
+        .call(client -> client.getNamedQuery(name))
         .continueWith(
             task -> {
               com.google.firebase.firestore.core.Query query = task.getResult();
@@ -824,7 +827,8 @@ public class FirebaseFirestore {
           runnable.run();
         };
     AsyncEventListener<Void> asyncListener = new AsyncEventListener<>(userExecutor, eventListener);
-    return clientProvider.call(client -> client.addSnapshotsInSyncListener(activity, asyncListener));
+    return clientProvider.call(
+        client -> client.addSnapshotsInSyncListener(activity, asyncListener));
   }
 
   <T> T callClient(Function<FirestoreClient, T> call) {

@@ -961,7 +961,8 @@ public class Query {
   public Task<QuerySnapshot> get(@NonNull Source source) {
     validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
-      return firestore.callClient(client -> client.getDocumentsFromLocalCache(query))
+      return firestore
+          .callClient(client -> client.getDocumentsFromLocalCache(query))
           .continueWith(
               Executors.DIRECT_EXECUTOR,
               (Task<ViewSnapshot> viewSnap) ->

@@ -26,7 +26,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.TransactionOptions;
@@ -305,8 +304,7 @@ public final class FirestoreClient {
   }
 
   public ListenerRegistration addSnapshotsInSyncListener(
-      Activity activity,
-      AsyncEventListener<Void> listener) {
+      Activity activity, AsyncEventListener<Void> listener) {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
     return ActivityScope.bind(
