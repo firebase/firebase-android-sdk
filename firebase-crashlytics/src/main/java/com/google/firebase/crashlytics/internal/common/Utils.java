@@ -22,9 +22,11 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -117,9 +119,34 @@ public final class Utils {
   public static <T> T awaitEvenIfOnMainThread(Task<T> task)
       throws ExecutionException, InterruptedException, TimeoutException {
     if (Looper.getMainLooper() == Looper.myLooper()) {
-      return Tasks.await(task, MAIN_HANDLER_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+      return awaitOnMainThread(task);
     } else {
       return Tasks.await(task, TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+    }
+  }
+
+  private static <T> T awaitOnMainThread(Task<T> task)
+      throws ExecutionException, InterruptedException, TimeoutException {
+    CountDownLatch latch = new CountDownLatch(1);
+
+    task.continueWith(
+        TASK_CONTINUATION_EXECUTOR_SERVICE,
+        unusedTask -> {
+          latch.countDown();
+          return null;
+        });
+
+    //noinspection ResultOfMethodCallIgnored
+    latch.await(MAIN_HANDLER_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+
+    if (task.isSuccessful()) {
+      return task.getResult();
+    } else if (task.isCanceled()) {
+      throw new CancellationException("Task is already canceled");
+    } else if (task.isComplete()) {
+      throw new ExecutionException(task.getException());
+    } else {
+      throw new TimeoutException();
     }
   }
 
@@ -146,6 +173,15 @@ public final class Utils {
       }
     }
   }
+
+  /**
+   * ExecutorService that is used exclusively by the awaitEvenIfOnMainThread function. If the
+   * Continuation which counts down the latch is called on the same thread which is waiting on the
+   * latch, a deadlock will occur. A dedicated ExecutorService ensures that cannot happen.
+   */
+  private static final ExecutorService TASK_CONTINUATION_EXECUTOR_SERVICE =
+      ExecutorUtils.buildSingleThreadExecutorService(
+          "awaitEvenIfOnMainThread task continuation executor");
 
   private Utils() {}
 }
