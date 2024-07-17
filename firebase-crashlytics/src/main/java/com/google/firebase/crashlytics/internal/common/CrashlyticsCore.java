@@ -281,6 +281,10 @@ public class CrashlyticsCore {
 
   // endregion
 
+  public boolean isCrashlyticsCollectionEnabled() {
+    return dataCollectionArbiter.isAutomaticDataCollectionEnabled();
+  }
+
   public void setCrashlyticsCollectionEnabled(@Nullable Boolean enabled) {
     dataCollectionArbiter.setCrashlyticsDataCollectionEnabled(enabled);
   }
