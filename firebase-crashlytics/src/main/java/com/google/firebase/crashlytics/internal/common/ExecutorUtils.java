@@ -14,11 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
-
 import android.annotation.SuppressLint;
-import com.google.firebase.crashlytics.internal.Logger;
-import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -30,16 +26,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class ExecutorUtils {
-  private static final long DEFAULT_TERMINATION_TIMEOUT = 2L;
-
   private ExecutorUtils() {}
 
   public static ExecutorService buildSingleThreadExecutorService(String name) {
     final ThreadFactory threadFactory = ExecutorUtils.getNamedThreadFactory(name);
-    final ExecutorService executor =
-        newSingleThreadExecutor(threadFactory, new ThreadPoolExecutor.DiscardPolicy());
-    ExecutorUtils.addDelayedShutdownHook(name, executor);
-    return executor;
+    return newSingleThreadExecutor(threadFactory, new ThreadPoolExecutor.DiscardPolicy());
   }
 
   public static ScheduledExecutorService buildSingleThreadScheduledExecutorService(String name) {
@@ -48,7 +39,6 @@ public final class ExecutorUtils {
     @SuppressLint("ThreadPoolCreation")
     final ScheduledExecutorService executor =
         Executors.newSingleThreadScheduledExecutor(threadFactory);
-    ExecutorUtils.addDelayedShutdownHook(name, executor);
     return executor;
   }
 
@@ -86,50 +76,5 @@ public final class ExecutorUtils {
             new LinkedBlockingQueue<Runnable>(),
             threadFactory,
             rejectedExecutionHandler));
-  }
-
-  private static void addDelayedShutdownHook(String serviceName, ExecutorService service) {
-    ExecutorUtils.addDelayedShutdownHook(
-        serviceName, service, DEFAULT_TERMINATION_TIMEOUT, SECONDS);
-  }
-
-  // TODO(b/258263226): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  private static void addDelayedShutdownHook(
-      final String serviceName,
-      final ExecutorService service,
-      final long terminationTimeout,
-      final TimeUnit timeUnit) {
-
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                new BackgroundPriorityRunnable() {
-                  @Override
-                  public void onRun() {
-                    try {
-                      Logger.getLogger().d("Executing shutdown hook for " + serviceName);
-                      service.shutdown();
-                      if (!service.awaitTermination(terminationTimeout, timeUnit)) {
-                        Logger.getLogger()
-                            .d(
-                                serviceName
-                                    + " did not shut down in the"
-                                    + " allocated time. Requesting immediate shutdown.");
-                        service.shutdownNow();
-                      }
-                    } catch (InterruptedException e) {
-                      Logger.getLogger()
-                          .d(
-                              String.format(
-                                  Locale.US,
-                                  "Interrupted while waiting for %s to shut down."
-                                      + " Requesting immediate shutdown.",
-                                  serviceName));
-                      service.shutdownNow();
-                    }
-                  }
-                },
-                "Crashlytics Shutdown Hook for " + serviceName));
   }
 }

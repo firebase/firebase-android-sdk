@@ -19,21 +19,24 @@ import android.os.Looper;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /** Utils */
-@SuppressWarnings({"ResultOfMethodCallIgnored", "UnusedReturnValue"})
+@SuppressWarnings({"UnusedReturnValue"})
 public final class Utils {
-  private static final int TIMEOUT_SEC = 4;
+  private static final int TIMEOUT_MILLIS = 4_000;
+  private static final int MAIN_HANDLER_TIMEOUT_MILLIS = 2_750;
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   // TODO(b/261014167): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
@@ -52,7 +55,9 @@ public final class Utils {
     return result.getTask();
   }
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   public static <T> Task<T> race(Executor executor, Task<T> t1, Task<T> t2) {
     final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     Continuation<T, Void> continuation =
@@ -103,35 +108,18 @@ public final class Utils {
    * you should feel slightly bad about it.
    *
    * @param task the task to block on
-   * @return the value that was returned by the task, if successful.
-   * @throws InterruptedException if the method was interrupted
-   * @throws TimeoutException if the method timed out while waiting for the task.
+   * @return the Task's result
+   * @throws ExecutionException if the Task fails. {@code getCause} will return the original
+   *     exception.
+   * @throws InterruptedException if an interrupt occurs while waiting for the Task to complete
+   * @throws TimeoutException if the specified timeout is reached before the Task completes
    */
   public static <T> T awaitEvenIfOnMainThread(Task<T> task)
-      throws InterruptedException, TimeoutException {
-    CountDownLatch latch = new CountDownLatch(1);
-
-    task.continueWith(
-        TASK_CONTINUATION_EXECUTOR_SERVICE,
-        unusedTask -> {
-          latch.countDown();
-          return null;
-        });
-
+      throws ExecutionException, InterruptedException, TimeoutException {
     if (Looper.getMainLooper() == Looper.myLooper()) {
-      latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+      return Tasks.await(task, MAIN_HANDLER_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } else {
-      latch.await(TIMEOUT_SEC, TimeUnit.SECONDS);
-    }
-
-    if (task.isSuccessful()) {
-      return task.getResult();
-    } else if (task.isCanceled()) {
-      throw new CancellationException("Task is already canceled");
-    } else if (task.isComplete()) {
-      throw new IllegalStateException(task.getException());
-    } else {
-      throw new TimeoutException();
+      return Tasks.await(task, TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -158,15 +146,6 @@ public final class Utils {
       }
     }
   }
-
-  /**
-   * ExecutorService that is used exclusively by the awaitEvenIfOnMainThread function. If the
-   * Continuation which counts down the latch is called on the same thread which is waiting on the
-   * latch, a deadlock will occur. A dedicated ExecutorService ensures that cannot happen.
-   */
-  private static final ExecutorService TASK_CONTINUATION_EXECUTOR_SERVICE =
-      ExecutorUtils.buildSingleThreadExecutorService(
-          "awaitEvenIfOnMainThread task continuation executor");
 
   private Utils() {}
 }
