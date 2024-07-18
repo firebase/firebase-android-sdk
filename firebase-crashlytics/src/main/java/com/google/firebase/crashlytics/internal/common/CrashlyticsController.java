@@ -250,9 +250,13 @@ class CrashlyticsController {
               }
             });
 
+    // Block until the task completes, to prevent the process from ending before logging the report.
+    // There might be other uncaught exception handlers in the chain, so do not block very long.
     try {
-      // TODO(mrober): Don't block the main thread ever for on-demand fatals.
-      Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
+      // Never block on ODFs, in case they get triggered from the main thread.
+      if (!isOnDemand) {
+        Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
+      }
     } catch (TimeoutException e) {
       Logger.getLogger().e("Cannot send reports. Timed out while fetching settings.");
     } catch (Exception e) {

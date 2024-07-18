@@ -15,16 +15,14 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
+import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static com.google.common.truth.Truth.assertThat;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.os.Bundle;
-
 import com.google.firebase.FirebaseApp;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,7 +35,7 @@ public class DataCollectionArbiterRobolectricTest {
   private FirebaseApp firebaseApp;
 
   private static final String FIREBASE_CRASHLYTICS_COLLECTION_ENABLED =
-          "firebase_crashlytics_collection_enabled";
+      "firebase_crashlytics_collection_enabled";
 
   @Before
   public void setUp() {
@@ -54,7 +52,7 @@ public class DataCollectionArbiterRobolectricTest {
   public void testSetCrashlyticsDataCollectionEnabled_overridesOtherSettings() {
     // Ensure that Manifest metadata is set to false.
     editManifestApplicationMetadata(testContext)
-            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, false);
+        .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, false);
 
     // Mock FirebaseApp to return default data collection as false.
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(false);
@@ -70,21 +68,21 @@ public class DataCollectionArbiterRobolectricTest {
     assertThat(arbiter.isAutomaticDataCollectionEnabled()).isFalse();
 
     arbiter.setCrashlyticsDataCollectionEnabled(null);
-    //Expecting `false` result since manifest metadata value is `false`
+    // Expecting `false` result since manifest metadata value is `false`
     assertThat(arbiter.isAutomaticDataCollectionEnabled()).isFalse();
   }
 
   @Test
   public void testManifestMetadata_respectedWhenNoOverride() {
     editManifestApplicationMetadata(testContext)
-            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
+        .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, true);
 
     DataCollectionArbiter arbiter = getDataCollectionArbiter(firebaseApp);
 
     assertThat(arbiter.isAutomaticDataCollectionEnabled()).isTrue();
 
     editManifestApplicationMetadata(testContext)
-            .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, false);
+        .putBoolean(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED, false);
 
     arbiter = getDataCollectionArbiter(firebaseApp);
 
@@ -93,8 +91,7 @@ public class DataCollectionArbiterRobolectricTest {
 
   @Test
   public void testDefaultDataCollection_usedWhenNoOverrideOrManifestSetting() {
-    editManifestApplicationMetadata(testContext)
-            .remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
+    editManifestApplicationMetadata(testContext).remove(FIREBASE_CRASHLYTICS_COLLECTION_ENABLED);
 
     DataCollectionArbiter arbiter = getDataCollectionArbiter(firebaseApp);
 
@@ -104,13 +101,14 @@ public class DataCollectionArbiterRobolectricTest {
     when(firebaseApp.isDataCollectionDefaultEnabled()).thenReturn(false);
     assertThat(arbiter.isAutomaticDataCollectionEnabled()).isFalse();
 
-    //No Test of `null` return for firebaseApp.isDataCollectionDefaultEnabled(), since it will never return `null` value
+    // No Test of `null` return for firebaseApp.isDataCollectionDefaultEnabled(), since it will
+    // never return `null` value
   }
 
   private Bundle editManifestApplicationMetadata(Context context) {
     return shadowOf(context.getPackageManager())
-            .getInternalMutablePackageInfo(context.getPackageName())
-            .applicationInfo
-            .metaData;
+        .getInternalMutablePackageInfo(context.getPackageName())
+        .applicationInfo
+        .metaData;
   }
 }
