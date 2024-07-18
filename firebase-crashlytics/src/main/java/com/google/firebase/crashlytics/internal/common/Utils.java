@@ -31,9 +31,15 @@ import java.util.concurrent.TimeoutException;
 /** Utils */
 @SuppressWarnings({"ResultOfMethodCallIgnored", "UnusedReturnValue"})
 public final class Utils {
-  private static final int TIMEOUT_SEC = 4;
+  /** Timeout in milliseconds for blocking on background threads. */
+  private static final int BACKGROUND_TIMEOUT_MILLIS = 4_000;
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /** Timeout in milliseconds for blocking on the main thread. Be careful about ANRs. */
+  private static final int MAIN_TIMEOUT_MILLIS = 2_750;
+
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   // TODO(b/261014167): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
@@ -52,7 +58,9 @@ public final class Utils {
     return result.getTask();
   }
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   public static <T> Task<T> race(Executor executor, Task<T> t1, Task<T> t2) {
     final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     Continuation<T, Void> continuation =
@@ -119,9 +127,9 @@ public final class Utils {
         });
 
     if (Looper.getMainLooper() == Looper.myLooper()) {
-      latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+      latch.await(MAIN_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } else {
-      latch.await(TIMEOUT_SEC, TimeUnit.SECONDS);
+      latch.await(BACKGROUND_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     if (task.isSuccessful()) {
