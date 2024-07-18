@@ -20,6 +20,11 @@ firebaseLibrary {
     testLab.enabled = false
     publishSources = true
     publishJavadoc = false
+    releaseNotes {
+        name.set("{{ab_testing}}")
+        versionName.set("ab_testing")
+        hasKTX.set(false)
+    }
 }
 
 android {

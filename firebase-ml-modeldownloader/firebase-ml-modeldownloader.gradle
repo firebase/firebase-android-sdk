@@ -24,6 +24,10 @@ firebaseLibrary {
     libraryGroup "ml-modeldownloader"
     testLab.enabled = true
     publishJavadoc = true
+    releaseNotes {
+        name.set("{{firebase_ml}}")
+        versionName.set("firebaseml-modeldownloader")
+    }
 }
 
 protobuf {

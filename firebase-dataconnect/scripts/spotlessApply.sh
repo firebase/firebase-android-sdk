@@ -24,10 +24,10 @@ fi
 readonly PROJECT_ROOT_DIR="$(dirname "$0")/../.."
 
 readonly TARGETS=(
-  ":firebase-dataconnect:ktfmtFormat"
-  ":firebase-dataconnect:androidTestutil:ktfmtFormat"
-  ":firebase-dataconnect:connectors:ktfmtFormat"
-  ":firebase-dataconnect:testutil:ktfmtFormat"
+  ":firebase-dataconnect:spotlessApply"
+  ":firebase-dataconnect:androidTestutil:spotlessApply"
+  ":firebase-dataconnect:connectors:spotlessApply"
+  ":firebase-dataconnect:testutil:spotlessApply"
 )
 
 readonly args=(

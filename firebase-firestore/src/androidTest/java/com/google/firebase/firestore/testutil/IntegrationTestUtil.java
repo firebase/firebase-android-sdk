@@ -22,6 +22,7 @@ import static org.junit.Assert.assertNull;
 
 import android.content.Context;
 import android.os.StrictMode;
+import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -42,6 +43,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.Source;
 import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.provider.FirestoreProvider;
@@ -120,6 +122,7 @@ public class IntegrationTestUtil {
   private static final FirestoreProvider provider = new FirestoreProvider();
 
   private static boolean strictModeEnabled = false;
+
   private static boolean backendPrimed = false;
 
   // FirebaseOptions needed to create a test FirebaseApp.
@@ -170,12 +173,15 @@ public class IntegrationTestUtil {
     }
   }
 
+  @NonNull
   public static DatabaseInfo testEnvDatabaseInfo() {
     return new DatabaseInfo(
-        DatabaseId.forProject(provider.projectId()),
-        "test-persistenceKey",
-        getFirestoreHost(),
-        getSslEnabled());
+        testEnvDatabaseId(), "test-persistenceKey", getFirestoreHost(), getSslEnabled());
+  }
+
+  @NonNull
+  public static DatabaseId testEnvDatabaseId() {
+    return DatabaseId.forProject(provider.projectId());
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
@@ -315,8 +321,9 @@ public class IntegrationTestUtil {
             MockCredentialsProvider.instance(),
             new EmptyAppCheckTokenProvider(),
             asyncQueue,
-            /*firebaseApp=*/ null,
-            /*instanceRegistry=*/ (dbId) -> {});
+            ComponentProvider::defaultFactory,
+            /* firebaseApp= */ null,
+            /* instanceRegistry= */ (dbId) -> {});
     waitFor(firestore.clearPersistence());
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);

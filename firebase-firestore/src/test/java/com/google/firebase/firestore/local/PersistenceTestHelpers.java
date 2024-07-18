@@ -42,6 +42,7 @@ public final class PersistenceTestHelpers {
   public static SQLitePersistence createSQLitePersistence(String name) {
     return openSQLitePersistence(name, LruGarbageCollector.Params.Default());
   }
+
   /**
    * Creates and starts a new SQLitePersistence instance for testing.
    *

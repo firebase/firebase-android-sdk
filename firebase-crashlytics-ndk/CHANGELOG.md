@@ -1,4 +1,10 @@
 # Unreleased
+
+
+# 19.0.3
+* [changed] Updated `firebase-crashlytics` dependency to v19.0.3
+
+# 19.0.2
 * [changed] Update libcrashlytics to support 16 kb page sizes.
 
 # 19.0.1
