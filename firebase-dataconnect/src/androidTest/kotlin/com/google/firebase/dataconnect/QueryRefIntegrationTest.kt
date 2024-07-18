@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.randomId
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
@@ -352,17 +353,20 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun executeShouldSupportMassiveConcurrency() =
     runTest(timeout = 60.seconds) {
+      val latch = SuspendingCountDownLatch(25_000)
       val query = personSchema.getPerson(id = "foo")
 
-      val deferreds = buildList {
-        repeat(25_000) {
+      val deferreds =
+        List(latch.count) {
           // Use `Dispatchers.Default` as the dispatcher for the launched coroutines so that there
           // will be at least 2 threads used to run the coroutines (as documented by
           // `Dispatchers.Default`), introducing a guaranteed minimum level of parallelism, ensuring
           // that this test is indeed testing "massive concurrency".
-          add(backgroundScope.async(Dispatchers.Default) { query.execute() })
+          backgroundScope.async(Dispatchers.Default) {
+            latch.countDown().await()
+            query.execute()
+          }
         }
-      }
 
       val results = deferreds.map { it.await() }
       results.forEachIndexed { index, result ->
