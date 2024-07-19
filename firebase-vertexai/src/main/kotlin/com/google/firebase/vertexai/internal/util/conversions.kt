@@ -115,7 +115,7 @@ internal fun GenerationConfig.toInternal() =
     maxOutputTokens = maxOutputTokens,
     stopSequences = stopSequences,
     responseMimeType = responseMimeType,
-    responseSchema = responseSchema
+    responseSchema = responseSchema?.toInternal()
   )
 
 internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
