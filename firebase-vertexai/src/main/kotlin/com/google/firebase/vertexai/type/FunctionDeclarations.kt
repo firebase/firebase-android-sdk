@@ -368,7 +368,7 @@ fun <T, U, W, Z> defineFunction(
 ) = FourParameterFunction(name, description, arg1, arg2, arg3, arg4, function)
 
 private fun <T> FunctionCallPart.getArgOrThrow(param: Schema<T>): T {
-  return param.fromString(args[param.name])
+  return param.fromString(args?.get(param.name))
     ?: throw RuntimeException(
       "Missing argument for parameter \"${param.name}\" for function \"$name\""
     )

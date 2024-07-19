@@ -49,7 +49,7 @@ class BlobPart(val mimeType: String, val blob: ByteArray) : Part
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-class FunctionCallPart(val name: String, val args: Map<String, String?>) : Part
+class FunctionCallPart(val name: String, val args: Map<String, String?>?) : Part
 
 /**
  * Represents function call output to be returned to the model when it requests a function call.

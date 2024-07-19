@@ -86,7 +86,7 @@ internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.
         )
       )
     is com.google.firebase.vertexai.type.FunctionCallPart ->
-      FunctionCallPart(FunctionCall(name, args.orEmpty()))
+      FunctionCallPart(FunctionCall(name, args))
     is com.google.firebase.vertexai.type.FunctionResponsePart ->
       FunctionResponsePart(FunctionResponse(name, response.toInternal()))
     is FileDataPart ->
@@ -219,7 +219,7 @@ internal fun com.google.ai.client.generativeai.common.shared.Part.toPublic(): Pa
     is FunctionCallPart ->
       com.google.firebase.vertexai.type.FunctionCallPart(
         functionCall.name,
-        functionCall.args.orEmpty(),
+        functionCall.args,
       )
     is FunctionResponsePart ->
       com.google.firebase.vertexai.type.FunctionResponsePart(
