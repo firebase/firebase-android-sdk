@@ -171,23 +171,6 @@ public final class FirestoreClient {
   }
 
   /** Starts listening to a query. */
-  public ListenerRegistration listen(
-      Query query,
-      ListenOptions options,
-      @Nullable Activity activity,
-      AsyncEventListener<ViewSnapshot> listener) {
-    this.verifyNotTerminated();
-    QueryListener queryListener = new QueryListener(query, options, listener);
-    asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
-    return ActivityScope.bind(
-        activity,
-        () -> {
-          listener.mute();
-          asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(queryListener));
-        });
-  }
-
-  /** Starts listening to a query. */
   public QueryListener listen(
       Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
     this.verifyNotTerminated();
