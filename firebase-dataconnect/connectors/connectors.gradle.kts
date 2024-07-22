@@ -117,7 +117,7 @@ androidComponents.onVariants { variant ->
 
   val generateCodeTask = project.tasks.register<DataConnectCodegenTask>("generate${variantNameTitleCase}DataConnectSources") {
     inputDirectories.set(inputDirectoriesProvider)
-    intermediatesDirectory.set(project.layout.buildDirectory.dir("intermediates/generateDataConnectSources/${variant.name}"))
+    mergedInputsDirectory.set(project.layout.buildDirectory.dir("intermediates/mergedDataConnectSources/${variant.name}"))
     dataConnectCli.set(File("/google/src/cloud/dconeybe/codegen/google3/blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli"))
   }
 
@@ -129,7 +129,7 @@ abstract class DataConnectCodegenTask : DefaultTask() {
   abstract val outputDirectory: DirectoryProperty
 
   @get:OutputDirectory
-  abstract val intermediatesDirectory: DirectoryProperty
+  abstract val mergedInputsDirectory: DirectoryProperty
 
   @get:InputFiles
   abstract val inputDirectories: ListProperty<Collection<Directory>>
@@ -140,13 +140,13 @@ abstract class DataConnectCodegenTask : DefaultTask() {
   @TaskAction
   fun generateCode() {
     val outputDirectory = outputDirectory.asFile.get()
-    val intermediatesDirectory = intermediatesDirectory.asFile.get()
+    val mergedInputsDirectory = mergedInputsDirectory.asFile.get()
     val inputDirectories = inputDirectories.get().map { it.map { it.asFile } }
 
     deleteDirectory(outputDirectory)
-    deleteDirectory(intermediatesDirectory)
-    mergeInputDirectories(inputDirectories, intermediatesDirectory)
-    runCodgen(intermediatesDirectory, outputDirectory)
+    deleteDirectory(mergedInputsDirectory)
+    mergeInputDirectories(inputDirectories, mergedInputsDirectory)
+    runCodgen(mergedInputsDirectory, outputDirectory)
   }
 
   private fun deleteDirectory(dir: File) {
@@ -204,10 +204,10 @@ abstract class DataConnectCodegenTask : DefaultTask() {
         add("-v")
         add("2")
       }
+      add("gradle")
       add("generate")
       add("-config_dir=$intermediatesDirectory")
-      add("-target=kotlin")
-      add("-output_dir_override=${outputDirectory.path}")
+      add("-output_dir=${outputDirectory.path}")
     }
     val codegenArgsStr = codegenArgs.joinToString(" ")
     logger.info("Running command: {}", codegenArgsStr)
