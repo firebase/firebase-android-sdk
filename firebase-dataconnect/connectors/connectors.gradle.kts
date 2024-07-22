@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
+import com.android.build.api.variant.DslExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.Locale
 import kotlin.io.path.relativeTo
+import com.android.build.api.variant.VariantExtension
+import com.android.build.api.variant.VariantExtensionConfig
+import javax.inject.Inject
+import org.gradle.api.provider.Property
 
 plugins {
   id("com.android.library")
@@ -102,6 +107,24 @@ tasks.withType<KotlinCompile>().all {
       kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
     }
   }
+}
+
+interface DataConnectProjectDslExtension {
+  var connectors: List<String>
+}
+
+abstract class DataConnectVariantDslExtension @Inject constructor(
+    extensionConfig: VariantExtensionConfig<*>
+): VariantExtension, java.io.Serializable {
+  abstract val connectors: ListProperty<String>
+
+  init {
+    connectors.set(extensionConfig.projectExtension(DataConnectProjectDslExtension::class.java).connectors)
+  }
+}
+
+androidComponents.registerExtension(DslExtension.Builder("dataconnect").extendProjectWith(DataConnectProjectDslExtension::class.java).build()) { config ->
+  project.objects.newInstance(DataConnectVariantDslExtension::class.java, config)
 }
 
 androidComponents.onVariants { variant ->
