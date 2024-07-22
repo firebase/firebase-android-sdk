@@ -182,7 +182,7 @@ class Schema<T>(
   fun fromString(value: String?) = type.parse(value)
 
   companion object {
-    /** Registers a schema for a 32 bit integer number */
+    /** Registers a schema for a 32-bit integer number */
     fun int(name: String, description: String) =
       Schema<Int>(
         name = name,
@@ -192,7 +192,7 @@ class Schema<T>(
         nullable = false,
       )
 
-    /** Registers a schema for a 64 bit integer number */
+    /** Registers a schema for a 64-bit integer number */
     fun long(name: String, description: String) =
       Schema<Long>(
         name = name,
@@ -221,7 +221,7 @@ class Schema<T>(
 
     /** Registers a schema for a floating point number */
     @Deprecated(
-      message = "this is being renamed to double",
+      message = "Use `double` instead.",
       replaceWith = ReplaceWith("double(name, description)"),
     )
     fun num(name: String, description: String) =

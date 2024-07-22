@@ -29,8 +29,6 @@ import static org.mockito.Mockito.verify;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.firestore.auth.CredentialsProvider;
-import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
@@ -114,7 +112,8 @@ public class StreamTest {
       AsyncQueue testQueue, StreamStatusCallback callback) {
     DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
     RemoteSerializer remoteSerializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    FirestoreChannel firestoreChannel = new FirestoreChannel(
+    FirestoreChannel firestoreChannel =
+        new FirestoreChannel(
             testQueue,
             ApplicationProvider.getApplicationContext(),
             null == null ? new EmptyCredentialsProvider() : null,
@@ -142,7 +141,8 @@ public class StreamTest {
     GrpcMetadataProvider mockGrpcProvider = mock(GrpcMetadataProvider.class);
     DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
     RemoteSerializer remoteSerializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    FirestoreChannel firestoreChannel = new FirestoreChannel(
+    FirestoreChannel firestoreChannel =
+        new FirestoreChannel(
             testQueue,
             ApplicationProvider.getApplicationContext(),
             new EmptyCredentialsProvider(),
@@ -167,7 +167,8 @@ public class StreamTest {
     AsyncQueue testQueue = new AsyncQueue();
     DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
     RemoteSerializer remoteSerializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    FirestoreChannel firestoreChannel = new FirestoreChannel(
+    FirestoreChannel firestoreChannel =
+        new FirestoreChannel(
             testQueue,
             ApplicationProvider.getApplicationContext(),
             new EmptyCredentialsProvider(),
@@ -217,7 +218,8 @@ public class StreamTest {
     AsyncQueue testQueue = new AsyncQueue();
     DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
     RemoteSerializer remoteSerializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    FirestoreChannel firestoreChannel = new FirestoreChannel(
+    FirestoreChannel firestoreChannel =
+        new FirestoreChannel(
             testQueue,
             ApplicationProvider.getApplicationContext(),
             new EmptyCredentialsProvider(),
@@ -300,7 +302,8 @@ public class StreamTest {
     MockCredentialsProvider mockCredentialsProvider = new MockCredentialsProvider();
     DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
     RemoteSerializer remoteSerializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    FirestoreChannel firestoreChannel = new FirestoreChannel(
+    FirestoreChannel firestoreChannel =
+        new FirestoreChannel(
             testQueue,
             ApplicationProvider.getApplicationContext(),
             mockCredentialsProvider,
@@ -332,7 +335,8 @@ public class StreamTest {
     MockCredentialsProvider mockCredentialsProvider = new MockCredentialsProvider();
     DatabaseInfo databaseInfo = IntegrationTestUtil.testEnvDatabaseInfo();
     RemoteSerializer remoteSerializer = new RemoteSerializer(databaseInfo.getDatabaseId());
-    FirestoreChannel firestoreChannel = new FirestoreChannel(
+    FirestoreChannel firestoreChannel =
+        new FirestoreChannel(
             testQueue,
             ApplicationProvider.getApplicationContext(),
             mockCredentialsProvider,

@@ -20,7 +20,9 @@ plugins {
 firebaseLibrary{
     libraryGroup("transport")
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 protobuf {

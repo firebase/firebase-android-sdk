@@ -18,11 +18,9 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Assert.hardAssertNonNull;
 
 import android.content.Context;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -57,8 +55,8 @@ public abstract class ComponentProvider {
   @NonNull
   public static ComponentProvider defaultFactory(@NonNull FirebaseFirestoreSettings settings) {
     return settings.isPersistenceEnabled()
-            ? new SQLiteComponentProvider()
-            : new MemoryComponentProvider();
+        ? new SQLiteComponentProvider()
+        : new MemoryComponentProvider();
   }
 
   /** Configuration options for the component provider. */
@@ -73,8 +71,7 @@ public abstract class ComponentProvider {
     public final CredentialsProvider<User> authProvider;
     public final CredentialsProvider<String> appCheckProvider;
 
-    @Nullable
-    public final GrpcMetadataProvider metadataProvider;
+    @Nullable public final GrpcMetadataProvider metadataProvider;
 
     public Configuration(
         Context context,
@@ -85,8 +82,7 @@ public abstract class ComponentProvider {
         FirebaseFirestoreSettings settings,
         CredentialsProvider<User> authProvider,
         CredentialsProvider<String> appCheckProvider,
-        @Nullable GrpcMetadataProvider metadataProvider
-      ) {
+        @Nullable GrpcMetadataProvider metadataProvider) {
       this.context = context;
       this.asyncQueue = asyncQueue;
       this.databaseInfo = databaseInfo;

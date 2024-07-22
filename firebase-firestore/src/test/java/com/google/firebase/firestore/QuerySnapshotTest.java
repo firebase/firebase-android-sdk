@@ -129,9 +129,9 @@ public class QuerySnapshotTest {
             newDocuments,
             oldDocuments,
             documentChanges,
-            /*isFromCache=*/ false,
-            /*mutatedKeys=*/ keySet(),
-            /*didSyncStateChange=*/ true,
+            /* isFromCache= */ false,
+            /* mutatedKeys= */ keySet(),
+            /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false,
             /* hasCachedResults= */ false);
 
@@ -140,24 +140,24 @@ public class QuerySnapshotTest {
 
     QueryDocumentSnapshot doc1Snap =
         QueryDocumentSnapshot.fromDocument(
-            firestore, doc1New, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+            firestore, doc1New, /* fromCache= */ false, /* hasPendingWrites= */ false);
     QueryDocumentSnapshot doc2Snap =
         QueryDocumentSnapshot.fromDocument(
-            firestore, doc2New, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+            firestore, doc2New, /* fromCache= */ false, /* hasPendingWrites= */ false);
 
     assertEquals(1, snapshot.getDocumentChanges().size());
     List<DocumentChange> changesWithoutMetadata =
         Arrays.asList(
             new DocumentChange(
-                doc2Snap, DocumentChange.Type.MODIFIED, /*oldIndex=*/ 1, /*newIndex=*/ 1));
+                doc2Snap, DocumentChange.Type.MODIFIED, /* oldIndex= */ 1, /* newIndex= */ 1));
     assertEquals(changesWithoutMetadata, snapshot.getDocumentChanges());
 
     List<DocumentChange> changesWithMetadata =
         Arrays.asList(
             new DocumentChange(
-                doc1Snap, DocumentChange.Type.MODIFIED, /*oldIndex=*/ 0, /*newIndex=*/ 0),
+                doc1Snap, DocumentChange.Type.MODIFIED, /* oldIndex= */ 0, /* newIndex= */ 0),
             new DocumentChange(
-                doc2Snap, DocumentChange.Type.MODIFIED, /*oldIndex=*/ 1, /*newIndex=*/ 1));
+                doc2Snap, DocumentChange.Type.MODIFIED, /* oldIndex= */ 1, /* newIndex= */ 1));
     assertEquals(changesWithMetadata, snapshot.getDocumentChanges(MetadataChanges.INCLUDE));
   }
 }

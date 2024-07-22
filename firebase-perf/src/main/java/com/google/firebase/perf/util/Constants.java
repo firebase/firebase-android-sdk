@@ -43,6 +43,7 @@ public class Constants {
 
   /** Default rate of Token Bucket rate limiting algorithm. Number of event logs per minute. */
   public static final int RATE_PER_MINUTE = 100;
+
   /**
    * The bucket capacity of Token Bucket rate limiting algorithm. Number of event logs burst
    * allowed.

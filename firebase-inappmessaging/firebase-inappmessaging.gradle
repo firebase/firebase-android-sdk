@@ -22,6 +22,10 @@ plugins {
 firebaseLibrary {
     libraryGroup "inappmessaging"
     testLab.enabled = true
+    releaseNotes {
+        name.set("{{inappmessaging}}")
+        versionName.set("inappmessaging")
+    }
 }
 
 protobuf {

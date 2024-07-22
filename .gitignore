@@ -13,6 +13,7 @@ smoke-test-logs/
 smoke-tests/build-debug-headGit-smoke-test
 smoke-tests/firehorn.log
 macrobenchmark-output.json
+vertexai-sdk-test-data/
 
 # generated Terraform docs
 .terraform/*

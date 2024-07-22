@@ -29,7 +29,7 @@ public class IdlingResourceManager {
   public static CountingIdlingResource getInstance() {
     if (idlingResource == null) {
       idlingResource =
-          new CountingIdlingResource("BandwagonerIdlingResource", /*debugCounting=*/ true);
+          new CountingIdlingResource("BandwagonerIdlingResource", /* debugCounting= */ true);
     }
     return idlingResource;
   }

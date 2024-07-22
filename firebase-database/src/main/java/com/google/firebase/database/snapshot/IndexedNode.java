@@ -37,6 +37,7 @@ public class IndexedNode implements Iterable<NamedNode> {
       new ImmutableSortedSet<NamedNode>(Collections.<NamedNode>emptyList(), null);
 
   private final Node node;
+
   /**
    * The indexed set is initialized lazily for cases where we don't need to access any order
    * specific methods

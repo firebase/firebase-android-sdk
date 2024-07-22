@@ -26,7 +26,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.rule.ActivityTestRule;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.Semaphore;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,8 +34,8 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class ListenerRegistrationTest {
 
-  @AfterClass
-  public static void tearDown() {
+  @After
+  public void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 
@@ -205,22 +205,22 @@ public class ListenerRegistrationTest {
   @Rule
   public ActivityTestRule<TestActivity> activityTestRule =
       new ActivityTestRule<>(
-          TestActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
+          TestActivity.class, /* initialTouchMode= */ false, /* launchActivity= */ false);
 
   @Test
   public void activityScopedListenerStopsListeningWhenRawActivityStops() {
-    TestActivity activity = activityTestRule.launchActivity(/*intent=*/ null);
+    TestActivity activity = activityTestRule.launchActivity(/* intent= */ null);
     activityScopedListenerStopsListeningWhenActivityStops(activity);
   }
 
   @Rule
   public ActivityTestRule<TestFragmentActivity> activityTestFragmentRule =
       new ActivityTestRule<>(
-          TestFragmentActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
+          TestFragmentActivity.class, /* initialTouchMode= */ false, /* launchActivity= */ false);
 
   @Test
   public void activityScopedListenerStopsListeningWhenFragmentActivityStops() {
-    TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/*intent=*/ null);
+    TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/* intent= */ null);
     activityScopedListenerStopsListeningWhenActivityStops(activity);
   }
 }

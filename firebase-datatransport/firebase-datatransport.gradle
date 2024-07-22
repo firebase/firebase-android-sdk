@@ -18,7 +18,9 @@ plugins {
 
 firebaseLibrary {
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
     publishSources = true
 }
 

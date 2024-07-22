@@ -15,42 +15,36 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.NonNull;
-
 import com.google.protobuf.ByteString;
 
 public class SQLiteGlobalsCache implements GlobalsCache {
 
-    private static final String SESSION_TOKEN = "sessionToken";
-    private final SQLitePersistence db;
+  private static final String SESSION_TOKEN = "sessionToken";
+  private final SQLitePersistence db;
 
-    public SQLiteGlobalsCache(SQLitePersistence persistence) {
-        this.db = persistence;
-    }
+  public SQLiteGlobalsCache(SQLitePersistence persistence) {
+    this.db = persistence;
+  }
 
-    @NonNull
-    @Override
-    public ByteString getSessionsToken() {
-        byte[] bytes = get(SESSION_TOKEN);
-        return bytes == null ? ByteString.EMPTY : ByteString.copyFrom(bytes);
-    }
+  @NonNull
+  @Override
+  public ByteString getSessionsToken() {
+    byte[] bytes = get(SESSION_TOKEN);
+    return bytes == null ? ByteString.EMPTY : ByteString.copyFrom(bytes);
+  }
 
-    @Override
-    public void setSessionToken(@NonNull ByteString value) {
-        set(SESSION_TOKEN, value.toByteArray());
-    }
+  @Override
+  public void setSessionToken(@NonNull ByteString value) {
+    set(SESSION_TOKEN, value.toByteArray());
+  }
 
-    private byte[] get(@NonNull String name) {
-        return db.query("SELECT value FROM globals WHERE name = ?")
-                .binding(name)
-                .firstValue(row -> row.getBlob(0));
-    }
+  private byte[] get(@NonNull String name) {
+    return db.query("SELECT value FROM globals WHERE name = ?")
+        .binding(name)
+        .firstValue(row -> row.getBlob(0));
+  }
 
-    private void set(@NonNull String name, @NonNull byte[] value) {
-        db.execute(
-                "INSERT OR REPLACE INTO globals "
-                        + "(name, value) "
-                        + "VALUES (?, ?)",
-                name,
-                value);
-    }
+  private void set(@NonNull String name, @NonNull byte[] value) {
+    db.execute("INSERT OR REPLACE INTO globals " + "(name, value) " + "VALUES (?, ?)", name, value);
+  }
 }

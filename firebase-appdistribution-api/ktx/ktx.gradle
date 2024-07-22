@@ -21,7 +21,9 @@ firebaseLibrary {
     libraryGroup "appdistribution"
     testLab.enabled = true
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
     publishSources = true
     previewMode = "beta"
 }

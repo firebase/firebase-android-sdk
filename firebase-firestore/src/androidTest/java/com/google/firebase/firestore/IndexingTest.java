@@ -28,15 +28,15 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.testutil.Assert;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.ExecutionException;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class IndexingTest {
 
-  @AfterClass
-  public static void tearDown() {
+  @After
+  public void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 

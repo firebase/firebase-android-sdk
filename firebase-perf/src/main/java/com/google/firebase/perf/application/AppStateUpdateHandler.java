@@ -16,7 +16,6 @@ package com.google.firebase.perf.application;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import java.lang.ref.WeakReference;
@@ -28,6 +27,7 @@ import java.lang.ref.WeakReference;
 public abstract class AppStateUpdateHandler implements AppStateCallback {
 
   private final AppStateMonitor appStateMonitor;
+
   // The weak reference to register/unregister with AppStateMonitor.
   // It must be a weak reference because unregisterForAppState() is called typically from
   // Trace.stop() and user may forget to call Trace.stop(), if it was a strong reference,

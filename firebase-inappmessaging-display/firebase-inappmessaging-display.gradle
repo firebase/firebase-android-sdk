@@ -21,6 +21,10 @@ plugins {
 firebaseLibrary {
     libraryGroup "inappmessaging"
     testLab.enabled = true
+    releaseNotes {
+        name.set("{{inappmessaging}} Display")
+        versionName.set("inappmessaging-display")
+    }
 }
 
 android {

@@ -18,7 +18,6 @@ import android.content.Context;
 import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.android.gms.common.api.Api;
 import com.google.android.gms.common.api.Api.ApiOptions;
 import com.google.android.gms.common.api.Api.ApiOptions.NoOptions;

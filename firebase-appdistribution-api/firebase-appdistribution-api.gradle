@@ -20,6 +20,10 @@ plugins {
 firebaseLibrary {
     libraryGroup "appdistribution"
     previewMode = "beta"
+    releaseNotes {
+        name.set("{{appdistro}} API")
+        versionName.set("app-distro-api")
+    }
 }
 
 android {

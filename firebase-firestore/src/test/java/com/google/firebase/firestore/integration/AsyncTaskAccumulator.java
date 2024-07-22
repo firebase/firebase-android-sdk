@@ -14,15 +14,12 @@
 package com.google.firebase.firestore.integration;
 
 import androidx.annotation.NonNull;
-
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-
 
 /**
  * Collects asynchronous `onResult` and `onException` callback invocations.
@@ -34,91 +31,91 @@ import java.util.NoSuchElementException;
  */
 public class AsyncTaskAccumulator<T> implements Iterable<Task<T>> {
 
-    private int eventCount;
-    private List<TaskCompletionSource<T>> events;
+  private int eventCount;
+  private List<TaskCompletionSource<T>> events;
 
-    public AsyncTaskAccumulator() {
-        eventCount = 0;
-        events = new ArrayList<>();
+  public AsyncTaskAccumulator() {
+    eventCount = 0;
+    events = new ArrayList<>();
+  }
+
+  /**
+   * Callback for next `onResult` or `onException`. Calling this method repeatedly will
+   * provide callbacks further into the future. Each callback should only be exactly once.
+   */
+  public synchronized TaskCompletionSource<T> next() {
+    return computeIfAbsentIndex(eventCount++);
+  }
+
+  /**
+   * Callback that can be invoked as part of test code.
+   */
+  public void onResult(T result) {
+    next().setResult(result);
+  }
+
+  /**
+   * Callback that can be invoked as part of test code.
+   */
+  public void onException(Exception e) {
+    next().setException(e);
+  }
+
+  private TaskCompletionSource<T> computeIfAbsentIndex(int i) {
+    while (events.size() <= i) {
+      events.add(new TaskCompletionSource<>());
     }
+    return events.get(i);
+  }
 
-    /**
-     * Callback for next `onResult` or `onException`. Calling this method repeatedly will
-     * provide callbacks further into the future. Each callback should only be exactly once.
-     */
-    public synchronized TaskCompletionSource<T> next() {
-        return computeIfAbsentIndex(eventCount++);
-    }
+  /**
+   * Get task that completes when result arrives.
+   *
+   * @param index 0 indexed arrival sequence of results.
+   * @return Task.
+   */
+  @NonNull
+  public synchronized Task<T> get(int index) {
+    return computeIfAbsentIndex(index).getTask();
+  }
 
-    /**
-     * Callback that can be invoked as part of test code.
-     */
-    public void onResult(T result) {
-        next().setResult(result);
-    }
+  /**
+   * Iterates over results.
+   * <p>
+   * The Iterator is thread safe.
+   * Iteration will stop upon task that is failed, cancelled or incomplete.
+   * <p>
+   * A loop that waits for task to complete before getting next task will continue to iterate
+   * indefinitely. Attempting to iterate past a task that is not yet successful will throw
+   * {#code NoSuchElementException} and {@code #hasNext()} will be false. In this way, iteration
+   * in nonblocking. Last element will be failed, cancelled or awaiting result.
+   *
+   * @return Iterator of Tasks that complete.
+   */
+  @NonNull
+  @Override
+  public Iterator<Task<T>> iterator() {
+    return new Iterator<Task<T>>() {
 
-    /**
-     * Callback that can be invoked as part of test code.
-     */
-    public void onException(Exception e) {
-        next().setException(e);
-    }
+      private int i = -1;
+      private Task<T> current;
 
-    private TaskCompletionSource<T> computeIfAbsentIndex(int i) {
-        while (events.size() <= i) {
-            events.add(new TaskCompletionSource<>());
+      @Override
+      public synchronized boolean hasNext() {
+        // We always return first, and continue to return tasks so long as previous
+        // is successful. A task that hasn't completed, will also mark the end of
+        // iteration.
+        return i < 0 || current.isSuccessful();
+      }
+
+      @Override
+      public synchronized Task<T> next() {
+        if (!hasNext()) {
+          throw new NoSuchElementException();
         }
-        return events.get(i);
-    }
-
-    /**
-     * Get task that completes when result arrives.
-     *
-     * @param index 0 indexed arrival sequence of results.
-     * @return Task.
-     */
-    @NonNull
-    public synchronized Task<T> get(int index) {
-        return computeIfAbsentIndex(index).getTask();
-    }
-
-    /**
-     * Iterates over results.
-     * <p>
-     * The Iterator is thread safe.
-     * Iteration will stop upon task that is failed, cancelled or incomplete.
-     * <p>
-     * A loop that waits for task to complete before getting next task will continue to iterate
-     * indefinitely. Attempting to iterate past a task that is not yet successful will throw
-     * {#code NoSuchElementException} and {@code #hasNext()} will be false. In this way, iteration
-     * in nonblocking. Last element will be failed, cancelled or awaiting result.
-     *
-     * @return Iterator of Tasks that complete.
-     */
-    @NonNull
-    @Override
-    public Iterator<Task<T>> iterator() {
-        return new Iterator<Task<T>>() {
-
-            private int i = -1;
-            private Task<T> current;
-
-            @Override
-            public synchronized boolean hasNext() {
-                // We always return first, and continue to return tasks so long as previous
-                // is successful. A task that hasn't completed, will also mark the end of
-                // iteration.
-                return i < 0 || current.isSuccessful();
-            }
-
-            @Override
-            public synchronized Task<T> next() {
-                if (!hasNext()) {
-                    throw new NoSuchElementException();
-                }
-                i++;
-                return current = get(i);
-            }
-        };
-    }
+        i++;
+        return current = get(i);
+      }
+    };
+  }
 }

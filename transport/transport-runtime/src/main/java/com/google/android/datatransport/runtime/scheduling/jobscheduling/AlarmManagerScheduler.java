@@ -87,6 +87,7 @@ public class AlarmManagerScheduler implements WorkScheduler {
   public void schedule(TransportContext transportContext, int attemptNumber) {
     schedule(transportContext, attemptNumber, false);
   }
+
   /**
    * Schedules the AlarmManager service.
    *

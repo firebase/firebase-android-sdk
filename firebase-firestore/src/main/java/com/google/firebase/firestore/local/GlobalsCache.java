@@ -15,7 +15,6 @@
 package com.google.firebase.firestore.local;
 
 import androidx.annotation.NonNull;
-
 import com.google.protobuf.ByteString;
 
 /**
@@ -28,9 +27,8 @@ import com.google.protobuf.ByteString;
  */
 interface GlobalsCache {
 
-    @NonNull
-    ByteString getSessionsToken();
+  @NonNull
+  ByteString getSessionsToken();
 
-    void setSessionToken(@NonNull ByteString value);
-
+  void setSessionToken(@NonNull ByteString value);
 }

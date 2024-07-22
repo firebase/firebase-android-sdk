@@ -59,15 +59,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class QueryTest {
 
-  @AfterClass
-  public static void tearDown() {
+  @After
+  public void tearDown() {
     IntegrationTestUtil.tearDown();
   }
 

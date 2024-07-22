@@ -107,8 +107,10 @@ internal class LiveQuery(
       jobMutex.withLock {
         job.let { currentJob ->
           if (currentJob !== null && currentJob !== originalJob) {
+            logger.debug { "using in-flight job to execute query" }
             currentJob
           } else {
+            logger.debug { "creating new job to execute query" }
             coroutineScope.async { doExecute() }.also { newJob -> job = newJob }
           }
         }

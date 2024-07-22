@@ -253,7 +253,7 @@ public class ChildrenNode implements Node {
   }
 
   public void forEachChild(final ChildVisitor visitor) {
-    forEachChild(visitor, /*includePriority=*/ false);
+    forEachChild(visitor, /* includePriority= */ false);
   }
 
   public void forEachChild(final ChildVisitor visitor, boolean includePriority) {

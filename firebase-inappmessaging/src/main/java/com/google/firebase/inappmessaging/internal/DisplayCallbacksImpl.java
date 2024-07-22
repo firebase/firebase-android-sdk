@@ -15,9 +15,7 @@
 package com.google.firebase.inappmessaging.internal;
 
 import android.text.TextUtils;
-
 import androidx.annotation.VisibleForTesting;
-
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;

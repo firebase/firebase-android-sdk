@@ -90,7 +90,8 @@ public class WatchChangeAggregator {
     FALSE_POSITIVE
   }
 
-  public WatchChangeAggregator(DatabaseId databaseId, TargetMetadataProvider targetMetadataProvider) {
+  public WatchChangeAggregator(
+      DatabaseId databaseId, TargetMetadataProvider targetMetadataProvider) {
     this.databaseId = databaseId;
     this.targetMetadataProvider = targetMetadataProvider;
   }
@@ -299,7 +300,8 @@ public class WatchChangeAggregator {
     ImmutableSortedSet<DocumentKey> existingKeys =
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     int removalCount = 0;
-    String rootDocumentsPath = "projects/"
+    String rootDocumentsPath =
+        "projects/"
             + databaseId.getProjectId()
             + "/databases/"
             + databaseId.getDatabaseId()
@@ -307,12 +309,13 @@ public class WatchChangeAggregator {
     for (DocumentKey key : existingKeys) {
       String documentPath = rootDocumentsPath + key.getPath().canonicalString();
       if (!bloomFilter.mightContain(documentPath)) {
-        this.removeDocumentFromTarget(targetId, key, /*updatedDocument=*/ null);
+        this.removeDocumentFromTarget(targetId, key, /* updatedDocument= */ null);
         removalCount++;
       }
     }
     return removalCount;
   }
+
   /**
    * Converts the currently accumulated state into a remote event at the provided snapshot version.
    * Resets the accumulated changes before returning.

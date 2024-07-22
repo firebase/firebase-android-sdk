@@ -30,6 +30,7 @@ final class TopicOperation {
   @VisibleForTesting static final String OPERATION_PAIR_DIVIDER = "!";
   private static final String OLD_TOPIC_PREFIX = "/topics/";
   private static final String TOPIC_NAME_PATTERN = "[a-zA-Z0-9-_.~%]{1,900}";
+
   /**
    * Only topic names that match the pattern "[a-zA-Z0-9-_.~%]{1,900}" are allowed for subscribing
    * and publishing.
@@ -89,7 +90,7 @@ final class TopicOperation {
       return null;
     }
 
-    return new TopicOperation(/*operation=*/ splits[0], /*topic=*/ splits[1]);
+    return new TopicOperation(/* operation= */ splits[0], /* topic= */ splits[1]);
   }
 
   public String getTopic() {

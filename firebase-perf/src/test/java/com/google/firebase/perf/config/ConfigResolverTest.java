@@ -28,7 +28,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;

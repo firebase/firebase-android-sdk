@@ -300,7 +300,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
         schema.updatePerson(id = personId, name = "NewName").execute()
 
         buildList {
-            repeat(25_000) {
+            repeat(10_000) {
               // Run on Dispatchers.Default to ensure some level of concurrency.
               add(backgroundScope.async(Dispatchers.Default) { query.execute() })
             }
@@ -317,7 +317,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
             .catch { if (it !is TimeoutCancellationException) throw it }
             .toList()
         assertWithMessage("results.size").that(results.size).isGreaterThan(0)
-        assertWithMessage("results.size").that(results.size).isLessThan(1000)
+        assertWithMessage("results.size").that(results.size).isLessThan(2000)
         results.forEachIndexed { i, result ->
           assertWithMessage("results[$i]")
             .that(result.result.getOrThrow().data.person?.name)

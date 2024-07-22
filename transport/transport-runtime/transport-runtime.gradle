@@ -52,7 +52,9 @@ protobuf {
 firebaseLibrary {
     libraryGroup("transport")
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
     testLab {
         enabled = true
 

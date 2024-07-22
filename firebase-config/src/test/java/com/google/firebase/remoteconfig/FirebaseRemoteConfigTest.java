@@ -252,7 +252,7 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 FIREPERF_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFireperfFetchedCache,
                 mockFireperfActivatedCache,
@@ -269,7 +269,7 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 PERSONALIZATION_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFetchedCache,
                 mockActivatedCache,
@@ -366,8 +366,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void ensureInitialized_notInitialized_isNotComplete() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
     loadActivatedCacheWithIncompleteTask();
     loadInstanceIdAndToken();
 
@@ -380,9 +380,9 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void ensureInitialized_initialized_returnsCorrectFrcInfo() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
@@ -806,8 +806,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void activate_fireperfNamespace_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFireperfFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockFireperfActivatedCache, /* container= */ null);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
 

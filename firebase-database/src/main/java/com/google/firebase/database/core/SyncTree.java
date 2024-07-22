@@ -290,7 +290,7 @@ public class SyncTree {
             } else {
               ImmutableTree<Boolean> affectedTree = new ImmutableTree<Boolean>(true);
               return applyOperationToSyncPoints(
-                  new AckUserWrite(Path.getEmptyPath(), affectedTree, /*revert=*/ true));
+                  new AckUserWrite(Path.getEmptyPath(), affectedTree, /* revert= */ true));
             }
           }
         });
@@ -855,7 +855,7 @@ public class SyncTree {
     if (keep && !keepSyncedQueries.contains(query)) {
       // TODO[persistence]: Find better / more efficient way to do keep-synced listeners.
       addEventRegistration(
-          new KeepSyncedEventRegistration(query), /*skipListenerSetup=*/ skipDedup);
+          new KeepSyncedEventRegistration(query), /* skipListenerSetup= */ skipDedup);
       keepSyncedQueries.add(query);
     } else if (!keep && keepSyncedQueries.contains(query)) {
       removeEventRegistration(new KeepSyncedEventRegistration(query), skipDedup);

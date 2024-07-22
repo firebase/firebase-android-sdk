@@ -195,7 +195,11 @@ internal constructor(
    * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
   suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
-    return controller.countTokens(constructCountTokensRequest(*prompt)).toPublic()
+    try {
+      return controller.countTokens(constructCountTokensRequest(*prompt)).toPublic()
+    } catch (e: Throwable) {
+      throw FirebaseVertexAIException.from(e)
+    }
   }
 
   /**

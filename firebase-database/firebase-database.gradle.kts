@@ -22,6 +22,10 @@ firebaseLibrary {
   libraryGroup("database")
   testLab.enabled = true
   publishSources = true
+  releaseNotes {
+    name.set("{{database}}")
+    versionName.set("realtime-database")
+  }
 }
 
 android {

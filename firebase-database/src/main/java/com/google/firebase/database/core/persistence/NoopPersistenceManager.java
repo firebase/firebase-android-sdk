@@ -77,7 +77,7 @@ public class NoopPersistenceManager implements PersistenceManager {
     return new CacheNode(
         IndexedNode.from(EmptyNode.Empty(), query.getIndex()),
         /* fullyInitialized= */ false,
-        /*filtered=*/ false);
+        /* filtered= */ false);
   }
 
   @Override

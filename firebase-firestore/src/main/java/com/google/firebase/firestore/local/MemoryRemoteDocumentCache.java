@@ -38,6 +38,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   /** Underlying cache of documents and their read times. */
   private ImmutableSortedMap<DocumentKey, Document> docs;
+
   /** Manages the collection group index. */
   private IndexManager indexManager;
 

@@ -68,26 +68,31 @@ public final class DynamicLink {
     // Dynamic Link parameters.
     /** @hide */
     @VisibleForTesting public static final String KEY_DOMAIN = "domain";
+
     /** @hide */
     // TODO(b/120887495): This @VisibleForTesting annotation was being ignored by prod code.
     // Please check that removing it is correct, and remove this comment along with it.
     // @VisibleForTesting
     public static final String KEY_DOMAIN_URI_PREFIX = "domainUriPrefix";
+
     /** @hide */
     // TODO(b/120887495): This @VisibleForTesting annotation was being ignored by prod code.
     // Please check that removing it is correct, and remove this comment along with it.
     // @VisibleForTesting
     public static final String KEY_DYNAMIC_LINK = "dynamicLink";
+
     /** @hide */
     // TODO(b/120887495): This @VisibleForTesting annotation was being ignored by prod code.
     // Please check that removing it is correct, and remove this comment along with it.
     // @VisibleForTesting
     public static final String KEY_DYNAMIC_LINK_PARAMETERS = "parameters";
+
     /** @hide */
     // TODO(b/120887495): This @VisibleForTesting annotation was being ignored by prod code.
     // Please check that removing it is correct, and remove this comment along with it.
     // @VisibleForTesting
     public static final String KEY_SUFFIX = "suffix";
+
     /** @hide */
     // TODO(b/120887495): This @VisibleForTesting annotation was being ignored by prod code.
     // Please check that removing it is correct, and remove this comment along with it.
@@ -416,8 +421,10 @@ public final class DynamicLink {
     // AndroidInfo parameters.
     /** @hide */
     @VisibleForTesting public static final String KEY_ANDROID_PACKAGE_NAME = "apn";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_ANDROID_FALLBACK_LINK = "afl";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_ANDROID_MIN_VERSION_CODE = "amv";
 
@@ -566,16 +573,22 @@ public final class DynamicLink {
     // IosInfo parameters.
     /** @hide */
     @VisibleForTesting public static final String KEY_IOS_BUNDLE_ID = "ibi";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_IOS_FALLBACK_LINK = "ifl";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_IOS_CUSTOM_SCHEME = "ius";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_IPAD_FALLBACK_LINK = "ipfl";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_IPAD_BUNDLE_ID = "ipbi";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_IOS_APP_STORE_ID = "isi";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_IOS_MINIMUM_VERSION = "imv";
 
@@ -747,7 +760,7 @@ public final class DynamicLink {
        * @deprecated Firebase Dynamic Links is deprecated and should not be used in new projects. The
        *   service will shut down on August 25, 2025. For more information, see
        *   <a href="https://firebase.google.com/support/dynamic-links-faq">Dynamic Links deprecation documentation</a>.
-       d.
+       * d.
        */
       @NonNull
       @Deprecated
@@ -813,12 +826,16 @@ public final class DynamicLink {
     // GooglePlayAnalytics parameters.
     /** @hide */
     @VisibleForTesting public static final String KEY_UTM_CAMPAIGN = "utm_campaign";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_UTM_SOURCE = "utm_source";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_UTM_MEDIUM = "utm_medium";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_UTM_TERM = "utm_term";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_UTM_CONTENT = "utm_content";
 
@@ -1051,8 +1068,10 @@ public final class DynamicLink {
     // ITunesConnectAnalytics parameters.
     /** @hide */
     @VisibleForTesting public static final String KEY_ITUNES_CONNECT_PT = "pt";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_ITUNES_CONNECT_AT = "at";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_ITUNES_CONNECT_CT = "ct";
 
@@ -1207,8 +1226,10 @@ public final class DynamicLink {
     // SocialMetaTagInfo parameters.
     /** @hide */
     @VisibleForTesting public static final String KEY_SOCIAL_TITLE = "st";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_SOCIAL_DESCRIPTION = "sd";
+
     /** @hide */
     @VisibleForTesting public static final String KEY_SOCIAL_IMAGE_LINK = "si";
 

@@ -57,6 +57,7 @@ public class ConfigContainer {
    * <p>Used by the FRC client to retrieve config values.
    */
   private JSONObject configsJson;
+
   /** Cached value of the time when this container's values were fetched. */
   private Date fetchTime;
 

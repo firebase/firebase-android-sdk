@@ -28,7 +28,9 @@ firebaseLibrary {
   testLab.enabled = true
   publishSources = true
   publishJavadoc = false
-  publishReleaseNotes = false
+  releaseNotes { 
+    enabled.set(false)
+}
 }
 
 android {

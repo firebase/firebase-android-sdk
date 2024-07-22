@@ -54,6 +54,7 @@ public class ImageData {
     }
     return false;
   }
+
   /**
    * !!!!!WARNING!!!!! We are overriding equality in this class. Please add equality checks for all
    * new private class members.

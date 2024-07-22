@@ -22,8 +22,8 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class SQLiteGlobalCacheTest extends GlobalsCacheTest {
 
-    @Override
-    Persistence getPersistence() {
-        return PersistenceTestHelpers.createSQLitePersistence();
-    }
+  @Override
+  Persistence getPersistence() {
+    return PersistenceTestHelpers.createSQLitePersistence();
+  }
 }

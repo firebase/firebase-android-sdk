@@ -54,10 +54,13 @@ public class Query {
 
   /** @hide */
   protected final Repo repo;
+
   /** @hide */
   protected final Path path;
+
   /** @hide */
   protected final QueryParams params;
+
   // we can't use params index, because the default query params have priority index set as default,
   // but we don't want to allow multiple orderByPriority calls, so track them here
   private final boolean orderByCalled;

@@ -20,7 +20,9 @@ plugins {
 firebaseLibrary {
   libraryGroup("functions")
   publishJavadoc = false
-  publishReleaseNotes = false
+  releaseNotes { 
+    enabled.set(false)
+}
   publishSources = true
   testLab.enabled = true
 }

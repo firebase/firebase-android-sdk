@@ -76,8 +76,7 @@ public class MemoryComponentProvider extends ComponentProvider {
     if (isMemoryLruGcEnabled(configuration.settings)) {
       LocalSerializer serializer = new LocalSerializer(getRemoteSerializer());
       LruGarbageCollector.Params params =
-          LruGarbageCollector.Params.WithCacheSizeBytes(
-              configuration.settings.getCacheSizeBytes());
+          LruGarbageCollector.Params.WithCacheSizeBytes(configuration.settings.getCacheSizeBytes());
       return MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
     }
 

@@ -21,6 +21,10 @@ firebaseLibrary {
     libraryGroup "dynamic-links"
     testLab.enabled = false
     publishSources = true
+    releaseNotes {
+        name.set("{{ddls}}")
+        versionName.set("dynamic-links")
+    }
 }
 
 android {

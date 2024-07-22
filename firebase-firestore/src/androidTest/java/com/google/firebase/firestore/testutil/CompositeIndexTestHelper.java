@@ -17,7 +17,6 @@ package com.google.firebase.firestore.testutil;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testInMemoryFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.writeAllDocs;
 import static com.google.firebase.firestore.util.Util.autoId;
@@ -70,7 +69,7 @@ public class CompositeIndexTestHelper {
   // Runs a test with specified documents in the COMPOSITE_INDEX_TEST_COLLECTION.
   @NonNull
   public CollectionReference withTestDocs(@NonNull Map<String, Map<String, Object>> docs) {
-    CollectionReference writer = testInMemoryFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
+    CollectionReference writer = testFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
     writeAllDocs(writer, prepareTestDocuments(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;

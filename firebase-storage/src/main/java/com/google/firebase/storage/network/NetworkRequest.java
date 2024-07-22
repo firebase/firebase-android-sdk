@@ -446,6 +446,7 @@ public abstract class NetworkRequest {
   public Map<String, String> getResultHeaders() {
     return requestHeaders;
   }
+
   /**
    * If an error has occurred, returns the exception. Otherwise null.
    *

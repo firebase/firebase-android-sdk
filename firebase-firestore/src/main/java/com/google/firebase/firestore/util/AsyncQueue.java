@@ -133,7 +133,7 @@ public class AsyncQueue {
       if (scheduledFuture != null) {
         // NOTE: We don't rely on this cancel() succeeding since handleDelayElapsed() will become
         // a no-op anyway (since markDone() sets scheduledFuture to null).
-        scheduledFuture.cancel(/*mayInterruptRunning=*/ false);
+        scheduledFuture.cancel(/* mayInterruptRunning= */ false);
         markDone();
       }
     }
@@ -390,6 +390,7 @@ public class AsyncQueue {
 
   /** The executor backing this AsyncQueue. */
   private final SynchronizedShutdownAwareExecutor executor;
+
   // Tasks scheduled to be queued in the future. Tasks are automatically removed after they are run
   // or canceled.
   // NOTE: We disallow duplicates currently, so this could be a Set<> which might have better

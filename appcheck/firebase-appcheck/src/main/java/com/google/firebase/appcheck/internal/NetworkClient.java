@@ -212,6 +212,7 @@ public class NetworkClient {
       return null;
     }
   }
+
   /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
     byte[] hash;

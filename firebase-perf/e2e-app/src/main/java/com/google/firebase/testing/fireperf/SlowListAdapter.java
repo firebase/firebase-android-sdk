@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class SlowListAdapter extends ListAdapter {
   private static final String LOG_TAG = SlowListAdapter.class.getSimpleName();
+
   /**
    * Constructor for ListAdapter that accepts a number of items to display.
    *

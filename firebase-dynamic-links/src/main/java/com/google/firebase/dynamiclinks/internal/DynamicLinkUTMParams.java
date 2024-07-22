@@ -34,8 +34,10 @@ public class DynamicLinkUTMParams {
 
   /** Key to retrieve utm_medium from utm params bundle returned by {@link #asBundle()} */
   public static final String KEY_UTM_MEDIUM = "utm_medium";
+
   /** Key to retrieve utm_source from utm params bundle returned by {@link #asBundle()} */
   public static final String KEY_UTM_SOURCE = "utm_source";
+
   /** Key to retrieve utm_campaign from utm params bundle returned by {@link #asBundle()} */
   public static final String KEY_UTM_CAMPAIGN = "utm_campaign";
 

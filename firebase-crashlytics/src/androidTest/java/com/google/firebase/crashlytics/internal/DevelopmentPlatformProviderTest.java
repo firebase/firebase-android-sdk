@@ -31,7 +31,7 @@ public class DevelopmentPlatformProviderTest extends CrashlyticsTestCase {
   private static final String FLUTTER_PLATFORM = "Flutter";
 
   public void testDevelopmentPlatformInfo_withUnity_returnsPlatformAndVersion() throws Exception {
-    Context context = createMockContext(/*withUnityResource=*/ true);
+    Context context = createMockContext(/* withUnityResource= */ true);
 
     assertTrue(DevelopmentPlatformProvider.isUnity(context));
 
@@ -52,7 +52,7 @@ public class DevelopmentPlatformProviderTest extends CrashlyticsTestCase {
   }
 
   public void testDevelopmentPlatformInfo_unknownPlatform_returnsNull() throws Exception {
-    Context context = createMockContext(/*withUnityResource=*/ false);
+    Context context = createMockContext(/* withUnityResource= */ false);
 
     assertFalse(DevelopmentPlatformProvider.isUnity(context));
 

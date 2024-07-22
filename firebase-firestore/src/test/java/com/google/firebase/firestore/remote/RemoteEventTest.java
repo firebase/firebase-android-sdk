@@ -93,7 +93,8 @@ public class RemoteEventTest {
     // pattern: "projects/test-project/databases/test-database/documents/"+document_key.
     DatabaseId databaseId = DatabaseId.forDatabase("test-project", "test-database");
 
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(databaseId, targetMetadataProvider);
+    WatchChangeAggregator aggregator =
+        new WatchChangeAggregator(databaseId, targetMetadataProvider);
 
     List<Integer> targetIds = new ArrayList<>();
 

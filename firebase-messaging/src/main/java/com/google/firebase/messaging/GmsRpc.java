@@ -74,12 +74,14 @@ class GmsRpc {
   // LINT.IfChange
   /** InstanceId should be reset. Can be a duplicate, or deleted. */
   static final String ERROR_INSTANCE_ID_RESET = "INSTANCE_ID_RESET";
+
   // LINT.ThenChange(//depot/google3/firebase/instance_id/client/cpp/src/android/instance_id.cc)
 
   // --- List of parameters sent to the /register3 servlet
 
   /** Internal parameter used to indicate a 'subtype'. Will not be stored in DB for Nacho. */
   private static final String EXTRA_SUBTYPE = "subtype";
+
   /** Extra used to indicate which senders (Google API project IDs) can send messages to the app */
   private static final String EXTRA_SENDER = "sender";
 
@@ -102,18 +104,24 @@ class GmsRpc {
 
   /** Version of the client library. String like: "fcm-112233" */
   private static final String PARAM_CLIENT_VER = "cliv";
+
   /** gmp_app_id (application identifier in firebase). String */
   private static final String PARAM_GMP_APP_ID = "gmp_app_id";
+
   /** version of the gms package. Integer.toString() */
   private static final String PARAM_GMS_VER = "gmsv";
+
   /** android build version. Integer.toString() */
   private static final String PARAM_OS_VER = "osv";
+
   /** package version code. Integer.toString() */
   private static final String PARAM_APP_VER_CODE = "app_ver";
+
   /** package version name. Integer.toString() */
   private static final String PARAM_APP_VER_NAME = "app_ver_name";
 
   private static final String PARAM_FIS_AUTH_TOKEN = "Goog-Firebase-Installations-Auth";
+
   /** hashed value of developer chosen (nick)name of Firebase Core SDK (a.k.a. FirebaseApp) */
   private static final String PARAM_FIREBASE_APP_NAME_HASH = "firebase-app-name-hash";
 

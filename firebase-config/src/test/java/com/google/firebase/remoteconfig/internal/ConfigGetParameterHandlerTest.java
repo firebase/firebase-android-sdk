@@ -96,8 +96,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getString_getBlockingFails_returnsEmptyString() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     String stringValue = getHandler.getString(STRING_KEY);
 
@@ -138,7 +138,7 @@ public class ConfigGetParameterHandlerTest {
   public void getString_activatedKeyExistsAndNoDefaultsConfigs_returnsActivatedValue()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of(STRING_KEY, ACTIVATED_STRING_VALUE));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     String stringValue = getHandler.getString(STRING_KEY);
 
@@ -148,7 +148,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getString_noActivatedConfigsButDefaultsKeyExists_returnsDefaultsValue()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of(STRING_KEY, DEFAULTS_STRING_VALUE));
 
     String stringValue = getHandler.getString(STRING_KEY);
@@ -158,8 +158,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getString_activatedAndDefaultsConfigsDoNotExist_returnsStaticDefault() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     String stringValue = getHandler.getString(STRING_KEY);
 
@@ -180,7 +180,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getString_activatedKeyExists_callsListeners() throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of(STRING_KEY, ACTIVATED_STRING_VALUE));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     getHandler.addListener(this.mockListener);
 
@@ -226,7 +226,7 @@ public class ConfigGetParameterHandlerTest {
   public void getBoolean_activatedKeyExistsAndNoDefaultsConfigs_returnsActivatedValue()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of(BOOLEAN_KEY, ACTIVATED_BOOLEAN_STRING_VALUE));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     boolean booleanValue = getHandler.getBoolean(BOOLEAN_KEY);
 
@@ -236,7 +236,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getBoolean_noActivatedConfigsButDefaultsKeyExists_returnsDefaultsValue()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of(BOOLEAN_KEY, DEFAULTS_BOOLEAN_STRING_VALUE));
 
     boolean booleanValue = getHandler.getBoolean(BOOLEAN_KEY);
@@ -246,8 +246,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getBoolean_activatedAndDefaultsConfigsDoNotExist_returnsStaticDefault() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     boolean booleanValue = getHandler.getBoolean(BOOLEAN_KEY);
 
@@ -301,7 +301,7 @@ public class ConfigGetParameterHandlerTest {
   public void getByteArray_activatedKeyExistsAndNoDefaultsConfigs_returnsActivatedValue()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of(BYTE_ARRAY_KEY, ACTIVATED_BYTE_ARRAY_STRING_VALUE));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     byte[] byteArrayValue = getHandler.getByteArray(BYTE_ARRAY_KEY);
 
@@ -311,7 +311,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getByteArray_noActivatedConfigsButDefaultsKeyExists_returnsDefaultsValue()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of(BYTE_ARRAY_KEY, DEFAULTS_BYTE_ARRAY_STRING_VALUE));
 
     byte[] byteArrayValue = getHandler.getByteArray(BYTE_ARRAY_KEY);
@@ -321,8 +321,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getByteArray_activatedAndDefaultsConfigsDoNotExist_returnsStaticDefault() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     byte[] byteArrayValue = getHandler.getByteArray(BYTE_ARRAY_KEY);
 
@@ -375,7 +375,7 @@ public class ConfigGetParameterHandlerTest {
   public void getDouble_activatedKeyExistsAndNoDefaultsConfigs_returnsActivatedValue()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of(DOUBLE_KEY, ACTIVATED_DOUBLE_VALUE));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     double doubleValue = getHandler.getDouble(DOUBLE_KEY);
 
@@ -385,7 +385,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getDouble_noActivatedConfigsButDefaultsKeyExists_returnsDefaultsValue()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of(DOUBLE_KEY, DEFAULTS_DOUBLE_VALUE));
 
     double doubleValue = getHandler.getDouble(DOUBLE_KEY);
@@ -395,8 +395,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getDouble_activatedAndDefaultsConfigsDoNotExist_returnsStaticDefault() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     double doubleValue = getHandler.getDouble(DOUBLE_KEY);
 
@@ -448,7 +448,7 @@ public class ConfigGetParameterHandlerTest {
   public void getLong_activatedKeyExistsAndNoDefaultsConfigs_returnsActivatedValue()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of(LONG_KEY, ACTIVATED_LONG_VALUE));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     long longValue = getHandler.getLong(LONG_KEY);
 
@@ -458,7 +458,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getLong_noActivatedConfigsButDefaultsKeyExists_returnsDefaultsValue()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of(LONG_KEY, DEFAULTS_LONG_VALUE));
 
     long longValue = getHandler.getLong(LONG_KEY);
@@ -468,8 +468,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getLong_activatedAndDefaultsConfigsDoNotExist_returnsStaticDefault() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     long longValue = getHandler.getLong(LONG_KEY);
 
@@ -521,7 +521,7 @@ public class ConfigGetParameterHandlerTest {
   public void getValue_activatedKeyExistsAndNoDefaultsConfigs_returnsActivatedValue()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of(STRING_KEY, ACTIVATED_STRING_VALUE));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     FirebaseRemoteConfigValue frcValue = getHandler.getValue(STRING_KEY);
 
@@ -531,7 +531,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getValue_noActivatedConfigsButDefaultsKeyExists_returnsDefaultsValue()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of(STRING_KEY, DEFAULTS_STRING_VALUE));
 
     FirebaseRemoteConfigValue frcValue = getHandler.getValue(STRING_KEY);
@@ -541,8 +541,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getValue_activatedAndDefaultsConfigsDoNotExist_returnsStaticDefault() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     FirebaseRemoteConfigValue frcValue = getHandler.getValue(STRING_KEY);
 
@@ -617,7 +617,7 @@ public class ConfigGetParameterHandlerTest {
   public void getKeysByPrefix_activatedKeysExistAndNoDefaultsConfigs_returnsActivatedKeys()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of("pre11", "", "pre21", "", "pre122", ""));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     Set<String> keys = getHandler.getKeysByPrefix("pre2");
 
@@ -627,7 +627,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getKeysByPrefix_noActivatedConfigsButDefaultsKeysExist_returnsDefaultsKeys()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of("pre11", "", "pre21", "", "pre12", ""));
 
     Set<String> keys = getHandler.getKeysByPrefix("pre2");
@@ -637,8 +637,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getKeysByPrefix_activatedAndDefaultsConfigsDoNotExist_returnsEmptySet() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     Set<String> keys = getHandler.getKeysByPrefix("pre2");
 
@@ -660,8 +660,8 @@ public class ConfigGetParameterHandlerTest {
 
   @Test
   public void getAll_activatedAndDefaultsConfigsDoNotExist_returnsEmptyMap() {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     Map<String, FirebaseRemoteConfigValue> configs = getHandler.getAll();
 
@@ -672,7 +672,7 @@ public class ConfigGetParameterHandlerTest {
   public void getAll_activatedKeyExistsAndNoDefaultsConfigs_returnsActivatedValues()
       throws Exception {
     loadActivatedCacheWithMap(ImmutableMap.of("pre11", "activated_foo", "pre21", "activated_bar"));
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
 
     Map<String, FirebaseRemoteConfigValue> configs = getHandler.getAll();
 
@@ -684,7 +684,7 @@ public class ConfigGetParameterHandlerTest {
   @Test
   public void getAll_noActivatedConfigsButDefaultsKeysExist_returnsDefaultsValuess()
       throws Exception {
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadDefaultsCacheWithMap(ImmutableMap.of("pre11", "default_foo", "pre21", "default_bar"));
 
     Map<String, FirebaseRemoteConfigValue> configs = getHandler.getAll();

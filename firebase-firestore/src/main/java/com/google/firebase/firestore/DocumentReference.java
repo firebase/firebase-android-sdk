@@ -282,7 +282,7 @@ public class DocumentReference {
                 Document doc = task.getResult();
                 boolean hasPendingWrites = doc != null && doc.hasLocalMutations();
                 return new DocumentSnapshot(
-                    firestore, key, doc, /*isFromCache=*/ true, hasPendingWrites);
+                    firestore, key, doc, /* isFromCache= */ true, hasPendingWrites);
               });
     } else {
       return getViaSnapshotListener(source);

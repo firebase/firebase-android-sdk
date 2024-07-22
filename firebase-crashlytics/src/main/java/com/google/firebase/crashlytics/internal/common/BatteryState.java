@@ -69,7 +69,7 @@ class BatteryState {
 
     try {
       final IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-      final Intent batteryStatusIntent = context.registerReceiver(/*receiver=*/ null, ifilter);
+      final Intent batteryStatusIntent = context.registerReceiver(/* receiver= */ null, ifilter);
       if (batteryStatusIntent != null) {
         powerConnected = isPowerConnected(batteryStatusIntent);
         level = getLevel(batteryStatusIntent);

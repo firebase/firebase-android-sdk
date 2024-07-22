@@ -22,7 +22,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.util.DefaultClock;

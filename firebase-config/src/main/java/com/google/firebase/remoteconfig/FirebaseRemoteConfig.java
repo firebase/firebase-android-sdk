@@ -92,19 +92,25 @@ public class FirebaseRemoteConfig {
 
   /** The static default string value for any given key. */
   public static final String DEFAULT_VALUE_FOR_STRING = "";
+
   /** The static default long value for any given key. */
   public static final long DEFAULT_VALUE_FOR_LONG = 0L;
+
   /** The static default double value for any given key. */
   public static final double DEFAULT_VALUE_FOR_DOUBLE = 0D;
+
   /** The static default boolean value for any given key. */
   public static final boolean DEFAULT_VALUE_FOR_BOOLEAN = false;
+
   /** The static default byte array value for any given key. */
   public static final byte[] DEFAULT_VALUE_FOR_BYTE_ARRAY = new byte[0];
 
   /** Indicates that the value returned is the static default value. */
   public static final int VALUE_SOURCE_STATIC = 0;
+
   /** Indicates that the value returned was retrieved from the defaults set by the client. */
   public static final int VALUE_SOURCE_DEFAULT = 1;
+
   /** Indicates that the value returned was retrieved from the Firebase Remote Config server. */
   public static final int VALUE_SOURCE_REMOTE = 2;
 
@@ -113,16 +119,19 @@ public class FirebaseRemoteConfig {
    * was completed successfully.
    */
   public static final int LAST_FETCH_STATUS_SUCCESS = -1;
+
   /**
    * Indicates that the FirebaseRemoteConfig singleton object has not yet attempted to fetch
    * parameter values from the Firebase Remote Config server.
    */
   public static final int LAST_FETCH_STATUS_NO_FETCH_YET = 0;
+
   /**
    * Indicates that the most recent attempt to fetch parameter values from the Firebase Remote
    * Config server has failed.
    */
   public static final int LAST_FETCH_STATUS_FAILURE = 1;
+
   /**
    * Indicates that the most recent attempt to fetch parameter values from the Firebase Remote
    * Config server was throttled.
@@ -138,6 +147,7 @@ public class FirebaseRemoteConfig {
 
   private final Context context;
   private final FirebaseApp firebaseApp;
+
   /**
    * Firebase A/B Testing (ABT) is only valid for the 3P namespace, so the ABT variable will be null
    * if the current instance of Firebase Remote Config is using a non-3P namespace.

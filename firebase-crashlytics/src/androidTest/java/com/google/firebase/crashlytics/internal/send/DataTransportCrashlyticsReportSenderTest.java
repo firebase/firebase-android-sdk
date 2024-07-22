@@ -65,9 +65,9 @@ public class DataTransportCrashlyticsReportSenderTest {
     final CrashlyticsReportWithSessionId report2 = mockReportWithSessionId();
 
     final Task<CrashlyticsReportWithSessionId> send1 =
-        reportSender.enqueueReport(report1, /*isOnDemand=*/ true);
+        reportSender.enqueueReport(report1, /* isOnDemand= */ true);
     final Task<CrashlyticsReportWithSessionId> send2 =
-        reportSender.enqueueReport(report2, /*isOnDemand=*/ true);
+        reportSender.enqueueReport(report2, /* isOnDemand= */ true);
 
     try {
       Thread.sleep(2_000); // give time to process queue

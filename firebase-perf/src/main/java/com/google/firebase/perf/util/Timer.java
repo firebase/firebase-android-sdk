@@ -38,6 +38,7 @@ public class Timer implements Parcelable {
    * jump forwards or backwards unpredictably. {@see SystemClock}
    */
   private long wallClockMicros;
+
   /**
    * Monotonic time measured in the {@link SystemClock#elapsedRealtime()} timebase. Only used to
    * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.

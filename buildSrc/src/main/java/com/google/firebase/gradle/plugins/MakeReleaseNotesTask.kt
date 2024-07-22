@@ -82,17 +82,17 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
    * updates.
    * ```
    *
-   * @see convertToMetadata
+   * @see ReleaseNotesConfigurationExtension
    */
   @TaskAction
   fun make() {
     val changelog = Changelog.fromFile(changelogFile.asFile.get())
-    val metadata = convertToMetadata(project.name)
+    val config = project.firebaseLibrary.releaseNotes
     val unreleased = changelog.releases.first()
     val version = project.version.toString()
     val skipMissing = skipMissingEntries.getOrElse(false)
 
-    if (!project.firebaseLibrary.publishReleaseNotes)
+    if (!config.enabled.get())
       throw StopActionException("No release notes required for ${project.name}")
 
     if (!unreleased.hasContent()) {
@@ -108,7 +108,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
 
     val baseReleaseNotes =
       """
-        |### ${metadata.name} version $version {: #${metadata.versionName}_v$versionClassifier}
+        |### ${config.name.get()} version $version {: #${config.versionName.get()}_v$versionClassifier}
         |
         |${unreleased.content.toReleaseNotes()}
       """
@@ -117,13 +117,13 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
 
     val ktxReleaseNotes =
       """
-          |#### ${metadata.name} Kotlin extensions version $version {: #${metadata.versionName}-ktx_v$versionClassifier}
+          |#### ${config.name.get()} Kotlin extensions version $version {: #${config.versionName.get()}-ktx_v$versionClassifier}
           |
           |${unreleased.ktx?.toReleaseNotes() ?: KTXTransitiveReleaseText(project.name)}
         """
         .trimMargin()
         .trim()
-        .takeIf { metadata.hasKTX }
+        .takeIf { config.hasKTX.get() }
 
     val releaseNotes =
       """

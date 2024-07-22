@@ -24,6 +24,10 @@ firebaseLibrary {
         enabled = true
         device 'model=panther,version=33'
     }
+    releaseNotes {
+        name.set("{{crashlytics}}")
+        versionName.set("crashlytics")
+    }
 }
 
 android {
@@ -93,6 +97,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.mockito.core)
     testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
 
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
