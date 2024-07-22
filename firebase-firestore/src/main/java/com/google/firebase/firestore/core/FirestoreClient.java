@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
@@ -27,7 +26,6 @@ import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -302,16 +300,9 @@ public final class FirestoreClient {
     }
   }
 
-  public ListenerRegistration addSnapshotsInSyncListener(
-      Activity activity, AsyncEventListener<Void> listener) {
+  public void addSnapshotsInSyncListener(EventListener<Void> listener) {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> eventManager.addSnapshotsInSyncListener(listener));
-    return ActivityScope.bind(
-        activity,
-        () -> {
-          listener.mute();
-          asyncQueue.enqueueAndForget(() -> eventManager.removeSnapshotsInSyncListener(listener));
-        });
   }
 
   public void loadBundle(InputStream bundleData, LoadBundleTask resultTask) {
@@ -358,6 +349,11 @@ public final class FirestoreClient {
   public void deleteAllFieldIndexes() {
     verifyNotTerminated();
     asyncQueue.enqueueAndForget(() -> localStore.deleteAllFieldIndexes());
+  }
+
+  public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
+    // `enqueueAndForget` will no-op if client is already terminated.
+    asyncQueue.enqueueAndForget(() -> eventManager.removeSnapshotsInSyncListener(listener));
   }
 
   private void verifyNotTerminated() {

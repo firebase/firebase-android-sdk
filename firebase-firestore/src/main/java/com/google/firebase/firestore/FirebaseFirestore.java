@@ -36,6 +36,7 @@ import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
@@ -834,7 +835,15 @@ public class FirebaseFirestore {
         };
     AsyncEventListener<Void> asyncListener = new AsyncEventListener<>(userExecutor, eventListener);
     return clientProvider.call(
-        client -> client.addSnapshotsInSyncListener(activity, asyncListener));
+        client -> {
+          client.addSnapshotsInSyncListener(asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.removeSnapshotsInSyncListener(asyncListener);
+              });
+        });
   }
 
   <T> T callClient(Function<FirestoreClient, T> call) {
