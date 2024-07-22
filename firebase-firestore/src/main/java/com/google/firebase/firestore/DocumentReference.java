@@ -26,8 +26,10 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
+import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -528,7 +530,17 @@ public class DocumentReference {
         new AsyncEventListener<>(userExecutor, viewListener);
 
     com.google.firebase.firestore.core.Query query = asQuery();
-    return firestore.callClient(client -> client.listen(query, options, activity, asyncListener));
+
+    return firestore.callClient(
+        client -> {
+          QueryListener queryListener = client.listen(query, options, asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.stopListening(queryListener);
+              });
+        });
   }
 
   @Override

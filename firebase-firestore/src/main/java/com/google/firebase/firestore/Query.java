@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.CompositeFilter;
@@ -33,6 +34,7 @@ import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
+import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -1178,7 +1180,16 @@ public class Query {
     AsyncEventListener<ViewSnapshot> asyncListener =
         new AsyncEventListener<>(executor, viewListener);
 
-    return firestore.callClient(client -> client.listen(query, options, activity, asyncListener));
+    return firestore.callClient(
+        client -> {
+          QueryListener queryListener = client.listen(query, options, asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.stopListening(queryListener);
+              });
+        });
   }
 
   private void validateHasExplicitOrderByForLimitToLast() {

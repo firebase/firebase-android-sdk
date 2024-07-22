@@ -24,6 +24,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.AggregateField;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.ListenerRegistration;
@@ -184,6 +185,21 @@ public final class FirestoreClient {
           listener.mute();
           asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(queryListener));
         });
+  }
+
+  /** Starts listening to a query. */
+  public QueryListener listen(
+      Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
+    this.verifyNotTerminated();
+    QueryListener queryListener = new QueryListener(query, options, listener);
+    asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
+    return queryListener;
+  }
+
+  /** Stops listening to a query previously listened to. */
+  public void stopListening(QueryListener listener) {
+    // `enqueueAndForget` will no-op if client is already terminated.
+    asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 
   // TODO(b/261013682): Use an explicit executor in continuations.
