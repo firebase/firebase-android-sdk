@@ -221,6 +221,21 @@ abstract class DataConnectCodegenTask : DefaultTask() {
     }
   }
 
+  private fun codegenArgs() = sequence<String> {
+      yield(dataConnectCli.get().asFile.path)
+      if (logger.isInfoEnabled) {
+        yield("-logtostderr")
+      }
+      if (logger.isDebugEnabled) {
+        yield("-v")
+        yield("2")
+      }
+      yield("gradle")
+      yield("generate")
+      yield("-config_dir=$intermediatesDirectory")
+      yield("-output_dir=${outputDirectory.path}")
+  }
+
   private fun runCodgen(intermediatesDirectory: File, outputDirectory: File) {
     val codegenArgs = buildList {
       add(dataConnectCli.get().asFile.path)
