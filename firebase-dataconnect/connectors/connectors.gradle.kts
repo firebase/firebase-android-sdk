@@ -21,12 +21,12 @@ import kotlin.io.path.relativeTo
 import com.android.build.api.variant.VariantExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import javax.inject.Inject
-import org.gradle.api.provider.Property
 
 plugins {
   id("com.android.library")
   id("kotlin-android")
   alias(libs.plugins.kotlinx.serialization)
+  id("com.google.firebase.dataconnect.gradle.plugin")
 }
 
 android {
@@ -119,7 +119,11 @@ abstract class DataConnectVariantDslExtension @Inject constructor(
   abstract val connectors: ListProperty<String>
 
   init {
-    connectors.set(extensionConfig.projectExtension(DataConnectProjectDslExtension::class.java).connectors)
+    // Commenting since the call to extensionConfig.projectExtension() fails with
+    // "No global extension DSL element implements ExtensionAware"
+    //val projectExtension = extensionConfig.projectExtension(DataConnectProjectDslExtension::class.java)
+    //connectors.set(projectExtension.connectors)
+    connectors.convention(emptyList())
   }
 }
 

@@ -35,6 +35,7 @@ import org.gradle.kotlin.dsl.register
  */
 class DataConnectGradlePlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        project.logger.lifecycle("zzyzx Applying DataConnectGradlePlugin")
 
         // Registers a callback on the application of the Android Application plugin.
         // This allows the CustomPlugin to work whether it's applied before or after
