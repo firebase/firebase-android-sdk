@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -28,6 +29,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 import java.util.concurrent.atomic.AtomicReference;
+
+import kotlinx.coroutines.scheduling.Task;
 
 /**
  * Manages keys and user-specific metadata set by the user, including serializing metadata to disk
@@ -49,7 +52,7 @@ public class UserMetadata {
   @VisibleForTesting public static final int MAX_ROLLOUT_ASSIGNMENTS = 128;
 
   private final MetaDataStore metaDataStore;
-  @Background private final Executor backgroundSequentialExecutor;
+  @VisibleForTesting @Background public final Executor backgroundSequentialExecutor;
   private String sessionIdentifier;
 
   // The following references contain a marker bit, which is true if the data maintained in the
@@ -71,9 +74,9 @@ public class UserMetadata {
   }
 
   public static UserMetadata loadFromExistingSession(
-      String sessionId, FileStore fileStore, ExecutorService commonBackgroundExecutorService) {
+      String sessionId, FileStore fileStore, Executor userActionExecutor) {
     MetaDataStore store = new MetaDataStore(fileStore);
-    UserMetadata metadata = new UserMetadata(sessionId, fileStore, commonBackgroundExecutorService);
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore, userActionExecutor);
     // We don't use the set methods in this class, because they will attempt to re-serialize the
     // data, which is unnecessary because we just read them from disk.
     metadata.customKeys.map.getReference().setKeys(store.readKeyData(sessionId, false));
@@ -84,10 +87,10 @@ public class UserMetadata {
   }
 
   public UserMetadata(
-          String sessionIdentifier, FileStore fileStore, ExecutorService commonBackgroundExecutor) {
+          String sessionIdentifier, FileStore fileStore, Executor userActionExecutor) {
     this.sessionIdentifier = sessionIdentifier;
     this.metaDataStore = new MetaDataStore(fileStore);
-    this.backgroundSequentialExecutor = ExecutorUtils.buildSequentialExecutor(commonBackgroundExecutor);
+    this.backgroundSequentialExecutor = userActionExecutor;
   }
 
   /**
@@ -145,6 +148,7 @@ public class UserMetadata {
    * data, if necessary.
    */
   public boolean setCustomKey(String key, String value) {
+    Logger.getLogger().i("Set custom keys : " + value + " " + key + " " + Thread.currentThread());
     return customKeys.setKey(key, value);
   }
 
@@ -228,7 +232,7 @@ public class UserMetadata {
       this.map = new AtomicMarkableReference<>(keysMap, false);
     }
 
-    public Map<String, String> getKeys() {
+    public synchronized Map<String, String> getKeys() {
       return map.getReference().getKeys();
     }
 
@@ -260,6 +264,9 @@ public class UserMetadata {
           () -> {
             queuedSerializer.set(null);
             serializeIfMarked();
+            if (queuedSerializer.get() != null) {
+              scheduleSerializationTaskIfNeeded();
+            }
           };
 
       // Don't schedule the task if there's another queued task waiting, because the already-queued

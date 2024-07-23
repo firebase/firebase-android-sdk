@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
@@ -42,6 +43,7 @@ import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStr
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -100,6 +102,7 @@ public class CrashlyticsCore {
   private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
 
   @Background private final ExecutorService commonBackgroundExecutorService;
+  @Background private final Executor userActionsExecutor;
 
   // region Constructors
 
@@ -128,6 +131,7 @@ public class CrashlyticsCore {
     this.sessionsSubscriber = sessionsSubscriber;
     this.remoteConfigDeferredProxy = remoteConfigDeferredProxy;
     this.commonBackgroundExecutorService = backgroundExecutorService;
+    this.userActionsExecutor = FirebaseExecutors.newSequentialExecutor(backgroundExecutorService);
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
@@ -156,7 +160,7 @@ public class CrashlyticsCore {
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata =
-          new UserMetadata(sessionIdentifier, fileStore, commonBackgroundExecutorService);
+          new UserMetadata(sessionIdentifier, fileStore, userActionsExecutor);
       final LogFileManager logFileManager = new LogFileManager(fileStore);
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(
@@ -192,7 +196,7 @@ public class CrashlyticsCore {
               nativeComponent,
               analyticsEventLogger,
               sessionsSubscriber,
-              commonBackgroundExecutorService);
+              userActionsExecutor);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
@@ -327,7 +331,9 @@ public class CrashlyticsCore {
    * safe to invoke this method from the main thread.
    */
   public void logException(@NonNull Throwable throwable) {
-    controller.writeNonFatalException(Thread.currentThread(), throwable);
+    userActionsExecutor.execute(() -> {
+      controller.writeNonFatalException(Thread.currentThread(), throwable);
+    });
   }
 
   /**
@@ -342,11 +348,15 @@ public class CrashlyticsCore {
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    controller.writeToLog(timestamp, msg);
+    userActionsExecutor.execute(() -> {
+      controller.writeToLog(timestamp, msg);
+    });
   }
 
   public void setUserId(String identifier) {
-    controller.setUserId(identifier);
+    userActionsExecutor.execute(() -> {
+      controller.setUserId(identifier);
+    });
   }
 
   /**
@@ -359,7 +369,9 @@ public class CrashlyticsCore {
    * @throws NullPointerException if key is null.
    */
   public void setCustomKey(String key, String value) {
-    controller.setCustomKey(key, value);
+    userActionsExecutor.execute(() -> {
+      controller.setCustomKey(key, value);
+    });
   }
 
   /**
@@ -376,7 +388,9 @@ public class CrashlyticsCore {
    * @throws NullPointerException if any key in keysAndValues is null.
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
-    controller.setCustomKeys(keysAndValues);
+    userActionsExecutor.execute(() -> {
+      controller.setCustomKeys(keysAndValues);
+    });
   }
 
   // endregion

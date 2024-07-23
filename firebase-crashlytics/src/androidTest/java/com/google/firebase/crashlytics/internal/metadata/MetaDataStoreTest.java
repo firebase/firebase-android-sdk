@@ -16,8 +16,10 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -63,6 +66,8 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   private final ExecutorService backgroundExecutor = TestOnlyExecutors.background();
 
+  private final Executor userActionsExecutor = FirebaseExecutors.newSequentialExecutor(backgroundExecutor);
+
   private MetaDataStore storeUnderTest;
 
   @Override
@@ -82,7 +87,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   private UserMetadata metadataWithUserId(String sessionId, String userId) {
-    UserMetadata metadata = new UserMetadata(sessionId, fileStore, backgroundExecutor);
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore, userActionsExecutor);
     metadata.setUserId(userId);
     return metadata;
   }
@@ -90,36 +95,36 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   @Test
   public void testWriteUserData_allFields() {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertEquals(USER_ID, userData.getUserId());
   }
 
   @Test
   public void testWriteUserData_noFields() {
     storeUnderTest.writeUserData(
-        SESSION_ID_1, new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+        SESSION_ID_1, new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor).getUserId());
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertNull(userData.getUserId());
   }
 
   @Test
   public void testWriteUserData_singleField() {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertEquals(USER_ID, userData.getUserId());
   }
 
   @Test
   public void testWriteUserData_null() {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, null).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertNull(userData.getUserId());
   }
 
   @Test
   public void testWriteUserData_emptyString() {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, "").getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertEquals("", userData.getUserId());
   }
 
@@ -127,7 +132,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   public void testWriteUserData_unicode() {
     storeUnderTest.writeUserData(
         SESSION_ID_1, metadataWithUserId(SESSION_ID_1, UNICODE).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertEquals(UNICODE, userData.getUserId());
   }
 
@@ -135,14 +140,14 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   public void testWriteUserData_escaped() {
     storeUnderTest.writeUserData(
         SESSION_ID_1, metadataWithUserId(SESSION_ID_1, ESCAPED).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertEquals(ESCAPED.trim(), userData.getUserId());
   }
 
   @Test
   public void testWriteUserData_readDifferentSession() {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_2, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_2, fileStore, userActionsExecutor);
     assertNull(userData.getUserId());
   }
 
@@ -152,7 +157,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     try (PrintWriter printWriter = new PrintWriter(file)) {
       printWriter.println("Matt says hi!");
     }
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertNull(userData.getUserId());
     assertFalse(file.exists());
   }
@@ -161,14 +166,14 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   public void testReadUserData_emptyData() throws IOException {
     File file = storeUnderTest.getUserDataFileForSession(SESSION_ID_1);
     file.createNewFile();
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertNull(userData.getUserId());
     assertFalse(file.exists());
   }
 
   @Test
   public void testReadUserData_noStoredData() {
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, userActionsExecutor);
     assertNull(userData.getUserId());
   }
 
@@ -181,28 +186,37 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
                 put(KEY_2, "20000");
               }
             };
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
-    for (int index = 0; index <= 10000; index++) {
-      userMetadata.setCustomKey(KEY_1, String.valueOf(index));
-      userMetadata.setCustomKey(KEY_2, String.valueOf(index * 2));
-    }
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor);
+    for (int times = 0; times <= 100;  times++) {
+      for (int index = 0; index <= 10000; index++) {
+        userMetadata.setCustomKey(KEY_1, String.valueOf(index));
+        userMetadata.setCustomKey(KEY_2, String.valueOf(index * 2));
+        if (index == 0 || index == 10000) {
+          Logger.getLogger().i("Finish write the key data: " + index + " time: " + times);
+        }
+      }
 
-    backgroundExecutor.execute(() -> {
-      final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
-      assertThat(readKeys.get(KEY_1)).isEqualTo("10000");
-      assertThat(readKeys.get(KEY_2)).isEqualTo("20000");
-      assertEqualMaps(keys, readKeys);
-    });
+      int time = times;
+      userMetadata.backgroundSequentialExecutor.execute(() -> {
+        Logger.getLogger().i("Start read the key data, times: "  + time );
+        final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
+        Logger.getLogger().i("Data read: " + readKeys);
+        assertThat(readKeys.get(KEY_1)).isEqualTo("10000");
+        assertThat(readKeys.get(KEY_2)).isEqualTo("20000");
+        assertEqualMaps(keys, readKeys);
+      });
+      Thread.sleep(40);
+    }
     // Need to wait background thread to finish its task to terminate the Junit test thread
     backgroundExecutor.awaitTermination(10, TimeUnit.SECONDS);
   }
 
   @Test
   public void testUpdateSessionId_notPersistUserIdToNewSessionIfNoUserIdSet() throws Exception {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor);
     userMetadata.setNewSession(SESSION_ID_2);
 
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
               .isFalse();
     });
@@ -211,9 +225,9 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   @Test
   public void testUpdateSessionId_notPersistCustomKeysToNewSessionIfNoCustomKeysSet() throws Exception {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor);
     userMetadata.setNewSession(SESSION_ID_2);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
               .isFalse();
     });
@@ -222,9 +236,9 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   @Test
   public void testUpdateSessionId_notPersistRolloutsToNewSessionIfNoRolloutsSet() throws Exception {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor);
     userMetadata.setNewSession(SESSION_ID_2);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(
               fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
               .isFalse();
@@ -234,7 +248,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   @Test
   public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() throws Exception {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor);
     final Map<String, String> keys =
         new HashMap<String, String>() {
           {
@@ -245,13 +259,13 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
         };
     userMetadata.setCustomKeys(keys);
     userMetadata.setNewSession(SESSION_ID_2);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
               .isTrue();
     });
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(metaDataStore.readKeyData(SESSION_ID_2)).isEqualTo(keys);
     });
 
@@ -261,16 +275,16 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   @Test
   public void testUpdateSessionId_persistUserIdToNewSessionIfUserIdSet() throws Exception {
     String userId = "ThemisWang";
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor);
     userMetadata.setUserId(userId);
     userMetadata.setNewSession(SESSION_ID_2);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
               .isTrue();
     });
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(metaDataStore.readUserId(SESSION_ID_2)).isEqualTo(userId);
     });
     backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
@@ -278,17 +292,17 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   @Test
   public void testUpdateSessionId_persistRolloutsToNewSessionIfRolloutsSet() throws Exception {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, backgroundExecutor);
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, userActionsExecutor);
     userMetadata.updateRolloutsState(ROLLOUTS_STATE);
     userMetadata.setNewSession(SESSION_ID_2);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(
               fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
               .isTrue();
     });
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
-    backgroundExecutor.execute(() ->{
+    userMetadata.backgroundSequentialExecutor.execute(() ->{
       assertThat(metaDataStore.readRolloutsState(SESSION_ID_2)).isEqualTo(ROLLOUTS_STATE);
     });
     backgroundExecutor.awaitTermination(1, TimeUnit.SECONDS);
