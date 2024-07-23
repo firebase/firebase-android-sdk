@@ -37,9 +37,10 @@ import java.util.concurrent.ExecutorService;
 /** @hide */
 public class CrashlyticsRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-cls";
-  private final Qualified<ExecutorService> backgroundExecutorService = Qualified.qualified(Background.class, ExecutorService.class);
-  private final Qualified<ExecutorService> blockingExecutorService = Qualified.qualified(Blocking.class, ExecutorService.class);
-
+  private final Qualified<ExecutorService> backgroundExecutorService =
+      Qualified.qualified(Background.class, ExecutorService.class);
+  private final Qualified<ExecutorService> blockingExecutorService =
+      Qualified.qualified(Blocking.class, ExecutorService.class);
 
   static {
     // Add Crashlytics as a dependency of Sessions when this class is loaded into memory.
@@ -79,6 +80,12 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
         container.getDeferred(FirebaseRemoteConfigInterop.class);
 
     return FirebaseCrashlytics.init(
-        app, firebaseInstallations, nativeComponent, analyticsConnector, remoteConfigInterop, container.get(backgroundExecutorService),  container.get(blockingExecutorService));
+        app,
+        firebaseInstallations,
+        nativeComponent,
+        analyticsConnector,
+        remoteConfigInterop,
+        container.get(backgroundExecutorService),
+        container.get(blockingExecutorService));
   }
 }

@@ -17,7 +17,6 @@ package com.google.firebase.crashlytics.internal.common;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
-
 import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Locale;
