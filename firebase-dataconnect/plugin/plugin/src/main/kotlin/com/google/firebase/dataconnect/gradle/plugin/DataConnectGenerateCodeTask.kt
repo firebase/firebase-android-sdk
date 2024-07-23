@@ -16,15 +16,27 @@
 package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
-import org.gradle.api.*
-import org.gradle.api.file.*
+import javax.inject.Inject
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.provider.*
-import org.gradle.api.tasks.*
+import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 
 abstract class DataConnectGenerateCodeTask : DefaultTask() {
+
+  @get:Inject abstract val execOperations: ExecOperations
+
+  @get:Inject abstract val fileSystemOperations: FileSystemOperations
 
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
@@ -37,10 +49,11 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
   @get:Input abstract val variantExtension: Property<DataConnectVariantDslExtension>
 
   @TaskAction
-  fun taskAction() {
-    val outputDirectory = outputDirectory.get().asFile
-    val mergedInputsDirectory = mergedInputsDirectory.get().asFile
-    val inputDirectories = inputDirectories.get().flatten().map { it.asFile }.filter { it.exists() }
+  fun run() {
+    val outputDirectory: File = outputDirectory.get().asFile
+    val mergedInputsDirectory: File = mergedInputsDirectory.get().asFile
+    val inputDirectories: List<List<File>> =
+      inputDirectories.get().map { aaa -> aaa.map { bbb -> bbb.asFile } }
     val dataConnectCliExecutable: File =
       variantExtension
         .get()
@@ -51,8 +64,49 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
     logger.info("outputDirectory={}", outputDirectory)
     logger.info("mergedInputsDirectory={}", mergedInputsDirectory)
-    logger.info("inputDirectories={}", inputDirectories)
+    logger.info("inputDirectories={}", inputDirectories.flatten().filter { it.exists() })
     logger.info("dataConnectCliExecutable={}", dataConnectCliExecutable)
     logger.info("connectors={}", if (connectors.isNotEmpty()) connectors.toString() else "<all>")
+
+    fileSystemOperations.delete { it.delete(mergedInputsDirectory, outputDirectory) }
+    mergeInputDirectories(inputDirectories, mergedInputsDirectory)
+    runCodgen(mergedInputsDirectory, outputDirectory, dataConnectCliExecutable, connectors)
+  }
+
+  private fun mergeInputDirectories(inputDirectories: List<List<File>>, outputDirectory: File) {
+    for (curInputDirectories in inputDirectories) {
+      fileSystemOperations.copy {
+        it.from(inputDirectories)
+        it.into(outputDirectory)
+        it.duplicatesStrategy = DuplicatesStrategy.FAIL
+      }
+    }
+  }
+
+  private fun runCodgen(
+    intermediatesDirectory: File,
+    outputDirectory: File,
+    dataConnectCliExecutable: File,
+    connectors: List<String>
+  ) {
+    execOperations.exec {
+      it.setIgnoreExitValue(false)
+      it.executable = dataConnectCliExecutable.path
+
+      if (logger.isInfoEnabled) {
+        it.args("-logtostderr")
+      }
+      if (logger.isDebugEnabled) {
+        it.args("-v")
+        it.args("2")
+      }
+      it.args("gradle")
+      it.args("generate")
+      it.args("-config_dir=$intermediatesDirectory")
+      it.args("-output_dir=${outputDirectory.path}")
+      if (connectors.isNotEmpty()) {
+        it.args("-connectors=${connectors.joinToString(",")}")
+      }
+    }
   }
 }

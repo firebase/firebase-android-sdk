@@ -41,6 +41,7 @@ import org.gradle.api.provider.ListProperty
  * Since this type will be used as a Task input (see [DataConnectGenerateCodeTask]), make it extend
  * [java.io.Serializable]
  */
+@Suppress("UnstableApiUsage")
 abstract class DataConnectVariantDslExtension
 @Inject
 constructor(
@@ -51,9 +52,14 @@ constructor(
   abstract val dataConnectCliExecutable: RegularFileProperty
 
   init {
+    println(
+      "zzyzx DataConnectVariantDslExtension.init() starting for variant: ${extensionConfig.variant.name}"
+    )
+
     valueFromExtensions(extensionConfig, "connectors", DataConnectDslExtension::connectors)?.let {
       connectors.set(it)
     }
+
     valueFromExtensions(
         extensionConfig,
         "dataConnectCliExecutable",
@@ -68,7 +74,7 @@ constructor(
       name: String,
       getter: (DataConnectDslExtension) -> T?
     ): T? {
-      val projectExt = extensionConfig.projectExtension(DataConnectDslExtension::class.java)
+      // val projectExt = extensionConfig.projectExtension(DataConnectDslExtension::class.java)
       val buildTypeExt = extensionConfig.buildTypeExtension(DataConnectDslExtension::class.java)
       val productFlavorExts =
         extensionConfig.productFlavorsExtensions(DataConnectDslExtension::class.java)
@@ -77,7 +83,7 @@ constructor(
 
       val valueBySource =
         buildMap<String, T> {
-          getter(projectExt)?.let { put("project", it) }
+          // getter(projectExt)?.let { put("project", it) }
           getter(buildTypeExt)?.let { put("buildType:${extensionConfig.variant.buildType}", it) }
           productFlavorExts.forEachIndexed { index, productFlavorExt ->
             getter(productFlavorExt)?.let { put("productFlavor:${productFlavorNames[index]}", it) }
