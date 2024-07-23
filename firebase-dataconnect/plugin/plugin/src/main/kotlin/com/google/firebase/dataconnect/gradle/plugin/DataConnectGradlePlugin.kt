@@ -39,19 +39,11 @@ class DataConnectGradlePlugin : Plugin<Project> {
           .extendProductFlavorWith(DataConnectDslExtension::class.java)
           .build()
       ) { config: VariantExtensionConfig<*> ->
-        println(
-          "zzyzx androidComponents.registerExtension() callback starting for variant: ${config.variant.name}"
-        )
         project.objects.newInstance(DataConnectVariantDslExtension::class.java, config)
       }
 
-      println("zzyzx androidComponents.registerExtension() called")
-
       androidComponents.onVariants { variant ->
         val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
-        println(
-          "zzyzx androidComponents.onVariants() callback starting for variant: ${variant.name}"
-        )
 
         val generateCodeTask =
           project.tasks.register<DataConnectGenerateCodeTask>(
@@ -93,8 +85,6 @@ class DataConnectGradlePlugin : Plugin<Project> {
           DataConnectGenerateCodeTask::outputDirectory
         )
       }
-
-      println("zzyzx androidComponents.onVariants() called")
     }
   }
 }
