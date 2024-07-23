@@ -7,3 +7,4 @@ android-gradlePlugin-api = { group = "com.android.tools.build", name = "gradle-a
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+spotless = { id = "com.diffplug.spotless", version = "7.0.0.BETA1" }

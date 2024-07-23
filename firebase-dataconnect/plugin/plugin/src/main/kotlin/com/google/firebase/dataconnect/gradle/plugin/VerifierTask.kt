@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright 2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,39 +37,34 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
-abstract class VerifierTask: DefaultTask() {
+abstract class VerifierTask : DefaultTask() {
 
-    // In order of the task to be up-to-date when the data has not changed,
-    // the task must declare an output, even if it's not used. Tasks with no
-    // output are always run regardless of whether the inputs changed or not
-    @get:OutputDirectory
-    abstract val output: DirectoryProperty
+  // In order of the task to be up-to-date when the data has not changed,
+  // the task must declare an output, even if it's not used. Tasks with no
+  // output are always run regardless of whether the inputs changed or not
+  @get:OutputDirectory abstract val output: DirectoryProperty
 
-    @get:Input
-    abstract val projectExtension: Property<ProjectDslExtension>
+  @get:Input abstract val projectExtension: Property<ProjectDslExtension>
 
-    @get:Input
-    abstract val buildTypeExtension: Property<BuildTypeDslExtension>
+  @get:Input abstract val buildTypeExtension: Property<BuildTypeDslExtension>
 
-    @get:Input
-    abstract val productFlavorExtension: Property<ProductFlavorDslExtension>
+  @get:Input abstract val productFlavorExtension: Property<ProductFlavorDslExtension>
 
-    @get:Input
-    abstract val variantExtension: Property<VariantDslExtension>
+  @get:Input abstract val variantExtension: Property<VariantDslExtension>
 
-    @TaskAction
-    fun taskAction() {
-        println("<---- Project Extension ----->")
-        println("settingOne : ${projectExtension.get().settingOne}")
-        println("settingTwo : ${projectExtension.get().settingTwo}")
-        println("<---- BuildType Extension ----->")
-        println("buildTypeSettingOne: ${buildTypeExtension.get().buildTypeSettingOne}")
-        println("buildTypeSettingTwo: ${buildTypeExtension.get().buildTypeSettingTwo}")
-        println("<---- Product Flavor Extension ----->")
-        println("productFlavorSettingOne: ${productFlavorExtension.get().productFlavorSettingOne}")
-        println("productFlavorSettingTwo: ${productFlavorExtension.get().productFlavorSettingTwo}")
-        println("<---- Variant Extension ----->")
-        println("variantSettingOne: ${variantExtension.get().variantSettingOne.get()}")
-        println("variantSettingTwo: ${variantExtension.get().variantSettingTwo.get()}")
-    }
+  @TaskAction
+  fun taskAction() {
+    println("<---- Project Extension ----->")
+    println("settingOne : ${projectExtension.get().settingOne}")
+    println("settingTwo : ${projectExtension.get().settingTwo}")
+    println("<---- BuildType Extension ----->")
+    println("buildTypeSettingOne: ${buildTypeExtension.get().buildTypeSettingOne}")
+    println("buildTypeSettingTwo: ${buildTypeExtension.get().buildTypeSettingTwo}")
+    println("<---- Product Flavor Extension ----->")
+    println("productFlavorSettingOne: ${productFlavorExtension.get().productFlavorSettingOne}")
+    println("productFlavorSettingTwo: ${productFlavorExtension.get().productFlavorSettingTwo}")
+    println("<---- Variant Extension ----->")
+    println("variantSettingOne: ${variantExtension.get().variantSettingOne.get()}")
+    println("variantSettingTwo: ${variantExtension.get().variantSettingTwo.get()}")
+  }
 }

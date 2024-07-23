@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 The Android Open Source Project
+ * Copyright 2024 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ package com.google.firebase.dataconnect.gradle.plugin
  * This extension type is registered by calling
  * [com.android.build.api.variant.AndroidComponents.registerExtension] method.
  *
- * In this recipe, check [CustomSettings] for how this type is registered along with
- * other DSL types extensions.
+ * In this recipe, check [CustomSettings] for how this type is registered along with other DSL types
+ * extensions.
  */
 interface BuildTypeDslExtension {
-    var buildTypeSettingOne: String
-    var buildTypeSettingTwo: Int
+  var buildTypeSettingOne: String
+  var buildTypeSettingTwo: Int
 }
