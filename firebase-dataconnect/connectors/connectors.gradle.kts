@@ -36,13 +36,6 @@ android {
     targetSdk = targetSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
-  buildTypes {
-    debug {
-      extensions.configure<DataConnectDslExtension> {
-        configDir = file("../emulator/dataconnect")
-      }
-    }
-  }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -62,6 +55,10 @@ android {
       excludes.add("META-INF/LICENSE.md")
       excludes.add("META-INF/LICENSE-notice.md")
     }
+  }
+
+  dataconnect {
+    configDir = file("../emulator/dataconnectZZ")
   }
 }
 

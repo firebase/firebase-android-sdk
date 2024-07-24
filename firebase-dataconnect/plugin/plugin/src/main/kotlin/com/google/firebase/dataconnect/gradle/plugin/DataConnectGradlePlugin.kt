@@ -17,12 +17,15 @@
 
 package com.google.firebase.dataconnect.gradle.plugin
 
+import com.android.build.api.dsl.ApplicationExtension
+import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import java.util.Locale
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.register
 
 @Suppress("unused")
@@ -37,6 +40,7 @@ class DataConnectGradlePlugin : Plugin<Project> {
       DslExtension.Builder("dataconnect")
         .extendBuildTypeWith(DataConnectDslExtension::class.java)
         .extendProductFlavorWith(DataConnectDslExtension::class.java)
+        .extendProjectWith(DataConnectDslExtension::class.java)
         .build()
     ) { config: VariantExtensionConfig<*> ->
       project.objects.newInstance(DataConnectVariantDslExtension::class.java, config)
@@ -53,7 +57,19 @@ class DataConnectGradlePlugin : Plugin<Project> {
             project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
           )
 
-          // Propagate the properties from the `DataConnectVariantDslExtension` to the task.
+          val android = project.extensions.getByType(LibraryExtension::class.java) as ExtensionAware
+          android.extensions.getByType(DataConnectDslExtension::class.java).let { dataConnectDslExtension ->
+            dataConnectDslExtension.configDir?.let {
+              customConfigDirectory.convention(project.layout.projectDirectory.dir(it.path))
+            }
+            dataConnectDslExtension.connectors?.let {
+              connectors.convention(it)
+            }
+            dataConnectDslExtension.dataConnectCliExecutable?.let {
+              dataConnectCliExecutable.convention(project.layout.projectDirectory.file(it.path))
+            }
+          }
+
           variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also {
             defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
             customConfigDirectory.set(it.configDir)

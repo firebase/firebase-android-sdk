@@ -56,7 +56,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     val outputDirectory: File = outputDirectory.get().asFile
     val workDirectory: File = workDirectory.get().asFile
     val defaultConfigDirectories: List<File> = defaultConfigDirectories.get().map { it.asFile }
-    val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
+    val customConfigDirectory: File? = customConfigDirectory.getOrNull()?.asFile
     val dataConnectCliExecutable: File = dataConnectCliExecutable.get().asFile
     val connectors: List<String> = connectors.get()
 
