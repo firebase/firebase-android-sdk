@@ -21,9 +21,10 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
@@ -45,7 +46,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -68,7 +69,9 @@ public class FirebaseCrashlytics {
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
       @NonNull Deferred<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector,
-      @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred) {
+      @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred,
+      @Background ExecutorService backgroundExecutorService,
+      @Blocking ExecutorService blockingExecutorService) {
 
     Context context = app.getApplicationContext();
     final String appIdentifier = context.getPackageName();
@@ -147,8 +150,8 @@ public class FirebaseCrashlytics {
 
     Logger.getLogger().v("Installer package name is: " + appData.installerPackageName);
 
-    final ExecutorService threadPoolExecutor =
-        ExecutorUtils.buildSingleThreadExecutorService("com.google.firebase.crashlytics.startup");
+    final Executor threadPoolExecutor =
+        ExecutorUtils.buildSequentialExecutor(backgroundExecutorService);
 
     final SettingsController settingsController =
         SettingsController.create(
@@ -178,17 +181,9 @@ public class FirebaseCrashlytics {
 
     final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);
 
-    Tasks.call(
-        threadPoolExecutor,
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            if (finishCoreInBackground) {
-              core.doBackgroundInitializationAsync(settingsController);
-            }
-            return null;
-          }
-        });
+    if (finishCoreInBackground) {
+      core.doBackgroundInitializationAsync(settingsController);
+    }
 
     return new FirebaseCrashlytics(core);
   }
