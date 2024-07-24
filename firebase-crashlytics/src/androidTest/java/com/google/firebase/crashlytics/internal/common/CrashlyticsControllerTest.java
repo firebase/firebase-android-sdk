@@ -186,7 +186,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               sessionReportingCoordinator,
               nativeComponent,
               analyticsEventLogger,
-              mock(CrashlyticsAppQualitySessionsSubscriber.class));
+              mock(CrashlyticsAppQualitySessionsSubscriber.class),
+              new CrashlyticsWorker(TestOnlyExecutors.background()));
       return controller;
     }
   }
