@@ -20,4 +20,5 @@ import java.io.File
 interface DataConnectDslExtension {
   var connectors: List<String>?
   var dataConnectCliExecutable: File?
+  var configDir: File?
 }

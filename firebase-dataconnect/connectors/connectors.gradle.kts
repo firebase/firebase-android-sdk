@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -34,6 +35,13 @@ android {
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+  buildTypes {
+    debug {
+      extensions.configure<DataConnectDslExtension> {
+        configDir = file("../emulator/dataconnect")
+      }
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8

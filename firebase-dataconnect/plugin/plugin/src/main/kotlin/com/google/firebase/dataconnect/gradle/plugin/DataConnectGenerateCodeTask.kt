@@ -18,14 +18,15 @@ package com.google.firebase.dataconnect.gradle.plugin
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileSystemOperations
-import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -38,13 +39,13 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:Inject abstract val fileSystemOperations: FileSystemOperations
 
-  @get:Inject abstract val projectLayout: ProjectLayout
-
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
   @get:OutputDirectory abstract val mergedInputsDirectory: DirectoryProperty
 
-  @get:InputFiles abstract val inputDirectories: ListProperty<Directory>
+  @get:InputFiles abstract val defaultConfigDirectories: ListProperty<Directory>
+
+  @get:InputDirectory abstract val customConfigDirectory: DirectoryProperty
 
   @get:InputFile abstract val dataConnectCliExecutable: RegularFileProperty
 
@@ -54,20 +55,28 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
   fun run() {
     val outputDirectory: File = outputDirectory.get().asFile
     val mergedInputsDirectory: File = mergedInputsDirectory.get().asFile
-    val inputDirectories: List<File> = inputDirectories.get().map { it.asFile }
+    val defaultConfigDirectories: List<File> = defaultConfigDirectories.get().map { it.asFile }
+    val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
     val dataConnectCliExecutable: File = dataConnectCliExecutable.get().asFile
     val connectors: List<String> = connectors.get()
 
     logger.info("outputDirectory={}", outputDirectory)
     logger.info("mergedInputsDirectory={}", mergedInputsDirectory)
-    logger.info("inputDirectories={}", inputDirectories)
+    logger.info("defaultConfigDirectories={}", defaultConfigDirectories)
+    logger.info("customConfigDirectory={}", customConfigDirectory)
     logger.info("dataConnectCliExecutable={}", dataConnectCliExecutable)
     logger.info("connectors={}", connectors)
 
     deleteDirectories(mergedInputsDirectory, outputDirectory)
-    mergeInputDirectories(inputDirectories, mergedInputsDirectory)
-    generateCode(dataConnectCliExecutable, mergedInputsDirectory, outputDirectory, connectors)
+    val configDirectory =
+      mergeConfigDirectories(defaultConfigDirectories, customConfigDirectory, mergedInputsDirectory)
 
+    if (configDirectory === null) {
+      logger.info("No non-empty config directories found; nothing to do")
+      return
+    }
+
+    generateCode(dataConnectCliExecutable, configDirectory, outputDirectory, connectors)
     logger.info("completed successfully")
   }
 
@@ -77,13 +86,40 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     fileSystemOperations.delete { it.delete(directories) }
   }
 
-  private fun mergeInputDirectories(inputDirectories: List<File>, outputDirectory: File) {
-    logger.info("Copying input directories {} to {}", inputDirectories, outputDirectory)
-    fileSystemOperations.copy {
-      it.from(inputDirectories)
-      it.into(outputDirectory)
-      it.duplicatesStrategy = DuplicatesStrategy.FAIL
+  private fun mergeConfigDirectories(
+    defaultConfigDirectories: List<File>,
+    customConfigDirectory: File?,
+    outputDirectory: File
+  ): File? {
+    if (customConfigDirectory !== null) {
+      if (!customConfigDirectory.exists()) {
+        throw DataConnectInputDirectoryNotFoundException(
+          "custom config directory not found: $customConfigDirectory"
+        )
+      }
+      logger.info("Using custom config directory: {}", customConfigDirectory)
+      return customConfigDirectory
     }
+
+    defaultConfigDirectories
+      .filter { it.exists() }
+      .let { existingConfigDirectories ->
+        if (existingConfigDirectories.size == 1) {
+          val singleConfigDirectory = existingConfigDirectories.single()
+          logger.info("Using single config directory: {}", singleConfigDirectory)
+          return singleConfigDirectory
+        }
+      }
+
+    logger.info("Merging config directories {} to {}", defaultConfigDirectories, outputDirectory)
+    val workResult =
+      fileSystemOperations.copy {
+        it.from(defaultConfigDirectories)
+        it.into(outputDirectory)
+        it.duplicatesStrategy = DuplicatesStrategy.FAIL
+      }
+
+    return if (workResult.didWork) outputDirectory else null
   }
 
   private fun generateCode(
@@ -114,4 +150,6 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
       }
     }
   }
+
+  class DataConnectInputDirectoryNotFoundException(message: String) : GradleException(message)
 }

@@ -62,8 +62,6 @@ class DataConnectGradlePlugin : Plugin<Project> {
 }
 
 private fun DataConnectGenerateCodeTask.configureForVariant(variant: Variant) {
-  inputDirectories.set(variant.sources.getByName("dataconnect").all)
-
   // Use a directory in the "build" directory for writing the result of merging the
   // "input" directories.
   mergedInputsDirectory.set(
@@ -72,6 +70,8 @@ private fun DataConnectGenerateCodeTask.configureForVariant(variant: Variant) {
 
   // Propagate the properties from the `DataConnectVariantDslExtension` to the task.
   variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also {
+    defaultConfigDirectories.convention(variant.sources.getByName("dataconnect").all)
+    customConfigDirectory.set(it.configDir)
     connectors.set(it.connectors)
     dataConnectCliExecutable.set(it.dataConnectCliExecutable)
   }

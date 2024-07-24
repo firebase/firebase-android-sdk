@@ -19,6 +19,7 @@ import com.android.build.api.variant.VariantExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import javax.inject.Inject
 import org.gradle.api.GradleException
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -52,7 +53,7 @@ constructor(
 ) : VariantExtension, java.io.Serializable {
   abstract val connectors: ListProperty<String>
   abstract val dataConnectCliExecutable: RegularFileProperty
-
+  abstract val configDir: DirectoryProperty
   init {
     connectors.convention(emptyList())
 
@@ -72,6 +73,10 @@ constructor(
         DataConnectDslExtension::dataConnectCliExecutable
       )
       ?.let { dataConnectCliExecutable.set(it) }
+
+    valueFromExtensions(extensionConfig, "configDir", DataConnectDslExtension::configDir)?.let {
+      configDir.set(projectLayout.projectDirectory.dir(it.path))
+    }
   }
 
   private companion object {
