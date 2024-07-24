@@ -100,8 +100,8 @@ constructor(
         valueBySource.values.single()
       } else {
         throw ConflictingSettingsException(
-          "Setting $name has conflicting values set in: " +
-            valueBySource.keys.sorted().joinToString { ", " }
+          "'$name' has conflicting values set ${valueBySource.size} places" +
+            " (at most 1 place is supported): ${valueBySource.keys.sorted().joinToString(", ")}"
         )
       }
     }
