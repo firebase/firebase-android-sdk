@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
-import com.android.build.api.variant.Variant
 import com.android.build.api.variant.VariantExtensionConfig
 import java.util.Locale
 import org.gradle.api.Plugin
@@ -50,7 +49,17 @@ class DataConnectGradlePlugin : Plugin<Project> {
         project.tasks.register<DataConnectGenerateCodeTask>(
           "generate${variantNameTitleCase}DataConnectSources"
         ) {
-          configureForVariant(variant)
+          workDirectory.set(
+            project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
+          )
+
+          // Propagate the properties from the `DataConnectVariantDslExtension` to the task.
+          variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also {
+            defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
+            customConfigDirectory.set(it.configDir)
+            connectors.set(it.connectors)
+            dataConnectCliExecutable.set(it.dataConnectCliExecutable)
+          }
         }
 
       variant.sources.kotlin!!.addGeneratedSourceDirectory(
@@ -58,21 +67,5 @@ class DataConnectGradlePlugin : Plugin<Project> {
         DataConnectGenerateCodeTask::outputDirectory
       )
     }
-  }
-}
-
-private fun DataConnectGenerateCodeTask.configureForVariant(variant: Variant) {
-  // Use a directory in the "build" directory for writing the result of merging the
-  // "input" directories.
-  mergedInputsDirectory.set(
-    project.layout.buildDirectory.dir("intermediates/dataconnect/mergedSources/${variant.name}")
-  )
-
-  // Propagate the properties from the `DataConnectVariantDslExtension` to the task.
-  variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also {
-    defaultConfigDirectories.convention(variant.sources.getByName("dataconnect").all)
-    customConfigDirectory.set(it.configDir)
-    connectors.set(it.connectors)
-    dataConnectCliExecutable.set(it.dataConnectCliExecutable)
   }
 }

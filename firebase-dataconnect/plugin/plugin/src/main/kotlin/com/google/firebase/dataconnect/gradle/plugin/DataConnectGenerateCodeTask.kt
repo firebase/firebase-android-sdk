@@ -41,7 +41,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
-  @get:OutputDirectory abstract val mergedInputsDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val workDirectory: DirectoryProperty
 
   @get:InputFiles abstract val defaultConfigDirectories: ListProperty<Directory>
 
@@ -54,30 +54,42 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
   @TaskAction
   fun run() {
     val outputDirectory: File = outputDirectory.get().asFile
-    val mergedInputsDirectory: File = mergedInputsDirectory.get().asFile
+    val workDirectory: File = workDirectory.get().asFile
     val defaultConfigDirectories: List<File> = defaultConfigDirectories.get().map { it.asFile }
     val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
     val dataConnectCliExecutable: File = dataConnectCliExecutable.get().asFile
     val connectors: List<String> = connectors.get()
 
     logger.info("outputDirectory={}", outputDirectory)
-    logger.info("mergedInputsDirectory={}", mergedInputsDirectory)
+    logger.info("workDirectory={}", workDirectory)
     logger.info("defaultConfigDirectories={}", defaultConfigDirectories)
     logger.info("customConfigDirectory={}", customConfigDirectory)
     logger.info("dataConnectCliExecutable={}", dataConnectCliExecutable)
     logger.info("connectors={}", connectors)
 
-    deleteDirectories(mergedInputsDirectory, outputDirectory)
-    val configDirectory =
-      mergeConfigDirectories(defaultConfigDirectories, customConfigDirectory, mergedInputsDirectory)
+    deleteDirectories(workDirectory, outputDirectory)
 
-    if (configDirectory === null) {
-      logger.info("No non-empty config directories found; nothing to do")
+    val mergedConfigsDirectory =
+      mergeConfigDirectories(
+        defaultConfigDirectories = defaultConfigDirectories,
+        customConfigDirectory = customConfigDirectory,
+        outputDirectory = File(workDirectory, "dataconnect"),
+      )
+
+    if (mergedConfigsDirectory === null) {
+      logger.info("No Data Connect config directories found; nothing to do")
       return
     }
 
-    generateCode(dataConnectCliExecutable, configDirectory, outputDirectory, connectors)
-    logger.info("completed successfully")
+    generateCode(
+      dataConnectCliExecutable = dataConnectCliExecutable,
+      workingDirectory = File(workDirectory, "logs"),
+      configDirectory = mergedConfigsDirectory,
+      outputDirectory = outputDirectory,
+      connectors = connectors,
+    )
+
+    logger.info("Completed successfully")
   }
 
   private fun deleteDirectories(vararg directory: File) {
@@ -124,20 +136,29 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   private fun generateCode(
     dataConnectCliExecutable: File,
+    workingDirectory: File,
     configDirectory: File,
     outputDirectory: File,
     connectors: List<String>
   ) {
+    if (!workingDirectory.exists()) {
+      if (!workingDirectory.mkdirs()) {
+        throw GradleException("unable to create directory: $workingDirectory")
+      }
+    }
+
     execOperations.exec { execSpec ->
       execSpec.run {
         executable(dataConnectCliExecutable)
-        setIgnoreExitValue(false)
+        workingDir(workingDirectory)
+        isIgnoreExitValue = false
 
-        if (logger.isInfoEnabled) {
-          args("-logtostderr")
-        }
         if (logger.isDebugEnabled) {
+          args("-v").args("9")
+          args("-logtostderr")
+        } else if (logger.isInfoEnabled) {
           args("-v").args("2")
+          args("-logtostderr")
         }
 
         args("gradle").args("generate")
