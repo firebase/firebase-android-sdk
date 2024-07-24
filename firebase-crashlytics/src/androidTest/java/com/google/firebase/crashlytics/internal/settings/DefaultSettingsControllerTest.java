@@ -25,14 +25,15 @@ import static org.mockito.Mockito.when;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CurrentTimeProvider;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
-import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider.InstallIds;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
 
@@ -57,7 +58,8 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
   private SettingsSpiCall mockSettingsSpiCall;
   private DataCollectionArbiter mockDataCollectionArbiter;
 
-  private Executor networkExecutor = ExecutorUtils.buildSingleThreadExecutorService("network");
+  private final Executor backgroundExecutor = TestOnlyExecutors.background();
+  private final ExecutorService networkExecutor = TestOnlyExecutors.blocking();
 
   public DefaultSettingsControllerTest() {}
 
@@ -121,7 +123,8 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             mockDataCollectionArbiter,
             false);
 
-    await(controller.loadSettingsData(networkExecutor));
+    await(
+        controller.loadSettingsData(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()));
     assertEquals(cachedSettings, controller.getSettingsSync());
 
     verifyNoMoreInteractions(mockSettingsSpiCall);
@@ -153,7 +156,8 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             mockDataCollectionArbiter,
             true);
 
-    controller.loadSettingsData(SettingsCacheBehavior.SKIP_CACHE_LOOKUP, networkExecutor);
+    controller.loadSettingsData(
+        SettingsCacheBehavior.SKIP_CACHE_LOOKUP, backgroundExecutor, networkExecutor);
     assertNotNull(controller.getSettingsSync());
 
     dataCollectionPermission.trySetResult(null);
@@ -198,7 +202,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             mockDataCollectionArbiter,
             false);
 
-    Task<Void> loadFinished = controller.loadSettingsData(networkExecutor);
+    Task<Void> loadFinished = controller.loadSettingsData(backgroundExecutor, networkExecutor);
 
     assertEquals(cachedSettings, controller.getSettingsSync());
     assertEquals(cachedSettings, await(controller.getSettingsAsync()));
@@ -236,7 +240,8 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             mockSettingsSpiCall,
             mockDataCollectionArbiter,
             false);
-    controller.loadSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION, networkExecutor);
+    controller.loadSettingsData(
+        SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION, backgroundExecutor, networkExecutor);
     assertEquals(cachedSettings, controller.getSettingsSync());
 
     verifyNoMoreInteractions(mockSettingsSpiCall);
@@ -279,7 +284,8 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             false);
 
     Task<Void> loadFinished =
-        controller.loadSettingsData(SettingsCacheBehavior.SKIP_CACHE_LOOKUP, networkExecutor);
+        controller.loadSettingsData(
+            SettingsCacheBehavior.SKIP_CACHE_LOOKUP, backgroundExecutor, networkExecutor);
     assertEquals(expiredCachedSettings, controller.getSettingsSync());
 
     dataCollectionPermission.trySetResult(null);
@@ -330,7 +336,8 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             false);
 
     Task<Void> loadFinished =
-        controller.loadSettingsData(SettingsCacheBehavior.SKIP_CACHE_LOOKUP, networkExecutor);
+        controller.loadSettingsData(
+            SettingsCacheBehavior.SKIP_CACHE_LOOKUP, backgroundExecutor, networkExecutor);
     assertEquals(expiredCachedSettings, controller.getSettingsSync());
 
     dataCollectionPermission.trySetResult(null);
@@ -364,7 +371,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
             mockDataCollectionArbiter,
             false);
 
-    Task<Void> loadFinished = controller.loadSettingsData(networkExecutor);
+    Task<Void> loadFinished = controller.loadSettingsData(backgroundExecutor, networkExecutor);
     assertNotNull(controller.getSettingsSync());
     assertFalse(controller.getSettingsAsync().isComplete());
 

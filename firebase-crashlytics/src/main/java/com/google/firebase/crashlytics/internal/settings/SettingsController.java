@@ -34,6 +34,9 @@ import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.Locale;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -149,8 +152,8 @@ public class SettingsController implements SettingsProvider {
    *
    * @return a task that is resolved when loading is completely finished.
    */
-  public Task<Void> loadSettingsData(Executor executor) {
-    return loadSettingsData(SettingsCacheBehavior.USE_CACHE, executor);
+  public Task<Void> loadSettingsData(Executor backgroundExecutor, ExecutorService networkExecutor) {
+    return loadSettingsData(SettingsCacheBehavior.USE_CACHE, backgroundExecutor, networkExecutor);
   }
 
   /**
@@ -158,7 +161,10 @@ public class SettingsController implements SettingsProvider {
    *
    * @return a task that is resolved when loading is completely finished.
    */
-  public Task<Void> loadSettingsData(SettingsCacheBehavior cacheBehavior, Executor executor) {
+  Task<Void> loadSettingsData(
+      SettingsCacheBehavior cacheBehavior,
+      Executor backgroundExecutor,
+      ExecutorService networkExecutor) {
     // TODO: Refactor this so that it doesn't do the cache lookup twice when settings are
     // expired.
 
@@ -187,17 +193,21 @@ public class SettingsController implements SettingsProvider {
 
     // Kick off fetching fresh settings.
     return dataCollectionArbiter
-        .waitForDataCollectionPermission(executor)
+        .waitForDataCollectionPermission(backgroundExecutor)
         .onSuccessTask(
-            executor,
+            backgroundExecutor,
             new SuccessContinuation<Void, Void>() {
               @NonNull
               @Override
               public Task<Void> then(@Nullable Void aVoid) throws Exception {
                 // Waited for data collection permission, so this is safe.
                 final boolean dataCollectionToken = true;
-                final JSONObject settingsJson =
-                    settingsSpiCall.invoke(settingsRequest, dataCollectionToken);
+
+                Future<JSONObject> settingsFuture =
+                    networkExecutor.submit(
+                        () -> settingsSpiCall.invoke(settingsRequest, dataCollectionToken));
+                // TODO(mrober): What is the network timeout supposed to be? Errors propagate.
+                JSONObject settingsJson = settingsFuture.get(3, TimeUnit.SECONDS);
 
                 if (settingsJson != null) {
                   final Settings fetchedSettings =

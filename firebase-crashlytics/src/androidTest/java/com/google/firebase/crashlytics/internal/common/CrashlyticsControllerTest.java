@@ -34,6 +34,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
@@ -119,7 +120,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
       sessionReportingCoordinator = mockSessionReportingCoordinator;
 
-      backgroundWorker = new CrashlyticsBackgroundWorker(new SameThreadExecutorService());
+      backgroundWorker = new CrashlyticsBackgroundWorker(TestOnlyExecutors.background());
     }
 
     ControllerBuilder setDataCollectionArbiter(DataCollectionArbiter arbiter) {
@@ -208,6 +209,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     controller.writeNonFatalException(thread, nonFatal);
     controller.doCloseSessions(testSettingsProvider);
 
+    // TODO(mrober): Better way to wait?
+    Thread.sleep(300);
+
     verify(mockSessionReportingCoordinator)
         .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong());
   }
@@ -230,7 +234,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
   @Test
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
-  public void testOnDemandFatal_callLogFatalException() {
+  public void testOnDemandFatal_callLogFatalException() throws Exception {
     Thread thread = Thread.currentThread();
     Exception fatal = new RuntimeException("Fatal");
     Thread.UncaughtExceptionHandler exceptionHandler = mock(Thread.UncaughtExceptionHandler.class);
@@ -245,6 +249,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
             .build();
     controller.enableExceptionHandling(SESSION_ID, exceptionHandler, testSettingsProvider);
     controller.logFatalException(thread, fatal);
+
+    // TODO(mrober): Better way to wait?
+    Thread.sleep(300);
 
     verify(mockUserMetadata).setNewSession(not(eq(SESSION_ID)));
   }
@@ -323,7 +330,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final CrashlyticsController controller =
         builder().setNativeComponent(mockNativeComponent).setLogFileManager(logFileManager).build();
 
-    controller.finalizeSessions(testSettingsProvider);
+    TestOnlyExecutors.background()
+        .submit(() -> controller.finalizeSessions(testSettingsProvider))
+        .get();
     verify(mockSessionReportingCoordinator)
         .finalizeSessionWithNativeEvent(eq(previousSessionId), any(), any());
     verify(mockSessionReportingCoordinator, never())
@@ -331,9 +340,11 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
-  public void testMissingNativeComponentCausesNoReports() {
+  public void testMissingNativeComponentCausesNoReports() throws Exception {
     final CrashlyticsController controller = createController();
-    controller.finalizeSessions(testSettingsProvider);
+    TestOnlyExecutors.background()
+        .submit(() -> controller.finalizeSessions(testSettingsProvider))
+        .get();
 
     List<String> sessions = testFileStore.getAllOpenSessionIds();
     for (String sessionId : sessions) {
@@ -384,7 +395,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    controller.finalizeSessions(testSettingsProvider);
+    TestOnlyExecutors.background()
+        .submit(() -> controller.finalizeSessions(testSettingsProvider))
+        .get();
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
@@ -535,7 +548,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
-  public void testFatalEvent_sendsAppExceptionEvent() {
+  public void testFatalEvent_sendsAppExceptionEvent() throws Exception {
     final String sessionId = "sessionId";
     final LogFileManager logFileManager = new LogFileManager(testFileStore);
     final AnalyticsEventLogger mockFirebaseAnalyticsLogger = mock(AnalyticsEventLogger.class);
@@ -551,7 +564,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     controller.openSession(SESSION_ID);
     controller.handleUncaughtException(
         testSettingsProvider, Thread.currentThread(), new RuntimeException("Fatal"));
-    controller.finalizeSessions(testSettingsProvider);
+    TestOnlyExecutors.background()
+        .submit(() -> controller.finalizeSessions(testSettingsProvider))
+        .get();
 
     assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
   }

@@ -26,6 +26,7 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
@@ -236,6 +237,7 @@ public class CrashlyticsCore {
   /** Performs background initialization synchronously on the calling thread. */
   @CanIgnoreReturnValue
   private Task<Void> doBackgroundInitialization(SettingsProvider settingsProvider) {
+    CrashlyticsPreconditions.checkBackgroundThread();
     // create the marker for this run
     markInitializationStarted();
 
@@ -456,7 +458,7 @@ public class CrashlyticsCore {
 
   /** Synchronous call to mark start of initialization */
   void markInitializationStarted() {
-    backgroundWorker.checkRunningOnThread();
+    CrashlyticsPreconditions.checkBackgroundThread();
 
     // Create the Crashlytics initialization marker file, which is used to determine
     // whether the app crashed before initialization could complete.

@@ -40,39 +40,13 @@ public class CrashlyticsBackgroundWorker {
 
   private final Object tailLock = new Object();
 
-  // A thread local to keep track of which thread belongs to this executor.
-  private final ThreadLocal<Boolean> isExecutorThread = new ThreadLocal<>();
-
   public CrashlyticsBackgroundWorker(Executor executor) {
     this.executor = executor;
-    // Queue up the first job as one that marks the thread so we can check it later.
-    executor.execute(
-        new Runnable() {
-          @Override
-          public void run() {
-            isExecutorThread.set(true);
-          }
-        });
   }
 
   /** Returns the executor used by this background worker. */
   public Executor getExecutor() {
     return executor;
-  }
-
-  /** Returns true if called on the thread owned by this background worker. */
-  private boolean isRunningOnThread() {
-    return Boolean.TRUE.equals(isExecutorThread.get());
-  }
-
-  /**
-   * Throws an exception if called from any thread other than the background worker's. This helps
-   * guarantee code is being called on the intended thread.
-   */
-  public void checkRunningOnThread() {
-    if (!isRunningOnThread()) {
-      throw new IllegalStateException("Not running on background worker thread as intended.");
-    }
   }
 
   /**

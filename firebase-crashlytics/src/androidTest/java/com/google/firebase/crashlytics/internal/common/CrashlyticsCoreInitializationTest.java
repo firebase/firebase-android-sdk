@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -119,7 +120,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
-      crashHandlerExecutor = new SameThreadExecutorService();
+      crashHandlerExecutor = TestOnlyExecutors.background();
       fileStore = new FileStore(context);
     }
 

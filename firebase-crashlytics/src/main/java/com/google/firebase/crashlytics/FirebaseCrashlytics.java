@@ -19,7 +19,6 @@ import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
@@ -166,18 +165,8 @@ public class FirebaseCrashlytics {
 
     // Kick off actually fetching the settings.
     settingsController
-        .loadSettingsData(threadPoolExecutor)
-        .continueWith(
-            threadPoolExecutor,
-            new Continuation<Void, Object>() {
-              @Override
-              public Object then(@NonNull Task<Void> task) throws Exception {
-                if (!task.isSuccessful()) {
-                  Logger.getLogger().e("Error fetching settings.", task.getException());
-                }
-                return null;
-              }
-            });
+        .loadSettingsData(threadPoolExecutor, blockingExecutorService)
+        .addOnFailureListener(ex -> Logger.getLogger().e("Error fetching settings.", ex));
 
     final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);
 
@@ -456,11 +445,11 @@ public class FirebaseCrashlytics {
    * Indicates whether or not automatic data collection is enabled
    *
    * @return In order of priority:
-   * <p>If {@link #setCrashlyticsCollectionEnabled(boolean)} is called with a value, use it</p>
-   *
-   * <p>If the <b>firebase_crashlytics_collection_enabled</b> key is in your app’s AndroidManifest.xml, use it</p>
-   *
-   * <p>Otherwise, use the default {@link FirebaseApp#isDataCollectionDefaultEnabled()} in FirebaseApp</p>
+   *     <p>If {@link #setCrashlyticsCollectionEnabled(boolean)} is called with a value, use it
+   *     <p>If the <b>firebase_crashlytics_collection_enabled</b> key is in your app’s
+   *     AndroidManifest.xml, use it
+   *     <p>Otherwise, use the default {@link FirebaseApp#isDataCollectionDefaultEnabled()} in
+   *     FirebaseApp
    */
   public boolean isCrashlyticsCollectionEnabled() {
     return core.isCrashlyticsCollectionEnabled();

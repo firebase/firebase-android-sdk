@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
@@ -427,7 +428,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
               breadcrumbSource,
               new UnavailableAnalyticsEventLogger(),
               new FileStore(context),
-              new SameThreadExecutorService(),
+              TestOnlyExecutors.background(),
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
               mock(RemoteConfigDeferredProxy.class));
       return crashlyticsCore;
