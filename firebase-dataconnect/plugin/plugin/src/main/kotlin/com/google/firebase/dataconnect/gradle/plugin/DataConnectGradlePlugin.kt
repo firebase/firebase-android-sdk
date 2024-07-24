@@ -13,78 +13,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:Suppress("UnstableApiUsage")
+
 package com.google.firebase.dataconnect.gradle.plugin
 
+import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
-import com.android.build.api.variant.LibraryAndroidComponentsExtension
+import com.android.build.api.variant.Variant
 import com.android.build.api.variant.VariantExtensionConfig
-import com.android.build.gradle.LibraryPlugin
-import java.io.File
 import java.util.Locale
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.register
 
-@Suppress("unused", "UnstableApiUsage")
+@Suppress("unused")
 class DataConnectGradlePlugin : Plugin<Project> {
+
   override fun apply(project: Project) {
-    project.plugins.withType(LibraryPlugin::class.java) { _ ->
-      val androidComponents =
-        project.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
+    val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
-      androidComponents.registerExtension(
-        DslExtension.Builder("dataconnect")
-          .extendProjectWith(DataConnectDslExtension::class.java)
-          .extendBuildTypeWith(DataConnectDslExtension::class.java)
-          .extendProductFlavorWith(DataConnectDslExtension::class.java)
-          .build()
-      ) { config: VariantExtensionConfig<*> ->
-        project.objects.newInstance(DataConnectVariantDslExtension::class.java, config)
-      }
+    androidComponents.registerSourceType("dataconnect")
 
-      androidComponents.onVariants { variant ->
-        val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
-
-        val generateCodeTask =
-          project.tasks.register<DataConnectGenerateCodeTask>(
-            "generate${variantNameTitleCase}DataConnectSources"
-          ) {
-            // Use src/main/dataconnect, src/debug/dataconnect, etc. as the "input" directories.
-            // These directories will be merged into a single directory using the same scheme as
-            // Java sources. Find these "input" directories relative to the "assets" directories.
-            inputDirectories.set(
-              variant.sources.assets!!.all.map { directoryCollections ->
-                directoryCollections.map { directories ->
-                  directories.map { directory -> directory.dir("../dataconnect") }
-                }
-              }
-            )
-
-            // Use a directory in the "build" directory for writing the result of merging the
-            // "input" directories.
-            mergedInputsDirectory.set(
-              project.layout.buildDirectory.dir(
-                "intermediates/dataconnect/mergedSources/${variant.name}"
-              )
-            )
-
-            dataConnectCliExecutable.set(
-              File(
-                "/google/src/cloud/dconeybe/codegen/google3/" +
-                  "blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli"
-              )
-            )
-
-            // Provide a reference to the variant extension, from which the task can retrieve
-            // settings set or overridden by the caller.
-            variantExtension.set(variant.getExtension(DataConnectVariantDslExtension::class.java))
-          }
-
-        variant.sources.kotlin!!.addGeneratedSourceDirectory(
-          generateCodeTask,
-          DataConnectGenerateCodeTask::outputDirectory
-        )
-      }
+    androidComponents.registerExtension(
+      DslExtension.Builder("dataconnect")
+        .extendBuildTypeWith(DataConnectDslExtension::class.java)
+        .extendProductFlavorWith(DataConnectDslExtension::class.java)
+        .build()
+    ) { config: VariantExtensionConfig<*> ->
+      project.objects.newInstance(DataConnectVariantDslExtension::class.java, config)
     }
+
+    androidComponents.onVariants { variant ->
+      val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
+
+      val generateCodeTask =
+        project.tasks.register<DataConnectGenerateCodeTask>(
+          "generate${variantNameTitleCase}DataConnectSources"
+        ) {
+          configureForVariant(variant)
+        }
+
+      variant.sources.kotlin!!.addGeneratedSourceDirectory(
+        generateCodeTask,
+        DataConnectGenerateCodeTask::outputDirectory
+      )
+    }
+  }
+}
+
+private fun DataConnectGenerateCodeTask.configureForVariant(variant: Variant) {
+  inputDirectories.set(variant.sources.getByName("dataconnect").all)
+
+  // Use a directory in the "build" directory for writing the result of merging the
+  // "input" directories.
+  mergedInputsDirectory.set(
+    project.layout.buildDirectory.dir("intermediates/dataconnect/mergedSources/${variant.name}")
+  )
+
+  // Propagate the properties from the `DataConnectVariantDslExtension` to the task.
+  variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also {
+    connectors.set(it.connectors)
+    dataConnectCliExecutable.set(it.dataConnectCliExecutable)
   }
 }

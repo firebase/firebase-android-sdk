@@ -19,6 +19,7 @@ import com.android.build.api.variant.VariantExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import javax.inject.Inject
 import org.gradle.api.GradleException
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 
@@ -46,14 +47,19 @@ abstract class DataConnectVariantDslExtension
 @Inject
 constructor(
   // Do not keep a reference on the VariantExtensionConfig as it is not serializable.
-  extensionConfig: VariantExtensionConfig<*>
+  extensionConfig: VariantExtensionConfig<*>,
+  projectLayout: ProjectLayout,
 ) : VariantExtension, java.io.Serializable {
   abstract val connectors: ListProperty<String>
   abstract val dataConnectCliExecutable: RegularFileProperty
 
   init {
-    println(
-      "zzyzx DataConnectVariantDslExtension.init() starting for variant: ${extensionConfig.variant.name}"
+    connectors.convention(emptyList())
+
+    dataConnectCliExecutable.convention(
+      projectLayout.projectDirectory.file(
+        "/google/src/cloud/dconeybe/codegen/google3/blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli"
+      )
     )
 
     valueFromExtensions(extensionConfig, "connectors", DataConnectDslExtension::connectors)?.let {
@@ -74,7 +80,6 @@ constructor(
       name: String,
       getter: (DataConnectDslExtension) -> T?
     ): T? {
-      // val projectExt = extensionConfig.projectExtension(DataConnectDslExtension::class.java)
       val buildTypeExt = extensionConfig.buildTypeExtension(DataConnectDslExtension::class.java)
       val productFlavorExts =
         extensionConfig.productFlavorsExtensions(DataConnectDslExtension::class.java)
@@ -83,7 +88,6 @@ constructor(
 
       val valueBySource =
         buildMap<String, T> {
-          // getter(projectExt)?.let { put("project", it) }
           getter(buildTypeExt)?.let { put("buildType:${extensionConfig.variant.buildType}", it) }
           productFlavorExts.forEachIndexed { index, productFlavorExt ->
             getter(productFlavorExt)?.let { put("productFlavor:${productFlavorNames[index]}", it) }

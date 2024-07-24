@@ -22,9 +22,9 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileSystemOperations
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -38,98 +38,80 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:Inject abstract val fileSystemOperations: FileSystemOperations
 
+  @get:Inject abstract val projectLayout: ProjectLayout
+
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
   @get:OutputDirectory abstract val mergedInputsDirectory: DirectoryProperty
 
-  @get:InputFiles abstract val inputDirectories: ListProperty<Collection<Directory>>
+  @get:InputFiles abstract val inputDirectories: ListProperty<Directory>
 
   @get:InputFile abstract val dataConnectCliExecutable: RegularFileProperty
 
-  @get:Input abstract val variantExtension: Property<DataConnectVariantDslExtension>
+  @get:Input abstract val connectors: ListProperty<String>
 
   @TaskAction
   fun run() {
     val outputDirectory: File = outputDirectory.get().asFile
     val mergedInputsDirectory: File = mergedInputsDirectory.get().asFile
-    val inputDirectories: List<List<File>> =
-      inputDirectories.get().map { aaa -> aaa.map { bbb -> bbb.asFile } }
-    val dataConnectCliExecutable: File =
-      variantExtension
-        .get()
-        .dataConnectCliExecutable
-        .getOrElse(dataConnectCliExecutable.get())
-        .asFile
-    val connectors: List<String> = variantExtension.get().connectors.getOrElse(emptyList())
+    val inputDirectories: List<File> = inputDirectories.get().map { it.asFile }
+    val dataConnectCliExecutable: File = dataConnectCliExecutable.get().asFile
+    val connectors: List<String> = connectors.get()
 
-    logger.info("[{}] outputDirectory={}", name, outputDirectory)
-    logger.info("[{}] mergedInputsDirectory={}", name, mergedInputsDirectory)
-    logger.info("[{}] inputDirectories={}", name, inputDirectories.flatten().filter { it.exists() })
-    logger.info("[{}] dataConnectCliExecutable={}", name, dataConnectCliExecutable)
-    logger.info(
-      "[{}] connectors={}",
-      name,
-      if (connectors.isNotEmpty()) connectors.toString() else "<all>"
-    )
+    logger.info("outputDirectory={}", outputDirectory)
+    logger.info("mergedInputsDirectory={}", mergedInputsDirectory)
+    logger.info("inputDirectories={}", inputDirectories)
+    logger.info("dataConnectCliExecutable={}", dataConnectCliExecutable)
+    logger.info("connectors={}", connectors)
 
     deleteDirectories(mergedInputsDirectory, outputDirectory)
     mergeInputDirectories(inputDirectories, mergedInputsDirectory)
-    runCodgen(mergedInputsDirectory, outputDirectory, dataConnectCliExecutable, connectors)
+    generateCode(dataConnectCliExecutable, mergedInputsDirectory, outputDirectory, connectors)
 
-    logger.info("[{}] completed successfully", name)
+    logger.info("completed successfully")
   }
 
   private fun deleteDirectories(vararg directory: File) {
     val directories = directory.toList()
-    logger.info("[{}] Deleting directories: {}", name, directories)
+    logger.info("Deleting directories: {}", directories)
     fileSystemOperations.delete { it.delete(directories) }
   }
 
-  private fun mergeInputDirectories(inputDirectories: List<List<File>>, outputDirectory: File) {
-    for (curInputDirectories in inputDirectories) {
-      logger.info(
-        "[{}] Copying input directories {} to {}",
-        name,
-        curInputDirectories,
-        outputDirectory
-      )
-      fileSystemOperations.copy {
-        it.from(curInputDirectories)
-        it.into(outputDirectory)
-        it.duplicatesStrategy = DuplicatesStrategy.FAIL
-      }
+  private fun mergeInputDirectories(inputDirectories: List<File>, outputDirectory: File) {
+    logger.info("Copying input directories {} to {}", inputDirectories, outputDirectory)
+    fileSystemOperations.copy {
+      it.from(inputDirectories)
+      it.into(outputDirectory)
+      it.duplicatesStrategy = DuplicatesStrategy.FAIL
     }
   }
 
-  private fun runCodgen(
-    intermediatesDirectory: File,
-    outputDirectory: File,
+  private fun generateCode(
     dataConnectCliExecutable: File,
+    configDirectory: File,
+    outputDirectory: File,
     connectors: List<String>
   ) {
-    val codegenArgs =
-      buildList<String> {
-        add(dataConnectCliExecutable.path)
+    execOperations.exec { execSpec ->
+      execSpec.run {
+        executable(dataConnectCliExecutable)
+        setIgnoreExitValue(false)
+
         if (logger.isInfoEnabled) {
-          add("-logtostderr")
+          args("-logtostderr")
         }
         if (logger.isDebugEnabled) {
-          add("-v")
-          add("2")
+          args("-v").args("2")
         }
-        add("gradle")
-        add("generate")
-        add("-config_dir=$intermediatesDirectory")
-        add("-output_dir=${outputDirectory.path}")
+
+        args("gradle").args("generate")
+
+        args("-config_dir=$configDirectory")
+        args("-output_dir=${outputDirectory.path}")
         if (connectors.isNotEmpty()) {
-          add("-connectors=${connectors.joinToString(",")}")
+          args("-connectors=${connectors.joinToString(",")}")
         }
       }
-
-    logger.info("[{}] Running command: {}", name, codegenArgs.joinToString(" "))
-    execOperations.exec {
-      it.commandLine = codegenArgs
-      it.setIgnoreExitValue(false)
     }
   }
 }

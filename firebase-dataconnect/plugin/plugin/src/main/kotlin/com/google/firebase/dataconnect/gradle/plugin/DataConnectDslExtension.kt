@@ -15,9 +15,9 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
-import java.io.File
+import org.gradle.api.file.RegularFile
 
 interface DataConnectDslExtension {
   var connectors: List<String>?
-  var dataConnectCliExecutable: File?
+  var dataConnectCliExecutable: RegularFile?
 }
