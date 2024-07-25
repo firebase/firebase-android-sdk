@@ -111,7 +111,13 @@ val Project.isKTXLibary: Boolean
  * @param property the name of the property to look for
  */
 inline fun <reified T> Project.provideProperty(property: String) = provider {
-  findProperty(property) as? T
+  val maybeProperty = findProperty(property)
+
+  // using when instead of an if statement so we can expand as needed
+  when (T::class) {
+    Boolean::class -> maybeProperty?.toString()?.toBoolean() as? T
+    else -> maybeProperty as? T
+  }
 }
 
 /** Fetches the jars of dependencies associated with this configuration through an artifact view. */

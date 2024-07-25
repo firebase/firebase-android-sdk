@@ -23,6 +23,11 @@ firebaseLibrary {
         enabled = true
         device 'model=panther,version=33' // Pixel7
     }
+    releaseNotes {
+        name.set("{{crashlytics}} NDK")
+        versionName.set("crashlytics-ndk")
+        hasKTX.set(false)
+    }
     testLab.enabled = true
     publishJavadoc = false
 }
@@ -33,10 +38,10 @@ android {
     }
     namespace "com.google.firebase.crashlytics.ndk"
     ndkVersion "25.1.8937393"
-    compileSdkVersion 33
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion 33
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
         versionName version
 
         externalNativeBuild {
@@ -105,21 +110,22 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation "com.google.firebase:firebase-common:20.4.2"
-    implementation "com.google.firebase:firebase-common-ktx:20.4.2"
-    implementation "com.google.firebase:firebase-components:17.1.5"
-    implementation project(':firebase-crashlytics')
+    api project(':firebase-crashlytics')
+    api "com.google.firebase:firebase-common:21.0.0"
+    api "com.google.firebase:firebase-common-ktx:21.0.0"
+    api "com.google.firebase:firebase-components:18.0.0"
+
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
 
     testImplementation 'androidx.test:runner:1.4.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.3'
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
-    androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
-    androidTestImplementation 'org.mockito:mockito-core:3.4.3'
+    androidTestImplementation 'androidx.test:runner:1.4.0'
+    androidTestImplementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.28.1'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.28.1'
-    androidTestImplementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+    androidTestImplementation 'org.mockito:mockito-core:3.4.3'
 }

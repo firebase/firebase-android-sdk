@@ -19,7 +19,10 @@ package com.google.firebase.gradle.plugins
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.StopActionException
 import org.gradle.api.tasks.TaskAction
@@ -33,6 +36,7 @@ import org.gradle.work.DisableCachingByDefault
  *
  * @property changelogFile The `CHANGELOG.md` file to use as a [Changelog]
  * @property releaseNotesFile The output file to write the release notes to
+ * @property skipMissingEntries Continue the build if the release notes are missing entries
  * @throws StopActionException If metadata does not exist for the given project, or there are no
  * changes to release
  * @see make
@@ -42,6 +46,8 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
   @get:InputFile abstract val changelogFile: RegularFileProperty
 
   @get:OutputFile abstract val releaseNotesFile: RegularFileProperty
+
+  @get:Optional @get:Input abstract val skipMissingEntries: Property<Boolean>
 
   /**
    * Converts the [changelogFile] into a [Changelog], and then uses that data to create release
@@ -76,26 +82,33 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
    * updates.
    * ```
    *
-   * @see convertToMetadata
+   * @see ReleaseNotesConfigurationExtension
    */
   @TaskAction
   fun make() {
     val changelog = Changelog.fromFile(changelogFile.asFile.get())
-    val metadata = convertToMetadata(project.name)
+    val config = project.firebaseLibrary.releaseNotes
     val unreleased = changelog.releases.first()
     val version = project.version.toString()
+    val skipMissing = skipMissingEntries.getOrElse(false)
 
-    if (!project.firebaseLibrary.publishJavadoc)
+    if (!config.enabled.get())
       throw StopActionException("No release notes required for ${project.name}")
 
-    if (!unreleased.hasContent())
+    if (!unreleased.hasContent()) {
+      if (skipMissing)
+        throw StopActionException(
+          "Missing releasing notes for  \"${project.name}\", but skip missing enabled."
+        )
+
       throw GradleException("Missing release notes for \"${project.name}\"")
+    }
 
     val versionClassifier = version.replace(".", "-")
 
     val baseReleaseNotes =
       """
-        |### ${metadata.name} version $version {: #${metadata.versionName}_v$versionClassifier}
+        |### ${config.name.get()} version $version {: #${config.versionName.get()}_v$versionClassifier}
         |
         |${unreleased.content.toReleaseNotes()}
       """
@@ -104,13 +117,13 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
 
     val ktxReleaseNotes =
       """
-          |#### ${metadata.name} Kotlin extensions version $version {: #${metadata.versionName}-ktx_v$versionClassifier}
+          |#### ${config.name.get()} Kotlin extensions version $version {: #${config.versionName.get()}-ktx_v$versionClassifier}
           |
           |${unreleased.ktx?.toReleaseNotes() ?: KTXTransitiveReleaseText(project.name)}
         """
         .trimMargin()
         .trim()
-        .takeIf { metadata.hasKTX }
+        .takeIf { config.hasKTX.get() }
 
     val releaseNotes =
       """

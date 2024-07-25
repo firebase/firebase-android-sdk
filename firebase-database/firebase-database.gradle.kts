@@ -15,20 +15,26 @@
 plugins {
     id("firebase-library")
     id("kotlin-android")
+    id("copy-google-services")
 }
 
 firebaseLibrary {
   libraryGroup("database")
   testLab.enabled = true
   publishSources = true
+  releaseNotes {
+    name.set("{{database}}")
+    versionName.set("realtime-database")
+  }
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
   installation.timeOutInMs = 60 * 1000
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database"
   defaultConfig {
@@ -48,6 +54,7 @@ android {
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
     testOptions.unitTests.isIncludeAndroidResources = true
@@ -55,20 +62,20 @@ android {
 }
 
 dependencies {
-    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
+    api("com.google.firebase:firebase-appcheck-interop:17.1.0")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
+    api("com.google.firebase:firebase-auth-interop:20.0.0") {
      exclude(group = "com.google.firebase", module = "firebase-common")
      exclude(group = "com.google.firebase", module = "firebase-components")
    }
-    implementation("com.google.firebase:firebase-database-collection:18.0.1")
+    api("com.google.firebase:firebase-database-collection:18.0.1")
     implementation(libs.androidx.annotation)
     implementation(libs.bundles.playservices)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.playservices.tasks)
+    api(libs.playservices.tasks)
 
     testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
@@ -91,7 +98,3 @@ dependencies {
     androidTestImplementation(libs.quickcheck)
     androidTestImplementation(libs.truth)
 }
-
-ext["packageName"] = "com.google.firebase.database"
-
-apply("../gradle/googleServices.gradle")

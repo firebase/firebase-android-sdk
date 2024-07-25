@@ -3,7 +3,7 @@ name: Merge to main
 on:
   pull_request:
     branches:
-      - master
+      - main
     types:
       - opened
       - labeled

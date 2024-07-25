@@ -111,6 +111,9 @@ public final class LocalStore implements BundleCallback {
   /** Manages our in-memory or durable persistence. */
   private final Persistence persistence;
 
+  /** General purpose global state. */
+  private GlobalsCache globalsCache;
+
   /** Manages the list of active field and collection indices. */
   private IndexManager indexManager;
 
@@ -153,6 +156,7 @@ public final class LocalStore implements BundleCallback {
     this.persistence = persistence;
     this.queryEngine = queryEngine;
 
+    globalsCache = persistence.getGlobalsCache();
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
     targetIdGenerator = TargetIdGenerator.forTargetCache(targetCache.getHighestTargetId());
@@ -390,6 +394,14 @@ public final class LocalStore implements BundleCallback {
    */
   public SnapshotVersion getLastRemoteSnapshotVersion() {
     return targetCache.getLastRemoteSnapshotVersion();
+  }
+
+  public ByteString getSessionToken() {
+    return globalsCache.getSessionsToken();
+  }
+
+  public void setSessionsToken(ByteString sessionToken) {
+    globalsCache.setSessionToken(sessionToken);
   }
 
   /**

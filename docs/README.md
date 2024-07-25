@@ -36,4 +36,4 @@ in your app:
   * [`firebase-database`](ktx/database.md)
 
 [android-setup]: https://firebase.google.com/docs/android/setup
-[main-readme]: https://github.com/firebase/firebase-android-sdk/blob/master/README.md
+[main-readme]: https://github.com/firebase/firebase-android-sdk/blob/main/README.md

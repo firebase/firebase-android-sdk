@@ -16,4 +16,14 @@ plugins {
     id 'firebase-library'
 }
 
-android.compileSdkVersion = 26
+firebaseLibrary {
+    releaseNotes {
+        name.set("{{firebase_storage_full}}")
+        versionName.set("storage")
+    }
+}
+
+android{
+    namespace 'com.example.firebase-storage'
+    compileSdkVersion 26
+}

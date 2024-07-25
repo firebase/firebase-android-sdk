@@ -16,6 +16,7 @@ plugins {
     id("firebase-library")
     id("kotlin-android")
     id("firebase-vendor")
+    id("copy-google-services")
     kotlin("kapt")
 }
 
@@ -23,14 +24,21 @@ firebaseLibrary {
     libraryGroup("functions")
     testLab.enabled = true
     publishSources = true
+    releaseNotes {
+        name.set("{{functions_client}}")
+        versionName.set("functions-client")
+    }
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
+  val minSdkVersion : Int by rootProject
+
   namespace = "com.google.firebase.functions"
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
+    minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -43,6 +51,7 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
+  kotlinOptions { jvmTarget = "1.8" }
   testOptions.unitTests.isIncludeAndroidResources = true
 }
 
@@ -68,26 +77,26 @@ dependencies {
     implementation("com.google.firebase:firebase-iid-interop:17.1.0")
     implementation(libs.okhttp)
 
-    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation("com.google.firebase:firebase-auth-interop:18.0.0") {
+    api("com.google.firebase:firebase-appcheck-interop:17.1.0")
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+    api("com.google.firebase:firebase-components:18.0.0")
+    api("com.google.firebase:firebase-annotations:16.2.0")
+    api("com.google.firebase:firebase-auth-interop:18.0.0") {
        exclude(group = "com.google.firebase", module = "firebase-common")
    }
-    implementation("com.google.firebase:firebase-iid:21.1.0") {
+    api("com.google.firebase:firebase-iid:21.1.0") {
        exclude(group = "com.google.firebase", module = "firebase-common")
        exclude(group = "com.google.firebase", module = "firebase-components")
    }
-    implementation("com.google.firebase:firebase-iid-interop:17.1.0")
+    api("com.google.firebase:firebase-iid-interop:17.1.0")
     implementation(libs.androidx.annotation)
     implementation(libs.javax.inject)
     implementation(libs.kotlin.stdlib)
     implementation(libs.okhttp)
     implementation(libs.playservices.base)
     implementation(libs.playservices.basement)
-    implementation(libs.playservices.tasks)
+    api(libs.playservices.tasks)
 
     annotationProcessor(libs.autovalue)
     annotationProcessor(libs.dagger.compiler)
@@ -113,10 +122,3 @@ dependencies {
     kapt("com.google.dagger:dagger-android-processor:2.43.2")
     kapt("com.google.dagger:dagger-compiler:2.43.2")
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-extra["packageName"] = "com.google.firebase.functions"
-apply(from = "../gradle/googleServices.gradle")

@@ -133,12 +133,19 @@ public abstract class SchedulerConfig {
     }
   }
 
-  public long getScheduleDelay(Priority priority, long minTimestamp, int attemptNumber) {
+  public long getScheduleDelay(
+      Priority priority, long minTimestamp, int attemptNumber, boolean skipDelta) {
     long timeDiff = minTimestamp - getClock().getTime();
     ConfigValue config = getValues().get(priority);
 
-    long delay = Math.max(adjustedExponentialBackoff(attemptNumber, config.getDelta()), timeDiff);
+    long delta = (skipDelta) ? 1 : config.getDelta();
+
+    long delay = Math.max(adjustedExponentialBackoff(attemptNumber, delta), timeDiff);
     return Math.min(delay, config.getMaxAllowedDelay());
+  }
+
+  public long getScheduleDelay(Priority priority, long minTimestamp, int attemptNumber) {
+    return getScheduleDelay(priority, minTimestamp, attemptNumber, false);
   }
 
   private long adjustedExponentialBackoff(int attemptNumber, long delta) {
@@ -153,11 +160,21 @@ public abstract class SchedulerConfig {
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
   public JobInfo.Builder configureJob(
-      JobInfo.Builder builder, Priority priority, long minimumTimestamp, int attemptNumber) {
-    long latency = getScheduleDelay(priority, minimumTimestamp, attemptNumber);
+      JobInfo.Builder builder,
+      Priority priority,
+      long minimumTimestamp,
+      int attemptNumber,
+      boolean skipDelta) {
+    long latency = getScheduleDelay(priority, minimumTimestamp, attemptNumber, skipDelta);
     builder.setMinimumLatency(latency); // wait at least
     populateFlags(builder, getValues().get(priority).getFlags());
     return builder;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+  public JobInfo.Builder configureJob(
+      JobInfo.Builder builder, Priority priority, long minimumTimestamp, int attemptNumber) {
+    return configureJob(builder, priority, minimumTimestamp, attemptNumber, false);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)

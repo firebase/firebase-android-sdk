@@ -22,12 +22,18 @@ firebaseLibrary {
   testLab.enabled = false
   publishSources = true
   publishJavadoc = false
+  releaseNotes {
+    name.set("Dynamic feature modules support")
+    versionName.set("dynamic-feature-modules-support")
+    hasKTX.set(false)
+  }
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
   val minSdkVersion : Int by rootProject
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   namespace = "com.google.firebase.dynamicloading"
   defaultConfig {
     minSdk = minSdkVersion
@@ -44,6 +50,7 @@ android {
 
 dependencies {
   implementation("com.google.android.play:feature-delivery:2.0.0")
-  implementation("com.google.firebase:firebase-common:20.3.1")
-  implementation("com.google.firebase:firebase-components:17.1.0")
+  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-components:18.0.0")
 }

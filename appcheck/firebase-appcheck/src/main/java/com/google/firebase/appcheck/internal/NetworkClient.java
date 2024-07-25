@@ -51,8 +51,6 @@ public class NetworkClient {
 
   private static final String TAG = NetworkClient.class.getName();
 
-  private static final String SAFETY_NET_EXCHANGE_URL_TEMPLATE =
-      "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeSafetyNetToken?key=%s";
   private static final String DEBUG_EXCHANGE_URL_TEMPLATE =
       "https://firebaseappcheck.googleapis.com/v1/projects/%s/apps/%s:exchangeDebugToken?key=%s";
   private static final String PLAY_INTEGRITY_EXCHANGE_URL_TEMPLATE =
@@ -73,11 +71,10 @@ public class NetworkClient {
   private final Provider<HeartBeatController> heartBeatControllerProvider;
 
   @Retention(RetentionPolicy.SOURCE)
-  @IntDef({UNKNOWN, SAFETY_NET, DEBUG, PLAY_INTEGRITY})
+  @IntDef({UNKNOWN, DEBUG, PLAY_INTEGRITY})
   public @interface AttestationTokenType {}
 
   public static final int UNKNOWN = 0;
-  public static final int SAFETY_NET = 1;
   public static final int DEBUG = 2;
   public static final int PLAY_INTEGRITY = 3;
 
@@ -215,6 +212,7 @@ public class NetworkClient {
       return null;
     }
   }
+
   /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
     byte[] hash;
@@ -234,8 +232,6 @@ public class NetworkClient {
 
   private static String getUrlTemplate(@AttestationTokenType int tokenType) {
     switch (tokenType) {
-      case SAFETY_NET:
-        return SAFETY_NET_EXCHANGE_URL_TEMPLATE;
       case DEBUG:
         return DEBUG_EXCHANGE_URL_TEMPLATE;
       case PLAY_INTEGRITY:

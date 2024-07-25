@@ -19,6 +19,11 @@ plugins {
 firebaseLibrary {
     libraryGroup "appcheck"
     publishSources = true
+    releaseNotes {
+        name.set("{{app_check}} Play integrity")
+        versionName.set("appcheck-playintegrity")
+        hasKTX.set(false)
+    }
 }
 
 android {
@@ -27,7 +32,7 @@ android {
     }
 
     namespace "com.google.firebase.appcheck.playintegrity"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
@@ -43,24 +48,25 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-common:20.4.2'
-    implementation 'com.google.firebase:firebase-common-ktx:20.4.2'
-    implementation 'com.google.firebase:firebase-components:17.1.5'
-    implementation project(':appcheck:firebase-appcheck')
+    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+
+    api project(':appcheck:firebase-appcheck')
+    api 'com.google.firebase:firebase-annotations:16.2.0'
+    api 'com.google.firebase:firebase-common:21.0.0'
+    api 'com.google.firebase:firebase-common-ktx:21.0.0'
+    api 'com.google.firebase:firebase-components:18.0.0'
+
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.android.play:integrity:1.2.0'
-
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
     testImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:3.4.6'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

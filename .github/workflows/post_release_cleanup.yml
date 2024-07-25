@@ -12,10 +12,15 @@ jobs:
   create-pull-request:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.1.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
       - name: Run post release cleanup task
         run: |
           ./gradlew postReleaseCleanup
@@ -23,7 +28,10 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          base: 'master'
+          token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
+          committer: google-oss-bot <google-oss-bot@google.com>
+          assignees: ${{ github.actor }}
+          base: 'main'
           branch: 'releases/${{ inputs.name }}.mergeback'
           add-paths: |
             **/CHANGELOG.md

@@ -206,6 +206,11 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
+  GlobalsCache getGlobalsCache() {
+    return new SQLiteGlobalsCache(this);
+  }
+
+  @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     db.beginTransactionWithListener(transactionListener);
@@ -265,7 +270,7 @@ public final class SQLitePersistence extends Persistence {
    * @see "https://www.sqlite.org/pragma.html#pragma_page_size"
    */
   private long getPageSize() {
-    return query("PRAGMA page_size").firstValue(row -> row.getLong(/*column=*/ 0));
+    return query("PRAGMA page_size").firstValue(row -> row.getLong(/* column= */ 0));
   }
 
   /**
@@ -275,7 +280,7 @@ public final class SQLitePersistence extends Persistence {
    * @see "https://www.sqlite.org/pragma.html#pragma_page_count."
    */
   private long getPageCount() {
-    return query("PRAGMA page_count").firstValue(row -> row.getLong(/*column=*/ 0));
+    return query("PRAGMA page_count").firstValue(row -> row.getLong(/* column= */ 0));
   }
 
   /**

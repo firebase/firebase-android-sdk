@@ -218,6 +218,7 @@ public final class RemoteSerializer {
   public String databaseName() {
     return databaseName;
   }
+
   // Documents
 
   public com.google.firestore.v1.Document encodeDocument(DocumentKey key, ObjectValue value) {

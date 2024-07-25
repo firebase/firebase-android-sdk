@@ -1,4 +1,72 @@
 # Unreleased
+* [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is enabled.
+  ([Github #5919](//github.com/firebase/firebase-android-sdk/issues/5919))
+* [fixed] Ensure that on-demand fatal events are never processed on the main thread.
+
+
+# 19.0.3
+* [changed] Update the internal file system to handle long file names.
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.0.2
+* [changed] Changing caught exception type to fail safely on any exception type.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.0.1
+* [changed] Improve cold initialization time.
+* [fixed] Fixed version compatibility issues with other Firebase libraries.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.0.0
+* [fixed] Force validation or rotation of FIDs.
+* [fixed] Added keep rule for shrinkage of Crashlytics build resources in strict mode.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.6.3
+* [feature] Updated `firebase-sessions` dependency.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.6.2
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.6.1
+* [feature] Updated `firebase-sessions` dependency for internal improvements
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.6.0
 * [changed] Include more details about app processes in reports.
@@ -33,7 +101,8 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 18.4.3
-* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions
+  library. [#5337]
 
 
 ## Kotlin
@@ -80,7 +149,8 @@ updates.
   (GitHub [#4721](https://github.com/firebase/firebase-android-sdk/pull/4721){: .external})
 * [changed] Improved crash reporting reliability for crashes that occur early
   in the app's lifecycle.
-  (GitHub [#4608](https://github.com/firebase/firebase-android-sdk/pull/4608){: .external}, [#4786](https://github.com/firebase/firebase-android-sdk/pull/4786){: .external})
+  (GitHub [#4608](https://github.com/firebase/firebase-android-sdk/pull/4608){:
+  .external}, [#4786](https://github.com/firebase/firebase-android-sdk/pull/4786){: .external})
 
 
 ## Kotlin
@@ -139,7 +209,8 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 18.3.1
-* [fixed] Fixed an [issue](https://github.com/firebase/firebase-android-sdk/issues/4223){: .external}
+* [fixed] Fixed an [issue](https://github.com/firebase/firebase-android-sdk/issues/4223){:
+  .external}
   in v18.3.0 that caused a `NoClassDefFoundError` in specific cases.
 
 
@@ -161,12 +232,13 @@ using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
-  `firebase-crashlytics` library. The Kotlin extensions library has the
-  following additional updates:
+`firebase-crashlytics` library. The Kotlin extensions library has the
+following additional updates:
 
 * [feature] Firebase now supports Kotlin coroutines.
   With this release, we added
-  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){:
+  .external}
   to `firebase-crashlytics-ktx` as a transitive dependency, which exposes the
   `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
@@ -452,7 +524,8 @@ updates.
   include native crashes in crash-free users counts.
 * [fixed] Removed a harmless, yet unexpected `FileNotFoundException` log
   output that printed when an optional file is unavailable.
-  ([Github Issue #1559](//github.com/firebase/firebase-android-sdk/issues/1559#issuecomment-638387614){: .external})
+  ([Github Issue #1559](//github.com/firebase/firebase-android-sdk/issues/1559#issuecomment-638387614){:
+  .external})
 
 
 ## Kotlin
@@ -523,12 +596,13 @@ The following release notes describe changes in the new SDK.
   </ul>
 </aside>
 
- * [changed] Replaced static methods with new instance methods that are more
- consistent with other Firebase SDKs and more intuitive to use. The new APIs
- give your users more control over how you collect their data.
- * [removed] Removed the Fabric [crashlytics] API key. Now, [crashlytics]
- will always use the `google-services.json` file to associate your app with your
- Firebase project. If you linked your app from Fabric, remove the Fabric API key
- from your `AndroidManifest.xml` file.
- * [removed] The `fabric.properties` and `crashlytics.properties` files are no
- longer supported. Remove them from your app.
+* [changed] Replaced static methods with new instance methods that are more
+  consistent with other Firebase SDKs and more intuitive to use. The new APIs
+  give your users more control over how you collect their data.
+* [removed] Removed the Fabric [crashlytics] API key. Now, [crashlytics]
+  will always use the `google-services.json` file to associate your app with your
+  Firebase project. If you linked your app from Fabric, remove the Fabric API key
+  from your `AndroidManifest.xml` file.
+* [removed] The `fabric.properties` and `crashlytics.properties` files are no
+  longer supported. Remove them from your app.
+

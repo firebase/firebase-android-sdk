@@ -1,6 +1,12 @@
 # Unreleased
 
 
+# 22.0.0
+* [changed] Bump internal dependencies
+
+# 21.1.2
+* [changed] Bump internal dependencies.
+
 # 21.1.1
 * [changed] Internal changes to improve experiment reporting.
 
@@ -34,7 +40,6 @@
 
 # 17.1.1
 * [changed] Updated API to support the latest [remote_config] update.
-
 * [changed] Updated minSdkVersion to API level 16.
 
 # 17.1.0

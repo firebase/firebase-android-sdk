@@ -16,7 +16,7 @@ package com.google.firebase.inappmessaging;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.inappmessaging.internal.DataCollectionHelper;

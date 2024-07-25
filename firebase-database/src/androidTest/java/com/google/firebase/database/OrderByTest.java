@@ -478,7 +478,10 @@ public class OrderByTest {
 
   @Test
   public void queriesWorkOnLeafNodes()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TestFailure,
           TimeoutException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
     final Semaphore semaphore = new Semaphore(0);

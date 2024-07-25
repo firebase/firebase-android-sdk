@@ -19,12 +19,16 @@ plugins {
 firebaseLibrary {
     publishSources = true
     publishJavadoc = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
+  val compileSdkVersion : Int by rootProject
   val targetSdkVersion : Int by rootProject
   val minSdkVersion : Int by rootProject
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   namespace = "com.google.firebase.components"
   defaultConfig {
     minSdk = minSdkVersion
@@ -41,7 +45,7 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-annotations:16.2.0")
   implementation(libs.androidx.annotation)
   implementation(libs.errorprone.annotations)
 

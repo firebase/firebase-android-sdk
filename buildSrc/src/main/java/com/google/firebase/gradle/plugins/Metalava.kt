@@ -62,7 +62,7 @@ fun Project.runMetalavaWithArgs(
     ) + arguments
 
   project.javaexec {
-    main = "com.android.tools.metalava.Driver"
+    mainClass.set("com.android.tools.metalava.Driver")
     classpath = project.metalavaConfig
     args = allArgs
     isIgnoreExitValue = ignoreFailure

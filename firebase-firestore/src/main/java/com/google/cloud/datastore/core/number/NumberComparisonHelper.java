@@ -25,6 +25,7 @@ public final class NumberComparisonHelper {
 
   /** The maximum value in the main range of integers representable as both long and double. */
   public static final long MAX_SAFE_LONG = 1L << 53;
+
   /** The minimum value in the main range of integers representable as both long and double. */
   public static final long MIN_SAFE_LONG = -MAX_SAFE_LONG;
 
@@ -59,18 +60,9 @@ public final class NumberComparisonHelper {
     return firestoreCompareDoubles(doubleValue, longAsDouble);
   }
 
-  /**
-   * Compares longs. Note that we can't use Long.compare because it's only available after Android
-   * 19.
-   */
+  /** Compares longs. */
   public static int compareLongs(long leftLong, long rightLong) {
-    if (leftLong < rightLong) {
-      return -1;
-    } else if (leftLong > rightLong) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return Long.compare(leftLong, rightLong);
   }
 
   /**

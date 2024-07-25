@@ -16,9 +16,11 @@ plugins {
     id 'kotlin-android'
     id 'com.google.gms.google-services'
     id 'com.google.firebase.appdistribution'
+    id 'copy-google-services'
 }
 
 android {
+    namespace "com.google.firebase.appdistribution.testapp"
     compileSdk 33
 
     defaultConfig {
@@ -71,33 +73,28 @@ dependencies {
     // TODO(rachelprince): Add flag to build with public version of SDK
     println("Building with HEAD version ':firebase-appdistribution' of SDK")
 
-    // All variants use the API
-    implementation project(':firebase-appdistribution-api:ktx')
+    version ':firebase-appdistribution'
 
     // In this test project we also need to explicitly declare these dependencies
     implementation project(':firebase-appdistribution-api')
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
+    // All variants use the API
+    implementation project(':firebase-appdistribution-api:ktx')
+    implementation "androidx.activity:activity-ktx:1.6.0"
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation "androidx.core:core:1.9.0"
+    implementation 'androidx.core:core-ktx:1.9.0'
+    implementation "androidx.fragment:fragment-ktx:1.5.3"
     implementation "com.google.android.gms:play-services-tasks:18.0.2"
+    implementation 'com.google.android.material:material:1.6.1'
+    implementation 'com.google.firebase:firebase-common-ktx:21.0.0'
+    // Shake detection
+    implementation 'com.squareup:seismic:1.0.3'
+    // Other dependencies
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
     // Beta flavor uses the full implementation
     betaImplementation project(':firebase-appdistribution')
 
-    // Other dependencies
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "androidx.activity:activity-ktx:1.6.0"
-    implementation "androidx.fragment:fragment-ktx:1.5.3"
-    implementation 'androidx.core:core-ktx:1.9.0'
-    implementation "androidx.core:core:1.9.0"
-    implementation 'androidx.appcompat:appcompat:1.5.1'
-    implementation 'com.google.android.material:material:1.6.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-
     testImplementation 'junit:junit:4.13.2'
-
-    // Shake detection
-    implementation 'com.squareup:seismic:1.0.3'
 }
-
-// This allows the app to connect to Firebase on the CI.
-ext.packageName = "com.googletest.firebase.appdistribution.testapp"
-apply from: '../../gradle/googleServices.gradle'

@@ -729,7 +729,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -743,7 +743,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(Object... fieldValues) {
-    Bound bound = boundFromFields("startAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("startAt", fieldValues, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -757,7 +757,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -772,7 +772,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(Object... fieldValues) {
-    Bound bound = boundFromFields("startAfter", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("startAfter", fieldValues, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -786,7 +786,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -800,7 +800,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(Object... fieldValues) {
-    Bound bound = boundFromFields("endBefore", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("endBefore", fieldValues, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -814,7 +814,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -828,7 +828,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(Object... fieldValues) {
-    Bound bound = boundFromFields("endAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("endAt", fieldValues, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -1126,6 +1126,27 @@ public class Query {
   }
 
   /**
+   * Starts listening to this query with the given options.
+   *
+   * @param options Sets snapshot listener options, including whether metadata-only changes should
+   *     trigger snapshot events, the source to listen to, the executor to use to call the listener,
+   *     or the activity to scope the listener to.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull SnapshotListenOptions options, @NonNull EventListener<QuerySnapshot> listener) {
+    checkNotNull(options, "Provided options value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        options.getExecutor(),
+        internalOptions(options.getMetadataChanges(), options.getSource()),
+        options.getActivity(),
+        listener);
+  }
+
+  /**
    * Internal helper method to create add a snapshot listener.
    *
    * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
@@ -1181,8 +1202,8 @@ public class Query {
    * <em>without actually downloading the documents</em>.
    *
    * <p>Using the returned query to count the documents is efficient because only the final count,
-   * not the documents' data, is downloaded. The returned query can even count the documents if the
-   * result set would be prohibitively large to download entirely (like thousands of documents).
+   * not the documents' data, is downloaded. The returned query can count the documents in cases
+   * where the result set is prohibitively large to download entirely (thousands of documents).
    *
    * @return The {@code AggregateQuery} that counts the documents in the result set of this query.
    */
@@ -1192,13 +1213,13 @@ public class Query {
   }
 
   /**
-   * Calculates the specified aggregations over the documents in the result set of the given query,
+   * Calculates the specified aggregations over the documents in the result set of the given query
    * without actually downloading the documents.
    *
-   * <p>Using this function to perform aggregations is efficient because only the final aggregation
-   * values, not the documents' data, is downloaded. This function can even perform aggregations of
-   * the documents if the result set would be prohibitively large to download entirely (like
-   * thousands of documents).
+   * <p>Using the returned query to perform aggregations is efficient because only the final
+   * aggregation values, not the documents' data, is downloaded. The returned query can perform
+   * aggregations of the documents in cases where the result set is prohibitively large to download
+   * entirely (thousands of documents).
    *
    * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
    *     set of this query.
@@ -1239,10 +1260,16 @@ public class Query {
 
   /** Converts the public API options object to the internal options object. */
   private static ListenOptions internalOptions(MetadataChanges metadataChanges) {
+    return internalOptions(metadataChanges, ListenSource.DEFAULT);
+  }
+
+  private static ListenOptions internalOptions(
+      MetadataChanges metadataChanges, ListenSource source) {
     ListenOptions internalOptions = new ListenOptions();
     internalOptions.includeDocumentMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.includeQueryMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.waitForSyncWhenOnline = false;
+    internalOptions.source = source;
     return internalOptions;
   }
 }

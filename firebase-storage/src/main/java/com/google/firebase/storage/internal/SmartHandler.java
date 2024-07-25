@@ -29,6 +29,7 @@ import java.util.concurrent.Executor;
 @SuppressWarnings("JavaDoc")
 public class SmartHandler {
   private final Executor executor;
+
   /**
    * This works around a deadlock in robolectric (see https://github
    * .com/robolectric/robolectric/issues/2115) The root cause is that even if you do a handler.post

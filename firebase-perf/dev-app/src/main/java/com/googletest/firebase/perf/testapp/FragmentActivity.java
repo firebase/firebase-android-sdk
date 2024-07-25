@@ -71,12 +71,12 @@ public class FragmentActivity extends AppCompatActivity {
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    switch (item.getItemId()) {
-      case R.id.action_change_gif:
-        model.changeImage();
-        return true;
-      default:
-        return super.onOptionsItemSelected(item);
+    int itemId = item.getItemId();
+    if (itemId == R.id.action_change_gif) {
+      model.changeImage();
+      return true;
+    } else {
+      return super.onOptionsItemSelected(item);
     }
   }
 

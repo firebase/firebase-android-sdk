@@ -282,6 +282,9 @@ public class EventTest {
     ZombieVerifier.verifyRepoZombies(refs);
 
     writer.setValue(42);
+
+    IntegrationTestHelpers.waitForRoundtrip(reader);
+    IntegrationTestHelpers.waitForRoundtrip(writer);
     assertTrue(writeHelper.waitForEvents());
     assertTrue(writeHelper2.waitForEvents());
     assertTrue(readHelper.waitForEvents());
@@ -294,7 +297,7 @@ public class EventTest {
       throws DatabaseException, TestFailure, TimeoutException, InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
-    ReadFuture readFuture = ReadFuture.untilEquals(ref, 2L, /*ignoreFirstNull=*/ true);
+    ReadFuture readFuture = ReadFuture.untilEquals(ref, 2L, /* ignoreFirstNull= */ true);
     ZombieVerifier.verifyRepoZombies(ref);
 
     for (int i = 0; i < 3; ++i) {
@@ -311,7 +314,10 @@ public class EventTest {
 
   @Test
   public void unsubscribeEventsAndConfirmEventsNoLongerFire()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -543,7 +549,10 @@ public class EventTest {
 
   @Test
   public void canRegisterTheSameCallbackMultipleTimesNeedToUnregisterItMultipleTimes()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -814,7 +823,10 @@ public class EventTest {
 
   @Test
   public void onceFiresExactlyOnce()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -867,7 +879,10 @@ public class EventTest {
 
   @Test
   public void childEventsAreRaised()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
@@ -953,7 +968,10 @@ public class EventTest {
 
   @Test
   public void childEventsAreRaisedWithAQuery()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 

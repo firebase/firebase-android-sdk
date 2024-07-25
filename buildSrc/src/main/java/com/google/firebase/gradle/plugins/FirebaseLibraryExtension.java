@@ -40,11 +40,19 @@ public class FirebaseLibraryExtension {
   /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
 
+  /**
+   * Indicates the library is in a preview mode (alpha, beta, ...), and must publish with a tag
+   */
+  public String previewMode = "";
+
   /** Static analysis configuration. */
   public final FirebaseStaticAnalysis staticAnalysis;
 
   /** Firebase Test Lab configuration/ */
   public final FirebaseTestLabExtension testLab;
+
+  /** Release notes configuration. */
+  public final ReleaseNotesConfigurationExtension releaseNotes;
 
   public Property<String> groupId;
   public Property<String> artifactId;
@@ -75,6 +83,10 @@ public class FirebaseLibraryExtension {
     this.testLab = new FirebaseTestLabExtension(project.getObjects());
     this.artifactId = project.getObjects().property(String.class);
     this.groupId = project.getObjects().property(String.class);
+    this.releaseNotes = project.getExtensions().create("releaseNotes", ReleaseNotesConfigurationExtension.class);
+    this.releaseNotes.getEnabled().convention(true);
+    this.releaseNotes.getHasKTX().convention(true);
+    this.releaseNotes.getArtifactName().convention(project.getName());
 
     if ("ktx".equals(project.getName()) && project.getParent() != null) {
       artifactId.set(new DefaultProvider<>(() -> project.getParent().getName() + "-ktx"));
@@ -117,6 +129,10 @@ public class FirebaseLibraryExtension {
   /** Provides a hook to customize pom generation. */
   public void customizePom(Action<MavenPom> action) {
     customizePomAction = action;
+  }
+
+  public void releaseNotes(Action<ReleaseNotesConfigurationExtension> action) {
+    action.execute(releaseNotes);
   }
 
   public void applyPomCustomization(MavenPom pom) {

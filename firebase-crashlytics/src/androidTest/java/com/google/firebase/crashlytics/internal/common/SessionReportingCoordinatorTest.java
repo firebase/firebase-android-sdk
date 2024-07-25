@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -265,7 +266,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(mockEventBuilder).build();
@@ -286,7 +287,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(reportMetadata).getRolloutsState();
@@ -386,7 +387,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(mockEventBuilder).build();
@@ -407,7 +408,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(reportMetadata).getRolloutsState();
@@ -497,7 +498,8 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.enqueueReport(mockReport1, false)).thenReturn(successfulTask);
     when(reportSender.enqueueReport(mockReport2, false)).thenReturn(failedTask);
 
-    when(idManager.fetchTrueFid()).thenReturn("fid");
+    when(idManager.fetchTrueFid(anyBoolean()))
+        .thenReturn(new FirebaseInstallationId("fid", "authToken"));
     reportingCoordinator.sendReports(Runnable::run);
 
     verify(reportSender).enqueueReport(mockReport1, false);
@@ -528,8 +530,8 @@ public class SessionReportingCoordinatorTest {
     when(mockEventBuilder.build()).thenReturn(mockEvent);
     when(mockEvent.getApp()).thenReturn(mockEventApp);
     when(mockEventApp.toBuilder()).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.setCustomAttributes(any())).thenReturn(mockEventAppBuilder);
-    when(mockEventAppBuilder.setInternalKeys(any())).thenReturn(mockEventAppBuilder);
+    when(mockEventAppBuilder.setCustomAttributes(anyList())).thenReturn(mockEventAppBuilder);
+    when(mockEventAppBuilder.setInternalKeys(anyList())).thenReturn(mockEventAppBuilder);
     when(mockEventAppBuilder.build()).thenReturn(mockEventApp);
     when(dataCapture.captureEventData(
             any(Throwable.class),
@@ -548,6 +550,7 @@ public class SessionReportingCoordinatorTest {
     when(mockSession.getIdentifier()).thenReturn(sessionId);
     when(mockReport.getSession()).thenReturn(mockSession);
     when(mockReport.withFirebaseInstallationId(anyString())).thenReturn(mockReport);
+    when(mockReport.withFirebaseAuthenticationToken(anyString())).thenReturn(mockReport);
     return mockReport;
   }
 
