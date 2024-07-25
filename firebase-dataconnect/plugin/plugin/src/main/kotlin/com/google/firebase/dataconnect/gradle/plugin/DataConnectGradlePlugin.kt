@@ -26,8 +26,10 @@ import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.kotlin.dsl.register
 
@@ -41,24 +43,21 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
   private val logger = Logging.getLogger(javaClass)
 
   override fun apply(project: Project) {
-    logger.info(
-      "Checking environment variable {} for the Data Connect executable to use",
-      ENV_DATACONNECT_EMULATOR_BINARY_PATH
-    )
-    val dataConnectExecutableFromEnv =
-      providerFactory.environmentVariable(ENV_DATACONNECT_EMULATOR_BINARY_PATH).run {
-        if (!isPresent) {
-          null
-        } else {
-          project.layout.projectDirectory.file(get()).also { exePath ->
-            logger.info(
-              "Found Data Connect executable specified in environment variable {}: {}",
-              ENV_DATACONNECT_EMULATOR_BINARY_PATH,
-              exePath.asFile
-            )
-          }
-        }
-      }
+    val dataConnectExecutableFromProperties: Provider<RegularFile> = run {
+      val gradleProperty = project.providers.gradleProperty(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME)
+      logger.info(
+        "Gradle property {}: {}",
+        DATA_CONNECT_EXECUTABLE_PROPERTY_NAME,
+        gradleProperty.orNull
+      )
+      val systemProperty = project.providers.systemProperty(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME)
+      logger.info(
+        "System property {}: {}",
+        DATA_CONNECT_EXECUTABLE_PROPERTY_NAME,
+        systemProperty.orNull
+      )
+      gradleProperty.orElse(systemProperty).map { project.layout.projectDirectory.file(it) }
+    }
 
     val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
@@ -115,8 +114,8 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             }
           }
 
-          if (dataConnectExecutableFromEnv !== null) {
-            dataConnectExecutable.set(dataConnectExecutableFromEnv)
+          if (dataConnectExecutableFromProperties.isPresent) {
+            dataConnectExecutable.set(dataConnectExecutableFromProperties)
           }
         }
 
@@ -128,4 +127,4 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
   }
 }
 
-private const val ENV_DATACONNECT_EMULATOR_BINARY_PATH = "DATACONNECT_EMULATOR_BINARY_PATH"
+private const val DATA_CONNECT_EXECUTABLE_PROPERTY_NAME = "DATA_CONNECT_EXECUTABLE"
