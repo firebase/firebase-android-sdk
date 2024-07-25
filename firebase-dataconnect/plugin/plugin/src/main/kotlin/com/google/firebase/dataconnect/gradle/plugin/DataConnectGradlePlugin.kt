@@ -26,7 +26,9 @@ import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.kotlin.dsl.register
 
 @Suppress("unused")
@@ -34,7 +36,30 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
 
   @get:Inject abstract val projectLayout: ProjectLayout
 
+  @get:Inject abstract val providerFactory: ProviderFactory
+
+  private val logger = Logging.getLogger(javaClass)
+
   override fun apply(project: Project) {
+    logger.info(
+      "Checking environment variable {} for the Data Connect executable to use",
+      ENV_DATACONNECT_EMULATOR_BINARY_PATH
+    )
+    val dataConnectExecutableFromEnv =
+      providerFactory.environmentVariable(ENV_DATACONNECT_EMULATOR_BINARY_PATH).run {
+        if (!isPresent) {
+          null
+        } else {
+          project.layout.projectDirectory.file(get()).also { exePath ->
+            logger.info(
+              "Found Data Connect executable specified in environment variable {}: {}",
+              ENV_DATACONNECT_EMULATOR_BINARY_PATH,
+              exePath.asFile
+            )
+          }
+        }
+      }
+
     val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
     androidComponents.registerSourceType("dataconnect")
@@ -89,6 +114,10 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
               }
             }
           }
+
+          if (dataConnectExecutableFromEnv !== null) {
+            dataConnectExecutable.set(dataConnectExecutableFromEnv)
+          }
         }
 
       variant.sources.java!!.addGeneratedSourceDirectory(
@@ -98,3 +127,5 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
     }
   }
 }
+
+private const val ENV_DATACONNECT_EMULATOR_BINARY_PATH = "DATACONNECT_EMULATOR_BINARY_PATH"

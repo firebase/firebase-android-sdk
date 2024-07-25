@@ -130,7 +130,11 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
       return singleConfigDirectory
     }
 
-    logger.info("Merging existing config directories {} to {}", existingConfigDirectories, outputDirectory)
+    logger.info(
+      "Merging existing config directories {} to {}",
+      existingConfigDirectories,
+      outputDirectory
+    )
     fileSystemOperations.copy {
       it.from(existingConfigDirectories)
       it.into(outputDirectory)
