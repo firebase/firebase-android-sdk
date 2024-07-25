@@ -15,13 +15,74 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
+import com.android.build.api.variant.Variant
 import com.android.build.api.variant.VariantExtension
 import com.android.build.api.variant.VariantExtensionConfig
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension.DataConnectCodegenDslExtension
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension.DataConnectEmulatorDslExtension
 import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+
+/** The common settings that apply to both code generation and running the emulator. */
+abstract class DataConnectVariantBaseDslExtension(
+  variant: Variant,
+  buildTypeExtension: DataConnectBaseDslExtension,
+  productFlavorExtensions: List<DataConnectBaseDslExtension>
+) {
+
+  abstract val connectors: Property<Collection<String>>
+  abstract val dataConnectExecutable: RegularFileProperty
+  abstract val configDir: DirectoryProperty
+
+  init {
+    val productFlavorExtByName = buildMap {
+      val productFlavorNames = variant.productFlavors.map { "${it.first}=${it.second}" }
+      productFlavorExtensions.forEachIndexed { index, productFlavorExtension ->
+        put("productFlavor:${productFlavorNames[index]}", productFlavorExtension)
+      }
+    }
+
+    fun <T> initializeProperty(
+      name: String,
+      getter: (DataConnectBaseDslExtension) -> T?,
+      callback: (T) -> Unit,
+    ) {
+      val valueBySource =
+        buildMap<String, T> {
+          getter(buildTypeExtension)?.let { put("buildType:${variant.buildType}", it) }
+          productFlavorExtByName.forEach { productFlavorName, productFlavorExtension ->
+            getter(productFlavorExtension)?.let { put(productFlavorName, it) }
+          }
+        }
+
+      if (valueBySource.size == 1) {
+        callback(valueBySource.values.single())
+      } else if (valueBySource.size > 1) {
+        throw ConflictingSettingsException(
+          "'$name' has conflicting values set ${valueBySource.size} places" +
+            " (at most 1 place is supported): ${valueBySource.keys.sorted().joinToString(", ")}"
+        )
+      }
+    }
+
+    initializeProperty("connectors", DataConnectBaseDslExtension::connectors) { connectors.set(it) }
+
+    initializeProperty(
+      "dataConnectExecutable",
+      DataConnectBaseDslExtension::dataConnectExecutable
+    ) {
+      dataConnectExecutable.set(it)
+    }
+
+    initializeProperty("configDir", DataConnectBaseDslExtension::configDir) { configDir.set(it) }
+  }
+
+  class ConflictingSettingsException(message: String) : GradleException(message)
+}
 
 /**
  * This is the extension type for extending [com.android.build.api.variant.Variant].
@@ -40,73 +101,64 @@ import org.gradle.api.provider.Property
  * [com.android.build.api.variant.AndroidComponentsExtension.registerExtension] method.
  */
 @Suppress("UnstableApiUsage")
-abstract class DataConnectVariantDslExtension
-@Inject
-constructor(
-  // Do not keep a reference on the VariantExtensionConfig as it is not serializable.
-  extensionConfig: VariantExtensionConfig<*>,
-) : VariantExtension {
-  abstract val connectors: Property<Collection<String>>
-  abstract val dataConnectExecutable: RegularFileProperty
-  abstract val configDir: DirectoryProperty
+abstract class DataConnectVariantDslExtension(
+  variant: Variant,
+  buildTypeExtension: DataConnectDslExtension,
+  productFlavorExtensions: List<DataConnectDslExtension>,
+  objectFactory: ObjectFactory,
+) :
+  DataConnectVariantBaseDslExtension(variant, buildTypeExtension, productFlavorExtensions),
+  VariantExtension {
 
-  init {
-    initializeProperty(
-      extensionConfig = extensionConfig,
-      name = "connectors",
-      getter = DataConnectDslExtension::connectors,
-    ) {
-      connectors.set(it)
-    }
+  @Inject
+  @Suppress("unused")
+  constructor(
+    extensionConfig: VariantExtensionConfig<*>,
+    objectFactory: ObjectFactory
+  ) : this(
+    extensionConfig.variant,
+    extensionConfig.buildTypeExtension(DataConnectDslExtension::class.java),
+    extensionConfig.productFlavorsExtensions(DataConnectDslExtension::class.java),
+    objectFactory = objectFactory
+  )
 
-    initializeProperty(
-      extensionConfig = extensionConfig,
-      name = "dataConnectExecutable",
-      getter = DataConnectDslExtension::dataConnectExecutable,
-    ) {
-      dataConnectExecutable.set(it)
-    }
+  val codegen: DataConnectCodegenVariantDslExtension =
+    objectFactory.newInstance(
+      DataConnectCodegenVariantDslExtension::class.java,
+      variant,
+      buildTypeExtension.codegen,
+      productFlavorExtensions.map { it.codegen }
+    )
 
-    initializeProperty(
-      extensionConfig = extensionConfig,
-      name = "configDir",
-      getter = DataConnectDslExtension::configDir,
-    ) {
-      configDir.set(it)
-    }
-  }
+  val emulator: DataConnectEmulatorVariantDslExtension =
+    objectFactory.newInstance(
+      DataConnectEmulatorVariantDslExtension::class.java,
+      variant,
+      buildTypeExtension.emulator,
+      productFlavorExtensions.map { it.emulator }
+    )
 
-  private companion object {
-    fun <T> initializeProperty(
-      extensionConfig: VariantExtensionConfig<*>,
-      name: String,
-      getter: (DataConnectDslExtension) -> T?,
-      callback: (T) -> Unit,
-    ) {
-      val buildTypeExt = extensionConfig.buildTypeExtension(DataConnectDslExtension::class.java)
-      val productFlavorExts =
-        extensionConfig.productFlavorsExtensions(DataConnectDslExtension::class.java)
-      val productFlavorNames =
-        extensionConfig.variant.productFlavors.map { "${it.first}=${it.second}" }
+  /**
+   * Values to use when performing code generation, which override the values from those defined in
+   * the outer scope.
+   */
+  abstract class DataConnectCodegenVariantDslExtension
+  @Inject
+  constructor(
+    variant: Variant,
+    buildTypeExtension: DataConnectCodegenDslExtension,
+    productFlavorExtensions: List<DataConnectCodegenDslExtension>
+  ) : DataConnectVariantBaseDslExtension(variant, buildTypeExtension, productFlavorExtensions)
 
-      val valueBySource =
-        buildMap<String, T> {
-          getter(buildTypeExt)?.let { put("buildType:${extensionConfig.variant.buildType}", it) }
-          productFlavorExts.forEachIndexed { index, productFlavorExt ->
-            getter(productFlavorExt)?.let { put("productFlavor:${productFlavorNames[index]}", it) }
-          }
-        }
-
-      if (valueBySource.size == 1) {
-        callback(valueBySource.values.single())
-      } else if (valueBySource.size > 1) {
-        throw ConflictingSettingsException(
-          "'$name' has conflicting values set ${valueBySource.size} places" +
-            " (at most 1 place is supported): ${valueBySource.keys.sorted().joinToString(", ")}"
-        )
-      }
-    }
-  }
-
-  class ConflictingSettingsException(message: String) : GradleException(message)
+  /**
+   * Values to use when running the Data Connect emulator, which override the values from those
+   * defined in the outer scope.
+   */
+  abstract class DataConnectEmulatorVariantDslExtension
+  @Inject
+  constructor(
+    variant: Variant,
+    buildTypeExtension: DataConnectEmulatorDslExtension,
+    productFlavorExtensions: List<DataConnectEmulatorDslExtension>
+  ) : DataConnectVariantBaseDslExtension(variant, buildTypeExtension, productFlavorExtensions)
 }

@@ -76,11 +76,18 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             }
           }
 
-          variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also { ext ->
-            if (ext.configDir.isPresent) customConfigDirectory.set(ext.configDir)
-            if (ext.connectors.isPresent) connectors.set(ext.connectors)
-            if (ext.dataConnectExecutable.isPresent)
-              dataConnectExecutable.set(ext.dataConnectExecutable)
+          variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also { parentExt ->
+            for (ext in listOf(parentExt, parentExt.codegen)) {
+              if (ext.configDir.isPresent) {
+                customConfigDirectory.set(ext.configDir)
+              }
+              if (ext.connectors.isPresent) {
+                connectors.set(ext.connectors)
+              }
+              if (ext.dataConnectExecutable.isPresent) {
+                dataConnectExecutable.set(ext.dataConnectExecutable)
+              }
+            }
           }
         }
 
