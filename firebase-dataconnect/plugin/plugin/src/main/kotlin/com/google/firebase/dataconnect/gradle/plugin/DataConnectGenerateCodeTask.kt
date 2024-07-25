@@ -49,7 +49,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:InputDirectory @get:Optional abstract val customConfigDirectory: DirectoryProperty
 
-  @get:InputFile abstract val dataConnectCliExecutable: RegularFileProperty
+  @get:InputFile abstract val dataConnectExecutable: RegularFileProperty
 
   @get:Input abstract val connectors: Property<Collection<String>>
 
@@ -59,14 +59,14 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     val workDirectory: File = workDirectory.get().asFile
     val defaultConfigDirectories: List<File> = defaultConfigDirectories.get().map { it.asFile }
     val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
-    val dataConnectCliExecutable: File = dataConnectCliExecutable.get().asFile
+    val dataConnectExecutable: File = dataConnectExecutable.get().asFile
     val connectors: Collection<String> = connectors.get()
 
     logger.info("outputDirectory={}", outputDirectory)
     logger.info("workDirectory={}", workDirectory)
     logger.info("defaultConfigDirectories={}", defaultConfigDirectories)
     logger.info("customConfigDirectory={}", customConfigDirectory)
-    logger.info("dataConnectCliExecutable={}", dataConnectCliExecutable)
+    logger.info("dataConnectExecutable={}", dataConnectExecutable)
     logger.info("connectors={}", connectors)
 
     deleteDirectories(workDirectory, outputDirectory)
@@ -84,7 +84,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     }
 
     generateCode(
-      dataConnectCliExecutable = dataConnectCliExecutable,
+      dataConnectExecutable = dataConnectExecutable,
       workingDirectory = File(workDirectory, "logs"),
       configDirectory = mergedConfigsDirectory,
       outputDirectory = outputDirectory,
@@ -137,7 +137,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
   }
 
   private fun generateCode(
-    dataConnectCliExecutable: File,
+    dataConnectExecutable: File,
     workingDirectory: File,
     configDirectory: File,
     outputDirectory: File,
@@ -151,7 +151,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
     execOperations.exec { execSpec ->
       execSpec.run {
-        executable(dataConnectCliExecutable)
+        executable(dataConnectExecutable)
         workingDir(workingDirectory)
         isIgnoreExitValue = false
 

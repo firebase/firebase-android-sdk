@@ -47,7 +47,7 @@ constructor(
   extensionConfig: VariantExtensionConfig<*>,
 ) : VariantExtension {
   abstract val connectors: Property<Collection<String>>
-  abstract val dataConnectCliExecutable: RegularFileProperty
+  abstract val dataConnectExecutable: RegularFileProperty
   abstract val configDir: DirectoryProperty
 
   init {
@@ -61,10 +61,10 @@ constructor(
 
     initializeProperty(
       extensionConfig = extensionConfig,
-      name = "dataConnectCliExecutable",
-      getter = DataConnectDslExtension::dataConnectCliExecutable,
+      name = "dataConnectExecutable",
+      getter = DataConnectDslExtension::dataConnectExecutable,
     ) {
-      dataConnectCliExecutable.set(it)
+      dataConnectExecutable.set(it)
     }
 
     initializeProperty(

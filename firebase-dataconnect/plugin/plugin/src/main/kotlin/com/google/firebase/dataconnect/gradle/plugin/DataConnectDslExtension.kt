@@ -16,9 +16,73 @@
 package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
+import javax.inject.Inject
+import org.gradle.api.model.ObjectFactory
 
-interface DataConnectDslExtension {
-  var connectors: Collection<String>?
-  var dataConnectCliExecutable: File?
-  var configDir: File?
+/** The common settings that apply to both code generation and running the emulator. */
+abstract class DataConnectBaseDslExtension {
+
+  /** Returns the empty list, but using this function instead can improve readability. */
+  fun allConnectors(): List<String> = emptyList()
+
+  /** The Data Connect executable to use. */
+  abstract var dataConnectExecutable: File?
+
+  /** The directory containing `dataconnect.yaml` to use, instead of the default directories. */
+  abstract var configDir: File?
+
+  /** The IDs of connectors defined by `dataconnect.yaml` to use. */
+  abstract var connectors: Collection<String>?
+}
+
+abstract class DataConnectDslExtension @Inject constructor(objectFactory: ObjectFactory) :
+  DataConnectBaseDslExtension() {
+
+  /**
+   * Values to use when performing code generation, which override the values from those defined in
+   * the outer scope.
+   */
+  @Suppress("MemberVisibilityCanBePrivate")
+  val codegen: DataConnectCodegenDslExtension =
+    objectFactory.newInstance(DataConnectCodegenDslExtension::class.java)
+
+  /**
+   * Configure values to use when performing code generation, which override the values from those
+   * defined in the outer scope.
+   */
+  @Suppress("unused")
+  fun codegen(block: DataConnectCodegenDslExtension.() -> Unit) {
+    block(codegen)
+  }
+
+  /**
+   * Values to use when running the Data Connect emulator, which override the values from those
+   * defined in the outer scope.
+   */
+  @Suppress("MemberVisibilityCanBePrivate")
+  val emulator: DataConnectEmulatorDslExtension =
+    objectFactory.newInstance(DataConnectEmulatorDslExtension::class.java)
+
+  /**
+   * Configure values to use when running the Data Connect emulator, which override the values from
+   * those defined in the outer scope.
+   */
+  @Suppress("unused")
+  fun emulator(block: DataConnectEmulatorDslExtension.() -> Unit) {
+    block(emulator)
+  }
+
+  /**
+   * Values to use when performing code generation, which override the values from those defined in
+   * the outer scope.
+   */
+  abstract class DataConnectCodegenDslExtension : DataConnectBaseDslExtension()
+
+  /**
+   * Values to use when running the Data Connect emulator, which override the values from those
+   * defined in the outer scope.
+   */
+  abstract class DataConnectEmulatorDslExtension : DataConnectBaseDslExtension() {
+    abstract var postgresConnectionUrl: String?
+  }
 }
