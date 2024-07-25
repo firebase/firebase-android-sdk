@@ -68,17 +68,17 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           connectors.set(emptyList())
 
           val android = project.extensions.getByType(LibraryExtension::class.java) as ExtensionAware
-          android.extensions.getByType(DataConnectDslExtension::class.java).let {
-            it.configDir?.let { customConfigDirectory.set(it) }
-            it.connectors?.let { connectors.set(it) }
-            it.dataConnectCliExecutable?.let { dataConnectCliExecutable.set(it) }
+          android.extensions.getByType(DataConnectDslExtension::class.java).let { ext ->
+            ext.configDir?.let { customConfigDirectory.set(it) }
+            ext.connectors?.let { connectors.set(it) }
+            ext.dataConnectCliExecutable?.let { dataConnectCliExecutable.set(it) }
           }
 
-          variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also {
-            if (it.configDir.isPresent) customConfigDirectory.set(it.configDir)
-            if (it.connectors.isPresent) connectors.set(it.connectors)
-            if (it.dataConnectCliExecutable.isPresent)
-              dataConnectCliExecutable.set(it.dataConnectCliExecutable)
+          variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also { ext ->
+            if (ext.configDir.isPresent) customConfigDirectory.set(ext.configDir)
+            if (ext.connectors.isPresent) connectors.set(ext.connectors)
+            if (ext.dataConnectCliExecutable.isPresent)
+              dataConnectCliExecutable.set(ext.dataConnectCliExecutable)
           }
         }
 

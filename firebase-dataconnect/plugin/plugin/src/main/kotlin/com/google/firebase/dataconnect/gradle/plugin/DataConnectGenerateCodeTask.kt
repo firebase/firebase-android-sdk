@@ -25,6 +25,7 @@ import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -50,7 +51,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:InputFile abstract val dataConnectCliExecutable: RegularFileProperty
 
-  @get:Input abstract val connectors: ListProperty<String>
+  @get:Input abstract val connectors: Property<Collection<String>>
 
   @TaskAction
   fun run() {
@@ -59,7 +60,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     val defaultConfigDirectories: List<File> = defaultConfigDirectories.get().map { it.asFile }
     val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
     val dataConnectCliExecutable: File = dataConnectCliExecutable.get().asFile
-    val connectors: List<String> = connectors.get()
+    val connectors: Collection<String> = connectors.get()
 
     logger.info("outputDirectory={}", outputDirectory)
     logger.info("workDirectory={}", workDirectory)
@@ -140,7 +141,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     workingDirectory: File,
     configDirectory: File,
     outputDirectory: File,
-    connectors: List<String>
+    connectors: Collection<String>
   ) {
     if (!workingDirectory.exists()) {
       if (!workingDirectory.mkdirs()) {

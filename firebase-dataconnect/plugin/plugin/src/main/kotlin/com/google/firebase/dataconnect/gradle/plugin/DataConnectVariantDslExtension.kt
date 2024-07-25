@@ -21,7 +21,7 @@ import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 
 /**
  * This is the extension type for extending [com.android.build.api.variant.Variant].
@@ -46,7 +46,7 @@ constructor(
   // Do not keep a reference on the VariantExtensionConfig as it is not serializable.
   extensionConfig: VariantExtensionConfig<*>,
 ) : VariantExtension {
-  abstract val connectors: ListProperty<String>
+  abstract val connectors: Property<Collection<String>>
   abstract val dataConnectCliExecutable: RegularFileProperty
   abstract val configDir: DirectoryProperty
 
