@@ -42,7 +42,6 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
    * Values to use when performing code generation, which override the values from those defined in
    * the outer scope.
    */
-  @Suppress("MemberVisibilityCanBePrivate")
   val codegen: DataConnectCodegenDslExtension =
     objectFactory.newInstance(DataConnectCodegenDslExtension::class.java)
 
@@ -59,7 +58,6 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
    * Values to use when running the Data Connect emulator, which override the values from those
    * defined in the outer scope.
    */
-  @Suppress("MemberVisibilityCanBePrivate")
   val emulator: DataConnectEmulatorDslExtension =
     objectFactory.newInstance(DataConnectEmulatorDslExtension::class.java)
 
