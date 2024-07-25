@@ -91,7 +91,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           }
         }
 
-      variant.sources.kotlin!!.addGeneratedSourceDirectory(
+      variant.sources.java!!.addGeneratedSourceDirectory(
         generateCodeTask,
         DataConnectGenerateCodeTask::outputDirectory
       )
