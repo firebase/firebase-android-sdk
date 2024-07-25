@@ -17,19 +17,22 @@
 
 package com.google.firebase.dataconnect.gradle.plugin
 
-import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import java.util.Locale
+import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.kotlin.dsl.register
 
 @Suppress("unused")
-class DataConnectGradlePlugin : Plugin<Project> {
+abstract class DataConnectGradlePlugin : Plugin<Project> {
+
+  @get:Inject abstract val projectLayout: ProjectLayout
 
   override fun apply(project: Project) {
     val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
@@ -56,25 +59,26 @@ class DataConnectGradlePlugin : Plugin<Project> {
           workDirectory.set(
             project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
           )
+          defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
+          dataConnectCliExecutable.set(
+            projectLayout.projectDirectory.file(
+              "/google/src/cloud/dconeybe/codegen/google3/blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli"
+            )
+          )
+          connectors.set(emptyList())
 
           val android = project.extensions.getByType(LibraryExtension::class.java) as ExtensionAware
-          android.extensions.getByType(DataConnectDslExtension::class.java).let { dataConnectDslExtension ->
-            dataConnectDslExtension.configDir?.let {
-              customConfigDirectory.convention(project.layout.projectDirectory.dir(it.path))
-            }
-            dataConnectDslExtension.connectors?.let {
-              connectors.convention(it)
-            }
-            dataConnectDslExtension.dataConnectCliExecutable?.let {
-              dataConnectCliExecutable.convention(project.layout.projectDirectory.file(it.path))
-            }
+          android.extensions.getByType(DataConnectDslExtension::class.java).let {
+            it.configDir?.let { customConfigDirectory.set(it) }
+            it.connectors?.let { connectors.set(it) }
+            it.dataConnectCliExecutable?.let { dataConnectCliExecutable.set(it) }
           }
 
           variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also {
-            defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
-            customConfigDirectory.set(it.configDir)
-            connectors.set(it.connectors)
-            dataConnectCliExecutable.set(it.dataConnectCliExecutable)
+            if (it.configDir.isPresent) customConfigDirectory.set(it.configDir)
+            if (it.connectors.isPresent) connectors.set(it.connectors)
+            if (it.dataConnectCliExecutable.isPresent)
+              dataConnectCliExecutable.set(it.dataConnectCliExecutable)
           }
         }
 

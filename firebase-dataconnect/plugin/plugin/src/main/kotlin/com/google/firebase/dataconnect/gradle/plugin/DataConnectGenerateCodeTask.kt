@@ -29,6 +29,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
@@ -45,7 +46,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:InputFiles abstract val defaultConfigDirectories: ListProperty<Directory>
 
-  @get:InputDirectory abstract val customConfigDirectory: DirectoryProperty
+  @get:InputDirectory @get:Optional abstract val customConfigDirectory: DirectoryProperty
 
   @get:InputFile abstract val dataConnectCliExecutable: RegularFileProperty
 
@@ -56,7 +57,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     val outputDirectory: File = outputDirectory.get().asFile
     val workDirectory: File = workDirectory.get().asFile
     val defaultConfigDirectories: List<File> = defaultConfigDirectories.get().map { it.asFile }
-    val customConfigDirectory: File? = customConfigDirectory.getOrNull()?.asFile
+    val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
     val dataConnectCliExecutable: File = dataConnectCliExecutable.get().asFile
     val connectors: List<String> = connectors.get()
 

@@ -20,7 +20,6 @@ import com.android.build.api.variant.VariantExtensionConfig
 import javax.inject.Inject
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 
@@ -38,10 +37,7 @@ import org.gradle.api.provider.ListProperty
  * the last value set even if the value was reset after the Task was created.
  *
  * The instance is created by providing a configuration block to the
- * [com.android.build.api.variant.AndroidComponents.registerExtension] method.
- *
- * Since this type will be used as a Task input (see [DataConnectGenerateCodeTask]), make it extend
- * [java.io.Serializable]
+ * [com.android.build.api.variant.AndroidComponentsExtension.registerExtension] method.
  */
 @Suppress("UnstableApiUsage")
 abstract class DataConnectVariantDslExtension
@@ -49,42 +45,44 @@ abstract class DataConnectVariantDslExtension
 constructor(
   // Do not keep a reference on the VariantExtensionConfig as it is not serializable.
   extensionConfig: VariantExtensionConfig<*>,
-  projectLayout: ProjectLayout,
-) : VariantExtension, java.io.Serializable {
+) : VariantExtension {
   abstract val connectors: ListProperty<String>
   abstract val dataConnectCliExecutable: RegularFileProperty
   abstract val configDir: DirectoryProperty
+
   init {
-    connectors.convention(emptyList())
-
-    dataConnectCliExecutable.convention(
-      projectLayout.projectDirectory.file(
-        "/google/src/cloud/dconeybe/codegen/google3/blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli"
-      )
-    )
-
-    valueFromExtensions(extensionConfig, "connectors", DataConnectDslExtension::connectors)?.let {
+    initializeProperty(
+      extensionConfig = extensionConfig,
+      name = "connectors",
+      getter = DataConnectDslExtension::connectors,
+    ) {
       connectors.set(it)
     }
 
-    valueFromExtensions(
-        extensionConfig,
-        "dataConnectCliExecutable",
-        DataConnectDslExtension::dataConnectCliExecutable
-      )
-      ?.let { dataConnectCliExecutable.set(it) }
+    initializeProperty(
+      extensionConfig = extensionConfig,
+      name = "dataConnectCliExecutable",
+      getter = DataConnectDslExtension::dataConnectCliExecutable,
+    ) {
+      dataConnectCliExecutable.set(it)
+    }
 
-    valueFromExtensions(extensionConfig, "configDir", DataConnectDslExtension::configDir)?.let {
-      configDir.set(projectLayout.projectDirectory.dir(it.path))
+    initializeProperty(
+      extensionConfig = extensionConfig,
+      name = "configDir",
+      getter = DataConnectDslExtension::configDir,
+    ) {
+      configDir.set(it)
     }
   }
 
   private companion object {
-    fun <T> valueFromExtensions(
+    fun <T> initializeProperty(
       extensionConfig: VariantExtensionConfig<*>,
       name: String,
-      getter: (DataConnectDslExtension) -> T?
-    ): T? {
+      getter: (DataConnectDslExtension) -> T?,
+      callback: (T) -> Unit,
+    ) {
       val buildTypeExt = extensionConfig.buildTypeExtension(DataConnectDslExtension::class.java)
       val productFlavorExts =
         extensionConfig.productFlavorsExtensions(DataConnectDslExtension::class.java)
@@ -99,11 +97,9 @@ constructor(
           }
         }
 
-      return if (valueBySource.isEmpty()) {
-        null
-      } else if (valueBySource.size == 1) {
-        valueBySource.values.single()
-      } else {
+      if (valueBySource.size == 1) {
+        callback(valueBySource.values.single())
+      } else if (valueBySource.size > 1) {
         throw ConflictingSettingsException(
           "'$name' has conflicting values set ${valueBySource.size} places" +
             " (at most 1 place is supported): ${valueBySource.keys.sorted().joinToString(", ")}"

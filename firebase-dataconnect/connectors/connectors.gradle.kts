@@ -58,7 +58,7 @@ android {
   }
 
   dataconnect {
-    configDir = file("../emulator/dataconnectZZ")
+    configDir = file("../emulator/dataconnect")
   }
 }
 
