@@ -28,6 +28,7 @@ import org.gradle.api.Project
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.ExtensionAware
+import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.kotlin.dsl.register
 
@@ -91,17 +92,22 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             }
           }
 
-          val dataConnectExecutableGradleProperty =
-            project.providers.gradleProperty(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME)
-          logger.info(
-            "Loaded gradle property {}: {}",
-            DATA_CONNECT_EXECUTABLE_PROPERTY_NAME,
-            dataConnectExecutableGradleProperty.orNull
-          )
-          if (dataConnectExecutableGradleProperty.isPresent) {
-            dataConnectExecutable.set(
-              dataConnectExecutableGradleProperty.map { project.layout.projectDirectory.file(it) }
-            )
+          fun withGradlePropertyIfSet(propertyName: String, block: (Provider<String>) -> Unit) {
+            val provider = project.providers.gradleProperty(propertyName)
+            logger.info("Loaded gradle property {}: {}", propertyName, provider.orNull)
+            if (provider.isPresent) {
+              block(provider)
+            }
+          }
+
+          withGradlePropertyIfSet(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME) { provider ->
+            dataConnectExecutable.set(provider.map { project.layout.projectDirectory.file(it) })
+          }
+          withGradlePropertyIfSet(DATA_CONNECT_CONFIG_DIR_PROPERTY_NAME) { provider ->
+            customConfigDirectory.set(provider.map { project.layout.projectDirectory.dir(it) })
+          }
+          withGradlePropertyIfSet(DATA_CONNECT_CONNECTORS_PROPERTY_NAME) { provider ->
+            connectors.set(provider.map { it.split(",") })
           }
         }
 
@@ -114,3 +120,5 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
 }
 
 private const val DATA_CONNECT_EXECUTABLE_PROPERTY_NAME = "DATA_CONNECT_EXECUTABLE"
+private const val DATA_CONNECT_CONFIG_DIR_PROPERTY_NAME = "DATA_CONNECT_CONFIG_DIR"
+private const val DATA_CONNECT_CONNECTORS_PROPERTY_NAME = "DATA_CONNECT_CONNECTORS"
