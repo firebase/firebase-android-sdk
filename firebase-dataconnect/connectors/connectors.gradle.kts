@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -59,6 +58,7 @@ android {
 
   dataconnect {
     configDir = file("../emulator/dataconnect")
+    connectors = listOf("demo", "keywords")
   }
 }
 
