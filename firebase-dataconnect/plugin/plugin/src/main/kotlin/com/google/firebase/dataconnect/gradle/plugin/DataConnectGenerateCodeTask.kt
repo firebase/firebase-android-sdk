@@ -105,35 +105,39 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     customConfigDirectory: File?,
     outputDirectory: File
   ): File? {
-    if (customConfigDirectory !== null) {
-      if (!customConfigDirectory.exists()) {
-        throw DataConnectInputDirectoryNotFoundException(
-          "custom config directory not found: $customConfigDirectory"
-        )
+    val configDirectories = buildList {
+      if (customConfigDirectory !== null) {
+        if (!customConfigDirectory.exists()) {
+          throw DataConnectInputDirectoryNotFoundException(
+            "custom config directory not found: $customConfigDirectory"
+          )
+        }
+        add(customConfigDirectory)
       }
-      logger.info("Using custom config directory: {}", customConfigDirectory)
-      return customConfigDirectory
+
+      addAll(defaultConfigDirectories)
     }
 
-    defaultConfigDirectories
-      .filter { it.exists() }
-      .let { existingConfigDirectories ->
-        if (existingConfigDirectories.size == 1) {
-          val singleConfigDirectory = existingConfigDirectories.single()
-          logger.info("Using single config directory: {}", singleConfigDirectory)
-          return singleConfigDirectory
-        }
-      }
+    logger.info("Merging config directories: {}", configDirectories)
 
-    logger.info("Merging config directories {} to {}", defaultConfigDirectories, outputDirectory)
-    val workResult =
-      fileSystemOperations.copy {
-        it.from(defaultConfigDirectories)
-        it.into(outputDirectory)
-        it.duplicatesStrategy = DuplicatesStrategy.FAIL
-      }
+    val existingConfigDirectories = configDirectories.filter { it.exists() }
+    if (existingConfigDirectories.isEmpty()) {
+      logger.info("None of the config directories exist")
+      return null
+    } else if (existingConfigDirectories.size == 1) {
+      val singleConfigDirectory = existingConfigDirectories.single()
+      logger.info("Using the only existing config directory: {}", singleConfigDirectory)
+      return singleConfigDirectory
+    }
 
-    return if (workResult.didWork) outputDirectory else null
+    logger.info("Merging existing config directories {} to {}", existingConfigDirectories, outputDirectory)
+    fileSystemOperations.copy {
+      it.from(existingConfigDirectories)
+      it.into(outputDirectory)
+      it.duplicatesStrategy = DuplicatesStrategy.FAIL
+    }
+
+    return outputDirectory
   }
 
   private fun generateCode(
