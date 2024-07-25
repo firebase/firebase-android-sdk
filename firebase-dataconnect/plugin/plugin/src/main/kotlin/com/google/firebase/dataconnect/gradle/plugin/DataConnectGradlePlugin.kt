@@ -26,10 +26,8 @@ import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.ProjectLayout
-import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.kotlin.dsl.register
 
@@ -43,22 +41,6 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
   private val logger = Logging.getLogger(javaClass)
 
   override fun apply(project: Project) {
-    val dataConnectExecutableFromProperties: Provider<RegularFile> = run {
-      val gradleProperty = project.providers.gradleProperty(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME)
-      logger.info(
-        "Gradle property {}: {}",
-        DATA_CONNECT_EXECUTABLE_PROPERTY_NAME,
-        gradleProperty.orNull
-      )
-      val systemProperty = project.providers.systemProperty(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME)
-      logger.info(
-        "System property {}: {}",
-        DATA_CONNECT_EXECUTABLE_PROPERTY_NAME,
-        systemProperty.orNull
-      )
-      gradleProperty.orElse(systemProperty).map { project.layout.projectDirectory.file(it) }
-    }
-
     val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
     androidComponents.registerSourceType("dataconnect")
@@ -84,11 +66,6 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
           )
           defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
-          dataConnectExecutable.set(
-            projectLayout.projectDirectory.file(
-              "/google/src/cloud/dconeybe/codegen/google3/blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli"
-            )
-          )
           connectors.set(emptyList())
 
           val android = project.extensions.getByType(LibraryExtension::class.java) as ExtensionAware
@@ -114,8 +91,17 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             }
           }
 
-          if (dataConnectExecutableFromProperties.isPresent) {
-            dataConnectExecutable.set(dataConnectExecutableFromProperties)
+          val dataConnectExecutableGradleProperty =
+            project.providers.gradleProperty(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME)
+          logger.info(
+            "Loaded gradle property {}: {}",
+            DATA_CONNECT_EXECUTABLE_PROPERTY_NAME,
+            dataConnectExecutableGradleProperty.orNull
+          )
+          if (dataConnectExecutableGradleProperty.isPresent) {
+            dataConnectExecutable.set(
+              dataConnectExecutableGradleProperty.map { project.layout.projectDirectory.file(it) }
+            )
           }
         }
 
