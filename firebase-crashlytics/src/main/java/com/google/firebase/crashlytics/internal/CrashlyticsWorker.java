@@ -56,8 +56,7 @@ public class CrashlyticsWorker {
    * Submits a <code>Callable</code> task for asynchronous execution on the executor.
    *
    * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the
-   * callable, throws an <code>ExecutionException</code> if the callable throws an exception, or
-   * throws a <code>CancellationException</code> if the task is cancelled.
+   * callable, or throws an <code>ExecutionException</code> if the callable throws an exception.
    */
   public <T> Task<T> submit(Callable<T> callable) {
     synchronized (tailLock) {
@@ -76,8 +75,7 @@ public class CrashlyticsWorker {
    * Submits a <code>Runnable</code> task for asynchronous execution on the executor.
    *
    * <p>Returns a <code>Task</code> which will be resolved with null upon successful completion of
-   * the runnable, throws an <code>ExecutionException</code> if the runnable throws an exception, or
-   * throws a <code>CancellationException</code> if the task is cancelled.
+   * the runnable, or throws an <code>ExecutionException</code> if the runnable throws an exception.
    */
   public Task<Void> submit(Runnable runnable) {
     synchronized (tailLock) {
