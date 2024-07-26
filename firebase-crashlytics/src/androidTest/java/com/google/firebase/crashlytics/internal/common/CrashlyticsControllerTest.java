@@ -74,6 +74,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private DataCollectionArbiter mockDataCollectionArbiter;
   private CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);
 
+  private CrashlyticsWorker diskWriteWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
+
   @Override
   protected void setUp() throws Exception {
     super.setUp();
@@ -187,7 +189,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               nativeComponent,
               analyticsEventLogger,
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
-              new CrashlyticsWorker(TestOnlyExecutors.background()));
+              diskWriteWorker);
       return controller;
     }
   }
@@ -377,13 +379,14 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
    */
   // FIXME: Validate this test works as intended
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
-  public void testLogStringAfterCrashOk() {
+  public void testLogStringAfterCrashOk() throws Exception {
     final CrashlyticsController controller = builder().build();
     controller.handleUncaughtException(
         testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    controller.writeToLog(System.currentTimeMillis(), "Hi");
+    diskWriteWorker.submit(() -> controller.writeToLog(System.currentTimeMillis(), "Hi"));
+    diskWriteWorker.await();
   }
 
   /**
