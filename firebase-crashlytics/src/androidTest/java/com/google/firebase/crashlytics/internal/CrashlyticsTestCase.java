@@ -21,6 +21,8 @@ import junit.framework.TestCase;
 
 /** Base class for all our TestCases. */
 public class CrashlyticsTestCase extends TestCase {
+  // TODO(mrober): Setup the workers with test executors in here?
+
   protected Context getContext() {
     return ApplicationProvider.getApplicationContext();
   }

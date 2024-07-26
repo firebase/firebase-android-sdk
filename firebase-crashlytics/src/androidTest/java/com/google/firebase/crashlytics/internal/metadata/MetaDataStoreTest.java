@@ -16,8 +16,9 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
+import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.io.IOException;
@@ -57,7 +58,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   private FileStore fileStore;
-  private final CrashlyticsBackgroundWorker worker = new CrashlyticsBackgroundWorker(Runnable::run);
+  private final CrashlyticsWorker worker = new CrashlyticsWorker(TestOnlyExecutors.background());
 
   private MetaDataStore storeUnderTest;
 
@@ -178,7 +179,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
-  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() {
+  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() throws Exception {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -194,6 +195,9 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
         .isTrue();
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
+
+    worker.await();
+
     assertThat(metaDataStore.readKeyData(SESSION_ID_2)).isEqualTo(keys);
   }
 

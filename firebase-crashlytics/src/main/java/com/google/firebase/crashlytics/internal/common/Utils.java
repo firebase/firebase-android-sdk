@@ -77,31 +77,6 @@ public final class Utils {
     return result.getTask();
   }
 
-  /** Similar to Tasks.call, but takes a Callable that returns a Task. */
-  public static <T> Task<T> callTask(Executor executor, Callable<Task<T>> callable) {
-    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
-    executor.execute(
-        () -> {
-          try {
-            callable
-                .call()
-                .continueWith(
-                    executor,
-                    task -> {
-                      if (task.isSuccessful()) {
-                        result.setResult(task.getResult());
-                      } else if (task.getException() != null) {
-                        result.setException(task.getException());
-                      }
-                      return null;
-                    });
-          } catch (Exception e) {
-            result.setException(e);
-          }
-        });
-    return result.getTask();
-  }
-
   /**
    * Blocks until the given Task completes, and then returns the value the Task was resolved with,
    * if successful. If the Task fails, an exception will be thrown, wrapping the Exception of the
