@@ -47,7 +47,7 @@ public class CrashlyticsWorker {
     this.executor = executor;
   }
 
-  /** Returns the executor used by this background worker. */
+  /** Returns the executor used by this worker. */
   public ExecutorService getExecutor() {
     return executor;
   }
