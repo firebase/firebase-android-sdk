@@ -104,9 +104,10 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertNull(userData.getUserId());
   }
 
-  public void testWriteUserData_emptyString() {
+  public void testWriteUserData_emptyString() throws Exception {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, "").getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    worker.await();
     assertEquals("", userData.getUserId());
   }
 
@@ -117,10 +118,11 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEquals(UNICODE, userData.getUserId());
   }
 
-  public void testWriteUserData_escaped() {
+  public void testWriteUserData_escaped() throws Exception {
     storeUnderTest.writeUserData(
         SESSION_ID_1, metadataWithUserId(SESSION_ID_1, ESCAPED).getUserId());
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    worker.await();
     assertEquals(ESCAPED.trim(), userData.getUserId());
   }
 
