@@ -282,6 +282,43 @@ public class CrashlyticsWorkerTest {
   }
 
   @Test
+  public void submitTaskFromAnotherWorkerThatThrows() throws Exception {
+    Task<?> otherTask =
+        new CrashlyticsWorker(TestOnlyExecutors.blocking())
+            .submitTask(() -> Tasks.forException(new IndexOutOfBoundsException()));
+
+    // Await on the throwing task to force the exception to propagate.
+    assertThrows(ExecutionException.class, () -> Tasks.await(otherTask));
+
+    // Submit another task to local worker to verify the chain did not break.
+    Task<Long> localTask = crashlyticsWorker.submitTask(() -> Tasks.forResult(0x5fe6eb50c7b537a9L));
+
+    Long localResult = Tasks.await(localTask);
+
+    assertThat(otherTask.isSuccessful()).isFalse();
+    assertThat(localTask.isSuccessful()).isTrue();
+    assertThat(localResult).isEqualTo(0x5fe6eb50c7b537a9L);
+  }
+
+  @Test
+  public void submitTaskFromAnotherWorkerThatCancels() throws Exception {
+    Task<?> otherCancelled =
+        new CrashlyticsWorker(TestOnlyExecutors.blocking()).submitTask(Tasks::forCanceled);
+
+    // Await on the cancelled task to force the exception to propagate.
+    assertThrows(CancellationException.class, () -> Tasks.await(otherCancelled));
+
+    // Submit another task to local worker to verify the chain did not break.
+    Task<Long> localTask = crashlyticsWorker.submitTask(() -> Tasks.forResult(0x5fe6eb50c7b537a9L));
+
+    Long localResult = Tasks.await(localTask);
+
+    assertThat(otherCancelled.isCanceled()).isTrue();
+    assertThat(localTask.isCanceled()).isFalse();
+    assertThat(localResult).isEqualTo(0x5fe6eb50c7b537a9L);
+  }
+
+  @Test
   public void submitTaskFromAnotherWorkerDoesNotUseLocalThreads() throws Exception {
     // Setup a "local" worker.
     ThreadPoolExecutor localExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
