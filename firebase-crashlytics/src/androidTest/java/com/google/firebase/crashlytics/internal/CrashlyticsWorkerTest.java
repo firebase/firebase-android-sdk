@@ -287,17 +287,18 @@ public class CrashlyticsWorkerTest {
         new CrashlyticsWorker(TestOnlyExecutors.blocking())
             .submitTask(() -> Tasks.forException(new IndexOutOfBoundsException()));
 
-    // Await on the throwing task to force the exception to propagate.
-    assertThrows(ExecutionException.class, () -> Tasks.await(otherTask));
+    // Await on the throwing task to force the exception to propagate threw the local worker.
+    Task<?> task = crashlyticsWorker.submitTask(() -> otherTask);
+    assertThrows(ExecutionException.class, () -> Tasks.await(task));
 
     // Submit another task to local worker to verify the chain did not break.
-    Task<Long> localTask = crashlyticsWorker.submitTask(() -> Tasks.forResult(0x5fe6eb50c7b537a9L));
+    Task<Integer> localTask = crashlyticsWorker.submitTask(() -> Tasks.forResult(0x5f375a86));
 
-    Long localResult = Tasks.await(localTask);
+    Integer localResult = Tasks.await(localTask);
 
     assertThat(otherTask.isSuccessful()).isFalse();
     assertThat(localTask.isSuccessful()).isTrue();
-    assertThat(localResult).isEqualTo(0x5fe6eb50c7b537a9L);
+    assertThat(localResult).isEqualTo(0x5f375a86);
   }
 
   @Test
@@ -305,8 +306,9 @@ public class CrashlyticsWorkerTest {
     Task<?> otherCancelled =
         new CrashlyticsWorker(TestOnlyExecutors.blocking()).submitTask(Tasks::forCanceled);
 
-    // Await on the cancelled task to force the exception to propagate.
-    assertThrows(CancellationException.class, () -> Tasks.await(otherCancelled));
+    // Await on the cancelled task to force the exception to propagate threw the local worker.
+    Task<?> task = crashlyticsWorker.submitTask(() -> otherCancelled);
+    assertThrows(CancellationException.class, () -> Tasks.await(task));
 
     // Submit another task to local worker to verify the chain did not break.
     Task<Long> localTask = crashlyticsWorker.submitTask(() -> Tasks.forResult(0x5fe6eb50c7b537a9L));
