@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -149,6 +150,25 @@ public class CrashlyticsWorkerTest {
   }
 
   @Test
+  public void submitCallableThatThrowsThenReturns() throws Exception {
+    Task<Void> throwingTask =
+        crashlyticsWorker.submit(
+            () -> {
+              throw new IOException();
+            });
+
+    assertThrows(ExecutionException.class, () -> Tasks.await(throwingTask));
+
+    String hiro =
+        "When you are wrestling for possession of a sword, the man with the handle always wins.";
+    Task<String> task = crashlyticsWorker.submitTask(() -> Tasks.forResult(hiro));
+
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo(hiro);
+  }
+
+  @Test
   public void submitRunnable() throws Exception {
     Task<Void> task = crashlyticsWorker.submit(() -> {});
 
@@ -170,6 +190,24 @@ public class CrashlyticsWorkerTest {
     ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
 
     assertThat(thrown).hasCauseThat().hasMessageThat().isEqualTo("I threw in the runnable");
+  }
+
+  @Test
+  public void submitRunnableThatThrowsThenReturns() throws Exception {
+    Task<Void> thowingTask =
+        crashlyticsWorker.submit(
+            (Runnable)
+                () -> {
+                  throw new IllegalArgumentException();
+                });
+
+    assertThrows(ExecutionException.class, () -> Tasks.await(thowingTask));
+
+    Task<Void> task = crashlyticsWorker.submit(() -> {});
+
+    Void result = Tasks.await(task);
+
+    assertThat(result).isNull();
   }
 
   @Test
@@ -252,6 +290,23 @@ public class CrashlyticsWorkerTest {
   }
 
   @Test
+  public void submitTaskThatCancelsThenAwaitsThenCallable() throws Exception {
+    Task<?> cancelled = crashlyticsWorker.submitTask(Tasks::forCanceled);
+
+    // Await on the cancelled task to force the exception to propagate.
+    assertThrows(CancellationException.class, () -> Tasks.await(cancelled));
+
+    // Submit a simple callable.
+    Task<Boolean> task = crashlyticsWorker.submit(() -> true);
+
+    boolean result = Tasks.await(task);
+
+    assertThat(cancelled.isCanceled()).isTrue();
+    assertThat(task.isCanceled()).isFalse();
+    assertThat(result).isTrue();
+  }
+
+  @Test
   public void submitTaskThatCancelsThenAwaitsThenRunnable() throws Exception {
     Task<?> cancelled = crashlyticsWorker.submitTask(Tasks::forCanceled);
 
@@ -294,7 +349,7 @@ public class CrashlyticsWorkerTest {
     // Submit another task to local worker to verify the chain did not break.
     Task<Integer> localTask = crashlyticsWorker.submitTask(() -> Tasks.forResult(0x5f375a86));
 
-    Integer localResult = Tasks.await(localTask);
+    int localResult = Tasks.await(localTask);
 
     assertThat(otherTask.isSuccessful()).isFalse();
     assertThat(localTask.isSuccessful()).isTrue();
@@ -313,7 +368,7 @@ public class CrashlyticsWorkerTest {
     // Submit another task to local worker to verify the chain did not break.
     Task<Long> localTask = crashlyticsWorker.submitTask(() -> Tasks.forResult(0x5fe6eb50c7b537a9L));
 
-    Long localResult = Tasks.await(localTask);
+    long localResult = Tasks.await(localTask);
 
     assertThat(otherCancelled.isCanceled()).isTrue();
     assertThat(localTask.isCanceled()).isFalse();
@@ -353,14 +408,15 @@ public class CrashlyticsWorkerTest {
 
   @Test
   public void submitTaskWhenThreadPoolFull() {
-    // Fill the backing executor thread pool.
+    // Fill the underlying executor thread pool.
     for (int i = 0; i < 10; i++) {
-      crashlyticsWorker.getExecutor().execute(() -> sleep(1_000));
+      crashlyticsWorker.getExecutor().execute(() -> sleep(40));
     }
 
     Task<Integer> task = crashlyticsWorker.submitTask(() -> Tasks.forResult(42));
 
-    assertThrows(TimeoutException.class, () -> Tasks.await(task, 300, TimeUnit.MILLISECONDS));
+    // The underlying thread pool is full with tasks that will take longer than this timeout.
+    assertThrows(TimeoutException.class, () -> Tasks.await(task, 30, TimeUnit.MILLISECONDS));
   }
 
   private static void sleep(long millis) {
