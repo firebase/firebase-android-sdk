@@ -17,8 +17,8 @@ package com.google.firebase.crashlytics.internal.metadata;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.List;
@@ -47,7 +47,7 @@ public class UserMetadata {
   @VisibleForTesting public static final int MAX_ROLLOUT_ASSIGNMENTS = 128;
 
   private final MetaDataStore metaDataStore;
-  private final CrashlyticsBackgroundWorker backgroundWorker;
+  private final CrashlyticsWorker backgroundWorker;
   private String sessionIdentifier;
 
   // The following references contain a marker bit, which is true if the data maintained in the
@@ -69,9 +69,9 @@ public class UserMetadata {
   }
 
   public static UserMetadata loadFromExistingSession(
-      String sessionId, FileStore fileStore, CrashlyticsBackgroundWorker backgroundWorker) {
+      String sessionId, FileStore fileStore, CrashlyticsWorker commonWorker) {
     MetaDataStore store = new MetaDataStore(fileStore);
-    UserMetadata metadata = new UserMetadata(sessionId, fileStore, backgroundWorker);
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore, commonWorker);
     // We don't use the set methods in this class, because they will attempt to re-serialize the
     // data, which is unnecessary because we just read them from disk.
     metadata.customKeys.map.getReference().setKeys(store.readKeyData(sessionId, false));
@@ -82,10 +82,10 @@ public class UserMetadata {
   }
 
   public UserMetadata(
-      String sessionIdentifier, FileStore fileStore, CrashlyticsBackgroundWorker backgroundWorker) {
+      String sessionIdentifier, FileStore fileStore, CrashlyticsWorker commonWorker) {
     this.sessionIdentifier = sessionIdentifier;
     this.metaDataStore = new MetaDataStore(fileStore);
-    this.backgroundWorker = backgroundWorker;
+    this.backgroundWorker = commonWorker;
   }
 
   /**

@@ -30,6 +30,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
+import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
@@ -82,7 +84,7 @@ class CrashlyticsController {
   private final CrashlyticsFileMarker crashMarker;
   private final UserMetadata userMetadata;
 
-  private final CrashlyticsBackgroundWorker backgroundWorker;
+  private final CrashlyticsWorker backgroundWorker;
 
   private final IdManager idManager;
   private final FileStore fileStore;
@@ -116,7 +118,7 @@ class CrashlyticsController {
 
   CrashlyticsController(
       Context context,
-      CrashlyticsBackgroundWorker backgroundWorker,
+      CrashlyticsWorker commonWorker,
       IdManager idManager,
       DataCollectionArbiter dataCollectionArbiter,
       FileStore fileStore,
@@ -129,7 +131,7 @@ class CrashlyticsController {
       AnalyticsEventLogger analyticsEventLogger,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     this.context = context;
-    this.backgroundWorker = backgroundWorker;
+    this.backgroundWorker = commonWorker;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.fileStore = fileStore;
@@ -308,6 +310,7 @@ class CrashlyticsController {
 
   /** This function must be called before opening the first session * */
   boolean didCrashOnPreviousExecution() {
+    CrashlyticsPreconditions.checkBackgroundThread(); // To not violate strict mode.
     if (!crashMarker.isPresent()) {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
@@ -531,7 +534,7 @@ class CrashlyticsController {
    * @param settingsProvider
    */
   boolean finalizeSessions(SettingsProvider settingsProvider) {
-    backgroundWorker.checkRunningOnThread();
+    CrashlyticsPreconditions.checkBackgroundThread();
 
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
