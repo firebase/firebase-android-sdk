@@ -39,11 +39,9 @@ public class SQLiteComponentProvider extends MemoryComponentProvider {
 
   @Override
   protected Persistence createPersistence(Configuration configuration) {
-    LocalSerializer serializer =
-        new LocalSerializer(getRemoteSerializer());
+    LocalSerializer serializer = new LocalSerializer(getRemoteSerializer());
     LruGarbageCollector.Params params =
-        LruGarbageCollector.Params.WithCacheSizeBytes(
-            configuration.settings.getCacheSizeBytes());
+        LruGarbageCollector.Params.WithCacheSizeBytes(configuration.settings.getCacheSizeBytes());
     return new SQLitePersistence(
         configuration.context,
         configuration.databaseInfo.getPersistenceKey(),

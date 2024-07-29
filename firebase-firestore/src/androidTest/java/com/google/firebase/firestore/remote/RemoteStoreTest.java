@@ -16,11 +16,9 @@ package com.google.firebase.firestore.remote;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 
-import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
-import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.MemoryPersistence;
@@ -74,7 +72,13 @@ public class RemoteStoreTest {
     persistence.start();
     LocalStore localStore = new LocalStore(persistence, new QueryEngine(), User.UNAUTHENTICATED);
     RemoteStore remoteStore =
-        new RemoteStore(IntegrationTestUtil.testEnvDatabaseId(), callback, localStore, datastore, testQueue, connectivityMonitor);
+        new RemoteStore(
+            IntegrationTestUtil.testEnvDatabaseId(),
+            callback,
+            localStore,
+            datastore,
+            testQueue,
+            connectivityMonitor);
 
     waitFor(testQueue.enqueue(remoteStore::forceEnableNetwork));
     drain(testQueue);

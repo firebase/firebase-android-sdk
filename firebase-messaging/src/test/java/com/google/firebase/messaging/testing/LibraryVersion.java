@@ -18,6 +18,7 @@ public class LibraryVersion {
   private static final String UNKNOWN_VERSION = "UNKNOWN";
 
   private static LibraryVersion INSTANCE = new LibraryVersion();
+
   /** Returns the singleton instance of LibraryVersion. */
   public static LibraryVersion getInstance() {
     return INSTANCE;

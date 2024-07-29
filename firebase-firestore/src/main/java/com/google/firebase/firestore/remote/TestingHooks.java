@@ -223,7 +223,7 @@ final class TestingHooks {
       }
       return create(
           bloomFilter,
-          /*bloomFilterApplied=*/ bloomFilterStatus == BloomFilterApplicationStatus.SUCCESS,
+          /* bloomFilterApplied= */ bloomFilterStatus == BloomFilterApplicationStatus.SUCCESS,
           unchangedNames.getHashCount(),
           unchangedNames.getBits().getBitmap().size(),
           unchangedNames.getBits().getPadding());

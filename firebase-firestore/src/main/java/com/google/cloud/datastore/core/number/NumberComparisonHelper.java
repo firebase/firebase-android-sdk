@@ -25,6 +25,7 @@ public final class NumberComparisonHelper {
 
   /** The maximum value in the main range of integers representable as both long and double. */
   public static final long MAX_SAFE_LONG = 1L << 53;
+
   /** The minimum value in the main range of integers representable as both long and double. */
   public static final long MIN_SAFE_LONG = -MAX_SAFE_LONG;
 
