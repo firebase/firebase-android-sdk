@@ -1,10 +1,6 @@
 {
     "name": "m151",
     "libraries": [
-        ":firebase-crashlytics",
-        ":firebase-crashlytics-ndk",
-        ":firebase-sessions",
-        ":firebase-crashlytics:ktx",
         ":firebase-vertexai"
     ]
 }
