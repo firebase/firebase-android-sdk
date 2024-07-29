@@ -23,6 +23,7 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
@@ -68,7 +69,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
+      CrashlyticsWorker diskWriteWorker) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
@@ -77,7 +79,13 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context, settingsProvider, onDemandCounter);
     return new SessionReportingCoordinator(
-        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata, idManager);
+        dataCapture,
+        reportPersistence,
+        reportSender,
+        logFileManager,
+        userMetadata,
+        idManager,
+        diskWriteWorker);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -87,19 +95,23 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final UserMetadata reportMetadata;
   private final IdManager idManager;
 
+  final CrashlyticsWorker diskWriteWorker;
+
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
-      IdManager idManager) {
+      IdManager idManager,
+      CrashlyticsWorker diskWriteWorker) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
     this.idManager = idManager;
+    this.diskWriteWorker = diskWriteWorker;
   }
 
   @Override
@@ -108,21 +120,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         dataCapture.captureReportData(sessionId, timestampSeconds);
 
     reportPersistence.persistReport(capturedReport);
-  }
-
-  @Override
-  public void onLog(long timestamp, String log) {
-    logFileManager.writeToLog(timestamp, log);
-  }
-
-  @Override
-  public void onCustomKey(String key, String value) {
-    reportMetadata.setCustomKey(key, value);
-  }
-
-  @Override
-  public void onUserId(String userId) {
-    reportMetadata.setUserId(userId);
   }
 
   public void persistFatalEvent(
@@ -339,8 +336,19 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             EVENT_THREAD_IMPORTANCE,
             MAX_CHAINED_EXCEPTION_DEPTH,
             includeAllThreads);
+    CrashlyticsReport.Session.Event finallizedEvent = addMetaDataToEvent(capturedEvent);
 
-    reportPersistence.persistEvent(addMetaDataToEvent(capturedEvent), sessionId, isHighPriority);
+    // Non-fatal case, non-fatal does not include all threads
+    // We move to diskWriteWorker for persistence
+    if (!includeAllThreads) {
+      diskWriteWorker.submit(
+          () -> {
+            reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
+          });
+      return;
+    }
+
+    reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {

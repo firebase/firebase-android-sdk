@@ -172,7 +172,8 @@ public class CrashlyticsCore {
               stackTraceTrimmingStrategy,
               settingsProvider,
               onDemandCounter,
-              sessionsSubscriber);
+              sessionsSubscriber,
+              diskWriteWorker);
 
       controller =
           new CrashlyticsController(
@@ -337,7 +338,7 @@ public class CrashlyticsCore {
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    commonWorker.submit(() -> controller.writeToLog(timestamp, msg));
+    diskWriteWorker.submit(() -> controller.writeToLog(timestamp, msg));
   }
 
   public void setUserId(String identifier) {

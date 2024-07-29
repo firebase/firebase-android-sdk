@@ -25,27 +25,4 @@ interface CrashlyticsLifecycleEvents {
    * @param sessionId the identifier for the new session
    */
   void onBeginSession(@NonNull String sessionId, long timestamp);
-
-  /**
-   * Called when a message is logged by the user.
-   *
-   * @param timestamp the timestamp of the message (in milliseconds since app launch)
-   * @param log the log message
-   */
-  void onLog(long timestamp, String log);
-
-  /**
-   * Called when a custom key is set by the user.
-   *
-   * @param key
-   * @param value
-   */
-  void onCustomKey(String key, String value);
-
-  /**
-   * Called when a user ID is set by the user.
-   *
-   * @param userId
-   */
-  void onUserId(String userId);
 }
