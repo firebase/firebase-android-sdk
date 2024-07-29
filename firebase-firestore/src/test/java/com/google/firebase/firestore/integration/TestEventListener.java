@@ -16,36 +16,34 @@ package com.google.firebase.firestore.integration;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-
 import java.util.Iterator;
 
 /**
  * EventListener test harness.
  */
-class TestEventListener<T>implements EventListener<T> {
+class TestEventListener<T> implements EventListener<T> {
 
-    AsyncTaskAccumulator<T> events = new AsyncTaskAccumulator<>();
+  AsyncTaskAccumulator<T> events = new AsyncTaskAccumulator<>();
 
-    @Override
-    public synchronized void onEvent(@Nullable T value, @Nullable FirebaseFirestoreException error) {
-        if (error == null) {
-            events.onResult(value);
-        } else {
-            events.onException(error);
-        }
+  @Override
+  public synchronized void onEvent(@Nullable T value, @Nullable FirebaseFirestoreException error) {
+    if (error == null) {
+      events.onResult(value);
+    } else {
+      events.onException(error);
     }
+  }
 
-    @NonNull
-    public synchronized Task<T> get(int index) {
-        return events.get(index);
-    }
+  @NonNull
+  public synchronized Task<T> get(int index) {
+    return events.get(index);
+  }
 
-    @NonNull
-    public Iterator<Task<T>> iterator() {
-        return events.iterator();
-    }
+  @NonNull
+  public Iterator<Task<T>> iterator() {
+    return events.iterator();
+  }
 }

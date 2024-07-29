@@ -146,7 +146,8 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
     InitRequest.Builder initRequest = InitRequest.newBuilder();
     if (sessionToken != null) initRequest.setSessionToken(sessionToken);
 
-    WriteRequest.Builder request = WriteRequest.newBuilder()
+    WriteRequest.Builder request =
+        WriteRequest.newBuilder()
             .setDatabase(serializer.databaseName())
             .setInitRequest(initRequest);
 
@@ -173,7 +174,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
 
   @Override
   public void onFirst(WriteResponse response) {
-    hardAssert(response.hasInitResponse(),"InitResponse expected as part of Handshake response");
+    hardAssert(response.hasInitResponse(), "InitResponse expected as part of Handshake response");
     lastStreamToken = response.getStreamToken();
 
     // The first response is the handshake response

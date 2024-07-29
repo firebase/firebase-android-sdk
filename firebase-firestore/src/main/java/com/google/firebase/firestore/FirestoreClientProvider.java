@@ -120,24 +120,23 @@ final class FirestoreClientProvider {
    */
   synchronized <T> T executeIfShutdown(
       Function<Executor, T> callIf, Function<Executor, T> callElse) {
-    Executor executor = command -> asyncQueue.enqueueAndForgetEvenAfterShutdown(command);
     if (client == null || client.isTerminated()) {
-      return callIf.apply(executor);
+      return callIf.apply(asyncQueue.getExecutor());
     } else {
-      return callElse.apply(executor);
+      return callElse.apply(asyncQueue.getExecutor());
     }
   }
 
   synchronized <T> T executeWhileShutdown(Function<Executor, T> call) {
     // This will block asyncQueue, prevent a new client from being started.
     if (client == null || client.isTerminated()) {
-        return call.apply(asyncQueue.getExecutor());
+      return call.apply(asyncQueue.getExecutor());
     } else {
-        client.shutdown();
-        asyncQueue = asyncQueue.reincarnate();
-        T result = call.apply(asyncQueue.getExecutor());
-        client = clientFactory.apply(asyncQueue);
-        return result;
+      client.shutdown();
+      asyncQueue = asyncQueue.reincarnate();
+      T result = call.apply(asyncQueue.getExecutor());
+      client = clientFactory.apply(asyncQueue);
+      return result;
     }
   }
 

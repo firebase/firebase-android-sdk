@@ -52,7 +52,6 @@ import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
-
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
@@ -140,7 +139,8 @@ public final class FirestoreClient {
 
   public void setClearPersistenceCallback(Consumer<ByteString> clearPersistenceCallback) {
     this.verifyNotTerminated();
-    asyncQueue.enqueueAndForget(() -> remoteStore.setClearPersistenceCallback(clearPersistenceCallback));
+    asyncQueue.enqueueAndForget(
+        () -> remoteStore.setClearPersistenceCallback(clearPersistenceCallback));
   }
 
   private void onAsyncQueueShutdown() {

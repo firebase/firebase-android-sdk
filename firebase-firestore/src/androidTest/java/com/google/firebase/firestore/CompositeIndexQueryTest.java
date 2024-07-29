@@ -39,7 +39,6 @@ import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.Query.Direction;
-import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.testutil.CompositeIndexTestHelper;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Map;

@@ -19,15 +19,12 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
-import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleElement;
 import com.google.firebase.firestore.bundle.BundleLoader;

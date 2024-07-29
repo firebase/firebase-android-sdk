@@ -59,7 +59,6 @@ import com.google.firebase.firestore.util.Logger.Level;
 import com.google.firebase.firestore.util.Preconditions;
 import com.google.firebase.inject.Deferred;
 import com.google.protobuf.ByteString;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -113,8 +112,7 @@ public class FirebaseFirestore {
   final FirestoreClientProvider clientProvider;
   private final GrpcMetadataProvider metadataProvider;
 
-  @VisibleForTesting
-  Function<Executor, Task<Void>> clearPersistenceMethod;
+  @VisibleForTesting Function<Executor, Task<Void>> clearPersistenceMethod;
 
   @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
 
@@ -251,18 +249,20 @@ public class FirebaseFirestore {
 
     this.settings = new FirebaseFirestoreSettings.Builder().build();
 
-    this.clearPersistenceMethod = executor -> {
-      final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-      executor.execute(() -> {
-        try {
-          SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
-          source.setResult(null);
-        } catch (FirebaseFirestoreException e) {
-          source.setException(e);
-        }
-      });
-      return source.getTask();
-    };
+    this.clearPersistenceMethod =
+        executor -> {
+          final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
+          executor.execute(
+              () -> {
+                try {
+                  SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
+                  source.setResult(null);
+                } catch (FirebaseFirestoreException e) {
+                  source.setException(e);
+                }
+              });
+          return source.getTask();
+        };
   }
 
   /** Returns the settings used by this {@code FirebaseFirestore} object. */
@@ -316,26 +316,26 @@ public class FirebaseFirestore {
   private FirestoreClient newClient(AsyncQueue asyncQueue) {
     synchronized (clientProvider) {
       DatabaseInfo databaseInfo =
-              new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
+          new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
-      FirestoreClient client = new FirestoreClient(
+      FirestoreClient client =
+          new FirestoreClient(
               context,
               databaseInfo,
-              settings,
               authProviderFactory.get(),
               appCheckTokenProviderFactory.get(),
               asyncQueue,
               metadataProvider,
-              componentProviderFactory.apply(settings)
-      );
+              componentProviderFactory.apply(settings));
 
-      client.setClearPersistenceCallback(sessionToken -> {
-        synchronized (clientProvider) {
-          if (client.isTerminated()) return;
-          this.sessionToken = sessionToken;
-          clearPersistence();
-        }
-      });
+      client.setClearPersistenceCallback(
+          sessionToken -> {
+            synchronized (clientProvider) {
+              if (client.isTerminated()) return;
+              this.sessionToken = sessionToken;
+              clearPersistence();
+            }
+          });
 
       // Session token must be set before we enable network, since it is part of stream handshake.
       if (sessionToken != null) {

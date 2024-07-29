@@ -40,14 +40,12 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firestore.v1.InitResponse;
 import com.google.protobuf.ByteString;
-
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
@@ -76,8 +74,7 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
 @RunWith(AndroidJUnit4.class)
 public class StreamTest {
 
-  @Rule
-  public Timeout timeout = new Timeout(10, TimeUnit.SECONDS);
+  @Rule public Timeout timeout = new Timeout(10, TimeUnit.SECONDS);
 
   /** Single mutation to send to the write stream. */
   private static final List<Mutation> mutations =

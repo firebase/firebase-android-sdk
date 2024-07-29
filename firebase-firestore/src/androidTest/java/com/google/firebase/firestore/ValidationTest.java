@@ -45,7 +45,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.Transaction.Function;
-import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.Consumer;
 import java.util.Arrays;

@@ -30,16 +30,12 @@ import com.google.firebase.firestore.remote.GrpcCallProvider;
 import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
-import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
 import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;
-
-import com.google.firebase.firestore.integration.TestClientCall;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -78,11 +74,11 @@ public final class FirebaseFirestoreIntegrationTestFactory {
         new AsyncTaskAccumulator<>();
 
     /** Mockito mock of GrpcCallProvider. */
-        public GrpcCallProvider mockGrpcCallProvider;
+    public GrpcCallProvider mockGrpcCallProvider;
 
-        private Instance(ComponentProvider componentProvider) {
-            this.componentProvider = componentProvider;
-        }
+    private Instance(ComponentProvider componentProvider) {
+      this.componentProvider = componentProvider;
+    }
 
     /**
      * Queues work on AsyncQueue. This is required when faking responses from server since they
@@ -125,13 +121,14 @@ public final class FirebaseFirestoreIntegrationTestFactory {
   public final FirebaseFirestore.InstanceRegistry instanceRegistry =
       mock(FirebaseFirestore.InstanceRegistry.class);
 
-    public FirebaseFirestoreIntegrationTestFactory(DatabaseId databaseId) {
-        firestore = new FirebaseFirestore(
-                ApplicationProvider.getApplicationContext(),
-                databaseId,
-                "k",
-                EmptyCredentialsProvider::new,
-                EmptyAppCheckTokenProvider::new,
+  public FirebaseFirestoreIntegrationTestFactory(DatabaseId databaseId) {
+    firestore =
+        new FirebaseFirestore(
+            ApplicationProvider.getApplicationContext(),
+            databaseId,
+            "k",
+            EmptyCredentialsProvider::new,
+            EmptyAppCheckTokenProvider::new,
             this::componentProvider,
             null,
             instanceRegistry,
@@ -146,16 +143,16 @@ public final class FirebaseFirestoreIntegrationTestFactory {
   }
 
   public void setClearPersistenceMethod(Function<Executor, Task<Void>> clearPersistenceMethod) {
-        firestore.clearPersistenceMethod = clearPersistenceMethod;
-    }
+    firestore.clearPersistenceMethod = clearPersistenceMethod;
+  }
 
-    private GrpcCallProvider mockGrpcCallProvider(Instance instance) {
-        GrpcCallProvider mockGrpcCallProvider = mock(GrpcCallProvider.class);
-        when(mockGrpcCallProvider.createClientCall(eq(FirestoreGrpc.getListenMethod())))
-                .thenAnswer(invocation -> Tasks.forResult(new TestClientCall<>(instance.listens.next())));
-        when(mockGrpcCallProvider.createClientCall(eq(FirestoreGrpc.getWriteMethod())))
-                .thenAnswer(invocation -> Tasks.forResult(new TestClientCall<>(instance.writes.next())));
-        instance.mockGrpcCallProvider = mockGrpcCallProvider;
+  private GrpcCallProvider mockGrpcCallProvider(Instance instance) {
+    GrpcCallProvider mockGrpcCallProvider = mock(GrpcCallProvider.class);
+    when(mockGrpcCallProvider.createClientCall(eq(FirestoreGrpc.getListenMethod())))
+        .thenAnswer(invocation -> Tasks.forResult(new TestClientCall<>(instance.listens.next())));
+    when(mockGrpcCallProvider.createClientCall(eq(FirestoreGrpc.getWriteMethod())))
+        .thenAnswer(invocation -> Tasks.forResult(new TestClientCall<>(instance.writes.next())));
+    instance.mockGrpcCallProvider = mockGrpcCallProvider;
     return mockGrpcCallProvider;
   }
 

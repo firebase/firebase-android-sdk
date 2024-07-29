@@ -90,7 +90,8 @@ public class WatchStream
     InitRequest.Builder initRequest = InitRequest.newBuilder();
     if (sessionToken != null) initRequest.setSessionToken(sessionToken);
 
-    ListenRequest.Builder request = ListenRequest.newBuilder()
+    ListenRequest.Builder request =
+        ListenRequest.newBuilder()
             .setDatabase(serializer.databaseName())
             .setInitRequest(initRequest);
 
