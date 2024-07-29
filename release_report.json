@@ -1,0 +1,114 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "fd33b50717cb95e11c9815122d04361aa3994546",
+                "prId": "6119",
+                "author": "themiswang",
+                "message": "Crashlytics common executor (#6119)\n\nCherry-pick https://github.com/firebase/firebase-android-sdk/pull/6019,\r\nhttps://github.com/firebase/firebase-android-sdk/pull/6040 to main\r\n\r\n#no-changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fd33b50717cb95e11c9815122d04361aa3994546",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6119"
+            },
+            {
+                "commitId": "647d88c34dbbf5af55dc08531750862e54d39157",
+                "prId": "6113",
+                "author": "Matthew Robertson",
+                "message": "Ensure that on-demand fatal events are never processed on the main thread (#6113)\n\nEnsure that on-demand fatal events are never processed on the main\r\nthread.\r\n\r\nAlso decreased the timeout on main to under 3 seconds, to give more time\r\nto other uncaught exception handlers in the chain.\r\n\r\nAlso fixed some formatting.\r\n\r\nTested cases:\r\nUncaught exception thrown from the main thread\r\nUncaught exception thrown from a background thread\r\nODF triggered on the main thread\r\nODF triggered on a background thread",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/647d88c34dbbf5af55dc08531750862e54d39157",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6113"
+            },
+            {
+                "commitId": "050cc898d4c3692ddafdad52ca7f41b450a79053",
+                "prId": "6080",
+                "author": "lehcar09",
+                "message": "Add isCrashlyticsCollectionEnabled() API  (#6080)\n\nFR: https://github.com/firebase/firebase-android-sdk/issues/5919\r\n\r\nTested Manually",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/050cc898d4c3692ddafdad52ca7f41b450a79053",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6080"
+            },
+            {
+                "commitId": "ec68af618192de27d80a15e99fe9655d4629f2af",
+                "prId": "6083",
+                "author": "Matthew Robertson",
+                "message": "Upgrade Crashlytics dep versions (#6083)\n\nUpdate Crashlytics and AQS dep versions. Fixed some of the tests because\r\nof changes to Mockito. The Mockito version in the Android tests is still\r\npinned a bit old, because after that version a lot more things break.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ec68af618192de27d80a15e99fe9655d4629f2af",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6083"
+            },
+            {
+                "commitId": "d11959ba735a72fbfedc031ce26491dad7605725",
+                "prId": "6072",
+                "author": "Matthew Robertson",
+                "message": "Fix more tests (#6072)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d11959ba735a72fbfedc031ce26491dad7605725",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6072"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "ec68af618192de27d80a15e99fe9655d4629f2af",
+                "prId": "6083",
+                "author": "Matthew Robertson",
+                "message": "Upgrade Crashlytics dep versions (#6083)\n\nUpdate Crashlytics and AQS dep versions. Fixed some of the tests because\r\nof changes to Mockito. The Mockito version in the Android tests is still\r\npinned a bit old, because after that version a lot more things break.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ec68af618192de27d80a15e99fe9655d4629f2af",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6083"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "9a1d12005e175d90e6b6853edafe8829752d76c0",
+                "prId": "6114",
+                "author": "David Motsonashvili",
+                "message": "wire through response schema from common (#6114)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9a1d12005e175d90e6b6853edafe8829752d76c0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6114"
+            },
+            {
+                "commitId": "3dc208ce297b65c0c15bd1582dbb9dc868b1f437",
+                "prId": "6105",
+                "author": "Tanzim Hossain",
+                "message": "VertexAI: convert exceptions from countTokens() to VertexAIException (#6105)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3dc208ce297b65c0c15bd1582dbb9dc868b1f437",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6105"
+            },
+            {
+                "commitId": "8d5c103feb090293ffa98467bcf984bdf2e7bd3a",
+                "prId": "6104",
+                "author": "Tanzim Hossain",
+                "message": "Add more VertexAI unit tests (#6104)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8d5c103feb090293ffa98467bcf984bdf2e7bd3a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6104"
+            },
+            {
+                "commitId": "a41af7dcebbe050b7f7ef8b275e6c0a4a814f66c",
+                "prId": "6103",
+                "author": "Tanzim Hossain",
+                "message": "VertexAI: add support for mock responses versioning system (#6103)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a41af7dcebbe050b7f7ef8b275e6c0a4a814f66c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6103"
+            },
+            {
+                "commitId": "4db5dc83cf83541c3bf4fe7a18bc24eb7521c2b7",
+                "prId": "6090",
+                "author": "Tanzim Hossain",
+                "message": "Add Vertex AI unit tests (#6090)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4db5dc83cf83541c3bf4fe7a18bc24eb7521c2b7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6090"
+            },
+            {
+                "commitId": "f23f6f11610640d767dcda65702a21a7d61f5d27",
+                "prId": "6093",
+                "author": "Daymon",
+                "message": "Address M150 Javadoc comments (#6093)\n\nPer [b/352564349](https://b.corp.google.com/issues/352564349),\r\n\r\nThis fixes the non blocking comments Rachel left in the m150 Javadoc CL.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f23f6f11610640d767dcda65702a21a7d61f5d27",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6093"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-firestore",
+        ":firebase-firestore:ktx"
+    ]
+}
