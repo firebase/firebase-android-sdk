@@ -96,8 +96,8 @@ public class CrashlyticsCore {
 
   private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
 
-  private final CrashlyticsWorker commonWorker;
-  private final CrashlyticsWorker diskWriteWorker;
+  @VisibleForTesting final CrashlyticsWorker commonWorker;
+  @VisibleForTesting final CrashlyticsWorker diskWriteWorker;
 
   // region Constructors
 
@@ -153,7 +153,7 @@ public class CrashlyticsCore {
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata =
-          new UserMetadata(sessionIdentifier, fileStore, commonWorker);
+          new UserMetadata(sessionIdentifier, fileStore, diskWriteWorker);
       final LogFileManager logFileManager = new LogFileManager(fileStore);
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(
@@ -188,7 +188,8 @@ public class CrashlyticsCore {
               sessionReportingCoordinator,
               nativeComponent,
               analyticsEventLogger,
-              sessionsSubscriber);
+              sessionsSubscriber,
+              diskWriteWorker);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
@@ -321,7 +322,7 @@ public class CrashlyticsCore {
    * safe to invoke this method from the main thread.
    */
   public void logException(@NonNull Throwable throwable) {
-    controller.writeNonFatalException(Thread.currentThread(), throwable);
+    commonWorker.submit(() -> controller.writeNonFatalException(Thread.currentThread(), throwable));
   }
 
   /**
@@ -336,11 +337,11 @@ public class CrashlyticsCore {
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    controller.writeToLog(timestamp, msg);
+    commonWorker.submit(() -> controller.writeToLog(timestamp, msg));
   }
 
   public void setUserId(String identifier) {
-    controller.setUserId(identifier);
+    commonWorker.submit(() -> controller.setUserId(identifier));
   }
 
   /**
@@ -353,7 +354,7 @@ public class CrashlyticsCore {
    * @throws NullPointerException if key is null.
    */
   public void setCustomKey(String key, String value) {
-    controller.setCustomKey(key, value);
+    commonWorker.submit(() -> controller.setCustomKey(key, value));
   }
 
   /**
@@ -370,7 +371,7 @@ public class CrashlyticsCore {
    * @throws NullPointerException if any key in keysAndValues is null.
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
-    controller.setCustomKeys(keysAndValues);
+    commonWorker.submit(() -> controller.setCustomKeys(keysAndValues));
   }
 
   // endregion
@@ -390,7 +391,7 @@ public class CrashlyticsCore {
    * @throws NullPointerException if key is null.
    */
   public void setInternalKey(String key, String value) {
-    controller.setInternalKey(key, value);
+    commonWorker.submit(() -> controller.setInternalKey(key, value));
   }
 
   /** Logs a fatal Throwable on the Crashlytics servers on-demand. */
@@ -399,11 +400,16 @@ public class CrashlyticsCore {
         .d("Recorded on-demand fatal events: " + onDemandCounter.getRecordedOnDemandExceptions());
     Logger.getLogger()
         .d("Dropped on-demand fatal events: " + onDemandCounter.getDroppedOnDemandExceptions());
-    controller.setInternalKey(
-        ON_DEMAND_RECORDED_KEY, Integer.toString(onDemandCounter.getRecordedOnDemandExceptions()));
-    controller.setInternalKey(
-        ON_DEMAND_DROPPED_KEY, Integer.toString(onDemandCounter.getDroppedOnDemandExceptions()));
-    controller.logFatalException(Thread.currentThread(), throwable);
+    commonWorker.submit(
+        () -> {
+          controller.setInternalKey(
+              ON_DEMAND_RECORDED_KEY,
+              Integer.toString(onDemandCounter.getRecordedOnDemandExceptions()));
+          controller.setInternalKey(
+              ON_DEMAND_DROPPED_KEY,
+              Integer.toString(onDemandCounter.getDroppedOnDemandExceptions()));
+          controller.logFatalException(Thread.currentThread(), throwable);
+        });
   }
 
   // endregion

@@ -385,7 +385,7 @@ public class CrashlyticsWorkerTest {
     Task<Integer> otherTask =
         crashlyticsWorker.submit(
             () -> {
-              sleep(30);
+              sleep(300);
               return localExecutor.getActiveCount();
             });
 
@@ -394,6 +394,8 @@ public class CrashlyticsWorkerTest {
 
     // 1 active thread when doing a local task.
     assertThat(Tasks.await(localWorker.submit(localExecutor::getActiveCount))).isEqualTo(1);
+
+    sleep(1); // The test is a bit flaky without this.
 
     // 0 active local threads when waiting for other task.
     // Waiting for a task from another worker does not block a local thread.
