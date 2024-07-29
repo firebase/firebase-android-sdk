@@ -19,12 +19,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import androidx.test.core.app.ApplicationProvider;
-
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.integration.AsyncTaskAccumulator;
+import com.google.firebase.firestore.integration.TestClientCall;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.remote.GrpcCallProvider;
 import com.google.firebase.firestore.remote.RemoteComponenetProvider;
@@ -56,72 +56,74 @@ import java.util.concurrent.Executor;
  */
 public final class FirebaseFirestoreIntegrationTestFactory {
 
-    /**
-     * Everytime the `componentProviderFactory` on FirebaseFirestore is run, a new instance is added.
-     */
-    public final AsyncTaskAccumulator<Instance> instances = new AsyncTaskAccumulator<>();
+  /**
+   * Everytime the `componentProviderFactory` on FirebaseFirestore is run, a new instance is added.
+   */
+  public final AsyncTaskAccumulator<Instance> instances = new AsyncTaskAccumulator<>();
 
-    /**
-     * Instance of Firestore components.
-     */
-    public static class Instance {
+  /**
+   * Instance of Firestore components.
+   */
+  public static class Instance {
 
-        /** Instance of ComponentProvider */
-        public final ComponentProvider componentProvider;
+    /** Instance of ComponentProvider */
+    public final ComponentProvider componentProvider;
 
-        /** Every listen stream created is captured here. */
-        private final AsyncTaskAccumulator<TestClientCall<ListenRequest, ListenResponse>> listens = new AsyncTaskAccumulator<>();
+    /** Every listen stream created is captured here. */
+    private final AsyncTaskAccumulator<TestClientCall<ListenRequest, ListenResponse>> listens =
+        new AsyncTaskAccumulator<>();
 
-        /** Every write stream created is captured here. */
-        private final AsyncTaskAccumulator<TestClientCall<WriteRequest, WriteResponse>> writes = new AsyncTaskAccumulator<>();
+    /** Every write stream created is captured here. */
+    private final AsyncTaskAccumulator<TestClientCall<WriteRequest, WriteResponse>> writes =
+        new AsyncTaskAccumulator<>();
 
-        /** Mockito mock of GrpcCallProvider. */
+    /** Mockito mock of GrpcCallProvider. */
         public GrpcCallProvider mockGrpcCallProvider;
 
         private Instance(ComponentProvider componentProvider) {
             this.componentProvider = componentProvider;
         }
 
-        /**
-         * Queues work on AsyncQueue. This is required when faking responses from server since they
-         * must be handled through the AsyncQueue of the FirestoreClient.
-         */
-        public Task<Void> enqueue(Runnable runnable) {
-            return configuration.asyncQueue.enqueue(runnable);
-        }
-
-        /**
-         * Configuration passed to `ComponentProvider`
-         *
-         * <p>
-         * This is never null because `Task<Instance>` completes after initialization. The
-         * `FirebaseFirestoreIntegrationTestFactory` will set `Instance.configuration` from within
-         * the ComponentProvider override.
-         */
-        public ComponentProvider.Configuration configuration;
-
-        /** Every listen stream created */
-        public Task<TestClientCall<ListenRequest, ListenResponse>> getListenClient(int i) {
-            return listens.get(i);
-        }
-
-        /** Every write stream created */
-        public Task<TestClientCall<WriteRequest, WriteResponse>> getWriteClient(int i) {
-            return writes.get(i);
-        }
-
+    /**
+     * Queues work on AsyncQueue. This is required when faking responses from server since they
+     * must be handled through the AsyncQueue of the FirestoreClient.
+     */
+    public Task<Void> enqueue(Runnable runnable) {
+      return configuration.asyncQueue.enqueue(runnable);
     }
 
     /**
-     * The FirebaseFirestore instance.
+     * Configuration passed to `ComponentProvider`
+     *
+     * <p>
+     * This is never null because `Task<Instance>` completes after initialization. The
+     * `FirebaseFirestoreIntegrationTestFactory` will set `Instance.configuration` from within
+     * the ComponentProvider override.
      */
-    public final FirebaseFirestore firestore;
+    public ComponentProvider.Configuration configuration;
 
-    /**
-     * Mockito Mock of `FirebaseFirestore.InstanceRegistry` that was passed into FirebaseFirestore
-     * constructor.
-     */
-    public final FirebaseFirestore.InstanceRegistry instanceRegistry = mock(FirebaseFirestore.InstanceRegistry.class);
+    /** Every listen stream created */
+    public Task<TestClientCall<ListenRequest, ListenResponse>> getListenClient(int i) {
+      return listens.get(i);
+    }
+
+    /** Every write stream created */
+    public Task<TestClientCall<WriteRequest, WriteResponse>> getWriteClient(int i) {
+      return writes.get(i);
+    }
+  }
+
+  /**
+   * The FirebaseFirestore instance.
+   */
+  public final FirebaseFirestore firestore;
+
+  /**
+   * Mockito Mock of `FirebaseFirestore.InstanceRegistry` that was passed into FirebaseFirestore
+   * constructor.
+   */
+  public final FirebaseFirestore.InstanceRegistry instanceRegistry =
+      mock(FirebaseFirestore.InstanceRegistry.class);
 
     public FirebaseFirestoreIntegrationTestFactory(DatabaseId databaseId) {
         firestore = new FirebaseFirestore(
@@ -130,20 +132,20 @@ public final class FirebaseFirestoreIntegrationTestFactory {
                 "k",
                 EmptyCredentialsProvider::new,
                 EmptyAppCheckTokenProvider::new,
-                this::componentProvider,
-                null,
-                instanceRegistry,
-                null
-        );
-    }
+            this::componentProvider,
+            null,
+            instanceRegistry,
+            null);
+  }
 
-    public void useMemoryCache() {
-        FirebaseFirestoreSettings.Builder builder = new FirebaseFirestoreSettings.Builder(firestore.getFirestoreSettings());
-        builder.setLocalCacheSettings(MemoryCacheSettings.newBuilder().build());
-        firestore.setFirestoreSettings(builder.build());
-    }
+  public void useMemoryCache() {
+    FirebaseFirestoreSettings.Builder builder =
+        new FirebaseFirestoreSettings.Builder(firestore.getFirestoreSettings());
+    builder.setLocalCacheSettings(MemoryCacheSettings.newBuilder().build());
+    firestore.setFirestoreSettings(builder.build());
+  }
 
-    public void setClearPersistenceMethod(Function<Executor, Task<Void>> clearPersistenceMethod) {
+  public void setClearPersistenceMethod(Function<Executor, Task<Void>> clearPersistenceMethod) {
         firestore.clearPersistenceMethod = clearPersistenceMethod;
     }
 
@@ -154,21 +156,23 @@ public final class FirebaseFirestoreIntegrationTestFactory {
         when(mockGrpcCallProvider.createClientCall(eq(FirestoreGrpc.getWriteMethod())))
                 .thenAnswer(invocation -> Tasks.forResult(new TestClientCall<>(instance.writes.next())));
         instance.mockGrpcCallProvider = mockGrpcCallProvider;
-        return mockGrpcCallProvider;
-    }
+    return mockGrpcCallProvider;
+  }
 
-    private ComponentProvider componentProvider(FirebaseFirestoreSettings settings) {
-        TaskCompletionSource<Instance> next = instances.next();
-        ComponentProvider componentProvider = ComponentProvider.defaultFactory(settings);
-        Instance instance = new Instance(componentProvider);
-        componentProvider.setRemoteProvider(new RemoteComponenetProvider() {
-            @Override
-            protected GrpcCallProvider createGrpcCallProvider(ComponentProvider.Configuration configuration) {
-                instance.configuration = configuration;
-                next.setResult(instance);
-                return mockGrpcCallProvider(instance);
-            }
+  private ComponentProvider componentProvider(FirebaseFirestoreSettings settings) {
+    TaskCompletionSource<Instance> next = instances.next();
+    ComponentProvider componentProvider = ComponentProvider.defaultFactory(settings);
+    Instance instance = new Instance(componentProvider);
+    componentProvider.setRemoteProvider(
+        new RemoteComponenetProvider() {
+          @Override
+          protected GrpcCallProvider createGrpcCallProvider(
+              ComponentProvider.Configuration configuration) {
+            instance.configuration = configuration;
+            next.setResult(instance);
+            return mockGrpcCallProvider(instance);
+          }
         });
-        return componentProvider;
-    }
+    return componentProvider;
+  }
 }

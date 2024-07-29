@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.crashlytics.internal.persistence.FileStore.sanitizeName;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -29,6 +30,11 @@ public class FileStoreTest extends CrashlyticsTestCase {
   protected void setUp() throws Exception {
     super.setUp();
     fileStore = new FileStore(getContext());
+  }
+
+  public void testProcessName() {
+    // If this test fails, the test setup is missing a process name so fileStore is using v1.
+    assertThat(fileStore.processName).isEqualTo("com.google.firebase.crashlytics.test");
   }
 
   public void testGetCommonFile() {
@@ -128,9 +134,13 @@ public class FileStoreTest extends CrashlyticsTestCase {
     assertEquals(0, fileStore.getNativeReports().size());
   }
 
-  public void testSanitizeName() {
-    assertEquals(
-        "com.google.my.awesome.app_big.stuff.Happens_Here123___",
-        sanitizeName("com.google.my.awesome.app:big.stuff.Happens_Here123$%^"));
+  public void testSanitizeShortName() {
+    assertThat(sanitizeName("com.google.Process_Name123$%^"))
+        .isEqualTo("com.google.Process_Name123___");
+  }
+
+  public void testSanitizeLongName() {
+    assertThat(sanitizeName("com.google.my.awesome.app:big.stuff.Happens_Here123$%^"))
+        .isEqualTo("ef6c01fc7a1a8d10ecb062a81707f769d39d4210");
   }
 }

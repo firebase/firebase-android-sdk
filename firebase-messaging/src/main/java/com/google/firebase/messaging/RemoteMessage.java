@@ -344,6 +344,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       this.data.putAll(data);
       return this;
     }
+
     /** @hide */
     @NonNull
     public Map<String, String> getData() {

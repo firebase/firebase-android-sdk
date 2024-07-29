@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.CompositeFilter;
@@ -33,6 +34,7 @@ import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
+import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -726,7 +728,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("startAt", snapshot, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -740,7 +742,7 @@ public class Query {
    */
   @NonNull
   public Query startAt(Object... fieldValues) {
-    Bound bound = boundFromFields("startAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("startAt", fieldValues, /* inclusive= */ true);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -754,7 +756,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("startAfter", snapshot, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -769,7 +771,7 @@ public class Query {
    */
   @NonNull
   public Query startAfter(Object... fieldValues) {
-    Bound bound = boundFromFields("startAfter", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("startAfter", fieldValues, /* inclusive= */ false);
     return new Query(query.startAt(bound), firestore);
   }
 
@@ -783,7 +785,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /*inclusive=*/ false);
+    Bound bound = boundFromDocumentSnapshot("endBefore", snapshot, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -797,7 +799,7 @@ public class Query {
    */
   @NonNull
   public Query endBefore(Object... fieldValues) {
-    Bound bound = boundFromFields("endBefore", fieldValues, /*inclusive=*/ false);
+    Bound bound = boundFromFields("endBefore", fieldValues, /* inclusive= */ false);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -811,7 +813,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(@NonNull DocumentSnapshot snapshot) {
-    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /*inclusive=*/ true);
+    Bound bound = boundFromDocumentSnapshot("endAt", snapshot, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -825,7 +827,7 @@ public class Query {
    */
   @NonNull
   public Query endAt(Object... fieldValues) {
-    Bound bound = boundFromFields("endAt", fieldValues, /*inclusive=*/ true);
+    Bound bound = boundFromFields("endAt", fieldValues, /* inclusive= */ true);
     return new Query(query.endAt(bound), firestore);
   }
 
@@ -961,7 +963,8 @@ public class Query {
   public Task<QuerySnapshot> get(@NonNull Source source) {
     validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
-      return firestore.callClient(client -> client.getDocumentsFromLocalCache(query))
+      return firestore
+          .callClient(client -> client.getDocumentsFromLocalCache(query))
           .continueWith(
               Executors.DIRECT_EXECUTOR,
               (Task<ViewSnapshot> viewSnap) ->
@@ -1177,7 +1180,16 @@ public class Query {
     AsyncEventListener<ViewSnapshot> asyncListener =
         new AsyncEventListener<>(executor, viewListener);
 
-    return firestore.callClient(client -> client.listen(query, options, activity, asyncListener));
+    return firestore.callClient(
+        client -> {
+          QueryListener queryListener = client.listen(query, options, asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.stopListening(queryListener);
+              });
+        });
   }
 
   private void validateHasExplicitOrderByForLimitToLast() {

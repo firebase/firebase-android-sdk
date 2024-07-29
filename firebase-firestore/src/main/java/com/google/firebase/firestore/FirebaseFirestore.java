@@ -38,6 +38,7 @@ import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
@@ -276,8 +277,8 @@ public class FirebaseFirestore {
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
     checkNotNull(settings, "Provided settings must not be null.");
-    synchronized (clientProvider) {
-      settings = mergeEmulatorSettings(settings, this.emulatorSettings);
+    synchronized (databaseId) {
+      settings = mergeEmulatorSettings(settings, emulatorSettings);
 
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
@@ -725,7 +726,13 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> clearPersistence() {
-    return clientProvider.executeWhileShutdown(clearPersistenceMethod);
+    return clientProvider.executeIfShutdown(
+        clearPersistenceMethod,
+        executor ->
+            Tasks.forException(
+                new FirebaseFirestoreException(
+                    "Persistence cannot be cleared while the firestore instance is running.",
+                    FirebaseFirestoreException.Code.FAILED_PRECONDITION)));
   }
 
   /**
@@ -837,7 +844,8 @@ public class FirebaseFirestore {
   // TODO(b/261013682): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public @NonNull Task<Query> getNamedQuery(@NonNull String name) {
-    return clientProvider.call(client -> client.getNamedQuery(name))
+    return clientProvider
+        .call(client -> client.getNamedQuery(name))
         .continueWith(
             task -> {
               com.google.firebase.firestore.core.Query query = task.getResult();
@@ -868,7 +876,16 @@ public class FirebaseFirestore {
           runnable.run();
         };
     AsyncEventListener<Void> asyncListener = new AsyncEventListener<>(userExecutor, eventListener);
-    return clientProvider.call(client -> client.addSnapshotsInSyncListener(activity, asyncListener));
+    return clientProvider.call(
+        client -> {
+          client.addSnapshotsInSyncListener(asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.removeSnapshotsInSyncListener(asyncListener);
+              });
+        });
   }
 
   <T> T callClient(Function<FirestoreClient, T> call) {

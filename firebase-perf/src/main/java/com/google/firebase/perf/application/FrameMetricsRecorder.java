@@ -17,7 +17,6 @@ package com.google.firebase.perf.application;
 import android.app.Activity;
 import android.os.Build;
 import android.util.SparseIntArray;
-
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;

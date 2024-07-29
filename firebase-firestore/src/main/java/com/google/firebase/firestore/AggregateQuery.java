@@ -64,7 +64,9 @@ public class AggregateQuery {
   public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
     Preconditions.checkNotNull(source, "AggregateSource must not be null");
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
-    query.firestore.callClient(client -> client.runAggregateQuery(query.query, aggregateFieldList))
+    query
+        .firestore
+        .callClient(client -> client.runAggregateQuery(query.query, aggregateFieldList))
         .continueWith(
             Executors.DIRECT_EXECUTOR,
             (task) -> {

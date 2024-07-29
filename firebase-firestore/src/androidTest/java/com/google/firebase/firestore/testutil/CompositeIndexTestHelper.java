@@ -53,7 +53,7 @@ public class CompositeIndexTestHelper {
   private final String testId;
   private static final String TEST_ID_FIELD = "testId";
   private static final String TTL_FIELD = "expireAt";
-  private static final String COMPOSITE_INDEX_TEST_COLLECTION = "composite-index-test-collection";
+  public static final String COMPOSITE_INDEX_TEST_COLLECTION = "composite-index-test-collection";
 
   // Creates a new instance of the CompositeIndexTestHelper class, with a unique test
   // identifier for data isolation.
@@ -69,7 +69,7 @@ public class CompositeIndexTestHelper {
   // Runs a test with specified documents in the COMPOSITE_INDEX_TEST_COLLECTION.
   @NonNull
   public CollectionReference withTestDocs(@NonNull Map<String, Map<String, Object>> docs) {
-    CollectionReference writer = withTestCollection();
+    CollectionReference writer = testFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
     writeAllDocs(writer, prepareTestDocuments(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;

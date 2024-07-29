@@ -44,7 +44,6 @@ import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
 import androidx.test.core.app.ApplicationProvider;
-
 import com.google.firebase.messaging.shadows.ShadowPreconditions;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.TestImageServer;

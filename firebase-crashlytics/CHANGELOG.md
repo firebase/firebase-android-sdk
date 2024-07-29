@@ -1,5 +1,25 @@
 # Unreleased
+* [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is enabled.
+  ([Github #5919](//github.com/firebase/firebase-android-sdk/issues/5919))
+* [fixed] Ensure that on-demand fatal events are never processed on the main thread.
 
+
+# 19.0.3
+* [changed] Update the internal file system to handle long file names.
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 19.0.2
+* [changed] Changing caught exception type to fail safely on any exception type.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 19.0.1
 * [changed] Improve cold initialization time.

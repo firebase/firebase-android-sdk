@@ -612,7 +612,7 @@ public class RemoteStore implements WatchChangeAggregator.TargetMetadataProvider
                 targetData.getTarget(),
                 targetId,
                 targetData.getSequenceNumber(),
-                /*purpose=*/ entry.getValue());
+                /* purpose= */ entry.getValue());
         this.sendWatchRequest(requestTargetData);
       }
     }

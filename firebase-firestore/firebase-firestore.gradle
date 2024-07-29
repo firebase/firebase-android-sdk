@@ -24,7 +24,11 @@ firebaseLibrary {
     publishSources = true
     testLab {
         enabled = true
-        timeout = '30m'
+        timeout = '45m'
+    }
+    releaseNotes {
+        name.set("{{firestore}}")
+        versionName.set("firestore")
     }
 }
 

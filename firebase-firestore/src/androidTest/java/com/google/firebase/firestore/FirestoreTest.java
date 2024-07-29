@@ -1111,7 +1111,7 @@ public class FirestoreTest {
     assertSame(instance, sameInstance);
     waitFor(instance.document("abc/123").set(Collections.singletonMap("field", 100L)));
 
-    instance.terminate();
+    waitFor(instance.terminate());
     FirebaseFirestore newInstance = FirebaseFirestore.getInstance(app);
     newInstance.setFirestoreSettings(newTestSettings());
 

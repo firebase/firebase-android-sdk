@@ -28,7 +28,9 @@ firebaseLibrary {
   testLab.enabled = true
   publishSources = true
   publishJavadoc = false
-  publishReleaseNotes = false
+  releaseNotes { 
+    enabled.set(false)
+}
 }
 
 android {
@@ -61,23 +63,23 @@ dependencies {
   api("com.google.firebase:firebase-common-ktx:21.0.0")
 
   api("com.google.firebase:firebase-components:18.0.0")
-  api("com.google.firebase:firebase-installations-interop:17.1.1") {
+  api("com.google.firebase:firebase-installations-interop:17.2.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
   implementation("androidx.datastore:datastore-preferences:1.0.0")
-  implementation("com.google.android.datatransport:transport-api:3.0.0")
+  implementation("com.google.android.datatransport:transport-api:3.2.0")
   api("com.google.firebase:firebase-annotations:16.2.0")
   api("com.google.firebase:firebase-encoders:17.0.0")
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
   compileOnly(libs.errorprone.annotations)
 
-  runtimeOnly("com.google.firebase:firebase-installations:17.2.0") {
+  runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8") {
+  runtimeOnly("com.google.firebase:firebase-datatransport:19.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }

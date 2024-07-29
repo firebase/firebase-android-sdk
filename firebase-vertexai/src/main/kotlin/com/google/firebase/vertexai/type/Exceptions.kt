@@ -134,12 +134,16 @@ class RequestTimeoutException(message: String, cause: Throwable? = null) :
  * The specified Vertex AI location is invalid.
  *
  * For a list of valid locations, see
- * [Vertex AI locations](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
+ * [Vertex AI locations.](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
  */
 class InvalidLocationException(location: String, cause: Throwable? = null) :
   FirebaseVertexAIException("Invalid location \"${location}\"", cause)
 
-/** The service is not enabled for this project. Visit the Firebase Console to enable it. */
+/**
+ * The service is not enabled for this Firebase project. Learn how to enable the required services
+ * in the
+ * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/faq-and-troubleshooting#required-apis)
+ */
 class ServiceDisabledException(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 

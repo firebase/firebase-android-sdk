@@ -41,7 +41,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.auth.User;
@@ -330,19 +329,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             databaseInfo,
             currentUser,
             maxConcurrentLimboResolutions,
-            new FirebaseFirestoreSettings.Builder().build(),
             new EmptyCredentialsProvider(),
             new EmptyAppCheckTokenProvider(),
-            null
-        );
+            null);
 
-    RemoteComponenetProvider remoteProvider = new RemoteComponenetProvider() {
-      @Override
-      protected Datastore createDatastore(ComponentProvider.Configuration configuration) {
-        return datastore;
-      }
-    };
-    ComponentProvider provider = initializeComponentProvider(remoteProvider, configuration, useEagerGcForMemory);
+    RemoteComponenetProvider remoteProvider =
+        new RemoteComponenetProvider() {
+          @Override
+          protected Datastore createDatastore(ComponentProvider.Configuration configuration) {
+            return datastore;
+          }
+        };
+    ComponentProvider provider =
+        initializeComponentProvider(remoteProvider, configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
     if (localPersistence.getReferenceDelegate() instanceof LruDelegate) {
       lruGarbageCollector =
