@@ -43,7 +43,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `short reply`() =
-    goldenStreamingFile("success-basic-reply-short.txt") {
+    goldenStreamingFile("streaming-success-basic-reply-short.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -57,7 +57,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `long reply`() =
-    goldenStreamingFile("success-basic-reply-long.txt") {
+    goldenStreamingFile("streaming-success-basic-reply-long.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -73,7 +73,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `unknown enum`() =
-    goldenStreamingFile("success-unknown-enum.txt") {
+    goldenStreamingFile("streaming-success-unknown-enum.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -88,7 +88,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `unknown enum in finish reason`() =
-    goldenStreamingFile("failure-unknown-finish-enum.txt") {
+    goldenStreamingFile("streaming-failure-unknown-finish-enum.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -99,7 +99,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `quotes escaped`() =
-    goldenStreamingFile("success-quotes-escaped.txt") {
+    goldenStreamingFile("streaming-success-quotes-escaped.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -114,7 +114,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `prompt blocked for safety`() =
-    goldenStreamingFile("failure-prompt-blocked-safety.txt") {
+    goldenStreamingFile("streaming-failure-prompt-blocked-safety.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -125,7 +125,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `empty content`() =
-    goldenStreamingFile("failure-empty-content.txt") {
+    goldenStreamingFile("streaming-failure-empty-content.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<SerializationException> { responses.collect() } }
@@ -133,7 +133,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `http errors`() =
-    goldenStreamingFile("failure-http-error.txt", HttpStatusCode.PreconditionFailed) {
+    goldenStreamingFile("streaming-failure-http-error.txt", HttpStatusCode.PreconditionFailed) {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<ServerException> { responses.collect() } }
@@ -141,7 +141,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `stopped for safety`() =
-    goldenStreamingFile("failure-finish-reason-safety.txt") {
+    goldenStreamingFile("streaming-failure-finish-reason-safety.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -152,7 +152,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `citation parsed correctly`() =
-    goldenStreamingFile("success-citations.txt") {
+    goldenStreamingFile("streaming-success-citations.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -163,7 +163,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `stopped for recitation`() =
-    goldenStreamingFile("failure-recitation-no-content.txt") {
+    goldenStreamingFile("streaming-failure-recitation-no-content.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -174,7 +174,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `image rejected`() =
-    goldenStreamingFile("failure-image-rejected.txt", HttpStatusCode.BadRequest) {
+    goldenStreamingFile("streaming-failure-image-rejected.txt", HttpStatusCode.BadRequest) {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<ServerException> { responses.collect() } }
@@ -182,7 +182,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `unknown model`() =
-    goldenStreamingFile("failure-unknown-model.txt", HttpStatusCode.NotFound) {
+    goldenStreamingFile("streaming-failure-unknown-model.txt", HttpStatusCode.NotFound) {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<ServerException> { responses.collect() } }
@@ -190,7 +190,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `invalid api key`() =
-    goldenStreamingFile("failure-api-key.txt", HttpStatusCode.BadRequest) {
+    goldenStreamingFile("streaming-failure-api-key.txt", HttpStatusCode.BadRequest) {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<InvalidAPIKeyException> { responses.collect() } }
@@ -198,7 +198,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `invalid json`() =
-    goldenStreamingFile("failure-invalid-json.txt") {
+    goldenStreamingFile("streaming-failure-invalid-json.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<SerializationException> { responses.collect() } }
@@ -206,7 +206,7 @@ internal class StreamingSnapshotTests {
 
   @Test
   fun `malformed content`() =
-    goldenStreamingFile("failure-malformed-content.txt") {
+    goldenStreamingFile("streaming-failure-malformed-content.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) { shouldThrow<SerializationException> { responses.collect() } }

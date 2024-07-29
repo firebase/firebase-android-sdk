@@ -32,8 +32,12 @@ import java.util.concurrent.Executor;
  * that would create a deadlock. In such a case, the worker can return a Task that depends on the
  * future work, and run the future work on the executor's thread, but not put it in the queue as its
  * own worker.
+ *
+ * @deprecated Use the generic CrashlyticsWorker instead.
  */
+@Deprecated
 public class CrashlyticsBackgroundWorker {
+  // TODO(mrober): Clean this up after moving everything to the generic CrashlyticsWorker.
   private final Executor executor;
 
   private Task<Void> tail = Tasks.forResult(null);

@@ -118,7 +118,7 @@ internal fun goldenStreamingFile(
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
 ) = doBlocking {
-  val goldenFile = loadGoldenFile("streaming-$name")
+  val goldenFile = loadGoldenFile(name)
   val messages = goldenFile.readLines().filter { it.isNotBlank() }
 
   commonTest(httpStatusCode) {
@@ -149,7 +149,7 @@ internal fun goldenUnaryFile(
   block: CommonTest,
 ) =
   commonTest(httpStatusCode) {
-    val goldenFile = loadGoldenFile("unary-$name")
+    val goldenFile = loadGoldenFile(name)
     val message = goldenFile.readText()
 
     channel.send(message.toByteArray())

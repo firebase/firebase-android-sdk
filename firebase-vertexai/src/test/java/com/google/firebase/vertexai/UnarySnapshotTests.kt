@@ -52,7 +52,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `short reply`() =
-    goldenUnaryFile("success-basic-reply-short.json") {
+    goldenUnaryFile("unary-success-basic-reply-short.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -65,7 +65,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `long reply`() =
-    goldenUnaryFile("success-basic-reply-long.json") {
+    goldenUnaryFile("unary-success-basic-reply-long.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -78,7 +78,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `unknown enum`() =
-    goldenUnaryFile("success-unknown-enum.json") {
+    goldenUnaryFile("unary-success-unknown-enum.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -92,7 +92,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `unknown enum in finish reason`() =
-    goldenUnaryFile("failure-unknown-enum-finish-reason.json") {
+    goldenUnaryFile("unary-failure-unknown-enum-finish-reason.json") {
       withTimeout(testTimeout) {
         shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
           {
@@ -103,7 +103,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `unknown enum in block reason`() =
-    goldenUnaryFile("failure-unknown-enum-prompt-blocked.json") {
+    goldenUnaryFile("unary-failure-unknown-enum-prompt-blocked.json") {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
@@ -114,7 +114,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `quotes escaped`() =
-    goldenUnaryFile("success-quote-reply.json") {
+    goldenUnaryFile("unary-success-quote-reply.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -127,7 +127,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `safetyRatings missing`() =
-    goldenUnaryFile("success-missing-safety-ratings.json") {
+    goldenUnaryFile("unary-success-missing-safety-ratings.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -140,7 +140,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `safetyRatings including severity`() =
-    goldenUnaryFile("success-including-severity.json") {
+    goldenUnaryFile("unary-success-including-severity.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -158,7 +158,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `prompt blocked for safety`() =
-    goldenUnaryFile("failure-prompt-blocked-safety.json") {
+    goldenUnaryFile("unary-failure-prompt-blocked-safety.json") {
       withTimeout(testTimeout) {
         shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
           {
@@ -169,7 +169,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `empty content`() =
-    goldenUnaryFile("failure-empty-content.json") {
+    goldenUnaryFile("unary-failure-empty-content.json") {
       withTimeout(testTimeout) {
         shouldThrow<SerializationException> { model.generateContent("prompt") }
       }
@@ -177,13 +177,16 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `http error`() =
-    goldenUnaryFile("failure-http-error.json", HttpStatusCode.PreconditionFailed) {
+    goldenUnaryFile("unary-failure-http-error.json", HttpStatusCode.PreconditionFailed) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.generateContent("prompt") } }
     }
 
   @Test
   fun `user location error`() =
-    goldenUnaryFile("failure-unsupported-user-location.json", HttpStatusCode.PreconditionFailed) {
+    goldenUnaryFile(
+      "unary-failure-unsupported-user-location.json",
+      HttpStatusCode.PreconditionFailed
+    ) {
       withTimeout(testTimeout) {
         shouldThrow<UnsupportedUserLocationException> { model.generateContent("prompt") }
       }
@@ -191,7 +194,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `stopped for safety`() =
-    goldenUnaryFile("failure-finish-reason-safety.json") {
+    goldenUnaryFile("unary-failure-finish-reason-safety.json") {
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { model.generateContent("prompt") }
         exception.response.candidates.first().finishReason shouldBe FinishReason.SAFETY
@@ -200,7 +203,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `stopped for safety with no content`() =
-    goldenUnaryFile("failure-finish-reason-safety-no-content.json") {
+    goldenUnaryFile("unary-failure-finish-reason-safety-no-content.json") {
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { model.generateContent("prompt") }
         exception.response.candidates.first().finishReason shouldBe FinishReason.SAFETY
@@ -209,7 +212,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `citation returns correctly`() =
-    goldenUnaryFile("success-citations.json") {
+    goldenUnaryFile("unary-success-citations.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -220,7 +223,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `citation returns correctly with missing license and startIndex`() =
-    goldenUnaryFile("success-citations-nolicense.json") {
+    goldenUnaryFile("unary-success-citations-nolicense.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -236,7 +239,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `response includes usage metadata`() =
-    goldenUnaryFile("success-usage-metadata.json") {
+    goldenUnaryFile("unary-success-usage-metadata.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -249,7 +252,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `response includes partial usage metadata`() =
-    goldenUnaryFile("success-partial-usage-metadata.json") {
+    goldenUnaryFile("unary-success-partial-usage-metadata.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -263,7 +266,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `properly translates json text`() =
-    goldenUnaryFile("success-constraint-decoding-json.json") {
+    goldenUnaryFile("unary-success-constraint-decoding-json.json") {
       val response = model.generateContent("prompt")
 
       response.candidates.isEmpty() shouldBe false
@@ -283,7 +286,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `invalid response`() =
-    goldenUnaryFile("failure-invalid-response.json") {
+    goldenUnaryFile("unary-failure-invalid-response.json") {
       withTimeout(testTimeout) {
         shouldThrow<SerializationException> { model.generateContent("prompt") }
       }
@@ -291,7 +294,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `malformed content`() =
-    goldenUnaryFile("failure-malformed-content.json") {
+    goldenUnaryFile("unary-failure-malformed-content.json") {
       withTimeout(testTimeout) {
         shouldThrow<SerializationException> { model.generateContent("prompt") }
       }
@@ -299,7 +302,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `invalid api key`() =
-    goldenUnaryFile("failure-api-key.json", HttpStatusCode.BadRequest) {
+    goldenUnaryFile("unary-failure-api-key.json", HttpStatusCode.BadRequest) {
       withTimeout(testTimeout) {
         shouldThrow<InvalidAPIKeyException> { model.generateContent("prompt") }
       }
@@ -307,19 +310,19 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `image rejected`() =
-    goldenUnaryFile("failure-image-rejected.json", HttpStatusCode.BadRequest) {
+    goldenUnaryFile("unary-failure-image-rejected.json", HttpStatusCode.BadRequest) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.generateContent("prompt") } }
     }
 
   @Test
   fun `unknown model`() =
-    goldenUnaryFile("failure-unknown-model.json", HttpStatusCode.NotFound) {
+    goldenUnaryFile("unary-failure-unknown-model.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.generateContent("prompt") } }
     }
 
   @Test
   fun `service disabled`() =
-    goldenUnaryFile("failure-service-disabled.json", HttpStatusCode.Forbidden) {
+    goldenUnaryFile("unary-failure-service-disabled.json", HttpStatusCode.Forbidden) {
       withTimeout(testTimeout) {
         shouldThrow<ServiceDisabledException> { model.generateContent("prompt") }
       }
@@ -327,7 +330,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `function call contains null param`() =
-    goldenUnaryFile("success-function-call-null.json") {
+    goldenUnaryFile("unary-success-function-call-null.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
         val callPart = (response.candidates.first().content.parts.first() as FunctionCallPart)
@@ -338,7 +341,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `function call contains json literal`() =
-    goldenUnaryFile("success-function-call-json-literal.json") {
+    goldenUnaryFile("unary-success-function-call-json-literal.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
         val content = response.candidates.shouldNotBeNullOrEmpty().first().content
@@ -355,7 +358,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `function call contains no arguments`() =
-    goldenUnaryFile("success-function-call-no-arguments.json") {
+    goldenUnaryFile("unary-success-function-call-no-arguments.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
@@ -367,7 +370,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `function call contains arguments`() =
-    goldenUnaryFile("success-function-call-with-arguments.json") {
+    goldenUnaryFile("unary-success-function-call-with-arguments.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
@@ -380,7 +383,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `function call with parallel calls`() =
-    goldenUnaryFile("success-function-call-parallel-calls.json") {
+    goldenUnaryFile("unary-success-function-call-parallel-calls.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
         val callList = response.functionCalls
@@ -395,7 +398,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `function call with mixed content`() =
-    goldenUnaryFile("success-function-call-mixed-content.json") {
+    goldenUnaryFile("unary-success-function-call-mixed-content.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
         val callList = response.functionCalls
@@ -408,7 +411,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `countTokens succeeds`() =
-    goldenUnaryFile("success-total-tokens.json") {
+    goldenUnaryFile("unary-success-total-tokens.json") {
       withTimeout(testTimeout) {
         val response = model.countTokens("prompt")
 
@@ -419,7 +422,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `countTokens succeeds with no billable characters`() =
-    goldenUnaryFile("success-no-billable-characters.json") {
+    goldenUnaryFile("unary-success-no-billable-characters.json") {
       withTimeout(testTimeout) {
         val response = model.countTokens("prompt")
 
@@ -430,7 +433,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `countTokens fails with model not found`() =
-    goldenUnaryFile("failure-model-not-found.json", HttpStatusCode.NotFound) {
+    goldenUnaryFile("unary-failure-model-not-found.json", HttpStatusCode.NotFound) {
       withTimeout(testTimeout) { shouldThrow<ServerException> { model.countTokens("prompt") } }
     }
 }

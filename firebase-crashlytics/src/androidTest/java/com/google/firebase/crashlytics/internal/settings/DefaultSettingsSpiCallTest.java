@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.settings;
 
 import static org.mockito.Mockito.*;
 
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
 
@@ -83,7 +85,8 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
               }
             });
 
-    assertNotNull(call.invoke(requestData, true));
+    Future<?> future = TestOnlyExecutors.blocking().submit(() -> call.invoke(requestData, true));
+    assertNotNull(future.get());
 
     assertEquals(url, request.getUrl());
 
@@ -128,7 +131,8 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
               }
             });
 
-    assertNotNull(call.invoke(requestData, true));
+    Future<?> future = TestOnlyExecutors.blocking().submit(() -> call.invoke(requestData, true));
+    assertNotNull(future.get());
 
     assertEquals(url, request.getUrl());
 

@@ -17,8 +17,10 @@ package com.google.firebase.crashlytics.internal.common;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.annotation.SuppressLint;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Locale;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,6 +35,10 @@ public final class ExecutorUtils {
   private static final long DEFAULT_TERMINATION_TIMEOUT = 2L;
 
   private ExecutorUtils() {}
+
+  public static Executor buildSequentialExecutor(Executor commonExecutor) {
+    return FirebaseExecutors.newSequentialExecutor(commonExecutor);
+  }
 
   public static ExecutorService buildSingleThreadExecutorService(String name) {
     final ThreadFactory threadFactory = ExecutorUtils.getNamedThreadFactory(name);
