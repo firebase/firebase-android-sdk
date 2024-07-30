@@ -507,13 +507,14 @@ public class QueryTest {
 
     Semaphore receivedDocument = new Semaphore(0);
 
-    ListenerRegistration listener = collectionReference.addSnapshotListener(
-        MetadataChanges.INCLUDE,
-        (snapshot, error) -> {
-          if (!snapshot.isEmpty() && !snapshot.getMetadata().isFromCache()) {
-            receivedDocument.release();
-          }
-        });
+    ListenerRegistration listener =
+        collectionReference.addSnapshotListener(
+            MetadataChanges.INCLUDE,
+            (snapshot, error) -> {
+              if (!snapshot.isEmpty() && !snapshot.getMetadata().isFromCache()) {
+                receivedDocument.release();
+              }
+            });
 
     waitFor(firestore.disableNetwork());
     collectionReference.add(map("foo", FieldValue.serverTimestamp()));
