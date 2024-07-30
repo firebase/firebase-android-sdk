@@ -40,16 +40,6 @@ public class EventAccumulator<T> {
 
   public EventListener<T> listener() {
     return (value, error) -> {
-      hardAssert(error == null, "Unexpected error: %s", error);
-      hardAssert(
-          !rejectAdditionalEvents, "Received event after `assertNoAdditionalEvents()` was called");
-      Logger.debug("EventAccumulator", "Received new event: " + value);
-      events.add(value);
-    };
-  }
-
-  public EventListener<T> errorListener() {
-    return (value, error) -> {
       hardAssert(
           !rejectAdditionalEvents, "Received event after `assertNoAdditionalEvents()` was called");
       if (error == null) {
@@ -77,7 +67,7 @@ public class EventAccumulator<T> {
       for (int i = 0; i < numEvents; ++i) {
         Object event = events.take();
         if (event instanceof FirebaseFirestoreException) {
-          throw new RuntimeException((FirebaseFirestoreException) event);
+          fail("Unexpected error: %s", event);
         }
         result.add((T) event);
       }

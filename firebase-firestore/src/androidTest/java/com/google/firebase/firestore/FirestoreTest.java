@@ -1258,8 +1258,7 @@ public class FirestoreTest {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
     EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
-    ListenerRegistration registration =
-        reference.addSnapshotListener(eventAccumulator.errorListener());
+    ListenerRegistration registration = reference.addSnapshotListener(eventAccumulator.listener());
     eventAccumulator.await();
 
     waitFor(instance.terminate());
