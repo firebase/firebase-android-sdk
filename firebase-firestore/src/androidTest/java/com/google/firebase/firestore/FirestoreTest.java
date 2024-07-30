@@ -1264,10 +1264,7 @@ public class FirestoreTest {
 
     waitFor(instance.terminate());
 
-    FirebaseFirestoreException error =
-        assertThrows(FirebaseFirestoreException.class, eventAccumulator::awaitError);
-
-    assertEquals(error.getCode(), Code.ABORTED);
+    assertEquals(eventAccumulator.awaitError().getCode(), Code.ABORTED);
 
     // This should proceed without error.
     registration.remove();
