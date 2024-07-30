@@ -1270,6 +1270,26 @@ public class FirestoreTest {
   }
 
   @Test
+  public void testQueryListenerThrowsErrorOnTermination() {
+    FirebaseFirestore instance = testFirestore();
+    DocumentReference reference = instance.document("abc/123");
+    EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
+    ListenerRegistration registration =
+        reference.addSnapshotListener(eventAccumulator.errorListener());
+    eventAccumulator.await();
+
+    waitFor(instance.terminate());
+
+    FirebaseFirestoreException error =
+        assertThrows(FirebaseFirestoreException.class, eventAccumulator::awaitError);
+
+    assertEquals(error.getCode(), Code.ABORTED);
+
+    // This should proceed without error.
+    registration.remove();
+  }
+
+  @Test
   public void testWaitForPendingWritesResolves() {
     DocumentReference documentReference = testCollection("abc").document("123");
     FirebaseFirestore firestore = documentReference.getFirestore();
