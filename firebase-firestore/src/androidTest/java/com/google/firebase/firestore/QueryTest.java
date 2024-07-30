@@ -507,7 +507,7 @@ public class QueryTest {
 
     Semaphore receivedDocument = new Semaphore(0);
 
-    collectionReference.addSnapshotListener(
+    ListenerRegistration listener = collectionReference.addSnapshotListener(
         MetadataChanges.INCLUDE,
         (snapshot, error) -> {
           if (!snapshot.isEmpty() && !snapshot.getMetadata().isFromCache()) {
@@ -520,6 +520,8 @@ public class QueryTest {
     waitFor(firestore.enableNetwork());
 
     waitFor(receivedDocument);
+
+    listener.remove();
   }
 
   @Test
