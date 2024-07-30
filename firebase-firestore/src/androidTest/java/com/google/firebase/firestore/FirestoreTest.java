@@ -1258,24 +1258,7 @@ public class FirestoreTest {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
     EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
-    ListenerRegistration registration = reference.addSnapshotListener(eventAccumulator.listener());
-    eventAccumulator.await();
-
-    waitFor(instance.terminate());
-
-    // This should proceed without error.
-    registration.remove();
-    // Multiple calls should proceed as an effectively no-op.
-    registration.remove();
-  }
-
-  @Test
-  public void testQueryListenerThrowsErrorOnTermination() {
-    FirebaseFirestore instance = testFirestore();
-    DocumentReference reference = instance.document("abc/123");
-    EventAccumulator<DocumentSnapshot> eventAccumulator = new EventAccumulator<>();
-    ListenerRegistration registration =
-        reference.addSnapshotListener(eventAccumulator.errorListener());
+    ListenerRegistration registration = reference.addSnapshotListener(eventAccumulator.errorListener());
     eventAccumulator.await();
 
     waitFor(instance.terminate());
@@ -1286,6 +1269,8 @@ public class FirestoreTest {
     assertEquals(error.getCode(), Code.ABORTED);
 
     // This should proceed without error.
+    registration.remove();
+    // Multiple calls should proceed as an effectively no-op.
     registration.remove();
   }
 
