@@ -96,8 +96,8 @@ public class CrashlyticsCore {
 
   private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
 
-  @VisibleForTesting final CrashlyticsWorker commonWorker;
-  @VisibleForTesting final CrashlyticsWorker diskWriteWorker;
+  private final CrashlyticsWorker commonWorker;
+  private final CrashlyticsWorker diskWriteWorker;
 
   // region Constructors
 
@@ -338,7 +338,11 @@ public class CrashlyticsCore {
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    diskWriteWorker.submit(() -> controller.writeToLog(timestamp, msg));
+    // queuing up on common worker to maintain the order
+    commonWorker.submit(
+        () -> {
+          diskWriteWorker.submit(() -> controller.writeToLog(timestamp, msg));
+        });
   }
 
   public void setUserId(String identifier) {

@@ -48,10 +48,10 @@ import java.util.SortedSet;
 import java.util.concurrent.Executor;
 
 /**
- * This class handles Crashlytics lifecycle events and coordinates session data capture and
+ * This class coordinates Crashlytics session data capture and
  * persistence, as well as sending of reports to Firebase Crashlytics.
  */
-public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
+public class SessionReportingCoordinator {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
@@ -95,7 +95,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final UserMetadata reportMetadata;
   private final IdManager idManager;
 
-  final CrashlyticsWorker diskWriteWorker;
+  private final CrashlyticsWorker diskWriteWorker;
 
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
@@ -114,7 +114,6 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     this.diskWriteWorker = diskWriteWorker;
   }
 
-  @Override
   public void onBeginSession(@NonNull String sessionId, long timestampSeconds) {
     final CrashlyticsReport capturedReport =
         dataCapture.captureReportData(sessionId, timestampSeconds);
@@ -323,7 +322,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       @NonNull String sessionId,
       @NonNull String eventType,
       long timestamp,
-      boolean includeAllThreads) {
+      boolean isFatal) {
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
@@ -335,12 +334,11 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             timestamp,
             EVENT_THREAD_IMPORTANCE,
             MAX_CHAINED_EXCEPTION_DEPTH,
-            includeAllThreads);
+            isFatal);
     CrashlyticsReport.Session.Event finallizedEvent = addMetaDataToEvent(capturedEvent);
 
-    // Non-fatal case, non-fatal does not include all threads
-    // We move to diskWriteWorker for persistence
-    if (!includeAllThreads) {
+    // Non-fatal, persistence write task we move to diskWriteWorker
+    if (!isFatal) {
       diskWriteWorker.submit(
           () -> {
             reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
