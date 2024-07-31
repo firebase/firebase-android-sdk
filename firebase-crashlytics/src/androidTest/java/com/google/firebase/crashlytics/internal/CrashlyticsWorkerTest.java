@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
@@ -518,6 +519,149 @@ public class CrashlyticsWorkerTest {
     // Verify the list is complete and in order.
     assertThat(list).isInOrder();
     assertThat(list).hasSize(7);
+  }
+
+  @Test
+  public void raceReturnsFirstResult() throws Exception {
+    // Create 2 tasks on different workers to race.
+    Task<String> task1 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submit(
+                () -> {
+                  sleep(200);
+                  return "first";
+                });
+    Task<String> task2 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submit(
+                () -> {
+                  sleep(400);
+                  return "slow";
+                });
+
+    Task<String> task = crashlyticsWorker.race(task1, task2);
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo("first");
+  }
+
+  @Test
+  public void raceReturnsFirstException() {
+    // Create 2 tasks on different workers to race.
+    Task<String> task1 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submitTask(
+                () -> {
+                  sleep(200);
+                  return Tasks.forException(new ArithmeticException());
+                });
+    Task<String> task2 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submitTask(
+                () -> {
+                  sleep(400);
+                  return Tasks.forException(new IllegalStateException());
+                });
+
+    Task<String> task = crashlyticsWorker.race(task1, task2);
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+
+    // The first task throws an ArithmeticException.
+    assertThat(thrown).hasCauseThat().isInstanceOf(ArithmeticException.class);
+  }
+
+  @Test
+  public void raceFirstCancelsReturnsSecondResult() throws Exception {
+    // Create 2 tasks on different workers to race.
+    Task<String> task1 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submitTask(
+                () -> {
+                  sleep(200);
+                  return Tasks.forCanceled();
+                });
+    Task<String> task2 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submitTask(
+                () -> {
+                  sleep(400);
+                  return Tasks.forResult("I am slow but didn't cancel.");
+                });
+
+    Task<String> task = crashlyticsWorker.race(task1, task2);
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo("I am slow but didn't cancel.");
+  }
+
+  @Test
+  public void raceBothCancel() {
+    // Create 2 tasks on different workers to race.
+    Task<String> task1 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submitTask(
+                () -> {
+                  sleep(200);
+                  return Tasks.forCanceled();
+                });
+    Task<String> task2 =
+        new CrashlyticsWorker(TestOnlyExecutors.background())
+            .submitTask(
+                () -> {
+                  sleep(400);
+                  return Tasks.forCanceled();
+                });
+
+    Task<String> task = crashlyticsWorker.race(task1, task2);
+
+    // Both cancelled, so cancel the race result.
+    assertThrows(CancellationException.class, () -> Tasks.await(task));
+  }
+
+  @Test
+  public void raceTasksOnSameWorker() throws Exception {
+    // Create 2 tasks on this worker to race.
+    Task<String> task1 = crashlyticsWorker.submit(() -> "first");
+    Task<String> task2 = crashlyticsWorker.submit(() -> "second");
+
+    Task<String> task = crashlyticsWorker.race(task1, task2);
+    String result = Tasks.await(task);
+
+    // The first task is submitted to this worker first, so will always be first.
+    assertThat(result).isEqualTo("first");
+  }
+
+  @Test
+  public void raceTaskOneOnSameWorkerAnotherNeverCompletes() throws Exception {
+    // Create a task on this worker, and another that never completes, to race.
+    Task<String> task1 = crashlyticsWorker.submit(() -> "first");
+    Task<String> task2 = new TaskCompletionSource<String>().getTask();
+
+    Task<String> task = crashlyticsWorker.race(task1, task2);
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo("first");
+  }
+
+  @Test
+  public void raceTaskOneOnSameWorkerAnotherOtherThatCompletesFirst() throws Exception {
+    // Add a decoy task to the worker to take up some time.
+    crashlyticsWorker.submitTask(
+        () -> {
+          sleep(200);
+          return Tasks.forResult(null);
+        });
+
+    // Create a task on this worker, and another, to race.
+    Task<String> task1 = crashlyticsWorker.submit(() -> "same worker");
+    TaskCompletionSource<String> task2 = new TaskCompletionSource<>();
+    task2.trySetResult("other");
+
+    Task<String> task = crashlyticsWorker.race(task1, task2.getTask());
+    String result = Tasks.await(task);
+
+    // The other tasks completes first because the first task is queued up later on the worker.
+    assertThat(result).isEqualTo("other");
   }
 
   private static void sleep(long millis) {
