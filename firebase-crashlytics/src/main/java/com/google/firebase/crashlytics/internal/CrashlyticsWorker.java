@@ -17,8 +17,10 @@
 package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -60,6 +62,7 @@ public class CrashlyticsWorker {
    * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the
    * callable, or throws an <code>ExecutionException</code> if the callable throws an exception.
    */
+  @CanIgnoreReturnValue
   public <T> Task<T> submit(Callable<T> callable) {
     synchronized (tailLock) {
       // Do not propagate a cancellation.
@@ -79,6 +82,7 @@ public class CrashlyticsWorker {
    * <p>Returns a <code>Task</code> which will be resolved with null upon successful completion of
    * the runnable, or throws an <code>ExecutionException</code> if the runnable throws an exception.
    */
+  @CanIgnoreReturnValue
   public Task<Void> submit(Runnable runnable) {
     synchronized (tailLock) {
       // Do not propagate a cancellation.
@@ -108,10 +112,36 @@ public class CrashlyticsWorker {
    * returned by the callable, throws an <code>ExecutionException</code> if the callable throws an
    * exception, or throws a <code>CancellationException</code> if the task is cancelled.
    */
+  @CanIgnoreReturnValue
   public <T> Task<T> submitTask(Callable<Task<T>> callable) {
     synchronized (tailLock) {
       // Chain the new callable task onto the queue's tail, regardless of cancellation.
       Task<T> result = tail.continueWithTask(executor, task -> callable.call());
+      tail = result;
+      return result;
+    }
+  }
+
+  /**
+   * Submits a <code>Callable</code> <code>Task</code> followed by a <code>Continuation</code> for
+   * asynchronous execution on the executor.
+   *
+   * <p>This is useful for submitting a task that must be immediately followed by another task,
+   * regardless of more tasks being submitted in parallel. For example, settings.
+   *
+   * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the Task
+   * returned by the callable and continued by the continuation, throws an <code>ExecutionException
+   * </code> if either task throws an exception, or throws a <code>CancellationException</code> if
+   * either task is cancelled.
+   */
+  @CanIgnoreReturnValue
+  public <T, R> Task<R> submitTask(
+      Callable<Task<T>> callable, Continuation<T, Task<R>> continuation) {
+    synchronized (tailLock) {
+      // Chain the new callable task and continuation onto the queue's tail.
+      Task<R> result =
+          tail.continueWithTask(executor, task -> callable.call())
+              .continueWithTask(executor, continuation);
       tail = result;
       return result;
     }

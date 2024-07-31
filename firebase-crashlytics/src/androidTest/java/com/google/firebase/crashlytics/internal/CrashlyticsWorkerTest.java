@@ -421,6 +421,105 @@ public class CrashlyticsWorkerTest {
     assertThrows(TimeoutException.class, () -> Tasks.await(task, 30, TimeUnit.MILLISECONDS));
   }
 
+  @Test
+  public void submitTaskThatReturnsWithContinuation() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            () -> Tasks.forResult(1337),
+            task -> Tasks.forResult(Integer.toString(task.getResult())));
+
+    assertThat(Tasks.await(result)).isEqualTo("1337");
+  }
+
+  @Test
+  public void submitTaskThatThrowsWithContinuation() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            () -> Tasks.forException(new IndexOutOfBoundsException("Sometimes we look too far.")),
+            task -> {
+              if (task.getException() != null) {
+                return Tasks.forResult("Task threw.");
+              }
+              return Tasks.forResult("I dunno how I got here?");
+            });
+
+    assertThat(Tasks.await(result)).isEqualTo("Task threw.");
+  }
+
+  @Test
+  public void submitTaskWithContinuationThatThrows() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            () -> Tasks.forResult(7), task -> Tasks.forException(new IOException()));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(result));
+
+    assertThat(thrown).hasCauseThat().isInstanceOf(IOException.class);
+
+    // Verify the worker still executes tasks after the continuation threw.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> 42))).isEqualTo(42);
+  }
+
+  @Test
+  public void submitTaskThatCancelsWithContinuation() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            Tasks::forCanceled,
+            task -> Tasks.forResult(task.isCanceled() ? "Task cancelled." : "What?"));
+
+    assertThat(Tasks.await(result)).isEqualTo("Task cancelled.");
+  }
+
+  @Test
+  public void submitTaskWithContinuationThatCancels() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(() -> Tasks.forResult(7), task -> Tasks.forCanceled());
+
+    assertThrows(CancellationException.class, () -> Tasks.await(result));
+
+    // Verify the worker still executes tasks after the continuation was cancelled.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> "jk"))).isEqualTo("jk");
+  }
+
+  @Test
+  public void submitTaskWithContinuationExecutesInOrder() throws Exception {
+    // The integers added to the list represent the order they should be executed in.
+    List<Integer> list = new ArrayList<>();
+
+    // Start the chain which adds 1, then kicks off tasks to add 6 & 7 later, but adds 2 before
+    // executing the newly added tasks in the continuation.
+    crashlyticsWorker.submitTask(
+        () -> {
+          list.add(1);
+
+          // Sleep to give time for the tasks 3, 4, 5 to be submitted.
+          sleep(300);
+
+          // We added the 1 and will add 2 in the continuation. And 3, 4, 5 have been submitted.
+          crashlyticsWorker.submit(() -> list.add(6));
+          crashlyticsWorker.submit(() -> list.add(7));
+
+          return Tasks.forResult(1);
+        },
+        task -> {
+          // When the task 1 completes the next number to add is 2. Because all the other tasks are
+          // just submitted, not executed yet.
+          list.add(2);
+          return Tasks.forResult("a");
+        });
+
+    // Submit tasks to add 3, 4, 5 since we just added 1 and know a continuation will add the 2.
+    crashlyticsWorker.submit(() -> list.add(3));
+    crashlyticsWorker.submit(() -> list.add(4));
+    crashlyticsWorker.submit(() -> list.add(5));
+
+    crashlyticsWorker.await();
+
+    // Verify the list is complete and in order.
+    assertThat(list).isInOrder();
+    assertThat(list).hasSize(7);
+  }
+
   private static void sleep(long millis) {
     try {
       Thread.sleep(millis);
