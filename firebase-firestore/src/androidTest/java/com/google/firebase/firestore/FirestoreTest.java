@@ -1263,6 +1263,8 @@ public class FirestoreTest {
 
     waitFor(instance.terminate());
 
+    assertEquals(eventAccumulator.awaitError().getCode(), Code.ABORTED);
+
     // This should proceed without error.
     registration.remove();
     // Multiple calls should proceed as an effectively no-op.

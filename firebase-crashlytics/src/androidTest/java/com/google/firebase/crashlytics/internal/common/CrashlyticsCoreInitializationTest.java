@@ -27,9 +27,11 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
@@ -44,7 +46,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
@@ -89,8 +90,9 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     private IdManager idManager;
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
-    private ExecutorService crashHandlerExecutor;
     private FileStore fileStore;
+    private CrashlyticsWorker commonWorker;
+    private CrashlyticsWorker diskWriteWorker;
 
     public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
       app = mock(FirebaseApp.class);
@@ -119,7 +121,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
-      crashHandlerExecutor = new SameThreadExecutorService();
+      commonWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
+      diskWriteWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
       fileStore = new FileStore(context);
     }
 
@@ -142,9 +145,10 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
           new DisabledBreadcrumbSource(),
           new UnavailableAnalyticsEventLogger(),
           fileStore,
-          crashHandlerExecutor,
           mock(CrashlyticsAppQualitySessionsSubscriber.class),
-          mock(RemoteConfigDeferredProxy.class));
+          mock(RemoteConfigDeferredProxy.class),
+          commonWorker,
+          diskWriteWorker);
     }
   }
 

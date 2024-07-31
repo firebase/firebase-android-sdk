@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
@@ -30,28 +31,45 @@ import java.util.concurrent.BlockingQueue;
 public class EventAccumulator<T> {
   private static final int MAX_EVENTS = 10;
 
-  private final BlockingQueue<T> events;
+  private final BlockingQueue<Object> events;
   private boolean rejectAdditionalEvents;
 
   public EventAccumulator() {
-    events = new ArrayBlockingQueue<T>(MAX_EVENTS);
+    events = new ArrayBlockingQueue<>(MAX_EVENTS);
   }
 
   public EventListener<T> listener() {
     return (value, error) -> {
-      hardAssert(error == null, "Unexpected error: %s", error);
       hardAssert(
           !rejectAdditionalEvents, "Received event after `assertNoAdditionalEvents()` was called");
-      Logger.debug("EventAccumulator", "Received new event: " + value);
-      events.offer(value);
+      if (error == null) {
+        Logger.debug("EventAccumulator", "Received new event: " + value);
+        events.add(value);
+      } else {
+        Logger.debug("EventAccumulator", "Received error: " + error);
+        events.add(error);
+      }
     };
+  }
+
+  public FirebaseFirestoreException awaitError() {
+    try {
+      return (FirebaseFirestoreException) events.take();
+    } catch (Exception e) {
+      Logger.debug("EventAccumulator", e.toString());
+      throw fail("Failed to receive error");
+    }
   }
 
   public List<T> await(int numEvents) {
     try {
       List<T> result = new ArrayList<>(numEvents);
       for (int i = 0; i < numEvents; ++i) {
-        result.add(events.take());
+        Object event = events.take();
+        if (event instanceof FirebaseFirestoreException) {
+          fail("Unexpected error: %s", event);
+        }
+        result.add((T) event);
       }
       return result;
     } catch (InterruptedException e) {
