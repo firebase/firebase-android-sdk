@@ -62,6 +62,8 @@ public class CrashlyticsWorker {
   /**
    * Submits a <code>Callable</code> task for asynchronous execution on the executor.
    *
+   * <p>A blocking callable will block an underlying thread.
+   *
    * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the
    * callable, or throws an <code>ExecutionException</code> if the callable throws an exception.
    */
@@ -81,6 +83,8 @@ public class CrashlyticsWorker {
 
   /**
    * Submits a <code>Runnable</code> task for asynchronous execution on the executor.
+   *
+   * <p>A blocking runnable will block an underlying thread.
    *
    * <p>Returns a <code>Task</code> which will be resolved with null upon successful completion of
    * the runnable, or throws an <code>ExecutionException</code> if the runnable throws an exception.
