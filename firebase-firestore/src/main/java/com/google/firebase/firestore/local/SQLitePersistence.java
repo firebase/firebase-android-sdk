@@ -242,6 +242,8 @@ public final class SQLitePersistence extends Persistence {
 
   public static void clearPersistence(Context context, DatabaseId databaseId, String persistenceKey)
       throws FirebaseFirestoreException {
+    // TODO Could we change this with SQLiteDatabase.deleteDatabase().
+
     String databaseName = SQLitePersistence.databaseName(persistenceKey, databaseId);
     String sqLitePath = context.getDatabasePath(databaseName).getPath();
     String journalPath = sqLitePath + "-journal";

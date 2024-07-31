@@ -163,7 +163,6 @@ public abstract class ComponentProvider {
     syncEngine = createSyncEngine(configuration);
     eventManager = createEventManager(configuration);
     localStore.start();
-    remoteStore.start();
     garbageCollectionScheduler = createGarbageCollectionScheduler(configuration);
     indexBackfiller = createIndexBackfiller(configuration);
   }
