@@ -621,8 +621,18 @@ public class CrashlyticsWorkerTest {
   @Test
   public void raceTasksOnSameWorker() throws Exception {
     // Create 2 tasks on this worker to race.
-    Task<String> task1 = crashlyticsWorker.submit(() -> "first");
-    Task<String> task2 = crashlyticsWorker.submit(() -> "second");
+    Task<String> task1 =
+        crashlyticsWorker.submit(
+            () -> {
+              sleep(200);
+              return "first";
+            });
+    Task<String> task2 =
+        crashlyticsWorker.submit(
+            () -> {
+              sleep(300);
+              return "second";
+            });
 
     Task<String> task = crashlyticsWorker.race(task1, task2);
     String result = Tasks.await(task);
