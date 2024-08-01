@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
 import com.google.firebase.inject.Deferred
@@ -30,7 +31,8 @@ internal class FirebaseDataConnectFactory(
   private val firebaseApp: FirebaseApp,
   private val blockingExecutor: Executor,
   private val nonBlockingExecutor: Executor,
-  private val deferredAuthProvider: Deferred<InternalAuthProvider>
+  private val deferredAuthProvider: Deferred<InternalAuthProvider>,
+  private val deferredAppCheckProvider: Deferred<InteropAppCheckTokenProvider>,
 ) {
 
   init {

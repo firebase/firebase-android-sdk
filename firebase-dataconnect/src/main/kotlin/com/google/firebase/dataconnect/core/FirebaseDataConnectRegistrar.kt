@@ -22,6 +22,7 @@ import androidx.annotation.RestrictTo
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.annotations.concurrent.Lightweight
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
@@ -50,13 +51,15 @@ internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
         .add(Dependency.required(blockingExecutor))
         .add(Dependency.required(nonBlockingExecutor))
         .add(Dependency.deferred(internalAuthProvider))
+        .add(Dependency.deferred(interopAppCheckTokenProvider))
         .factory { container ->
           FirebaseDataConnectFactory(
             context = container.get(context),
             firebaseApp = container.get(firebaseApp),
             blockingExecutor = container.get(blockingExecutor),
             nonBlockingExecutor = container.get(nonBlockingExecutor),
-            deferredAuthProvider = container.getDeferred(internalAuthProvider)
+            deferredAuthProvider = container.getDeferred(internalAuthProvider),
+            deferredAppCheckProvider = container.getDeferred(interopAppCheckTokenProvider),
           )
         }
         .build(),
@@ -72,5 +75,7 @@ internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
     private val nonBlockingExecutor =
       Qualified.qualified(Lightweight::class.java, Executor::class.java)
     private val internalAuthProvider = Qualified.unqualified(InternalAuthProvider::class.java)
+    private val interopAppCheckTokenProvider =
+      Qualified.unqualified(InteropAppCheckTokenProvider::class.java)
   }
 }
