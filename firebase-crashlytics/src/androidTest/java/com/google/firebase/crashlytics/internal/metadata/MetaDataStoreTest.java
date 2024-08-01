@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.io.IOException;

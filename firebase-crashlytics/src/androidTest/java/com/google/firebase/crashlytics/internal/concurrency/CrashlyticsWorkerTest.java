@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.crashlytics.internal;
+package com.google.firebase.crashlytics.internal.concurrency;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
