@@ -25,11 +25,12 @@ package com.google.firebase.vertexai.type
  * @property candidateCount The max *unique* responses to return
  * @property maxOutputTokens The max tokens to generate per response
  * @property stopSequences A list of strings to stop generation on occurrence of
- * @property responseMimeType Response type for generated candidate text. See the
- * [vertex docs](https://cloud.google.com/vertex-ai/docs/reference/rest/v1beta1/GenerationConfig)
- * for a list of supported types.
+ * @property responseMimeType Response MIME type for the generated candidate text. For a list of
+ *   supported response MIME types, see the
+ *   [Vertex AI documentation](https://cloud.google.com/vertex-ai/docs/reference/rest/v1beta1/GenerationConfig#FIELDS.response_mime_type)
+ *   for a list of supported types.
  * @property responseSchema A schema that the response must adhere to, used with the
- * `application/json` mimeType.
+ *   `application/json` MINE type.
  */
 class GenerationConfig
 private constructor(
@@ -55,7 +56,6 @@ private constructor(
    * @property candidateCount The max *unique* responses to return
    * @property maxOutputTokens The max tokens to generate per response
    * @property stopSequences A list of strings to stop generation on occurrence of
-   *
    * @see [generationConfig]
    */
   class Builder {
@@ -78,7 +78,7 @@ private constructor(
         maxOutputTokens = maxOutputTokens,
         stopSequences = stopSequences,
         responseMimeType = responseMimeType,
-        responseSchema = responseSchema
+        responseSchema = responseSchema,
       )
   }
 
@@ -86,7 +86,6 @@ private constructor(
 
     /**
      * Alternative casing for [GenerationConfig.Builder]:
-     *
      * ```
      * val config = GenerationConfig.builder()
      * ```
