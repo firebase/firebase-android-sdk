@@ -26,11 +26,11 @@ package com.google.firebase.vertexai.type
  * @property maxOutputTokens The max tokens to generate per response
  * @property stopSequences A list of strings to stop generation on occurrence of
  * @property responseMimeType Response MIME type for the generated candidate text. For a list of
- *   supported response MIME types, see the
- *   [Vertex AI documentation](https://cloud.google.com/vertex-ai/docs/reference/rest/v1beta1/GenerationConfig#FIELDS.response_mime_type)
- *   for a list of supported types.
+ * supported response MIME types, see the
+ * [Vertex AI documentation](https://cloud.google.com/vertex-ai/docs/reference/rest/v1beta1/GenerationConfig#FIELDS.response_mime_type)
+ * for a list of supported types.
  * @property responseSchema A schema that the response must adhere to, used with the
- *   `application/json` MINE type.
+ * `application/json` MINE type.
  */
 class GenerationConfig
 private constructor(
