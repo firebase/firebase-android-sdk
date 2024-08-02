@@ -320,7 +320,6 @@ public class IntegrationTestUtil {
             persistenceKey,
             MockCredentialsProvider.instance(),
             new EmptyAppCheckTokenProvider(),
-            asyncQueue,
             ComponentProvider::defaultFactory,
             /* firebaseApp= */ null,
             /* instanceRegistry= */ (dbId) -> {});

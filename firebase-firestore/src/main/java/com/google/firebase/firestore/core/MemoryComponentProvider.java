@@ -39,6 +39,10 @@ import io.grpc.Status;
  */
 public class MemoryComponentProvider extends ComponentProvider {
 
+  public MemoryComponentProvider(FirebaseFirestoreSettings settings) {
+    super(settings);
+  }
+
   @Override
   @Nullable
   protected Scheduler createGarbageCollectionScheduler(Configuration configuration) {
@@ -73,10 +77,10 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   protected Persistence createPersistence(Configuration configuration) {
-    if (isMemoryLruGcEnabled(configuration.settings)) {
+    if (isMemoryLruGcEnabled(settings)) {
       LocalSerializer serializer = new LocalSerializer(getRemoteSerializer());
       LruGarbageCollector.Params params =
-          LruGarbageCollector.Params.WithCacheSizeBytes(configuration.settings.getCacheSizeBytes());
+          LruGarbageCollector.Params.WithCacheSizeBytes(settings.getCacheSizeBytes());
       return MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
     }
 
