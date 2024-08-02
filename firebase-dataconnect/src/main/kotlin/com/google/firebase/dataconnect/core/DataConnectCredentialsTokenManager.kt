@@ -118,7 +118,7 @@ internal abstract class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 
     // Call `whenAvailable()` on a non-main thread because it accesses SharedPreferences, which
     // performs disk i/o, violating the StrictMode policy android.os.strictmode.DiskReadViolation.
-    val coroutineName = CoroutineName("$instanceId k6rwgqg9gh $instanceId whenAvailable")
+    val coroutineName = CoroutineName("k6rwgqg9gh $instanceId whenAvailable")
     coroutineScope.launch(coroutineName + blockingDispatcher) {
       deferredProvider.whenAvailable(DeferredProviderHandlerImpl(weakThis, newState.tokenListener))
     }
@@ -387,7 +387,10 @@ internal abstract class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 
   private class CredentialsTokenManagerClosedException(
     tokenProvider: DataConnectCredentialsTokenManager<*, *>
-  ) : DataConnectException("CredentialsTokenManager ${tokenProvider.instanceId} was closed")
+  ) :
+    DataConnectException(
+      "DataConnectCredentialsTokenManager ${tokenProvider.instanceId} was closed"
+    )
 
   private class GetAccessTokenCancelledException(cause: Throwable) :
     DataConnectException("getAccessToken() was cancelled, likely by close()", cause)
