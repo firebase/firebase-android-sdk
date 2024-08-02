@@ -35,6 +35,7 @@ internal class DataConnectGrpcClient(
   connector: ConnectorConfig,
   private val grpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
+  private val dataConnectAppCheck: DataConnectAppCheck,
   private val logger: Logger,
 ) {
   val instanceId: String
@@ -110,7 +111,12 @@ internal class DataConnectGrpcClient(
         "$kotlinMethodName() [rid=$requestId]" +
           " retrying with fresh auth token due to UNAUTHENTICATED error"
       }
+
+      // TODO(b/356877295) Only invalidate auth or appcheck tokens, but not both, to avoid
+      //  spamming the appcheck attestation provider.
       dataConnectAuth.forceRefresh()
+      dataConnectAppCheck.forceRefresh()
+
       block()
     }
   }
