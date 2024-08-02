@@ -82,6 +82,7 @@ internal class FirebaseDataConnectFactory(
       blockingExecutor = blockingExecutor,
       nonBlockingExecutor = nonBlockingExecutor,
       deferredAuthProvider = deferredAuthProvider,
+      deferredAppCheckProvider = deferredAppCheckProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
     )
