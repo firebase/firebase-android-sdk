@@ -206,7 +206,7 @@ class DataConnectAuthUnitTest {
     withClue("result=$result") { result.shouldBeNull() }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("returns null")
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("FirebaseAuth is not (yet?) available")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("token provider is not (yet?) available")
   }
 
   @Test
@@ -228,7 +228,9 @@ class DataConnectAuthUnitTest {
     exception shouldHaveMessage
       "DataConnectCredentialsTokenManager ${dataConnectAuth.instanceId} was closed"
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("throws DataConnectAuthClosedException")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+      "throws CredentialsTokenManagerClosedException"
+    )
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("has been closed")
   }
 
@@ -260,7 +262,7 @@ class DataConnectAuthUnitTest {
     withClue("result=$result") { result shouldBe accessToken }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-      "returns value obtained from FirebaseAuth: ${accessToken.toScrubbedAccessToken()}"
+      "returns retrieved token: ${accessToken.toScrubbedAccessToken()}"
     )
     mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
   }
@@ -325,7 +327,7 @@ class DataConnectAuthUnitTest {
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining("getAccessToken(forceRefresh=true)")
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-        "returns value obtained from FirebaseAuth: ${accessToken.toScrubbedAccessToken()}"
+        "returns retrieved token: ${accessToken.toScrubbedAccessToken()}"
       )
       mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
     }
@@ -502,7 +504,7 @@ class DataConnectAuthUnitTest {
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "${dataConnectAuth.instanceId} whenAvailable"
     )
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("FirebaseAuth is not (yet?) available")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("token provider is not (yet?) available")
   }
 
   @Test
@@ -550,7 +552,7 @@ class DataConnectAuthUnitTest {
         verify { mockInternalAuthProvider.removeIdTokenListener(idTokenListener) }
       }
       mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-        "unregistering IdTokenListener that was just added"
+        "unregistering token listener that was just added"
       )
     }
 
