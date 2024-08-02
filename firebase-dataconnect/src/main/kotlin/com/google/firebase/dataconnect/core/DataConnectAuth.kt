@@ -22,6 +22,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.internal.InternalTokenResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.tasks.await
 
 internal class DataConnectAuth(
   deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
@@ -44,8 +45,8 @@ internal class DataConnectAuth(
   override fun removeTokenListener(provider: InternalAuthProvider, listener: IdTokenListener) =
     provider.removeIdTokenListener(listener)
 
-  override fun getAccessToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
-    provider.getAccessToken(forceRefresh)
+  override suspend fun getToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
+    provider.getAccessToken(forceRefresh).await().let { GetTokenResult(it.token) }
 
   private class IdTokenListenerImpl(private val logger: Logger) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {

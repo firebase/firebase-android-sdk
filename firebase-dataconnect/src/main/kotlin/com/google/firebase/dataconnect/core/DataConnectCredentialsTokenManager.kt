@@ -16,10 +16,8 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.android.gms.tasks.Task
 import com.google.firebase.annotations.DeferredApi
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
-import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.util.SequencedReference
@@ -45,7 +43,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.yield
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
@@ -100,7 +97,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
       /** The token listener that is, or will be, registered with [provider]. */
       override val tokenListener: L,
 
-      /** The value to specify for `forceRefresh` on the next invocation of [getAccessToken]. */
+      /** The value to specify for `forceRefresh` on the next invocation of [getToken]. */
       val forceTokenRefresh: Boolean
     ) : State<T, L>, ProviderListenerPair<T, L>
 
@@ -158,7 +155,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
    * Starts an asynchronous task to get a new access token from the given provider, forcing a token
    * refresh if and only if `forceRefresh` is true.
    */
-  protected abstract fun getAccessToken(provider: T, forceRefresh: Boolean): Task<GetTokenResult>
+  protected abstract suspend fun getToken(provider: T, forceRefresh: Boolean): GetTokenResult
 
   /**
    * Initializes this object, acquiring resources and registering necessary listeners.
@@ -240,7 +237,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
   }
 
   /**
-   * Sets a flag to force-refresh the token upon the next call to [getAccessToken].
+   * Sets a flag to force-refresh the token upon the next call to [getToken].
    *
    * If [close] has been called, this method does nothing.
    *
@@ -285,14 +282,14 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
   ): State.Active<T, L> {
     val coroutineName =
       CoroutineName(
-        "$instanceId 535gmcvv5a $invocationId getAccessToken(" +
+        "$instanceId 535gmcvv5a $invocationId getToken(" +
           "provider=${provider}, forceRefresh=$forceRefresh)"
       )
     val job =
       coroutineScope.async(coroutineName, CoroutineStart.LAZY) {
         val sequenceNumber = nextSequenceNumber()
-        logger.debug { "$invocationId getAccessToken(forceRefresh=$forceRefresh)" }
-        val result = runCatching { getAccessToken(provider, forceRefresh).await() }
+        logger.debug { "$invocationId getToken(forceRefresh=$forceRefresh)" }
+        val result = runCatching { getToken(provider, forceRefresh) }
         SequencedReference(sequenceNumber, result)
       }
     return State.Active(provider, tokenListener, job)
@@ -305,9 +302,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
    * @throws DataConnectException if [close] has not been called or is called while the operation is
    * in progress.
    */
-  suspend fun getAccessToken(requestId: String): String? {
+  suspend fun getToken(requestId: String): String? {
     val invocationId = "gat" + Random.nextAlphanumericString(length = 8)
-    logger.debug { "$invocationId getAccessToken(requestId=$requestId)" }
+    logger.debug { "$invocationId getToken(requestId=$requestId)" }
     while (true) {
       val attemptSequenceNumber = nextSequenceNumber()
       val oldState = state.get()
@@ -315,10 +312,10 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
       val newState: State.Active<T, L> =
         when (oldState) {
           is State.Uninitialized ->
-            throw IllegalStateException("getAccessToken() cannot be called before initialize()")
+            throw IllegalStateException("getToken() cannot be called before initialize()")
           is State.Closed -> {
             logger.debug {
-              "$invocationId getAccessToken() throws CredentialsTokenManagerClosedException" +
+              "$invocationId getToken() throws CredentialsTokenManagerClosedException" +
                 " because the DataConnectCredentialsTokenManager instance has been closed"
             }
             throw CredentialsTokenManagerClosedException(this)
@@ -326,7 +323,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
           is State.Ready -> {
             if (oldState.provider === null) {
               logger.debug {
-                "$invocationId getAccessToken() returns null" +
+                "$invocationId getToken() returns null" +
                   " (token provider is not (yet?) available)"
               }
               return null
@@ -361,7 +358,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
           continue
         }
         logger.debug {
-          "$invocationId getAccessToken() starts a new coroutine to get the token" +
+          "$invocationId getToken() starts a new coroutine to get the token" +
             " (oldState=${oldState::class.simpleName})"
         }
       }
@@ -369,12 +366,12 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
       val jobResult = newState.job.runCatching { await() }
 
       // Ensure that any exception checking below is due to an exception that happened in the
-      // coroutine that called getAccessToken(), not from the calling coroutine being cancelled.
+      // coroutine that called getToken(), not from the calling coroutine being cancelled.
       coroutineContext.ensureActive()
 
       val sequencedResult = jobResult.getOrNull()
       if (sequencedResult !== null && sequencedResult.sequenceNumber < attemptSequenceNumber) {
-        logger.debug { "$invocationId getAccessToken() got an old result; retrying" }
+        logger.debug { "$invocationId getToken() got an old result; retrying" }
         continue
       }
 
@@ -382,42 +379,36 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
       if (exception !== null) {
         val retryException = exception.getRetryIndicator()
         if (retryException !== null) {
-          logger.debug {
-            "$invocationId getAccessToken() retrying due to ${retryException.message}"
-          }
+          logger.debug { "$invocationId getToken() retrying due to ${retryException.message}" }
           continue
         } else if (exception is FirebaseNoSignedInUserException) {
           logger.debug {
-            "$invocationId getAccessToken() returns null" +
-              " (FirebaseAuth reports no signed-in user)"
+            "$invocationId getToken() returns null" + " (FirebaseAuth reports no signed-in user)"
           }
           return null
         } else if (exception is CancellationException) {
           logger.warn(exception) {
-            "$invocationId getAccessToken() throws GetAccessTokenCancelledException," +
+            "$invocationId getToken() throws GetTokenCancelledException," +
               " likely due to DataConnectCredentialsTokenManager.close() being called"
           }
-          throw GetAccessTokenCancelledException(exception)
+          throw GetTokenCancelledException(exception)
         } else {
-          logger.warn(exception) {
-            "$invocationId getAccessToken() failed unexpectedly: $exception"
-          }
+          logger.warn(exception) { "$invocationId getToken() failed unexpectedly: $exception" }
           throw exception
         }
       }
 
       val accessToken = sequencedResult!!.ref.getOrThrow().token
       logger.debug {
-        "$invocationId getAccessToken() returns retrieved token: " +
-          accessToken?.toScrubbedAccessToken()
+        "$invocationId getToken() returns retrieved token: " + accessToken?.toScrubbedAccessToken()
       }
       return accessToken
     }
   }
 
-  private sealed class GetAccessTokenRetry(message: String) : Exception(message)
-  private class ForceRefresh(message: String) : GetAccessTokenRetry(message)
-  private class NewProvider(message: String) : GetAccessTokenRetry(message)
+  private sealed class GetTokenRetry(message: String) : Exception(message)
+  private class ForceRefresh(message: String) : GetTokenRetry(message)
+  private class NewProvider(message: String) : GetTokenRetry(message)
 
   @DeferredApi
   private fun onProviderAvailable(newProvider: T, tokenListener: L) {
@@ -481,8 +472,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
       "DataConnectCredentialsTokenManager ${tokenProvider.instanceId} was closed"
     )
 
-  private class GetAccessTokenCancelledException(cause: Throwable) :
-    DataConnectException("getAccessToken() was cancelled, likely by close()", cause)
+  private class GetTokenCancelledException(cause: Throwable) :
+    DataConnectException("getToken() was cancelled, likely by close()", cause)
 
   // Work around a race condition where addIdTokenListener() and removeIdTokenListener() throw if
   // the FirebaseApp is deleted during or before its invocation.
@@ -498,13 +489,15 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
     }
   }
 
+  protected data class GetTokenResult(val token: String?)
+
   private companion object {
-    fun Throwable.getRetryIndicator(): GetAccessTokenRetry? {
+    fun Throwable.getRetryIndicator(): GetTokenRetry? {
       var currentCause: Throwable? = this
       while (true) {
         if (currentCause === null) {
           return null
-        } else if (currentCause is GetAccessTokenRetry) {
+        } else if (currentCause is GetTokenRetry) {
           return currentCause
         }
         currentCause = currentCause.cause ?: return null
