@@ -42,6 +42,11 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
 
   @Test
+  fun addTestsForAuthAndAppCheckMetadata() {
+    throw RuntimeException("implement me")
+  }
+
+  @Test
   fun executeQueryShouldSendExpectedGrpcMetadata() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
