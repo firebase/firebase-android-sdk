@@ -40,3 +40,90 @@ jobs:
           FTL_RESULTS_BUCKET: fireescape
         run: |
           ./gradlew :firebase-config:test-app:deviceCheck withErrorProne -PtargetBackend="prod"
+            - name: Create Artifact YAML
+  # You may pin to the exact commit or the version.
+  # uses: opencontextinc/create-artifact-yaml@218aadb9180fd982c8f2aaa592573297bdb9550e
+  uses: opencontextinc/create-artifact-yaml@v1.0.1
+  with:
+    # Type of artifact. One of sbom, container, package, or image
+    type: 
+    # URL/URI of the artifact
+    url: 
+    # Directory to save YAML files to. If not specified then the directory oc-artifact-yaml will be used.
+    directory: # optional
+                      - name: Satellite file upload
+  # You may pin to the exact commit or the version.
+  # uses: IBM/satellite-config-upload-action@fa11109a47c82d0adf3f02c3a3ba59d4a4db7054
+  uses: IBM/satellite-config-upload-action@v1.0.1
+  with:
+    # IBM Cloud API key
+    apikey: 
+    # Satellite Config channelUuid
+    channelUuid: 
+    # File to upload
+    filename: 
+    # Name of the new version
+    versionName: 
+    # IBM Cloud Satellite API endpoint
+    satelliteHost: # optional, default is https://config.satellite.cloud.ibm.com/graphql
+    # IBM Cloud IAM endpoint
+    tokenHost: # optional, default is https://iam.cloud.ibm.com/identity/token
+                      - name: ServiceNow CI/CD Rollback App
+  # You may pin to the exact commit or the version.
+  # uses: ServiceNow/sncicd-rollback-app@4e322960b74926a35d60c5e321962a75c5a93249
+  uses: ServiceNow/sncicd-rollback-app@2.0.0
+  with:
+    # Application version to rollback
+    version: 
+            - name: Secrets Safe Action
+  # You may pin to the exact commit or the version.
+  # uses: BeyondTrust/secrets-safe-action@9e2bbfd1aa4ae265a03d6a212c42e193551af485
+  uses: BeyondTrust/secrets-safe-action@v1.0
+  with:
+    # The API OAuth Client ID is configured in BeyondInsight for your application. For use when authenticating to Secrets Safe
+    client_id: # default is 
+    # The API OAuth Client Secret is configured in BeyondInsight for your application. For use when authenticating to Secrets Safe.
+    client_secret: # default is 
+    # The API URL for the Secrets Safe instance from which to request a secret.
+    api_url: # default is 
+    # Indicates whether to verify the certificate authority on the Secrets Safe instance. For use when authenticating to Secrets Safe.
+    verify_ca: # optional, default is true
+    # Content of the certificate (cert.pem) for use when authenticating with an API key using a Client Certificate.
+    certificate: # optional, default is 
+    # Certificate private key (key.pem). For use when authenticating with an API key using a Client Certificate.
+    certificate_key: # optional, default is 
+    # Path to the Secrets Safe secret along with the value that the output secrets will be mapped to. For example, {"path": "folder1/folder2/title","output_id": "title"}
+    secret_path: # optional, default is 
+    # Path to the Managed Account secret along with the value that the output secrets will be mapped to. For example, {"path": "system/account","output_id": "account"}
+    managed_account_path: # optional, default is 
+    # Log level
+    log_level: # optional, default is INFO
+    # Secrets path and managed accounts path separator
+    path_separator: # optional, default is /
+
+            - name: ServiceNow CI/CD Activate Plugin
+  # You may pin to the exact commit or the version.
+  # uses: ServiceNow/sncicd-plugin-activate@a12a95b41b8e026f9107d0c38f22245a5f4cf8d7
+  uses: ServiceNow/sncicd-plugin-activate@2.0.0
+  with:
+    # Plugin ID to be installed
+    pluginID: 
+                      - name: Update your package.json with an npm pre-release version, and update dependencies with pre-release versions
+  # You may pin to the exact commit or the version.
+  # uses: adobe/update-prerelease-npm-version@4dea8f295023f5b18126afd79bae1057a5b92d6e
+  uses: adobe/update-prerelease-npm-version@v1.2.0
+  with:
+    # the pre-release tag to set
+    pre-release-tag: # optional, default is pre
+    # the package.json file
+    package-json-path: # optional, default is package.json
+    # the dependencies to update with a version tag (comma separated)
+    dependencies-to-update: # optional, default is 
+    # the version tag for the dependencies to update
+    dependencies-to-update-version-tag: # optional, default is next
+    # the new package name to publish to
+    package-name: # optional
+    # skip updating any =dependencies to update (see dependencies-to-update setting)
+    skip-dependencies-to-update: # optional
+
+          
