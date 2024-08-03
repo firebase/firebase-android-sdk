@@ -75,6 +75,7 @@ internal class DataConnectGrpcMetadata(
         val keySet: MutableSet<String> = keys().toMutableSet()
         // Always explicitly include the auth header in the returned string, even if it is absent.
         keySet.add(firebaseAuthTokenHeader.name())
+        keySet.add(firebaseAppCheckTokenHeader.name())
         keySet.sorted().map { Metadata.Key.of(it, Metadata.ASCII_STRING_MARSHALLER) }
       }
 
@@ -84,7 +85,11 @@ internal class DataConnectGrpcMetadata(
           if (values === null) listOf(null)
           else {
             values.map {
-              if (key.name() == firebaseAuthTokenHeader.name()) it.toScrubbedAccessToken() else it
+              when (key.name()) {
+                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken()
+                firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
+                else -> it
+              }
             }
           }
 

@@ -109,7 +109,7 @@ internal class DataConnectGrpcClient(
       }
       logger.warn(e) {
         "$kotlinMethodName() [rid=$requestId]" +
-          " retrying with fresh auth token due to UNAUTHENTICATED error"
+          " retrying with fresh Auth and/or AppCheck tokens due to UNAUTHENTICATED error"
       }
 
       // TODO(b/356877295) Only invalidate auth or appcheck tokens, but not both, to avoid
