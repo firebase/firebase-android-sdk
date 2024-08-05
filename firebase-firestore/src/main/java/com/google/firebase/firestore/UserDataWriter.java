@@ -27,6 +27,7 @@ import static com.google.firebase.firestore.model.Values.TYPE_ORDER_REFERENCE;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_SERVER_TIMESTAMP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_STRING;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_TIMESTAMP;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_VECTOR;
 import static com.google.firebase.firestore.model.Values.typeOrder;
 import static com.google.firebase.firestore.util.Assert.fail;
 
@@ -34,6 +35,7 @@ import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
@@ -86,6 +88,8 @@ public class UserDataWriter {
       case TYPE_ORDER_GEOPOINT:
         return new GeoPoint(
             value.getGeoPointValue().getLatitude(), value.getGeoPointValue().getLongitude());
+      case TYPE_ORDER_VECTOR:
+        return convertVectorValue(value.getMapValue().getFieldsMap());
       default:
         throw fail("Unknown value type: " + value.getValueTypeCase());
     }
@@ -97,6 +101,14 @@ public class UserDataWriter {
       result.put(entry.getKey(), convertValue(entry.getValue()));
     }
     return result;
+  }
+
+  VectorValue convertVectorValue(Map<String, Value> mapValue) {
+    double[] values =
+        mapValue.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue().getValuesList().stream()
+            .mapToDouble(val -> val.getDoubleValue())
+            .toArray();
+    return new VectorValue(values);
   }
 
   private Object convertServerTimestamp(Value serverTimestampValue) {

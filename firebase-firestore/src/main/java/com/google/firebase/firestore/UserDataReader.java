@@ -32,6 +32,7 @@ import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
@@ -45,11 +46,13 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.NullValue;
 import com.google.type.LatLng;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 /**
  * Helper for parsing raw user input (provided via the API) into internal model classes.
@@ -440,11 +443,24 @@ public final class UserDataReader {
                   databaseId.getDatabaseId(),
                   ((DocumentReference) input).getPath()))
           .build();
+    } else if (input instanceof VectorValue) {
+      return parseVectorValue(((VectorValue) input), context);
     } else if (input.getClass().isArray()) {
       throw context.createError("Arrays are not supported; use a List instead");
     } else {
       throw context.createError("Unsupported type: " + Util.typeName(input));
     }
+  }
+
+  private Value parseVectorValue(VectorValue vector, ParseContext context) {
+    MapValue.Builder mapBuilder = MapValue.newBuilder();
+
+    mapBuilder.putFields(Values.TYPE_KEY, Values.VECTOR_VALUE_TYPE);
+    mapBuilder.putFields(
+        Values.VECTOR_MAP_VECTORS_KEY,
+        parseData(Arrays.stream(vector.toArray()).boxed().collect(Collectors.toList()), context));
+
+    return Value.newBuilder().setMapValue(mapBuilder).build();
   }
 
   private Value parseTimestamp(Timestamp timestamp) {

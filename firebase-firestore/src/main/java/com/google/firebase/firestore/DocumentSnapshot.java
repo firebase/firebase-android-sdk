@@ -484,6 +484,18 @@ public class DocumentSnapshot {
     return new DocumentReference(key, firestore);
   }
 
+  /**
+   * Returns the value of the field as a VectorValue.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a VectorValue.
+   * @return The value of the field.
+   */
+  @Nullable
+  public VectorValue getVectorValue(@NonNull String field) {
+    return (VectorValue) get(field);
+  }
+
   @Nullable
   private <T> T getTypedValue(String field, Class<T> clazz) {
     checkNotNull(field, "Provided field must not be null.");

@@ -41,6 +41,7 @@ public class FirestoreIndexValueWriter {
   public static final int INDEX_TYPE_REFERENCE = 37;
   public static final int INDEX_TYPE_GEOPOINT = 45;
   public static final int INDEX_TYPE_ARRAY = 50;
+  public static final int INDEX_TYPE_VECTOR = 53;
   public static final int INDEX_TYPE_MAP = 55;
   public static final int INDEX_TYPE_REFERENCE_SEGMENT = 60;
 
@@ -114,6 +115,9 @@ public class FirestoreIndexValueWriter {
         if (Values.isMaxValue(indexValue)) {
           writeValueTypeLabel(encoder, Integer.MAX_VALUE);
           break;
+        } else if (Values.isVectorValue(indexValue)) {
+          writeIndexVector(indexValue.getMapValue(), encoder);
+          break;
         }
         writeIndexMap(indexValue.getMapValue(), encoder);
         writeTruncationMarker(encoder);
@@ -139,6 +143,22 @@ public class FirestoreIndexValueWriter {
   }
 
   private void writeIndexMap(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
+    writeValueTypeLabel(encoder, INDEX_TYPE_VECTOR);
+
+    Map<String, Value> map = mapIndexValue.getFieldsMap();
+
+    // Vectors sort first by length
+    String key = Values.VECTOR_MAP_VECTORS_KEY;
+    int length = map.get(key).getArrayValue().getValuesCount();
+    this.writeValueTypeLabel(encoder, INDEX_TYPE_VECTOR);
+    encoder.writeLong(length);
+
+    // Vectors then sort by position value
+    this.writeIndexString(key, encoder);
+    this.writeIndexValueAux(map.get(key), encoder);
+  }
+
+  private void writeIndexVector(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
     writeValueTypeLabel(encoder, INDEX_TYPE_MAP);
     for (Map.Entry<String, Value> entry : mapIndexValue.getFieldsMap().entrySet()) {
       String key = entry.getKey();

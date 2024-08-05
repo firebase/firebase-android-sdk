@@ -113,7 +113,7 @@ it on behalf.
 
 Run below to format Java code:
 ```bash
-./gradlew :firebase-firestore:googleJavaFormat
+./gradlew :firebase-firestore:spotlessApply
 ```
 
 See [here](../README.md#code-formatting) if you want to be able to format code

@@ -182,4 +182,15 @@ public abstract class FieldValue {
   public static FieldValue increment(double l) {
     return new NumericIncrementFieldValue(l);
   }
+
+  /**
+   * Creates a new {@link VectorValue} constructed with a copy of the given array of doubles.
+   *
+   * @param values Create a {@link VectorValue} instance with a copy of this array of doubles.
+   * @return A new {@link VectorValue} constructed with a copy of the given array of doubles.
+   */
+  @NonNull
+  public static VectorValue vector(@NonNull double[] values) {
+    return new VectorValue(values);
+  }
 }
