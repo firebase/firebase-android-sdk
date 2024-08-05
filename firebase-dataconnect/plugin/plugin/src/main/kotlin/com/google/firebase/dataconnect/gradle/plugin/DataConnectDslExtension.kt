@@ -15,10 +15,10 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
-import org.gradle.api.model.ObjectFactory
-import org.gradle.kotlin.dsl.newInstance
 import java.io.File
 import javax.inject.Inject
+import org.gradle.api.model.ObjectFactory
+import org.gradle.kotlin.dsl.newInstance
 
 /** The common settings that apply to both code generation and running the emulator. */
 abstract class DataConnectBaseDslExtension {
@@ -43,7 +43,8 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
    * Values to use when performing code generation, which override the values from those defined in
    * the outer scope.
    */
-  val codegen: DataConnectCodegenDslExtension = objectFactory.newInstance<DataConnectCodegenDslExtension>()
+  val codegen: DataConnectCodegenDslExtension =
+    objectFactory.newInstance<DataConnectCodegenDslExtension>()
 
   /**
    * Configure values to use when performing code generation, which override the values from those
@@ -58,7 +59,8 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
    * Values to use when running the Data Connect emulator, which override the values from those
    * defined in the outer scope.
    */
-  val emulator: DataConnectEmulatorDslExtension = objectFactory.newInstance<DataConnectEmulatorDslExtension>()
+  val emulator: DataConnectEmulatorDslExtension =
+    objectFactory.newInstance<DataConnectEmulatorDslExtension>()
 
   /**
    * Configure values to use when running the Data Connect emulator, which override the values from

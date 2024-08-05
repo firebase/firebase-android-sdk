@@ -21,7 +21,10 @@ import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
 import com.android.build.api.variant.VariantExtensionConfig
+import java.io.File
+import java.io.FileNotFoundException
 import java.util.Locale
+import java.util.Properties
 import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -33,9 +36,6 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.register
-import java.io.File
-import java.io.FileNotFoundException
-import java.util.Properties
 
 @Suppress("unused")
 abstract class DataConnectGradlePlugin : Plugin<Project> {
@@ -65,6 +65,11 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
 
     androidComponents.onVariants { variant ->
       val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
+
+      val emulatorTask =
+        project.tasks.register<DataConnectEmulatorTask>(
+          "run${variantNameTitleCase}DataConnectEmulator"
+        )
 
       val generateCodeTask =
         project.tasks.register<DataConnectGenerateCodeTask>(
@@ -130,36 +135,38 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
 
     try {
       logger.info("Loading properties from file: {}", file)
-      file.inputStream().use {
-        properties.load(it)
-      }
+      file.inputStream().use { properties.load(it) }
     } catch (e: FileNotFoundException) {
       logger.info("Properties file not found; ignoring ({})", file)
       return null
     }
 
     val dataConnectDslExtension = objectFactory.newInstance<DataConnectDslExtension>()
-    fun Map.Entry<*,Any>.asConfigDir(): File = project.file(value)
-    fun Map.Entry<*,Any>.asConnectors(): List<String> = value.toString().split(",")
-    fun Map.Entry<*,Any>.asDataConnectExecutable(): File = project.file(value)
+    fun Map.Entry<*, Any>.asConfigDir(): File = project.file(value)
+    fun Map.Entry<*, Any>.asConnectors(): List<String> = value.toString().split(",")
+    fun Map.Entry<*, Any>.asDataConnectExecutable(): File = project.file(value)
 
     for (property in properties) {
       when (property.key) {
         "configDir" -> dataConnectDslExtension.configDir = property.asConfigDir()
         "connectors" -> dataConnectDslExtension.connectors = property.asConnectors()
-        "dataConnectExecutable" -> dataConnectDslExtension.dataConnectExecutable = property.asDataConnectExecutable()
+        "dataConnectExecutable" ->
+          dataConnectDslExtension.dataConnectExecutable = property.asDataConnectExecutable()
         "codegen.configDir" -> dataConnectDslExtension.codegen.configDir = property.asConfigDir()
         "codegen.connectors" -> dataConnectDslExtension.codegen.connectors = property.asConnectors()
-        "codegen.dataConnectExecutable" -> dataConnectDslExtension.codegen.dataConnectExecutable = property.asDataConnectExecutable()
+        "codegen.dataConnectExecutable" ->
+          dataConnectDslExtension.codegen.dataConnectExecutable = property.asDataConnectExecutable()
         "emulator.configDir" -> dataConnectDslExtension.emulator.configDir = property.asConfigDir()
-        "emulator.connectors" -> dataConnectDslExtension.emulator.connectors = property.asConnectors()
-        "emulator.dataConnectExecutable" -> dataConnectDslExtension.emulator.dataConnectExecutable = property.asDataConnectExecutable()
+        "emulator.connectors" ->
+          dataConnectDslExtension.emulator.connectors = property.asConnectors()
+        "emulator.dataConnectExecutable" ->
+          dataConnectDslExtension.emulator.dataConnectExecutable =
+            property.asDataConnectExecutable()
       }
     }
 
     return dataConnectDslExtension
   }
-
 }
 
 private const val DATA_CONNECT_EXECUTABLE_PROPERTY_NAME = "DATA_CONNECT_EXECUTABLE"
