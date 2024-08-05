@@ -19,6 +19,10 @@ import androidx.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Arrays;
 
+/**
+ * Represent a vector type in Firestore documents.
+ * Create an instance with {@link FieldValue#vector(double[])}.
+ */
 public class VectorValue implements Serializable {
   private final double[] values;
 
