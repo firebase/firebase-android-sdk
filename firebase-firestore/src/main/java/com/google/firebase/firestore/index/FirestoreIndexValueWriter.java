@@ -142,7 +142,7 @@ public class FirestoreIndexValueWriter {
     encoder.writeString(stringIndexValue);
   }
 
-  private void writeIndexMap(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
+  private void writeIndexVector(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
     writeValueTypeLabel(encoder, INDEX_TYPE_VECTOR);
 
     Map<String, Value> map = mapIndexValue.getFieldsMap();
@@ -158,7 +158,7 @@ public class FirestoreIndexValueWriter {
     this.writeIndexValueAux(map.get(key), encoder);
   }
 
-  private void writeIndexVector(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
+  private void writeIndexMap(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
     writeValueTypeLabel(encoder, INDEX_TYPE_MAP);
     for (Map.Entry<String, Value> entry : mapIndexValue.getFieldsMap().entrySet()) {
       String key = entry.getKey();
