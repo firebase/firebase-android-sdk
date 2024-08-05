@@ -28,6 +28,8 @@ import android.content.Context;
 import android.os.Build;
 import androidx.annotation.RequiresApi;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -61,6 +63,8 @@ public class SessionReportingCoordinatorRobolectricTest {
 
   private SessionReportingCoordinator reportingCoordinator;
 
+  private CrashlyticsWorker diskWriteWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -72,7 +76,8 @@ public class SessionReportingCoordinatorRobolectricTest {
             reportSender,
             logFileManager,
             reportMetadata,
-            idManager);
+            idManager,
+            diskWriteWorker);
     mockEventInteractions();
   }
 
