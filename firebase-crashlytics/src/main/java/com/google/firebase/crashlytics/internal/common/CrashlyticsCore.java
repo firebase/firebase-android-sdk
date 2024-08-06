@@ -27,11 +27,11 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
-import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -74,7 +74,10 @@ public class CrashlyticsCore {
 
   private final Context context;
   private final FirebaseApp app;
+
+  /** This field is accessed by the Unity plugin via reflection. */
   private final DataCollectionArbiter dataCollectionArbiter;
+
   private final OnDemandCounter onDemandCounter;
 
   private final long startTime;
@@ -96,8 +99,8 @@ public class CrashlyticsCore {
 
   private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
 
-  @VisibleForTesting final CrashlyticsWorker commonWorker;
-  @VisibleForTesting final CrashlyticsWorker diskWriteWorker;
+  private final CrashlyticsWorker commonWorker;
+  private final CrashlyticsWorker diskWriteWorker;
 
   // region Constructors
 
@@ -172,7 +175,8 @@ public class CrashlyticsCore {
               stackTraceTrimmingStrategy,
               settingsProvider,
               onDemandCounter,
-              sessionsSubscriber);
+              sessionsSubscriber,
+              diskWriteWorker);
 
       controller =
           new CrashlyticsController(
@@ -337,7 +341,11 @@ public class CrashlyticsCore {
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    commonWorker.submit(() -> controller.writeToLog(timestamp, msg));
+    // queuing up on common worker to maintain the order
+    commonWorker.submit(
+        () -> {
+          diskWriteWorker.submit(() -> controller.writeToLog(timestamp, msg));
+        });
   }
 
   public void setUserId(String identifier) {

@@ -1,5 +1,6 @@
 # Unreleased
-
+* [changed] Retry Topic Subscribe/Unsubscribe operations with exponential
+  backoff if they hit a quota error.
 
 # 24.0.0
 * [changed] Switched Firelog to use the new TransportBackend.
