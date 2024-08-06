@@ -569,6 +569,7 @@ class CrashlyticsController {
    */
   private void doCloseSessions(
       boolean skipCurrentSession, SettingsProvider settingsProvider, boolean isInitProcess) {
+    CrashlyticsPreconditions.checkBackgroundThread();
     final int offset = skipCurrentSession ? 1 : 0;
 
     // :TODO HW2021 this implementation can be cleaned up.
