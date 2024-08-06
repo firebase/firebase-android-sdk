@@ -1,0 +1,112 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.google.firebase.dataconnect.gradle.plugin
+
+import java.io.File
+import java.util.Locale
+import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
+import org.gradle.api.file.Directory
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.TaskAction
+
+abstract class DataConnectMergeDataConnectDirectoriesTask : DefaultTask() {
+
+  @get:InputFiles abstract val defaultConfigDirectories: ListProperty<Directory>
+
+  @get:InputDirectory @get:Optional abstract val customConfigDirectory: DirectoryProperty
+
+  @get:OutputFiles abstract val buildDirectory: DirectoryProperty
+
+  @get:OutputFiles abstract val mergedDirectory: DirectoryProperty
+
+  @TaskAction
+  fun run() {
+    val defaultConfigDirectories: List<File> =
+      defaultConfigDirectories
+        .get()
+        .map { it.asFile }
+        .sortedBy { it.absolutePath.lowercase(Locale.US) }
+    val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
+    val buildDirectory: File = buildDirectory.get().asFile
+    val mergedDirectory: File = mergedDirectory.get().asFile
+
+    logger.info(
+      "defaultConfigDirectories ({}): {}",
+      defaultConfigDirectories.size,
+      defaultConfigDirectories.map { it.absolutePath }.sorted().joinToString(", ")
+    )
+    logger.info("customConfigDirectory: ${customConfigDirectory?.absolutePath}")
+    logger.info("buildDirectory: ${buildDirectory.absolutePath}")
+    logger.info("mergedDirectory: ${mergedDirectory.absolutePath}")
+
+    logger.info("Deleting build directory: $buildDirectory")
+    project.delete(buildDirectory)
+
+    val configDirectories =
+      buildList {
+          addAll(defaultConfigDirectories)
+          if (customConfigDirectory !== null) {
+            add(customConfigDirectory)
+            if (!customConfigDirectory.exists()) {
+              throw GradleException(
+                "custom data connect config directory not found:" +
+                  " ${customConfigDirectory.absolutePath} (error code: chhzf62bwt)"
+              )
+            }
+          }
+        }
+        .sortedBy { it.absolutePath.lowercase(Locale.US) }
+
+    val existingConfigDirectories = configDirectories.filter { it.exists() }
+    val onlyExistingConfigDirectory = existingConfigDirectories.singleOrNull()
+
+    if (mergedDirectory == onlyExistingConfigDirectory) {
+      // nothing to do, since the one-and-only existing config directory will be used directly.
+      return
+    } else if (existingConfigDirectories.isEmpty()) {
+      // nothing to do, since there are no existing config directories.
+      return
+    } else if (mergedDirectory != buildDirectory) {
+      throw GradleException(
+        "mergedDirectory must equal buildDirectory" +
+          " when there are more than one existing config directories;" +
+          " however, they were unequal and there were ${existingConfigDirectories.size}" +
+          " existing config directories: " +
+          existingConfigDirectories.joinToString(", ") { it.absolutePath } +
+          " (mergedDirectory=$mergedDirectory buildDirectory=$buildDirectory)" +
+          " (error code: qay4ngz5fr)"
+      )
+    }
+
+    logger.info(
+      "Merging config directories {} to {}",
+      existingConfigDirectories.joinToString(", ") { it.absolutePath },
+      mergedDirectory.absolutePath
+    )
+    project.copy {
+      it.from(existingConfigDirectories)
+      it.into(mergedDirectory)
+      it.duplicatesStrategy = DuplicatesStrategy.FAIL
+    }
+  }
+}

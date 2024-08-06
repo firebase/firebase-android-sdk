@@ -24,9 +24,17 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
 
 abstract class DataConnectEmulatorTask : DefaultTask() {
+
+  @get:InputFile abstract val dataConnectExecutable: RegularFileProperty
+
+  @get:InputDirectory abstract val configDirectory: DirectoryProperty
 
   @TaskAction
   fun run() = runBlocking {

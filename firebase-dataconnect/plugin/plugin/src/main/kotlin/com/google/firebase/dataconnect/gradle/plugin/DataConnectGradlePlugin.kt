@@ -22,19 +22,18 @@ import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import java.io.File
-import java.io.FileNotFoundException
 import java.util.Locale
-import java.util.Properties
 import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logging
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
-import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.register
 
 @Suppress("unused")
@@ -49,6 +48,9 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
   private val logger = Logging.getLogger(javaClass)
 
   override fun apply(project: Project) {
+    // TODO: Add support for com.android.build.api.dsl.ApplicationExtension, not just
+    // LibraryExtension.
+    val android = project.extensions.getByType(LibraryExtension::class.java) as ExtensionAware
     val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
 
     androidComponents.registerSourceType("dataconnect")
@@ -65,62 +67,74 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
 
     androidComponents.onVariants { variant ->
       val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
+      val dataConnectDslProjectExtension =
+        android.extensions.getByType(DataConnectDslExtension::class.java)
+      val dataConnectDslVariantExtension =
+        variant.getExtension(DataConnectVariantDslExtension::class.java)!!
 
-      val emulatorTask =
-        project.tasks.register<DataConnectEmulatorTask>(
-          "run${variantNameTitleCase}DataConnectEmulator"
-        )
+      val resolvedDataConnectExecutable: Provider<RegularFile> = run {
+        val valueFromProject: Provider<File> =
+          providerFactory.provider { dataConnectDslProjectExtension.dataConnectExecutable }
+        val valueFromVariant: Provider<File> = dataConnectDslVariantExtension.dataConnectExecutable
+        valueFromVariant.orElse(valueFromProject).map {
+          project.layout.projectDirectory.file(it.path)
+        }
+      }
+
+      val resolvedCustomConfigDir: Provider<Directory> = run {
+        val valueFromProject: Provider<File> =
+          providerFactory.provider { dataConnectDslProjectExtension.configDir }
+        val valueFromVariant: Provider<File> = dataConnectDslVariantExtension.configDir
+        valueFromVariant.orElse(valueFromProject).map {
+          project.layout.projectDirectory.dir(it.path)
+        }
+      }
+
+      val resolvedConnectors: Provider<Collection<String>> = run {
+        val valueFromProject: Provider<Collection<String>> =
+          providerFactory.provider { dataConnectDslProjectExtension.codegen.connectors }
+        val valueFromVariant: Provider<Collection<String>> =
+          dataConnectDslVariantExtension.codegen.connectors
+        valueFromVariant.orElse(valueFromProject)
+      }
+
+      val mergeConfigDirectoriesTask =
+        project.tasks.register<DataConnectMergeDataConnectDirectoriesTask>(
+          "merge${variantNameTitleCase}DataConnectConfigDirs"
+        ) {
+          defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
+          customConfigDirectory.set(resolvedCustomConfigDir)
+          buildDirectory.set(
+            project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
+          )
+          mergedDirectory.set(
+            providerFactory
+              .provider {
+                buildList {
+                    addAll(defaultConfigDirectories.get())
+                    customConfigDirectory.orNull?.let { add(it) }
+                  }
+                  .singleOrNull { it.asFile.exists() }
+              }
+              .orElse(buildDirectory)
+          )
+        }
+
+      project.tasks.register<DataConnectEmulatorTask>(
+        "run${variantNameTitleCase}DataConnectEmulator"
+      ) {
+        outputs.upToDateWhen { false }
+        dataConnectExecutable.set(resolvedDataConnectExecutable)
+        configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
+      }
 
       val generateCodeTask =
         project.tasks.register<DataConnectGenerateCodeTask>(
           "generate${variantNameTitleCase}DataConnectSources"
         ) {
-          workDirectory.set(
-            project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
-          )
-          defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
-          connectors.set(emptyList())
-
-          val android = project.extensions.getByType(LibraryExtension::class.java) as ExtensionAware
-          android.extensions.getByType(DataConnectDslExtension::class.java).let { parentExt ->
-            for (ext in listOf(parentExt, parentExt.codegen)) {
-              ext.configDir?.let { customConfigDirectory.set(it) }
-              ext.connectors?.let { connectors.set(it) }
-              ext.dataConnectExecutable?.let { dataConnectExecutable.set(it) }
-            }
-          }
-
-          variant.getExtension(DataConnectVariantDslExtension::class.java)!!.also { parentExt ->
-            for (ext in listOf(parentExt, parentExt.codegen)) {
-              if (ext.configDir.isPresent) {
-                customConfigDirectory.set(ext.configDir)
-              }
-              if (ext.connectors.isPresent) {
-                connectors.set(ext.connectors)
-              }
-              if (ext.dataConnectExecutable.isPresent) {
-                dataConnectExecutable.set(ext.dataConnectExecutable)
-              }
-            }
-          }
-
-          fun withGradlePropertyIfSet(propertyName: String, block: (Provider<String>) -> Unit) {
-            val provider = project.providers.gradleProperty(propertyName)
-            logger.info("Loaded gradle property {}: {}", propertyName, provider.orNull)
-            if (provider.isPresent) {
-              block(provider)
-            }
-          }
-
-          withGradlePropertyIfSet(DATA_CONNECT_EXECUTABLE_PROPERTY_NAME) { provider ->
-            dataConnectExecutable.set(provider.map { project.layout.projectDirectory.file(it) })
-          }
-          withGradlePropertyIfSet(DATA_CONNECT_CONFIG_DIR_PROPERTY_NAME) { provider ->
-            customConfigDirectory.set(provider.map { project.layout.projectDirectory.dir(it) })
-          }
-          withGradlePropertyIfSet(DATA_CONNECT_CONNECTORS_PROPERTY_NAME) { provider ->
-            connectors.set(provider.map { it.split(",") })
-          }
+          dataConnectExecutable.set(resolvedDataConnectExecutable)
+          configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
+          connectors.set(resolvedConnectors)
         }
 
       variant.sources.java!!.addGeneratedSourceDirectory(
@@ -129,46 +143,4 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
       )
     }
   }
-
-  private fun loadLocalProperties(project: Project, file: File): DataConnectDslExtension? {
-    val properties = Properties()
-
-    try {
-      logger.info("Loading properties from file: {}", file)
-      file.inputStream().use { properties.load(it) }
-    } catch (e: FileNotFoundException) {
-      logger.info("Properties file not found; ignoring ({})", file)
-      return null
-    }
-
-    val dataConnectDslExtension = objectFactory.newInstance<DataConnectDslExtension>()
-    fun Map.Entry<*, Any>.asConfigDir(): File = project.file(value)
-    fun Map.Entry<*, Any>.asConnectors(): List<String> = value.toString().split(",")
-    fun Map.Entry<*, Any>.asDataConnectExecutable(): File = project.file(value)
-
-    for (property in properties) {
-      when (property.key) {
-        "configDir" -> dataConnectDslExtension.configDir = property.asConfigDir()
-        "connectors" -> dataConnectDslExtension.connectors = property.asConnectors()
-        "dataConnectExecutable" ->
-          dataConnectDslExtension.dataConnectExecutable = property.asDataConnectExecutable()
-        "codegen.configDir" -> dataConnectDslExtension.codegen.configDir = property.asConfigDir()
-        "codegen.connectors" -> dataConnectDslExtension.codegen.connectors = property.asConnectors()
-        "codegen.dataConnectExecutable" ->
-          dataConnectDslExtension.codegen.dataConnectExecutable = property.asDataConnectExecutable()
-        "emulator.configDir" -> dataConnectDslExtension.emulator.configDir = property.asConfigDir()
-        "emulator.connectors" ->
-          dataConnectDslExtension.emulator.connectors = property.asConnectors()
-        "emulator.dataConnectExecutable" ->
-          dataConnectDslExtension.emulator.dataConnectExecutable =
-            property.asDataConnectExecutable()
-      }
-    }
-
-    return dataConnectDslExtension
-  }
 }
-
-private const val DATA_CONNECT_EXECUTABLE_PROPERTY_NAME = "DATA_CONNECT_EXECUTABLE"
-private const val DATA_CONNECT_CONFIG_DIR_PROPERTY_NAME = "DATA_CONNECT_CONFIG_DIR"
-private const val DATA_CONNECT_CONNECTORS_PROPERTY_NAME = "DATA_CONNECT_CONNECTORS"
