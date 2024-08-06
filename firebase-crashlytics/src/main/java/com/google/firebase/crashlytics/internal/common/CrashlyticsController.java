@@ -216,7 +216,6 @@ class CrashlyticsController {
 
                 // We've fatally crashed, so write the marker file that indicates a crash occurred.
                 crashMarker.create();
-
                 reportingCoordinator.persistFatalEvent(
                     ex, thread, currentSessionId, timestampSeconds);
 
@@ -375,8 +374,11 @@ class CrashlyticsController {
                       public Task<Void> call() throws Exception {
                         if (!send) {
                           Logger.getLogger().v("Deleting cached crash reports...");
-                          deleteFiles(listAppExceptionMarkerFiles());
-                          reportingCoordinator.removeAllReports();
+                          diskWriteWorker.submit(
+                              () -> {
+                                deleteFiles(listAppExceptionMarkerFiles());
+                                reportingCoordinator.removeAllReports();
+                              });
                           unsentReportsHandled.trySetResult(null);
                           return Tasks.forResult(null);
                         }
@@ -532,7 +534,7 @@ class CrashlyticsController {
 
     Logger.getLogger().v("Finalizing previously open sessions.");
     try {
-      doCloseSessions(true, settingsProvider);
+      doCloseSessions(true, settingsProvider, true);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
@@ -578,14 +580,15 @@ class CrashlyticsController {
   }
 
   void doCloseSessions(SettingsProvider settingsProvider) {
-    doCloseSessions(false, settingsProvider);
+    doCloseSessions(false, settingsProvider, false);
   }
 
   /**
-   * Not synchronized/locked. Must be executed from the single thread executor service used by this
-   * class.
+   *
+   * Not synchronized/locked. Must be executed from the executor service runs tasks in serial order
    */
-  private void doCloseSessions(boolean skipCurrentSession, SettingsProvider settingsProvider) {
+  private void doCloseSessions(
+      boolean skipCurrentSession, SettingsProvider settingsProvider, boolean isInitProcess) {
     final int offset = skipCurrentSession ? 1 : 0;
 
     // :TODO HW2021 this implementation can be cleaned up.
@@ -599,13 +602,15 @@ class CrashlyticsController {
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
-    if (settingsProvider.getSettingsSync().featureFlagData.collectAnrs) {
+    // We only collect ANR info for finalize report during initialization process
+    if (isInitProcess && settingsProvider.getSettingsSync().featureFlagData.collectAnrs) {
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
     } else {
       Logger.getLogger().v("ANR feature disabled.");
     }
 
-    if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
+    // We only collect native crash info for finalize report during initialization process
+    if (isInitProcess && nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
       // We only finalize the current session if it's a Java crash, so only finalize native crash
       // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
