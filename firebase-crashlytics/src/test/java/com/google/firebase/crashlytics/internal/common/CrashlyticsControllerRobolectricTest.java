@@ -43,6 +43,7 @@ import com.google.firebase.crashlytics.internal.settings.Settings.SessionData;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.inject.Deferred;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
@@ -100,6 +101,7 @@ public class CrashlyticsControllerRobolectricTest {
 
   @Test
   public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() {
+    final String sessionIdPrevious = "sessionIdPrevious";
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
     // Adds multiple AppExitInfos to confirm that Crashlytics loops through
@@ -109,12 +111,12 @@ public class CrashlyticsControllerRobolectricTest {
     List<ApplicationExitInfo> testApplicationExitInfo = getApplicationExitInfoList();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
-        .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
+        .thenReturn(new TreeSet<>(Arrays.asList(sessionId, sessionIdPrevious)));
     mockSettingsProvider(true, false);
-    controller.doCloseSessions(mockSettingsProvider);
+    controller.finalizeSessions(mockSettingsProvider);
     verify(mockSessionReportingCoordinator)
         .persistRelevantAppExitInfoEvent(
-            eq(sessionId),
+            eq(sessionIdPrevious),
             eq(testApplicationExitInfo),
             any(LogFileManager.class),
             any(UserMetadata.class));

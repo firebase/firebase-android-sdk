@@ -559,6 +559,8 @@ class CrashlyticsController {
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
+  // This is only used for exception handler close session (we have another close session in
+  // background initialization)
   void doCloseSessions(SettingsProvider settingsProvider) {
     doCloseSessions(false, settingsProvider, false);
   }
