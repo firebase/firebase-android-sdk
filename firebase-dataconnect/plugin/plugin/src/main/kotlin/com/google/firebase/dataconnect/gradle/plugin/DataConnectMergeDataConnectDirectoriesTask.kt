@@ -23,21 +23,20 @@ import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
 import org.gradle.api.provider.ListProperty
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 abstract class DataConnectMergeDataConnectDirectoriesTask : DefaultTask() {
 
   @get:InputFiles abstract val defaultConfigDirectories: ListProperty<Directory>
 
-  @get:InputDirectory @get:Optional abstract val customConfigDirectory: DirectoryProperty
+  @get:InputFiles @get:Optional abstract val customConfigDirectory: DirectoryProperty
 
-  @get:OutputFiles abstract val buildDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val buildDirectory: DirectoryProperty
 
-  @get:OutputFiles abstract val mergedDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val mergedDirectory: DirectoryProperty
 
   @TaskAction
   fun run() {

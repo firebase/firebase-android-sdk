@@ -77,7 +77,7 @@ abstract class DataConnectVariantDslExtension(
   }
 
   /** @see DataConnectDslExtension.dataConnectExecutable */
-  abstract var dataConnectExecutable: Property<File>
+  abstract val dataConnectExecutable: Property<File>
   init {
     dataConnectExecutable.setFrom(
       variant,

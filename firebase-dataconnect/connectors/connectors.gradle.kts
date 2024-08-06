@@ -57,8 +57,11 @@ android {
   }
 
   dataconnect {
+    dataConnectExecutable = File("/google/src/cloud/dconeybe/codegen/google3/blaze-bin/third_party/firebase/dataconnect/emulator/cli/cli")
     configDir = file("../emulator/dataconnect")
-    connectors = listOf("demo", "keywords")
+    codegen {
+      connectors = listOf("demo", "keywords")
+    }
   }
 }
 
