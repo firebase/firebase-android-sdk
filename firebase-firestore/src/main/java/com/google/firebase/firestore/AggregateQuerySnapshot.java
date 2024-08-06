@@ -22,7 +22,6 @@ import com.google.firestore.v1.Value;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
-import javax.annotation.Nonnull;
 
 /**
  * The results of executing an {@link AggregateQuery}.
@@ -33,9 +32,9 @@ import javax.annotation.Nonnull;
  */
 public class AggregateQuerySnapshot {
 
-  @Nonnull private final AggregateQuery query;
+  @NonNull private final AggregateQuery query;
 
-  @Nonnull private final Map<String, Value> data;
+  @NonNull private final Map<String, Value> data;
 
   AggregateQuerySnapshot(@NonNull AggregateQuery query, @NonNull Map<String, Value> data) {
     checkNotNull(query);
@@ -73,7 +72,7 @@ public class AggregateQuerySnapshot {
    * @return The result of the given aggregation.
    */
   @Nullable
-  public Object get(@Nonnull AggregateField aggregateField) {
+  public Object get(@NonNull AggregateField aggregateField) {
     return getInternal(aggregateField);
   }
 
@@ -83,7 +82,7 @@ public class AggregateQuerySnapshot {
    * @param countAggregateField The count aggregation for which the value is requested.
    * @return The result of the given count aggregation.
    */
-  public long get(@Nonnull AggregateField.CountAggregateField countAggregateField) {
+  public long get(@NonNull AggregateField.CountAggregateField countAggregateField) {
     Long value = getLong(countAggregateField);
     if (value == null) {
       throw new IllegalArgumentException(
@@ -102,7 +101,7 @@ public class AggregateQuerySnapshot {
    * @return The result of the given average aggregation.
    */
   @Nullable
-  public Double get(@Nonnull AggregateField.AverageAggregateField averageAggregateField) {
+  public Double get(@NonNull AggregateField.AverageAggregateField averageAggregateField) {
     return getDouble(averageAggregateField);
   }
 
@@ -116,7 +115,7 @@ public class AggregateQuerySnapshot {
    * @return The result of the given average aggregation as a double.
    */
   @Nullable
-  public Double getDouble(@Nonnull AggregateField aggregateField) {
+  public Double getDouble(@NonNull AggregateField aggregateField) {
     Number val = getTypedValue(aggregateField, Number.class);
     return val != null ? val.doubleValue() : null;
   }
@@ -130,13 +129,13 @@ public class AggregateQuerySnapshot {
    * @return The result of the given average aggregation as a long.
    */
   @Nullable
-  public Long getLong(@Nonnull AggregateField aggregateField) {
+  public Long getLong(@NonNull AggregateField aggregateField) {
     Number val = getTypedValue(aggregateField, Number.class);
     return val != null ? val.longValue() : null;
   }
 
   @Nullable
-  private Object getInternal(@Nonnull AggregateField aggregateField) {
+  private Object getInternal(@NonNull AggregateField aggregateField) {
     if (!data.containsKey(aggregateField.getAlias())) {
       throw new IllegalArgumentException(
           "'"
@@ -154,14 +153,14 @@ public class AggregateQuerySnapshot {
   }
 
   @Nullable
-  private <T> T getTypedValue(@Nonnull AggregateField aggregateField, Class<T> clazz) {
+  private <T> T getTypedValue(@NonNull AggregateField aggregateField, Class<T> clazz) {
     Object value = getInternal(aggregateField);
     return castTypedValue(value, aggregateField, clazz);
   }
 
   @Nullable
   private <T> T castTypedValue(
-      Object value, @Nonnull AggregateField aggregateField, Class<T> clazz) {
+      Object value, @NonNull AggregateField aggregateField, Class<T> clazz) {
     if (value == null) {
       return null;
     } else if (!clazz.isInstance(value)) {

@@ -94,7 +94,7 @@ public class RealtimeFragment extends Fragment {
         frc.addOnConfigUpdateListener(
             new ConfigUpdateListener() {
               @Override
-              public void onUpdate(ConfigUpdate configUpdate) {
+              public void onUpdate(@NonNull ConfigUpdate configUpdate) {
                 Log.d(TAG, String.join(", ", configUpdate.getUpdatedKeys()));
                 updatedParamsText.setText(String.join(", ", configUpdate.getUpdatedKeys()));
               }

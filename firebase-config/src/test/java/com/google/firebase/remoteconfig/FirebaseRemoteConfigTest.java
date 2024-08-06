@@ -316,7 +316,7 @@ public final class FirebaseRemoteConfigTest {
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(ConfigUpdate configUpdate) {
+          public void onUpdate(@NonNull ConfigUpdate configUpdate) {
             mockOnUpdateListener.onUpdate(configUpdate);
           }
 
@@ -1757,7 +1757,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigUpdateListener generateEmptyRealtimeListener() {
     return new ConfigUpdateListener() {
       @Override
-      public void onUpdate(ConfigUpdate configUpdate) {}
+      public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
 
       @Override
       public void onError(@NonNull FirebaseRemoteConfigException error) {}
