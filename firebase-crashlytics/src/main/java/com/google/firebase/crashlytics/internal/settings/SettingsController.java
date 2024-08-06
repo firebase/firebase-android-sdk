@@ -30,10 +30,12 @@ import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.common.SystemCurrentTimeProvider;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.Locale;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -149,8 +151,9 @@ public class SettingsController implements SettingsProvider {
    *
    * @return a task that is resolved when loading is completely finished.
    */
-  public Task<Void> loadSettingsData(Executor executor) {
-    return loadSettingsData(SettingsCacheBehavior.USE_CACHE, executor);
+  public Task<Void> loadSettingsData(
+      CrashlyticsWorker commonWorker, ExecutorService networkExecutor) {
+    return loadSettingsData(SettingsCacheBehavior.USE_CACHE, commonWorker, networkExecutor);
   }
 
   /**
@@ -158,7 +161,10 @@ public class SettingsController implements SettingsProvider {
    *
    * @return a task that is resolved when loading is completely finished.
    */
-  public Task<Void> loadSettingsData(SettingsCacheBehavior cacheBehavior, Executor executor) {
+  public Task<Void> loadSettingsData(
+      SettingsCacheBehavior cacheBehavior,
+      CrashlyticsWorker commonWorker,
+      ExecutorService networkExecutor) {
     // TODO: Refactor this so that it doesn't do the cache lookup twice when settings are
     // expired.
 
@@ -186,18 +192,22 @@ public class SettingsController implements SettingsProvider {
     }
 
     // Kick off fetching fresh settings.
+    // TODO(mrober): Refactor to call worker directly, not expose executor.
     return dataCollectionArbiter
-        .waitForDataCollectionPermission(executor)
+        .waitForDataCollectionPermission(commonWorker.getExecutor())
         .onSuccessTask(
-            executor,
+            commonWorker.getExecutor(),
             new SuccessContinuation<Void, Void>() {
               @NonNull
               @Override
               public Task<Void> then(@Nullable Void aVoid) throws Exception {
                 // Waited for data collection permission, so this is safe.
                 final boolean dataCollectionToken = true;
-                final JSONObject settingsJson =
-                    settingsSpiCall.invoke(settingsRequest, dataCollectionToken);
+                Future<JSONObject> settingsFuture =
+                    networkExecutor.submit(
+                        () -> settingsSpiCall.invoke(settingsRequest, dataCollectionToken));
+                // TODO(mrober): Should we add a timeout here, or let the entire init timeout?
+                JSONObject settingsJson = settingsFuture.get();
 
                 if (settingsJson != null) {
                   final Settings fetchedSettings =

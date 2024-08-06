@@ -26,10 +26,12 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -39,9 +41,7 @@ import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStra
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -74,7 +74,10 @@ public class CrashlyticsCore {
 
   private final Context context;
   private final FirebaseApp app;
+
+  /** This field is accessed by the Unity plugin via reflection. */
   private final DataCollectionArbiter dataCollectionArbiter;
+
   private final OnDemandCounter onDemandCounter;
 
   private final long startTime;
@@ -90,13 +93,14 @@ public class CrashlyticsCore {
   @VisibleForTesting public final BreadcrumbSource breadcrumbSource;
   private final AnalyticsEventLogger analyticsEventLogger;
 
-  private final ExecutorService crashHandlerExecutor;
-  private final CrashlyticsBackgroundWorker backgroundWorker;
   private final CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber;
 
   private final CrashlyticsNativeComponent nativeComponent;
 
   private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
+
+  private final CrashlyticsWorker commonWorker;
+  private final CrashlyticsWorker diskWriteWorker;
 
   // region Constructors
 
@@ -108,9 +112,10 @@ public class CrashlyticsCore {
       BreadcrumbSource breadcrumbSource,
       AnalyticsEventLogger analyticsEventLogger,
       FileStore fileStore,
-      ExecutorService crashHandlerExecutor,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      RemoteConfigDeferredProxy remoteConfigDeferredProxy) {
+      RemoteConfigDeferredProxy remoteConfigDeferredProxy,
+      CrashlyticsWorker commonWorker,
+      CrashlyticsWorker diskWriteWorker) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.context = app.getApplicationContext();
@@ -118,11 +123,11 @@ public class CrashlyticsCore {
     this.nativeComponent = nativeComponent;
     this.breadcrumbSource = breadcrumbSource;
     this.analyticsEventLogger = analyticsEventLogger;
-    this.crashHandlerExecutor = crashHandlerExecutor;
     this.fileStore = fileStore;
-    this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
     this.sessionsSubscriber = sessionsSubscriber;
     this.remoteConfigDeferredProxy = remoteConfigDeferredProxy;
+    this.commonWorker = commonWorker;
+    this.diskWriteWorker = diskWriteWorker;
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
@@ -151,7 +156,7 @@ public class CrashlyticsCore {
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
 
       final UserMetadata userMetadata =
-          new UserMetadata(sessionIdentifier, fileStore, backgroundWorker);
+          new UserMetadata(sessionIdentifier, fileStore, diskWriteWorker);
       final LogFileManager logFileManager = new LogFileManager(fileStore);
       final StackTraceTrimmingStrategy stackTraceTrimmingStrategy =
           new MiddleOutFallbackStrategy(
@@ -170,12 +175,13 @@ public class CrashlyticsCore {
               stackTraceTrimmingStrategy,
               settingsProvider,
               onDemandCounter,
-              sessionsSubscriber);
+              sessionsSubscriber,
+              diskWriteWorker);
 
       controller =
           new CrashlyticsController(
               context,
-              backgroundWorker,
+              commonWorker,
               idManager,
               dataCollectionArbiter,
               fileStore,
@@ -186,7 +192,8 @@ public class CrashlyticsCore {
               sessionReportingCoordinator,
               nativeComponent,
               analyticsEventLogger,
-              sessionsSubscriber);
+              sessionsSubscriber,
+              diskWriteWorker);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
@@ -220,22 +227,16 @@ public class CrashlyticsCore {
     return true;
   }
 
-  /** Performs background initialization asynchronously on the background worker's thread. */
+  /** Performs background initialization asynchronously on the common worker. */
   @CanIgnoreReturnValue
   public Task<Void> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
-    return Utils.callTask(
-        crashHandlerExecutor,
-        new Callable<Task<Void>>() {
-          @Override
-          public Task<Void> call() throws Exception {
-            return doBackgroundInitialization(settingsProvider);
-          }
-        });
+    return commonWorker.submitTask(() -> doBackgroundInitialization(settingsProvider));
   }
 
   /** Performs background initialization synchronously on the calling thread. */
   @CanIgnoreReturnValue
   private Task<Void> doBackgroundInitialization(SettingsProvider settingsProvider) {
+    CrashlyticsPreconditions.checkBackgroundThread();
     // create the marker for this run
     markInitializationStarted();
 
@@ -325,7 +326,7 @@ public class CrashlyticsCore {
    * safe to invoke this method from the main thread.
    */
   public void logException(@NonNull Throwable throwable) {
-    controller.writeNonFatalException(Thread.currentThread(), throwable);
+    commonWorker.submit(() -> controller.writeNonFatalException(Thread.currentThread(), throwable));
   }
 
   /**
@@ -340,11 +341,15 @@ public class CrashlyticsCore {
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    controller.writeToLog(timestamp, msg);
+    // queuing up on common worker to maintain the order
+    commonWorker.submit(
+        () -> {
+          diskWriteWorker.submit(() -> controller.writeToLog(timestamp, msg));
+        });
   }
 
   public void setUserId(String identifier) {
-    controller.setUserId(identifier);
+    commonWorker.submit(() -> controller.setUserId(identifier));
   }
 
   /**
@@ -357,7 +362,7 @@ public class CrashlyticsCore {
    * @throws NullPointerException if key is null.
    */
   public void setCustomKey(String key, String value) {
-    controller.setCustomKey(key, value);
+    commonWorker.submit(() -> controller.setCustomKey(key, value));
   }
 
   /**
@@ -374,7 +379,7 @@ public class CrashlyticsCore {
    * @throws NullPointerException if any key in keysAndValues is null.
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
-    controller.setCustomKeys(keysAndValues);
+    commonWorker.submit(() -> controller.setCustomKeys(keysAndValues));
   }
 
   // endregion
@@ -394,7 +399,7 @@ public class CrashlyticsCore {
    * @throws NullPointerException if key is null.
    */
   public void setInternalKey(String key, String value) {
-    controller.setInternalKey(key, value);
+    commonWorker.submit(() -> controller.setInternalKey(key, value));
   }
 
   /** Logs a fatal Throwable on the Crashlytics servers on-demand. */
@@ -403,11 +408,16 @@ public class CrashlyticsCore {
         .d("Recorded on-demand fatal events: " + onDemandCounter.getRecordedOnDemandExceptions());
     Logger.getLogger()
         .d("Dropped on-demand fatal events: " + onDemandCounter.getDroppedOnDemandExceptions());
-    controller.setInternalKey(
-        ON_DEMAND_RECORDED_KEY, Integer.toString(onDemandCounter.getRecordedOnDemandExceptions()));
-    controller.setInternalKey(
-        ON_DEMAND_DROPPED_KEY, Integer.toString(onDemandCounter.getDroppedOnDemandExceptions()));
-    controller.logFatalException(Thread.currentThread(), throwable);
+    commonWorker.submit(
+        () -> {
+          controller.setInternalKey(
+              ON_DEMAND_RECORDED_KEY,
+              Integer.toString(onDemandCounter.getRecordedOnDemandExceptions()));
+          controller.setInternalKey(
+              ON_DEMAND_DROPPED_KEY,
+              Integer.toString(onDemandCounter.getDroppedOnDemandExceptions()));
+          controller.logFatalException(Thread.currentThread(), throwable);
+        });
   }
 
   // endregion
@@ -424,7 +434,7 @@ public class CrashlyticsCore {
 
   /**
    * When a startup crash occurs, Crashlytics must lock on the main thread and complete
-   * initializaiton to upload crash result. 4 seconds is chosen for the lock to prevent ANR
+   * initialization to upload crash result. 4 seconds is chosen for the lock to prevent ANR
    */
   private void finishInitSynchronously(SettingsProvider settingsProvider) {
 
@@ -436,7 +446,8 @@ public class CrashlyticsCore {
           }
         };
 
-    final Future<?> future = crashHandlerExecutor.submit(runnable);
+    // TODO(mrober): Refactor to Tasks. Maybe just re-use async task and awaitEvenIfOnMain?
+    final Future<?> future = commonWorker.getExecutor().submit(runnable);
 
     Logger.getLogger()
         .d(
@@ -456,7 +467,7 @@ public class CrashlyticsCore {
 
   /** Synchronous call to mark start of initialization */
   void markInitializationStarted() {
-    backgroundWorker.checkRunningOnThread();
+    CrashlyticsPreconditions.checkBackgroundThread();
 
     // Create the Crashlytics initialization marker file, which is used to determine
     // whether the app crashed before initialization could complete.
@@ -466,21 +477,18 @@ public class CrashlyticsCore {
 
   /** Enqueues a job to remove the Crashlytics initialization marker file */
   void markInitializationComplete() {
-    backgroundWorker.submit(
-        new Callable<Boolean>() {
-          @Override
-          public Boolean call() throws Exception {
-            try {
-              final boolean removed = initializationMarker.remove();
-              if (!removed) {
-                Logger.getLogger().w("Initialization marker file was not properly removed.");
-              }
-              return removed;
-            } catch (Exception e) {
-              Logger.getLogger()
-                  .e("Problem encountered deleting Crashlytics initialization marker.", e);
-              return false;
+    commonWorker.submit(
+        () -> {
+          try {
+            boolean removed = initializationMarker.remove();
+            if (!removed) {
+              Logger.getLogger().w("Initialization marker file was not properly removed.");
             }
+            return removed;
+          } catch (Exception e) {
+            Logger.getLogger()
+                .e("Problem encountered deleting Crashlytics initialization marker.", e);
+            return false;
           }
         });
   }
@@ -492,14 +500,7 @@ public class CrashlyticsCore {
   // region Previous crash handling
 
   private void checkForPreviousCrash() {
-    Task<Boolean> task =
-        backgroundWorker.submit(
-            new Callable<Boolean>() {
-              @Override
-              public Boolean call() throws Exception {
-                return controller.didCrashOnPreviousExecution();
-              }
-            });
+    Task<Boolean> task = commonWorker.submit(() -> controller.didCrashOnPreviousExecution());
 
     Boolean result;
     try {

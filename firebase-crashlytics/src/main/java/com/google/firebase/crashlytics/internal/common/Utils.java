@@ -20,7 +20,6 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -31,9 +30,15 @@ import java.util.concurrent.TimeoutException;
 /** Utils */
 @SuppressWarnings({"ResultOfMethodCallIgnored", "UnusedReturnValue"})
 public final class Utils {
-  private static final int TIMEOUT_SEC = 4;
+  /** Timeout in milliseconds for blocking on background threads. */
+  private static final int BACKGROUND_TIMEOUT_MILLIS = 4_000;
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /** Timeout in milliseconds for blocking on the main thread. Be careful about ANRs. */
+  private static final int MAIN_TIMEOUT_MILLIS = 2_750;
+
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   // TODO(b/261014167): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
@@ -52,7 +57,9 @@ public final class Utils {
     return result.getTask();
   }
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   public static <T> Task<T> race(Executor executor, Task<T> t1, Task<T> t2) {
     final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     Continuation<T, Void> continuation =
@@ -66,31 +73,6 @@ public final class Utils {
         };
     t1.continueWith(executor, continuation);
     t2.continueWith(executor, continuation);
-    return result.getTask();
-  }
-
-  /** Similar to Tasks.call, but takes a Callable that returns a Task. */
-  public static <T> Task<T> callTask(Executor executor, Callable<Task<T>> callable) {
-    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
-    executor.execute(
-        () -> {
-          try {
-            callable
-                .call()
-                .continueWith(
-                    executor,
-                    task -> {
-                      if (task.isSuccessful()) {
-                        result.setResult(task.getResult());
-                      } else if (task.getException() != null) {
-                        result.setException(task.getException());
-                      }
-                      return null;
-                    });
-          } catch (Exception e) {
-            result.setException(e);
-          }
-        });
     return result.getTask();
   }
 
@@ -119,9 +101,9 @@ public final class Utils {
         });
 
     if (Looper.getMainLooper() == Looper.myLooper()) {
-      latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+      latch.await(MAIN_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     } else {
-      latch.await(TIMEOUT_SEC, TimeUnit.SECONDS);
+      latch.await(BACKGROUND_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     if (task.isSuccessful()) {

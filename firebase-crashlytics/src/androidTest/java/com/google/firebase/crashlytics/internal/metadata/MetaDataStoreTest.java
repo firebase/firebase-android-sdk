@@ -16,8 +16,9 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.io.IOException;
@@ -57,8 +58,8 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   private FileStore fileStore;
-  private final CrashlyticsBackgroundWorker worker = new CrashlyticsBackgroundWorker(Runnable::run);
 
+  private CrashlyticsWorker diskWriteWorker;
   private MetaDataStore storeUnderTest;
 
   @Override
@@ -66,6 +67,12 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     super.setUp();
     fileStore = new FileStore(getContext());
     storeUnderTest = new MetaDataStore(fileStore);
+    diskWriteWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
+  }
+
+  @Override
+  public void tearDown() throws Exception {
+    fileStore.deleteAllCrashlyticsFiles();
   }
 
   private UserMetadata metadataWithUserId(String sessionId) {
@@ -73,113 +80,179 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   private UserMetadata metadataWithUserId(String sessionId, String userId) {
-    UserMetadata metadata = new UserMetadata(sessionId, fileStore, worker);
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore, diskWriteWorker);
     metadata.setUserId(userId);
     return metadata;
   }
 
-  public void testWriteUserData_allFields() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+  @Test
+  public void testWriteUserData_allFields() throws Exception {
+    diskWriteWorker.submit(
+        () -> {
+          storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
+        });
+    diskWriteWorker.await();
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertEquals(USER_ID, userData.getUserId());
   }
 
-  public void testWriteUserData_noFields() {
-    storeUnderTest.writeUserData(
-        SESSION_ID_1, new UserMetadata(SESSION_ID_1, fileStore, null).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+  @Test
+  public void testWriteUserData_noFields() throws Exception {
+    diskWriteWorker.submit(
+        () -> {
+          storeUnderTest.writeUserData(
+              SESSION_ID_1, new UserMetadata(SESSION_ID_1, fileStore, null).getUserId());
+        });
+    diskWriteWorker.await();
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertNull(userData.getUserId());
   }
 
-  public void testWriteUserData_singleField() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+  @Test
+  public void testWriteUserData_singleField() throws Exception {
+    diskWriteWorker.submit(
+        () -> {
+          storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
+        });
+    diskWriteWorker.await();
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertEquals(USER_ID, userData.getUserId());
   }
 
-  public void testWriteUserData_null() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, null).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+  @Test
+  public void testWriteUserData_null() throws Exception {
+    diskWriteWorker.submit(
+        () -> {
+          storeUnderTest.writeUserData(
+              SESSION_ID_1, metadataWithUserId(SESSION_ID_1, null).getUserId());
+        });
+    diskWriteWorker.await();
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertNull(userData.getUserId());
   }
 
-  public void testWriteUserData_emptyString() {
-    storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1, "").getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+  @Test
+  public void testWriteUserData_emptyString() throws Exception {
+    diskWriteWorker.submit(
+        () -> {
+          storeUnderTest.writeUserData(
+              SESSION_ID_1, metadataWithUserId(SESSION_ID_1, "").getUserId());
+        });
+    diskWriteWorker.await();
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertEquals("", userData.getUserId());
   }
 
-  public void testWriteUserData_unicode() {
+  @Test
+  public void testWriteUserData_unicode() throws Exception {
     storeUnderTest.writeUserData(
         SESSION_ID_1, metadataWithUserId(SESSION_ID_1, UNICODE).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    diskWriteWorker.await();
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertEquals(UNICODE, userData.getUserId());
   }
 
-  public void testWriteUserData_escaped() {
-    storeUnderTest.writeUserData(
-        SESSION_ID_1, metadataWithUserId(SESSION_ID_1, ESCAPED).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+  @Test
+  public void testWriteUserData_escaped() throws Exception {
+    diskWriteWorker.submit(
+        () -> {
+          storeUnderTest.writeUserData(
+              SESSION_ID_1, metadataWithUserId(SESSION_ID_1, ESCAPED).getUserId());
+        });
+    diskWriteWorker.await();
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertEquals(ESCAPED.trim(), userData.getUserId());
   }
 
+  @Test
   public void testWriteUserData_readDifferentSession() {
     storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_2, fileStore, worker);
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_2, fileStore, diskWriteWorker);
     assertNull(userData.getUserId());
   }
 
+  @Test
   public void testReadUserData_corruptData() throws IOException {
     File file = storeUnderTest.getUserDataFileForSession(SESSION_ID_1);
     try (PrintWriter printWriter = new PrintWriter(file)) {
       printWriter.println("Matt says hi!");
     }
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertNull(userData.getUserId());
     assertFalse(file.exists());
   }
 
+  @Test
   public void testReadUserData_emptyData() throws IOException {
     File file = storeUnderTest.getUserDataFileForSession(SESSION_ID_1);
     file.createNewFile();
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertNull(userData.getUserId());
     assertFalse(file.exists());
   }
 
+  @Test
   public void testReadUserData_noStoredData() {
-    UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
+    UserMetadata userData =
+        UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, diskWriteWorker);
     assertNull(userData.getUserId());
   }
 
   @Test
-  public void testUpdateSessionId_notPersistUserIdToNewSessionIfNoUserIdSet() {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+  public void testUpdateSessionId_notPersistUserIdToNewSessionIfNoUserIdSet() throws Exception {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, diskWriteWorker);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
-        .isFalse();
+    diskWriteWorker.submit(
+        () -> {
+          assertThat(
+                  fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
+              .isFalse();
+        });
+    diskWriteWorker.await();
   }
 
   @Test
-  public void testUpdateSessionId_notPersistCustomKeysToNewSessionIfNoCustomKeysSet() {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+  public void testUpdateSessionId_notPersistCustomKeysToNewSessionIfNoCustomKeysSet()
+      throws Exception {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, diskWriteWorker);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
-        .isFalse();
+    diskWriteWorker.submit(
+        () -> {
+          assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+              .isFalse();
+        });
+    diskWriteWorker.await();
   }
 
   @Test
-  public void testUpdateSessionId_notPersistRolloutsToNewSessionIfNoRolloutsSet() {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+  public void testUpdateSessionId_notPersistRolloutsToNewSessionIfNoRolloutsSet() throws Exception {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, diskWriteWorker);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(
-            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
-        .isFalse();
+
+    diskWriteWorker.submit(
+        () -> {
+          assertThat(
+                  fileStore
+                      .getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME)
+                      .exists())
+              .isFalse();
+        });
+    diskWriteWorker.await();
   }
 
   @Test
-  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() throws Exception {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, diskWriteWorker);
     final Map<String, String> keys =
         new HashMap<String, String>() {
           {
@@ -190,34 +263,74 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
         };
     userMetadata.setCustomKeys(keys);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
-        .isTrue();
+    diskWriteWorker.submit(
+        () -> {
+          assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+              .isTrue();
+        });
+    diskWriteWorker.await();
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
     assertThat(metaDataStore.readKeyData(SESSION_ID_2)).isEqualTo(keys);
   }
 
   @Test
-  public void testUpdateSessionId_persistUserIdToNewSessionIfUserIdSet() {
+  public void testSetSameKeysRaceCondition_preserveLastEntryValue() throws Exception {
+    final Map<String, String> keys =
+        new HashMap<String, String>() {
+          {
+            put(KEY_1, "10000");
+            put(KEY_2, "20000");
+          }
+        };
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, diskWriteWorker);
+    for (int index = 0; index <= 10000; index++) {
+      userMetadata.setCustomKey(KEY_1, String.valueOf(index));
+      userMetadata.setCustomKey(KEY_2, String.valueOf(index * 2));
+    }
+    diskWriteWorker.submit(
+        () -> {
+          final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
+          assertThat(readKeys.get(KEY_1)).isEqualTo("10000");
+          assertThat(readKeys.get(KEY_2)).isEqualTo("20000");
+          assertEqualMaps(keys, readKeys);
+        });
+    diskWriteWorker.await();
+  }
+
+  @Test
+  public void testUpdateSessionId_persistUserIdToNewSessionIfUserIdSet() throws Exception {
     String userId = "ThemisWang";
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, diskWriteWorker);
     userMetadata.setUserId(userId);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
-        .isTrue();
+
+    diskWriteWorker.submit(
+        () -> {
+          assertThat(
+                  fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
+              .isTrue();
+        });
+    diskWriteWorker.await();
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
     assertThat(metaDataStore.readUserId(SESSION_ID_2)).isEqualTo(userId);
   }
 
   @Test
-  public void testUpdateSessionId_persistRolloutsToNewSessionIfRolloutsSet() {
-    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+  public void testUpdateSessionId_persistRolloutsToNewSessionIfRolloutsSet() throws Exception {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, diskWriteWorker);
     userMetadata.updateRolloutsState(ROLLOUTS_STATE);
     userMetadata.setNewSession(SESSION_ID_2);
-    assertThat(
-            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
-        .isTrue();
+    diskWriteWorker.submit(
+        () -> {
+          assertThat(
+                  fileStore
+                      .getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME)
+                      .exists())
+              .isTrue();
+        });
+    diskWriteWorker.await();
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
     assertThat(metaDataStore.readRolloutsState(SESSION_ID_2)).isEqualTo(ROLLOUTS_STATE);
