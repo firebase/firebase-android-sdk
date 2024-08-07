@@ -17,6 +17,7 @@
 
 package com.google.firebase.dataconnect.gradle.plugin
 
+import com.android.build.api.dsl.ApplicationExtension
 import com.android.build.api.dsl.LibraryExtension
 import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
@@ -34,6 +35,9 @@ import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
+import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.newInstance
 import org.gradle.kotlin.dsl.register
 
 @Suppress("unused")
@@ -48,10 +52,19 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
   private val logger = Logging.getLogger(javaClass)
 
   override fun apply(project: Project) {
-    // TODO: Add support for com.android.build.api.dsl.ApplicationExtension, not just
-    // LibraryExtension.
-    val android = project.extensions.getByType(LibraryExtension::class.java) as ExtensionAware
+    val android =
+      project.extensions.run {
+        findByType<ApplicationExtension>()
+          ?: findByType<LibraryExtension>()
+            ?: throw DataConnectGradleException(
+            "b2a848r87f",
+            "Unable to find Android ApplicationExtension or LibraryExtension;" +
+              " ensure that the Android Gradle application or library plugin has been applied"
+          )
+      } as ExtensionAware
+
     val androidComponents = project.extensions.getByType(AndroidComponentsExtension::class.java)
+    logger.info("Found Android Gradle Plugin version: {}", androidComponents.pluginVersion)
 
     androidComponents.registerSourceType("dataconnect")
 
@@ -62,15 +75,13 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
         .extendProjectWith(DataConnectDslExtension::class.java)
         .build()
     ) { config: VariantExtensionConfig<*> ->
-      project.objects.newInstance(DataConnectVariantDslExtension::class.java, config)
+      project.objects.newInstance<DataConnectVariantDslExtension>(config)
     }
 
     androidComponents.onVariants { variant ->
       val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
-      val dataConnectDslProjectExtension =
-        android.extensions.getByType(DataConnectDslExtension::class.java)
-      val dataConnectDslVariantExtension =
-        variant.getExtension(DataConnectVariantDslExtension::class.java)!!
+      val dataConnectDslProjectExtension = android.extensions.getByType<DataConnectDslExtension>()
+      val dataConnectDslVariantExtension = variant.getExtension<DataConnectVariantDslExtension>()
 
       val resolvedDataConnectExecutable: Provider<RegularFile> = run {
         val valueFromProject: Provider<File> =
@@ -99,7 +110,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
       }
 
       val mergeConfigDirectoriesTask =
-        project.tasks.register<DataConnectMergeDataConnectDirectoriesTask>(
+        project.tasks.register<DataConnectMergeConfigDirectoriesTask>(
           "merge${variantNameTitleCase}DataConnectConfigDirs"
         ) {
           defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)

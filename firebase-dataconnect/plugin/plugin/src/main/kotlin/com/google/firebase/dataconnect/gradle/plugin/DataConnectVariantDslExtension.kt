@@ -24,9 +24,9 @@ import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension.Dat
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension.DataConnectEmulatorDslExtension
 import java.io.File
 import javax.inject.Inject
-import org.gradle.api.GradleException
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
+import org.gradle.kotlin.dsl.*
 
 /**
  * This is the extension type for extending [com.android.build.api.variant.Variant].
@@ -59,8 +59,8 @@ abstract class DataConnectVariantDslExtension(
     objectFactory: ObjectFactory
   ) : this(
     extensionConfig.variant,
-    extensionConfig.buildTypeExtension(DataConnectDslExtension::class.java),
-    extensionConfig.productFlavorsExtensions(DataConnectDslExtension::class.java),
+    extensionConfig.buildTypeExtension(),
+    extensionConfig.productFlavorsExtensions(),
     objectFactory,
   )
 
@@ -72,7 +72,7 @@ abstract class DataConnectVariantDslExtension(
       buildTypeExtension,
       productFlavorExtensions,
       "configDir",
-      DataConnectDslExtension::configDir
+      DataConnectDslExtension::configDir,
     )
   }
 
@@ -84,26 +84,24 @@ abstract class DataConnectVariantDslExtension(
       buildTypeExtension,
       productFlavorExtensions,
       "dataConnectExecutable",
-      DataConnectDslExtension::dataConnectExecutable
+      DataConnectDslExtension::dataConnectExecutable,
     )
   }
 
   /** @see DataConnectDslExtension.codegen */
   val codegen: DataConnectCodegenVariantDslExtension =
     objectFactory.newInstance(
-      DataConnectCodegenVariantDslExtension::class.java,
       variant,
       buildTypeExtension.codegen,
-      productFlavorExtensions.map { it.codegen }
+      productFlavorExtensions.map { it.codegen },
     )
 
   /** @see DataConnectDslExtension.emulator */
   val emulator: DataConnectEmulatorVariantDslExtension =
     objectFactory.newInstance(
-      DataConnectEmulatorVariantDslExtension::class.java,
       variant,
       buildTypeExtension.emulator,
-      productFlavorExtensions.map { it.emulator }
+      productFlavorExtensions.map { it.emulator },
     )
 
   /** Values to use when performing code generation. */
@@ -122,7 +120,7 @@ abstract class DataConnectVariantDslExtension(
         buildTypeExtension,
         productFlavorExtensions,
         "connectors",
-        DataConnectCodegenDslExtension::connectors
+        DataConnectCodegenDslExtension::connectors,
       )
     }
   }
@@ -148,8 +146,6 @@ abstract class DataConnectVariantDslExtension(
     }
   }
 
-  class ConflictingValuesException(message: String) : GradleException(message)
-
   private companion object {
 
     fun <PropertyType : Any, ExtensionType : Any> Property<PropertyType>.setFrom(
@@ -159,7 +155,6 @@ abstract class DataConnectVariantDslExtension(
       name: String,
       getValue: (ExtensionType) -> PropertyType?,
     ) {
-
       val values = buildMap {
         getValue(buildTypeExtension)?.let { put("BuildType:${variant.buildType}", it) }
         val productFlavorNames = variant.productFlavors.map { "${it.first}=${it.second}" }
@@ -173,7 +168,8 @@ abstract class DataConnectVariantDslExtension(
       if (values.size == 1) {
         set(values.values.single())
       } else if (values.size > 1) {
-        throw ConflictingValuesException(
+        throw DataConnectGradleException(
+          "z9hmj4bmgs",
           "$name is specified in ${values.size} places," +
             " but at most one is supported: " +
             values.keys.sorted().joinToString(", ")

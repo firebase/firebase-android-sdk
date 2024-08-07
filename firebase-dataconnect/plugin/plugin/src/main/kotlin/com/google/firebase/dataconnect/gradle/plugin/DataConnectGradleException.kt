@@ -15,18 +15,7 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.file.RegularFileProperty
-import org.gradle.api.tasks.InputDirectory
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.TaskAction
+import org.gradle.api.GradleException
 
-abstract class DataConnectEmulatorTask : DefaultTask() {
-
-  @get:InputFile abstract val dataConnectExecutable: RegularFileProperty
-
-  @get:InputDirectory abstract val configDirectory: DirectoryProperty
-
-  @TaskAction fun run() {}
-}
+class DataConnectGradleException(errorCode: String, message: String, cause: Throwable? = null) :
+  GradleException("$message (error code: $errorCode)", cause)

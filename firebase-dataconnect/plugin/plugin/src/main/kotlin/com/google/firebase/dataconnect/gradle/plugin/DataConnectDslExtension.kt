@@ -40,9 +40,7 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
    * defined in the outer scope.
    */
   @Suppress("unused")
-  fun codegen(block: DataConnectCodegenDslExtension.() -> Unit) {
-    block(codegen)
-  }
+  fun codegen(block: DataConnectCodegenDslExtension.() -> Unit): Unit = block(codegen)
 
   /**
    * Values to use when running the Data Connect emulator, which override the values from those
@@ -56,9 +54,7 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
    * those defined in the outer scope.
    */
   @Suppress("unused")
-  fun emulator(block: DataConnectEmulatorDslExtension.() -> Unit) {
-    block(emulator)
-  }
+  fun emulator(block: DataConnectEmulatorDslExtension.() -> Unit): Unit = block(emulator)
 
   /**
    * Values to use when performing code generation, which override the values from those defined in

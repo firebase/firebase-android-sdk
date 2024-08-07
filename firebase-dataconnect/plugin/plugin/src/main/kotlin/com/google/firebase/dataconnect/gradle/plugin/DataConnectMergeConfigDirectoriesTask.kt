@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.gradle.plugin
 import java.io.File
 import java.util.Locale
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
@@ -28,7 +27,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
-abstract class DataConnectMergeDataConnectDirectoriesTask : DefaultTask() {
+abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
 
   @get:InputFiles abstract val defaultConfigDirectories: ListProperty<Directory>
 
@@ -54,11 +53,11 @@ abstract class DataConnectMergeDataConnectDirectoriesTask : DefaultTask() {
       defaultConfigDirectories.size,
       defaultConfigDirectories.map { it.absolutePath }.sorted().joinToString(", ")
     )
-    logger.info("customConfigDirectory: ${customConfigDirectory?.absolutePath}")
-    logger.info("buildDirectory: ${buildDirectory.absolutePath}")
-    logger.info("mergedDirectory: ${mergedDirectory.absolutePath}")
+    logger.info("customConfigDirectory: {}", customConfigDirectory?.absolutePath)
+    logger.info("buildDirectory: {}", buildDirectory.absolutePath)
+    logger.info("mergedDirectory: {}", mergedDirectory.absolutePath)
 
-    logger.info("Deleting build directory: $buildDirectory")
+    logger.info("Deleting build directory: {}", buildDirectory)
     project.delete(buildDirectory)
 
     val configDirectories =
@@ -67,9 +66,10 @@ abstract class DataConnectMergeDataConnectDirectoriesTask : DefaultTask() {
           if (customConfigDirectory !== null) {
             add(customConfigDirectory)
             if (!customConfigDirectory.exists()) {
-              throw GradleException(
-                "custom data connect config directory not found:" +
-                  " ${customConfigDirectory.absolutePath} (error code: chhzf62bwt)"
+              throw DataConnectGradleException(
+                "chhzf62bwt",
+                "custom data connect config directory not found: " +
+                  customConfigDirectory.absolutePath
               )
             }
           }
@@ -86,14 +86,14 @@ abstract class DataConnectMergeDataConnectDirectoriesTask : DefaultTask() {
       // nothing to do, since there are no existing config directories.
       return
     } else if (mergedDirectory != buildDirectory) {
-      throw GradleException(
+      throw DataConnectGradleException(
+        "qay4ngz5fr",
         "mergedDirectory must equal buildDirectory" +
           " when there are more than one existing config directories;" +
           " however, they were unequal and there were ${existingConfigDirectories.size}" +
           " existing config directories: " +
           existingConfigDirectories.joinToString(", ") { it.absolutePath } +
-          " (mergedDirectory=$mergedDirectory buildDirectory=$buildDirectory)" +
-          " (error code: qay4ngz5fr)"
+          " (mergedDirectory=$mergedDirectory buildDirectory=$buildDirectory)"
       )
     }
 

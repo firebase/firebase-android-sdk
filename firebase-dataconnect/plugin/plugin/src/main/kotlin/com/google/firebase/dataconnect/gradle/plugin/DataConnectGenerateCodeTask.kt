@@ -17,7 +17,6 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -25,7 +24,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 abstract class DataConnectGenerateCodeTask : DefaultTask() {
@@ -36,7 +35,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:Input abstract val connectors: Property<Collection<String>>
 
-  @get:OutputFiles abstract val outputDirectory: DirectoryProperty
+  @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
   @TaskAction
   fun run() {
@@ -60,31 +59,14 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
       return
     }
 
-    project.exec { execSpec ->
-      execSpec.run {
-        executable(dataConnectExecutable)
-        isIgnoreExitValue = false
-
-        if (logger.isDebugEnabled) {
-          args("-v").args("9")
-          args("-logtostderr")
-        } else if (logger.isInfoEnabled) {
-          args("-v").args("2")
-          args("-logtostderr")
-        }
-
-        args("gradle").args("generate")
-
-        args("-config_dir=$configDirectory")
-        args("-output_dir=${outputDirectory.path}")
-        if (connectors.isNotEmpty()) {
-          args("-connectors=${connectors.joinToString(",")}")
-        }
-      }
-    }
+    runDataConnectExecutable(
+      dataConnectExecutable = dataConnectExecutable,
+      subCommand = listOf("gradle", "generate"),
+      configDirectory = configDirectory,
+      connectors = connectors,
+      outputDirectory = outputDirectory,
+    )
 
     logger.info("Completed successfully")
   }
-
-  class DataConnectInputDirectoryNotFoundException(message: String) : GradleException(message)
 }
