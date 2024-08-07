@@ -69,15 +69,17 @@ public class FirestoreIndexValueWriterTest {
   }
 
   @Test
-  public void writeIndexValueSupportsEmptyVector() throws ExecutionException, InterruptedException {
+  public void writeIndexValueSupportsEmptyVector() {
     UserDataReader dataReader = new UserDataReader(DatabaseId.EMPTY);
     Value value = dataReader.parseQueryValue(FieldValue.vector(new double[] {}));
 
+    // Encode an actual VectorValue
     IndexByteEncoder encoder = new IndexByteEncoder();
     FirestoreIndexValueWriter.INSTANCE.writeIndexValue(
         value, encoder.forKind(FieldIndex.Segment.Kind.ASCENDING));
     byte[] actualBytes = encoder.getEncodedBytes();
 
+    // Create the expected representation of the encoded vector
     IndexByteEncoder expectedEncoder = new IndexByteEncoder();
     DirectionalIndexByteEncoder expectedDirectionalEncoder =
         expectedEncoder.forKind(FieldIndex.Segment.Kind.ASCENDING);
@@ -95,6 +97,7 @@ public class FirestoreIndexValueWriterTest {
     expectedDirectionalEncoder.writeInfinity();
     byte[] expectedBytes = expectedEncoder.getEncodedBytes();
 
+    // Assert actual and expected encodings are equal
     Assert.assertArrayEquals(actualBytes, expectedBytes);
   }
 }
