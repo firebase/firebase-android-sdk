@@ -58,11 +58,11 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.cloudmessaging.CloudMessage;
 import com.google.android.gms.cloudmessaging.Rpc;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.iid.FirebaseInstanceIdReceiver;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
+import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.FakeConnectorComponent;
@@ -104,6 +104,8 @@ public class FirebaseMessagingServiceRoboTest {
 
   // blank activity
   public static class MyTestActivity extends Activity {}
+
+  public static class MySecondTestActivity extends Activity {}
 
   private static final AnalyticsValidator analyticsValidator =
       FakeConnectorComponent.getAnalyticsValidator();
@@ -501,6 +503,43 @@ public class FirebaseMessagingServiceRoboTest {
     }
   }
 
+  /** Test that a notification does not re-log events when the same notification is found. */
+  @Test
+  public void notification_clickAnalytics_duplicateMessageId() throws Exception {
+    FirebaseMessaging.getInstance(firebaseApp); // register activity lifecycle friends
+    simulateNotificationMessageWithAnalytics();
+
+    PendingIntent clickPendingIntent = getSingleShownNotification().contentIntent;
+    try (ActivityScenario<MyTestActivity> scenario =
+        dispatchActivityIntentToActivity(clickPendingIntent)) {
+      Intent secondActivityIntent = new Intent();
+      secondActivityIntent.putExtras(shadowOf(clickPendingIntent).getSavedIntent());
+      // Start another Activity with the same notification and check it doesn't log open again.
+      try (ActivityScenario<MySecondTestActivity> secondScenario =
+          ActivityScenario.launch(secondActivityIntent)) {
+        List<AnalyticsValidator.LoggedEvent> events = analyticsValidator.getLoggedEvents();
+        assertThat(events).hasSize(2);
+        AnalyticsValidator.LoggedEvent receiveEvent = events.get(0);
+        assertThat(receiveEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
+        assertThat(receiveEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_RECEIVE);
+        assertThat(receiveEvent.getParams())
+            .string(Analytics.PARAM_MESSAGE_ID)
+            .isEqualTo("composer_key");
+        assertThat(receiveEvent.getParams())
+            .string(Analytics.PARAM_MESSAGE_NAME)
+            .isEqualTo("composer_label");
+        assertThat(receiveEvent.getParams())
+            .integer(Analytics.PARAM_MESSAGE_TIME)
+            .isEqualTo(1234567890);
+        assertThat(receiveEvent.getParams()).doesNotContainKey(Analytics.PARAM_TOPIC);
+
+        AnalyticsValidator.LoggedEvent openEvent = events.get(1);
+        assertThat(openEvent.getOrigin()).isEqualTo(Analytics.ORIGIN_FCM);
+        assertThat(openEvent.getName()).isEqualTo(Analytics.EVENT_NOTIFICATION_OPEN);
+      }
+    }
+  }
+
   /** Test that a notification logs the correct event on dismiss. */
   @Test
   public void testNotification_dismissAnalytics() throws Exception {
@@ -612,6 +651,7 @@ public class FirebaseMessagingServiceRoboTest {
     // Robo manifest doesn't have a default activity, so set click action so that we get a
     // click pending intent.
     builder.addData(DisplayNotificationRoboTest.KEY_CLICK_ACTION, "click_action");
+    builder.addData(MessagePayloadKeys.MSGID, "msg_id");
     AnalyticsTestHelper.addAnalyticsExtras(builder);
     startServiceViaReceiver(builder.buildIntent());
   }
@@ -765,44 +805,5 @@ public class FirebaseMessagingServiceRoboTest {
         shadowOf((Application) ApplicationProvider.getApplicationContext())
             .getBoundServiceConnections();
     return ImmutableSet.copyOf(connList.toArray(new ServiceConnection[0]));
-  }
-
-  /**
-   * Calls handleIntent on {@link #service} in a background thread and connects any outgoing
-   * bindService calls made in the meantime.
-   *
-   * <p>Returns a CountDownLatch that's finished when the call to handleIntent finishes.
-   */
-  private CountDownLatch handleIntent(Intent intent, int time, TimeUnit unit) throws Exception {
-    long timeoutAtMillis = System.currentTimeMillis() + unit.toMillis(time);
-
-    // Connections that were active before we started
-    Set<ServiceConnection> previousConnections = getBoundServiceConnections();
-
-    // Run the thing that will cause a bindService call in the background
-    CountDownLatch finishedLatch = new CountDownLatch(1);
-    executorService.execute(
-        () -> {
-          service.handleIntent(intent);
-          finishedLatch.countDown();
-        });
-
-    // wait for the call to be made (service connection to appear)
-    while (Sets.difference(getBoundServiceConnections(), previousConnections).isEmpty()) {
-      assertWithMessage("timed out waiting for binder connection")
-          .that(System.currentTimeMillis())
-          .isLessThan(timeoutAtMillis);
-
-      TimeUnit.MILLISECONDS.sleep(50);
-    }
-
-    CountDownLatch flushLatch = new CountDownLatch(1);
-    new Handler(Looper.getMainLooper()).post(flushLatch::countDown);
-    shadowOf(Looper.getMainLooper()).idle();
-
-    long millisRemaining = Math.max(0, timeoutAtMillis - System.currentTimeMillis());
-    assertThat(flushLatch.await(millisRemaining, TimeUnit.MILLISECONDS)).isTrue();
-
-    return finishedLatch;
   }
 }
