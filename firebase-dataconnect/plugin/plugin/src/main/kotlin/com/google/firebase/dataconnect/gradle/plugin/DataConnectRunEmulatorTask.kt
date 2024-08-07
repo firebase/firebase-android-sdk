@@ -40,7 +40,7 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
     val postgresConnectionUrl: String = postgresConnectionUrl.get()
 
     logger.info("dataConnectExecutable={}", dataConnectExecutable.absolutePath)
-    logger.info("configDirectory={}", configDirectory?.absolutePath)
+    logger.info("configDirectory={}", configDirectory.absolutePath)
     logger.info("postgresConnectionUrl={}", postgresConnectionUrl)
 
     runDataConnectExecutable(

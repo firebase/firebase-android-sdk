@@ -15,16 +15,16 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
-import java.io.File
 import java.util.Properties
 import org.gradle.api.Project
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 class DataConnectLocalSettings(project: Project) {
 
-  val dataConnectExecutable: Provider<File> =
+  val dataConnectExecutable: Provider<RegularFile> =
     project.providerForDataConnectLocalSetting(KEY_DATA_CONNECT_EXECUTABLE) { value, project ->
-      project.file(value)
+      project.layout.projectDirectory.file(value)
     }
 
   val postgresConnectionUrl: Provider<String> =
