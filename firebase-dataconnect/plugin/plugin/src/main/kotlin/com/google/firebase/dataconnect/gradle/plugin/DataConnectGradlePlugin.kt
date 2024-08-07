@@ -78,16 +78,19 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
       project.objects.newInstance<DataConnectVariantDslExtension>(config)
     }
 
+    val dataConnectLocalSettings = DataConnectLocalSettings(project)
+
     androidComponents.onVariants { variant ->
       val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
       val dataConnectDslProjectExtension = android.extensions.getByType<DataConnectDslExtension>()
       val dataConnectDslVariantExtension = variant.getExtension<DataConnectVariantDslExtension>()
 
       val resolvedDataConnectExecutable: Provider<RegularFile> = run {
+        val valueFromLocalSettings = dataConnectLocalSettings.dataConnectExecutable
         val valueFromProject: Provider<File> =
           providerFactory.provider { dataConnectDslProjectExtension.dataConnectExecutable }
         val valueFromVariant: Provider<File> = dataConnectDslVariantExtension.dataConnectExecutable
-        valueFromVariant.orElse(valueFromProject).map {
+        valueFromLocalSettings.orElse(valueFromVariant).orElse(valueFromProject).map {
           project.layout.projectDirectory.file(it.path)
         }
       }
