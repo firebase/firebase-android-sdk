@@ -282,8 +282,9 @@ public class CrashlyticsCore {
 
   // endregion
 
-  public boolean isCrashlyticsCollectionEnabled() {
-    return dataCollectionArbiter.isAutomaticDataCollectionEnabled();
+  public Task<Boolean> isCrashlyticsCollectionEnabled() {
+    // TODO(mrober): Does Unity or Flutter call this method?
+    return Tasks.forResult(dataCollectionArbiter.isAutomaticDataCollectionEnabled());
   }
 
   public void setCrashlyticsCollectionEnabled(@Nullable Boolean enabled) {
@@ -514,8 +515,14 @@ public class CrashlyticsCore {
     didCrashOnPreviousExecution = Boolean.TRUE.equals(result);
   }
 
+  @Deprecated
   public boolean didCrashOnPreviousExecution() {
+    // TODO(mrober): Is this boolean always accurate?
     return didCrashOnPreviousExecution;
+  }
+
+  public Task<Boolean> didCrashOnPreviousRun() {
+    return Tasks.forResult(didCrashOnPreviousExecution);
   }
 
   // endregion

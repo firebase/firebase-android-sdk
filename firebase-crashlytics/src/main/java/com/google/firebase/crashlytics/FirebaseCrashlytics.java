@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import androidx.annotation.Discouraged;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -430,23 +431,35 @@ public class FirebaseCrashlytics {
   /**
    * Checks whether the app crashed on its previous run.
    *
-   * @return true if a crash was recorded during the previous run of the app.
+   * @return true if a crash was recorded during the previous run of the app. May not be current.
+   * @deprecated May not be current. Use didCrashOnPreviousRun instead. Will be removed in Q2 2025.
    */
+  @Discouraged(message = "May not be current. Use didCrashOnPreviousRun instead.")
+  @Deprecated
   public boolean didCrashOnPreviousExecution() {
     return core.didCrashOnPreviousExecution();
   }
 
   /**
+   * Checks whether the app crashed on its previous run.
+   *
+   * @return A Task that resolves to true if a crash was recorded during the previous run of the app
+   */
+  public Task<Boolean> didCrashOnPreviousRun() {
+    return core.didCrashOnPreviousRun();
+  }
+
+  /**
    * Indicates whether or not automatic data collection is enabled
    *
-   * @return In order of priority:
+   * @return A Task that resolved in order of priority:
    *     <p>If {@link #setCrashlyticsCollectionEnabled(boolean)} is called with a value, use it
    *     <p>If the <b>firebase_crashlytics_collection_enabled</b> key is in your app’s
    *     AndroidManifest.xml, use it
    *     <p>Otherwise, use the default {@link FirebaseApp#isDataCollectionDefaultEnabled()} in
    *     FirebaseApp
    */
-  public boolean isCrashlyticsCollectionEnabled() {
+  public Task<Boolean> isCrashlyticsCollectionEnabled() {
     return core.isCrashlyticsCollectionEnabled();
   }
 
