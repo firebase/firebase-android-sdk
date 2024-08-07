@@ -63,9 +63,10 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
       dataConnectExecutable = dataConnectExecutable,
       subCommand = listOf("gradle", "generate"),
       configDirectory = configDirectory,
-      connectors = connectors,
-      outputDirectory = outputDirectory,
-    )
+    ) {
+      this.connectors = connectors
+      this.outputDirectory = outputDirectory
+    }
 
     logger.info("Completed successfully")
   }

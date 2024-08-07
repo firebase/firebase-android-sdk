@@ -15,18 +15,41 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
 
-abstract class DataConnectEmulatorTask : DefaultTask() {
+abstract class DataConnectRunEmulatorTask : DefaultTask() {
 
   @get:InputFile abstract val dataConnectExecutable: RegularFileProperty
 
   @get:InputDirectory abstract val configDirectory: DirectoryProperty
 
-  @TaskAction fun run() {}
+  @get:Input abstract val postgresConnectionUrl: Property<String>
+
+  @TaskAction
+  fun run() {
+    val dataConnectExecutable: File = dataConnectExecutable.get().asFile
+    val configDirectory: File = configDirectory.get().asFile
+    val postgresConnectionUrl: String = postgresConnectionUrl.get()
+
+    logger.info("dataConnectExecutable={}", dataConnectExecutable.absolutePath)
+    logger.info("configDirectory={}", configDirectory?.absolutePath)
+    logger.info("postgresConnectionUrl={}", postgresConnectionUrl)
+
+    runDataConnectExecutable(
+      dataConnectExecutable = dataConnectExecutable,
+      subCommand = listOf("dev"),
+      configDirectory = configDirectory,
+    ) {
+      this.listen = "127.0.0.1:9399"
+      this.localConnectionString = postgresConnectionUrl
+    }
+  }
 }

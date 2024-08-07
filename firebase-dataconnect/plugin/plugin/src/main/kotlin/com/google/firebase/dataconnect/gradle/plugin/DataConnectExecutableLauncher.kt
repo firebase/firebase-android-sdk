@@ -18,13 +18,28 @@ package com.google.firebase.dataconnect.gradle.plugin
 import java.io.File
 import org.gradle.api.Task
 
+interface DataConnectExecutableConfig {
+  var outputDirectory: File?
+  var connectors: Collection<String>
+  var listen: String?
+  var localConnectionString: String?
+}
+
 fun Task.runDataConnectExecutable(
   dataConnectExecutable: File,
   subCommand: List<String>,
   configDirectory: File,
-  connectors: Collection<String> = emptyList(),
-  outputDirectory: File? = null
+  configure: DataConnectExecutableConfig.() -> Unit,
 ) {
+  val config =
+    object : DataConnectExecutableConfig {
+        override var outputDirectory: File? = null
+        override var connectors: Collection<String> = emptyList()
+        override var listen: String? = null
+        override var localConnectionString: String? = null
+      }
+      .apply(configure)
+
   project.exec { execSpec ->
     execSpec.run {
       executable(dataConnectExecutable)
@@ -42,12 +57,14 @@ fun Task.runDataConnectExecutable(
 
       args("-config_dir=$configDirectory")
 
-      if (outputDirectory !== null) {
-        args("-output_dir=${outputDirectory.path}")
+      config.outputDirectory?.let { args("-output_dir=${it.path}") }
+      config.connectors.let {
+        if (it.isNotEmpty()) {
+          args("-connectors=${it.joinToString(",")}")
+        }
       }
-      if (connectors.isNotEmpty()) {
-        args("-connectors=${connectors.joinToString(",")}")
-      }
+      config.listen?.let { args("-listen=${it}") }
+      config.localConnectionString?.let { args("-local_connection_string=${it}") }
     }
   }
 }

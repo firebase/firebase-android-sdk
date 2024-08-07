@@ -23,23 +23,38 @@ import org.gradle.api.provider.Provider
 class DataConnectLocalSettings(project: Project) {
 
   val dataConnectExecutable: Provider<File> =
-    project.provider {
-      var curProject: Project? = project
-      while (curProject !== null) {
-        val dataConnectExecutable = curProject.loadDataConnectExecutableFromLocalProperties()
-        if (dataConnectExecutable !== null) {
-          return@provider dataConnectExecutable
-        }
-        curProject = curProject.parent
-      }
-      return@provider null
+    project.providerForDataConnectLocalSetting(KEY_DATA_CONNECT_EXECUTABLE) { value, project ->
+      project.file(value)
     }
 
-  private companion object {
+  val postgresConnectionUrl: Provider<String> =
+    project.providerForDataConnectLocalSetting(KEY_POSTGRES_CONNECTION_URL)
+
+  companion object {
     const val FILE_NAME = "dataconnect.local.properties"
     const val KEY_DATA_CONNECT_EXECUTABLE = "dataConnectExecutable"
+    const val KEY_POSTGRES_CONNECTION_URL = "postgresConnectionUrl"
 
-    fun Project.loadDataConnectExecutableFromLocalProperties(): File? {
+    fun Project.providerForDataConnectLocalSetting(settingName: String): Provider<String> =
+      providerForDataConnectLocalSetting(settingName) { value, _ -> value }
+
+    fun <T> Project.providerForDataConnectLocalSetting(
+      settingName: String,
+      transformer: (String, Project) -> T
+    ): Provider<T> =
+      project.provider {
+        var curProject: Project? = project
+        while (curProject !== null) {
+          val settingValue = curProject.settingValueFromDataConnectLocalSettings(settingName)
+          if (settingValue !== null) {
+            return@provider transformer(settingValue, curProject)
+          }
+          curProject = curProject.parent
+        }
+        return@provider null
+      }
+
+    fun Project.settingValueFromDataConnectLocalSettings(settingName: String): String? {
       val localPropertiesFile = project.file(FILE_NAME)
       logger.info(
         "Looking for Data Connect local properties file: {}",
@@ -50,31 +65,27 @@ class DataConnectLocalSettings(project: Project) {
         return null
       }
 
-      logger.info(
-        "Loading Data Connect local properties file: {}",
-        localPropertiesFile.absolutePath
-      )
+      logger.info("Loading Data Connect local settings file: {}", localPropertiesFile.absolutePath)
       val properties = Properties()
       localPropertiesFile.inputStream().use { properties.load(it) }
 
-      val dataConnectExecutableStr = properties.getProperty(KEY_DATA_CONNECT_EXECUTABLE)
-      if (dataConnectExecutableStr === null) {
+      val settingValue = properties.getProperty(settingName)
+      if (settingValue === null) {
         logger.info(
-          "Key \"{}\" not found in Data Connect local properties file: {}",
-          KEY_DATA_CONNECT_EXECUTABLE,
-          localPropertiesFile.absolutePath
+          "Setting \"{}\" not found in Data Connect local properties file: {}",
+          settingName,
+          localPropertiesFile.absolutePath,
         )
-        return null
+      } else {
+        logger.info(
+          "Setting \"{}\" found in Data Connect local properties file {}: {}",
+          settingName,
+          localPropertiesFile.absolutePath,
+          settingValue,
+        )
       }
 
-      val dataConnectExecutableFile = project.file(dataConnectExecutableStr)
-      logger.info(
-        "Key \"{}\" found in Data Connect local properties file {}: {}",
-        KEY_DATA_CONNECT_EXECUTABLE,
-        localPropertiesFile.absolutePath,
-        dataConnectExecutableFile.absolutePath
-      )
-      return dataConnectExecutableFile
+      return settingValue
     }
   }
 }
