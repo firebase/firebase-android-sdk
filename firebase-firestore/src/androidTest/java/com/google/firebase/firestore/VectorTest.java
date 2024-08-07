@@ -78,8 +78,6 @@ public class VectorTest {
     assertTrue(actual.get("vector2") instanceof VectorValue);
     assertTrue(actual.get("vector3") instanceof VectorValue);
 
-    VectorValue pojo = actual.get("vector0", VectorValue.class);
-
     assertArrayEquals(
         expected.get("vector0").toArray(),
         actual.get("vector0", VectorValue.class).toArray(),
@@ -95,6 +93,23 @@ public class VectorTest {
     assertArrayEquals(
         expected.get("vector3").toArray(),
         actual.get("vector3", VectorValue.class).toArray(),
+        DOUBLE_EPSILON);
+
+    assertArrayEquals(
+        expected.get("vector0").toArray(),
+        actual.getVectorValue("vector0").toArray(),
+        DOUBLE_EPSILON);
+    assertArrayEquals(
+        expected.get("vector1").toArray(),
+        actual.getVectorValue("vector1").toArray(),
+        DOUBLE_EPSILON);
+    assertArrayEquals(
+        expected.get("vector2").toArray(),
+        actual.getVectorValue("vector2").toArray(),
+        DOUBLE_EPSILON);
+    assertArrayEquals(
+        expected.get("vector3").toArray(),
+        actual.getVectorValue("vector3").toArray(),
         DOUBLE_EPSILON);
   }
 

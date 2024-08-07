@@ -560,6 +560,7 @@ public class Values {
       case ARRAY_VALUE:
         return MIN_ARRAY;
       case MAP_VALUE:
+        // VectorValue sorts after ArrayValue and before an empty MapValue
         if (isVectorValue(value)) {
           return MIN_VECTOR_VALUE;
         }
@@ -592,6 +593,7 @@ public class Values {
       case ARRAY_VALUE:
         return MIN_VECTOR_VALUE;
       case MAP_VALUE:
+        // VectorValue sorts after ArrayValue and before an empty MapValue
         if (isVectorValue(value)) {
           return MIN_MAP;
         }

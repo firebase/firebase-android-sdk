@@ -104,11 +104,15 @@ public class UserDataWriter {
   }
 
   VectorValue convertVectorValue(Map<String, Value> mapValue) {
-    double[] values =
-        mapValue.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue().getValuesList().stream()
-            .mapToDouble(val -> val.getDoubleValue())
-            .toArray();
-    return new VectorValue(values);
+    List<Value> values =
+        mapValue.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue().getValuesList();
+
+    double[] doubles = new double[values.size()];
+    for (int i = 0; i < values.size(); i++) {
+      doubles[i] = values.get(i).getDoubleValue();
+    }
+
+    return new VectorValue(doubles);
   }
 
   private Object convertServerTimestamp(Value serverTimestampValue) {

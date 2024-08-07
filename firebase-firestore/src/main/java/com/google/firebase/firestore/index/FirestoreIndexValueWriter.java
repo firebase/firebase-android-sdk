@@ -143,14 +143,13 @@ public class FirestoreIndexValueWriter {
   }
 
   private void writeIndexVector(MapValue mapIndexValue, DirectionalIndexByteEncoder encoder) {
+    Map<String, Value> map = mapIndexValue.getFieldsMap();
+    String key = Values.VECTOR_MAP_VECTORS_KEY;
     writeValueTypeLabel(encoder, INDEX_TYPE_VECTOR);
 
-    Map<String, Value> map = mapIndexValue.getFieldsMap();
-
     // Vectors sort first by length
-    String key = Values.VECTOR_MAP_VECTORS_KEY;
     int length = map.get(key).getArrayValue().getValuesCount();
-    this.writeValueTypeLabel(encoder, INDEX_TYPE_VECTOR);
+    writeValueTypeLabel(encoder, INDEX_TYPE_NUMBER);
     encoder.writeLong(length);
 
     // Vectors then sort by position value

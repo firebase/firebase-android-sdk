@@ -46,13 +46,11 @@ import com.google.firestore.v1.Value;
 import com.google.protobuf.NullValue;
 import com.google.type.LatLng;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 /**
  * Helper for parsing raw user input (provided via the API) into internal model classes.
@@ -456,9 +454,7 @@ public final class UserDataReader {
     MapValue.Builder mapBuilder = MapValue.newBuilder();
 
     mapBuilder.putFields(Values.TYPE_KEY, Values.VECTOR_VALUE_TYPE);
-    mapBuilder.putFields(
-        Values.VECTOR_MAP_VECTORS_KEY,
-        parseData(Arrays.stream(vector.toArray()).boxed().collect(Collectors.toList()), context));
+    mapBuilder.putFields(Values.VECTOR_MAP_VECTORS_KEY, parseData(vector.toList(), context));
 
     return Value.newBuilder().setMapValue(mapBuilder).build();
   }

@@ -186,7 +186,7 @@ public abstract class FieldValue {
   /**
    * Creates a new {@link VectorValue} constructed with a copy of the given array of doubles.
    *
-   * @param values Create a {@link VectorValue} instance with a copy of this array of doubles.
+   * @param values Array of doubles to be copied to create a {@link VectorValue}.
    * @return A new {@link VectorValue} constructed with a copy of the given array of doubles.
    */
   @NonNull

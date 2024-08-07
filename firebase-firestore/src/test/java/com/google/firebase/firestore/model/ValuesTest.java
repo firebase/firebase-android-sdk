@@ -201,6 +201,7 @@ public class ValuesTest {
         .addEqualityGroup(wrap(Arrays.asList("foo", "0")))
 
         // vector
+        // .addEqualityGroup(wrap(FieldValue.vector(new double[] {})))
         .addEqualityGroup(wrap(FieldValue.vector(new double[] {100})))
         .addEqualityGroup(wrap(FieldValue.vector(new double[] {1, 2, 3})))
         .addEqualityGroup(wrap(FieldValue.vector(new double[] {1, 3, 2})))

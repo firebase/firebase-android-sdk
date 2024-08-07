@@ -485,7 +485,8 @@ public class DocumentSnapshot {
   }
 
   /**
-   * Returns the value of the field as a VectorValue.
+   * Returns the value of the field as a {@link VectorValue} or
+   * `null` if the field does not exist in the document.
    *
    * @param field The path to the field.
    * @throws RuntimeException if the value is not a VectorValue.

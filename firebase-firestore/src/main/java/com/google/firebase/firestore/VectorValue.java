@@ -16,19 +16,19 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represent a vector type in Firestore documents.
  * Create an instance with {@link FieldValue#vector(double[])}.
  */
-public class VectorValue implements Serializable {
+public class VectorValue {
   private final double[] values;
 
   VectorValue(@Nullable double[] values) {
-    if (values == null) this.values = new double[] {};
-    else this.values = values.clone();
+    this.values = (values == null) ? new double[] {} : values.clone();
   }
 
   /**
@@ -39,6 +39,21 @@ public class VectorValue implements Serializable {
   @NonNull
   public double[] toArray() {
     return this.values.clone();
+  }
+
+  /**
+   * Package private.
+   * Returns a representation of the vector as a List<Doubles>.
+   *
+   * @return A representation of the vector as an List<Doubles>
+   */
+  @NonNull
+  List<Double> toList() {
+    ArrayList<Double> result = new ArrayList<Double>(this.values.length);
+    for (int i = 0; i < this.values.length; i++) {
+      result.add(i, this.values[i]);
+    }
+    return result;
   }
 
   /**
