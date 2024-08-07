@@ -1,6 +1,8 @@
 # Unreleased
 * [changed] Retry Topic Subscribe/Unsubscribe operations with exponential
   backoff if they hit a quota error.
+* [changed] Checked for notification_open duplicate logging based on message ID
+  instead of the Activity's Intent.
 
 # 24.0.0
 * [changed] Switched Firelog to use the new TransportBackend.
