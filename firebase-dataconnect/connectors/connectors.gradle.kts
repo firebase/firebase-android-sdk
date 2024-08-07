@@ -20,6 +20,7 @@ plugins {
   id("com.android.library")
   id("kotlin-android")
   alias(libs.plugins.kotlinx.serialization)
+  id("com.google.firebase.dataconnect.gradle.plugin")
 }
 
 android {
@@ -52,6 +53,13 @@ android {
     resources {
       excludes.add("META-INF/LICENSE.md")
       excludes.add("META-INF/LICENSE-notice.md")
+    }
+  }
+
+  dataconnect {
+    configDir = file("../emulator/dataconnect")
+    codegen {
+      connectors = listOf("demo", "keywords")
     }
   }
 }

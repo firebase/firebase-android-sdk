@@ -19,7 +19,6 @@ set -euo pipefail
 echo "[$0] PID=$$"
 
 readonly SELF_DIR="$(dirname "$0")"
-export DATACONNECT_EMULATOR_BINARY_PATH="${SELF_DIR}/cli_wrapper.sh"
 
 readonly FIREBASE_ARGS=(
   firebase
@@ -28,6 +27,5 @@ readonly FIREBASE_ARGS=(
   --only auth,dataconnect
 )
 
-echo "[$0] Set environment variable DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
 echo "[$0] Running command: ${FIREBASE_ARGS[*]}"
 exec "${FIREBASE_ARGS[@]}"
