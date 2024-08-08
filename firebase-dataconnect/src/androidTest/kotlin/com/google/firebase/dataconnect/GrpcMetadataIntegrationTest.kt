@@ -18,8 +18,10 @@ package com.google.firebase.dataconnect
 
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.DataConnectTestCustomAppCheckProviderFactory
 import com.google.firebase.dataconnect.testutil.FirebaseAuthBackend
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.newInstance
@@ -165,9 +167,80 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     verifyMetadataDoesNotContain(metadatasJob2, firebaseAuthTokenHeader)
   }
 
-  private suspend fun verifyMetadataContains(job: Deferred<Metadata>, key: Metadata.Key<String>) {
+  @Test
+  fun executeQueryShouldNotSendAppCheckMetadataWhenAppCheckIsNotEnabled() = runTest {
+    // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
+    // appcheck token is sent at all.
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    val queryRef = dataConnect.query("qrybbeekpkkck", Unit, serializer<Unit>(), serializer<Unit>())
+    val metadatasJob = async { grpcServer.metadatas.first() }
+
+    queryRef.execute()
+
+    verifyMetadataContains(metadatasJob, firebaseAppCheckTokenHeader, PLACEHOLDER_APP_CHECK_TOKEN)
+  }
+
+  @Test
+  fun executeMutationShouldNotSendAppCheckMetadataWhenAppCheckIsNotEnabled() = runTest {
+    // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
+    // appcheck token is sent at all.
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    val mutationRef =
+      dataConnect.mutation("mutbs7hhxk39c", Unit, serializer<Unit>(), serializer<Unit>())
+    val metadatasJob = async { grpcServer.metadatas.first() }
+
+    mutationRef.execute()
+
+    verifyMetadataContains(metadatasJob, firebaseAppCheckTokenHeader, PLACEHOLDER_APP_CHECK_TOKEN)
+  }
+
+  @Test
+  fun executeQueryShouldSendAppCheckMetadataWhenAppCheckIsEnabled() = runTest {
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
+    val metadatasJob = async { grpcServer.metadatas.first() }
+    val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
+    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory())
+
+    queryRef.execute()
+
+    // TODO: Verify the actual _value_ of the AppCheck token, not just that it is not null.
+    verifyMetadataContains(metadatasJob, firebaseAppCheckTokenHeader)
+  }
+
+  @Test
+  fun executeMutationShouldSendAppCheckMetadataWhenAppCheckIsEnabled() = runTest {
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    val mutationRef =
+      dataConnect.mutation("mutz4hzqzpgb4", Unit, serializer<Unit>(), serializer<Unit>())
+    val metadatasJob = async { grpcServer.metadatas.first() }
+    val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
+    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory())
+
+    mutationRef.execute()
+
+    // TODO: Verify the actual _value_ of the AppCheck token, not just that it is not null.
+    verifyMetadataContains(metadatasJob, firebaseAppCheckTokenHeader)
+  }
+
+  private suspend fun verifyMetadataContains(
+    job: Deferred<Metadata>,
+    key: Metadata.Key<String>,
+    expectedValue: String? = null
+  ) {
     val metadata = withClue("waiting for metadata to be reported") { job.await() }
-    metadata.asClue { metadata.get(key).shouldNotBeNull() }
+    metadata.asClue {
+      val actualValue = metadata.get(key)
+      if (expectedValue === null) {
+        actualValue.shouldNotBeNull()
+      } else {
+        actualValue shouldBe expectedValue
+      }
+    }
   }
 
   private suspend fun verifyMetadataDoesNotContain(
@@ -211,6 +284,8 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   private companion object {
+    const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
+
     val firebaseAuthTokenHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
 
