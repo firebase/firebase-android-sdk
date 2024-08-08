@@ -222,7 +222,7 @@ class CrashlyticsController {
 
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsProvider);
-                doOpenSession(new CLSUUID(idManager).toString(), isOnDemand);
+                doOpenSession(new CLSUUID().getSessionId(), isOnDemand);
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.

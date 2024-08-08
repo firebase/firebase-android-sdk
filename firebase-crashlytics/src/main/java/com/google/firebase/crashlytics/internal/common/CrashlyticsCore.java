@@ -150,7 +150,7 @@ public class CrashlyticsCore {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }
 
-    final String sessionIdentifier = new CLSUUID(idManager).toString();
+    String sessionIdentifier = new CLSUUID().getSessionId();
     try {
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);
