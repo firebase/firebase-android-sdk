@@ -556,7 +556,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.TransactionOptions.Builder setMaxAttempts(int);
   }
 
-  public class VectorValue implements java.io.Serializable {
+  public class VectorValue {
     method @NonNull public double[] toArray();
   }
 
