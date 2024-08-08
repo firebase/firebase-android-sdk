@@ -19,6 +19,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
   id("com.android.library")
   id("kotlin-android")
+  alias(libs.plugins.kotlinx.serialization)
 }
 
 android {
@@ -55,6 +56,9 @@ dependencies {
 
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)
+  implementation(libs.auth0.jwt)
+  implementation(libs.kotlinx.serialization.core)
+  implementation(libs.kotlinx.serialization.json)
   implementation(libs.turbine)
   implementation(libs.truth)
 

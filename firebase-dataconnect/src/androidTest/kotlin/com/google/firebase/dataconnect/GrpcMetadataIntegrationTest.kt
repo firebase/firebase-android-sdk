@@ -203,7 +203,8 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
-    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory())
+    // TODO: replace with a stub AppCheckProviderFactory for simplicity.
+    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory("zzyzx"))
 
     queryRef.execute()
 
@@ -219,7 +220,8 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
       dataConnect.mutation("mutz4hzqzpgb4", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
-    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory())
+    // TODO: replace with a stub AppCheckProviderFactory for simplicity.
+    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory("zzyzx"))
 
     mutationRef.execute()
 
