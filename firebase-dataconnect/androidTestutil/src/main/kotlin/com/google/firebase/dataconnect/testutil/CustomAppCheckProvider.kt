@@ -111,14 +111,17 @@ class DataConnectTestCustomAppCheckProvider(firebaseApp: FirebaseApp, private va
       @SerialName("client_email") val clientEmail: String,
     )
 
+    val json = Json { ignoreUnknownKeys = true }
+
     val serviceAccount =
       try {
         applicationContext.assets.open(assetPath).use {
-          Json.decodeFromStream<SerializedFirebaseAdminServiceAccount>(it)
+          json.decodeFromStream<SerializedFirebaseAdminServiceAccount>(it)
         }
       } catch (e: Exception) {
         throw FirebaseAdminServiceAccountAssetFileException(
-          "loading from service account asset file failed: $assetPath",
+          "loading from service account asset file $assetPath failed: $e" +
+            " (error code kqv4a3wekv)",
           e
         )
       }
@@ -165,7 +168,8 @@ class DataConnectTestCustomAppCheckProvider(firebaseApp: FirebaseApp, private va
         Base64.decode(base64EncodedPrivateKey, Base64.DEFAULT)
       } catch (e: Exception) {
         throw FirebaseAdminServiceAccountAssetFileException(
-          "base64 decoding of private key in service account asset file failed: $assetPath",
+          "base64 decoding of private key in service account asset file $assetPath failed: $e" +
+            " (error code 45cq3mqyjx)",
           e
         )
       }
