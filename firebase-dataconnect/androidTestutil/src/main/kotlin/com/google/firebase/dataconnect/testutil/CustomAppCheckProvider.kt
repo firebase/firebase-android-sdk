@@ -43,9 +43,9 @@ import kotlin.time.Duration.Companion.minutes
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
-import kotlinx.serialization.json.encodeToStream
 
 private const val TAG = "FDCTestAppCheckProvider"
 
@@ -237,14 +237,17 @@ private class AppCheckTokenRetriever(
 
     @Serializable data class ExchangeTokenRequest(val customToken: String)
     val request = ExchangeTokenRequest(customToken = createFirebaseJavaWebToken(account))
+    val requestBody = json.encodeToString(request).encodeToByteArray()
 
     val connection = URL(exchangeTokenUrl).openConnection() as HttpURLConnection
     connection.requestMethod = "POST"
     connection.setRequestProperty("Authorization", "Bearer ${authToken.accessToken}")
+    connection.setRequestProperty("Content-Type", "application/json;charset=utf-8")
+    connection.setRequestProperty("Content-Length", "${requestBody.size}")
     connection.doOutput = true
 
     Log.i(TAG, "Sending exchange token refresh request to ${connection.url}")
-    connection.outputStream.use { json.encodeToStream(request, it) }
+    connection.outputStream.use { it.write(requestBody) }
 
     val responseCode = connection.responseCode
     if (responseCode != 200) {
@@ -257,7 +260,14 @@ private class AppCheckTokenRetriever(
     @Serializable data class ExchangeTokenResponse(val token: String, val ttl: String)
     val response = connection.inputStream.use { json.decodeFromStream<ExchangeTokenResponse>(it) }
 
-    val ttlMillis = response.ttl.drop(1).toLong()
+    if (!response.ttl.endsWith("s")) {
+      throw AppCheckTokenRetrieverException(
+        "Expected \"ttl\" in response to end with \"s\", but got: ${response.ttl}" +
+          " (error code c2mqk3b5an)"
+      )
+    }
+    val ttlMillis = response.ttl.dropLast(1).toLong()
+
     return DataConnectTestAppCheckToken(token = response.token, expireTimeMillis = ttlMillis).also {
       Log.i(
         TAG,
