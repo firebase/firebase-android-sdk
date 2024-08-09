@@ -21,7 +21,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.DataConnectTestCustomAppCheckProviderFactory
+import com.google.firebase.dataconnect.testutil.DataConnectTestFakeAppCheckProvider
 import com.google.firebase.dataconnect.testutil.FirebaseAuthBackend
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.newInstance
@@ -203,8 +203,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
-    // TODO: replace with a stub AppCheckProviderFactory for simplicity.
-    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory("zzyzx"))
+    appCheck.installAppCheckProviderFactory(DataConnectTestFakeAppCheckProvider.Factory())
 
     queryRef.execute()
 
@@ -220,8 +219,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
       dataConnect.mutation("mutz4hzqzpgb4", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
-    // TODO: replace with a stub AppCheckProviderFactory for simplicity.
-    appCheck.installAppCheckProviderFactory(DataConnectTestCustomAppCheckProviderFactory("zzyzx"))
+    appCheck.installAppCheckProviderFactory(DataConnectTestFakeAppCheckProvider.Factory())
 
     mutationRef.execute()
 

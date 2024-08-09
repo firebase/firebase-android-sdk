@@ -25,11 +25,11 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.AppCheckToken
-import com.google.firebase.util.nextAlphanumericString
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyFactory
@@ -37,7 +37,6 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Date
 import kotlin.concurrent.thread
-import kotlin.random.Random
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -49,29 +48,39 @@ import kotlinx.serialization.json.decodeFromStream
 
 private const val TAG = "FDCTestAppCheckProvider"
 
-class DataConnectTestCustomAppCheckProvider(firebaseApp: FirebaseApp, private val appId: String) :
+/**
+ * An App Check provider that creates _real_ App Check tokens from production servers.
+ *
+ * Normally, a custom App Check provider would make an HTTP call to a server somewhere which would
+ * use the https://github.com/firebase/firebase-admin-node SDK to create and return an App Check
+ * token. However, that is somewhat inconvenient for integration tests to have this external
+ * dependency. So, instead, this provider has ported the logic from AppCheck.createToken() in the
+ * firebase-admin-node SDK to Kotlin and makes direct calls to the backend. See instuctions at
+ * https://firebase.google.com/docs/app-check/custom-provider for details.
+ *
+ * In order for this to work, the `google-services.json` must point to a valid project and
+ * `androidTestutil/src/main/assets/firebase-admin-service-account.key.json` must be a valid service
+ * account key created by the Google Cloud console.
+ */
+class DataConnectTestProdAppCheckProvider(firebaseApp: FirebaseApp, private val appId: String) :
   AppCheckProvider {
 
   private val applicationContext: Context = firebaseApp.applicationContext
   private val projectId = requireNotNull(firebaseApp.options.projectId)
 
   override fun getToken(): Task<AppCheckToken> {
-    val invocationId = "acgt" + Random.nextAlphanumericString(length = 8)
-    Log.d(TAG, "[$invocationId] getToken() called")
+    Log.d(TAG, "getToken() called")
     val tcs = TaskCompletionSource<AppCheckToken>()
 
     thread(name = "DataConnectTestCustomAppCheckProvider") {
       runCatching { doTokenRefresh() }
         .fold(
           onSuccess = {
-            Log.i(
-              TAG,
-              "[$invocationId] getToken() succeeded with token: " + it.token.toScrubbedAccessToken()
-            )
+            Log.i(TAG, "getToken() succeeded with token: ${it.token.toScrubbedAccessToken()}")
             tcs.setResult(it)
           },
           onFailure = {
-            Log.e(TAG, "[$invocationId] getToken() failed", it)
+            Log.e(TAG, "getToken() failed", it)
             tcs.setException(if (it is Exception) it else Exception(it))
           },
         )
@@ -102,8 +111,29 @@ class DataConnectTestCustomAppCheckProvider(firebaseApp: FirebaseApp, private va
 
   private class ProjectIdMismatchException(message: String) : Exception(message)
 
+  class Factory(private val appId: String) : AppCheckProviderFactory {
+    override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
+      return DataConnectTestProdAppCheckProvider(firebaseApp, appId)
+    }
+  }
+
   private companion object {
     const val FIREBASE_ADMIN_SERVICE_ACCOUNT_ASSET_PATH = "firebase-admin-service-account.key.json"
+  }
+}
+
+class DataConnectTestFakeAppCheckProvider() : AppCheckProvider {
+
+  override fun getToken(): Task<AppCheckToken> {
+    val expireTimeMillis = Date().time + 1.hours.inWholeMilliseconds
+    val token = DataConnectTestAppCheckToken("TestToken", expireTimeMillis)
+    return Tasks.forResult(token)
+  }
+
+  class Factory : AppCheckProviderFactory {
+    override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
+      return DataConnectTestFakeAppCheckProvider()
+    }
   }
 }
 
@@ -114,13 +144,6 @@ class DataConnectTestAppCheckToken(
   override fun getToken(): String = token
 
   override fun getExpireTimeMillis(): Long = expireTimeMillis
-}
-
-class DataConnectTestCustomAppCheckProviderFactory(private val appId: String) :
-  AppCheckProviderFactory {
-  override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
-    return DataConnectTestCustomAppCheckProvider(firebaseApp, appId)
-  }
 }
 
 private data class GoogleAuthToken(
@@ -267,8 +290,9 @@ private class AppCheckTokenRetriever(
       )
     }
     val ttlMillis = response.ttl.dropLast(1).toLong()
+    val expireTimeMillis = Date().time + ttlMillis
 
-    return DataConnectTestAppCheckToken(token = response.token, expireTimeMillis = ttlMillis).also {
+    return DataConnectTestAppCheckToken(response.token, expireTimeMillis).also {
       Log.i(
         TAG,
         "Exchange token refresh request succeeded with token: " + it.token.toScrubbedAccessToken()

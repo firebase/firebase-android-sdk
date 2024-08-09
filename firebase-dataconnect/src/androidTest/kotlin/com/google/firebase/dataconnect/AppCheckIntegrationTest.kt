@@ -18,7 +18,7 @@ package com.google.firebase.dataconnect
 
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.DataConnectTestCustomAppCheckProviderFactory
+import com.google.firebase.dataconnect.testutil.DataConnectTestProdAppCheckProvider
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import io.kotest.assertions.asClue
@@ -34,7 +34,7 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   fun queryShouldSucceedWhenAppCheckTokenIsProvided() = runTest {
     val appCheck = FirebaseAppCheck.getInstance(personSchema.dataConnect.app)
     appCheck.installAppCheckProviderFactory(
-      DataConnectTestCustomAppCheckProviderFactory(
+      DataConnectTestProdAppCheckProvider.Factory(
         personSchema.dataConnect.app.applicationContext.getString(R.string.google_app_id)
       )
     )
