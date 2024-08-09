@@ -123,6 +123,10 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
+  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
 
   compileOnly(libs.javax.annotation.jsr250)
   implementation(libs.grpc.android)
@@ -151,6 +155,10 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
+  androidTestImplementation("com.google.firebase:firebase-appcheck:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)
@@ -158,6 +166,8 @@ dependencies {
   androidTestImplementation(libs.kotlin.coroutines.test)
   androidTestImplementation(libs.kotest.assertions)
   androidTestImplementation(libs.kotest.property)
+  androidTestImplementation(libs.mockk)
+  androidTestImplementation(libs.mockk.android)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
   androidTestImplementation(libs.turbine)
