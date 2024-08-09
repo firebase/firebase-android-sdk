@@ -26,6 +26,7 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.internal.util.toPublic
+import com.google.firebase.vertexai.type.BaseChatHistory
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
@@ -58,6 +59,7 @@ internal constructor(
   val tools: List<Tool>? = null,
   val toolConfig: ToolConfig? = null,
   val systemInstruction: Content? = null,
+  val chatHistory: BaseChatHistory? = null,
   private val controller: APIController
 ) {
 
@@ -70,6 +72,7 @@ internal constructor(
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
+    chatHistory: BaseChatHistory? = null,
     requestOptions: RequestOptions = RequestOptions(),
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
@@ -80,6 +83,7 @@ internal constructor(
     tools,
     toolConfig,
     systemInstruction,
+    chatHistory,
     APIController(
       apiKey,
       modelName,
@@ -128,12 +132,20 @@ internal constructor(
    * @return A [GenerateContentResponse]. Function should be called within a suspend context to
    * properly manage concurrency.
    */
-  suspend fun generateContent(vararg prompt: Content): GenerateContentResponse =
+  suspend fun generateContent(vararg prompt: Content): GenerateContentResponse {
     try {
-      controller.generateContent(constructRequest(*prompt)).toPublic().validate()
+      // TODO: use a semaphore the same way we already do in [Chat#sendMessage]
+      val response = if (chatHistory != null) {
+        controller.generateContent(constructRequest(*chatHistory.history.toTypedArray(), *prompt))
+      } else {
+        controller.generateContent(constructRequest(*prompt))
+      }.toPublic().validate()
+      chatHistory?.addMessages(response.candidates.first().content)
+      return response
     } catch (e: Throwable) {
       throw FirebaseVertexAIException.from(e)
     }
+  }
 
   /**
    * Generates a streaming response from the backend with the provided [Content].

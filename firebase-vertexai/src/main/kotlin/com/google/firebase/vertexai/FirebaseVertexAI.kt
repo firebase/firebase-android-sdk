@@ -22,6 +22,7 @@ import com.google.firebase.app
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
+import com.google.firebase.vertexai.type.BaseChatHistory
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.InvalidLocationException
@@ -59,6 +60,8 @@ internal constructor(
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
+    // Alternatively, we could default to the InMemoryHistory if we want it to opt-in by default
+    chatHistory: BaseChatHistory? = null,
   ): GenerativeModel {
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
@@ -71,6 +74,7 @@ internal constructor(
       tools,
       toolConfig,
       systemInstruction,
+      chatHistory,
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
