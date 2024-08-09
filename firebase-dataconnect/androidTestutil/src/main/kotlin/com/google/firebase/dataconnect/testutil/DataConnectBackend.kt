@@ -17,12 +17,17 @@
 package com.google.firebase.dataconnect.testutil
 
 import androidx.annotation.VisibleForTesting
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.getInstance
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Autopush
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Companion.fromInstrumentationArguments
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Custom
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Emulator
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Production
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Staging
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
@@ -158,19 +163,6 @@ sealed interface DataConnectBackend {
       }
   }
 
-  class InvalidInstrumentationArgument(
-    argumentValue: String,
-    details: String,
-    cause: Throwable? = null
-  ) :
-    Exception(
-      "Invalid value for instrumentation argument \"$INSTRUMENTATION_ARGUMENT\": " +
-        "\"$argumentValue\" ($details" +
-        (if (cause === null) "" else ": ${cause.message}") +
-        ")",
-      cause
-    )
-
   companion object {
 
     /**
@@ -187,17 +179,7 @@ sealed interface DataConnectBackend {
      * backend to use.
      */
     fun fromInstrumentationArguments(): DataConnectBackend {
-      val bundle =
-        try {
-          InstrumentationRegistry.getArguments()
-        } catch (_: IllegalStateException) {
-          // Treat IllegalStateException the same as no arguments specified, since getArguments()
-          // documents that it throws IllegalStateException "if no argument Bundle has been
-          // registered."
-          null
-        }
-
-      val argument = bundle?.getString(INSTRUMENTATION_ARGUMENT)
+      val argument = getInstrumentationArgument(INSTRUMENTATION_ARGUMENT)
       return fromInstrumentationArgument(argument) ?: Emulator()
     }
 
@@ -221,7 +203,12 @@ sealed interface DataConnectBackend {
         try {
           URI(arg)
         } catch (e: URISyntaxException) {
-          throw InvalidInstrumentationArgument(arg, "cannot be parsed as a URI", e)
+          throw InvalidInstrumentationArgumentException(
+            INSTRUMENTATION_ARGUMENT,
+            arg,
+            "cannot be parsed as a URI",
+            e
+          )
         }
 
       if (uri.scheme == "emulator") {
@@ -229,7 +216,12 @@ sealed interface DataConnectBackend {
           try {
             URL("https://${uri.schemeSpecificPart}")
           } catch (e: MalformedURLException) {
-            throw InvalidInstrumentationArgument(arg, "invalid 'emulator' URI", e)
+            throw InvalidInstrumentationArgumentException(
+              INSTRUMENTATION_ARGUMENT,
+              arg,
+              "invalid 'emulator' URI",
+              e
+            )
           }
         return Emulator(host = url.hostOrNull(), port = url.portOrNull())
       }
@@ -238,7 +230,12 @@ sealed interface DataConnectBackend {
         try {
           URL(arg)
         } catch (e: MalformedURLException) {
-          throw InvalidInstrumentationArgument(arg, "cannot be parsed as a URL", e)
+          throw InvalidInstrumentationArgumentException(
+            INSTRUMENTATION_ARGUMENT,
+            arg,
+            "cannot be parsed as a URL",
+            e
+          )
         }
 
       val host = url.hostOrNull()
@@ -248,7 +245,12 @@ sealed interface DataConnectBackend {
           "http" -> false
           "https" -> true
           else ->
-            throw InvalidInstrumentationArgument(arg, "unsupported protocol: ${url.protocol}", null)
+            throw InvalidInstrumentationArgumentException(
+              INSTRUMENTATION_ARGUMENT,
+              arg,
+              "unsupported protocol: ${url.protocol}",
+              null
+            )
         }
 
       val customHost =
@@ -259,7 +261,12 @@ sealed interface DataConnectBackend {
         } else if (port !== null) {
           ":$port"
         } else {
-          throw InvalidInstrumentationArgument(arg, "a host and/or a port must be specified", null)
+          throw InvalidInstrumentationArgumentException(
+            INSTRUMENTATION_ARGUMENT,
+            arg,
+            "a host and/or a port must be specified",
+            null
+          )
         }
 
       return Custom(host = customHost, sslEnabled = sslEnabled)
