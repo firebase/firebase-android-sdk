@@ -25,7 +25,6 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
-import com.google.android.gms.tasks.Tasks
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
@@ -62,7 +61,7 @@ private const val TAG = "FDCTestAppCheckProvider"
  * `androidTestutil/src/main/assets/firebase-admin-service-account.key.json` must be a valid service
  * account key created by the Google Cloud console.
  */
-class DataConnectTestProdAppCheckProvider(firebaseApp: FirebaseApp, private val appId: String) :
+class DataConnectTestAppCheckProvider(firebaseApp: FirebaseApp, private val appId: String) :
   AppCheckProvider {
 
   private val applicationContext: Context = firebaseApp.applicationContext
@@ -113,27 +112,12 @@ class DataConnectTestProdAppCheckProvider(firebaseApp: FirebaseApp, private val 
 
   class Factory(private val appId: String) : AppCheckProviderFactory {
     override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
-      return DataConnectTestProdAppCheckProvider(firebaseApp, appId)
+      return DataConnectTestAppCheckProvider(firebaseApp, appId)
     }
   }
 
   private companion object {
     const val FIREBASE_ADMIN_SERVICE_ACCOUNT_ASSET_PATH = "firebase-admin-service-account.key.json"
-  }
-}
-
-class DataConnectTestFakeAppCheckProvider() : AppCheckProvider {
-
-  override fun getToken(): Task<AppCheckToken> {
-    val expireTimeMillis = Date().time + 1.hours.inWholeMilliseconds
-    val token = DataConnectTestAppCheckToken("TestToken", expireTimeMillis)
-    return Tasks.forResult(token)
-  }
-
-  class Factory : AppCheckProviderFactory {
-    override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
-      return DataConnectTestFakeAppCheckProvider()
-    }
   }
 }
 

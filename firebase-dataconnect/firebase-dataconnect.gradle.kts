@@ -166,6 +166,8 @@ dependencies {
   androidTestImplementation(libs.kotlin.coroutines.test)
   androidTestImplementation(libs.kotest.assertions)
   androidTestImplementation(libs.kotest.property)
+  androidTestImplementation(libs.mockk)
+  androidTestImplementation(libs.mockk.android)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
   androidTestImplementation(libs.turbine)
