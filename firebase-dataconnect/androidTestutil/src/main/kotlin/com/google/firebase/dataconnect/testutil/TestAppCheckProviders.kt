@@ -25,6 +25,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
@@ -35,9 +36,13 @@ import java.security.KeyFactory
 import java.security.interfaces.RSAPrivateKey
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Date
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -61,14 +66,48 @@ private const val TAG = "FDCTestAppCheckProvider"
  * `androidTestutil/src/main/assets/firebase-admin-service-account.key.json` must be a valid service
  * account key created by the Google Cloud console.
  */
-class DataConnectTestAppCheckProvider(firebaseApp: FirebaseApp, private val appId: String) :
-  AppCheckProvider {
+class DataConnectTestAppCheckProviderFactory(
+  private val appId: String,
+  private val initialToken: String? = null
+) : AppCheckProviderFactory {
+
+  private val _tokens = MutableSharedFlow<DataConnectTestAppCheckToken>(replay = Int.MAX_VALUE)
+  val tokens: SharedFlow<DataConnectTestAppCheckToken> = _tokens.asSharedFlow()
+
+  override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
+    return DataConnectTestAppCheckProvider(firebaseApp, appId, initialToken, ::onTokenProduced)
+  }
+
+  private fun onTokenProduced(token: DataConnectTestAppCheckToken) {
+    check(_tokens.tryEmit(token)) {
+      "tryEmit() should have succeeded since _tokens is configured with replay=Int.MAX_VALUE" +
+        " (error code ty9kkxmqhp)"
+    }
+  }
+}
+
+private class DataConnectTestAppCheckProvider(
+  firebaseApp: FirebaseApp,
+  private val appId: String,
+  private val initialToken: String?,
+  private val onTokenProduced: (DataConnectTestAppCheckToken) -> Unit
+) : AppCheckProvider {
 
   private val applicationContext: Context = firebaseApp.applicationContext
   private val projectId = requireNotNull(firebaseApp.options.projectId)
+  private val initialTokenUsed = AtomicBoolean(false)
 
   override fun getToken(): Task<AppCheckToken> {
     Log.d(TAG, "getToken() called")
+
+    if (!initialTokenUsed.getAndSet(true) && initialToken !== null) {
+      Log.d(TAG, "getToken() unconditionally returning initialToken: $initialToken")
+      val expireTimeMillis = Date().time + 1.hours.inWholeMilliseconds
+      val appCheckToken = DataConnectTestAppCheckToken(initialToken, expireTimeMillis)
+      onTokenProduced(appCheckToken)
+      return Tasks.forResult(appCheckToken)
+    }
+
     val tcs = TaskCompletionSource<AppCheckToken>()
 
     thread(name = "DataConnectTestCustomAppCheckProvider") {
@@ -76,6 +115,7 @@ class DataConnectTestAppCheckProvider(firebaseApp: FirebaseApp, private val appI
         .fold(
           onSuccess = {
             Log.i(TAG, "getToken() succeeded with token: ${it.token.toScrubbedAccessToken()}")
+            onTokenProduced(it)
             tcs.setResult(it)
           },
           onFailure = {
@@ -109,12 +149,6 @@ class DataConnectTestAppCheckProvider(firebaseApp: FirebaseApp, private val appI
   }
 
   private class ProjectIdMismatchException(message: String) : Exception(message)
-
-  class Factory(private val appId: String) : AppCheckProviderFactory {
-    override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
-      return DataConnectTestAppCheckProvider(firebaseApp, appId)
-    }
-  }
 
   private companion object {
     const val FIREBASE_ADMIN_SERVICE_ACCOUNT_ASSET_PATH = "firebase-admin-service-account.key.json"

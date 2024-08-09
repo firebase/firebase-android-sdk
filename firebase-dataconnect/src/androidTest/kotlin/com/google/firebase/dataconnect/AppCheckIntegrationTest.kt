@@ -16,18 +16,26 @@
 
 package com.google.firebase.dataconnect
 
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.DataConnectTestAppCheckProvider
+import com.google.firebase.dataconnect.testutil.DataConnectTestAppCheckProviderFactory
 import com.google.firebase.dataconnect.testutil.InvalidInstrumentationArgumentException
 import com.google.firebase.dataconnect.testutil.getInstrumentationArgument
-import com.google.firebase.dataconnect.testutil.randomId
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
+import com.google.firebase.dataconnect.testutil.schemas.randomPersonName
+import io.grpc.Status
+import io.grpc.StatusException
 import io.kotest.assertions.asClue
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import org.junit.Assume.assumeNotNull
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
@@ -35,6 +43,12 @@ import org.junit.Test
 class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val personSchema by lazy { PersonSchema(dataConnectFactory) }
+
+  private val appCheck: FirebaseAppCheck
+    get() = FirebaseAppCheck.getInstance(personSchema.dataConnect.app)
+
+  private val appId: String
+    get() = InstrumentationRegistry.getInstrumentation().context.getString(R.string.google_app_id)
 
   @Before
   fun skipIfUsingEmulator() {
@@ -57,12 +71,7 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryAndMutationShouldSucceedWhenAppCheckTokenIsProvided() = runTest {
-    val appCheck = FirebaseAppCheck.getInstance(personSchema.dataConnect.app)
-    appCheck.installAppCheckProviderFactory(
-      DataConnectTestAppCheckProvider.Factory(
-        personSchema.dataConnect.app.applicationContext.getString(R.string.google_app_id)
-      )
-    )
+    appCheck.installAppCheckProviderFactory(DataConnectTestAppCheckProviderFactory(appId))
 
     val person1Id = randomPersonId()
     val person2Id = randomPersonId()
@@ -79,15 +88,74 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun queryShouldFailWhenAppCheckTokenIsThePlaceholderToken() = runTest {
+  fun queryShouldFailWhenAppCheckTokenIsThePlaceholder() = runTest {
     // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
     // appcheck token is sent at all.
+    val queryRef = personSchema.getPerson(id = randomPersonId())
 
-    personSchema.getPerson(id = randomId()).execute()
+    val thrownException = shouldThrow<StatusException> { queryRef.execute() }
+
+    thrownException.asClue { it.status.code shouldBe Status.PERMISSION_DENIED.code }
+  }
+
+  @Test
+  fun mutationShouldFailWhenAppCheckTokenIsThePlaceholder() = runTest {
+    // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
+    // appcheck token is sent at all.
+    val mutationRef = personSchema.createPerson(id = randomPersonId(), name = randomPersonName())
+
+    val thrownException = shouldThrow<StatusException> { mutationRef.execute() }
+
+    thrownException.asClue { it.status.code shouldBe Status.PERMISSION_DENIED.code }
+  }
+
+  @Test
+  fun queryShouldRetryIfAppCheckTokenIsExpired() = runTest {
+    val expiredToken = getInstrumentationArgument(APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG)
+    val appCheckProviderFactory =
+      DataConnectTestAppCheckProviderFactory(appId, initialToken = expiredToken)
+    appCheck.installAppCheckProviderFactory(appCheckProviderFactory)
+
+    personSchema.getPerson(id = randomPersonId()).execute()
+
+    val actualToken1 = appCheckProviderFactory.tokens.first().token
+    assumeNotNull(
+      "Test can only be run if an expired token is provided;" +
+        " to get an expired token, simply print \$actualToken1, wait for 1 hour," +
+        " then re-run the test, setting the $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG" +
+        " instrumentation argument to the token value (error code frsdh5dpxp)",
+      expiredToken
+    )
+    actualToken1 shouldBe expiredToken
+    val actualToken2 = appCheckProviderFactory.tokens.drop(1).first().token
+    actualToken2 shouldNotBe expiredToken
+  }
+
+  @Test
+  fun mutationShouldRetryIfAppCheckTokenIsExpired() = runTest {
+    val expiredToken = getInstrumentationArgument(APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG)
+    val appCheckProviderFactory =
+      DataConnectTestAppCheckProviderFactory(appId, initialToken = expiredToken)
+    appCheck.installAppCheckProviderFactory(appCheckProviderFactory)
+
+    personSchema.createPerson(id = randomPersonId(), name = randomPersonName()).execute()
+
+    val actualToken1 = appCheckProviderFactory.tokens.first().token
+    assumeNotNull(
+      "Test can only be run if an expired token is provided;" +
+        " to get an expired token, simply print \$actualToken1, wait for 1 hour," +
+        " then re-run the test, setting the $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG" +
+        " instrumentation argument to the token value (error code frsdh5dpxp)",
+      expiredToken
+    )
+    actualToken1 shouldBe expiredToken
+    val actualToken2 = appCheckProviderFactory.tokens.drop(1).first().token
+    actualToken2 shouldNotBe expiredToken
   }
 
   private companion object {
     const val APP_CHECK_ENFORCING_INSTRUMENTATION_ARG = "DATA_CONNECT_APP_CHECK_ENFORCING"
+    const val APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG = "DATA_CONNECT_APP_CHECK_EXPIRED_TOKEN"
 
     private fun isAppCheckInEnforcingMode(): Boolean {
       return when (
