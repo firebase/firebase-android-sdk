@@ -12,6 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+pluginManagement {
+  includeBuild("firebase-dataconnect/plugin")
+}
+
 rootProject.name = 'com.google.firebase'
 
 //Note: do not add subprojects to this file. Instead add them to subprojects.gradle
