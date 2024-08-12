@@ -22,6 +22,12 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.getInstance
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Autopush
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Companion.fromInstrumentationArguments
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Custom
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Emulator
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Production
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Staging
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException

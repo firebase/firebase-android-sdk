@@ -111,21 +111,55 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
+  fun `should omit x-firebase-appcheck when the AppCheck token is null`() = runTest {
+    val key = "jh7km3qgsd"
+    val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
+    coEvery { testValues.dataConnectAppCheck.getToken(any()) } returns null
+    val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
+    val requestId = Arb.requestId(key).next()
+
+    val metadata = dataConnectGrpcMetadata.get(requestId)
+
+    metadata.asClue { it.keys() shouldNotContain "x-firebase-appcheck" }
+  }
+
+  @Test
+  fun `should include x-firebase-appcheck when the AppCheck token is not null`() = runTest {
+    val key = "cz6htzv6qk"
+    val accessToken = Arb.accessToken(key).next()
+    val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
+    coEvery { testValues.dataConnectAppCheck.getToken(any()) } returns accessToken
+    val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
+    val requestId = Arb.requestId(key).next()
+
+    val metadata = dataConnectGrpcMetadata.get(requestId)
+
+    metadata.asClue {
+      it.keys() shouldContain "x-firebase-appcheck"
+      val metadataKey = Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
+      it.get(metadataKey) shouldBe accessToken
+    }
+  }
+
+  @Test
   fun `forSystemVersions() should return correct values`() = runTest {
     val key = "4vjtde6zyv"
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectAuth = testValues.dataConnectAuth
+    val dataConnectAppCheck = testValues.dataConnectAppCheck
     val connectorLocation = testValues.connectorConfig.location
 
     val metadata =
       DataConnectGrpcMetadata.forSystemVersions(
         dataConnectAuth = dataConnectAuth,
+        dataConnectAppCheck = dataConnectAppCheck,
         connectorLocation = connectorLocation,
         parentLogger = mockk(relaxed = true),
       )
 
     metadata.asClue {
       it.dataConnectAuth shouldBeSameInstanceAs dataConnectAuth
+      it.dataConnectAppCheck shouldBeSameInstanceAs dataConnectAppCheck
       it.connectorLocation shouldBeSameInstanceAs connectorLocation
       it.kotlinVersion shouldBe "${KotlinVersion.CURRENT}"
       it.androidVersion shouldBe Build.VERSION.SDK_INT
@@ -136,6 +170,7 @@ class DataConnectGrpcMetadataUnitTest {
 
   private data class DataConnectGrpcMetadataTestValues(
     val dataConnectAuth: DataConnectAuth,
+    val dataConnectAppCheck: DataConnectAppCheck,
     val requestIdSlot: CapturingSlot<String>,
     val connectorConfig: ConnectorConfig,
   ) {
@@ -148,6 +183,7 @@ class DataConnectGrpcMetadataUnitTest {
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
         dataConnectAuth = dataConnectAuth,
+        dataConnectAppCheck = dataConnectAppCheck,
         connectorLocation = connectorConfig.location,
         kotlinVersion = kotlinVersion,
         androidVersion = androidVersion,
@@ -162,6 +198,7 @@ class DataConnectGrpcMetadataUnitTest {
         rs: RandomSource = RandomSource.default()
       ): DataConnectGrpcMetadataTestValues {
         val dataConnectAuth: DataConnectAuth = mockk(relaxed = true)
+        val dataConnectAppCheck: DataConnectAppCheck = mockk(relaxed = true)
 
         val accessTokenArb = Arb.accessToken(key)
         val requestIdSlot = slot<String>()
@@ -172,6 +209,7 @@ class DataConnectGrpcMetadataUnitTest {
 
         return DataConnectGrpcMetadataTestValues(
           dataConnectAuth = dataConnectAuth,
+          dataConnectAppCheck = dataConnectAppCheck,
           requestIdSlot = requestIdSlot,
           connectorConfig = Arb.connectorConfig(key).next(rs),
         )
