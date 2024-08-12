@@ -283,7 +283,7 @@ class DataConnectGrpcClientUnitTest {
     val responseData = buildStructProto { put("foo", key) }
     val forceRefresh = AtomicBoolean(false)
     coEvery { mockDataConnectAppCheck.forceRefresh() } answers { forceRefresh.set(true) }
-    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any()) } answers
+    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } answers
       {
         if (forceRefresh.get()) {
           ExecuteQueryResponse.newBuilder().setData(responseData).build()
@@ -292,10 +292,11 @@ class DataConnectGrpcClientUnitTest {
         }
       }
 
-    val result = dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
+    val result =
+      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
-    coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeQuery(any(), any()) }
+    coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "retrying with fresh Auth and/or AppCheck tokens"
     )
@@ -307,7 +308,7 @@ class DataConnectGrpcClientUnitTest {
     val responseData = buildStructProto { put("foo", key) }
     val forceRefresh = AtomicBoolean(false)
     coEvery { mockDataConnectAppCheck.forceRefresh() } answers { forceRefresh.set(true) }
-    coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any()) } answers
+    coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) } answers
       {
         if (forceRefresh.get()) {
           ExecuteMutationResponse.newBuilder().setData(responseData).build()
@@ -316,10 +317,11 @@ class DataConnectGrpcClientUnitTest {
         }
       }
 
-    val result = dataConnectGrpcClient.executeMutation(requestId, operationName, variables)
+    val result =
+      dataConnectGrpcClient.executeMutation(requestId, operationName, variables, isFromGeneratedSdk)
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
-    coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeMutation(any(), any()) }
+    coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "retrying with fresh Auth and/or AppCheck tokens"
     )

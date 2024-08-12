@@ -144,8 +144,9 @@ class DataConnectGrpcMetadataUnitTest {
     coEvery { testValues.dataConnectAppCheck.getToken(any()) } returns null
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
+    val isFromGeneratedSdk = Arb.boolean().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId)
+    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
 
     metadata.asClue { it.keys() shouldNotContain "x-firebase-appcheck" }
   }
@@ -158,8 +159,9 @@ class DataConnectGrpcMetadataUnitTest {
     coEvery { testValues.dataConnectAppCheck.getToken(any()) } returns accessToken
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
+    val isFromGeneratedSdk = Arb.boolean().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId)
+    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
 
     metadata.asClue {
       it.keys() shouldContain "x-firebase-appcheck"

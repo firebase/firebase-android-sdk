@@ -18,13 +18,13 @@ package com.google.firebase.dataconnect
 
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.firebase.dataconnect.generated.GeneratedConnector
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.dataconnect.generated.GeneratedConnector
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.DataConnectTestAppCheckToken
