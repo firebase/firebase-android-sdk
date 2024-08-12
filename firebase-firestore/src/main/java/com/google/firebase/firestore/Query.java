@@ -33,7 +33,6 @@ import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
-import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.ViewSnapshot;
@@ -965,8 +964,7 @@ public class Query {
     validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
       return firestore
-          .getClient()
-          .getDocumentsFromLocalCache(query)
+          .callClient(client -> client.getDocumentsFromLocalCache(query))
           .continueWith(
               Executors.DIRECT_EXECUTOR,
               (Task<ViewSnapshot> viewSnap) ->
@@ -1182,10 +1180,16 @@ public class Query {
     AsyncEventListener<ViewSnapshot> asyncListener =
         new AsyncEventListener<>(executor, viewListener);
 
-    QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
-    return ActivityScope.bind(
-        activity,
-        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
+    return firestore.callClient(
+        client -> {
+          QueryListener queryListener = client.listen(query, options, asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.stopListening(queryListener);
+              });
+        });
   }
 
   private void validateHasExplicitOrderByForLimitToLast() {

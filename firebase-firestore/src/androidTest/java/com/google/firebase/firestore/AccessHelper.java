@@ -33,7 +33,6 @@ public final class AccessHelper {
       String persistenceKey,
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
-      AsyncQueue asyncQueue,
       Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
       FirebaseApp firebaseApp,
       FirebaseFirestore.InstanceRegistry instanceRegistry) {
@@ -43,7 +42,6 @@ public final class AccessHelper {
         persistenceKey,
         authProvider,
         appCheckProvider,
-        asyncQueue,
         componentProviderFactory,
         firebaseApp,
         instanceRegistry,
@@ -51,6 +49,6 @@ public final class AccessHelper {
   }
 
   public static AsyncQueue getAsyncQueue(FirebaseFirestore firestore) {
-    return firestore.getAsyncQueue();
+    return firestore.clientProvider.getAsyncQueue();
   }
 }
