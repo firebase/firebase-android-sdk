@@ -87,6 +87,9 @@ import kotlinx.serialization.SerializationStrategy
  * release notes will become part of the regular Android SDK releases.
  *
  * #### 16.0.0-alpha06 (not yet released)
+ * - [#6176](https://github.com/firebase/firebase-android-sdk/pull/6176]) Added App Check support.
+ * To use App Check, simply enable it like for any other Firebase product, as documented at
+ * https://firebase.google.com/docs/app-check.
  *
  * #### 16.0.0-alpha05 (June 24, 2024)
  * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
