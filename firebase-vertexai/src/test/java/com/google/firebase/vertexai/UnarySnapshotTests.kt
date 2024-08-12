@@ -77,8 +77,8 @@ internal class UnarySnapshotTests {
     }
 
   @Test
-  fun `unknown enum`() =
-    goldenUnaryFile("unary-success-unknown-enum.json") {
+  fun `unknown enum in safety ratings`() =
+    goldenUnaryFile("unary-success-unknown-enum-safety-ratings.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
@@ -322,7 +322,7 @@ internal class UnarySnapshotTests {
 
   @Test
   fun `service disabled`() =
-    goldenUnaryFile("unary-failure-service-disabled.json", HttpStatusCode.Forbidden) {
+    goldenUnaryFile("unary-failure-firebaseml-api-not-enabled.json", HttpStatusCode.Forbidden) {
       withTimeout(testTimeout) {
         shouldThrow<ServiceDisabledException> { model.generateContent("prompt") }
       }
