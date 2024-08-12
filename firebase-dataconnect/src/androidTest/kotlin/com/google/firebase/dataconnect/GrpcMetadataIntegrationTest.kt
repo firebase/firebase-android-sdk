@@ -175,7 +175,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun executeQueryShouldNotSendAppCheckMetadataWhenAppCheckIsNotEnabled() = runTest {
+  fun executeQueryShouldSendPlaceholderAppCheckMetadataWhenAppCheckIsNotEnabled() = runTest {
     // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
     // appcheck token is sent at all.
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
@@ -189,7 +189,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun executeMutationShouldNotSendAppCheckMetadataWhenAppCheckIsNotEnabled() = runTest {
+  fun executeMutationShouldSendPlaceholderAppCheckMetadataWhenAppCheckIsNotEnabled() = runTest {
     // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
     // appcheck token is sent at all.
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
