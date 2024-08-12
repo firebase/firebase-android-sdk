@@ -27,11 +27,11 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
-import com.google.firebase.crashlytics.internal.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -74,7 +74,10 @@ public class CrashlyticsCore {
 
   private final Context context;
   private final FirebaseApp app;
+
+  /** This field is accessed by the Unity plugin via reflection. */
   private final DataCollectionArbiter dataCollectionArbiter;
+
   private final OnDemandCounter onDemandCounter;
 
   private final long startTime;
