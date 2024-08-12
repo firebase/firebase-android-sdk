@@ -26,12 +26,11 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -322,7 +321,8 @@ public class CrashlyticsCore {
    * safe to invoke this method from the main thread.
    */
   public void logException(@NonNull Throwable throwable) {
-    crashlyticsWorkers.common.submit(() -> controller.writeNonFatalException(Thread.currentThread(), throwable));
+    crashlyticsWorkers.common.submit(
+        () -> controller.writeNonFatalException(Thread.currentThread(), throwable));
   }
 
   /**
@@ -496,7 +496,8 @@ public class CrashlyticsCore {
   // region Previous crash handling
 
   private void checkForPreviousCrash() {
-    Task<Boolean> task = crashlyticsWorkers.common.submit(() -> controller.didCrashOnPreviousExecution());
+    Task<Boolean> task =
+        crashlyticsWorkers.common.submit(() -> controller.didCrashOnPreviousExecution());
 
     Boolean result;
     try {
