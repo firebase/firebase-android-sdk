@@ -246,7 +246,7 @@ public final class Target {
       switch (fieldFilter.getOperator()) {
         case LESS_THAN:
         case LESS_THAN_OR_EQUAL:
-          filterValue = Values.getLowerBound(fieldFilter.getValue().getValueTypeCase());
+          filterValue = Values.getLowerBound(fieldFilter.getValue());
           break;
         case EQUAL:
         case IN:
@@ -311,7 +311,7 @@ public final class Target {
       switch (fieldFilter.getOperator()) {
         case GREATER_THAN_OR_EQUAL:
         case GREATER_THAN:
-          filterValue = Values.getUpperBound(fieldFilter.getValue().getValueTypeCase());
+          filterValue = Values.getUpperBound(fieldFilter.getValue());
           filterInclusive = false;
           break;
         case EQUAL:

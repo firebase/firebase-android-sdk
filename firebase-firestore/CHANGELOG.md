@@ -1,5 +1,6 @@
 # Unreleased
 * [changed] Fail snapshot listeners when Firestore terminates. [#6136](//github.com/firebase/firebase-android-sdk/pull/6136)
+* [feature] Add support for the VectorValue type. [#6154](//github.com/firebase/firebase-android-sdk/pull/6154)
 
 # 25.0.0
 * [feature] Enable queries with range & inequality filters on multiple fields. [#5729](//github.com/firebase/firebase-android-sdk/pull/5729)
