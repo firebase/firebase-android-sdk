@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectBackend.Companion.fromInstrumentationArgument
-import com.google.firebase.dataconnect.testutil.DataConnectBackend.InvalidInstrumentationArgument
 import java.net.URI
 import java.net.URL
 import org.junit.Test
@@ -96,7 +95,9 @@ class DataConnectBackendUnitTest {
   @Test
   fun `fromInstrumentationArgument('foo') should throw an exception`() {
     val exception =
-      assertThrows(InvalidInstrumentationArgument::class) { fromInstrumentationArgument("foo") }
+      assertThrows(InvalidInstrumentationArgumentException::class) {
+        fromInstrumentationArgument("foo")
+      }
     val urlParseErrorMessage = runCatching { URL("foo") }.exceptionOrNull()!!.message!!
     assertThat(exception).hasMessageThat().containsWithNonAdjacentText("foo")
     assertThat(exception).hasMessageThat().containsWithNonAdjacentText("invalid", ignoreCase = true)
@@ -107,7 +108,9 @@ class DataConnectBackendUnitTest {
   @Test
   fun `fromInstrumentationArgument(invalid URI) should throw an exception`() {
     val exception =
-      assertThrows(InvalidInstrumentationArgument::class) { fromInstrumentationArgument("..:") }
+      assertThrows(InvalidInstrumentationArgumentException::class) {
+        fromInstrumentationArgument("..:")
+      }
     val uriParseErrorMessage = runCatching { URI("..:") }.exceptionOrNull()!!.message!!
     assertThat(exception).hasMessageThat().containsWithNonAdjacentText("..:")
     assertThat(exception).hasMessageThat().containsWithNonAdjacentText("invalid", ignoreCase = true)
@@ -118,7 +121,7 @@ class DataConnectBackendUnitTest {
   @Test
   fun `fromInstrumentationArgument(invalid emulator URI) should throw an exception`() {
     val exception =
-      assertThrows(InvalidInstrumentationArgument::class) {
+      assertThrows(InvalidInstrumentationArgumentException::class) {
         fromInstrumentationArgument("emulator:::::")
       }
     val urlParseErrorMessage = runCatching { URL("https://::::") }.exceptionOrNull()!!.message!!
