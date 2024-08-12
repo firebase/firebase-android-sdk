@@ -30,11 +30,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -69,8 +69,6 @@ class CrashlyticsController {
   static final FilenameFilter APP_EXCEPTION_MARKER_FILTER =
       (directory, filename) -> filename.startsWith(APP_EXCEPTION_MARKER_PREFIX);
 
-  static final String NATIVE_SESSION_DIR = "native-sessions";
-
   static final int FIREBASE_CRASH_TYPE_FATAL = 1;
 
   private static final String GENERATOR_FORMAT = "Crashlytics Android SDK/%s";
@@ -84,9 +82,9 @@ class CrashlyticsController {
   private final CrashlyticsFileMarker crashMarker;
   private final UserMetadata userMetadata;
 
-  private final CrashlyticsWorker backgroundWorker;
+  @Deprecated private final CrashlyticsWorker backgroundWorker;
 
-  private final CrashlyticsWorker diskWriteWorker;
+  private final CrashlyticsWorkers crashlyticsWorkers;
 
   private final IdManager idManager;
   private final FileStore fileStore;
@@ -120,7 +118,6 @@ class CrashlyticsController {
 
   CrashlyticsController(
       Context context,
-      CrashlyticsWorker commonWorker,
       IdManager idManager,
       DataCollectionArbiter dataCollectionArbiter,
       FileStore fileStore,
@@ -132,9 +129,9 @@ class CrashlyticsController {
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorker diskWriteWorker) {
+      CrashlyticsWorkers crashlyticsWorkers) {
     this.context = context;
-    this.backgroundWorker = commonWorker;
+    this.backgroundWorker = crashlyticsWorkers.common;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.fileStore = fileStore;
@@ -146,11 +143,7 @@ class CrashlyticsController {
     this.analyticsEventLogger = analyticsEventLogger;
     this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
-    this.diskWriteWorker = diskWriteWorker;
-  }
-
-  private Context getContext() {
-    return context;
+    this.crashlyticsWorkers = crashlyticsWorkers;
   }
 
   // region Exception handling
@@ -314,7 +307,7 @@ class CrashlyticsController {
 
   /** This function must be called before opening the first session * */
   boolean didCrashOnPreviousExecution() {
-    CrashlyticsPreconditions.checkBackgroundThread(); // To not violate strict mode.
+    CrashlyticsWorkers.checkBackgroundThread(); // To not violate strict mode.
     if (!crashMarker.isPresent()) {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
@@ -523,7 +516,7 @@ class CrashlyticsController {
    * @param settingsProvider
    */
   boolean finalizeSessions(SettingsProvider settingsProvider) {
-    CrashlyticsPreconditions.checkBackgroundThread();
+    CrashlyticsWorkers.checkBackgroundThread();
 
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
@@ -930,7 +923,7 @@ class CrashlyticsController {
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
-            UserMetadata.loadFromExistingSession(sessionId, fileStore, diskWriteWorker);
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

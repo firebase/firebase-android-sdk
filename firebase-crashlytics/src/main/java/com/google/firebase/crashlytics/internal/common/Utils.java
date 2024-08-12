@@ -22,7 +22,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -54,25 +53,6 @@ public final class Utils {
         };
     t1.continueWith(continuation);
     t2.continueWith(continuation);
-    return result.getTask();
-  }
-
-  /**
-   * @return A tasks that is resolved when either of the given tasks is resolved.
-   */
-  public static <T> Task<T> race(Executor executor, Task<T> t1, Task<T> t2) {
-    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
-    Continuation<T, Void> continuation =
-        task -> {
-          if (task.isSuccessful()) {
-            result.trySetResult(task.getResult());
-          } else if (task.getException() != null) {
-            result.trySetException(task.getException());
-          }
-          return null;
-        };
-    t1.continueWith(executor, continuation);
-    t2.continueWith(executor, continuation);
     return result.getTask();
   }
 

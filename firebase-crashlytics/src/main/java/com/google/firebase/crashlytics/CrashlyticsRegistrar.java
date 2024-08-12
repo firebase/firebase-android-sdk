@@ -14,7 +14,7 @@
 
 package com.google.firebase.crashlytics;
 
-import static com.google.firebase.crashlytics.internal.CrashlyticsPreconditions.StrictLevel.ASSERT;
+import static com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers.StrictLevel.ASSERT;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
@@ -26,8 +26,8 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
@@ -70,9 +70,9 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
 
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
     // TODO(mrober): Make this a build time configuration. Do not release like this.
-    CrashlyticsPreconditions.setStrictLevel(ASSERT); // Kill the process on violation for debugging.
+    CrashlyticsWorkers.setStrictLevel(ASSERT); // Kill the process on violation for debugging.
 
-    // CrashlyticsPreconditions.checkMainThread();
+    // CrashlyticsWorkers.checkMainThread();
     long startTime = System.currentTimeMillis();
 
     FirebaseCrashlytics crashlytics =

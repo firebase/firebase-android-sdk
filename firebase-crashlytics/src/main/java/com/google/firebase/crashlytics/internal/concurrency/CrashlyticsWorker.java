@@ -47,7 +47,7 @@ public class CrashlyticsWorker {
   private final Object tailLock = new Object();
   private Task<?> tail = Tasks.forResult(null);
 
-  public CrashlyticsWorker(ExecutorService executor) {
+  CrashlyticsWorker(ExecutorService executor) {
     this.executor = executor;
   }
 
@@ -152,7 +152,7 @@ public class CrashlyticsWorker {
   }
 
   /**
-   * Blocks until all current pending tasks have completed, up to 30 seconds. Useful for testing.
+   * Blocks until all current pending tasks have completed, up to 30 seconds. Only for testing.
    *
    * <p>This is not a shutdown, this does not stop new tasks from being submitted to the queue.
    */
@@ -160,5 +160,8 @@ public class CrashlyticsWorker {
   public void await() throws ExecutionException, InterruptedException, TimeoutException {
     // Submit an empty runnable, and await on it for 30 sec so deadlocked tests fail faster.
     Tasks.await(submit(() -> {}), 30, TimeUnit.SECONDS);
+
+    // Sleep for a bit here, instead of de-flaking individual test cases.
+    Thread.sleep(1);
   }
 }
