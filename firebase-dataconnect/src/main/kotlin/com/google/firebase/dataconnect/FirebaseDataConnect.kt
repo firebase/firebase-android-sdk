@@ -87,7 +87,7 @@ import kotlinx.serialization.SerializationStrategy
  * release notes will become part of the regular Android SDK releases.
  *
  * #### 16.0.0-alpha06 (not yet released)
- * - [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN]) Added `equals` and
+ * - [#6177](https://github.com/firebase/firebase-android-sdk/pull/6177]) Added `equals` and
  * `hashCode` methods to [com.google.firebase.dataconnect.generated.GeneratedConnector]. This is
  * purely a cosmetic change, but requires using dataconnect emulator v1.1.18 or later, or else a
  * compilation error will result.
