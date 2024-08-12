@@ -488,6 +488,67 @@ public class CrashlyticsWorkerTest {
   }
 
   @Test
+  public void submitTaskThatReturnsWithSuccessContinuation() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forResult(1337), integer -> Tasks.forResult(Integer.toString(integer)));
+
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo("1337");
+  }
+
+  @Test
+  public void submitTaskThatThrowsWithSuccessContinuation() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forException(new IndexOutOfBoundsException()),
+            object -> Tasks.forResult("Still you don't believe."));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+
+    assertThat(thrown).hasCauseThat().isInstanceOf(IndexOutOfBoundsException.class);
+  }
+
+  @Test
+  public void submitTaskWithSuccessContinuationThatThrows() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forResult(7), integer -> Tasks.forException(new IOException()));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+
+    assertThat(thrown).hasCauseThat().isInstanceOf(IOException.class);
+
+    // Verify the worker still executes tasks after the success continuation threw.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> 42))).isEqualTo(42);
+  }
+
+  @Test
+  public void submitTaskThatCancelsWithSuccessContinuation() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            Tasks::forCanceled, object -> Tasks.forResult("Will set you free"));
+
+    assertThrows(CancellationException.class, () -> Tasks.await(task));
+
+    // Verify the worker still executes tasks after the task cancelled.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> 42))).isEqualTo(42);
+  }
+
+  @Test
+  public void submitTaskWithSuccessContinuationThatCancels() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forResult(7), integer -> Tasks.forCanceled());
+
+    assertThrows(CancellationException.class, () -> Tasks.await(task));
+
+    // Verify the worker still executes tasks after the success continuation was cancelled.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> "jk"))).isEqualTo("jk");
+  }
+
+  @Test
   public void submitTaskWithContinuationExecutesInOrder() throws Exception {
     // The integers added to the list represent the order they should be executed in.
     Queue<Integer> list = new ConcurrentLinkedQueue<>();

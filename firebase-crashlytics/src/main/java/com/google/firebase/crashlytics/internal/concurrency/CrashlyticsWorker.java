@@ -19,6 +19,7 @@ package com.google.firebase.crashlytics.internal.concurrency;
 import androidx.annotation.Discouraged;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
+import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
@@ -101,7 +102,7 @@ public class CrashlyticsWorker implements Executor {
   }
 
   /**
-   * Submits a <code>Callable</code> <code>Task</code> for asynchronous execution on the executor.
+   * Submits a <code>Callable Task</code> for asynchronous execution on the executor.
    *
    * <p>This is useful for making the worker block on an asynchronous operation, while letting the
    * underlying threads be re-used.
@@ -121,8 +122,8 @@ public class CrashlyticsWorker implements Executor {
   }
 
   /**
-   * Submits a <code>Callable</code> <code>Task</code> followed by a <code>Continuation</code> for
-   * asynchronous execution on the executor.
+   * Submits a <code>Callable Task</code> followed by a <code>Continuation</code> for asynchronous
+   * execution on the executor.
    *
    * <p>This is useful for submitting a task that must be immediately followed by another task,
    * regardless of more tasks being submitted in parallel. For example, settings.
@@ -140,6 +141,41 @@ public class CrashlyticsWorker implements Executor {
       Task<R> result =
           tail.continueWithTask(executor, task -> callable.call())
               .continueWithTask(executor, continuation);
+      tail = result;
+      return result;
+    }
+  }
+
+  /**
+   * Submits a <code>Callable Task</code> followed by a <code>SuccessContinuation</code> for
+   * asynchronous execution on the executor.
+   *
+   * <p>This is useful for submitting a task that must be immediately followed by another task, only
+   * if it was successful, but regardless of more tasks being submitted in parallel.
+   *
+   * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the Task
+   * returned by the callable and continued by the continuation, throws an <code>ExecutionException
+   * </code> if either task throws an exception, or throws a <code>CancellationException</code> if
+   * the task is cancelled.
+   */
+  @CanIgnoreReturnValue
+  public <T, R> Task<R> submitTaskOnSuccess(
+      Callable<Task<T>> callable, SuccessContinuation<T, R> successContinuation) {
+    synchronized (tailLock) {
+      // Chain the new callable task and success continuation onto the queue's tail.
+      Task<R> result =
+          tail.continueWithTask(executor, task -> callable.call())
+              .continueWithTask(
+                  executor,
+                  task -> {
+                    if (task.isSuccessful()) {
+                      return successContinuation.then(task.getResult());
+                    } else if (task.getException() != null) {
+                      return Tasks.forException(task.getException());
+                    } else {
+                      return Tasks.forCanceled();
+                    }
+                  });
       tail = result;
       return result;
     }
