@@ -17,9 +17,11 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.util.nextAlphanumericString
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.next
 
 fun Arb.Companion.keyedString(id: String, key: String, length: Int = 8): Arb<String> =
@@ -54,3 +56,13 @@ fun Arb.Companion.requestId(key: String): Arb<String> = keyedString("requestId",
 fun Arb.Companion.operationName(key: String): Arb<String> = keyedString("operation", key)
 
 fun Arb.Companion.projectId(key: String): Arb<String> = keyedString("project", key)
+
+fun Arb.Companion.host(key: String): Arb<String> = keyedString("host", key)
+
+fun Arb.Companion.dataConnectSettings(
+  key: String,
+  host: Arb<String> = host(key),
+  sslEnabled: Arb<Boolean> = Arb.boolean(),
+): Arb<DataConnectSettings> = arbitrary { rs ->
+  DataConnectSettings(host = host.next(rs), sslEnabled = sslEnabled.next(rs))
+}
