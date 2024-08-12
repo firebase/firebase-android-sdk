@@ -33,8 +33,8 @@ import java.util.concurrent.TimeoutException;
 /**
  * Worker for executing tasks sequentially on the given executor service.
  *
- * <p>Work on the queue may block, or it may return a Task, such that the underlying thread may be
- * re-used while the worker queue is still blocked.
+ * <p>Work on the queue may suspend, or it may return a Task, such that the underlying thread may be
+ * re-used while the worker queue is suspended.
  *
  * <p>Work enqueued on this worker will be run serially, regardless of the underlying executor.
  * Therefore, workers on the queue should not add new work to the queue and then block on it, as
@@ -104,7 +104,7 @@ public class CrashlyticsWorker implements Executor {
   /**
    * Submits a <code>Callable Task</code> for asynchronous execution on the executor.
    *
-   * <p>This is useful for making the worker block on an asynchronous operation, while letting the
+   * <p>This is useful for making the worker suspend on an asynchronous operation, while letting the
    * underlying threads be re-used.
    *
    * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the Task

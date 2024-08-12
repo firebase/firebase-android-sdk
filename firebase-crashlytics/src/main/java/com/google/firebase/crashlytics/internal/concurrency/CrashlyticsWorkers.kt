@@ -16,13 +16,7 @@
 
 package com.google.firebase.crashlytics.internal.concurrency
 
-import android.os.Build
-import android.os.Looper
 import com.google.firebase.crashlytics.internal.Logger
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers.StrictLevel.ASSERT
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers.StrictLevel.NONE
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers.StrictLevel.THROW
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers.StrictLevel.WARN
 import java.util.concurrent.ExecutorService
 
 /**
@@ -37,19 +31,20 @@ class CrashlyticsWorkers(
 
   /**
    * The common worker is for common background tasks, like background init, user actions, and
-   * processing uncaught exceptions. This is the main worker of the sdk.
+   * processing uncaught exceptions. This is the main worker of the sdk. This worker will never
+   * block on a disk write or network call.
    */
   @JvmField val common = CrashlyticsWorker(backgroundExecutorService)
 
   /**
-   * The disk write worker is for background tasks that persisting data to local disk. Ideally, no
-   * user action should require waiting on this (although still do).
+   * The disk write worker is for background tasks that persisting data to local disk. No user
+   * action should wait on this. Use for fire and forget, safe to ignore exceptions.
    */
   @JvmField val diskWrite = CrashlyticsWorker(backgroundExecutorService)
 
   /**
    * The data collect worker is for any background tasks that send data remotely, like fetching fid,
-   * settings, or uploading crash reports. This worker is blocked until permission is granted.
+   * settings, or uploading crash reports. This worker is suspended until permission is granted.
    */
   @JvmField val dataCollect = CrashlyticsWorker(backgroundExecutorService)
 
@@ -61,13 +56,8 @@ class CrashlyticsWorkers(
     private val threadName
       get() = Thread.currentThread().name
 
-    @JvmStatic var strictLevel: StrictLevel = NONE
-
-    @JvmStatic
-    fun checkMainThread() =
-      checkThread(::isMainThread) {
-        "Must be called on the main thread, was called on $threadName."
-      }
+    /** When enabled, failed preconditions will cause assertion errors for debugging. */
+    @JvmStatic var enforcement: Boolean = false
 
     @JvmStatic
     fun checkBlockingThread() =
@@ -81,34 +71,15 @@ class CrashlyticsWorkers(
         "Must be called on a background thread, was called on $threadName."
       }
 
-    private fun isMainThread() =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        Looper.getMainLooper().isCurrentThread
-      } else {
-        Looper.getMainLooper() == Looper.myLooper()
-      }
-
     private fun isBlockingThread() = threadName.contains("Firebase Blocking Thread #")
 
     private fun isBackgroundThread() = threadName.contains("Firebase Background Thread #")
 
     private fun checkThread(isCorrectThread: () -> Boolean, failureMessage: () -> String) {
-      if (strictLevel.level >= WARN.level && !isCorrectThread()) {
-        Logger.getLogger().w(failureMessage())
-        assert(strictLevel.level < ASSERT.level, failureMessage)
-        check(strictLevel.level < THROW.level, failureMessage)
+      if (!isCorrectThread()) {
+        Logger.getLogger().d(failureMessage())
+        assert(enforcement, failureMessage)
       }
     }
-  }
-
-  enum class StrictLevel(val level: Int) : Comparable<StrictLevel> {
-    /** Do not check for violations. */
-    NONE(0),
-    /** Log violations as warnings. */
-    WARN(1),
-    /** Throw an exception on violation. */
-    THROW(2),
-    /** Kill the process on violation. Useful for debugging. */
-    ASSERT(3),
   }
 }

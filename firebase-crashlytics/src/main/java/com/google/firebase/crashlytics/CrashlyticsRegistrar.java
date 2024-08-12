@@ -14,8 +14,6 @@
 
 package com.google.firebase.crashlytics;
 
-import static com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers.StrictLevel.ASSERT;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.annotations.concurrent.Background;
@@ -69,10 +67,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   }
 
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
-    // TODO(mrober): Make this a build time configuration. Do not release like this.
-    CrashlyticsWorkers.setStrictLevel(ASSERT); // Kill the process on violation for debugging.
+    CrashlyticsWorkers.setEnforcement(BuildConfig.DEBUG);
 
-    // CrashlyticsWorkers.checkMainThread();
     long startTime = System.currentTimeMillis();
 
     FirebaseCrashlytics crashlytics =
@@ -86,8 +82,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             container.get(blockingExecutorService));
 
     long duration = System.currentTimeMillis() - startTime;
-    if (duration > 30) {
-      Logger.getLogger().i("Initializing Crashlytics blocked main for " + duration + " ms");
+    if (duration > 16) {
+      Logger.getLogger().d("Initializing Crashlytics blocked main for " + duration + " ms");
     }
 
     return crashlytics;
