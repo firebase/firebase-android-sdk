@@ -90,6 +90,12 @@ import kotlinx.serialization.SerializationStrategy
  * - [#6176](https://github.com/firebase/firebase-android-sdk/pull/6176]) Added App Check support.
  * To use App Check, simply enable it like for any other Firebase product, as documented at
  * https://firebase.google.com/docs/app-check.
+ * - [#6177](https://github.com/firebase/firebase-android-sdk/pull/6177]) Added `equals` and
+ * `hashCode` methods to [com.google.firebase.dataconnect.generated.GeneratedConnector]. This is
+ * purely a cosmetic change, but requires using dataconnect emulator v1.1.18 (released May 23, 2024)
+ * or later; otherwise, a compilation error like `Class 'FooConnector' is not abstract and does not
+ * implement abstract member public abstract fun equals(other: Any?): Boolean defined in
+ * com.google.firebase.dataconnect.generated.GeneratedConnector` will occur.
  *
  * #### 16.0.0-alpha05 (June 24, 2024)
  * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
