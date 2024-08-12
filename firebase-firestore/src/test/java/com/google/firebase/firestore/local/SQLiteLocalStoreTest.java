@@ -294,6 +294,80 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
+  public void testIndexesVectorValues() {
+    FieldIndex index =
+        fieldIndex(
+            "coll", 0, FieldIndex.INITIAL_STATE, "embedding", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    writeMutation(setMutation("coll/arr1", map("embedding", Arrays.asList(0.1, 0.2, 0.3))));
+    writeMutation(setMutation("coll/map2", map("embedding", map())));
+    writeMutation(
+        setMutation("coll/doc3", map("embedding", FieldValue.vector(new double[] {4, 5, 6}))));
+    writeMutation(setMutation("coll/doc4", map("embedding", FieldValue.vector(new double[] {5}))));
+
+    Query query = query("coll").orderBy(orderBy("embedding", "asc"));
+    executeQuery(query);
+    assertQueryReturned("coll/arr1", "coll/doc4", "coll/doc3", "coll/map2");
+
+    query =
+        query("coll").filter(filter("embedding", "==", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertQueryReturned("coll/doc3");
+
+    query =
+        query("coll").filter(filter("embedding", ">", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("embedding", ">=", FieldValue.vector(new double[] {4})));
+    executeQuery(query);
+    assertQueryReturned("coll/doc4", "coll/doc3");
+
+    backfillIndexes();
+
+    query = query("coll").orderBy(orderBy("embedding", "asc"));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 4, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/arr1",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/map2",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/arr1", "coll/doc4", "coll/doc3", "coll/map2");
+
+    query =
+        query("coll").filter(filter("embedding", "==", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap("coll/doc3", CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc3");
+
+    query =
+        query("coll").filter(filter("embedding", ">", FieldValue.vector(new double[] {4, 5, 6})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 0);
+    assertOverlayTypes(keyMap());
+    assertQueryReturned();
+
+    query = query("coll").filter(filter("embedding", ">=", FieldValue.vector(new double[] {4})));
+    executeQuery(query);
+    assertOverlaysRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertOverlayTypes(
+        keyMap(
+            "coll/doc4",
+            CountingQueryEngine.OverlayType.Set,
+            "coll/doc3",
+            CountingQueryEngine.OverlayType.Set));
+    assertQueryReturned("coll/doc4", "coll/doc3");
+  }
+
+  @Test
   public void testIndexesServerTimestamps() {
     FieldIndex index =
         fieldIndex("coll", 0, FieldIndex.INITIAL_STATE, "time", FieldIndex.Segment.Kind.ASCENDING);
