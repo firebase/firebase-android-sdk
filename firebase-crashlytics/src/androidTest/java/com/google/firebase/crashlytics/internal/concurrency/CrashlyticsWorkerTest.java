@@ -488,6 +488,26 @@ public class CrashlyticsWorkerTest {
   }
 
   @Test
+  public void submitTaskOnSuccess() throws Exception {
+    TaskCompletionSource<Integer> waitingSource = new TaskCompletionSource<>();
+    Task<Integer> waitingTask = waitingSource.getTask();
+
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> waitingTask,
+            integerResult -> {
+              // This gets called with the result when the waiting task resolves successfully.
+              return Tasks.forResult(integerResult + " Success!");
+            });
+
+    waitingSource.trySetResult(1337);
+
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo("1337 Success!");
+  }
+
+  @Test
   public void submitTaskThatReturnsWithSuccessContinuation() throws Exception {
     Task<String> task =
         crashlyticsWorker.submitTaskOnSuccess(
@@ -499,7 +519,7 @@ public class CrashlyticsWorkerTest {
   }
 
   @Test
-  public void submitTaskThatThrowsWithSuccessContinuation() throws Exception {
+  public void submitTaskThatThrowsWithSuccessContinuation() {
     Task<String> task =
         crashlyticsWorker.submitTaskOnSuccess(
             () -> Tasks.forException(new IndexOutOfBoundsException()),

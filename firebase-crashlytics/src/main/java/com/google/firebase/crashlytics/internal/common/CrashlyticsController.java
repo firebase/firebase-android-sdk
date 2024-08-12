@@ -33,6 +33,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsTasks;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
@@ -296,7 +297,7 @@ class CrashlyticsController {
 
     Logger.getLogger().d("Waiting for send/deleteUnsentReports to be called.");
     // Wait for either the processReports callback to be called, or data collection to be enabled.
-    return Utils.race(collectionEnabled, reportActionProvided.getTask());
+    return CrashlyticsTasks.race(collectionEnabled, reportActionProvided.getTask());
   }
 
   /** This function must be called before opening the first session * */

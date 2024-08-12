@@ -93,6 +93,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
           storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
         });
     crashlyticsWorkers.diskWrite.await();
+    Thread.sleep(5);
     UserMetadata userData =
         UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, crashlyticsWorkers);
     assertEquals(USER_ID, userData.getUserId());
