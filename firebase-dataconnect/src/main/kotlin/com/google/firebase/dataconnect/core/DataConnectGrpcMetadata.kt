@@ -54,12 +54,12 @@ internal class DataConnectGrpcMetadata(
     "gl-kotlin/$kotlinVersion gl-android/$androidVersion fire/$dataConnectSdkVersion grpc/$grpcVersion"
 
   suspend fun get(requestId: String): Metadata {
-    val token = dataConnectAuth.getAccessToken(requestId)
+    val authToken = dataConnectAuth.getToken(requestId)
     return Metadata().also {
       it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
       it.put(googApiClientHeader, googApiClientHeaderValue)
-      if (token !== null) {
-        it.put(firebaseAuthTokenHeader, token)
+      if (authToken !== null) {
+        it.put(firebaseAuthTokenHeader, authToken)
       }
     }
   }

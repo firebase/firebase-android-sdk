@@ -80,10 +80,10 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
-  fun `should omit x-firebase-auth-token when the access token is null`() = runTest {
+  fun `should omit x-firebase-auth-token when the auth token is null`() = runTest {
     val key = "d85j28zpw9"
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
-    coEvery { testValues.dataConnectAuth.getAccessToken(any()) } returns null
+    coEvery { testValues.dataConnectAuth.getToken(any()) } returns null
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
 
@@ -93,11 +93,11 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
-  fun `should include x-firebase-auth-token when the access token is not null`() = runTest {
+  fun `should include x-firebase-auth-token when the auth token is not null`() = runTest {
     val key = "d85j28zpw9"
     val accessToken = Arb.accessToken(key).next()
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
-    coEvery { testValues.dataConnectAuth.getAccessToken(any()) } returns accessToken
+    coEvery { testValues.dataConnectAuth.getToken(any()) } returns accessToken
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
 
@@ -165,7 +165,7 @@ class DataConnectGrpcMetadataUnitTest {
 
         val accessTokenArb = Arb.accessToken(key)
         val requestIdSlot = slot<String>()
-        coEvery { dataConnectAuth.getAccessToken(capture(requestIdSlot)) } answers
+        coEvery { dataConnectAuth.getToken(capture(requestIdSlot)) } answers
           {
             accessTokenArb.next(rs)
           }
