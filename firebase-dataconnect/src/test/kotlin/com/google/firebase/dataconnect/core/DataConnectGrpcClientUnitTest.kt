@@ -72,6 +72,8 @@ class DataConnectGrpcClientUnitTest {
 
   private val mockDataConnectAuth: DataConnectAuth =
     mockk(relaxed = true, name = "mockDataConnectAuth-$key")
+  private val mockDataConnectAppCheck: DataConnectAppCheck =
+    mockk(relaxed = true, name = "mockDataConnectAppCheck-$key")
 
   private val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs =
     mockk(relaxed = true, name = "mockDataConnectGrpcRPCs-$key") {
@@ -89,6 +91,7 @@ class DataConnectGrpcClientUnitTest {
       connector = connectorConfig,
       grpcRPCs = mockDataConnectGrpcRPCs,
       dataConnectAuth = mockDataConnectAuth,
+      dataConnectAppCheck = mockDataConnectAppCheck,
       logger = mockLogger,
     )
 
@@ -244,7 +247,9 @@ class DataConnectGrpcClientUnitTest {
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
     coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) }
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("retrying with fresh auth token")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+      "retrying with fresh Auth and/or AppCheck tokens"
+    )
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("UNAUTHENTICATED")
   }
 
@@ -267,7 +272,57 @@ class DataConnectGrpcClientUnitTest {
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
     coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) }
-    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("retrying with fresh auth token")
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+      "retrying with fresh Auth and/or AppCheck tokens"
+    )
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("UNAUTHENTICATED")
+  }
+
+  @Test
+  fun `executeQuery() should retry with a fresh AppCheck token on UNAUTHENTICATED`() = runTest {
+    val responseData = buildStructProto { put("foo", key) }
+    val forceRefresh = AtomicBoolean(false)
+    coEvery { mockDataConnectAppCheck.forceRefresh() } answers { forceRefresh.set(true) }
+    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any()) } answers
+      {
+        if (forceRefresh.get()) {
+          ExecuteQueryResponse.newBuilder().setData(responseData).build()
+        } else {
+          throw StatusException(Status.UNAUTHENTICATED)
+        }
+      }
+
+    val result = dataConnectGrpcClient.executeQuery(requestId, operationName, variables)
+
+    result shouldBe OperationResult(data = responseData, errors = emptyList())
+    coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeQuery(any(), any()) }
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+      "retrying with fresh Auth and/or AppCheck tokens"
+    )
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining("UNAUTHENTICATED")
+  }
+
+  @Test
+  fun `executeMutation() should retry with a fresh AppCheck token on UNAUTHENTICATED`() = runTest {
+    val responseData = buildStructProto { put("foo", key) }
+    val forceRefresh = AtomicBoolean(false)
+    coEvery { mockDataConnectAppCheck.forceRefresh() } answers { forceRefresh.set(true) }
+    coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any()) } answers
+      {
+        if (forceRefresh.get()) {
+          ExecuteMutationResponse.newBuilder().setData(responseData).build()
+        } else {
+          throw StatusException(Status.UNAUTHENTICATED)
+        }
+      }
+
+    val result = dataConnectGrpcClient.executeMutation(requestId, operationName, variables)
+
+    result shouldBe OperationResult(data = responseData, errors = emptyList())
+    coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeMutation(any(), any()) }
+    mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
+      "retrying with fresh Auth and/or AppCheck tokens"
+    )
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("UNAUTHENTICATED")
   }
 
@@ -283,6 +338,7 @@ class DataConnectGrpcClientUnitTest {
 
     thrownException shouldBeSameInstanceAs exception
     coVerify(exactly = 0) { mockDataConnectAuth.forceRefresh() }
+    coVerify(exactly = 0) { mockDataConnectAppCheck.forceRefresh() }
   }
 
   @Test
@@ -302,6 +358,7 @@ class DataConnectGrpcClientUnitTest {
 
     thrownException shouldBeSameInstanceAs exception
     coVerify(exactly = 0) { mockDataConnectAuth.forceRefresh() }
+    coVerify(exactly = 0) { mockDataConnectAppCheck.forceRefresh() }
   }
 
   @Test

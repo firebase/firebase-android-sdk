@@ -10,6 +10,7 @@ grpc = "1.62.2"
 grpcKotlin = "1.4.1"
 javalite = "3.21.11"
 kotlin = "1.8.22"
+mockk = "1.13.11"
 serialization-plugin = "1.8.22"
 protoc = "3.21.11"
 truth = "1.4.2"
@@ -31,6 +32,7 @@ android-lint-testutils = { module = "com.android.tools:testutils", version.ref =
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
 androidx-core = { module = "androidx.core:core", version = "1.2.0" }
 androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
+auth0-jwt = { module = "com.auth0:java-jwt", version = "4.4.0" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
@@ -71,7 +73,8 @@ junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 mockito-core = { module = "org.mockito:mockito-core", version = "5.2.0" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
-mockk = { module = "io.mockk:mockk", version = "1.13.11" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 truth-liteproto-extension = { module = "com.google.truth.extensions:truth-liteproto-extension", version.ref = "truth" }

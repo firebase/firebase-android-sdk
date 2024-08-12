@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.annotations.DeferredApi
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.util.SequencedReference
@@ -44,7 +45,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
-/** Base class that shares logic for managing the Auth token and (future) AppCheck token. */
+/** Base class that shares logic for managing the Auth token and AppCheck token. */
 internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
   private val deferredProvider: com.google.firebase.inject.Deferred<T>,
   parentCoroutineScope: CoroutineScope,
@@ -88,7 +89,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
     class Ready<T, L>(
 
       /**
-       * The [InternalAuthProvider]; may be null if the deferred has not yet given us a provider.
+       * The [InternalAuthProvider] or [InteropAppCheckTokenProvider]; may be null if the deferred
+       * has not yet given us a provider.
        */
       override val provider: T?,
 
@@ -105,7 +107,10 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
      */
     class Active<T, L>(
 
-      /** The [InternalAuthProvider] that is performing the "get token" request. */
+      /**
+       * The [InternalAuthProvider] or [InteropAppCheckTokenProvider] that is performing the "get
+       * token" request.
+       */
       override val provider: T,
 
       /** The token listener that is registered with [provider]. */
@@ -395,7 +400,12 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 
       val accessToken = sequencedResult!!.ref.getOrThrow().token
       logger.debug {
-        "$invocationId getToken() returns retrieved token: ${accessToken?.toScrubbedAccessToken()}"
+        "$invocationId getToken() returns retrieved token: " +
+          if (accessToken == PLACEHOLDER_APP_CHECK_TOKEN) {
+            "$accessToken (the \"placeholder\" AppCheck token)"
+          } else {
+            accessToken?.toScrubbedAccessToken()
+          }
       }
       return accessToken
     }
@@ -487,6 +497,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
   protected data class GetTokenResult(val token: String?)
 
   private companion object {
+
+    const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
 
     fun Throwable.getRetryIndicator(): GetTokenRetry? {
       var currentCause: Throwable? = this
