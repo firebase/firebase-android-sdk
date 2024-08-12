@@ -89,8 +89,10 @@ import kotlinx.serialization.SerializationStrategy
  * #### 16.0.0-alpha06 (not yet released)
  * - [#6177](https://github.com/firebase/firebase-android-sdk/pull/6177]) Added `equals` and
  * `hashCode` methods to [com.google.firebase.dataconnect.generated.GeneratedConnector]. This is
- * purely a cosmetic change, but requires using dataconnect emulator v1.1.18 or later, or else a
- * compilation error will result.
+ * purely a cosmetic change, but requires using dataconnect emulator v1.1.18 (released May 23, 2024)
+ * or later; otherwise, a compilation error like `Class 'FooConnector' is not abstract and does not
+ * implement abstract member public abstract fun equals(other: Any?): Boolean defined in
+ * com.google.firebase.dataconnect.generated.GeneratedConnector` will occur.
  *
  * #### 16.0.0-alpha05 (June 24, 2024)
  * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
