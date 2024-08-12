@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.oldquerymgr.LiveQueries
@@ -57,6 +58,8 @@ internal class FirebaseDataConnectImpl(
   override val blockingExecutor: Executor,
   override val nonBlockingExecutor: Executor,
   private val deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
+  private val deferredAppCheckProvider:
+    com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
 ) : FirebaseDataConnectInternal {
@@ -106,6 +109,18 @@ internal class FirebaseDataConnectImpl(
         .apply { initialize() }
     }
 
+  private val lazyDataConnectAppCheck =
+    SuspendingLazy(mutex) {
+      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
+      DataConnectAppCheck(
+          deferredAppCheckTokenProvider = deferredAppCheckProvider,
+          parentCoroutineScope = coroutineScope,
+          blockingDispatcher = blockingDispatcher,
+          logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
+        )
+        .apply { initialize() }
+    }
+
   private val lazyGrpcRPCs =
     SuspendingLazy(mutex) {
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
@@ -142,6 +157,7 @@ internal class FirebaseDataConnectImpl(
       val grpcMetadata =
         DataConnectGrpcMetadata.forSystemVersions(
           dataConnectAuth = lazyDataConnectAuth.getLocked(),
+          dataConnectAppCheck = lazyDataConnectAppCheck.getLocked(),
           connectorLocation = config.location,
           parentLogger = logger,
         )
@@ -170,6 +186,7 @@ internal class FirebaseDataConnectImpl(
         connector = config,
         grpcRPCs = lazyGrpcRPCs.getLocked(),
         dataConnectAuth = lazyDataConnectAuth.getLocked(),
+        dataConnectAppCheck = lazyDataConnectAppCheck.getLocked(),
         logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
       )
     }
@@ -325,9 +342,10 @@ internal class FirebaseDataConnectImpl(
 
     mutex.withLock { closed = true }
 
-    // Close Auth synchronously to avoid race conditions with auth callbacks. Since close()
-    // is re-entrant, this is safe even if it's already been closed.
+    // Close Auth and AppCheck synchronously to avoid race conditions with auth callbacks.
+    // Since close() is re-entrant, this is safe even if they have already been closed.
     lazyDataConnectAuth.initializedValueOrNull?.close()
+    lazyDataConnectAppCheck.initializedValueOrNull?.close()
 
     // Start the job to asynchronously close the gRPC client.
     while (true) {
