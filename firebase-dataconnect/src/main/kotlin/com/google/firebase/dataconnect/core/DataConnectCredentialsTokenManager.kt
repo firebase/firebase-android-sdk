@@ -400,12 +400,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 
       val accessToken = sequencedResult!!.ref.getOrThrow().token
       logger.debug {
-        "$invocationId getToken() returns retrieved token: " +
-          if (accessToken == PLACEHOLDER_APP_CHECK_TOKEN) {
-            "$accessToken (the \"placeholder\" AppCheck token)"
-          } else {
-            accessToken?.toScrubbedAccessToken()
-          }
+        "$invocationId getToken() returns retrieved token: ${accessToken?.toScrubbedAccessToken()}"
       }
       return accessToken
     }
@@ -498,8 +493,6 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 
   private companion object {
 
-    const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
-
     fun Throwable.getRetryIndicator(): GetTokenRetry? {
       var currentCause: Throwable? = this
       while (true) {
@@ -523,7 +516,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
  * away.
  */
 internal fun String.toScrubbedAccessToken(): String =
-  if (length < 30) {
+  if (this == PLACEHOLDER_APP_CHECK_TOKEN) {
+    "$this (the \"placeholder\" AppCheck token)"
+  } else if (length < 30) {
     "<redacted>"
   } else {
     buildString {
@@ -536,3 +531,5 @@ internal fun String.toScrubbedAccessToken(): String =
       )
     }
   }
+
+private const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
