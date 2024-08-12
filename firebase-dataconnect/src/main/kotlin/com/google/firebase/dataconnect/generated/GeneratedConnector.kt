@@ -50,20 +50,14 @@ public interface GeneratedConnector {
    * @param other The object to compare to this for equality.
    * @return `other === this`
    */
-  // TODO: Uncomment equals() once the codegen changes in cl/634029357 are released in the latest
-  //  firestore-tools for a month or so, as adding this method is a breaking change as it forces the
-  //  generated classes to explicitly override this method.
-  // override fun equals(other: Any?): Boolean
+  override fun equals(other: Any?): Boolean
 
   /**
    * Calculates and returns the hash code for this object.
    *
    * @return the hash code for this object.
    */
-  // TODO: Uncomment hashCode() once the codegen changes in cl/634029357 are released in the latest
-  //  firestore-tools for a month or so, as adding this method is a breaking change as it forces the
-  //  generated classes to explicitly override this method.
-  // override fun hashCode(): Int
+  override fun hashCode(): Int
 
   /**
    * Returns a string representation of this object, useful for debugging.
