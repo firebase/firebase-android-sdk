@@ -42,7 +42,7 @@ internal class QueryExecutor(
   val lastSuccessfulResult: SequencedReference<QueryExecutorResult.Success>?
     get() = state.value.lastSuccessfulResult
 
-  suspend fun execute(): SequencedReference<QueryExecutorResult> {
+  suspend fun execute(isFromGeneratedSdk: Boolean): SequencedReference<QueryExecutorResult> {
     val minSequenceNumber = nextSequenceNumber()
     return state
       .map { it.lastResult }
@@ -51,7 +51,7 @@ internal class QueryExecutor(
           true
         } else {
           if (mutex.tryLock()) {
-            executeLocked()
+            executeLocked(isFromGeneratedSdk = isFromGeneratedSdk)
           }
           false
         }
@@ -62,6 +62,7 @@ internal class QueryExecutor(
 
   suspend fun subscribe(
     executeQuery: Boolean,
+    isFromGeneratedSdk: Boolean,
     callback: suspend (SequencedReference<QueryExecutorResult>) -> Unit
   ): Nothing {
     var minSequenceNumber: Long = -1
@@ -81,7 +82,7 @@ internal class QueryExecutor(
     }
 
     if (executeQuery) {
-      runCatching { execute() }
+      runCatching { execute(isFromGeneratedSdk = isFromGeneratedSdk) }
     }
 
     state.collect {
@@ -94,7 +95,9 @@ internal class QueryExecutor(
     }
   }
 
-  private suspend fun executeLocked(): SequencedReference<QueryExecutorResult> {
+  private suspend fun executeLocked(
+    isFromGeneratedSdk: Boolean
+  ): SequencedReference<QueryExecutorResult> {
     val executeQueryResult =
       try {
         val requestId = "qry" + Random.nextAlphanumericString(length = 10)
@@ -105,7 +108,8 @@ internal class QueryExecutor(
             executeQuery(
               requestId = requestId,
               operationName = operationName,
-              variables = variables
+              variables = variables,
+              isFromGeneratedSdk = isFromGeneratedSdk,
             )
           }
           .fold(

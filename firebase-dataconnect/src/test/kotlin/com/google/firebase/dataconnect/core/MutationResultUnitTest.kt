@@ -37,6 +37,7 @@ class MutationResultImplUnitTest {
       variables = TestVariables("sampleMutationTestData"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
+      isFromGeneratedSdk = true,
     )
 
   private val sampleMutation1 =
@@ -46,6 +47,7 @@ class MutationResultImplUnitTest {
       variables = TestVariables("sampleMutationTestData1"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
+      isFromGeneratedSdk = false,
     )
 
   private val sampleMutation2 =
@@ -55,6 +57,7 @@ class MutationResultImplUnitTest {
       variables = TestVariables("sampleMutationTestData2"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
+      isFromGeneratedSdk = true,
     )
 
   @Test

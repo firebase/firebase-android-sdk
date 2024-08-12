@@ -18,6 +18,9 @@ package com.google.firebase.dataconnect
 
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.dataconnect.generated.GeneratedConnector
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.FirebaseAuthBackend
@@ -39,6 +42,8 @@ import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
@@ -54,7 +59,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun executeQueryShouldSendExpectedGrpcMetadata() = runTest {
+  fun executeQueryShouldSendExpectedGrpcMetadataNotFromGeneratedSdk() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
     val queryRef = dataConnect.query("qrysp5xs5qxy8", Unit, serializer<Unit>(), serializer<Unit>())
@@ -62,11 +67,31 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
     queryRef.execute()
 
-    verifyMetadata(metadatasJob, dataConnect)
+    verifyMetadata(metadatasJob, dataConnect, isFromGeneratedSdk = false)
   }
 
   @Test
-  fun executeMutationShouldSendExpectedGrpcMetadata() = runTest {
+  fun executeQueryShouldSendExpectedGrpcMetadataFromGeneratedSdk() = runTest {
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    val generatedConnector = TestGeneratedConnector(dataConnect)
+    val generatedQuery =
+      TestGeneratedQuery(
+        generatedConnector,
+        "qry2peects97z",
+        serializer<Unit>(),
+        serializer<Unit>(),
+      )
+    val queryRef = generatedQuery.ref(Unit)
+    val metadatasJob = async { grpcServer.metadatas.first() }
+
+    queryRef.execute()
+
+    verifyMetadata(metadatasJob, dataConnect, isFromGeneratedSdk = true)
+  }
+
+  @Test
+  fun executeMutationShouldSendExpectedGrpcMetadataNotFromGeneratedSdk() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
     val mutationRef =
@@ -75,7 +100,27 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
     mutationRef.execute()
 
-    verifyMetadata(metadatasJob, dataConnect)
+    verifyMetadata(metadatasJob, dataConnect, isFromGeneratedSdk = false)
+  }
+
+  @Test
+  fun executeMutationShouldSendExpectedGrpcMetadataFromGeneratedSdk() = runTest {
+    val grpcServer = inProcessDataConnectGrpcServer.newInstance()
+    val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    val generatedConnector = TestGeneratedConnector(dataConnect)
+    val generatedMutation =
+      TestGeneratedMutation(
+        generatedConnector,
+        "mutd6tmz8db4h",
+        serializer<Unit>(),
+        serializer<Unit>(),
+      )
+    val mutationRef = generatedMutation.ref(Unit)
+    val metadatasJob = async { grpcServer.metadatas.first() }
+
+    mutationRef.execute()
+
+    verifyMetadata(metadatasJob, dataConnect, isFromGeneratedSdk = true)
   }
 
   @Test
@@ -189,7 +234,11 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     metadata.asClue { metadata.get(key).shouldBeNull() }
   }
 
-  private suspend fun verifyMetadata(job: Deferred<Metadata>, dataConnect: FirebaseDataConnect) {
+  private suspend fun verifyMetadata(
+    job: Deferred<Metadata>,
+    dataConnect: FirebaseDataConnect,
+    isFromGeneratedSdk: Boolean
+  ) {
     val metadata = withClue("waiting for metadata to be reported") { job.await() }
     metadata.asClue {
       metadata.keys().shouldContainAll(googRequestParamsHeader.name(), googApiClientHeader.name())
@@ -198,11 +247,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
         // AuthIntegrationTest
         metadata.get(googRequestParamsHeader) shouldBe
           "location=${dataConnect.config.location}&frontend=data"
-        metadata.get(googApiClientHeader) shouldBe
-          ("gl-kotlin/${KotlinVersion.CURRENT}" +
-            " gl-android/${Build.VERSION.SDK_INT}" +
-            " fire/${BuildConfig.VERSION_NAME}" +
-            " grpc/")
+        metadata.get(googApiClientHeader) shouldBe expectedGoogApiClientHeader(isFromGeneratedSdk)
       }
     }
   }
@@ -221,6 +266,30 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
+  class TestGeneratedConnector(override val dataConnect: FirebaseDataConnect) : GeneratedConnector {
+    override fun equals(other: Any?) = other === this
+    override fun hashCode() = System.identityHashCode(this)
+    override fun toString() = "TestGeneratedConnector"
+  }
+
+  class TestGeneratedQuery(
+    override val connector: TestGeneratedConnector,
+    override val operationName: String,
+    override val dataDeserializer: DeserializationStrategy<Unit>,
+    override val variablesSerializer: SerializationStrategy<Unit>
+  ) : GeneratedQuery<TestGeneratedConnector, Unit, Unit> {
+    override fun toString(): String = "TestGeneratedQuery"
+  }
+
+  class TestGeneratedMutation(
+    override val connector: TestGeneratedConnector,
+    override val operationName: String,
+    override val dataDeserializer: DeserializationStrategy<Unit>,
+    override val variablesSerializer: SerializationStrategy<Unit>
+  ) : GeneratedMutation<TestGeneratedConnector, Unit, Unit> {
+    override fun toString(): String = "TestGeneratedMutation"
+  }
+
   private companion object {
     val firebaseAuthTokenHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
@@ -230,5 +299,19 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val googApiClientHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
+
+    fun expectedGoogApiClientHeader(isFromGeneratedSdk: Boolean) = buildString {
+      append("gl-kotlin/${KotlinVersion.CURRENT}")
+      append(' ')
+      append("gl-android/${Build.VERSION.SDK_INT}")
+      append(' ')
+      append("fire/${BuildConfig.VERSION_NAME}")
+      append(' ')
+      append("grpc/")
+      if (isFromGeneratedSdk) {
+        append(' ')
+        append("kotlin/gen")
+      }
+    }
   }
 }
