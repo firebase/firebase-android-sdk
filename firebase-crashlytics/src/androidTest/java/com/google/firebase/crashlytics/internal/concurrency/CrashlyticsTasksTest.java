@@ -40,14 +40,14 @@ public class CrashlyticsTasksTest {
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submit(
                 () -> {
-                  sleep(200);
+                  sleep(20);
                   return "first";
                 });
     Task<String> task2 =
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submit(
                 () -> {
-                  sleep(400);
+                  sleep(40);
                   return "slow";
                 });
 
@@ -64,14 +64,14 @@ public class CrashlyticsTasksTest {
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submitTask(
                 () -> {
-                  sleep(200);
+                  sleep(20);
                   return Tasks.forException(new ArithmeticException());
                 });
     Task<String> task2 =
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submitTask(
                 () -> {
-                  sleep(400);
+                  sleep(40);
                   return Tasks.forException(new IllegalStateException());
                 });
 
@@ -89,14 +89,14 @@ public class CrashlyticsTasksTest {
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submitTask(
                 () -> {
-                  sleep(200);
+                  sleep(20);
                   return Tasks.forCanceled();
                 });
     Task<String> task2 =
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submitTask(
                 () -> {
-                  sleep(400);
+                  sleep(40);
                   return Tasks.forResult("I am slow but didn't cancel.");
                 });
 
@@ -113,14 +113,14 @@ public class CrashlyticsTasksTest {
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submitTask(
                 () -> {
-                  sleep(200);
+                  sleep(20);
                   return Tasks.forCanceled();
                 });
     Task<String> task2 =
         new CrashlyticsWorker(TestOnlyExecutors.background())
             .submitTask(
                 () -> {
-                  sleep(400);
+                  sleep(40);
                   return Tasks.forCanceled();
                 });
 
@@ -189,7 +189,7 @@ public class CrashlyticsTasksTest {
     // Add a decoy task to the worker to take up some time.
     worker.submitTask(
         () -> {
-          sleep(200);
+          sleep(20);
           return Tasks.forResult(null);
         });
 
@@ -216,7 +216,7 @@ public class CrashlyticsTasksTest {
     // Set a task result from another thread.
     new Thread(
             () -> {
-              sleep(300);
+              sleep(30);
               task1.trySetResult("yes");
             })
         .start();

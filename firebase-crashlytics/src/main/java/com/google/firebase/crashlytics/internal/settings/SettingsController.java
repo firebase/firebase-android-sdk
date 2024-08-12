@@ -191,7 +191,7 @@ public class SettingsController implements SettingsProvider {
     return dataCollectionArbiter
         .waitForDataCollectionPermission()
         .onSuccessTask(
-            crashlyticsWorkers.common.getExecutor(),
+            crashlyticsWorkers.common,
             new SuccessContinuation<Void, Void>() {
               @NonNull
               @Override

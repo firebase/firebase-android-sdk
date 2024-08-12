@@ -33,7 +33,6 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
@@ -53,7 +52,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
@@ -81,8 +79,6 @@ class CrashlyticsController {
   private final DataCollectionArbiter dataCollectionArbiter;
   private final CrashlyticsFileMarker crashMarker;
   private final UserMetadata userMetadata;
-
-  @Deprecated private final CrashlyticsWorker backgroundWorker;
 
   private final CrashlyticsWorkers crashlyticsWorkers;
 
@@ -131,7 +127,6 @@ class CrashlyticsController {
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
       CrashlyticsWorkers crashlyticsWorkers) {
     this.context = context;
-    this.backgroundWorker = crashlyticsWorkers.common;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.fileStore = fileStore;
@@ -194,7 +189,7 @@ class CrashlyticsController {
     final long timestampMillis = System.currentTimeMillis();
 
     final Task<Void> handleUncaughtExceptionTask =
-        backgroundWorker.submitTask(
+        crashlyticsWorkers.common.submitTask(
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
@@ -223,12 +218,10 @@ class CrashlyticsController {
                   return Tasks.forResult(null);
                 }
 
-                Executor executor = backgroundWorker.getExecutor();
-
                 return settingsProvider
                     .getSettingsAsync()
                     .onSuccessTask(
-                        executor,
+                        crashlyticsWorkers.common,
                         new SuccessContinuation<Settings, Void>() {
                           @NonNull
                           @Override
@@ -243,7 +236,8 @@ class CrashlyticsController {
                             return Tasks.whenAll(
                                 logAnalyticsAppExceptionEvents(),
                                 reportingCoordinator.sendReports(
-                                    executor, isOnDemand ? currentSessionId : null));
+                                    crashlyticsWorkers.common,
+                                    isOnDemand ? currentSessionId : null));
                           }
                         });
               }
@@ -362,7 +356,7 @@ class CrashlyticsController {
               @Override
               public Task<Void> then(@Nullable Boolean send) throws Exception {
 
-                return backgroundWorker.submitTask(
+                return crashlyticsWorkers.common.submitTask(
                     new Callable<Task<Void>>() {
                       @Override
                       public Task<Void> call() throws Exception {
@@ -383,10 +377,8 @@ class CrashlyticsController {
                         // permission.
                         dataCollectionArbiter.grantDataCollectionPermission(dataCollectionToken);
 
-                        Executor executor = backgroundWorker.getExecutor();
-
                         return settingsDataTask.onSuccessTask(
-                            executor,
+                            crashlyticsWorkers.common,
                             new SuccessContinuation<Settings, Void>() {
                               @NonNull
                               @Override
@@ -399,7 +391,7 @@ class CrashlyticsController {
                                   return Tasks.forResult(null);
                                 }
                                 logAnalyticsAppExceptionEvents();
-                                reportingCoordinator.sendReports(executor);
+                                reportingCoordinator.sendReports(crashlyticsWorkers.common);
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);
@@ -483,14 +475,8 @@ class CrashlyticsController {
 
   /** Open a new session on the single-threaded executor. */
   void openSession(String sessionIdentifier) {
-    backgroundWorker.submit(
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            doOpenSession(sessionIdentifier, /* isOnDemand= */ false);
-            return null;
-          }
-        });
+    crashlyticsWorkers.common.submit(
+        () -> doOpenSession(sessionIdentifier, /* isOnDemand= */ false));
   }
 
   /**

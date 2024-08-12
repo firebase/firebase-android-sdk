@@ -16,6 +16,7 @@
 
 package com.google.firebase.crashlytics.internal.concurrency;
 
+import androidx.annotation.Discouraged;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
@@ -23,6 +24,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -41,7 +43,7 @@ import java.util.concurrent.TimeoutException;
  *
  * @hide
  */
-public class CrashlyticsWorker {
+public class CrashlyticsWorker implements Executor {
   private final ExecutorService executor;
 
   private final Object tailLock = new Object();
@@ -67,12 +69,8 @@ public class CrashlyticsWorker {
   @CanIgnoreReturnValue
   public <T> Task<T> submit(Callable<T> callable) {
     synchronized (tailLock) {
-      // Do not propagate a cancellation.
-      if (tail.isCanceled()) {
-        tail = tail.continueWithTask(executor, task -> Tasks.forResult(null));
-      }
       // Chain the new callable onto the queue's tail.
-      Task<T> result = tail.continueWith(executor, task -> callable.call());
+      Task<T> result = tail.continueWithTask(executor, task -> Tasks.forResult(callable.call()));
       tail = result;
       return result;
     }
@@ -89,17 +87,13 @@ public class CrashlyticsWorker {
   @CanIgnoreReturnValue
   public Task<Void> submit(Runnable runnable) {
     synchronized (tailLock) {
-      // Do not propagate a cancellation.
-      if (tail.isCanceled()) {
-        tail = tail.continueWithTask(executor, task -> Tasks.forResult(null));
-      }
       // Chain the new runnable onto the queue's tail.
       Task<Void> result =
-          tail.continueWith(
+          tail.continueWithTask(
               executor,
               task -> {
                 runnable.run();
-                return null;
+                return Tasks.forResult(null);
               });
       tail = result;
       return result;
@@ -119,7 +113,7 @@ public class CrashlyticsWorker {
   @CanIgnoreReturnValue
   public <T> Task<T> submitTask(Callable<Task<T>> callable) {
     synchronized (tailLock) {
-      // Chain the new callable task onto the queue's tail, regardless of cancellation.
+      // Chain the new callable task onto the queue's tail.
       Task<T> result = tail.continueWithTask(executor, task -> callable.call());
       tail = result;
       return result;
@@ -149,6 +143,21 @@ public class CrashlyticsWorker {
       tail = result;
       return result;
     }
+  }
+
+  /**
+   * Forwards a <code>Runnable</code> to the underlying executor.
+   *
+   * <p>This is useful for passing the worker as the executor to task continuations.
+   *
+   * <p>This is different than {@link #submit(Runnable)}. This will not submit the runnable to the
+   * worker to execute in order, this will forward the runnable to the underlying executor. If you
+   * are calling this directly from your code, you probably want {@link #submit(Runnable)}.
+   */
+  @Override
+  @Discouraged(message = "This is probably not that you want. Use {@link #submit(Runnable)}.")
+  public void execute(Runnable runnable) {
+    executor.execute(runnable);
   }
 
   /**
