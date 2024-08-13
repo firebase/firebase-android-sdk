@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.gradle.plugin
 // serialver -classpath \
 //   plugin/build/classes/kotlin/main:$(find $HOME/.gradle/wrapper/dists -name
 // gradle-core-api-8.5.jar -printf '%p:') \
-//
 // com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutable\${VerificationInfo,File,RegularFile,Version}
 
 sealed interface DataConnectExecutable : java.io.Serializable {
