@@ -27,6 +27,20 @@ sealed interface DataConnectExecutable : java.io.Serializable {
     java.io.Serializable {
     companion object {
       private const val serialVersionUID: Long = 9100812685436842226L
+      fun forVersion(version: String): VerificationInfo =
+        when (version) {
+          "1.3.4" ->
+            VerificationInfo(
+              fileSizeInBytes = 24125592L,
+              sha512DigestHex =
+                "3ec9317db593ebeacfea9756cdd08a02849296fbab67f32f3d811a766be6ce2506fc7a0cf5f5ea880926f0c4defa5ded965268f5dfe5d07eb80cef926f216c7e"
+            )
+          else ->
+            throw DataConnectGradleException(
+              "3svd27ch8y",
+              "File size and SHA512 digest is not known for version: $version"
+            )
+        }
     }
   }
 
