@@ -362,7 +362,7 @@ class CrashlyticsController {
                       public Task<Void> call() throws Exception {
                         if (!send) {
                           Logger.getLogger().v("Deleting cached crash reports...");
-                          diskWriteWorker.submit(
+                          crashlyticsWorkers.diskWrite.submit(
                               () -> {
                                 deleteFiles(listAppExceptionMarkerFiles());
                                 reportingCoordinator.removeAllReports();
@@ -571,7 +571,7 @@ class CrashlyticsController {
    */
   private void doCloseSessions(
       boolean skipCurrentSession, SettingsProvider settingsProvider, boolean isInitProcess) {
-    CrashlyticsPreconditions.checkBackgroundThread();
+    CrashlyticsWorkers.checkBackgroundThread();
     final int offset = skipCurrentSession ? 1 : 0;
 
     // :TODO HW2021 this implementation can be cleaned up.

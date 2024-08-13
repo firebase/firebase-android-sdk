@@ -66,6 +66,8 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
 
+  private CrashlyticsWorkers crashlyticsWorkers;
+
   private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
       new CrashlyticsNativeComponentDeferredProxy(
           new Deferred<CrashlyticsNativeComponent>() {
@@ -81,17 +83,24 @@ public class CrashlyticsControllerRobolectricTest {
     MockitoAnnotations.openMocks(this);
     testContext = getApplicationContext();
     testFileStore = new FileStore(testContext);
+    crashlyticsWorkers =
+        new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
   }
 
   @Test
-  public void testDoCloseSession_enabledAnrs_doesNotPersistsAppExitInfoIfItDoesntExist() {
+  public void testDoCloseSession_enabledAnrs_doesNotPersistsAppExitInfoIfItDoesntExist()
+      throws Exception {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
     mockSettingsProvider(true, false);
-    controller.doCloseSessions(mockSettingsProvider);
+
+    crashlyticsWorkers.common.submit(() -> controller.doCloseSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(10);
+
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
     // single app exit info, and so this method won't be called.
     verify(mockSessionReportingCoordinator, never())
@@ -100,7 +109,7 @@ public class CrashlyticsControllerRobolectricTest {
   }
 
   @Test
-  public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() {
+  public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() throws Exception {
     final String sessionIdPrevious = "sessionIdPrevious";
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
@@ -113,7 +122,9 @@ public class CrashlyticsControllerRobolectricTest {
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Arrays.asList(sessionId, sessionIdPrevious)));
     mockSettingsProvider(true, false);
-    controller.finalizeSessions(mockSettingsProvider);
+    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(100);
     verify(mockSessionReportingCoordinator)
         .persistRelevantAppExitInfoEvent(
             eq(sessionIdPrevious),
@@ -123,14 +134,16 @@ public class CrashlyticsControllerRobolectricTest {
   }
 
   @Test
-  public void testDoCloseSession_disabledAnrs_doesNotPersistsAppExitInfo() {
+  public void testDoCloseSession_disabledAnrs_doesNotPersistsAppExitInfo() throws Exception {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
     mockSettingsProvider(false, false);
-    controller.doCloseSessions(mockSettingsProvider);
+    crashlyticsWorkers.common.submit(() -> controller.doCloseSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(10);
     verify(mockSessionReportingCoordinator, never())
         .persistRelevantAppExitInfoEvent(
             eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
@@ -179,7 +192,7 @@ public class CrashlyticsControllerRobolectricTest {
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class),
             mock(CrashlyticsAppQualitySessionsSubscriber.class),
-            new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()));
+            crashlyticsWorkers);
     controller.openSession(SESSION_ID);
     return controller;
   }

@@ -354,7 +354,7 @@ public class SessionReportingCoordinator {
       CrashlyticsReportWithSessionId report = task.getResult();
       Logger.getLogger()
           .d("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
-      diskWriteWorker.submit(
+      crashlyticsWorkers.diskWrite.submit(
           () -> {
             File reportFile = report.getReportFile();
             if (reportFile.delete()) {
