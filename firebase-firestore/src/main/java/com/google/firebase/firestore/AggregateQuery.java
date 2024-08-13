@@ -66,8 +66,7 @@ public class AggregateQuery {
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
     query
         .firestore
-        .getClient()
-        .runAggregateQuery(query.query, aggregateFieldList)
+        .callClient(client -> client.runAggregateQuery(query.query, aggregateFieldList))
         .continueWith(
             Executors.DIRECT_EXECUTOR,
             (task) -> {

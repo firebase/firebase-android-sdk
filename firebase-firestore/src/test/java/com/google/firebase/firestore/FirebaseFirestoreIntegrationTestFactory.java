@@ -30,7 +30,6 @@ import com.google.firebase.firestore.remote.GrpcCallProvider;
 import com.google.firebase.firestore.remote.RemoteComponenetProvider;
 import com.google.firebase.firestore.testutil.EmptyAppCheckTokenProvider;
 import com.google.firebase.firestore.testutil.EmptyCredentialsProvider;
-import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.ListenRequest;
 import com.google.firestore.v1.ListenResponse;
@@ -125,7 +124,6 @@ public final class FirebaseFirestoreIntegrationTestFactory {
             "k",
             new EmptyCredentialsProvider(),
             new EmptyAppCheckTokenProvider(),
-            new AsyncQueue(),
             this::componentProvider,
             null,
             instanceRegistry,

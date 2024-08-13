@@ -14,15 +14,11 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import android.annotation.SuppressLint;
 import android.os.Looper;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,46 +31,6 @@ public final class Utils {
 
   /** Timeout in milliseconds for blocking on the main thread. Be careful about ANRs. */
   private static final int MAIN_TIMEOUT_MILLIS = 2_750;
-
-  /**
-   * @return A tasks that is resolved when either of the given tasks is resolved.
-   */
-  // TODO(b/261014167): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
-  public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
-    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
-    Continuation<T, Void> continuation =
-        task -> {
-          if (task.isSuccessful()) {
-            result.trySetResult(task.getResult());
-          } else if (task.getException() != null) {
-            result.trySetException(task.getException());
-          }
-          return null;
-        };
-    t1.continueWith(continuation);
-    t2.continueWith(continuation);
-    return result.getTask();
-  }
-
-  /**
-   * @return A tasks that is resolved when either of the given tasks is resolved.
-   */
-  public static <T> Task<T> race(Executor executor, Task<T> t1, Task<T> t2) {
-    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
-    Continuation<T, Void> continuation =
-        task -> {
-          if (task.isSuccessful()) {
-            result.trySetResult(task.getResult());
-          } else if (task.getException() != null) {
-            result.trySetException(task.getException());
-          }
-          return null;
-        };
-    t1.continueWith(executor, continuation);
-    t2.continueWith(executor, continuation);
-    return result.getTask();
-  }
 
   /**
    * Blocks until the given Task completes, and then returns the value the Task was resolved with,

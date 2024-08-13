@@ -72,8 +72,8 @@ internal class StreamingSnapshotTests {
     }
 
   @Test
-  fun `unknown enum`() =
-    goldenStreamingFile("streaming-success-unknown-enum.txt") {
+  fun `unknown enum in safety ratings`() =
+    goldenStreamingFile("streaming-success-unknown-safety-enum.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {

@@ -14,63 +14,41 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static com.google.common.truth.Truth.assertThat;
 
-import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
-import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.ArrayList;
+import org.junit.Test;
 
-public class CLSUUIDTest extends CrashlyticsTestCase {
-
-  private IdManager idManager;
-  private CLSUUID uuid;
-
-  protected void setUp() throws Exception {
-    super.setUp();
-    FirebaseInstallationsApi installationsApiMock = mock(FirebaseInstallationsApi.class);
-    when(installationsApiMock.getId()).thenReturn(Tasks.forResult("instanceId"));
-    idManager =
-        new IdManager(
-            getContext(),
-            getContext().getPackageName(),
-            installationsApiMock,
-            DataCollectionArbiterTest.MOCK_ARBITER_ENABLED);
-    uuid = new CLSUUID(idManager);
-  }
-
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    uuid = null;
-  }
+public class CLSUUIDTest {
 
   /** Basic test of the CLSUUID string value. */
-  public void testToString() {
-    final String s = uuid.toString();
-    assertNotNull("The uuid string value should not be null", s);
-    assertEquals("The uuid string value should be 32 chars long", 32, s.length());
+  @Test
+  public void getSessionId() {
+    String sessionId = new CLSUUID().getSessionId();
+    assertThat(sessionId).isNotNull(); // The session id should not be null
+    assertThat(sessionId).hasLength(32); // The session id should be 32 chars long
   }
 
   /** Test that we don't get duplicate CLSUUID string values in a set of 100 uuid generated. */
-  public void testOrder() {
-    final String[] uuids = new String[100];
-    CLSUUID uuid = null;
+  @Test
+  public void sessionIdsInOrder() {
+    ArrayList<String> sessionIds = new ArrayList<>();
 
-    // Put 100 CLSUUID string values into an array.
+    // Put 100 CLSUUID string values into a list.
     for (int i = 0; i < 100; i++) {
-      uuid = new CLSUUID(idManager);
-      uuids[i] = uuid.toString();
+      sessionIds.add(new CLSUUID().getSessionId());
     }
 
-    // Assert that the other 99 CLSUUIDs don't match the current index in the loop.
-    for (int i = 0; i < uuids.length; i++) {
-      final String uuidAtIndex = uuids[i];
-      for (int j = 0; j < uuids.length; j++) {
-        if (i != j) {
-          assertFalse(
-              "We shouldn't have the same uuid at another index.", uuidAtIndex.equals(uuids[j]));
-        }
-      }
-    }
+    assertThat(sessionIds).isInOrder();
+    assertThat(sessionIds).containsNoDuplicates();
+  }
+
+  /** Test that we pad session ids properly. */
+  @Test
+  public void sessionIdsArePadded() {
+    String sessionId1 = new CLSUUID().getSessionId();
+    String sessionId2 = new CLSUUID().getSessionId();
+
+    assertThat(sessionId1.substring(20)).isEqualTo(sessionId2.substring(20));
   }
 }
