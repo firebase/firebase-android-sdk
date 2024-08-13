@@ -27,21 +27,18 @@ class DataConnectProviders(
   variantExtension: DataConnectVariantDslExtension
 ) {
 
-  val dataConnectExecutable: Provider<RegularFile> = run {
+  val dataConnectExecutable: Provider<DataConnectExecutable> = run {
     val gradlePropertyName = "dataconnect.dataConnectExecutable"
-    val valueFromLocalSettings: Provider<RegularFile> = localSettings.dataConnectExecutable
-    val valueFromGradleProperty: Provider<RegularFile> =
+    val valueFromLocalSettings: Provider<DataConnectExecutable> =
+      localSettings.dataConnectExecutable
+    val valueFromGradleProperty: Provider<DataConnectExecutable> =
       project.providers.gradleProperty(gradlePropertyName).map {
-        project.layout.projectDirectory.file(it)
+        val regularFile = project.layout.projectDirectory.file(it)
+        DataConnectExecutable.RegularFile(regularFile, verificationInfo = null)
       }
-    val valueFromVariant: Provider<RegularFile> =
-      project.layout.file(variantExtension.dataConnectExecutable)
-    val valueFromProject: Provider<RegularFile> =
-      project.provider {
-        projectExtension.dataConnectExecutable?.let { file ->
-          project.objects.fileProperty().apply { set(file) }.get()
-        }
-      }
+    val valueFromVariant: Provider<DataConnectExecutable> = variantExtension.dataConnectExecutable
+    val valueFromProject: Provider<DataConnectExecutable> =
+      project.provider { projectExtension.dataConnectExecutable }
 
     valueFromLocalSettings
       .orElse(valueFromGradleProperty)

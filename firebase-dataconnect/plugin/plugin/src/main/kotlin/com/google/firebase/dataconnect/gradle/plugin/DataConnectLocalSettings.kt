@@ -22,9 +22,10 @@ import org.gradle.api.provider.Provider
 
 class DataConnectLocalSettings(project: Project) {
 
-  val dataConnectExecutable: Provider<RegularFile> =
+  val dataConnectExecutable: Provider<DataConnectExecutable> =
     project.providerForDataConnectLocalSetting(KEY_DATA_CONNECT_EXECUTABLE) { value, project ->
-      project.layout.projectDirectory.file(value)
+      val regularFile = project.layout.projectDirectory.file(value)
+      DataConnectExecutable.RegularFile(regularFile, verificationInfo = null)
     }
 
   val postgresConnectionUrl: Provider<String> =
