@@ -15,7 +15,10 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutable.VerificationInfo
 import java.io.File
+import java.security.MessageDigest
+import java.util.Locale
 import java.util.regex.Pattern
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
@@ -34,9 +37,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
 
   @get:Input @get:Optional abstract val version: Property<String>
 
-  @get:Input
-  @get:Optional
-  abstract val verificationInfo: Property<DataConnectExecutable.VerificationInfo>
+  @get:Input @get:Optional abstract val verificationInfo: Property<VerificationInfo>
 
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
@@ -46,7 +47,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
   fun run() {
     val inputFile: File? = inputFile.orNull?.asFile
     val version: String? = version.orNull
-    val verificationInfo: DataConnectExecutable.VerificationInfo? = verificationInfo.orNull
+    val verificationInfo: VerificationInfo? = verificationInfo.orNull
     val buildDirectory: File = buildDirectory.get().asFile
     val outputFile: File = outputFile.get().asFile
 
@@ -76,6 +77,53 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
         "Neither 'inputFile' nor 'version' were specified," +
           " but exactly _one_ of them is required to be specified"
       )
+    }
+
+    if (verificationInfo !== null) {
+      verifyOutputFile(outputFile, verificationInfo)
+    }
+  }
+
+  private fun verifyOutputFile(outputFile: File, verificationInfo: VerificationInfo) {
+    logger.info("Verifying file size and SHA512 digest of file: {}", outputFile)
+    val fileInfo = FileInfo.forFile(outputFile)
+    if (fileInfo.sizeInBytes != verificationInfo.fileSizeInBytes) {
+      throw DataConnectGradleException(
+        "zjdpbsjv42",
+        "File $outputFile has an unexpected size (in bytes): actual=" +
+          String.format(Locale.US, "%,d", fileInfo.sizeInBytes) +
+          " expected=" +
+          String.format(Locale.US, "%,d", verificationInfo.fileSizeInBytes)
+      )
+    } else if (fileInfo.sha512DigestHex != verificationInfo.sha512DigestHex) {
+      throw DataConnectGradleException(
+        "3yyma4dqga",
+        "File $outputFile has an unexpected SHA512 digest:" +
+          " actual=${fileInfo.sha512DigestHex} expected=${verificationInfo.sha512DigestHex}"
+      )
+    }
+  }
+
+  data class FileInfo(val sizeInBytes: Long, val sha512DigestHex: String) {
+    companion object {
+      fun forFile(file: File): FileInfo {
+        val digest: MessageDigest = MessageDigest.getInstance("SHA-512")
+        val buffer = ByteArray(8192)
+        var bytesRead: Long = 0
+
+        file.inputStream().use {
+          while (true) {
+            val curBytesRead = it.read(buffer)
+            if (curBytesRead < 0) {
+              break
+            }
+            bytesRead += curBytesRead
+            digest.update(buffer, 0, curBytesRead)
+          }
+        }
+
+        return FileInfo(bytesRead, toHexString(digest.digest()))
+      }
     }
   }
 
