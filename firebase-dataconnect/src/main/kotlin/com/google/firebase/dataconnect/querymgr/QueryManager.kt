@@ -32,17 +32,25 @@ internal class NewQueryManager(val dataConnect: FirebaseDataConnectImpl) {
   private val activeQueries = ActiveQueries(dataConnect, parentLogger = logger)
 
   suspend fun <Data, Variables> execute(
-    query: QueryRef<Data, Variables>
+    query: QueryRef<Data, Variables>,
+    isFromGeneratedSdk: Boolean,
   ): SequencedReference<Result<Data>> =
-    withActiveQuery(query) { execute(query.dataDeserializer) }.toSequencedDataResult()
+    withActiveQuery(query) {
+        execute(
+          query.dataDeserializer,
+          isFromGeneratedSdk = isFromGeneratedSdk,
+        )
+      }
+      .toSequencedDataResult()
 
   suspend fun <Data, Variables> subscribe(
     query: QueryRef<Data, Variables>,
     executeQuery: Boolean,
+    isFromGeneratedSdk: Boolean,
     callback: suspend (SequencedReference<Result<Data>>) -> Unit,
   ): Nothing =
     withActiveQuery(query) {
-      subscribe(query.dataDeserializer, executeQuery) { activeQueryResult ->
+      subscribe(query.dataDeserializer, isFromGeneratedSdk, executeQuery) { activeQueryResult ->
         callback(activeQueryResult.toSequencedDataResult())
       }
     }

@@ -37,6 +37,7 @@ class QueryResultImplUnitTest {
       variables = TestVariables("sampleQueryTestData"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
+      isFromGeneratedSdk = true,
     )
 
   private val sampleQuery1 =
@@ -46,6 +47,7 @@ class QueryResultImplUnitTest {
       variables = TestVariables("sampleQueryTestData1"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
+      isFromGeneratedSdk = false,
     )
 
   private val sampleQuery2 =
@@ -55,6 +57,7 @@ class QueryResultImplUnitTest {
       variables = TestVariables("sampleQueryTestData2"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
+      isFromGeneratedSdk = true,
     )
 
   @Test

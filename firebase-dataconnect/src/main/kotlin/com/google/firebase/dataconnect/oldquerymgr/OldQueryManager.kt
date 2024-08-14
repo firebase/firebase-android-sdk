@@ -16,21 +16,31 @@
 
 package com.google.firebase.dataconnect.oldquerymgr
 
-import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.util.SequencedReference
 
 internal class OldQueryManager(private val liveQueries: LiveQueries) {
   suspend fun <Data, Variables> execute(
-    query: QueryRef<Data, Variables>
+    query: QueryRefImpl<Data, Variables>,
   ): SequencedReference<Result<Data>> =
-    liveQueries.withLiveQuery(query) { it.execute(query.dataDeserializer) }
+    liveQueries.withLiveQuery(query) {
+      it.execute(
+        dataDeserializer = query.dataDeserializer,
+        isFromGeneratedSdk = query.isFromGeneratedSdk,
+      )
+    }
 
   suspend fun <Data, Variables> subscribe(
-    query: QueryRef<Data, Variables>,
+    query: QueryRefImpl<Data, Variables>,
     executeQuery: Boolean,
     callback: suspend (SequencedReference<Result<Data>>) -> Unit,
   ): Nothing =
     liveQueries.withLiveQuery(query) { liveQuery ->
-      liveQuery.subscribe(query.dataDeserializer, executeQuery = executeQuery, callback = callback)
+      liveQuery.subscribe(
+        dataDeserializer = query.dataDeserializer,
+        executeQuery = executeQuery,
+        isFromGeneratedSdk = query.isFromGeneratedSdk,
+        callback = callback,
+      )
     }
 }

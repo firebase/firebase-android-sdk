@@ -56,6 +56,7 @@ internal class DataConnectGrpcClient(
     requestId: String,
     operationName: String,
     variables: Struct,
+    isFromGeneratedSdk: Boolean,
   ): OperationResult {
     val request = executeQueryRequest {
       this.name = requestName
@@ -65,7 +66,7 @@ internal class DataConnectGrpcClient(
 
     val response =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") {
-        executeQuery(requestId, request)
+        executeQuery(requestId, request, isFromGeneratedSdk)
       }
 
     return OperationResult(
@@ -78,6 +79,7 @@ internal class DataConnectGrpcClient(
     requestId: String,
     operationName: String,
     variables: Struct,
+    isFromGeneratedSdk: Boolean,
   ): OperationResult {
     val request = executeMutationRequest {
       this.name = requestName
@@ -87,7 +89,7 @@ internal class DataConnectGrpcClient(
 
     val response =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeMutation") {
-        executeMutation(requestId, request)
+        executeMutation(requestId, request, isFromGeneratedSdk = isFromGeneratedSdk)
       }
 
     return OperationResult(

@@ -21,6 +21,8 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.generated.GeneratedMutation
+import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.oldquerymgr.LiveQueries
 import com.google.firebase.dataconnect.oldquerymgr.LiveQuery
 import com.google.firebase.dataconnect.oldquerymgr.OldQueryManager
@@ -297,6 +299,7 @@ internal class FirebaseDataConnectImpl(
     variables: Variables,
     dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>,
+    generatedQuery: GeneratedQuery<*, Data, Variables>?,
   ) =
     QueryRefImpl(
       dataConnect = this,
@@ -304,6 +307,7 @@ internal class FirebaseDataConnectImpl(
       variables = variables,
       dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
+      isFromGeneratedSdk = generatedQuery !== null,
     )
 
   override fun <Data, Variables> mutation(
@@ -311,6 +315,7 @@ internal class FirebaseDataConnectImpl(
     variables: Variables,
     dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>,
+    generatedMutation: GeneratedMutation<*, Data, Variables>?,
   ) =
     MutationRefImpl(
       dataConnect = this,
@@ -318,6 +323,7 @@ internal class FirebaseDataConnectImpl(
       variables = variables,
       dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
+      isFromGeneratedSdk = generatedMutation !== null,
     )
 
   private val closeJob = MutableStateFlow(NullableReference<Deferred<Unit>>(null))

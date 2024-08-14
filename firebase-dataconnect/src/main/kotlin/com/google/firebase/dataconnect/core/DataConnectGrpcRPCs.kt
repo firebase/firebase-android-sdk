@@ -132,9 +132,10 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun executeMutation(
     requestId: String,
-    request: ExecuteMutationRequest
+    request: ExecuteMutationRequest,
+    isFromGeneratedSdk: Boolean,
   ): ExecuteMutationResponse {
-    val metadata = grpcMetadata.get(requestId)
+    val metadata = grpcMetadata.get(requestId, isFromGeneratedSdk)
     val kotlinMethodName = "executeMutation(${request.operationName})"
 
     logger.logGrpcSending(
@@ -167,8 +168,12 @@ internal class DataConnectGrpcRPCs(
     return result.getOrThrow()
   }
 
-  suspend fun executeQuery(requestId: String, request: ExecuteQueryRequest): ExecuteQueryResponse {
-    val metadata = grpcMetadata.get(requestId)
+  suspend fun executeQuery(
+    requestId: String,
+    request: ExecuteQueryRequest,
+    isFromGeneratedSdk: Boolean,
+  ): ExecuteQueryResponse {
+    val metadata = grpcMetadata.get(requestId, isFromGeneratedSdk)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
     logger.logGrpcSending(

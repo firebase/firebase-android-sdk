@@ -36,14 +36,24 @@ internal class ActiveQuery(
   private val typedActiveQueries = TypedActiveQueries(this, logger)
 
   suspend fun <Data> execute(
-    dataDeserializer: DeserializationStrategy<Data>
-  ): ActiveQueryResult<Data> = withTypedActiveQuery(dataDeserializer) { it.execute() }
+    dataDeserializer: DeserializationStrategy<Data>,
+    isFromGeneratedSdk: Boolean,
+  ): ActiveQueryResult<Data> =
+    withTypedActiveQuery(dataDeserializer) { it.execute(isFromGeneratedSdk = isFromGeneratedSdk) }
 
   suspend fun <Data> subscribe(
     dataDeserializer: DeserializationStrategy<Data>,
     executeQuery: Boolean,
+    isFromGeneratedSdk: Boolean,
     callback: suspend (ActiveQueryResult<Data>) -> Unit
-  ): Nothing = withTypedActiveQuery(dataDeserializer) { it.subscribe(executeQuery, callback) }
+  ): Nothing =
+    withTypedActiveQuery(dataDeserializer) {
+      it.subscribe(
+        executeQuery = executeQuery,
+        isFromGeneratedSdk = isFromGeneratedSdk,
+        callback = callback,
+      )
+    }
 
   private suspend fun <Data, ReturnType> withTypedActiveQuery(
     dataDeserializer: DeserializationStrategy<Data>,

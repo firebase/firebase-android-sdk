@@ -27,6 +27,7 @@ internal class QueryRefImpl<Data, Variables>(
   variables: Variables,
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
+  val isFromGeneratedSdk: Boolean,
 ) :
   QueryRef<Data, Variables>,
   OperationRefImpl<Data, Variables>(
@@ -69,4 +70,11 @@ internal class QueryRefImpl<Data, Variables>(
 }
 
 internal fun <Data, Variables> QueryRefImpl<Data, Variables>.withVariables(variables: Variables) =
-  QueryRefImpl(dataConnect, operationName, variables, dataDeserializer, variablesSerializer)
+  QueryRefImpl(
+    dataConnect,
+    operationName,
+    variables,
+    dataDeserializer,
+    variablesSerializer,
+    isFromGeneratedSdk,
+  )
