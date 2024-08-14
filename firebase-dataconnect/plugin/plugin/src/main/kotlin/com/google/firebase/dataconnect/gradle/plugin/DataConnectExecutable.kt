@@ -15,25 +15,28 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
+import java.io.Serializable
+
 // The following command was used to generate the `serialVersionUID` constants for each class.
 // serialver -classpath \
 //   plugin/build/classes/kotlin/main:$(find $HOME/.gradle/wrapper/dists -name
 // gradle-core-api-8.5.jar -printf '%p:') \
-// com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutable\${VerificationInfo,File,RegularFile,Version}
+// com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableInput\${VerificationInfo,File,RegularFile,Version}
 
-sealed interface DataConnectExecutable : java.io.Serializable {
+sealed interface DataConnectExecutable {
 
   data class VerificationInfo(val fileSizeInBytes: Long, val sha512DigestHex: String) :
-    java.io.Serializable {
+    Serializable {
+
     companion object {
-      private const val serialVersionUID: Long = 9100812685436842226L
       fun forVersion(version: String): VerificationInfo =
         when (version) {
           "1.3.4" ->
             VerificationInfo(
               fileSizeInBytes = 24125592L,
               sha512DigestHex =
-                "3ec9317db593ebeacfea9756cdd08a02849296fbab67f32f3d811a766be6ce2506fc7a0cf5f5ea880926f0c4defa5ded965268f5dfe5d07eb80cef926f216c7e"
+                "3ec9317db593ebeacfea9756cdd08a02849296fbab67f32f3d811a766be6ce2506f" +
+                  "c7a0cf5f5ea880926f0c4defa5ded965268f5dfe5d07eb80cef926f216c7e"
             )
           else ->
             throw DataConnectGradleException(
@@ -45,25 +48,13 @@ sealed interface DataConnectExecutable : java.io.Serializable {
   }
 
   data class File(val file: java.io.File, val verificationInfo: VerificationInfo?) :
-    DataConnectExecutable {
-    companion object {
-      private const val serialVersionUID: Long = 1418763632146586078L
-    }
-  }
+    DataConnectExecutable
 
   data class RegularFile(
     val file: org.gradle.api.file.RegularFile,
     val verificationInfo: VerificationInfo?
-  ) : DataConnectExecutable {
-    companion object {
-      private const val serialVersionUID: Long = 4824964901603066595L
-    }
-  }
+  ) : DataConnectExecutable
 
   data class Version(val version: String, val verificationInfo: VerificationInfo?) :
-    DataConnectExecutable {
-    companion object {
-      private const val serialVersionUID: Long = 1502768139059311352L
-    }
-  }
+    DataConnectExecutable
 }

@@ -23,14 +23,13 @@ import com.android.build.api.variant.AndroidComponentsExtension
 import com.android.build.api.variant.DslExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import java.util.Locale
-import javax.inject.Inject
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.file.ProjectLayout
+import org.gradle.api.file.Directory
+import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logging
-import org.gradle.api.model.ObjectFactory
 import org.gradle.api.plugins.ExtensionAware
-import org.gradle.api.provider.ProviderFactory
+import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.newInstance
@@ -38,12 +37,6 @@ import org.gradle.kotlin.dsl.register
 
 @Suppress("unused")
 abstract class DataConnectGradlePlugin : Plugin<Project> {
-
-  @get:Inject abstract val projectLayout: ProjectLayout
-
-  @get:Inject abstract val providerFactory: ProviderFactory
-
-  @get:Inject abstract val objectFactory: ObjectFactory
 
   private val logger = Logging.getLogger(javaClass)
 
@@ -78,6 +71,8 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
 
     androidComponents.onVariants { variant ->
       val variantNameTitleCase = variant.name.replaceFirstChar { it.titlecase(Locale.US) }
+      val baseBuildDirectory: Provider<Directory> =
+        project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
 
       val dataConnectProviders =
         DataConnectProviders(
@@ -87,17 +82,62 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           variantExtension = variant.getExtension<DataConnectVariantDslExtension>(),
         )
 
+      val downloadDataConnectExecutableTask =
+        project.tasks.register<DataConnectExecutableDownloadTask>(
+          "download${variantNameTitleCase}DataConnectExecutable"
+        ) {
+          val dataConnectExecutable = dataConnectProviders.dataConnectExecutable
+          buildDirectory.set(baseBuildDirectory.map { it.dir("executable") })
+          inputFile.set(
+            dataConnectExecutable.map {
+              when (it) {
+                is DataConnectExecutable.File -> project.layout.projectDirectory.file(it.file.path)
+                is DataConnectExecutable.RegularFile -> it.file
+                is DataConnectExecutable.Version -> null
+              }
+            }
+          )
+          version.set(
+            dataConnectExecutable.map {
+              when (it) {
+                is DataConnectExecutable.File -> null
+                is DataConnectExecutable.RegularFile -> null
+                is DataConnectExecutable.Version -> it.version
+              }
+            }
+          )
+          verificationInfo.set(
+            dataConnectExecutable.map {
+              when (it) {
+                is DataConnectExecutable.File -> it.verificationInfo
+                is DataConnectExecutable.RegularFile -> it.verificationInfo
+                is DataConnectExecutable.Version -> it.verificationInfo
+              }
+            }
+          )
+          outputFile.set(
+            dataConnectExecutable.map {
+              when (it) {
+                is DataConnectExecutable.File -> inputFile.get()
+                is DataConnectExecutable.RegularFile -> inputFile.get()
+                is DataConnectExecutable.Version ->
+                  buildDirectory
+                    .map { directory -> directory.file("dataconnect-v${it.version}") }
+                    .get()
+              }
+            }
+          )
+        }
+
       val mergeConfigDirectoriesTask =
         project.tasks.register<DataConnectMergeConfigDirectoriesTask>(
           "merge${variantNameTitleCase}DataConnectConfigDirs"
         ) {
           defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
           customConfigDirectory.set(dataConnectProviders.customConfigDir)
-          buildDirectory.set(
-            project.layout.buildDirectory.dir("intermediates/dataconnect/${variant.name}")
-          )
+          buildDirectory.set(baseBuildDirectory.map { it.dir("mergedConfigs") })
           mergedDirectory.set(
-            providerFactory
+            project
               .provider {
                 buildList {
                     addAll(defaultConfigDirectories.get())
@@ -113,7 +153,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
         "run${variantNameTitleCase}DataConnectEmulator"
       ) {
         outputs.upToDateWhen { false }
-        dataConnectExecutable.set(dataConnectProviders.dataConnectExecutable)
+        dataConnectExecutable.set(downloadDataConnectExecutableTask.flatMap { it.outputFile })
         configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
         postgresConnectionUrl.set(dataConnectProviders.postgresConnectionUrl)
       }
@@ -122,7 +162,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
         project.tasks.register<DataConnectGenerateCodeTask>(
           "generate${variantNameTitleCase}DataConnectSources"
         ) {
-          dataConnectExecutable.set(dataConnectProviders.dataConnectExecutable)
+          dataConnectExecutable.set(downloadDataConnectExecutableTask.flatMap { it.outputFile })
           configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
           connectors.set(dataConnectProviders.connectors)
         }
