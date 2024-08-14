@@ -50,16 +50,25 @@ internal class DataConnectGrpcMetadata(
   @Suppress("SpellCheckingInspection")
   private val googRequestParamsHeaderValue = "location=${connectorLocation}&frontend=data"
 
-  @Suppress("SpellCheckingInspection")
-  private val googApiClientHeaderValue =
-    "gl-kotlin/$kotlinVersion gl-android/$androidVersion fire/$dataConnectSdkVersion grpc/$grpcVersion"
+  private fun googApiClientHeaderValue(isFromGeneratedSdk: Boolean): String {
+    val components = buildList {
+      add("gl-kotlin/$kotlinVersion")
+      add("gl-android/$androidVersion")
+      add("fire/$dataConnectSdkVersion")
+      add("grpc/$grpcVersion")
+      if (isFromGeneratedSdk) {
+        add("kotlin/gen")
+      }
+    }
+    return components.joinToString(" ")
+  }
 
-  suspend fun get(requestId: String): Metadata {
+  suspend fun get(requestId: String, isFromGeneratedSdk: Boolean): Metadata {
     val authToken = dataConnectAuth.getToken(requestId)
     val appCheckToken = dataConnectAppCheck.getToken(requestId)
     return Metadata().also {
       it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
-      it.put(googApiClientHeader, googApiClientHeaderValue)
+      it.put(googApiClientHeader, googApiClientHeaderValue(isFromGeneratedSdk))
       if (authToken !== null) {
         it.put(firebaseAuthTokenHeader, authToken)
       }

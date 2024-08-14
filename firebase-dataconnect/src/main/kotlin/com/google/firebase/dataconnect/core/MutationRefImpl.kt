@@ -32,6 +32,7 @@ internal class MutationRefImpl<Data, Variables>(
   variables: Variables,
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
+  val isFromGeneratedSdk: Boolean,
 ) :
   MutationRef<Data, Variables>,
   OperationRefImpl<Data, Variables>(
@@ -56,7 +57,8 @@ internal class MutationRefImpl<Data, Variables>(
             (variables as DataConnectUntypedVariables).variables.toStructProto()
           else {
             encodeToStruct(variablesSerializer, variables)
-          }
+          },
+        isFromGeneratedSdk = isFromGeneratedSdk,
       )
       .runCatching { withContext(dataConnect.blockingDispatcher) { deserialize(dataDeserializer) } }
       .onFailure {

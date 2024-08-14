@@ -25,14 +25,20 @@ internal class TypedActiveQuery<Data>(
   val dataDeserializer: DeserializationStrategy<Data>,
   val logger: Logger
 ) {
-  suspend fun execute(): ActiveQueryResult<Data> =
-    activeQuery.queryExecutor.execute().toActiveQueryResult()
+  suspend fun execute(isFromGeneratedSdk: Boolean): ActiveQueryResult<Data> =
+    activeQuery.queryExecutor.execute(isFromGeneratedSdk = isFromGeneratedSdk).toActiveQueryResult()
 
   suspend fun subscribe(
     executeQuery: Boolean,
+    isFromGeneratedSdk: Boolean,
     callback: suspend (ActiveQueryResult<Data>) -> Unit
   ): Nothing =
-    activeQuery.queryExecutor.subscribe(executeQuery) { callback(it.toActiveQueryResult()) }
+    activeQuery.queryExecutor.subscribe(
+      executeQuery,
+      isFromGeneratedSdk = isFromGeneratedSdk,
+    ) {
+      callback(it.toActiveQueryResult())
+    }
 
   private fun SequencedReference<QueryExecutorResult>.toActiveQueryResult():
     ActiveQueryResult<Data> =

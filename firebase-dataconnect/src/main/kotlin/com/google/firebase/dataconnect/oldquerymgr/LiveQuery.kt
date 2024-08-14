@@ -88,7 +88,8 @@ internal class LiveQuery(
   private var job: Job? = null
 
   suspend fun <T> execute(
-    dataDeserializer: DeserializationStrategy<T>
+    dataDeserializer: DeserializationStrategy<T>,
+    isFromGeneratedSdk: Boolean,
   ): SequencedReference<Result<T>> {
     // Register the data deserialzier _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
@@ -111,7 +112,7 @@ internal class LiveQuery(
             currentJob
           } else {
             logger.debug { "creating new job to execute query" }
-            coroutineScope.async { doExecute() }.also { newJob -> job = newJob }
+            coroutineScope.async { doExecute(isFromGeneratedSdk) }.also { newJob -> job = newJob }
           }
         }
       }
@@ -124,6 +125,7 @@ internal class LiveQuery(
   suspend fun <T> subscribe(
     dataDeserializer: DeserializationStrategy<T>,
     executeQuery: Boolean,
+    isFromGeneratedSdk: Boolean,
     callback: suspend (SequencedReference<Result<T>>) -> Unit,
   ): Nothing {
     val registeredDataDeserializer = registerDataDeserializer(dataDeserializer)
@@ -143,7 +145,7 @@ internal class LiveQuery(
     // get invoked with cached results first (if any), then updated results after the query
     // executes.
     if (executeQuery) {
-      coroutineScope.launch { runCatching { execute(dataDeserializer) } }
+      coroutineScope.launch { runCatching { execute(dataDeserializer, isFromGeneratedSdk) } }
     }
 
     registeredDataDeserializer.onSuccessfulUpdate(
@@ -153,14 +155,21 @@ internal class LiveQuery(
     }
   }
 
-  private suspend fun doExecute() {
+  private suspend fun doExecute(isFromGeneratedSdk: Boolean) {
     val requestId = "qry" + Random.nextAlphanumericString(length = 10)
     val sequenceNumber = nextSequenceNumber()
 
     val executeQueryResult =
       grpcClient.runCatching {
-        logger.debug("Calling executeQuery() with requestId=$requestId")
-        executeQuery(requestId = requestId, operationName = operationName, variables = variables)
+        logger.debug(
+          "Calling executeQuery() with requestId=$requestId isFromGeneratedSdk=$isFromGeneratedSdk"
+        )
+        executeQuery(
+          requestId = requestId,
+          operationName = operationName,
+          variables = variables,
+          isFromGeneratedSdk = isFromGeneratedSdk,
+        )
       }
 
     // Normally, setting the value of `initialDataDeserializerUpdate` would be done in a compare-
