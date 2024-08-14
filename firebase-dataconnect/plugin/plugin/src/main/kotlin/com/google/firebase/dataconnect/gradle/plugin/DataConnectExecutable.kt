@@ -56,5 +56,12 @@ sealed interface DataConnectExecutable {
   ) : DataConnectExecutable
 
   data class Version(val version: String, val verificationInfo: VerificationInfo?) :
-    DataConnectExecutable
+    DataConnectExecutable {
+    companion object {
+      fun forVersionWithDefaultVerificationInfo(version: String): Version {
+        val verificationInfo = DataConnectExecutable.VerificationInfo.forVersion(version)
+        return Version(version, verificationInfo)
+      }
+    }
+  }
 }

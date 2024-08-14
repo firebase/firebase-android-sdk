@@ -17,9 +17,13 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutable.VerificationInfo
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.security.MessageDigest
-import java.util.Locale
 import java.util.regex.Pattern
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -91,9 +95,9 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
       throw DataConnectGradleException(
         "zjdpbsjv42",
         "File $outputFile has an unexpected size (in bytes): actual=" +
-          String.format(Locale.US, "%,d", fileInfo.sizeInBytes) +
+          fileInfo.sizeInBytes.toStringWithThousandsSeparator() +
           " expected=" +
-          String.format(Locale.US, "%,d", verificationInfo.fileSizeInBytes)
+          verificationInfo.fileSizeInBytes.toStringWithThousandsSeparator()
       )
     } else if (fileInfo.sha512DigestHex != verificationInfo.sha512DigestHex) {
       throw DataConnectGradleException(
@@ -142,6 +146,57 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
   }
 
   private fun runWithVersion(version: String, outputFile: File) {
-    TODO("not implemented yet (version=$version, outputFile=$outputFile)")
+    val fileName = "dataconnect-emulator-linux-v$version"
+    val url = URL("https://storage.googleapis.com/firemat-preview-drop/emulator/$fileName")
+
+    logger.info("Downloading {} to {}", url, outputFile)
+    project.mkdir(outputFile.parentFile)
+
+    val connection = url.openConnection() as HttpURLConnection
+    connection.requestMethod = "GET"
+
+    val responseCode = connection.responseCode
+    if (responseCode != HttpURLConnection.HTTP_OK) {
+      throw DataConnectGradleException(
+        "n3mj6ahxwt",
+        "Downloading Data Connect executable from $url failed with HTTP response code" +
+          " $responseCode: ${connection.responseMessage}" +
+          " (expected HTTP response code ${HttpURLConnection.HTTP_OK})"
+      )
+    }
+
+    val startTime = System.nanoTime()
+    val debouncer = Debouncer(5.seconds)
+    outputFile.outputStream().use { oStream ->
+      var downloadByteCount: Long = 0
+      fun logDownloadedBytes() {
+        val elapsedTime = (System.nanoTime() - startTime).toDuration(DurationUnit.NANOSECONDS)
+        logger.info(
+          "Downloaded {} bytes in {}",
+          downloadByteCount.toStringWithThousandsSeparator(),
+          elapsedTime
+        )
+      }
+      connection.inputStream.use { iStream ->
+        val buffer = ByteArray(8192)
+        while (true) {
+          val readCount = iStream.read(buffer)
+          if (readCount < 0) {
+            break
+          }
+          downloadByteCount += readCount
+          debouncer.maybeRun(::logDownloadedBytes)
+          oStream.write(buffer, 0, readCount)
+        }
+      }
+      logDownloadedBytes()
+    }
+
+    project.exec { execSpec ->
+      execSpec.run {
+        executable = "chmod"
+        args = listOf("a+x", outputFile.absolutePath)
+      }
+    }
   }
 }

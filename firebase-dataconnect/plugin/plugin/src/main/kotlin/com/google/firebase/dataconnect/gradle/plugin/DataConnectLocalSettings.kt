@@ -17,76 +17,124 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.util.Properties
 import org.gradle.api.Project
-import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 class DataConnectLocalSettings(project: Project) {
 
-  val dataConnectExecutable: Provider<DataConnectExecutable> =
-    project.providerForDataConnectLocalSetting(KEY_DATA_CONNECT_EXECUTABLE) { value, project ->
-      val regularFile = project.layout.projectDirectory.file(value)
-      DataConnectExecutable.RegularFile(regularFile, verificationInfo = null)
-    }
+  val dataConnectExecutableFile: Provider<DataConnectExecutable> =
+    project
+      .providerForDataConnectLocalSettings(
+        KEY_DATA_CONNECT_EXECUTABLE_FILE,
+        KEY_DATA_CONNECT_EXECUTABLE_VERSION
+      ) { settingName, settingValue, project ->
+        if (settingName == KEY_DATA_CONNECT_EXECUTABLE_FILE) {
+          val regularFile = project.layout.projectDirectory.file(settingValue)
+          DataConnectExecutable.RegularFile(regularFile, verificationInfo = null)
+        } else if (settingName == KEY_DATA_CONNECT_EXECUTABLE_VERSION) {
+          DataConnectExecutable.Version.forVersionWithDefaultVerificationInfo(settingValue)
+        } else {
+          throw IllegalStateException(
+            "fileValue==null && versionValue==null (error code rbhmsd524t)"
+          )
+        }
+      }
+      .map { settingValueByName ->
+        val executableFile = settingValueByName[KEY_DATA_CONNECT_EXECUTABLE_FILE]
+        val executableVersion = settingValueByName[KEY_DATA_CONNECT_EXECUTABLE_VERSION]
+        executableFile
+          ?: executableVersion
+            ?: throw IllegalStateException(
+            "executableFile==null && executableVersion==null (error code cn9ygjt55e)"
+          )
+      }
 
   val postgresConnectionUrl: Provider<String> =
     project.providerForDataConnectLocalSetting(KEY_POSTGRES_CONNECTION_URL)
 
   companion object {
     const val FILE_NAME = "dataconnect.local.properties"
-    const val KEY_DATA_CONNECT_EXECUTABLE = "dataConnectExecutable"
+    const val KEY_DATA_CONNECT_EXECUTABLE_FILE = "dataConnectExecutable.file"
+    const val KEY_DATA_CONNECT_EXECUTABLE_VERSION = "dataConnectExecutable.version"
     const val KEY_POSTGRES_CONNECTION_URL = "postgresConnectionUrl"
 
     fun Project.providerForDataConnectLocalSetting(settingName: String): Provider<String> =
       providerForDataConnectLocalSetting(settingName) { value, _ -> value }
 
-    fun <T> Project.providerForDataConnectLocalSetting(
+    fun <T : Any> Project.providerForDataConnectLocalSetting(
       settingName: String,
       transformer: (String, Project) -> T
     ): Provider<T> =
+      providerForDataConnectLocalSettings(settingName) { _, settingValue, project ->
+          transformer(settingValue, project)
+        }
+        .map { it[settingName]!! }
+
+    fun <T> Project.providerForDataConnectLocalSettings(
+      firstSettingName: String,
+      vararg otherSettingNames: String,
+      transformer: (String, String, Project) -> T,
+    ): Provider<Map<String, T>> =
       project.provider {
         var curProject: Project? = project
         while (curProject !== null) {
-          val settingValue = curProject.settingValueFromDataConnectLocalSettings(settingName)
-          if (settingValue !== null) {
-            return@provider transformer(settingValue, curProject)
+          val settingValues =
+            curProject.settingValuesFromDataConnectLocalSettings(
+              firstSettingName,
+              *otherSettingNames
+            )
+          if (settingValues.isNotEmpty()) {
+            return@provider settingValues.mapValues { entry ->
+              transformer(entry.key, entry.value, curProject!!)
+            }
           }
           curProject = curProject.parent
         }
         return@provider null
       }
 
-    fun Project.settingValueFromDataConnectLocalSettings(settingName: String): String? {
+    private fun Project.settingValuesFromDataConnectLocalSettings(
+      firstSettingName: String,
+      vararg otherSettingNames: String
+    ): Map<String, String> {
       val localPropertiesFile = project.file(FILE_NAME)
       logger.info(
         "Looking for Data Connect local properties file: {}",
-        localPropertiesFile.absolutePath
+        localPropertiesFile.absolutePath,
       )
 
       if (!localPropertiesFile.exists()) {
-        return null
+        return emptyMap()
       }
 
       logger.info("Loading Data Connect local settings file: {}", localPropertiesFile.absolutePath)
       val properties = Properties()
       localPropertiesFile.inputStream().use { properties.load(it) }
 
-      val settingValue = properties.getProperty(settingName)
-      if (settingValue === null) {
-        logger.info(
-          "Setting \"{}\" not found in Data Connect local properties file: {}",
-          settingName,
-          localPropertiesFile.absolutePath,
-        )
-      } else {
-        logger.info(
-          "Setting \"{}\" found in Data Connect local properties file {}: {}",
-          settingName,
-          localPropertiesFile.absolutePath,
-          settingValue,
-        )
+      val settingNames = buildList {
+        add(firstSettingName)
+        addAll(otherSettingNames)
+      }
+      val settingValueByName = mutableMapOf<String, String>()
+      for (settingName in settingNames) {
+        val settingValue = properties.getProperty(settingName)
+        if (settingValue === null) {
+          logger.info(
+            "Setting \"{}\" not found in Data Connect local properties file: {}",
+            settingName,
+            localPropertiesFile.absolutePath,
+          )
+        } else {
+          logger.info(
+            "Setting \"{}\" found in Data Connect local properties file {}: {}",
+            settingName,
+            localPropertiesFile.absolutePath,
+            settingValue,
+          )
+          settingValueByName.put(settingName, settingValue)
+        }
       }
 
-      return settingValue
+      return settingValueByName
     }
   }
 }

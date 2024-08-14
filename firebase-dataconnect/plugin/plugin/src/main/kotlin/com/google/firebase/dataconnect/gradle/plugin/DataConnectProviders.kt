@@ -17,7 +17,6 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
-import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 class DataConnectProviders(
@@ -28,36 +27,30 @@ class DataConnectProviders(
 ) {
 
   val dataConnectExecutable: Provider<DataConnectExecutable> = run {
-    val gradlePropertyName = "dataconnect.dataConnectExecutable"
+    val fileGradlePropertyName = "dataconnect.dataConnectExecutable.file"
+    val versionGradlePropertyName = "dataconnect.dataConnectExecutable.version"
+
     val valueFromLocalSettings: Provider<DataConnectExecutable> =
-      localSettings.dataConnectExecutable
-    val valueFromGradleProperty: Provider<DataConnectExecutable> =
-      project.providers.gradleProperty(gradlePropertyName).map {
+      localSettings.dataConnectExecutableFile
+    val fileValueFromGradleProperty: Provider<DataConnectExecutable> =
+      project.providers.gradleProperty(fileGradlePropertyName).map {
         val regularFile = project.layout.projectDirectory.file(it)
         DataConnectExecutable.RegularFile(regularFile, verificationInfo = null)
+      }
+    val versionValueFromGradleProperty: Provider<DataConnectExecutable> =
+      project.providers.gradleProperty(versionGradlePropertyName).map {
+        DataConnectExecutable.Version.forVersionWithDefaultVerificationInfo(it)
       }
     val valueFromVariant: Provider<DataConnectExecutable> = variantExtension.dataConnectExecutable
     val valueFromProject: Provider<DataConnectExecutable> =
       project.provider { projectExtension.dataConnectExecutable }
 
     valueFromLocalSettings
-      .orElse(valueFromGradleProperty)
+      .orElse(fileValueFromGradleProperty)
+      .orElse(versionValueFromGradleProperty)
       .orElse(valueFromVariant)
       .orElse(valueFromProject)
-      .orElse(
-        project.provider {
-          throw DataConnectGradleException(
-            "cgyqepdcxz",
-            "dataConnectExecutable is not set;" +
-              " try setting android.dataconnect.dataConnectExecutable=file(\"/foo/bar/cli\")" +
-              " in build.gradle or build.gradle.kts," +
-              " setting the $gradlePropertyName project property," +
-              " such as by specifying -P${gradlePropertyName}=/foo/bar/cli on the Gradle command line," +
-              " or setting ${DataConnectLocalSettings.KEY_DATA_CONNECT_EXECUTABLE}=/foo/bar/cli" +
-              " in ${project.file(DataConnectLocalSettings.FILE_NAME)}"
-          )
-        }
-      )
+      .orElse(DataConnectExecutable.Version.forVersionWithDefaultVerificationInfo("1.3.4"))
   }
 
   val postgresConnectionUrl: Provider<String> = run {
