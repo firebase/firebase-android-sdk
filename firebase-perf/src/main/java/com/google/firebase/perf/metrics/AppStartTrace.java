@@ -88,10 +88,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private final ConfigResolver configResolver;
   private final TraceMetric.Builder experimentTtid;
   private Context appContext;
+
   /**
    * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
    */
   private WeakReference<Activity> launchActivity;
+
   /**
    * The first time onResume() of any activity is called, the activity is saved as appStartActivity
    */
@@ -144,6 +146,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   public static void setLauncherActivityOnStartTime(String activity) {
     // no-op, for backward compatibility with old version plugin.
   }
+
   /**
    * Called from onResume() method of an activity by instrumented byte code.
    *

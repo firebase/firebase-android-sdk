@@ -449,7 +449,10 @@ public class QueryTest {
 
   @Test
   public void listenerCanBeRemovedFromSpecificQuery()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -477,7 +480,10 @@ public class QueryTest {
 
   @Test
   public void removingListenersWorks()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -531,7 +537,10 @@ public class QueryTest {
 
   @Test
   public void serverShouldOnlySend5Items()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -590,7 +599,10 @@ public class QueryTest {
 
   @Test
   public void testStartAfterWithOrderByKey()
-      throws DatabaseException, InterruptedException, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TimeoutException,
           TestFailure {
     DatabaseReference ref = getRandomNode();
     DatabaseReference childOne = ref.push();
@@ -717,7 +729,10 @@ public class QueryTest {
 
   @Test
   public void setVariousLimitsWithStartAtNameWithServerData()
-      throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
+      throws DatabaseException,
+          InterruptedException,
+          TestFailure,
+          ExecutionException,
           TimeoutException {
     DatabaseReference ref = getRandomNode();
 
@@ -742,7 +757,10 @@ public class QueryTest {
 
   @Test
   public void setVariousLimitsWithStartAfterNameWithServerData()
-      throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
+      throws DatabaseException,
+          InterruptedException,
+          TestFailure,
+          ExecutionException,
           TimeoutException {
     DatabaseReference ref = getRandomNode();
 
@@ -773,7 +791,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -823,7 +844,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitWithServerData()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -876,7 +900,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitFromFront()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -927,7 +954,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildRemovedAndChildAddedHitWhenDataEntersLimitWithStartAfter()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -978,7 +1008,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitFromFrontWithServerData()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1033,7 +1066,10 @@ public class QueryTest {
   @Test
   public void
       setLimitEnsureChildRemovedAndChildAddedHitWhenLimitIsHitFromFrontWithServerDataWithStartAfter()
-          throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+          throws DatabaseException,
+              TestFailure,
+              ExecutionException,
+              TimeoutException,
               InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1087,7 +1123,10 @@ public class QueryTest {
 
   @Test
   public void setStartAndLimitEnsureChildAddedFiredWhenLimitIsntHit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1137,7 +1176,10 @@ public class QueryTest {
 
   @Test
   public void setStartAfterAndLimitEnsureChildAddedFiredWhenLimitIsntHit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1189,7 +1231,10 @@ public class QueryTest {
 
   @Test
   public void setStartAndLimitEnsureChildAddedFiredWhenLimitIsntHitWithServerData()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1242,7 +1287,10 @@ public class QueryTest {
 
   @Test
   public void setStartAfterAndLimitEnsureChildAddedFiredWhenLimitIsntHitWithServerData()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1296,7 +1344,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildAddedAndChildRemovedAreFiredWhenAnElementIsRemoved()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1348,7 +1399,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildAddedAndChildRemovedAreFiredWhenAnElementIsRemovedUsingServerData()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1402,7 +1456,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildRemovedFiredWhenAllElementsRemoved()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1456,7 +1513,10 @@ public class QueryTest {
 
   @Test
   public void setLimitEnsureChildRemovedFiredWhenAllElementsRemovedUsingServerData()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1833,7 +1893,10 @@ public class QueryTest {
 
   @Test
   public void ensurePrevNameWorksWithLimit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1879,7 +1942,10 @@ public class QueryTest {
 
   @Test
   public void setALimitMoveNodesCheckPrevName()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -1934,7 +2000,10 @@ public class QueryTest {
 
   @Test
   public void setALimitAddNodesRemotelyWatchForEvents()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -2475,7 +2544,10 @@ public class QueryTest {
 
   @Test
   public void handlesAnOutOfViewQueryOnAChild()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2515,7 +2587,10 @@ public class QueryTest {
 
   @Test
   public void handlesAChildQueryGoingOutOfViewOfTheParent()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2564,7 +2639,10 @@ public class QueryTest {
 
   @Test
   public void handlesDivergingViews()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2619,7 +2697,10 @@ public class QueryTest {
 
   @Test
   public void handlesRemovingAQueriedElement()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2721,7 +2802,10 @@ public class QueryTest {
 
   @Test
   public void startAtWithTwoArgumentsWorksCase1169()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2757,7 +2841,10 @@ public class QueryTest {
 
   @Test
   public void startAfterWithTwoArgumentsWorks()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2794,7 +2881,10 @@ public class QueryTest {
 
   @Test
   public void handlesMultipleQueriesOnTheSameNode()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2838,7 +2928,10 @@ public class QueryTest {
 
   @Test
   public void handlesOnceCalledOnANodeWithADefaultListener()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2879,7 +2972,10 @@ public class QueryTest {
 
   @Test
   public void handlesOnceCalledOnANodeWithADefaultListenerAndNonCompleteLimit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2908,7 +3004,10 @@ public class QueryTest {
 
   @Test
   public void remoteRemoveEventTriggers()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     final DatabaseReference writer = refs.get(0);
@@ -2951,7 +3050,10 @@ public class QueryTest {
 
   @Test
   public void endAtWithTwoArgumentsAndLimitWorks()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -2984,7 +3086,10 @@ public class QueryTest {
 
   @Test
   public void complexUpdateAtQueryRootRaisesCorrectValueEvent()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3033,7 +3138,10 @@ public class QueryTest {
 
   @Test
   public void updateAtQueryRootRaisesCorrectValueEvent()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3075,7 +3183,10 @@ public class QueryTest {
 
   @Test
   public void listenForChildAddedEventsWithLimit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3138,7 +3249,10 @@ public class QueryTest {
 
   @Test
   public void listenForChildChangedEventsWithLimit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3225,7 +3339,10 @@ public class QueryTest {
 
   @Test
   public void listenForChildRemoveEventsWithLimit()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3308,7 +3425,10 @@ public class QueryTest {
 
   @Test
   public void listenForChildRemovedWhenParentRemoved()
-      throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
+      throws DatabaseException,
+          InterruptedException,
+          TestFailure,
+          ExecutionException,
           TimeoutException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3389,7 +3509,10 @@ public class QueryTest {
 
   @Test
   public void listenForChildRemovedWhenParentSetToScalar()
-      throws DatabaseException, InterruptedException, TestFailure, ExecutionException,
+      throws DatabaseException,
+          InterruptedException,
+          TestFailure,
+          ExecutionException,
           TimeoutException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3470,7 +3593,10 @@ public class QueryTest {
 
   @Test
   public void queriesBehaveAfterOnce()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);
@@ -3549,7 +3675,10 @@ public class QueryTest {
 
   @Test
   public void case2003CorrectlyGetEventsForStartAtEndAtQueriesWhenPriorityChanges()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -3635,7 +3764,10 @@ public class QueryTest {
 
   @Test
   public void correctlyGetEventsForStartAfterEndAtQueriesWhenPriorityChanges()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -3721,7 +3853,10 @@ public class QueryTest {
 
   @Test
   public void correctlyGetEventsForStartAtEndBeforeQueriesWhenPriorityChanges()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -3808,7 +3943,10 @@ public class QueryTest {
 
   @Test
   public void behavesWithDivergingQueries()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,
+          TestFailure,
+          ExecutionException,
+          TimeoutException,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     final DatabaseReference writer = refs.get(0);
@@ -4117,7 +4255,7 @@ public class QueryTest {
         new DatabaseReference.CompletionListener() {
           @Override
           public void onComplete(DatabaseError error, DatabaseReference ref) {
-            ref.endBefore(null, String.valueOf(/* MIN_PUSH_CHAR = */ '-'))
+            ref.endBefore(null, String.valueOf(/* MIN_PUSH_CHAR= */ '-'))
                 .addListenerForSingleValueEvent(
                     new ValueEventListener() {
                       @Override
@@ -4693,7 +4831,10 @@ public class QueryTest {
 
   @Test
   public void testGetResolvesWhenOnlineAndSameLevelListener()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TestFailure,
           TimeoutException {
     FirebaseDatabase writeDb = getNewDatabase();
     FirebaseDatabase readDb = getNewDatabase();
@@ -4909,7 +5050,10 @@ public class QueryTest {
 
   @Test
   public void testGetProbesInMemoryCacheForActiveListenerWhenOffline()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TestFailure,
           TimeoutException {
     FirebaseDatabase readerDb = getNewDatabase();
     readerDb.setPersistenceEnabled(true);
@@ -4980,7 +5124,10 @@ public class QueryTest {
 
   @Test
   public void testGetSendsServerProbesPersistenceCacheWhenOfflineWithNoListener()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TestFailure,
           TimeoutException {
     FirebaseDatabase readerDb = getNewDatabase();
     readerDb.setPersistenceEnabled(true);
@@ -5021,7 +5168,10 @@ public class QueryTest {
 
   @Test
   public void testGetUpdatesPersistenceCacheWhenEnabled()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
+      throws DatabaseException,
+          InterruptedException,
+          ExecutionException,
+          TestFailure,
           TimeoutException {
     FirebaseDatabase readerDb = getNewDatabase();
     readerDb.setPersistenceEnabled(true);
@@ -5083,7 +5233,10 @@ public class QueryTest {
 
   @Test
   public void querySnapshotChildrenRespectDefaultOrdering()
-      throws DatabaseException, ExecutionException, TimeoutException, TestFailure,
+      throws DatabaseException,
+          ExecutionException,
+          TimeoutException,
+          TestFailure,
           InterruptedException {
     List<DatabaseReference> refs = getRandomNode(2);
     DatabaseReference writer = refs.get(0);

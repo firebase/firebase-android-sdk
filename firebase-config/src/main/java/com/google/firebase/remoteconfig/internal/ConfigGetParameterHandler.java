@@ -64,9 +64,11 @@ public class ConfigGetParameterHandler {
   /** Byte arrays in FRC are encoded as UTF-8 Strings. */
   @VisibleForTesting(otherwise = VisibleForTesting.PACKAGE_PRIVATE)
   public static final Charset FRC_BYTE_ARRAY_ENCODING = Charset.forName("UTF-8");
+
   /** Regular expressions that will evaluate to a "true" boolean. */
   static final Pattern TRUE_REGEX =
       Pattern.compile("^(1|true|t|yes|y|on)$", Pattern.CASE_INSENSITIVE);
+
   /** Regular expressions that will evaluate to a "false" boolean. */
   static final Pattern FALSE_REGEX =
       Pattern.compile("^(0|false|f|no|n|off|)$", Pattern.CASE_INSENSITIVE);

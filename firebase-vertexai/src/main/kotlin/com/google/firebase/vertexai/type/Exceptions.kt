@@ -42,9 +42,7 @@ sealed class FirebaseVertexAIException(message: String, cause: Throwable? = null
             is com.google.ai.client.generativeai.common.ServerException ->
               ServerException(cause.message ?: "", cause.cause)
             is com.google.ai.client.generativeai.common.InvalidAPIKeyException ->
-              InvalidAPIKeyException(
-                cause.message ?: "",
-              )
+              InvalidAPIKeyException(cause.message ?: "")
             is com.google.ai.client.generativeai.common.PromptBlockedException ->
               PromptBlockedException(cause.response.toPublic(), cause.cause)
             is com.google.ai.client.generativeai.common.UnsupportedUserLocationException ->
@@ -91,7 +89,7 @@ class InvalidAPIKeyException(message: String, cause: Throwable? = null) :
 class PromptBlockedException(val response: GenerateContentResponse, cause: Throwable? = null) :
   FirebaseVertexAIException(
     "Prompt was blocked: ${response.promptFeedback?.blockReason?.name}",
-    cause
+    cause,
   )
 
 /**
@@ -121,7 +119,7 @@ class InvalidStateException(message: String, cause: Throwable? = null) :
 class ResponseStoppedException(val response: GenerateContentResponse, cause: Throwable? = null) :
   FirebaseVertexAIException(
     "Content generation stopped. Reason: ${response.candidates.first().finishReason?.name}",
-    cause
+    cause,
   )
 
 /**
@@ -136,15 +134,17 @@ class RequestTimeoutException(message: String, cause: Throwable? = null) :
  * The specified Vertex AI location is invalid.
  *
  * For a list of valid locations, see
- * [Vertex AI locations](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
+ * [Vertex AI locations.](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
  */
 class InvalidLocationException(location: String, cause: Throwable? = null) :
   FirebaseVertexAIException("Invalid location \"${location}\"", cause)
 
 /**
- * The service is not enabled for this project. Visit the Firebase Console to enable it.
+ * The service is not enabled for this Firebase project. Learn how to enable the required services
+ * in the
+ * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/faq-and-troubleshooting#required-apis)
  */
-class ServiceDisabledException (message: String, cause: Throwable? = null) :
+class ServiceDisabledException(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */

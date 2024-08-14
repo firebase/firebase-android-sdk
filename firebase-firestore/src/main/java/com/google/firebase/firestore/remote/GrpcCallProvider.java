@@ -117,7 +117,7 @@ public class GrpcCallProvider {
   }
 
   /** Creates a new ClientCall. */
-  <ReqT, RespT> Task<ClientCall<ReqT, RespT>> createClientCall(
+  public <ReqT, RespT> Task<ClientCall<ReqT, RespT>> createClientCall(
       MethodDescriptor<ReqT, RespT> methodDescriptor) {
     return channelTask.continueWithTask(
         asyncQueue.getExecutor(),
@@ -125,7 +125,7 @@ public class GrpcCallProvider {
   }
 
   /** Shuts down the gRPC channel and the internal worker queue. */
-  void shutdown() {
+  public void shutdown() {
     // Handling shutdown synchronously to avoid re-enqueuing on the AsyncQueue after shutdown has
     // started.
     ManagedChannel channel;

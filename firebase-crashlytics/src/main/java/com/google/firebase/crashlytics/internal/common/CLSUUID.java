@@ -18,42 +18,44 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A UUID whose lexicographical ordering is equivalent to a temporal ordering. Uniqueness is based
- * on timestamp, sequence identifier, processId, and a hash of the application installation
- * identifier.
- *
- * <p>Applications which generate colliding app installation identifiers are at risk of creating
- * colliding CLSUUIDs.
+ * on timestamp, sequence identifier, processId, and a random hash.
  */
 class CLSUUID {
-  private static final AtomicLong _sequenceNumber = new AtomicLong(0);
 
-  private static String _clsId;
+  // Padding to ensure the id is long enough, has only valid hex characters, and increase entropy.
+  private static final String ID_SHA =
+      CommonUtils.sha1(UUID.randomUUID().toString() + System.currentTimeMillis());
 
-  CLSUUID(IdManager idManager) {
-    final byte[] bytes = new byte[10];
+  private static final AtomicLong sequenceNumber = new AtomicLong(0);
+  private final String sessionId;
+
+  CLSUUID() {
+    byte[] bytes = new byte[10];
 
     this.populateTime(bytes);
     this.populateSequenceNumber(bytes);
     this.populatePID(bytes);
 
-    // sha1 it to ensure the string is long enough, has only valid hex characters, and to
-    // increase entropy.
-    final String idSha = CommonUtils.sha1(idManager.getInstallIds().getCrashlyticsInstallId());
-    final String timeSeqPid = CommonUtils.hexify(bytes);
+    String timeSeqPid = CommonUtils.hexify(bytes);
 
-    _clsId =
+    sessionId =
         String.format(
                 Locale.US,
                 "%s%s%s%s",
                 timeSeqPid.substring(0, 12),
                 timeSeqPid.substring(12, 16),
                 timeSeqPid.subSequence(16, 20),
-                idSha.substring(0, 12))
+                ID_SHA.substring(0, 12))
             .toUpperCase(Locale.US);
+  }
+
+  public String getSessionId() {
+    return sessionId;
   }
 
   private void populateTime(byte[] bytes) {
@@ -73,7 +75,7 @@ class CLSUUID {
   }
 
   private void populateSequenceNumber(byte[] bytes) {
-    final byte[] sequenceBytes = convertLongToTwoByteBuffer(_sequenceNumber.incrementAndGet());
+    byte[] sequenceBytes = convertLongToTwoByteBuffer(sequenceNumber.incrementAndGet());
     bytes[6] = sequenceBytes[0];
     bytes[7] = sequenceBytes[1];
   }
@@ -103,7 +105,8 @@ class CLSUUID {
     return buf.array();
   }
 
+  @Override
   public String toString() {
-    return _clsId;
+    return sessionId;
   }
 }

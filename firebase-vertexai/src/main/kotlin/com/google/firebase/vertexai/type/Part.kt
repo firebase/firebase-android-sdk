@@ -49,7 +49,7 @@ class BlobPart(val mimeType: String, val blob: ByteArray) : Part
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-class FunctionCallPart(val name: String, val args: Map<String, String>) : Part
+class FunctionCallPart(val name: String, val args: Map<String, String?>) : Part
 
 /**
  * Represents function call output to be returned to the model when it requests a function call.
@@ -64,8 +64,8 @@ class FunctionResponsePart(val name: String, val response: JSONObject) : Part
  *
  * @param uri The `"gs://"`-prefixed URI of the file in Cloud Storage for Firebase, for example,
  * `"gs://bucket-name/path/image.jpg"`
- * @param mimeType an IANA standard MIME type. For supported value see the
- * [vertex documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
+ * @param mimeType an IANA standard MIME type. For supported MIME type values see the
+ * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
 class FileDataPart(val uri: String, val mimeType: String) : Part
 

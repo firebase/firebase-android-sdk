@@ -30,10 +30,13 @@ public interface FirebasePerformanceAttributable {
   // Redefining some constants for javadoc as Constants class is hidden
   /** Maximum allowed number of attributes allowed in a trace. */
   int MAX_TRACE_CUSTOM_ATTRIBUTES = Constants.MAX_TRACE_CUSTOM_ATTRIBUTES;
+
   /** Maximum allowed length of the Key of the {@link Trace} attribute */
   int MAX_ATTRIBUTE_KEY_LENGTH = Constants.MAX_ATTRIBUTE_KEY_LENGTH;
+
   /** Maximum allowed length of the Value of the {@link Trace} attribute */
   int MAX_ATTRIBUTE_VALUE_LENGTH = Constants.MAX_ATTRIBUTE_VALUE_LENGTH;
+
   /** Maximum allowed length of the name of the {@link Trace} */
   int MAX_TRACE_NAME_LENGTH = Constants.MAX_TRACE_ID_LENGTH;
 

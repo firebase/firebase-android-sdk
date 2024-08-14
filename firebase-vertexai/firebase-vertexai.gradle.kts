@@ -26,6 +26,11 @@ firebaseLibrary {
   publishSources = true
   publishJavadoc = true
   previewMode = "beta"
+  releaseNotes {
+    name.set("{{firebase_vertexai}}")
+    versionName.set("vertex-ai")
+    hasKTX.set(false)
+  }
 }
 
 android {
@@ -44,7 +49,10 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   kotlinOptions { jvmTarget = "1.8" }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    unitTests.isIncludeAndroidResources = true
+    unitTests.isReturnDefaultValues = true
+  }
 }
 
 dependencies {
@@ -53,7 +61,7 @@ dependencies {
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-  implementation("com.google.ai.client.generativeai:common:0.5.0")
+  implementation("com.google.ai.client.generativeai:common:0.9.0")
   implementation(libs.androidx.annotation)
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
   implementation("androidx.core:core-ktx:1.12.0")
@@ -66,8 +74,12 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0-alpha03")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
 
+  val ktorVersion = "2.3.2"
   testImplementation("io.kotest:kotest-assertions-core:5.5.5")
   testImplementation("io.kotest:kotest-assertions-core-jvm:5.5.5")
+  testImplementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+  testImplementation("io.ktor:ktor-client-mock:$ktorVersion")
+  testImplementation("org.json:json:20240303")
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)

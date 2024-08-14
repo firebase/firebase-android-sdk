@@ -32,13 +32,13 @@ import com.google.firebase.annotations.PreviewApi;
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
-import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.FirebaseAppCheckTokenProvider;
 import com.google.firebase.firestore.auth.FirebaseAuthCredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
+import com.google.firebase.firestore.core.ComponentProvider;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.core.FirestoreClient;
 import com.google.firebase.firestore.local.SQLitePersistence;
@@ -75,6 +75,8 @@ import org.json.JSONObject;
  */
 public class FirebaseFirestore {
 
+  private final Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory;
+
   /**
    * Provides a registry management interface for {@code FirebaseFirestore} instances.
    *
@@ -93,7 +95,6 @@ public class FirebaseFirestore {
   private final String persistenceKey;
   private final CredentialsProvider<User> authProvider;
   private final CredentialsProvider<String> appCheckProvider;
-  private final AsyncQueue asyncQueue;
   private final FirebaseApp firebaseApp;
   private final UserDataReader userDataReader;
   // When user requests to terminate, use this to notify `FirestoreMultiDbComponent` to deregister
@@ -101,7 +102,7 @@ public class FirebaseFirestore {
   private final InstanceRegistry instanceRegistry;
   @Nullable private EmulatedServiceSettings emulatorSettings;
   private FirebaseFirestoreSettings settings;
-  private volatile FirestoreClient client;
+  final FirestoreClientProvider clientProvider;
   private final GrpcMetadataProvider metadataProvider;
 
   @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
@@ -192,8 +193,6 @@ public class FirebaseFirestore {
     }
     DatabaseId databaseId = DatabaseId.forDatabase(projectId, database);
 
-    AsyncQueue queue = new AsyncQueue();
-
     CredentialsProvider<User> authProvider =
         new FirebaseAuthCredentialsProvider(deferredAuthProvider);
     CredentialsProvider<String> appCheckProvider =
@@ -205,18 +204,16 @@ public class FirebaseFirestore {
     // so there is no need to include it in the persistence key.
     String persistenceKey = app.getName();
 
-    FirebaseFirestore firestore =
-        new FirebaseFirestore(
-            context,
-            databaseId,
-            persistenceKey,
-            authProvider,
-            appCheckProvider,
-            queue,
-            app,
-            instanceRegistry,
-            metadataProvider);
-    return firestore;
+    return new FirebaseFirestore(
+        context,
+        databaseId,
+        persistenceKey,
+        authProvider,
+        appCheckProvider,
+        ComponentProvider::defaultFactory,
+        app,
+        instanceRegistry,
+        metadataProvider);
   }
 
   @VisibleForTesting
@@ -226,7 +223,7 @@ public class FirebaseFirestore {
       String persistenceKey,
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
-      AsyncQueue asyncQueue,
+      @NonNull Function<FirebaseFirestoreSettings, ComponentProvider> componentProviderFactory,
       @Nullable FirebaseApp firebaseApp,
       InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
@@ -236,7 +233,8 @@ public class FirebaseFirestore {
     this.persistenceKey = checkNotNull(persistenceKey);
     this.authProvider = checkNotNull(authProvider);
     this.appCheckProvider = checkNotNull(appCheckProvider);
-    this.asyncQueue = checkNotNull(asyncQueue);
+    this.componentProviderFactory = checkNotNull(componentProviderFactory);
+    this.clientProvider = new FirestoreClientProvider(this::newClient);
     // NOTE: We allow firebaseApp to be null in tests only.
     this.firebaseApp = firebaseApp;
     this.instanceRegistry = instanceRegistry;
@@ -256,14 +254,13 @@ public class FirebaseFirestore {
    * can only be called before calling any other methods on this object.
    */
   public void setFirestoreSettings(@NonNull FirebaseFirestoreSettings settings) {
-    settings = mergeEmulatorSettings(settings, this.emulatorSettings);
-
+    checkNotNull(settings, "Provided settings must not be null.");
     synchronized (databaseId) {
-      checkNotNull(settings, "Provided settings must not be null.");
+      settings = mergeEmulatorSettings(settings, emulatorSettings);
 
       // As a special exception, don't throw if the same settings are passed repeatedly. This
       // should make it simpler to get a Firestore instance in an activity.
-      if (client != null && !this.settings.equals(settings)) {
+      if (clientProvider.isConfigured() && !this.settings.equals(settings)) {
         throw new IllegalStateException(
             "FirebaseFirestore has already been started and its settings can no longer be changed. "
                 + "You can only call setFirestoreSettings() before calling any other methods on a "
@@ -283,36 +280,30 @@ public class FirebaseFirestore {
    * @param port the emulator port (for example, 8080)
    */
   public void useEmulator(@NonNull String host, int port) {
-    if (this.client != null) {
-      throw new IllegalStateException(
-          "Cannot call useEmulator() after instance has already been initialized.");
-    }
+    synchronized (clientProvider) {
+      if (clientProvider.isConfigured()) {
+        throw new IllegalStateException(
+            "Cannot call useEmulator() after instance has already been initialized.");
+      }
 
-    this.emulatorSettings = new EmulatedServiceSettings(host, port);
-    this.settings = mergeEmulatorSettings(this.settings, this.emulatorSettings);
+      emulatorSettings = new EmulatedServiceSettings(host, port);
+      settings = mergeEmulatorSettings(settings, emulatorSettings);
+    }
   }
 
-  private void ensureClientConfigured() {
-    if (client != null) {
-      return;
-    }
-
-    synchronized (databaseId) {
-      if (client != null) {
-        return;
-      }
+  private FirestoreClient newClient(AsyncQueue asyncQueue) {
+    synchronized (clientProvider) {
       DatabaseInfo databaseInfo =
           new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
 
-      client =
-          new FirestoreClient(
-              context,
-              databaseInfo,
-              settings,
-              authProvider,
-              appCheckProvider,
-              asyncQueue,
-              metadataProvider);
+      return new FirestoreClient(
+          context,
+          databaseInfo,
+          authProvider,
+          appCheckProvider,
+          asyncQueue,
+          metadataProvider,
+          componentProviderFactory.apply(settings));
     }
   }
 
@@ -363,7 +354,7 @@ public class FirebaseFirestore {
   @PreviewApi
   @NonNull
   public Task<Void> setIndexConfiguration(@NonNull String json) {
-    ensureClientConfigured();
+    clientProvider.ensureConfigured();
     Preconditions.checkState(
         settings.isPersistenceEnabled(), "Cannot enable indexes when persistence is disabled");
 
@@ -406,7 +397,7 @@ public class FirebaseFirestore {
       throw new IllegalArgumentException("Failed to parse index configuration", e);
     }
 
-    return client.configureFieldIndexes(parsedIndexes);
+    return clientProvider.call(client -> client.configureFieldIndexes(parsedIndexes));
   }
 
   /**
@@ -420,12 +411,12 @@ public class FirebaseFirestore {
    *     not in use.
    */
   @Nullable
-  public synchronized PersistentCacheIndexManager getPersistentCacheIndexManager() {
-    ensureClientConfigured();
+  public PersistentCacheIndexManager getPersistentCacheIndexManager() {
+    clientProvider.ensureConfigured();
     if (persistentCacheIndexManager == null
         && (settings.isPersistenceEnabled()
             || settings.getCacheSettings() instanceof PersistentCacheSettings)) {
-      persistentCacheIndexManager = new PersistentCacheIndexManager(client);
+      persistentCacheIndexManager = new PersistentCacheIndexManager(clientProvider);
     }
     return persistentCacheIndexManager;
   }
@@ -440,7 +431,7 @@ public class FirebaseFirestore {
   @NonNull
   public CollectionReference collection(@NonNull String collectionPath) {
     checkNotNull(collectionPath, "Provided collection path must not be null.");
-    ensureClientConfigured();
+    clientProvider.ensureConfigured();
     return new CollectionReference(ResourcePath.fromString(collectionPath), this);
   }
 
@@ -454,7 +445,7 @@ public class FirebaseFirestore {
   @NonNull
   public DocumentReference document(@NonNull String documentPath) {
     checkNotNull(documentPath, "Provided document path must not be null.");
-    ensureClientConfigured();
+    clientProvider.ensureConfigured();
     return DocumentReference.forPath(ResourcePath.fromString(documentPath), this);
   }
 
@@ -475,7 +466,7 @@ public class FirebaseFirestore {
               "Invalid collectionId '%s'. Collection IDs must not contain '/'.", collectionId));
     }
 
-    ensureClientConfigured();
+    clientProvider.ensureConfigured();
     return new Query(
         new com.google.firebase.firestore.core.Query(ResourcePath.EMPTY, collectionId), this);
   }
@@ -497,7 +488,7 @@ public class FirebaseFirestore {
    */
   private <ResultT> Task<ResultT> runTransaction(
       TransactionOptions options, Transaction.Function<ResultT> updateFunction, Executor executor) {
-    ensureClientConfigured();
+    clientProvider.ensureConfigured();
 
     // We wrap the function they provide in order to
     // 1. Use internal implementation classes for Transaction,
@@ -511,7 +502,7 @@ public class FirebaseFirestore {
                     updateFunction.apply(
                         new Transaction(internalTransaction, FirebaseFirestore.this)));
 
-    return client.transaction(options, wrappedUpdateFunction);
+    return clientProvider.call(client -> client.transaction(options, wrappedUpdateFunction));
   }
 
   /**
@@ -562,7 +553,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public WriteBatch batch() {
-    ensureClientConfigured();
+    clientProvider.ensureConfigured();
 
     return new WriteBatch(this);
   }
@@ -604,10 +595,7 @@ public class FirebaseFirestore {
   @NonNull
   public Task<Void> terminate() {
     instanceRegistry.remove(this.getDatabaseId().getDatabaseId());
-
-    // The client must be initialized to ensure that all subsequent API usage throws an exception.
-    this.ensureClientConfigured();
-    return client.terminate();
+    return clientProvider.terminate();
   }
 
   /**
@@ -626,13 +614,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> waitForPendingWrites() {
-    ensureClientConfigured();
-    return client.waitForPendingWrites();
-  }
-
-  @VisibleForTesting
-  AsyncQueue getAsyncQueue() {
-    return asyncQueue;
+    return clientProvider.call(FirestoreClient::waitForPendingWrites);
   }
 
   /**
@@ -642,8 +624,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> enableNetwork() {
-    ensureClientConfigured();
-    return client.enableNetwork();
+    return clientProvider.call(FirestoreClient::enableNetwork);
   }
 
   /**
@@ -655,8 +636,7 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> disableNetwork() {
-    ensureClientConfigured();
-    return client.disableNetwork();
+    return clientProvider.call(FirestoreClient::disableNetwork);
   }
 
   /** Globally enables / disables Cloud Firestore logging for the SDK. */
@@ -688,15 +668,21 @@ public class FirebaseFirestore {
    */
   @NonNull
   public Task<Void> clearPersistence() {
+    return clientProvider.executeIfShutdown(
+        this::clearPersistence,
+        executor ->
+            Tasks.forException(
+                new FirebaseFirestoreException(
+                    "Persistence cannot be cleared while the firestore instance is running.",
+                    FirebaseFirestoreException.Code.FAILED_PRECONDITION)));
+  }
+
+  @NonNull
+  private Task<Void> clearPersistence(Executor executor) {
     final TaskCompletionSource<Void> source = new TaskCompletionSource<>();
-    asyncQueue.enqueueAndForgetEvenAfterShutdown(
+    executor.execute(
         () -> {
           try {
-            if (client != null && !client.isTerminated()) {
-              throw new FirebaseFirestoreException(
-                  "Persistence cannot be cleared while the firestore instance is running.",
-                  Code.FAILED_PRECONDITION);
-            }
             SQLitePersistence.clearPersistence(context, databaseId, persistenceKey);
             source.setResult(null);
           } catch (FirebaseFirestoreException e) {
@@ -705,6 +691,7 @@ public class FirebaseFirestore {
         });
     return source.getTask();
   }
+  ;
 
   /**
    * Attaches a listener for a snapshots-in-sync event. The snapshots-in-sync event indicates that
@@ -776,9 +763,8 @@ public class FirebaseFirestore {
    */
   @NonNull
   public LoadBundleTask loadBundle(@NonNull InputStream bundleData) {
-    ensureClientConfigured();
     LoadBundleTask resultTask = new LoadBundleTask();
-    client.loadBundle(bundleData, resultTask);
+    clientProvider.procedure(client -> client.loadBundle(bundleData, resultTask));
     return resultTask;
   }
 
@@ -816,9 +802,8 @@ public class FirebaseFirestore {
   // TODO(b/261013682): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public @NonNull Task<Query> getNamedQuery(@NonNull String name) {
-    ensureClientConfigured();
-    return client
-        .getNamedQuery(name)
+    return clientProvider
+        .call(client -> client.getNamedQuery(name))
         .continueWith(
             task -> {
               com.google.firebase.firestore.core.Query query = task.getResult();
@@ -843,25 +828,26 @@ public class FirebaseFirestore {
    */
   private ListenerRegistration addSnapshotsInSyncListener(
       Executor userExecutor, @Nullable Activity activity, @NonNull Runnable runnable) {
-    ensureClientConfigured();
     EventListener<Void> eventListener =
         (Void v, FirebaseFirestoreException error) -> {
           hardAssert(error == null, "snapshots-in-sync listeners should never get errors.");
           runnable.run();
         };
-    AsyncEventListener<Void> asyncListener =
-        new AsyncEventListener<Void>(userExecutor, eventListener);
-    client.addSnapshotsInSyncListener(asyncListener);
-    return ActivityScope.bind(
-        activity,
-        () -> {
-          asyncListener.mute();
-          client.removeSnapshotsInSyncListener(asyncListener);
+    AsyncEventListener<Void> asyncListener = new AsyncEventListener<>(userExecutor, eventListener);
+    return clientProvider.call(
+        client -> {
+          client.addSnapshotsInSyncListener(asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.removeSnapshotsInSyncListener(asyncListener);
+              });
         });
   }
 
-  FirestoreClient getClient() {
-    return client;
+  <T> T callClient(Function<FirestoreClient, T> call) {
+    return clientProvider.call(call);
   }
 
   DatabaseId getDatabaseId() {

@@ -114,7 +114,8 @@ internal fun GenerationConfig.toInternal() =
     candidateCount = candidateCount,
     maxOutputTokens = maxOutputTokens,
     stopSequences = stopSequences,
-    responseMimeType = responseMimeType
+    responseMimeType = responseMimeType,
+    responseSchema = responseSchema?.toInternal()
   )
 
 internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
@@ -177,6 +178,7 @@ internal fun <T> com.google.firebase.vertexai.type.Schema<T>.toInternal(): Schem
     type.name,
     description,
     format,
+    nullable,
     enum,
     properties?.mapValues { it.value.toInternal() },
     required,

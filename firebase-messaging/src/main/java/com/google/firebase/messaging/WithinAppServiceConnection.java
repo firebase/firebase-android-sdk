@@ -85,6 +85,7 @@ class WithinAppServiceConnection implements ServiceConnection {
   }
 
   private final Context context;
+
   /** Intent used during service connection to connect to the correct service */
   private final Intent connectionIntent;
 

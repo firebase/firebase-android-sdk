@@ -1,5 +1,8 @@
 # Unreleased
-
+* [changed] Retry Topic Subscribe/Unsubscribe operations with exponential
+  backoff if they hit a quota error.
+* [changed] Checked for notification_open duplicate logging based on message ID
+  instead of the Activity's Intent.
 
 # 24.0.0
 * [changed] Switched Firelog to use the new TransportBackend.
@@ -378,7 +381,7 @@ released on [March 03, 2020](/support/release-notes/android#2020-03-03).
   * The [messaging] registration tokens of installed instances of your apps
     might change once after updating dependencies to their latest versions. To
     learn if your apps are affected, review the
-    <a href="//github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/FCM_TOKENS_CHANGE.md"
+    <a href="//github.com/firebase/firebase-android-sdk/blob/main/firebase-installations/FCM_TOKENS_CHANGE.md"
        class="external">[firebase_installations] documentation</a>. Also,
     make sure to
     <a href="/docs/cloud-messaging/android/client#monitor-token-generation">monitor

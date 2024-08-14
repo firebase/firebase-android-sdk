@@ -123,6 +123,7 @@ package com.google.firebase.firestore {
     method @Nullable public String getString(@NonNull String);
     method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String);
     method @Nullable public com.google.firebase.Timestamp getTimestamp(@NonNull String, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
+    method @Nullable public com.google.firebase.firestore.VectorValue getVectorValue(@NonNull String);
     method @Nullable public <T> T toObject(@NonNull Class<T>);
     method @Nullable public <T> T toObject(@NonNull Class<T>, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior);
   }
@@ -152,6 +153,7 @@ package com.google.firebase.firestore {
     method @NonNull public static com.google.firebase.firestore.FieldValue increment(long);
     method @NonNull public static com.google.firebase.firestore.FieldValue increment(double);
     method @NonNull public static com.google.firebase.firestore.FieldValue serverTimestamp();
+    method @NonNull public static com.google.firebase.firestore.VectorValue vector(@NonNull double[]);
   }
 
   public class Filter {
@@ -552,6 +554,10 @@ package com.google.firebase.firestore {
     ctor public TransactionOptions.Builder(@NonNull com.google.firebase.firestore.TransactionOptions);
     method @NonNull public com.google.firebase.firestore.TransactionOptions build();
     method @NonNull public com.google.firebase.firestore.TransactionOptions.Builder setMaxAttempts(int);
+  }
+
+  public class VectorValue {
+    method @NonNull public double[] toArray();
   }
 
   public class WriteBatch {

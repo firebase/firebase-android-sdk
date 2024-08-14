@@ -15,6 +15,10 @@ All Gradle commands should be run from the root of this repository.
 
 ## Running Tests
 
+> [!IMPORTANT]
+> These unit tests require mock response files, which can be downloaded by running
+`./firebase-vertexai/update_responses.sh` from the root of this repository.
+
 Unit tests:
 
 `./gradlew :firebase-vertexai:check`
