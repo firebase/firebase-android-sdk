@@ -1,0 +1,171 @@
+{
+    "changesByLibraryName": {
+        "firebase-components": [
+            {
+                "commitId": "b83910b238aa9ac66a42f7fba49aedc5e86c8ffd",
+                "prId": "6184",
+                "author": "David Motsonashvili",
+                "message": "add release notes for componenets (#6184)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b83910b238aa9ac66a42f7fba49aedc5e86c8ffd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6184"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "db42baeae866b02cc877e27df14a7749ff255807",
+                "prId": "6156",
+                "author": "themiswang",
+                "message": "move more jobs to disk write (#6156)\n\nMove file clean up task to disk write worker.\r\nFix unit test: close session has to run on a background thread",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/db42baeae866b02cc877e27df14a7749ff255807",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6156"
+            },
+            {
+                "commitId": "fb2f8b24afc581dbb22d453859bbfe8bb37d4caa",
+                "prId": "6152",
+                "author": "Matthew Robertson",
+                "message": "Make the session id not depend on fetching the fid (#6152)\n\nMake generating a session id not depend on fetching the fid. This is\r\nneeded so we can allow the common worker to initialize, and start\r\naccepting use actions, before any data collection, settings, or fid\r\nvalidation happens.\r\n\r\nThe hash of the crashlytics installation id was used to pad the length\r\nand increase entropy. Instead of that, we use a random uuid now.\r\nVerified nothing depends on the source of that padding by manually\r\nsetting it to all 0s and doing an end-to-end test.\r\n\r\nThe way the session id is built is a little bit weird, using bytes. In\r\nthe future, we could rewrite this to use proper string formatting.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fb2f8b24afc581dbb22d453859bbfe8bb37d4caa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6152"
+            },
+            {
+                "commitId": "9535f940e2172021263497d819d3aec680ab301d",
+                "prId": "6178",
+                "author": "Matthew Robertson",
+                "message": "Add a CrashlyticsWorkers container to manage the workers (#6178)\n\nAdd a CrashlyticsWorkers container to manage the workers, and define\r\nwhat each one is for. Also added a `submitTaskOnSuccess` method for\r\nconvenience. This will be useful for any of the user actions that get\r\ntriggered by send unsent reports.\r\n\r\nAlso found and fixed a bug in the worker queue. If a task gets cancelled\r\nand is followed by a runnable or callable already in the queue, it would\r\nhave been skipped. Now it's not a problem, and a test case added.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9535f940e2172021263497d819d3aec680ab301d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6178"
+            },
+            {
+                "commitId": "9ed73c407bee8bde1e7c6e611a68f1639374bf9c",
+                "prId": "6158",
+                "author": "Matthew Robertson",
+                "message": "Create a util for Crashlytics tasks, and move race into it (#6158)\n\nCreate a util for Crashlytics-specific Tasks, and move `race` into it.\r\nThis util class will hold other things later, so they don't make the\r\nworker class a mess. We will need something like `submitWaiting` next to\r\nblock until a task is complete, this is how data collection is\r\nimplemented.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9ed73c407bee8bde1e7c6e611a68f1639374bf9c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6158"
+            },
+            {
+                "commitId": "99a9d9358502f88f464484c30539f836aa56e05b",
+                "prId": "6148",
+                "author": "Matthew Robertson",
+                "message": "Move CrashlyticsWorker to concurrency package (#6148)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/99a9d9358502f88f464484c30539f836aa56e05b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6148"
+            },
+            {
+                "commitId": "8b832df8146dd6ec58931aba6e0b01e8c1db0321",
+                "prId": "6143",
+                "author": "Matthew Robertson",
+                "message": "Improvements to the CrashlyticsWorker (#6143)\n\nAdded a method to submit a task followed by a continuation to the\r\nworker. This is useful for making a continuation happen right after the\r\nsubmitted task, even if other tasks were submitted to the worker in the\r\nmeantime. This will be useful for fetching settings from a network\r\nexecutor, then continuing on the common worker to parse the settings\r\njson.\r\n\r\nAlso added a method to race two tasks on the worker. This is useful for\r\nthings like waiting for an for explicit data collection enable call, or\r\nautomatic data collection being enabled.\r\n\r\nBoth methods have their behaviour fully documented in the javadoc and\r\ntested in unit tests.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8b832df8146dd6ec58931aba6e0b01e8c1db0321",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6143"
+            },
+            {
+                "commitId": "d0fea0e29b81201ec6d884fe65c6396ac5fe938c",
+                "prId": "6140",
+                "author": "Matthew Robertson",
+                "message": "Add tests for internal apis used by development platform plugins (#6140)\n\nAdd test cases for internal apis used by development platform plugins so\r\nwe don't break them by accident during refactoring.\r\n\r\nWe should consider making the internal api more explicit.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d0fea0e29b81201ec6d884fe65c6396ac5fe938c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6140"
+            },
+            {
+                "commitId": "10fe14215dcdff6e57f67196309b5f7fee859ad9",
+                "prId": "6133",
+                "author": "themiswang",
+                "message": "Move log and non-fatal persistence to disk write worker (#6133)\n\nOther metadata persistence is already on the right work from the\r\nprevious pr #6120\r\n- Move log and non-fatal persistence to disk write worker\r\n- Refine unit tests\r\n- Remove unused functions and interface",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/10fe14215dcdff6e57f67196309b5f7fee859ad9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6133"
+            },
+            {
+                "commitId": "26c8a5a7eab7fffb2820d8b9f23643d24c8510f1",
+                "prId": "6132",
+                "author": "Matthew Robertson",
+                "message": "Fix flaky test (#6132)\n\nFix flaky `submitTaskFromAnotherWorkerDoesNotUseLocalThreads` test. This\r\ntest would fail about 2% of the time on my machine due to dealing with\r\nthreads. With this change, it fails less than 0.5% of the time. Tested\r\nby running the test in a loop 1,000 times.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/26c8a5a7eab7fffb2820d8b9f23643d24c8510f1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6132"
+            },
+            {
+                "commitId": "3a4ec1891cd39115dff7d25fcb2b2eab3e743aba",
+                "prId": "6120",
+                "author": "themiswang",
+                "message": "User action refactor (#6120)\n\n- Creating common and disk worker based on Firebase background common\r\nexecutor\r\n- Move all user action directly to background thread and remove some\r\nunnecessary task submit\r\n- Add unit tests dependency for firebase common executor\r\n- Decouple crashlytics backend handler from user metadata and use disk\r\nwriting working for persistence write.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3a4ec1891cd39115dff7d25fcb2b2eab3e743aba",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6120"
+            },
+            {
+                "commitId": "96b702fbb7dda5569d08459d44e97ce63657bde8",
+                "prId": "6128",
+                "author": "Matthew Robertson",
+                "message": "Migrate to Firebase common executors (#6128)\n\nMigrate to Firebase common executors. Use the new `CrashlyticsWorker`\r\nfor common and disk write workers.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/96b702fbb7dda5569d08459d44e97ce63657bde8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6128"
+            },
+            {
+                "commitId": "705d7a3d71afa736a685d02779b02c90be6b50ea",
+                "prId": "6126",
+                "author": "Matthew Robertson",
+                "message": "Generalize the CrashlyticsWorker (#6126)\n\nGeneralize the CrashlyticsWorker.\r\n\r\nThe old CrashlyticsBackgroundWorker has a lot of overhead. Local\r\nexperimentation shows this generalized worker manages submitting tasks\r\nabout 4 times as fast.\r\n\r\nThe old background worker has some inaccurate Javadoc. I corrected and\r\nverified every detail mentioned in the Javadoc with integration tests.\r\nWe can rely on it now.\r\n\r\nI also found a bug in the old worker. If you cancel a task then submit a\r\nrunnable or callable, that will never execute because the chain breaks.\r\nI fixed it in the general worker and added test cases.\r\n\r\nNext steps will be to utilize the generic worker for the proposed\r\ncommon, network, and disk write workers.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/705d7a3d71afa736a685d02779b02c90be6b50ea",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6126"
+            },
+            {
+                "commitId": "1b491717889cbb74239b24711396400652a43990",
+                "prId": "6125",
+                "author": "Matthew Robertson",
+                "message": "Convenient preconditions specific for Crashlytics concurrency (#6125)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1b491717889cbb74239b24711396400652a43990",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6125"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-sessions": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "08deb691d666d981b72c0f96a266befa16812d95",
+                "prId": "6050",
+                "author": "Tom Andersen",
+                "message": "Add FirestoreClientProvider (#6050)\n\nIntroduce FirestoreClientProvider to manage life cycle and access to\r\nFirestoreClient. Calls to FirestoreClient are made through the reference\r\nheld in FirestoreClientProvider, thereby preparing for swapping\r\nFirestoreClient in future PR. This requires rewiring calls, such that\r\ncode does not hold a direct reference to FirestoreClient.\r\n\r\nI am open to a better name than FirestoeClientProvider...",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/08deb691d666d981b72c0f96a266befa16812d95",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6050"
+            },
+            {
+                "commitId": "57aaf396af5bed37a57816073ace0b0251aed882",
+                "prId": "6154",
+                "author": "Mark Duckworth",
+                "message": "feat: Add support for the VectorValue type (#6154)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/57aaf396af5bed37a57816073ace0b0251aed882",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6154"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "8c04ec2b567340dc61b2d2ff4fcb5e9faa9deba5",
+                "prId": "6112",
+                "author": "Greg Sakakihara",
+                "message": "Check for notification_open duplicate logging based on message ID. (#6112)\n\n- Changed to use the message ID when checking for duplicate\r\nnotification_open logging instead of the Activity's Intent. This should\r\navoid logging again when an app starts another activity using a copy of\r\nthe notification's intent\r\n(https://github.com/firebase/firebase-android-sdk/issues/6091).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8c04ec2b567340dc61b2d2ff4fcb5e9faa9deba5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6112"
+            },
+            {
+                "commitId": "c928402e8f1099e1a876205674f345827627b618",
+                "prId": "6098",
+                "author": "welishr",
+                "message": "Retry topic subscription on quota errors using exponential backoff (#6098)\n\nTopic subscription requests might hit a quota, but we can retry these\r\nfailures with exponential backoff incase they are transient. Retries will only be attempted as long as the app lives and will eventually backoff to 8 hours, so even if an app is consistently at quota, these extra sporadic retries should be harmless.\r\n\r\nFixes #6032",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c928402e8f1099e1a876205674f345827627b618",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6098"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-vertexai"
+    ]
+}

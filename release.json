@@ -1,0 +1,15 @@
+{
+    "name": "m152",
+    "libraries": [
+        ":firebase-components",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx"
+    ]
+}
