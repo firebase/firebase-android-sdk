@@ -17,6 +17,7 @@
 package com.google.firebase.vertexai.type
 
 import com.google.firebase.vertexai.FirebaseVertexAI
+import com.google.firebase.vertexai.common.GoogleGenerativeAIException
 import com.google.firebase.vertexai.internal.util.toPublic
 import kotlinx.coroutines.TimeoutCancellationException
 
@@ -35,27 +36,27 @@ sealed class FirebaseVertexAIException(message: String, cause: Throwable? = null
     fun from(cause: Throwable): FirebaseVertexAIException =
       when (cause) {
         is FirebaseVertexAIException -> cause
-        is com.google.ai.client.generativeai.common.GoogleGenerativeAIException ->
+        is GoogleGenerativeAIException ->
           when (cause) {
-            is com.google.ai.client.generativeai.common.SerializationException ->
+            is com.google.firebase.vertexai.common.SerializationException ->
               SerializationException(cause.message ?: "", cause.cause)
-            is com.google.ai.client.generativeai.common.ServerException ->
+            is com.google.firebase.vertexai.common.ServerException ->
               ServerException(cause.message ?: "", cause.cause)
-            is com.google.ai.client.generativeai.common.InvalidAPIKeyException ->
+            is com.google.firebase.vertexai.common.InvalidAPIKeyException ->
               InvalidAPIKeyException(cause.message ?: "")
-            is com.google.ai.client.generativeai.common.PromptBlockedException ->
+            is com.google.firebase.vertexai.common.PromptBlockedException ->
               PromptBlockedException(cause.response.toPublic(), cause.cause)
-            is com.google.ai.client.generativeai.common.UnsupportedUserLocationException ->
+            is com.google.firebase.vertexai.common.UnsupportedUserLocationException ->
               UnsupportedUserLocationException(cause.cause)
-            is com.google.ai.client.generativeai.common.InvalidStateException ->
+            is com.google.firebase.vertexai.common.InvalidStateException ->
               InvalidStateException(cause.message ?: "", cause)
-            is com.google.ai.client.generativeai.common.ResponseStoppedException ->
+            is com.google.firebase.vertexai.common.ResponseStoppedException ->
               ResponseStoppedException(cause.response.toPublic(), cause.cause)
-            is com.google.ai.client.generativeai.common.RequestTimeoutException ->
+            is com.google.firebase.vertexai.common.RequestTimeoutException ->
               RequestTimeoutException(cause.message ?: "", cause.cause)
-            is com.google.ai.client.generativeai.common.ServiceDisabledException ->
+            is com.google.firebase.vertexai.common.ServiceDisabledException ->
               ServiceDisabledException(cause.message ?: "", cause.cause)
-            is com.google.ai.client.generativeai.common.UnknownException ->
+            is com.google.firebase.vertexai.common.UnknownException ->
               UnknownException(cause.message ?: "", cause.cause)
             else -> UnknownException(cause.message ?: "", cause)
           }
