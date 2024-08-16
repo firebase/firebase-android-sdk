@@ -40,6 +40,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.ArrayContainsAnyFilter;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -306,6 +307,26 @@ public final class RemoteSerializerTest {
 
     Value proto = Value.newBuilder().setMapValue(obj).build();
     assertRoundTrip(model.get(FieldPath.EMPTY_PATH), proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesVectorValue() {
+    Value model = wrap(FieldValue.vector(new double[] {1, 2, 3}));
+
+    ArrayValue.Builder array =
+        ArrayValue.newBuilder()
+            .addValues(Value.newBuilder().setDoubleValue(1))
+            .addValues(Value.newBuilder().setDoubleValue(2))
+            .addValues(Value.newBuilder().setDoubleValue(3));
+
+    MapValue.Builder obj =
+        MapValue.newBuilder()
+            .putFields("__type__", Value.newBuilder().setStringValue("__vector__").build())
+            .putFields("value", Value.newBuilder().setArrayValue(array).build());
+
+    Value proto = Value.newBuilder().setMapValue(obj).build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
   }
 
   @Test

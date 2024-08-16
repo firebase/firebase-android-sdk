@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package com.google.firebase.crashlytics.internal;
+package com.google.firebase.crashlytics.internal.concurrency;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.crashlytics.internal.concurrency.ConcurrencyTesting.deflake;
+import static com.google.firebase.crashlytics.internal.concurrency.ConcurrencyTesting.getThreadName;
+import static com.google.firebase.crashlytics.internal.concurrency.ConcurrencyTesting.newNamedSingleThreadExecutor;
+import static com.google.firebase.crashlytics.internal.concurrency.ConcurrencyTesting.sleep;
 import static org.junit.Assert.assertThrows;
 
 import com.google.android.gms.tasks.Task;
@@ -29,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -58,7 +63,7 @@ public class CrashlyticsWorkerTest {
 
     // Find thread names by adding the names we touch to the set.
     for (int i = 0; i < 100; i++) {
-      crashlyticsWorker.submit(() -> threads.add(Thread.currentThread().getName()));
+      crashlyticsWorker.submit(() -> threads.add(getThreadName()));
     }
 
     crashlyticsWorker.await();
@@ -395,16 +400,16 @@ public class CrashlyticsWorkerTest {
     // 1 active thread when doing a local task.
     assertThat(Tasks.await(localWorker.submit(localExecutor::getActiveCount))).isEqualTo(1);
 
-    sleep(1); // The test is a bit flaky without this.
-
     // 0 active local threads when waiting for other task.
     // Waiting for a task from another worker does not block a local thread.
+    deflake();
     assertThat(Tasks.await(localWorker.submitTask(() -> otherTask))).isEqualTo(0);
 
     // 1 active thread when doing a task.
     assertThat(Tasks.await(localWorker.submit(localExecutor::getActiveCount))).isEqualTo(1);
 
     // No active threads after.
+    deflake();
     assertThat(localExecutor.getActiveCount()).isEqualTo(0);
   }
 
@@ -421,11 +426,159 @@ public class CrashlyticsWorkerTest {
     assertThrows(TimeoutException.class, () -> Tasks.await(task, 30, TimeUnit.MILLISECONDS));
   }
 
-  private static void sleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
-    }
+  @Test
+  public void submitTaskThatReturnsWithContinuation() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            () -> Tasks.forResult(1337),
+            task -> Tasks.forResult(Integer.toString(task.getResult())));
+
+    assertThat(Tasks.await(result)).isEqualTo("1337");
+  }
+
+  @Test
+  public void submitTaskThatThrowsWithContinuation() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            () -> Tasks.forException(new IndexOutOfBoundsException("Sometimes we look too far.")),
+            task -> {
+              if (task.getException() != null) {
+                return Tasks.forResult("Task threw.");
+              }
+              return Tasks.forResult("I dunno how I got here?");
+            });
+
+    assertThat(Tasks.await(result)).isEqualTo("Task threw.");
+  }
+
+  @Test
+  public void submitTaskWithContinuationThatThrows() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            () -> Tasks.forResult(7), task -> Tasks.forException(new IOException()));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(result));
+
+    assertThat(thrown).hasCauseThat().isInstanceOf(IOException.class);
+
+    // Verify the worker still executes tasks after the continuation threw.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> 42))).isEqualTo(42);
+  }
+
+  @Test
+  public void submitTaskThatCancelsWithContinuation() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(
+            Tasks::forCanceled,
+            task -> Tasks.forResult(task.isCanceled() ? "Task cancelled." : "What?"));
+
+    assertThat(Tasks.await(result)).isEqualTo("Task cancelled.");
+  }
+
+  @Test
+  public void submitTaskWithContinuationThatCancels() throws Exception {
+    Task<String> result =
+        crashlyticsWorker.submitTask(() -> Tasks.forResult(7), task -> Tasks.forCanceled());
+
+    assertThrows(CancellationException.class, () -> Tasks.await(result));
+
+    // Verify the worker still executes tasks after the continuation was cancelled.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> "jk"))).isEqualTo("jk");
+  }
+
+  @Test
+  public void submitTaskWithContinuationExecutesInOrder() throws Exception {
+    // The integers added to the list represent the order they should be executed in.
+    List<Integer> list = new ArrayList<>();
+
+    // Start the chain which adds 1, then kicks off tasks to add 6 & 7 later, but adds 2 before
+    // executing the newly added tasks in the continuation.
+    crashlyticsWorker.submitTask(
+        () -> {
+          list.add(1);
+
+          // Sleep to give time for the tasks 3, 4, 5 to be submitted.
+          sleep(300);
+
+          // We added the 1 and will add 2 in the continuation. And 3, 4, 5 have been submitted.
+          crashlyticsWorker.submit(() -> list.add(6));
+          crashlyticsWorker.submit(() -> list.add(7));
+
+          return Tasks.forResult(1);
+        },
+        task -> {
+          // When the task 1 completes the next number to add is 2. Because all the other tasks are
+          // just submitted, not executed yet.
+          list.add(2);
+          return Tasks.forResult("a");
+        });
+
+    // Submit tasks to add 3, 4, 5 since we just added 1 and know a continuation will add the 2.
+    crashlyticsWorker.submit(() -> list.add(3));
+    crashlyticsWorker.submit(() -> list.add(4));
+    crashlyticsWorker.submit(() -> list.add(5));
+
+    crashlyticsWorker.await();
+
+    // Verify the list is complete and in order.
+    assertThat(list).isInOrder();
+    assertThat(list).hasSize(7);
+  }
+
+  @Test
+  public void tasksRunOnCorrectThreads() throws Exception {
+    ExecutorService executor = newNamedSingleThreadExecutor("workerThread");
+    CrashlyticsWorker worker = new CrashlyticsWorker(executor);
+
+    ExecutorService otherExecutor = newNamedSingleThreadExecutor("otherThread");
+    CrashlyticsWorker otherWorker = new CrashlyticsWorker(otherExecutor);
+
+    // Submit a Runnable.
+    worker.submit(
+        () -> {
+          // The runnable blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+        });
+
+    // Submit a Callable.
+    worker.submit(
+        () -> {
+          // The callable blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return null;
+        });
+
+    // Submit a Callable<Task>.
+    worker.submitTask(
+        () -> {
+          // The callable itself blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return otherWorker.submit(
+              () -> {
+                // The called task blocks an underlying thread in its own executor.
+                assertThat(getThreadName()).isEqualTo("otherThread");
+              });
+        });
+
+    // Submit a Callable<Task> with a Continuation.
+    worker.submitTask(
+        () -> {
+          // The callable itself blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return otherWorker.submitTask(
+              () -> {
+                // The called task blocks an underlying thread in its own executor.
+                assertThat(getThreadName()).isEqualTo("otherThread");
+                return Tasks.forResult(null);
+              });
+        },
+        task -> {
+          // The continuation blocks an underlying thread of the original worker.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return Tasks.forResult(null);
+        });
+
+    // Await on the worker to force all the tasks to run their assertions.
+    worker.await();
   }
 }
