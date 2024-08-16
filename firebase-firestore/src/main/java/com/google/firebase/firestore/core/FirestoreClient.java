@@ -243,7 +243,9 @@ public final class FirestoreClient {
   public <TResult> Task<TResult> transaction(
       TransactionOptions options, Function<Transaction, Task<TResult>> updateFunction) {
     this.verifyNotTerminated();
-    return new TransactionRunner<>(asyncQueue, remoteStore, options, updateFunction).run();
+    return AsyncQueue.callTask(
+        asyncQueue.getExecutor(),
+        () -> new TransactionRunner<>(asyncQueue, remoteStore, options, updateFunction).run());
   }
 
   // TODO(b/261013682): Use an explicit executor in continuations.
