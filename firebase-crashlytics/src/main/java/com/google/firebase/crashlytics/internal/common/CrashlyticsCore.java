@@ -433,17 +433,11 @@ public class CrashlyticsCore {
    * initialization to upload crash result. 4 seconds is chosen for the lock to prevent ANR
    */
   private void finishInitSynchronously(SettingsProvider settingsProvider) {
-
-    final Runnable runnable =
-        new Runnable() {
-          @Override
-          public void run() {
-            doBackgroundInitialization(settingsProvider);
-          }
-        };
-
-    // TODO(mrober): Refactor to Tasks. Maybe just re-use async task and awaitEvenIfOnMain?
-    final Future<?> future = crashlyticsWorkers.common.getExecutor().submit(runnable);
+    Future<?> future =
+        crashlyticsWorkers
+            .common
+            .getExecutor()
+            .submit(() -> doBackgroundInitialization(settingsProvider));
 
     Logger.getLogger()
         .d(
@@ -452,12 +446,13 @@ public class CrashlyticsCore {
 
     try {
       future.get(DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      Logger.getLogger().e("Crashlytics was interrupted during initialization.", e);
-    } catch (ExecutionException e) {
-      Logger.getLogger().e("Crashlytics encountered a problem during initialization.", e);
-    } catch (TimeoutException e) {
-      Logger.getLogger().e("Crashlytics timed out during initialization.", e);
+    } catch (InterruptedException ex) {
+      Logger.getLogger().e("Crashlytics was interrupted during initialization.", ex);
+      Thread.currentThread().interrupt();
+    } catch (ExecutionException ex) {
+      Logger.getLogger().e("Crashlytics encountered a problem during initialization.", ex);
+    } catch (TimeoutException ex) {
+      Logger.getLogger().e("Crashlytics timed out during initialization.", ex);
     }
   }
 
@@ -496,13 +491,16 @@ public class CrashlyticsCore {
   // region Previous crash handling
 
   private void checkForPreviousCrash() {
-    Task<Boolean> task =
-        crashlyticsWorkers.common.submit(() -> controller.didCrashOnPreviousExecution());
+    Future<Boolean> future =
+        crashlyticsWorkers
+            .common
+            .getExecutor()
+            .submit(() -> controller.didCrashOnPreviousExecution());
 
     Boolean result;
     try {
-      result = Utils.awaitEvenIfOnMainThread(task);
-    } catch (Exception e) {
+      result = future.get(DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+    } catch (Exception ignored) {
       didCrashOnPreviousExecution = false;
       return;
     }
