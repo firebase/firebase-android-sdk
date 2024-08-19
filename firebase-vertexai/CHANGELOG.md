@@ -1,5 +1,6 @@
 # Unreleased
 * [feature] added support for `responseSchema` in `GenerationConfig`.
+* [changed] Made `FunctionCallPart.args` nullable.
 
 # 16.0.0-beta03
 * [changed] Breaking Change: changed `Schema.int` to return 32 bit integers instead of 64 bit (long).

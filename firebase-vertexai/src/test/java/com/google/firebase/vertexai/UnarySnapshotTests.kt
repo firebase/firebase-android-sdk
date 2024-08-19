@@ -335,7 +335,8 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = (response.candidates.first().content.parts.first() as FunctionCallPart)
 
-        callPart.args["season"] shouldBe null
+        callPart.args shouldNotBe null
+        callPart.args?.get("seasons") shouldBe null
       }
     }
 
@@ -352,7 +353,19 @@ internal class UnarySnapshotTests {
             it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
           }
 
-        callPart.args["current"] shouldBe "true"
+        callPart.args?.get("current") shouldBe "true"
+      }
+    }
+
+  @Test
+  fun `function call has no arguments field`() =
+    goldenUnaryFile("unary-success-function-call-empty-arguments.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+        val callPart = response.functionCalls.first()
+
+        callPart.name shouldBe "current_time"
+        callPart.args shouldBe null
       }
     }
 
@@ -364,7 +377,7 @@ internal class UnarySnapshotTests {
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
 
         callPart.name shouldBe "current_time"
-        callPart.args.isEmpty() shouldBe true
+        callPart.args?.isEmpty() shouldBe true
       }
     }
 
@@ -376,8 +389,8 @@ internal class UnarySnapshotTests {
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
 
         callPart.name shouldBe "sum"
-        callPart.args["x"] shouldBe "4"
-        callPart.args["y"] shouldBe "5"
+        callPart.args?.get("x") shouldBe "4"
+        callPart.args?.get("y") shouldBe "5"
       }
     }
 
@@ -391,7 +404,7 @@ internal class UnarySnapshotTests {
         callList.size shouldBe 3
         callList.forEach {
           it.name shouldBe "sum"
-          it.args.size shouldBe 2
+          it.args?.size shouldBe 2
         }
       }
     }
@@ -405,7 +418,7 @@ internal class UnarySnapshotTests {
 
         response.text shouldBe "The sum of [1, 2, 3] is"
         callList.size shouldBe 2
-        callList.forEach { it.args.size shouldBe 2 }
+        callList.forEach { it.args?.size shouldBe 2 }
       }
     }
 

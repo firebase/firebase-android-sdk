@@ -61,7 +61,7 @@ dependencies {
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-  implementation("com.google.ai.client.generativeai:common:0.9.0")
+  implementation("com.google.ai.client.generativeai:common:0.10.0")
   implementation(libs.androidx.annotation)
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
   implementation("androidx.core:core-ktx:1.12.0")
