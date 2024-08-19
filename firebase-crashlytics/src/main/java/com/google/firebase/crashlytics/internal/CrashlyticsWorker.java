@@ -22,8 +22,6 @@ import com.google.android.gms.tasks.Tasks;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Helper for executing tasks sequentially on the given executor service.
@@ -118,13 +116,13 @@ public class CrashlyticsWorker {
   }
 
   /**
-   * Blocks until all current pending tasks have completed, up to 30 seconds. Useful for testing.
+   * Blocks until all current pending tasks have completed.
    *
    * <p>This is not a shutdown, this does not stop new tasks from being submitted to the queue.
    */
   @VisibleForTesting
-  public void await() throws ExecutionException, InterruptedException, TimeoutException {
-    // Submit an empty runnable, and await on it for 30 sec so deadlocked tests fail faster.
-    Tasks.await(submit(() -> {}), 30, TimeUnit.SECONDS);
+  public void await() throws ExecutionException, InterruptedException {
+    // Submit an empty runnable, and await on it.
+    Tasks.await(submit(() -> {}));
   }
 }

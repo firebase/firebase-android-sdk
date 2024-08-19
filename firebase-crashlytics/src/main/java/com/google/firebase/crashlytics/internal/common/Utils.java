@@ -20,6 +20,7 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -73,6 +74,31 @@ public final class Utils {
         };
     t1.continueWith(executor, continuation);
     t2.continueWith(executor, continuation);
+    return result.getTask();
+  }
+
+  /** Similar to Tasks.call, but takes a Callable that returns a Task. */
+  public static <T> Task<T> callTask(Executor executor, Callable<Task<T>> callable) {
+    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
+    executor.execute(
+        () -> {
+          try {
+            callable
+                .call()
+                .continueWith(
+                    executor,
+                    task -> {
+                      if (task.isSuccessful()) {
+                        result.setResult(task.getResult());
+                      } else if (task.getException() != null) {
+                        result.setException(task.getException());
+                      }
+                      return null;
+                    });
+          } catch (Exception e) {
+            result.setException(e);
+          }
+        });
     return result.getTask();
   }
 
