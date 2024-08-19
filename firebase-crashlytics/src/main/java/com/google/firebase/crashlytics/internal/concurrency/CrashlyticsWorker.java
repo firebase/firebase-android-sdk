@@ -17,8 +17,10 @@
 package com.google.firebase.crashlytics.internal.concurrency;
 
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Callable;
@@ -26,9 +28,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Worker for executing tasks sequentially on the given executor service.
+ * Helper for executing tasks sequentially on the given executor service.
  *
  * <p>Work on the queue may block, or it may return a Task, such that the underlying thread may be
  * re-used while the worker queue is still blocked.
@@ -149,6 +152,35 @@ public class CrashlyticsWorker {
       tail = result;
       return result;
     }
+  }
+
+  /**
+   * Returns a task that is resolved when either of the given tasks is resolved.
+   *
+   * <p>When both tasks are cancelled, the returned task will be cancelled.
+   */
+  public <T> Task<T> race(Task<T> task1, Task<T> task2) {
+    CancellationTokenSource cancellation = new CancellationTokenSource();
+    TaskCompletionSource<T> result = new TaskCompletionSource<>(cancellation.getToken());
+
+    AtomicBoolean otherTaskCancelled = new AtomicBoolean(false);
+
+    Continuation<T, Task<Void>> continuation =
+        task -> {
+          if (task.isSuccessful()) {
+            result.trySetResult(task.getResult());
+          } else if (task.getException() != null) {
+            result.trySetException(task.getException());
+          } else if (otherTaskCancelled.getAndSet(true)) {
+            cancellation.cancel();
+          }
+          return Tasks.forResult(null);
+        };
+
+    task1.continueWithTask(executor, continuation);
+    task2.continueWithTask(executor, continuation);
+
+    return result.getTask();
   }
 
   /**
