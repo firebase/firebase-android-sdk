@@ -35,8 +35,8 @@ package com.google.firebase.dataconnect {
     method @NonNull public com.google.firebase.dataconnect.ConnectorConfig getConfig();
     method @NonNull public com.google.firebase.dataconnect.DataConnectSettings getSettings();
     method public int hashCode();
-    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.MutationRef<Data,Variables> mutation(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer);
-    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.QueryRef<Data,Variables> query(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer);
+    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.MutationRef<Data,Variables> mutation(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, @Nullable com.google.firebase.dataconnect.generated.GeneratedMutation<?,Data,Variables> generatedMutation = null);
+    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.QueryRef<Data,Variables> query(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, @Nullable com.google.firebase.dataconnect.generated.GeneratedQuery<?,Data,Variables> generatedQuery = null);
     method @Nullable public suspend Object suspendingClose(@NonNull kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @NonNull public String toString();
     method public void useEmulator(@NonNull String host = "10.0.2.2", int port = 9399);
@@ -161,7 +161,7 @@ package com.google.firebase.dataconnect {
 
 package com.google.firebase.dataconnect.core {
 
-  public final class DataConnectAuthKt {
+  public final class DataConnectCredentialsTokenManagerKt {
   }
 
   public final class DataConnectGrpcClientKt {
@@ -181,7 +181,9 @@ package com.google.firebase.dataconnect.core {
 package com.google.firebase.dataconnect.generated {
 
   public interface GeneratedConnector {
+    method public boolean equals(@Nullable Object other);
     method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getDataConnect();
+    method public int hashCode();
     method @NonNull public String toString();
     property @NonNull public abstract com.google.firebase.dataconnect.FirebaseDataConnect dataConnect;
   }
