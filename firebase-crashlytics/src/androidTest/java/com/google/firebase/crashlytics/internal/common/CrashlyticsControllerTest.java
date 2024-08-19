@@ -213,10 +213,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         .thenReturn(new TreeSet<>(Collections.singleton(sessionId)));
 
     controller.writeNonFatalException(thread, nonFatal);
-    crashlyticsWorkers.common.submit(() -> controller.doCloseSessions(testSettingsProvider));
+    controller.doCloseSessions(testSettingsProvider);
 
     crashlyticsWorkers.common.await();
-    crashlyticsWorkers.diskWrite.await();
 
     verify(mockSessionReportingCoordinator)
         .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong());
@@ -489,8 +488,6 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     await(controller.deleteUnsentReports());
     await(task);
-
-    crashlyticsWorkers.diskWrite.await();
 
     verify(mockSessionReportingCoordinator).removeAllReports();
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
