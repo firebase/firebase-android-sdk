@@ -129,24 +129,24 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           )
         }
 
+      val defaultConfigDirectories = variant.sources.getByName("dataconnect").all
+      val customConfigDirectory = dataConnectProviders.customConfigDir
+      val allConfigDirectories = buildList {
+        addAll(defaultConfigDirectories.get())
+        customConfigDirectory.orNull?.let { add(it) }
+      }
+      val existingConfigDirectories = allConfigDirectories.filter { it.asFile.exists() }
+
       val mergeConfigDirectoriesTask =
         project.tasks.register<DataConnectMergeConfigDirectoriesTask>(
           "merge${variantNameTitleCase}DataConnectConfigDirs"
         ) {
-          defaultConfigDirectories.set(variant.sources.getByName("dataconnect").all)
-          customConfigDirectory.set(dataConnectProviders.customConfigDir)
+          this.defaultConfigDirectories.set(defaultConfigDirectories)
+          this.customConfigDirectory.set(customConfigDirectory)
           buildDirectory.set(baseBuildDirectory.map { it.dir("mergedConfigs") })
-          mergedDirectory.set(
-            project
-              .provider {
-                buildList {
-                    addAll(defaultConfigDirectories.get())
-                    customConfigDirectory.orNull?.let { add(it) }
-                  }
-                  .singleOrNull { it.asFile.exists() }
-              }
-              .orElse(buildDirectory)
-          )
+          if (existingConfigDirectories.size > 1) {
+            mergedDirectory.set(buildDirectory)
+          }
         }
 
       project.tasks.register<DataConnectRunEmulatorTask>(
@@ -154,7 +154,21 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
       ) {
         outputs.upToDateWhen { false }
         dataConnectExecutable.set(downloadDataConnectExecutableTask.flatMap { it.outputFile })
-        configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
+        if (existingConfigDirectories.size > 1) {
+          configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
+        } else if (existingConfigDirectories.size == 1) {
+          configDirectory.set(existingConfigDirectories.single())
+        } else {
+          configDirectory.set(
+            project.provider {
+              throw DataConnectGradleException(
+                "cvvz9b57qp",
+                "Cannot run the Data Connect emulator unless one or more config directories exist:" +
+                  allConfigDirectories.joinToString(", ")
+              )
+            }
+          )
+        }
         postgresConnectionUrl.set(dataConnectProviders.postgresConnectionUrl)
       }
 
@@ -163,7 +177,11 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           "generate${variantNameTitleCase}DataConnectSources"
         ) {
           dataConnectExecutable.set(downloadDataConnectExecutableTask.flatMap { it.outputFile })
-          configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
+          if (existingConfigDirectories.size > 1) {
+            configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
+          } else if (existingConfigDirectories.size == 1) {
+            configDirectory.set(existingConfigDirectories.single())
+          }
           connectors.set(dataConnectProviders.connectors)
         }
 

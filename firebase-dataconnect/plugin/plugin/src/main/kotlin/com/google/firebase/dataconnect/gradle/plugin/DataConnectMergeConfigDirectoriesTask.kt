@@ -36,7 +36,7 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
 
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
-  @get:OutputDirectory abstract val mergedDirectory: DirectoryProperty
+  @get:OutputDirectory @get:Optional abstract val mergedDirectory: DirectoryProperty
 
   @TaskAction
   fun run() {
@@ -47,16 +47,16 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
         .sortedBy { it.absolutePath.lowercase(Locale.US) }
     val customConfigDirectory: File? = customConfigDirectory.orNull?.asFile
     val buildDirectory: File = buildDirectory.get().asFile
-    val mergedDirectory: File = mergedDirectory.get().asFile
+    val mergedDirectory: File? = mergedDirectory.orNull?.asFile
 
     logger.info(
       "defaultConfigDirectories ({}): {}",
       defaultConfigDirectories.size,
-      defaultConfigDirectories.map { it.absolutePath }.sorted().joinToString(", ")
+      defaultConfigDirectories.map { it.absolutePath }.joinToString(", ")
     )
     logger.info("customConfigDirectory: {}", customConfigDirectory?.absolutePath)
     logger.info("buildDirectory: {}", buildDirectory.absolutePath)
-    logger.info("mergedDirectory: {}", mergedDirectory.absolutePath)
+    logger.info("mergedDirectory: {}", mergedDirectory?.absolutePath)
 
     logger.info("Deleting build directory: {}", buildDirectory)
     project.delete(buildDirectory)
@@ -78,9 +78,16 @@ abstract class DataConnectMergeConfigDirectoriesTask : DefaultTask() {
         .sortedBy { it.absolutePath.lowercase(Locale.US) }
 
     val existingConfigDirectories = configDirectories.filter { it.exists() }
-    val onlyExistingConfigDirectory = existingConfigDirectories.singleOrNull()
 
-    if (mergedDirectory == onlyExistingConfigDirectory) {
+    if (mergedDirectory === null) {
+      if (existingConfigDirectories.size > 1) {
+        throw DataConnectGradleException(
+          "rft8texx22",
+          "'mergedDirectory' is null but existingConfigDirectories has more than one directory:" +
+            " (${existingConfigDirectories.size} directories) " +
+            existingConfigDirectories.joinToString(", ")
+        )
+      }
       // nothing to do, since the one-and-only existing config directory will be used directly.
       return
     } else if (existingConfigDirectories.isEmpty()) {
