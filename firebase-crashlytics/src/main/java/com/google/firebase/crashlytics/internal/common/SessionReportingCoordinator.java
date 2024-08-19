@@ -24,7 +24,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -48,10 +47,10 @@ import java.util.SortedSet;
 import java.util.concurrent.Executor;
 
 /**
- * This class coordinates Crashlytics session data capture and persistence, as well as sending of
- * reports to Firebase Crashlytics.
+ * This class handles Crashlytics lifecycle events and coordinates session data capture and
+ * persistence, as well as sending of reports to Firebase Crashlytics.
  */
-public class SessionReportingCoordinator {
+public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
@@ -69,8 +68,7 @@ public class SessionReportingCoordinator {
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
@@ -79,13 +77,7 @@ public class SessionReportingCoordinator {
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context, settingsProvider, onDemandCounter);
     return new SessionReportingCoordinator(
-        dataCapture,
-        reportPersistence,
-        reportSender,
-        logFileManager,
-        userMetadata,
-        idManager,
-        crashlyticsWorkers);
+        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata, idManager);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -95,30 +87,42 @@ public class SessionReportingCoordinator {
   private final UserMetadata reportMetadata;
   private final IdManager idManager;
 
-  private final CrashlyticsWorkers crashlyticsWorkers;
-
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
-      IdManager idManager,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      IdManager idManager) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
     this.idManager = idManager;
-    this.crashlyticsWorkers = crashlyticsWorkers;
   }
 
+  @Override
   public void onBeginSession(@NonNull String sessionId, long timestampSeconds) {
     final CrashlyticsReport capturedReport =
         dataCapture.captureReportData(sessionId, timestampSeconds);
 
     reportPersistence.persistReport(capturedReport);
+  }
+
+  @Override
+  public void onLog(long timestamp, String log) {
+    logFileManager.writeToLog(timestamp, log);
+  }
+
+  @Override
+  public void onCustomKey(String key, String value) {
+    reportMetadata.setCustomKey(key, value);
+  }
+
+  @Override
+  public void onUserId(String userId) {
+    reportMetadata.setUserId(userId);
   }
 
   public void persistFatalEvent(
@@ -322,7 +326,7 @@ public class SessionReportingCoordinator {
       @NonNull String sessionId,
       @NonNull String eventType,
       long timestamp,
-      boolean isFatal) {
+      boolean includeAllThreads) {
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
@@ -334,19 +338,9 @@ public class SessionReportingCoordinator {
             timestamp,
             EVENT_THREAD_IMPORTANCE,
             MAX_CHAINED_EXCEPTION_DEPTH,
-            isFatal);
-    CrashlyticsReport.Session.Event finallizedEvent = addMetaDataToEvent(capturedEvent);
+            includeAllThreads);
 
-    // Non-fatal, persistence write task we move to diskWriteWorker
-    if (!isFatal) {
-      crashlyticsWorkers.diskWrite.submit(
-          () -> {
-            reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
-          });
-      return;
-    }
-
-    reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
+    reportPersistence.persistEvent(addMetaDataToEvent(capturedEvent), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
@@ -354,16 +348,12 @@ public class SessionReportingCoordinator {
       CrashlyticsReportWithSessionId report = task.getResult();
       Logger.getLogger()
           .d("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
-      crashlyticsWorkers.diskWrite.submit(
-          () -> {
-            File reportFile = report.getReportFile();
-            if (reportFile.delete()) {
-              Logger.getLogger().d("Deleted report file: " + reportFile.getPath());
-            } else {
-              Logger.getLogger()
-                  .w("Crashlytics could not delete report file: " + reportFile.getPath());
-            }
-          });
+      File reportFile = report.getReportFile();
+      if (reportFile.delete()) {
+        Logger.getLogger().d("Deleted report file: " + reportFile.getPath());
+      } else {
+        Logger.getLogger().w("Crashlytics could not delete report file: " + reportFile.getPath());
+      }
       return true;
     }
     Logger.getLogger()
