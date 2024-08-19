@@ -70,10 +70,6 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
   private CrashlyticsCore crashlyticsCore;
   private BreadcrumbSource mockBreadcrumbSource;
-  private static final CrashlyticsWorker commonWorker =
-      new CrashlyticsWorker(TestOnlyExecutors.background());
-  private static final CrashlyticsWorker diskWriteWorker =
-      new CrashlyticsWorker(TestOnlyExecutors.background());
 
   @Override
   protected void setUp() throws Exception {
@@ -97,7 +93,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     final String id = "id012345";
     crashlyticsCore.setUserId(id);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertEquals(id, metadata.getUserId());
 
     final StringBuffer idBuffer = new StringBuffer(id);
@@ -108,13 +104,13 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     final String superLongId = longId + "more chars";
 
     crashlyticsCore.setUserId(superLongId);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertEquals(longId, metadata.getUserId());
 
     final String key1 = "key1";
     final String value1 = "value1";
     crashlyticsCore.setCustomKey(key1, value1);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertEquals(value1, metadata.getCustomKeys().get(key1));
 
     // Adding an existing key with the same value should return false
@@ -128,7 +124,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     // test truncation of custom keys and attributes
     crashlyticsCore.setCustomKey(superLongId, superLongValue);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertNull(metadata.getCustomKeys().get(superLongId));
     assertEquals(longValue, metadata.getCustomKeys().get(longId));
 
@@ -137,28 +133,28 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       final String key = "key" + i;
       final String value = "value" + i;
       crashlyticsCore.setCustomKey(key, value);
-      commonWorker.await();
+      crashlyticsCore.commonWorker.await();
       assertEquals(value, metadata.getCustomKeys().get(key));
     }
     // should be full now, extra key, value pairs will be dropped.
     final String key = "new key";
     crashlyticsCore.setCustomKey(key, "some value");
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertFalse(metadata.getCustomKeys().containsKey(key));
 
     // should be able to update existing keys
     crashlyticsCore.setCustomKey(key1, longValue);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertEquals(longValue, metadata.getCustomKeys().get(key1));
 
     // when we set a key to null, it should still exist with an empty value
     crashlyticsCore.setCustomKey(key1, null);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertEquals("", metadata.getCustomKeys().get(key1));
 
     // keys and values are trimmed.
     crashlyticsCore.setCustomKey(" " + key1 + " ", " " + longValue + " ");
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
     assertTrue(metadata.getCustomKeys().containsKey(key1));
     assertEquals(longValue, metadata.getCustomKeys().get(key1));
   }
@@ -209,7 +205,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     keysAndValues.put(intKey, String.valueOf(intValue));
 
     crashlyticsCore.setCustomKeys(keysAndValues);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
 
     assertEquals(stringValue, metadata.getCustomKeys().get(stringKey));
     assertEquals(trimmedValue, metadata.getCustomKeys().get(trimmedKey));
@@ -230,7 +226,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       addlKeysAndValues.put(key, value);
     }
     crashlyticsCore.setCustomKeys(addlKeysAndValues);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
 
     // Ensure all keys have been set
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size(), DELTA);
@@ -248,7 +244,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
       extraKeysAndValues.put(key, value);
     }
     crashlyticsCore.setCustomKeys(extraKeysAndValues);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
 
     // Make sure the extra keys were not added
     for (int i = UserMetadata.MAX_ATTRIBUTES; i < UserMetadata.MAX_ATTRIBUTES + 10; ++i) {
@@ -274,7 +270,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     updatedKeysAndValues.put(intKey, String.valueOf(updatedIntValue));
 
     crashlyticsCore.setCustomKeys(updatedKeysAndValues);
-    commonWorker.await();
+    crashlyticsCore.commonWorker.await();
 
     assertEquals(updatedStringValue, metadata.getCustomKeys().get(stringKey));
     assertFalse(Boolean.parseBoolean(metadata.getCustomKeys().get(booleanKey)));
@@ -447,8 +443,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
               new FileStore(context),
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
               mock(RemoteConfigDeferredProxy.class),
-              commonWorker,
-              diskWriteWorker);
+              new CrashlyticsWorker(TestOnlyExecutors.background()),
+              new CrashlyticsWorker(TestOnlyExecutors.background()));
       return crashlyticsCore;
     }
   }
