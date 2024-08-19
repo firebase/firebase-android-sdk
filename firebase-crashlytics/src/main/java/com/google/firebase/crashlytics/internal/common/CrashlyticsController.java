@@ -86,8 +86,6 @@ class CrashlyticsController {
 
   private final CrashlyticsWorker backgroundWorker;
 
-  private final CrashlyticsWorker diskWriteWorker;
-
   private final IdManager idManager;
   private final FileStore fileStore;
 
@@ -131,8 +129,7 @@ class CrashlyticsController {
       SessionReportingCoordinator sessionReportingCoordinator,
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorker diskWriteWorker) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     this.context = context;
     this.backgroundWorker = commonWorker;
     this.idManager = idManager;
@@ -146,7 +143,6 @@ class CrashlyticsController {
     this.analyticsEventLogger = analyticsEventLogger;
     this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
-    this.diskWriteWorker = diskWriteWorker;
   }
 
   private Context getContext() {
@@ -422,9 +418,16 @@ class CrashlyticsController {
 
   /** Log a timestamped string to the log file. */
   void writeToLog(final long timestamp, final String msg) {
-    if (!isHandlingException()) {
-      logFileManager.writeToLog(timestamp, msg);
-    }
+    backgroundWorker.submit(
+        new Callable<Void>() {
+          @Override
+          public Void call() throws Exception {
+            if (!isHandlingException()) {
+              logFileManager.writeToLog(timestamp, msg);
+            }
+            return null;
+          }
+        });
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
@@ -433,15 +436,23 @@ class CrashlyticsController {
     // rather than the time at which the task executes.
     final long timestampMillis = System.currentTimeMillis();
 
-    if (!isHandlingException()) {
-      long timestampSeconds = getTimestampSeconds(timestampMillis);
-      final String currentSessionId = getCurrentSessionId();
-      if (currentSessionId == null) {
-        Logger.getLogger().w("Tried to write a non-fatal exception while no session was open.");
-        return;
-      }
-      reportingCoordinator.persistNonFatalEvent(ex, thread, currentSessionId, timestampSeconds);
-    }
+    backgroundWorker.submit(
+        new Runnable() {
+          @Override
+          public void run() {
+            if (!isHandlingException()) {
+              long timestampSeconds = getTimestampSeconds(timestampMillis);
+              final String currentSessionId = getCurrentSessionId();
+              if (currentSessionId == null) {
+                Logger.getLogger()
+                    .w("Tried to write a non-fatal exception while no session was open.");
+                return;
+              }
+              reportingCoordinator.persistNonFatalEvent(
+                  ex, thread, currentSessionId, timestampSeconds);
+            }
+          }
+        });
   }
 
   void logFatalException(Thread thread, Throwable ex) {
@@ -930,7 +941,7 @@ class CrashlyticsController {
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
-            UserMetadata.loadFromExistingSession(sessionId, fileStore, diskWriteWorker);
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, backgroundWorker);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

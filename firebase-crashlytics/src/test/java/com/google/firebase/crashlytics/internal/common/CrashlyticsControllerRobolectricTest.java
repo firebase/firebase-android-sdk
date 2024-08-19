@@ -177,8 +177,7 @@ public class CrashlyticsControllerRobolectricTest {
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class),
-            mock(CrashlyticsAppQualitySessionsSubscriber.class),
-            new CrashlyticsWorker(TestOnlyExecutors.background()));
+            mock(CrashlyticsAppQualitySessionsSubscriber.class));
     controller.openSession(SESSION_ID);
     return controller;
   }
