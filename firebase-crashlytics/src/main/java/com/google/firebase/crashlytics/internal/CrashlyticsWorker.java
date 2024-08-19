@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.crashlytics.internal.concurrency;
+package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.CancellationTokenSource;
