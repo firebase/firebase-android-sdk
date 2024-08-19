@@ -30,7 +30,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 public class IdManager implements InstallIdProvider {
-  private static final int TIMEOUT_MILLIS = 4_000;
+  private static final int TIMEOUT_MILLIS = 10_000;
 
   public static final String DEFAULT_VERSION_NAME = "0.0";
 
