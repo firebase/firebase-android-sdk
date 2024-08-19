@@ -34,7 +34,7 @@ import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySess
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.IdManager;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
@@ -78,9 +78,6 @@ public class FirebaseCrashlytics {
                 + " for "
                 + appIdentifier);
 
-    CrashlyticsWorkers crashlyticsWorkers =
-        new CrashlyticsWorkers(backgroundExecutorService, blockingExecutorService);
-
     FileStore fileStore = new FileStore(context);
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
     final IdManager idManager =
@@ -99,6 +96,9 @@ public class FirebaseCrashlytics {
     RemoteConfigDeferredProxy remoteConfigDeferredProxy =
         new RemoteConfigDeferredProxy(remoteConfigInteropDeferred);
 
+    CrashlyticsWorker commonWorker = new CrashlyticsWorker(backgroundExecutorService);
+    CrashlyticsWorker diskWriteWorker = new CrashlyticsWorker(backgroundExecutorService);
+
     final CrashlyticsCore core =
         new CrashlyticsCore(
             app,
@@ -110,7 +110,8 @@ public class FirebaseCrashlytics {
             fileStore,
             sessionsSubscriber,
             remoteConfigDeferredProxy,
-            crashlyticsWorkers);
+            commonWorker,
+            diskWriteWorker);
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);
@@ -159,7 +160,7 @@ public class FirebaseCrashlytics {
 
     // Kick off actually fetching the settings.
     settingsController
-        .loadSettingsData(crashlyticsWorkers)
+        .loadSettingsData(commonWorker, blockingExecutorService)
         .addOnFailureListener(ex -> Logger.getLogger().e("Error fetching settings.", ex));
 
     final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);

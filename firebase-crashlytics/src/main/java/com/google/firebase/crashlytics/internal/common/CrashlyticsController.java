@@ -30,11 +30,11 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
+import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsTasks;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -53,6 +53,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
@@ -68,6 +69,8 @@ class CrashlyticsController {
   static final FilenameFilter APP_EXCEPTION_MARKER_FILTER =
       (directory, filename) -> filename.startsWith(APP_EXCEPTION_MARKER_PREFIX);
 
+  static final String NATIVE_SESSION_DIR = "native-sessions";
+
   static final int FIREBASE_CRASH_TYPE_FATAL = 1;
 
   private static final String GENERATOR_FORMAT = "Crashlytics Android SDK/%s";
@@ -81,7 +84,9 @@ class CrashlyticsController {
   private final CrashlyticsFileMarker crashMarker;
   private final UserMetadata userMetadata;
 
-  private final CrashlyticsWorkers crashlyticsWorkers;
+  private final CrashlyticsWorker backgroundWorker;
+
+  private final CrashlyticsWorker diskWriteWorker;
 
   private final IdManager idManager;
   private final FileStore fileStore;
@@ -115,6 +120,7 @@ class CrashlyticsController {
 
   CrashlyticsController(
       Context context,
+      CrashlyticsWorker commonWorker,
       IdManager idManager,
       DataCollectionArbiter dataCollectionArbiter,
       FileStore fileStore,
@@ -126,8 +132,9 @@ class CrashlyticsController {
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      CrashlyticsWorker diskWriteWorker) {
     this.context = context;
+    this.backgroundWorker = commonWorker;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.fileStore = fileStore;
@@ -139,7 +146,11 @@ class CrashlyticsController {
     this.analyticsEventLogger = analyticsEventLogger;
     this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
-    this.crashlyticsWorkers = crashlyticsWorkers;
+    this.diskWriteWorker = diskWriteWorker;
+  }
+
+  private Context getContext() {
+    return context;
   }
 
   // region Exception handling
@@ -190,7 +201,7 @@ class CrashlyticsController {
     final long timestampMillis = System.currentTimeMillis();
 
     final Task<Void> handleUncaughtExceptionTask =
-        crashlyticsWorkers.common.submitTask(
+        backgroundWorker.submitTask(
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
@@ -219,10 +230,12 @@ class CrashlyticsController {
                   return Tasks.forResult(null);
                 }
 
+                Executor executor = backgroundWorker.getExecutor();
+
                 return settingsProvider
                     .getSettingsAsync()
                     .onSuccessTask(
-                        crashlyticsWorkers.common,
+                        executor,
                         new SuccessContinuation<Settings, Void>() {
                           @NonNull
                           @Override
@@ -237,8 +250,7 @@ class CrashlyticsController {
                             return Tasks.whenAll(
                                 logAnalyticsAppExceptionEvents(),
                                 reportingCoordinator.sendReports(
-                                    crashlyticsWorkers.common,
-                                    isOnDemand ? currentSessionId : null));
+                                    executor, isOnDemand ? currentSessionId : null));
                           }
                         });
               }
@@ -297,12 +309,12 @@ class CrashlyticsController {
 
     Logger.getLogger().d("Waiting for send/deleteUnsentReports to be called.");
     // Wait for either the processReports callback to be called, or data collection to be enabled.
-    return CrashlyticsTasks.race(collectionEnabled, reportActionProvided.getTask());
+    return Utils.race(collectionEnabled, reportActionProvided.getTask());
   }
 
   /** This function must be called before opening the first session * */
   boolean didCrashOnPreviousExecution() {
-    CrashlyticsWorkers.checkBackgroundThread(); // To not violate strict mode.
+    CrashlyticsPreconditions.checkBackgroundThread(); // To not violate strict mode.
     if (!crashMarker.isPresent()) {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
@@ -357,7 +369,7 @@ class CrashlyticsController {
               @Override
               public Task<Void> then(@Nullable Boolean send) throws Exception {
 
-                return crashlyticsWorkers.common.submitTask(
+                return backgroundWorker.submitTask(
                     new Callable<Task<Void>>() {
                       @Override
                       public Task<Void> call() throws Exception {
@@ -378,8 +390,10 @@ class CrashlyticsController {
                         // permission.
                         dataCollectionArbiter.grantDataCollectionPermission(dataCollectionToken);
 
+                        Executor executor = backgroundWorker.getExecutor();
+
                         return settingsDataTask.onSuccessTask(
-                            crashlyticsWorkers.common,
+                            executor,
                             new SuccessContinuation<Settings, Void>() {
                               @NonNull
                               @Override
@@ -392,7 +406,7 @@ class CrashlyticsController {
                                   return Tasks.forResult(null);
                                 }
                                 logAnalyticsAppExceptionEvents();
-                                reportingCoordinator.sendReports(crashlyticsWorkers.common);
+                                reportingCoordinator.sendReports(executor);
                                 unsentReportsHandled.trySetResult(null);
 
                                 return Tasks.forResult(null);
@@ -476,8 +490,14 @@ class CrashlyticsController {
 
   /** Open a new session on the single-threaded executor. */
   void openSession(String sessionIdentifier) {
-    crashlyticsWorkers.common.submit(
-        () -> doOpenSession(sessionIdentifier, /* isOnDemand= */ false));
+    backgroundWorker.submit(
+        new Callable<Void>() {
+          @Override
+          public Void call() throws Exception {
+            doOpenSession(sessionIdentifier, /* isOnDemand= */ false);
+            return null;
+          }
+        });
   }
 
   /**
@@ -503,7 +523,7 @@ class CrashlyticsController {
    * @param settingsProvider
    */
   boolean finalizeSessions(SettingsProvider settingsProvider) {
-    CrashlyticsWorkers.checkBackgroundThread();
+    CrashlyticsPreconditions.checkBackgroundThread();
 
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
@@ -910,7 +930,7 @@ class CrashlyticsController {
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
-            UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, diskWriteWorker);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

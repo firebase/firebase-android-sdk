@@ -15,9 +15,9 @@
 package com.google.firebase.crashlytics.internal.settings;
 
 import android.text.TextUtils;
+import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.network.HttpGetRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.network.HttpResponse;
@@ -97,7 +97,7 @@ class DefaultSettingsSpiCall implements SettingsSpiCall {
 
   @Override
   public JSONObject invoke(SettingsRequest requestData, boolean dataCollectionToken) {
-    CrashlyticsWorkers.checkBlockingThread();
+    CrashlyticsPreconditions.checkBlockingThread();
     if (!dataCollectionToken) {
       throw new RuntimeException("An invalid data collection token was used.");
     }

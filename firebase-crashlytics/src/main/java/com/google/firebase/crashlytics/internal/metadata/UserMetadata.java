@@ -18,7 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.List;
@@ -47,7 +47,7 @@ public class UserMetadata {
 
   private final MetaDataStore metaDataStore;
 
-  private final CrashlyticsWorkers crashlyticsWorkers;
+  @VisibleForTesting final CrashlyticsWorker diskWriteWorker;
   private String sessionIdentifier;
 
   // The following references contain a marker bit, which is true if the data maintained in the
@@ -69,9 +69,9 @@ public class UserMetadata {
   }
 
   public static UserMetadata loadFromExistingSession(
-      String sessionId, FileStore fileStore, CrashlyticsWorkers crashlyticsWorkers) {
+      String sessionId, FileStore fileStore, CrashlyticsWorker diskWriteWorker) {
     MetaDataStore store = new MetaDataStore(fileStore);
-    UserMetadata metadata = new UserMetadata(sessionId, fileStore, crashlyticsWorkers);
+    UserMetadata metadata = new UserMetadata(sessionId, fileStore, diskWriteWorker);
     // We don't use the set methods in this class, because they will attempt to re-serialize the
     // data, which is unnecessary because we just read them from disk.
     metadata.customKeys.map.getReference().setKeys(store.readKeyData(sessionId, false));
@@ -82,10 +82,10 @@ public class UserMetadata {
   }
 
   public UserMetadata(
-      String sessionIdentifier, FileStore fileStore, CrashlyticsWorkers crashlyticsWorkers) {
+      String sessionIdentifier, FileStore fileStore, CrashlyticsWorker diskWriteWorker) {
     this.sessionIdentifier = sessionIdentifier;
     this.metaDataStore = new MetaDataStore(fileStore);
-    this.crashlyticsWorkers = crashlyticsWorkers;
+    this.diskWriteWorker = diskWriteWorker;
   }
 
   /**
@@ -99,7 +99,7 @@ public class UserMetadata {
       sessionIdentifier = sessionId;
       Map<String, String> keyData = customKeys.getKeys();
       List<RolloutAssignment> rolloutAssignments = rolloutsState.getRolloutAssignmentList();
-      crashlyticsWorkers.diskWrite.submit(
+      diskWriteWorker.submit(
           () -> {
             if (getUserId() != null) {
               metaDataStore.writeUserData(sessionId, getUserId());
@@ -132,12 +132,10 @@ public class UserMetadata {
       }
       userId.set(sanitizedNewId, true);
     }
-    crashlyticsWorkers.diskWrite.submit(this::serializeUserDataIfNeeded);
+    diskWriteWorker.submit(this::serializeUserDataIfNeeded);
   }
 
-  /**
-   * @return defensive copy of the custom keys.
-   */
+  /** @return defensive copy of the custom keys. */
   public Map<String, String> getCustomKeys() {
     return customKeys.getKeys();
   }
@@ -160,9 +158,7 @@ public class UserMetadata {
     customKeys.setKeys(keysAndValues);
   }
 
-  /**
-   * @return defensive copy of the internal keys.
-   */
+  /** @return defensive copy of the internal keys. */
   public Map<String, String> getInternalKeys() {
     return internalKeys.getKeys();
   }
@@ -192,7 +188,7 @@ public class UserMetadata {
       }
       List<RolloutAssignment> updatedRolloutAssignments = rolloutsState.getRolloutAssignmentList();
 
-      crashlyticsWorkers.diskWrite.submit(
+      diskWriteWorker.submit(
           () -> metaDataStore.writeRolloutState(sessionIdentifier, updatedRolloutAssignments));
       return true;
     }
@@ -272,7 +268,7 @@ public class UserMetadata {
       // Don't schedule the task if there's another queued task waiting, because the already-queued
       // task will write the latest data.
       if (queuedSerializer.compareAndSet(null, newRunnable)) {
-        crashlyticsWorkers.diskWrite.submit(newRunnable);
+        diskWriteWorker.submit(newRunnable);
       }
     }
 

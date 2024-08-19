@@ -14,8 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.network;
 
+import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,7 +57,7 @@ public class HttpGetRequest {
   }
 
   public HttpResponse execute() throws IOException {
-    CrashlyticsWorkers.checkBlockingThread(); // Network calls must be on a blocking thread.
+    CrashlyticsPreconditions.checkBlockingThread(); // Network calls must be on a blocking thread.
     InputStream stream = null;
     HttpsURLConnection connection = null;
     String body = null;

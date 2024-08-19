@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -71,8 +71,7 @@ public class SessionReportingCoordinatorTest {
 
   private SessionReportingCoordinator reportingCoordinator;
 
-  private CrashlyticsWorkers crashlyticsWorkers =
-      new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+  private CrashlyticsWorker diskWriteWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
 
   @Before
   public void setUp() {
@@ -86,7 +85,7 @@ public class SessionReportingCoordinatorTest {
             logFileManager,
             reportMetadata,
             idManager,
-            crashlyticsWorkers);
+            diskWriteWorker);
   }
 
   @Test
@@ -133,7 +132,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    crashlyticsWorkers.diskWrite.await();
+    diskWriteWorker.await();
 
     final boolean expectedAllThreads = false;
     final boolean expectedHighPriority = false;
@@ -158,7 +157,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    crashlyticsWorkers.diskWrite.await();
+    diskWriteWorker.await();
 
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
@@ -179,7 +178,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    crashlyticsWorkers.diskWrite.await();
+    diskWriteWorker.await();
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -256,7 +255,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    crashlyticsWorkers.diskWrite.await();
+    diskWriteWorker.await();
 
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
@@ -281,7 +280,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    crashlyticsWorkers.diskWrite.await();
+    diskWriteWorker.await();
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
@@ -304,7 +303,7 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
-    crashlyticsWorkers.diskWrite.await();
+    diskWriteWorker.await();
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();

@@ -16,16 +16,13 @@
 
 package com.google.firebase.crashlytics.internal.concurrency;
 
-import androidx.annotation.Discouraged;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
-import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -33,8 +30,8 @@ import java.util.concurrent.TimeoutException;
 /**
  * Worker for executing tasks sequentially on the given executor service.
  *
- * <p>Work on the queue may suspend, or it may return a Task, such that the underlying thread may be
- * re-used while the worker queue is suspended.
+ * <p>Work on the queue may block, or it may return a Task, such that the underlying thread may be
+ * re-used while the worker queue is still blocked.
  *
  * <p>Work enqueued on this worker will be run serially, regardless of the underlying executor.
  * Therefore, workers on the queue should not add new work to the queue and then block on it, as
@@ -44,13 +41,13 @@ import java.util.concurrent.TimeoutException;
  *
  * @hide
  */
-public class CrashlyticsWorker implements Executor {
+public class CrashlyticsWorker {
   private final ExecutorService executor;
 
   private final Object tailLock = new Object();
   private Task<?> tail = Tasks.forResult(null);
 
-  CrashlyticsWorker(ExecutorService executor) {
+  public CrashlyticsWorker(ExecutorService executor) {
     this.executor = executor;
   }
 
@@ -70,8 +67,12 @@ public class CrashlyticsWorker implements Executor {
   @CanIgnoreReturnValue
   public <T> Task<T> submit(Callable<T> callable) {
     synchronized (tailLock) {
+      // Do not propagate a cancellation.
+      if (tail.isCanceled()) {
+        tail = tail.continueWithTask(executor, task -> Tasks.forResult(null));
+      }
       // Chain the new callable onto the queue's tail.
-      Task<T> result = tail.continueWithTask(executor, task -> Tasks.forResult(callable.call()));
+      Task<T> result = tail.continueWith(executor, task -> callable.call());
       tail = result;
       return result;
     }
@@ -88,13 +89,17 @@ public class CrashlyticsWorker implements Executor {
   @CanIgnoreReturnValue
   public Task<Void> submit(Runnable runnable) {
     synchronized (tailLock) {
+      // Do not propagate a cancellation.
+      if (tail.isCanceled()) {
+        tail = tail.continueWithTask(executor, task -> Tasks.forResult(null));
+      }
       // Chain the new runnable onto the queue's tail.
       Task<Void> result =
-          tail.continueWithTask(
+          tail.continueWith(
               executor,
               task -> {
                 runnable.run();
-                return Tasks.forResult(null);
+                return null;
               });
       tail = result;
       return result;
@@ -102,9 +107,9 @@ public class CrashlyticsWorker implements Executor {
   }
 
   /**
-   * Submits a <code>Callable Task</code> for asynchronous execution on the executor.
+   * Submits a <code>Callable</code> <code>Task</code> for asynchronous execution on the executor.
    *
-   * <p>This is useful for making the worker suspend on an asynchronous operation, while letting the
+   * <p>This is useful for making the worker block on an asynchronous operation, while letting the
    * underlying threads be re-used.
    *
    * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the Task
@@ -114,7 +119,7 @@ public class CrashlyticsWorker implements Executor {
   @CanIgnoreReturnValue
   public <T> Task<T> submitTask(Callable<Task<T>> callable) {
     synchronized (tailLock) {
-      // Chain the new callable task onto the queue's tail.
+      // Chain the new callable task onto the queue's tail, regardless of cancellation.
       Task<T> result = tail.continueWithTask(executor, task -> callable.call());
       tail = result;
       return result;
@@ -122,8 +127,8 @@ public class CrashlyticsWorker implements Executor {
   }
 
   /**
-   * Submits a <code>Callable Task</code> followed by a <code>Continuation</code> for asynchronous
-   * execution on the executor.
+   * Submits a <code>Callable</code> <code>Task</code> followed by a <code>Continuation</code> for
+   * asynchronous execution on the executor.
    *
    * <p>This is useful for submitting a task that must be immediately followed by another task,
    * regardless of more tasks being submitted in parallel. For example, settings.
@@ -147,57 +152,7 @@ public class CrashlyticsWorker implements Executor {
   }
 
   /**
-   * Submits a <code>Callable Task</code> followed by a <code>SuccessContinuation</code> for
-   * asynchronous execution on the executor.
-   *
-   * <p>This is useful for submitting a task that must be immediately followed by another task, only
-   * if it was successful, but regardless of more tasks being submitted in parallel.
-   *
-   * <p>Returns a <code>Task</code> which will be resolved upon successful completion of the Task
-   * returned by the callable and continued by the continuation, throws an <code>ExecutionException
-   * </code> if either task throws an exception, or throws a <code>CancellationException</code> if
-   * the task is cancelled.
-   */
-  @CanIgnoreReturnValue
-  public <T, R> Task<R> submitTaskOnSuccess(
-      Callable<Task<T>> callable, SuccessContinuation<T, R> successContinuation) {
-    synchronized (tailLock) {
-      // Chain the new callable task and success continuation onto the queue's tail.
-      Task<R> result =
-          tail.continueWithTask(executor, task -> callable.call())
-              .continueWithTask(
-                  executor,
-                  task -> {
-                    if (task.isSuccessful()) {
-                      return successContinuation.then(task.getResult());
-                    } else if (task.getException() != null) {
-                      return Tasks.forException(task.getException());
-                    } else {
-                      return Tasks.forCanceled();
-                    }
-                  });
-      tail = result;
-      return result;
-    }
-  }
-
-  /**
-   * Forwards a <code>Runnable</code> to the underlying executor.
-   *
-   * <p>This is useful for passing the worker as the executor to task continuations.
-   *
-   * <p>This is different than {@link #submit(Runnable)}. This will not submit the runnable to the
-   * worker to execute in order, this will forward the runnable to the underlying executor. If you
-   * are calling this directly from your code, you probably want {@link #submit(Runnable)}.
-   */
-  @Override
-  @Discouraged(message = "This is probably not that you want. Use {@link #submit(Runnable)}.")
-  public void execute(Runnable runnable) {
-    executor.execute(runnable);
-  }
-
-  /**
-   * Blocks until all current pending tasks have completed, up to 30 seconds. Only for testing.
+   * Blocks until all current pending tasks have completed, up to 30 seconds. Useful for testing.
    *
    * <p>This is not a shutdown, this does not stop new tasks from being submitted to the queue.
    */
@@ -205,8 +160,5 @@ public class CrashlyticsWorker implements Executor {
   public void await() throws ExecutionException, InterruptedException, TimeoutException {
     // Submit an empty runnable, and await on it for 30 sec so deadlocked tests fail faster.
     Tasks.await(submit(() -> {}), 30, TimeUnit.SECONDS);
-
-    // Sleep for a bit here, instead of de-flaking individual test cases.
-    Thread.sleep(1);
   }
 }

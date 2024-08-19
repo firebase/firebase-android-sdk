@@ -24,7 +24,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -48,8 +48,8 @@ import java.util.SortedSet;
 import java.util.concurrent.Executor;
 
 /**
- * This class coordinates Crashlytics session data capture and persistence, as well as sending of
- * reports to Firebase Crashlytics.
+ * This class coordinates Crashlytics session data capture and
+ * persistence, as well as sending of reports to Firebase Crashlytics.
  */
 public class SessionReportingCoordinator {
 
@@ -70,7 +70,7 @@ public class SessionReportingCoordinator {
       SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter,
       CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      CrashlyticsWorker diskWriteWorker) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
@@ -85,7 +85,7 @@ public class SessionReportingCoordinator {
         logFileManager,
         userMetadata,
         idManager,
-        crashlyticsWorkers);
+        diskWriteWorker);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -95,7 +95,7 @@ public class SessionReportingCoordinator {
   private final UserMetadata reportMetadata;
   private final IdManager idManager;
 
-  private final CrashlyticsWorkers crashlyticsWorkers;
+  private final CrashlyticsWorker diskWriteWorker;
 
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
@@ -104,14 +104,14 @@ public class SessionReportingCoordinator {
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
       IdManager idManager,
-      CrashlyticsWorkers crashlyticsWorkers) {
+      CrashlyticsWorker diskWriteWorker) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
     this.idManager = idManager;
-    this.crashlyticsWorkers = crashlyticsWorkers;
+    this.diskWriteWorker = diskWriteWorker;
   }
 
   public void onBeginSession(@NonNull String sessionId, long timestampSeconds) {
@@ -339,7 +339,7 @@ public class SessionReportingCoordinator {
 
     // Non-fatal, persistence write task we move to diskWriteWorker
     if (!isFatal) {
-      crashlyticsWorkers.diskWrite.submit(
+      diskWriteWorker.submit(
           () -> {
             reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
           });

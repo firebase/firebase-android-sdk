@@ -41,5 +41,11 @@ class ConcurrencyTesting {
     }
   }
 
+  /** Helps to de-flake a test. */
+  static void deflake() {
+    // An easy, but ugly, way to fix a flaky test.
+    sleep(1);
+  }
+
   private ConcurrencyTesting() {}
 }

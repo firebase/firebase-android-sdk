@@ -40,7 +40,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -63,8 +63,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private static final String GOOGLE_APP_ID = "google:app:id";
   private static final String SESSION_ID = "session_id";
 
-  private final CrashlyticsWorkers crashlyticsWorkers =
-      new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+  private final CrashlyticsWorker commonWorker =
+      new CrashlyticsWorker(TestOnlyExecutors.background());
 
   private Context testContext;
   private IdManager idManager;
@@ -73,6 +73,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   private SessionReportingCoordinator mockSessionReportingCoordinator;
   private DataCollectionArbiter mockDataCollectionArbiter;
   private CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);
+
+  private CrashlyticsWorker diskWriteWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
 
   @Override
   protected void setUp() throws Exception {
@@ -106,7 +108,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   @Override
   protected void tearDown() throws Exception {
     super.tearDown();
-    crashlyticsWorkers.common.await();
+    commonWorker.await();
   }
 
   /** A convenience class for building CrashlyticsController instances for testing. */
@@ -175,6 +177,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       final CrashlyticsController controller =
           new CrashlyticsController(
               testContext.getApplicationContext(),
+              commonWorker,
               idManager,
               dataCollectionArbiter,
               testFileStore,
@@ -186,7 +189,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               nativeComponent,
               analyticsEventLogger,
               mock(CrashlyticsAppQualitySessionsSubscriber.class),
-              crashlyticsWorkers);
+              diskWriteWorker);
       return controller;
     }
   }
@@ -215,7 +218,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     controller.writeNonFatalException(thread, nonFatal);
     controller.doCloseSessions(testSettingsProvider);
 
-    crashlyticsWorkers.common.await();
+    commonWorker.await();
 
     verify(mockSessionReportingCoordinator)
         .persistNonFatalEvent(eq(nonFatal), eq(thread), eq(sessionId), anyLong());
@@ -254,7 +257,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     controller.enableExceptionHandling(SESSION_ID, exceptionHandler, testSettingsProvider);
     controller.logFatalException(thread, fatal);
 
-    crashlyticsWorkers.common.await();
+    commonWorker.await();
 
     verify(mockUserMetadata).setNewSession(not(eq(SESSION_ID)));
   }
@@ -333,8 +336,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final CrashlyticsController controller =
         builder().setNativeComponent(mockNativeComponent).setLogFileManager(logFileManager).build();
 
-    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(testSettingsProvider));
-    crashlyticsWorkers.common.await();
+    commonWorker.submit(() -> controller.finalizeSessions(testSettingsProvider));
+    commonWorker.await();
 
     verify(mockSessionReportingCoordinator)
         .finalizeSessionWithNativeEvent(eq(previousSessionId), any(), any());
@@ -345,8 +348,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
   public void testMissingNativeComponentCausesNoReports() throws Exception {
     final CrashlyticsController controller = createController();
-    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(testSettingsProvider));
-    crashlyticsWorkers.common.await();
+    commonWorker.submit(() -> controller.finalizeSessions(testSettingsProvider));
+    commonWorker.await();
 
     List<String> sessions = testFileStore.getAllOpenSessionIds();
     for (String sessionId : sessions) {
@@ -382,9 +385,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    crashlyticsWorkers.diskWrite.submit(
-        () -> controller.writeToLog(System.currentTimeMillis(), "Hi"));
-    crashlyticsWorkers.diskWrite.await();
+    diskWriteWorker.submit(() -> controller.writeToLog(System.currentTimeMillis(), "Hi"));
+    diskWriteWorker.await();
   }
 
   /**
@@ -399,8 +401,8 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
         testSettingsProvider, Thread.currentThread(), new RuntimeException());
 
     // This should not throw.
-    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(testSettingsProvider));
-    crashlyticsWorkers.common.await();
+    commonWorker.submit(() -> controller.finalizeSessions(testSettingsProvider));
+    commonWorker.await();
   }
 
   @SdkSuppress(minSdkVersion = 30) // ApplicationExitInfo
@@ -443,7 +445,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final DataCollectionArbiter arbiter = mock(DataCollectionArbiter.class);
     when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(false);
-    when(arbiter.waitForDataCollectionPermission())
+    when(arbiter.waitForDataCollectionPermission(any(Executor.class)))
         .thenReturn(new TaskCompletionSource<Void>().getTask());
     when(arbiter.waitForAutomaticDataCollectionEnabled())
         .thenReturn(new TaskCompletionSource<Void>().getTask());
@@ -564,14 +566,14 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singleton(sessionId)));
 
-    crashlyticsWorkers.common.submit(
+    commonWorker.submit(
         () -> {
           controller.openSession(SESSION_ID);
           controller.handleUncaughtException(
               testSettingsProvider, Thread.currentThread(), new RuntimeException("Fatal"));
           controller.finalizeSessions(testSettingsProvider);
         });
-    crashlyticsWorkers.common.await();
+    commonWorker.await();
 
     assertFirebaseAnalyticsCrashEvent(mockFirebaseAnalyticsLogger);
   }
