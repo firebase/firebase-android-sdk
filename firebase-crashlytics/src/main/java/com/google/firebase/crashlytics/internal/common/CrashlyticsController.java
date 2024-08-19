@@ -351,55 +351,48 @@ class CrashlyticsController {
 
     return waitForReportAction()
         .onSuccessTask(
+            crashlyticsWorkers.common,
             new SuccessContinuation<Boolean, Void>() {
               @NonNull
               @Override
               public Task<Void> then(@Nullable Boolean send) throws Exception {
+                if (!send) {
+                  Logger.getLogger().v("Deleting cached crash reports...");
+                  crashlyticsWorkers.diskWrite.submit(
+                      () -> {
+                        deleteFiles(listAppExceptionMarkerFiles());
+                        reportingCoordinator.removeAllReports();
+                      });
+                  unsentReportsHandled.trySetResult(null);
+                  return Tasks.forResult(null);
+                }
 
-                return crashlyticsWorkers.common.submitTask(
-                    new Callable<Task<Void>>() {
+                Logger.getLogger().d("Sending cached crash reports...");
+
+                // waitForReportAction guarantees we got user permission.
+                boolean dataCollectionToken = send;
+
+                // Signal to the settings fetch and onboarding that we have explicit
+                // permission.
+                dataCollectionArbiter.grantDataCollectionPermission(dataCollectionToken);
+
+                return settingsDataTask.onSuccessTask(
+                    crashlyticsWorkers.common,
+                    new SuccessContinuation<Settings, Void>() {
+                      @NonNull
                       @Override
-                      public Task<Void> call() throws Exception {
-                        if (!send) {
-                          Logger.getLogger().v("Deleting cached crash reports...");
-                          crashlyticsWorkers.diskWrite.submit(
-                              () -> {
-                                deleteFiles(listAppExceptionMarkerFiles());
-                                reportingCoordinator.removeAllReports();
-                              });
-                          unsentReportsHandled.trySetResult(null);
+                      public Task<Void> then(@Nullable Settings appSettingsData) throws Exception {
+                        if (appSettingsData == null) {
+                          Logger.getLogger()
+                              .w(
+                                  "Received null app settings at app startup. Cannot send cached reports");
                           return Tasks.forResult(null);
                         }
+                        logAnalyticsAppExceptionEvents();
+                        reportingCoordinator.sendReports(crashlyticsWorkers.common);
+                        unsentReportsHandled.trySetResult(null);
 
-                        Logger.getLogger().d("Sending cached crash reports...");
-
-                        // waitForReportAction guarantees we got user permission.
-                        boolean dataCollectionToken = send;
-
-                        // Signal to the settings fetch and onboarding that we have explicit
-                        // permission.
-                        dataCollectionArbiter.grantDataCollectionPermission(dataCollectionToken);
-
-                        return settingsDataTask.onSuccessTask(
-                            crashlyticsWorkers.common,
-                            new SuccessContinuation<Settings, Void>() {
-                              @NonNull
-                              @Override
-                              public Task<Void> then(@Nullable Settings appSettingsData)
-                                  throws Exception {
-                                if (appSettingsData == null) {
-                                  Logger.getLogger()
-                                      .w(
-                                          "Received null app settings at app startup. Cannot send cached reports");
-                                  return Tasks.forResult(null);
-                                }
-                                logAnalyticsAppExceptionEvents();
-                                reportingCoordinator.sendReports(crashlyticsWorkers.common);
-                                unsentReportsHandled.trySetResult(null);
-
-                                return Tasks.forResult(null);
-                              }
-                            });
+                        return Tasks.forResult(null);
                       }
                     });
               }
