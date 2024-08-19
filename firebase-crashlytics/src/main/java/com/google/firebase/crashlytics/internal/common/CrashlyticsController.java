@@ -248,6 +248,7 @@ class CrashlyticsController {
     try {
       // Never block on ODFs, in case they get triggered from the main thread.
       if (!isOnDemand) {
+        //noinspection deprecation drain the worker instead.
         Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
       }
     } catch (TimeoutException e) {
@@ -559,7 +560,6 @@ class CrashlyticsController {
   }
 
   /**
-   *
    * Not synchronized/locked. Must be executed from the executor service runs tasks in serial order
    */
   private void doCloseSessions(

@@ -27,10 +27,10 @@ import java.util.concurrent.TimeoutException;
 @SuppressWarnings({"ResultOfMethodCallIgnored", "UnusedReturnValue"})
 public final class Utils {
   /** Timeout in milliseconds for blocking on background threads. */
-  private static final int BACKGROUND_TIMEOUT_MILLIS = 4_000;
+  private static final int BACKGROUND_TIMEOUT_MILLIS = 5_000;
 
   /** Timeout in milliseconds for blocking on the main thread. Be careful about ANRs. */
-  private static final int MAIN_TIMEOUT_MILLIS = 2_750;
+  private static final int MAIN_TIMEOUT_MILLIS = 4_000;
 
   /**
    * Blocks until the given Task completes, and then returns the value the Task was resolved with,
@@ -44,7 +44,9 @@ public final class Utils {
    * @return the value that was returned by the task, if successful.
    * @throws InterruptedException if the method was interrupted
    * @throws TimeoutException if the method timed out while waiting for the task.
+   * @deprecated Don't use this. Drain the worker instead.
    */
+  @Deprecated
   public static <T> T awaitEvenIfOnMainThread(Task<T> task)
       throws InterruptedException, TimeoutException {
     CountDownLatch latch = new CountDownLatch(1);
