@@ -93,8 +93,8 @@ import kotlinx.serialization.SerializationStrategy
  * To use App Check, simply enable it like for any other Firebase product, as documented at
  * https://firebase.google.com/docs/app-check.
  * - [#6179](https://github.com/firebase/firebase-android-sdk/pull/6179]) Added metrics to track if
- * Data Connect queries and mutations are invoked from the generated SDK or from direct usage of
- * the Data Connect SDK, not using the code generation offered by Data Connect.
+ * Data Connect queries and mutations are invoked from the generated SDK or from direct usage of the
+ * Data Connect SDK, not using the code generation offered by Data Connect.
  * - [#6177](https://github.com/firebase/firebase-android-sdk/pull/6177]) Added `equals` and
  * `hashCode` methods to [com.google.firebase.dataconnect.generated.GeneratedConnector]. This is
  * purely a cosmetic change, but requires using dataconnect emulator v1.1.18 (released May 23, 2024)
