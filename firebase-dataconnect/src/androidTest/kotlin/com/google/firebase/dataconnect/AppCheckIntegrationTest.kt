@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect
 
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
@@ -48,7 +47,7 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
     get() = FirebaseAppCheck.getInstance(personSchema.dataConnect.app)
 
   private val appId: String
-    get() = InstrumentationRegistry.getInstrumentation().context.getString(R.string.google_app_id)
+    get() = personSchema.dataConnect.app.options.applicationId
 
   @Before
   fun skipIfUsingEmulator() {
