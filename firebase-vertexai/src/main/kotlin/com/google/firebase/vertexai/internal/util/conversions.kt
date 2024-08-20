@@ -228,7 +228,7 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
 }
 
 internal fun CitationSources.toPublic() =
-  CitationMetadata(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
+  CitationMetadata(startIndex = startIndex, endIndex = endIndex, uri = uri ?: "", license = license)
 
 internal fun com.google.firebase.vertexai.common.server.SafetyRating.toPublic() =
   SafetyRating(

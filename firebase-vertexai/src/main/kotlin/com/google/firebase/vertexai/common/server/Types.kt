@@ -66,7 +66,7 @@ constructor(@JsonNames("citations") val citationSources: List<CitationSources>)
 data class CitationSources(
   val startIndex: Int = 0,
   val endIndex: Int,
-  val uri: String,
+  val uri: String? = null,
   val license: String? = null,
 )
 
