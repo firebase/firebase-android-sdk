@@ -208,7 +208,7 @@ class DataConnectGrpcMetadataUnitTest {
       kotlinVersion: String = "1.2.3",
       androidVersion: Int = 4,
       dataConnectSdkVersion: String = "5.6.7",
-      grpcVersion: String = "8.9.10"
+      grpcVersion: String = "8.9.10",
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
         dataConnectAuth = dataConnectAuth,

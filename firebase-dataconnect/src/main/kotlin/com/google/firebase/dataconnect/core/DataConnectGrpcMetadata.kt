@@ -35,12 +35,12 @@ internal class DataConnectGrpcMetadata(
   private val logger =
     Logger("DataConnectGrpcMetadata").apply {
       debug {
-        "created by ${parentLogger.nameWithId} with " +
-          " dataConnectAuth=${dataConnectAuth.instanceId} " +
-          " connectorLocation=$connectorLocation " +
-          " kotlinVersion=$kotlinVersion " +
-          " androidVersion=$androidVersion " +
-          " dataConnectSdkVersion=$dataConnectSdkVersion " +
+        "created by ${parentLogger.nameWithId} with" +
+          " dataConnectAuth=${dataConnectAuth.instanceId}" +
+          " connectorLocation=$connectorLocation" +
+          " kotlinVersion=$kotlinVersion" +
+          " androidVersion=$androidVersion" +
+          " dataConnectSdkVersion=$dataConnectSdkVersion" +
           " grpcVersion=$grpcVersion"
       }
     }
