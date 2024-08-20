@@ -158,6 +158,7 @@ internal class FirebaseDataConnectImpl(
       logger.debug { "connecting to Data Connect backend: $backendInfo" }
       val grpcMetadata =
         DataConnectGrpcMetadata.forSystemVersions(
+          firebaseApp = app,
           dataConnectAuth = lazyDataConnectAuth.getLocked(),
           dataConnectAppCheck = lazyDataConnectAppCheck.getLocked(),
           connectorLocation = config.location,

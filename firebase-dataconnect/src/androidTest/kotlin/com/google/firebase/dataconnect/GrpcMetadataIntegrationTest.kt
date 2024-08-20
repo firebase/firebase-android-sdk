@@ -30,6 +30,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.DataConnectTestAppCheckToken
 import com.google.firebase.dataconnect.testutil.FirebaseAuthBackend
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
+import com.google.firebase.dataconnect.testutil.getFirebaseAppIdFromStrings
 import com.google.firebase.dataconnect.testutil.newInstance
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import io.grpc.Metadata
@@ -307,6 +308,8 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     isFromGeneratedSdk: Boolean
   ) {
     val metadata = withClue("waiting for metadata to be reported") { job.await() }
+    val expectedAppId = getFirebaseAppIdFromStrings()
+
     metadata.asClue {
       metadata.keys().shouldContainAll(googRequestParamsHeader.name(), googApiClientHeader.name())
       assertSoftly {
@@ -315,6 +318,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
         metadata.get(googRequestParamsHeader) shouldBe
           "location=${dataConnect.config.location}&frontend=data"
         metadata.get(googApiClientHeader) shouldBe expectedGoogApiClientHeader(isFromGeneratedSdk)
+        metadata.get(gmpAppIdHeader) shouldBe expectedAppId
       }
     }
   }
@@ -371,6 +375,9 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val googApiClientHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
+
+    private val gmpAppIdHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
 
     fun expectedGoogApiClientHeader(isFromGeneratedSdk: Boolean) = buildString {
       append("gl-kotlin/${KotlinVersion.CURRENT}")
