@@ -26,6 +26,7 @@ import com.google.firebase.components.Qualified;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.model.InternalTracingMetrics;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
@@ -86,6 +87,9 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
       Logger.getLogger().d("Initializing Crashlytics blocked main for " + duration + " ms");
     }
 
+    InternalTracingMetrics.InternalMetrics.put("crashlytics_init_time", String.valueOf(duration));
+    crashlytics.core.setCustomKeys(InternalTracingMetrics.InternalMetrics.getMetrics());
+    crashlytics.recordException(new RuntimeException("Crashlytics Initialization done"));
     return crashlytics;
   }
 }

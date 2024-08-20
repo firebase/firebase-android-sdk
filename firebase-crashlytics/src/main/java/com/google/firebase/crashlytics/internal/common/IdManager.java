@@ -23,6 +23,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.model.InternalTracingMetrics;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.Locale;
 import java.util.Objects;
@@ -130,21 +131,25 @@ public class IdManager implements InstallIdProvider {
       if (Objects.equals(trueFid.getFid(), cachedFid)) {
         // the current FID is the same as the cached FID, so we keep the cached Crashlytics ID
         installIds = InstallIds.create(readCachedCrashlyticsInstallId(prefs), trueFid);
+        InternalTracingMetrics.InternalMetrics.put("crashlytics_fid_state", "cached");
       } else {
         // the current FID has changed, so we generate a new Crashlytics ID
         installIds =
             InstallIds.create(createAndCacheCrashlyticsInstallId(trueFid.getFid(), prefs), trueFid);
+        InternalTracingMetrics.InternalMetrics.put("crashlytics_fid_state", "fetched");
       }
     } else { // data collection is NOT enabled; we can't use the FID
       if (isSyntheticFid(cachedFid)) {
         // We already have a cached synthetic FID, so we don't need to change the Crashlytics ID
         installIds = InstallIds.createWithoutFid(readCachedCrashlyticsInstallId(prefs));
+        InternalTracingMetrics.InternalMetrics.put("crashlytics_fid_state", "syntheticCached");
       } else {
         // we don't have a synthetic FID, so we need to replace the cached FID with a synthetic
         // one and create a new Crashlytics install id.
         installIds =
             InstallIds.createWithoutFid(
                 createAndCacheCrashlyticsInstallId(createSyntheticFid(), prefs));
+        InternalTracingMetrics.InternalMetrics.put("crashlytics_fid_state", "syntheticCreate");
       }
     }
     Logger.getLogger().v("Install IDs: " + installIds);

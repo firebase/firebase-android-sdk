@@ -31,6 +31,7 @@ import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.common.SystemCurrentTimeProvider;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.model.InternalTracingMetrics;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.Locale;
@@ -170,6 +171,7 @@ public class SettingsController implements SettingsProvider {
       if (cachedSettings != null) {
         settings.set(cachedSettings);
         settingsTask.get().trySetResult(cachedSettings);
+        InternalTracingMetrics.InternalMetrics.put("crashlytics_init_setting_state", "cached");
         return Tasks.forResult(null);
       }
     }
@@ -183,6 +185,7 @@ public class SettingsController implements SettingsProvider {
         getCachedSettingsData(SettingsCacheBehavior.IGNORE_CACHE_EXPIRATION);
     if (expiredSettings != null) {
       settings.set(expiredSettings);
+      InternalTracingMetrics.InternalMetrics.put("crashlytics_init_setting_state", "expired");
       settingsTask.get().trySetResult(expiredSettings);
     }
 
@@ -212,10 +215,11 @@ public class SettingsController implements SettingsProvider {
                   cachedSettingsIo.writeCachedSettings(
                       fetchedSettings.expiresAtMillis, settingsJson);
                   logSettings(settingsJson, "Loaded settings: ");
-
                   setStoredBuildInstanceIdentifier(settingsRequest.instanceId);
 
                   // Update the regular settings.
+                  InternalTracingMetrics.InternalMetrics.put(
+                      "crashlytics_init_setting_state", "fetched");
                   settings.set(fetchedSettings);
 
                   // Signal the Task that we have a new valid settings
