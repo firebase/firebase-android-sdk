@@ -35,14 +35,25 @@ import com.google.firebase.initialize
  * and will be incorporated into [FirebaseApp] instances that this object creates. Using such values
  * enables easily correlating instances back to the place in the source code where they are created.
  *
+ * If an error occurs at runtime like this:
+ * ```
+ * No instrumentation registered! Must run under a registering instrumentation.
+ * ```
+ * then make sure that the class is annotated with `@RunWith(AndroidJUnit4::class)`.
+ *
  * Example:
  * ```
- * @get:Rule
- * val firebaseAppFactory = FirebaseAppUnitTestingRule(
- *   appNameKey = "bsv6ag4m76",
- *   applicationIdKey = "52jdwgz9s9",
- *   projectIdKey = "pf9yk3m5jw"
- * )
+ * import androidx.test.ext.junit.runners.AndroidJUnit4
+ *
+ * @RunWith(AndroidJUnit4::class)
+ * class MyTest {
+ *   @get:Rule
+ *   val firebaseAppFactory = FirebaseAppUnitTestingRule(
+ *     appNameKey = "bsv6ag4m76",
+ *     applicationIdKey = "52jdwgz9s9",
+ *     projectIdKey = "pf9yk3m5jw"
+ *   )
+ * }
  * ```
  */
 class FirebaseAppUnitTestingRule(
