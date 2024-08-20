@@ -34,7 +34,7 @@ import kotlinx.serialization.encoding.Encoder
  * When an unknown enum value is found, the enum itself will be logged to stderr with a message
  * about opening an issue on GitHub regarding the new enum value.
  */
-class FirstOrdinalSerializer<T : Enum<T>>(private val enumClass: KClass<T>) : KSerializer<T> {
+internal class FirstOrdinalSerializer<T : Enum<T>>(private val enumClass: KClass<T>) : KSerializer<T> {
   override val descriptor: SerialDescriptor = buildClassSerialDescriptor("FirstOrdinalSerializer")
 
   override fun deserialize(decoder: Decoder): T {
@@ -70,7 +70,7 @@ class FirstOrdinalSerializer<T : Enum<T>>(private val enumClass: KClass<T>) : KS
  * By default an enum is serialized to its [name][Enum.name], and can be overwritten by providing a
  * [SerialName] annotation.
  */
-val <T : Enum<T>> T.serialName: String
+internal val <T : Enum<T>> T.serialName: String
   get() = declaringJavaClass.getField(name).getAnnotation<SerialName>()?.value ?: name
 
 /**
@@ -79,5 +79,5 @@ val <T : Enum<T>> T.serialName: String
  * @throws SerializationException if the class is not a valid enum. Beyond runtime emily magic, this
  * shouldn't really be possible.
  */
-fun <T : Enum<T>> KClass<T>.enumValues(): Array<T> =
+internal fun <T : Enum<T>> KClass<T>.enumValues(): Array<T> =
   java.enumConstants ?: throw SerializationException("$simpleName is not a valid enum type.")

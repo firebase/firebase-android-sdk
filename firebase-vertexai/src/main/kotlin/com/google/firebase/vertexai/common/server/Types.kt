@@ -25,23 +25,23 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
 
-object BlockReasonSerializer :
+internal object BlockReasonSerializer :
   KSerializer<BlockReason> by FirstOrdinalSerializer(BlockReason::class)
 
-object HarmProbabilitySerializer :
+internal object HarmProbabilitySerializer :
   KSerializer<HarmProbability> by FirstOrdinalSerializer(HarmProbability::class)
 
-object FinishReasonSerializer :
+internal object FinishReasonSerializer :
   KSerializer<FinishReason> by FirstOrdinalSerializer(FinishReason::class)
 
 @Serializable
-data class PromptFeedback(
+internal data class PromptFeedback(
   val blockReason: BlockReason? = null,
   val safetyRatings: List<SafetyRating>? = null,
 )
 
 @Serializable(BlockReasonSerializer::class)
-enum class BlockReason {
+internal enum class BlockReason {
   UNKNOWN,
   @SerialName("BLOCKED_REASON_UNSPECIFIED") UNSPECIFIED,
   SAFETY,
@@ -49,7 +49,7 @@ enum class BlockReason {
 }
 
 @Serializable
-data class Candidate(
+internal data class Candidate(
   val content: Content? = null,
   val finishReason: FinishReason? = null,
   val safetyRatings: List<SafetyRating>? = null,
@@ -58,12 +58,12 @@ data class Candidate(
 )
 
 @Serializable
-data class CitationMetadata
+internal data class CitationMetadata
 @OptIn(ExperimentalSerializationApi::class)
-constructor(@JsonNames("citations") val citationSources: List<CitationSources>)
+internal constructor(@JsonNames("citations") val citationSources: List<CitationSources>)
 
 @Serializable
-data class CitationSources(
+internal data class CitationSources(
   val startIndex: Int = 0,
   val endIndex: Int,
   val uri: String? = null,
@@ -71,7 +71,7 @@ data class CitationSources(
 )
 
 @Serializable
-data class SafetyRating(
+internal data class SafetyRating(
   val category: HarmCategory,
   val probability: HarmProbability,
   val blocked: Boolean? = null, // TODO(): any reason not to default to false?
@@ -81,7 +81,7 @@ data class SafetyRating(
 )
 
 @Serializable
-data class GroundingMetadata(
+internal data class GroundingMetadata(
   @SerialName("web_search_queries") val webSearchQueries: List<String>?,
   @SerialName("search_entry_point") val searchEntryPoint: SearchEntryPoint?,
   @SerialName("retrieval_queries") val retrievalQueries: List<String>?,
@@ -89,25 +89,25 @@ data class GroundingMetadata(
 )
 
 @Serializable
-data class SearchEntryPoint(
+internal data class SearchEntryPoint(
   @SerialName("rendered_content") val renderedContent: String?,
   @SerialName("sdk_blob") val sdkBlob: String?,
 )
 
 @Serializable
-data class GroundingAttribution(
+internal data class GroundingAttribution(
   val segment: Segment,
   @SerialName("confidence_score") val confidenceScore: Float?,
 )
 
 @Serializable
-data class Segment(
+internal data class Segment(
   @SerialName("start_index") val startIndex: Int,
   @SerialName("end_index") val endIndex: Int,
 )
 
 @Serializable(HarmProbabilitySerializer::class)
-enum class HarmProbability {
+internal enum class HarmProbability {
   UNKNOWN,
   @SerialName("HARM_PROBABILITY_UNSPECIFIED") UNSPECIFIED,
   NEGLIGIBLE,
@@ -117,7 +117,7 @@ enum class HarmProbability {
 }
 
 @Serializable
-enum class HarmSeverity {
+internal enum class HarmSeverity {
   UNKNOWN,
   @SerialName("HARM_SEVERITY_UNSPECIFIED") UNSPECIFIED,
   @SerialName("HARM_SEVERITY_NEGLIGIBLE") NEGLIGIBLE,
@@ -127,7 +127,7 @@ enum class HarmSeverity {
 }
 
 @Serializable(FinishReasonSerializer::class)
-enum class FinishReason {
+internal enum class FinishReason {
   UNKNOWN,
   @SerialName("FINISH_REASON_UNSPECIFIED") UNSPECIFIED,
   STOP,
@@ -138,6 +138,6 @@ enum class FinishReason {
 }
 
 @Serializable
-data class GRpcError(val code: Int, val message: String, val details: List<GRpcErrorDetails>)
+internal data class GRpcError(val code: Int, val message: String, val details: List<GRpcErrorDetails>)
 
-@Serializable data class GRpcErrorDetails(val reason: String? = null)
+@Serializable internal data class GRpcErrorDetails(val reason: String? = null)

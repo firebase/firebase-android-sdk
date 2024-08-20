@@ -21,23 +21,23 @@ import com.google.firebase.vertexai.common.server.GRpcError
 import com.google.firebase.vertexai.common.server.PromptFeedback
 import kotlinx.serialization.Serializable
 
-sealed interface Response
+internal sealed interface Response
 
 @Serializable
-data class GenerateContentResponse(
+internal data class GenerateContentResponse(
   val candidates: List<Candidate>? = null,
   val promptFeedback: PromptFeedback? = null,
   val usageMetadata: UsageMetadata? = null,
 ) : Response
 
 @Serializable
-data class CountTokensResponse(val totalTokens: Int, val totalBillableCharacters: Int? = null) :
+internal data class CountTokensResponse(val totalTokens: Int, val totalBillableCharacters: Int? = null) :
   Response
 
-@Serializable data class GRpcErrorResponse(val error: GRpcError) : Response
+@Serializable internal data class GRpcErrorResponse(val error: GRpcError) : Response
 
 @Serializable
-data class UsageMetadata(
+internal data class UsageMetadata(
   val promptTokenCount: Int? = null,
   val candidatesTokenCount: Int? = null,
   val totalTokenCount: Int? = null,

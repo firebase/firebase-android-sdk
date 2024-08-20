@@ -28,7 +28,7 @@ import kotlin.time.toDuration
  * first response.
  * @property apiVersion the api endpoint to call.
  */
-class RequestOptions(
+internal class RequestOptions(
   val timeout: Duration,
   val apiVersion: String = "v1beta",
   val endpoint: String = "https://generativelanguage.googleapis.com",

@@ -25,10 +25,10 @@ import com.google.firebase.vertexai.common.util.fullModelName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-sealed interface Request
+internal sealed interface Request
 
 @Serializable
-data class GenerateContentRequest(
+internal data class GenerateContentRequest(
   val model: String? = null,
   val contents: List<Content>,
   @SerialName("safety_settings") val safetySettings: List<SafetySetting>? = null,
@@ -39,7 +39,7 @@ data class GenerateContentRequest(
 ) : Request
 
 @Serializable
-data class CountTokensRequest(
+internal data class CountTokensRequest(
   val generateContentRequest: GenerateContentRequest? = null,
   val model: String? = null,
   val contents: List<Content>? = null,

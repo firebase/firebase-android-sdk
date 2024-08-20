@@ -21,7 +21,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 @Serializable
-data class GenerationConfig(
+internal data class GenerationConfig(
   val temperature: Float?,
   @SerialName("top_p") val topP: Float?,
   @SerialName("top_k") val topK: Int?,
@@ -35,19 +35,19 @@ data class GenerationConfig(
 )
 
 @Serializable
-data class Tool(
+internal data class Tool(
   val functionDeclarations: List<FunctionDeclaration>? = null,
   // This is a json object because it is not possible to make a data class with no parameters.
   val codeExecution: JsonObject? = null,
 )
 
 @Serializable
-data class ToolConfig(
+internal data class ToolConfig(
   @SerialName("function_calling_config") val functionCallingConfig: FunctionCallingConfig
 )
 
 @Serializable
-data class FunctionCallingConfig(val mode: Mode) {
+internal data class FunctionCallingConfig(val mode: Mode) {
   @Serializable
   enum class Mode {
     @SerialName("MODE_UNSPECIFIED") UNSPECIFIED,
@@ -58,10 +58,10 @@ data class FunctionCallingConfig(val mode: Mode) {
 }
 
 @Serializable
-data class FunctionDeclaration(val name: String, val description: String, val parameters: Schema)
+internal data class FunctionDeclaration(val name: String, val description: String, val parameters: Schema)
 
 @Serializable
-data class Schema(
+internal data class Schema(
   val type: String,
   val description: String? = null,
   val format: String? = null,

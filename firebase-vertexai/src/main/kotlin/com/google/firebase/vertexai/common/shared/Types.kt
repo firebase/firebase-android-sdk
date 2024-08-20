@@ -29,11 +29,11 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 
-object HarmCategorySerializer :
+internal object HarmCategorySerializer :
   KSerializer<HarmCategory> by FirstOrdinalSerializer(HarmCategory::class)
 
 @Serializable(HarmCategorySerializer::class)
-enum class HarmCategory {
+internal enum class HarmCategory {
   UNKNOWN,
   @SerialName("HARM_CATEGORY_HARASSMENT") HARASSMENT,
   @SerialName("HARM_CATEGORY_HATE_SPEECH") HATE_SPEECH,
@@ -45,43 +45,43 @@ typealias Base64 = String
 
 @ExperimentalSerializationApi
 @Serializable
-data class Content(@EncodeDefault val role: String? = "user", val parts: List<Part>)
+internal data class Content(@EncodeDefault val role: String? = "user", val parts: List<Part>)
 
-@Serializable(PartSerializer::class) sealed interface Part
+@Serializable(PartSerializer::class) internal sealed interface Part
 
-@Serializable data class TextPart(val text: String) : Part
+@Serializable internal data class TextPart(val text: String) : Part
 
-@Serializable data class BlobPart(@SerialName("inline_data") val inlineData: Blob) : Part
+@Serializable internal data class BlobPart(@SerialName("inline_data") val inlineData: Blob) : Part
 
-@Serializable data class FunctionCallPart(val functionCall: FunctionCall) : Part
+@Serializable internal data class FunctionCallPart(val functionCall: FunctionCall) : Part
 
-@Serializable data class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
+@Serializable internal data class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
 
-@Serializable data class ExecutableCodePart(val executableCode: ExecutableCode) : Part
-
-@Serializable
-data class CodeExecutionResultPart(val codeExecutionResult: CodeExecutionResult) : Part
-
-@Serializable data class FunctionResponse(val name: String, val response: JsonObject)
-
-@Serializable data class FunctionCall(val name: String, val args: Map<String, String?>? = null)
-
-@Serializable data class FileDataPart(@SerialName("file_data") val fileData: FileData) : Part
+@Serializable internal data class ExecutableCodePart(val executableCode: ExecutableCode) : Part
 
 @Serializable
-data class FileData(
+internal data class CodeExecutionResultPart(val codeExecutionResult: CodeExecutionResult) : Part
+
+@Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
+
+@Serializable internal  data class FunctionCall(val name: String, val args: Map<String, String?>? = null)
+
+@Serializable internal data class FileDataPart(@SerialName("file_data") val fileData: FileData) : Part
+
+@Serializable
+internal data class FileData(
   @SerialName("mime_type") val mimeType: String,
   @SerialName("file_uri") val fileUri: String,
 )
 
-@Serializable data class Blob(@SerialName("mime_type") val mimeType: String, val data: Base64)
+@Serializable internal data class Blob(@SerialName("mime_type") val mimeType: String, val data: Base64)
 
-@Serializable data class ExecutableCode(val language: String, val code: String)
+@Serializable internal data class ExecutableCode(val language: String, val code: String)
 
-@Serializable data class CodeExecutionResult(val outcome: Outcome, val output: String)
+@Serializable internal data class CodeExecutionResult(val outcome: Outcome, val output: String)
 
 @Serializable
-enum class Outcome {
+internal enum class Outcome {
   @SerialName("OUTCOME_UNSPECIFIED") UNSPECIFIED,
   OUTCOME_OK,
   OUTCOME_FAILED,
@@ -89,14 +89,14 @@ enum class Outcome {
 }
 
 @Serializable
-data class SafetySetting(
+internal data class SafetySetting(
   val category: HarmCategory,
   val threshold: HarmBlockThreshold,
   val method: HarmBlockMethod? = null,
 )
 
 @Serializable
-enum class HarmBlockThreshold {
+internal enum class HarmBlockThreshold {
   @SerialName("HARM_BLOCK_THRESHOLD_UNSPECIFIED") UNSPECIFIED,
   BLOCK_LOW_AND_ABOVE,
   BLOCK_MEDIUM_AND_ABOVE,
@@ -105,13 +105,13 @@ enum class HarmBlockThreshold {
 }
 
 @Serializable
-enum class HarmBlockMethod {
+internal enum class HarmBlockMethod {
   @SerialName("HARM_BLOCK_METHOD_UNSPECIFIED") UNSPECIFIED,
   SEVERITY,
   PROBABILITY,
 }
 
-object PartSerializer : JsonContentPolymorphicSerializer<Part>(Part::class) {
+internal object PartSerializer : JsonContentPolymorphicSerializer<Part>(Part::class) {
   override fun selectDeserializer(element: JsonElement): DeserializationStrategy<Part> {
     val jsonObject = element.jsonObject
     return when {

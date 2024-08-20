@@ -20,7 +20,7 @@ import io.ktor.serialization.JsonConvertException
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur. */
-sealed class GoogleGenerativeAIException(message: String, cause: Throwable? = null) :
+internal sealed class GoogleGenerativeAIException(message: String, cause: Throwable? = null) :
   RuntimeException(message, cause) {
   companion object {
 
@@ -47,15 +47,15 @@ sealed class GoogleGenerativeAIException(message: String, cause: Throwable? = nu
 }
 
 /** Something went wrong while trying to deserialize a response from the server. */
-class SerializationException(message: String, cause: Throwable? = null) :
+internal class SerializationException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
 /** The server responded with a non 200 response code. */
-class ServerException(message: String, cause: Throwable? = null) :
+internal class ServerException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
 /** The server responded that the API Key is no valid. */
-class InvalidAPIKeyException(message: String, cause: Throwable? = null) :
+internal class InvalidAPIKeyException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
 /**
@@ -65,7 +65,7 @@ class InvalidAPIKeyException(message: String, cause: Throwable? = null) :
  *
  * @property response the full server response for the request.
  */
-class PromptBlockedException(val response: GenerateContentResponse, cause: Throwable? = null) :
+internal class PromptBlockedException(val response: GenerateContentResponse, cause: Throwable? = null) :
   GoogleGenerativeAIException(
     "Prompt was blocked: ${response.promptFeedback?.blockReason?.name}",
     cause,
@@ -78,7 +78,7 @@ class PromptBlockedException(val response: GenerateContentResponse, cause: Throw
  * [list of regions](https://ai.google.dev/available_regions#available_regions) (countries and
  * territories) where the API is available.
  */
-class UnsupportedUserLocationException(cause: Throwable? = null) :
+internal class UnsupportedUserLocationException(cause: Throwable? = null) :
   GoogleGenerativeAIException("User location is not supported for the API use.", cause)
 
 /**
@@ -86,7 +86,7 @@ class UnsupportedUserLocationException(cause: Throwable? = null) :
  *
  * Usually indicative of consumer error.
  */
-class InvalidStateException(message: String, cause: Throwable? = null) :
+internal class InvalidStateException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
 /**
@@ -94,7 +94,7 @@ class InvalidStateException(message: String, cause: Throwable? = null) :
  *
  * @property response the full server response for the request
  */
-class ResponseStoppedException(val response: GenerateContentResponse, cause: Throwable? = null) :
+internal class ResponseStoppedException(val response: GenerateContentResponse, cause: Throwable? = null) :
   GoogleGenerativeAIException(
     "Content generation stopped. Reason: ${response.candidates?.first()?.finishReason?.name}",
     cause,
@@ -105,17 +105,17 @@ class ResponseStoppedException(val response: GenerateContentResponse, cause: Thr
  *
  * Usually occurs due to a user specified [timeout][RequestOptions.timeout].
  */
-class RequestTimeoutException(message: String, cause: Throwable? = null) :
+internal class RequestTimeoutException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
 /** The quota for this API key is depleted, retry this request at a later time. */
-class QuotaExceededException(message: String, cause: Throwable? = null) :
+internal class QuotaExceededException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
 /** The service is not enabled for this project. Visit the Firebase Console to enable it. */
-class ServiceDisabledException(message: String, cause: Throwable? = null) :
+internal class ServiceDisabledException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */
-class UnknownException(message: String, cause: Throwable? = null) :
+internal class UnknownException(message: String, cause: Throwable? = null) :
   GoogleGenerativeAIException(message, cause)
