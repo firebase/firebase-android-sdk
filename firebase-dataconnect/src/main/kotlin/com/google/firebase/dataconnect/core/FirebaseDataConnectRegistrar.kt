@@ -67,7 +67,7 @@ internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
     )
 
   companion object {
-    private const val LIBRARY_NAME = "fire-dataconnect"
+    private const val LIBRARY_NAME = "fire-data-connect"
 
     private val firebaseApp = Qualified.unqualified(FirebaseApp::class.java)
     private val context = Qualified.unqualified(Context::class.java)
