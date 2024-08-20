@@ -16,8 +16,10 @@
 package com.google.firebase.dataconnect.core
 
 import android.os.Build
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.accessToken
 import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.requestId
@@ -36,9 +38,20 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 class DataConnectGrpcMetadataUnitTest {
+
+  @get:Rule
+  val firebaseAppFactory =
+    FirebaseAppUnitTestingRule(
+      appNameKey = "sj4293acqj",
+      applicationIdKey = "kd8n74kn2j",
+      projectIdKey = "jhtzhpbtbm"
+    )
 
   @Test
   fun `should include x-goog-api-client when isFromGeneratedSdk=true`() = runTest {
@@ -101,6 +114,23 @@ class DataConnectGrpcMetadataUnitTest {
       it.keys() shouldContain "x-goog-request-params"
       val metadataKey = Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
       it.get(metadataKey) shouldBe "location=${location}&frontend=data"
+    }
+  }
+
+  @Test
+  fun `should include x-firebase-gmpid`() = runTest {
+    val key = "f835k79x6t"
+    val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
+    val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata(appId = "tvsxjeb745.appId")
+    val requestId = Arb.requestId(key).next()
+    val isFromGeneratedSdk = Arb.boolean().next()
+
+    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+
+    metadata.asClue {
+      it.keys() shouldContain "x-firebase-gmpid"
+      val metadataKey = Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
+      it.get(metadataKey) shouldBe "tvsxjeb745.appId"
     }
   }
 
@@ -180,6 +210,7 @@ class DataConnectGrpcMetadataUnitTest {
 
     val metadata =
       DataConnectGrpcMetadata.forSystemVersions(
+        firebaseApp = firebaseAppFactory.newInstance(),
         dataConnectAuth = dataConnectAuth,
         dataConnectAppCheck = dataConnectAppCheck,
         connectorLocation = connectorLocation,
@@ -209,6 +240,7 @@ class DataConnectGrpcMetadataUnitTest {
       androidVersion: Int = 4,
       dataConnectSdkVersion: String = "5.6.7",
       grpcVersion: String = "8.9.10",
+      appId: String = "2q5wm7vajh.appId",
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
         dataConnectAuth = dataConnectAuth,
@@ -218,6 +250,7 @@ class DataConnectGrpcMetadataUnitTest {
         androidVersion = androidVersion,
         dataConnectSdkVersion = dataConnectSdkVersion,
         grpcVersion = grpcVersion,
+        appId = appId,
         parentLogger = mockk(relaxed = true),
       )
 

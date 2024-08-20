@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import android.os.Build
+import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.protobuf.Struct
@@ -30,6 +31,7 @@ internal class DataConnectGrpcMetadata(
   val androidVersion: Int,
   val dataConnectSdkVersion: String,
   val grpcVersion: String,
+  val appId: String,
   val parentLogger: Logger,
 ) {
   private val logger =
@@ -41,7 +43,8 @@ internal class DataConnectGrpcMetadata(
           " kotlinVersion=$kotlinVersion" +
           " androidVersion=$androidVersion" +
           " dataConnectSdkVersion=$dataConnectSdkVersion" +
-          " grpcVersion=$grpcVersion"
+          " grpcVersion=$grpcVersion" +
+          " appId=$appId"
       }
     }
   val instanceId: String
@@ -69,6 +72,7 @@ internal class DataConnectGrpcMetadata(
     return Metadata().also {
       it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
       it.put(googApiClientHeader, googApiClientHeaderValue(isFromGeneratedSdk))
+      it.put(gmpAppIdHeader, appId)
       if (authToken !== null) {
         it.put(firebaseAuthTokenHeader, authToken)
       }
@@ -122,7 +126,12 @@ internal class DataConnectGrpcMetadata(
     private val googApiClientHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
 
+    @Suppress("SpellCheckingInspection")
+    private val gmpAppIdHeader: Metadata.Key<String> =
+      Metadata.Key.of("x-firebase-gmpid", Metadata.ASCII_STRING_MARSHALLER)
+
     fun forSystemVersions(
+      firebaseApp: FirebaseApp,
       dataConnectAuth: DataConnectAuth,
       dataConnectAppCheck: DataConnectAppCheck,
       connectorLocation: String,
@@ -136,6 +145,7 @@ internal class DataConnectGrpcMetadata(
         androidVersion = Build.VERSION.SDK_INT,
         dataConnectSdkVersion = BuildConfig.VERSION_NAME,
         grpcVersion = "", // no way to get the grpc version at runtime,
+        appId = firebaseApp.options.applicationId,
         parentLogger = parentLogger,
       )
   }
