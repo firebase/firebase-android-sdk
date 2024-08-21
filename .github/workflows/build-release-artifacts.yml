@@ -42,6 +42,6 @@ jobs:
       - name: Upload kotlindocs
         uses: actions/upload-artifact@v4.3.3
         with:
-          name: release_artifacts
+          name: kotlindocs
           path: build/kotlindoc.zip
           retention-days: 15
