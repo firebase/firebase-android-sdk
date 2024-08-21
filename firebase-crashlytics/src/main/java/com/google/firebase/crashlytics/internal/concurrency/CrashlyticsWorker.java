@@ -265,7 +265,7 @@ public class CrashlyticsWorker implements Executor {
     Logger.getLogger().d("worker log: " + name + ": " + msg);
   }
 
-  private static String whoCalledMe() {
+  static String whoCalledMe() {
     StackTraceElement[] elements = Thread.currentThread().getStackTrace();
     if (elements.length > 6) {
       return compress(elements[4].toString())

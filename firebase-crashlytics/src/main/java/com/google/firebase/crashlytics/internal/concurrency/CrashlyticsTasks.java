@@ -16,13 +16,17 @@
 
 package com.google.firebase.crashlytics.internal.concurrency;
 
+import static com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker.whoCalledMe;
+
 import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.crashlytics.internal.Logger;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Crashlytics specific utilities for dealing with Tasks.
@@ -33,12 +37,17 @@ public final class CrashlyticsTasks {
   /** An Executor that runs on the calling thread. */
   private static final Executor DIRECT = Runnable::run;
 
+  private static final AtomicInteger count = new AtomicInteger(0);
+
   /**
    * Returns a task that is resolved when either of the given tasks is resolved.
    *
    * <p>If both tasks are cancelled, the returned task will be cancelled.
    */
   public static <T> Task<T> race(Task<T> task1, Task<T> task2) {
+    String caller = count.incrementAndGet() + " - " + whoCalledMe();
+    Logger.getLogger().d("worker log: race  : start - " + caller);
+
     CancellationTokenSource cancellation = new CancellationTokenSource();
     TaskCompletionSource<T> result = new TaskCompletionSource<>(cancellation.getToken());
 
@@ -46,15 +55,19 @@ public final class CrashlyticsTasks {
 
     Continuation<T, Task<Void>> continuation =
         task -> {
+          Logger.getLogger().d("worker log: race  : conti - " + caller);
           if (task.isSuccessful()) {
             // Task is complete and successful.
             result.trySetResult(task.getResult());
+            Logger.getLogger().d("worker log: race  : succe - " + caller);
           } else if (task.getException() != null) {
             // Task is complete but unsuccessful.
             result.trySetException(task.getException());
+            Logger.getLogger().d("worker log: race  : failu - " + caller);
           } else if (otherTaskCancelled.getAndSet(true)) {
             // Both tasks are cancelled.
             cancellation.cancel();
+            Logger.getLogger().d("worker log: race  : cance - " + caller);
           }
           return Tasks.forResult(null);
         };
