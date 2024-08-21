@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Merged core networking code into VertexAI from a separate library
 * [feature] added support for `responseSchema` in `GenerationConfig`.
 
 # 16.0.0-beta03

@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-package com.google.firebase.vertexai.util
+@file:Suppress("DEPRECATION") // a replacement for our purposes has not been published yet
 
-import com.google.firebase.vertexai.GenerativeModel
+package com.google.firebase.vertexai.common.util
+
 import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.common.GenerateContentRequest
+import com.google.firebase.vertexai.common.GenerateContentResponse
+import com.google.firebase.vertexai.common.JSON
 import com.google.firebase.vertexai.common.RequestOptions
+import com.google.firebase.vertexai.common.server.Candidate
+import com.google.firebase.vertexai.common.shared.Content
+import com.google.firebase.vertexai.common.shared.TextPart
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.HttpStatusCode
@@ -27,22 +34,28 @@ import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import java.io.File
 import kotlinx.coroutines.launch
+import kotlinx.serialization.encodeToString
 
-private val TEST_CLIENT_ID = "firebase-vertexai-android/test"
+private val TEST_CLIENT_ID = "genai-android/test"
 
-/** String separator used in SSE communication to signal the end of a message. */
-internal const val SSE_SEPARATOR = "\r\n\r\n"
+internal fun prepareStreamingResponse(response: List<GenerateContentResponse>): List<ByteArray> =
+  response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
 
-/**
- * Writes the provided [bytes] to the channel and closes it.
- *
- * Just a wrapper around [writeFully] that closes the channel after writing is complete.
- *
- * @param bytes the data to send through the channel
- */
-internal suspend fun ByteChannel.send(bytes: ByteArray) {
-  writeFully(bytes)
-  close()
+internal fun prepareResponse(response: GenerateContentResponse) =
+  JSON.encodeToString(response).toByteArray()
+
+internal fun createRequest(vararg text: String): GenerateContentRequest {
+  val contents = text.map { Content(parts = listOf(TextPart(it))) }
+
+  return GenerateContentRequest("gemini", contents)
+}
+
+internal fun createResponse(text: String) = createResponses(text).single()
+
+internal fun createResponses(vararg text: String): List<GenerateContentResponse> {
+  val candidates = text.map { Candidate(Content(parts = listOf(TextPart(it)))) }
+
+  return candidates.map { GenerateContentResponse(candidates = listOf(it)) }
 }
 
 /**
@@ -53,7 +66,7 @@ internal suspend fun ByteChannel.send(bytes: ByteArray) {
  * @see commonTest
  * @see send
  */
-internal data class CommonTestScope(val channel: ByteChannel, val model: GenerativeModel)
+internal data class CommonTestScope(val channel: ByteChannel, val apiController: APIController)
 
 /** A test that runs under a [CommonTestScope]. */
 internal typealias CommonTest = suspend CommonTestScope.() -> Unit
@@ -98,8 +111,7 @@ internal fun commonTest(
       channel,
       status,
     )
-  val model = GenerativeModel("cool-model-name", controller = apiController)
-  CommonTestScope(channel, model).block()
+  CommonTestScope(channel, apiController).block()
 }
 
 /**
@@ -118,7 +130,7 @@ internal fun goldenStreamingFile(
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   block: CommonTest,
 ) = doBlocking {
-  val goldenFile = loadGoldenFile(name)
+  val goldenFile = loadGoldenFile("streaming/$name")
   val messages = goldenFile.readLines().filter { it.isNotBlank() }
 
   commonTest(httpStatusCode) {
@@ -149,7 +161,7 @@ internal fun goldenUnaryFile(
   block: CommonTest,
 ) =
   commonTest(httpStatusCode) {
-    val goldenFile = loadGoldenFile(name)
+    val goldenFile = loadGoldenFile("unary/$name")
     val message = goldenFile.readText()
 
     channel.send(message.toByteArray())
@@ -164,8 +176,7 @@ internal fun goldenUnaryFile(
  *
  * @see goldenUnaryFile
  */
-internal fun loadGoldenFile(path: String): File =
-  loadResourceFile("vertexai-sdk-test-data/mock-responses/$path")
+internal fun loadGoldenFile(path: String): File = loadResourceFile("golden-files/$path")
 
 /** Loads a file from the test resources directory. */
 internal fun loadResourceFile(path: String) = File("src/test/resources/$path")
