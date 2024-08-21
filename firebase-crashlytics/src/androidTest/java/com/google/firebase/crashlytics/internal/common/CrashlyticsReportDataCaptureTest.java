@@ -37,8 +37,11 @@ import android.content.IntentFilter;
 import android.os.BatteryManager;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.settings.Settings;
@@ -66,6 +69,8 @@ public class CrashlyticsReportDataCaptureTest {
   private int eventThreadImportance;
   private int maxChainedExceptions;
   private SettingsProvider testSettingsProvider;
+  private final CrashlyticsWorkers crashlyticsWorkers =
+      new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
 
   @Mock private DevelopmentPlatformProvider developmentPlatformProvider;
 
@@ -118,7 +123,9 @@ public class CrashlyticsReportDataCaptureTest {
         .thenReturn(expectedUnityVersion);
     initDataCapture();
 
-    final CrashlyticsReport report = dataCapture.captureReportData("sessionId", 0);
+    Task<CrashlyticsReport> task =
+        crashlyticsWorkers.common.submit(() -> dataCapture.captureReportData("sessionId", 0));
+    CrashlyticsReport report = Tasks.await(task);
 
     assertNotNull(report.getSession());
     assertEquals(UNITY_PLATFORM, report.getSession().getApp().getDevelopmentPlatform());
@@ -132,7 +139,9 @@ public class CrashlyticsReportDataCaptureTest {
     when(developmentPlatformProvider.getDevelopmentPlatform()).thenReturn(null);
     initDataCapture();
 
-    final CrashlyticsReport report = dataCapture.captureReportData("sessionId", 0);
+    Task<CrashlyticsReport> task =
+        crashlyticsWorkers.common.submit(() -> dataCapture.captureReportData("sessionId", 0));
+    CrashlyticsReport report = Tasks.await(task);
 
     assertNotNull(report.getSession());
     assertNull(report.getSession().getApp().getDevelopmentPlatform());
@@ -307,10 +316,13 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testCaptureReportSessionFields() {
+  public void testCaptureReportSessionFields() throws Exception {
     final String sessionId = "sessionId";
     final long timestamp = System.currentTimeMillis();
-    final CrashlyticsReport report = dataCapture.captureReportData(sessionId, timestamp);
+
+    Task<CrashlyticsReport> task =
+        crashlyticsWorkers.common.submit(() -> dataCapture.captureReportData(sessionId, timestamp));
+    CrashlyticsReport report = Tasks.await(task);
 
     assertEquals(sessionId, report.getSession().getIdentifier());
     assertEquals(timestamp, report.getSession().getStartedAt());

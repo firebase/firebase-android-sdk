@@ -104,6 +104,7 @@ public class IdManager implements InstallIdProvider {
   @Override
   @NonNull
   public synchronized InstallIds getInstallIds() {
+    CrashlyticsWorkers.checkBackgroundThread();
     if (!shouldRefresh()) {
       return installIds;
     }
