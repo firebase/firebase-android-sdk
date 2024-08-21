@@ -49,7 +49,7 @@ class CitationMetadata
 internal constructor(
   val startIndex: Int = 0,
   val endIndex: Int,
-  val uri: String,
+  val uri: String? = null,
   val license: String? = null
 )
 

@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] updated proguard rules to keep component registrar working with newer proguard versions.
 
 # 17.1.2
 * [changed] Internal changes to ensure only one interface is provided for
