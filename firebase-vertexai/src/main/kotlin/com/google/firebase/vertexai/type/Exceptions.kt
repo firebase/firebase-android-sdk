@@ -17,7 +17,7 @@
 package com.google.firebase.vertexai.type
 
 import com.google.firebase.vertexai.FirebaseVertexAI
-import com.google.firebase.vertexai.common.GoogleGenerativeAIException
+import com.google.firebase.vertexai.common.FirebaseCommonAIException
 import com.google.firebase.vertexai.internal.util.toPublic
 import kotlinx.coroutines.TimeoutCancellationException
 
@@ -36,7 +36,7 @@ sealed class FirebaseVertexAIException(message: String, cause: Throwable? = null
     fun from(cause: Throwable): FirebaseVertexAIException =
       when (cause) {
         is FirebaseVertexAIException -> cause
-        is GoogleGenerativeAIException ->
+        is FirebaseCommonAIException ->
           when (cause) {
             is com.google.firebase.vertexai.common.SerializationException ->
               SerializationException(cause.message ?: "", cause.cause)

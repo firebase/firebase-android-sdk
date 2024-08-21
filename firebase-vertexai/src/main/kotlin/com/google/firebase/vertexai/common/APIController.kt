@@ -131,7 +131,7 @@ internal constructor(
         .body<GenerateContentResponse>()
         .validate()
     } catch (e: Throwable) {
-      throw GoogleGenerativeAIException.from(e)
+      throw FirebaseCommonAIException.from(e)
     }
 
   fun generateContentStream(request: GenerateContentRequest): Flow<GenerateContentResponse> =
@@ -142,7 +142,7 @@ internal constructor(
         applyCommonConfiguration(request)
       }
       .map { it.validate() }
-      .catch { throw GoogleGenerativeAIException.from(it) }
+      .catch { throw FirebaseCommonAIException.from(it) }
 
   suspend fun countTokens(request: CountTokensRequest): CountTokensResponse =
     try {
@@ -154,7 +154,7 @@ internal constructor(
         .also { validateResponse(it) }
         .body()
     } catch (e: Throwable) {
-      throw GoogleGenerativeAIException.from(e)
+      throw FirebaseCommonAIException.from(e)
     }
 
   private fun HttpRequestBuilder.applyCommonConfiguration(request: Request) {
