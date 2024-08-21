@@ -22,8 +22,6 @@ import static org.mockito.Mockito.when;
 import android.content.Context;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -379,14 +377,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     return crashlyticsCore
         .doBackgroundInitializationAsync(mockSettingsController)
-        .onSuccessTask(
-            new SuccessContinuation<Void, CrashlyticsCore>() {
-              @NonNull
-              @Override
-              public Task<CrashlyticsCore> then(@Nullable Void aVoid) throws Exception {
-                return Tasks.forResult(crashlyticsCore);
-              }
-            });
+        .onSuccessTask(unused -> Tasks.forResult(crashlyticsCore));
   }
 
   /** Helper class for building CrashlyticsCore instances. */
