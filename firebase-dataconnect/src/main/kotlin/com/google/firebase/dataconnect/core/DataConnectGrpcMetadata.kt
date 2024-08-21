@@ -72,7 +72,9 @@ internal class DataConnectGrpcMetadata(
     return Metadata().also {
       it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
       it.put(googApiClientHeader, googApiClientHeaderValue(isFromGeneratedSdk))
-      it.put(gmpAppIdHeader, appId)
+      if (appId.isNotBlank()) {
+        it.put(gmpAppIdHeader, appId)
+      }
       if (authToken !== null) {
         it.put(firebaseAuthTokenHeader, authToken)
       }
