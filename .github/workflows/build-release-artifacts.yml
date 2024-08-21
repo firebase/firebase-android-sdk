@@ -25,9 +25,23 @@ jobs:
         run: |
           ./gradlew firebasePublish
 
-      - name: Upload generated artifacts
+      - name: Upload m2 repo
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: m2repository
+          path: build/m2repository.zip
+          retention-days: 15
+
+      - name: Upload release notes
         uses: actions/upload-artifact@v4.3.3
         with:
           name: release_artifacts
-          path: build/*.zip
+          path: build/release-notes.zip
+          retention-days: 15
+
+      - name: Upload kotlindocs
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: release_artifacts
+          path: build/kotlindoc.zip
           retention-days: 15
