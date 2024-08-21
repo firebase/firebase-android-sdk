@@ -135,6 +135,32 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
+  fun `should NOT include x-firebase-gmpid if appId is the empty string`() = runTest {
+    val key = "fpm5gpgp9z"
+    val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
+    val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata(appId = "")
+    val requestId = Arb.requestId(key).next()
+    val isFromGeneratedSdk = Arb.boolean().next()
+
+    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+
+    metadata.asClue { it.keys() shouldNotContain "x-firebase-gmpid" }
+  }
+
+  @Test
+  fun `should NOT include x-firebase-gmpid if appId is blank`() = runTest {
+    val key = "srvvn597dg"
+    val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
+    val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata(appId = " \r\n\t ")
+    val requestId = Arb.requestId(key).next()
+    val isFromGeneratedSdk = Arb.boolean().next()
+
+    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+
+    metadata.asClue { it.keys() shouldNotContain "x-firebase-gmpid" }
+  }
+
+  @Test
   fun `should omit x-firebase-auth-token when the auth token is null`() = runTest {
     val key = "d85j28zpw9"
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
