@@ -359,11 +359,8 @@ class CrashlyticsController {
               public Task<Void> then(@Nullable Boolean send) throws Exception {
                 if (!send) {
                   Logger.getLogger().v("Deleting cached crash reports...");
-                  crashlyticsWorkers.diskWrite.submit(
-                      () -> {
-                        deleteFiles(listAppExceptionMarkerFiles());
-                        reportingCoordinator.removeAllReports();
-                      });
+                  deleteFiles(listAppExceptionMarkerFiles());
+                  reportingCoordinator.removeAllReports();
                   unsentReportsHandled.trySetResult(null);
                   return Tasks.forResult(null);
                 }

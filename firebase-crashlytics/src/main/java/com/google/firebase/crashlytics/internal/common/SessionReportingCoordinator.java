@@ -354,16 +354,12 @@ public class SessionReportingCoordinator {
       CrashlyticsReportWithSessionId report = task.getResult();
       Logger.getLogger()
           .d("Crashlytics report successfully enqueued to DataTransport: " + report.getSessionId());
-      crashlyticsWorkers.diskWrite.submit(
-          () -> {
-            File reportFile = report.getReportFile();
-            if (reportFile.delete()) {
-              Logger.getLogger().d("Deleted report file: " + reportFile.getPath());
-            } else {
-              Logger.getLogger()
-                  .w("Crashlytics could not delete report file: " + reportFile.getPath());
-            }
-          });
+      File reportFile = report.getReportFile();
+      if (reportFile.delete()) {
+        Logger.getLogger().d("Deleted report file: " + reportFile.getPath());
+      } else {
+        Logger.getLogger().w("Crashlytics could not delete report file: " + reportFile.getPath());
+      }
       return true;
     }
     Logger.getLogger()
