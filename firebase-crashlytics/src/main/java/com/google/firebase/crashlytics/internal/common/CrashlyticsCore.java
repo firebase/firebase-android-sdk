@@ -224,13 +224,13 @@ public class CrashlyticsCore {
 
   /** Performs background initialization asynchronously on the common worker. */
   @CanIgnoreReturnValue
-  public Task<Void> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
+  public Task<Settings> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
     return crashlyticsWorkers.common.submitTask(() -> doBackgroundInitialization(settingsProvider));
   }
 
   /** Performs background initialization synchronously on the calling thread. */
   @CanIgnoreReturnValue
-  private Task<Void> doBackgroundInitialization(SettingsProvider settingsProvider) {
+  private Task<Settings> doBackgroundInitialization(SettingsProvider settingsProvider) {
     CrashlyticsWorkers.checkBackgroundThread();
     // create the marker for this run
     markInitializationStarted();
@@ -254,10 +254,9 @@ public class CrashlyticsCore {
         Logger.getLogger().w("Previous sessions could not be finalized.");
       }
 
-      // TODO: Move this call out of this method, so that the return value merely indicates
-      // initialization is complete. Callers that want to know when report sending is complete can
-      // handle that as a separate call.
-      return controller.submitAllReports(settingsProvider.getSettingsAsync());
+      Task<Settings> settings = settingsProvider.getSettingsAsync();
+      controller.submitAllReports(settings);
+      return settings;
     } catch (Exception e) {
       Logger.getLogger()
           .e("Crashlytics encountered a problem during asynchronous initialization.", e);

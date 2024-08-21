@@ -339,8 +339,6 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  // TODO(b/261014167): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   Task<Void> submitAllReports(Task<Settings> settingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
