@@ -468,20 +468,15 @@ public class CrashlyticsCore {
 
   /** Enqueues a job to remove the Crashlytics initialization marker file */
   void markInitializationComplete() {
-    crashlyticsWorkers.common.submit(
-        () -> {
-          try {
-            boolean removed = initializationMarker.remove();
-            if (!removed) {
-              Logger.getLogger().w("Initialization marker file was not properly removed.");
-            }
-            return removed;
-          } catch (Exception e) {
-            Logger.getLogger()
-                .e("Problem encountered deleting Crashlytics initialization marker.", e);
-            return false;
-          }
-        });
+    CrashlyticsWorkers.checkBackgroundThread();
+    try {
+      boolean removed = initializationMarker.remove();
+      if (!removed) {
+        Logger.getLogger().w("Initialization marker file was not properly removed.");
+      }
+    } catch (Exception ex) {
+      Logger.getLogger().e("Problem encountered deleting Crashlytics initialization marker.", ex);
+    }
   }
 
   boolean didPreviousInitializationFail() {
