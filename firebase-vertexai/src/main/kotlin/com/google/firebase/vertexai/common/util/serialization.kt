@@ -34,7 +34,8 @@ import kotlinx.serialization.encoding.Encoder
  * When an unknown enum value is found, the enum itself will be logged to stderr with a message
  * about opening an issue on GitHub regarding the new enum value.
  */
-internal class FirstOrdinalSerializer<T : Enum<T>>(private val enumClass: KClass<T>) : KSerializer<T> {
+internal class FirstOrdinalSerializer<T : Enum<T>>(private val enumClass: KClass<T>) :
+  KSerializer<T> {
   override val descriptor: SerialDescriptor = buildClassSerialDescriptor("FirstOrdinalSerializer")
 
   override fun deserialize(decoder: Decoder): T {

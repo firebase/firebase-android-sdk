@@ -26,11 +26,11 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.ktor.http.HttpStatusCode
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
-import kotlin.time.Duration.Companion.seconds
 
 internal class StreamingSnapshotTests {
   private val testTimeout = 5.seconds
@@ -76,7 +76,8 @@ internal class StreamingSnapshotTests {
         responseList.any {
           it.candidates?.any {
             it.safetyRatings?.any { it.category == HarmCategory.UNKNOWN } ?: false
-          } ?: false
+          }
+            ?: false
         } shouldBe true
       }
     }

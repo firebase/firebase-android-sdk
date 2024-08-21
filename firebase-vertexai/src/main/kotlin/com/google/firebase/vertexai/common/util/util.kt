@@ -21,4 +21,5 @@ package com.google.firebase.vertexai.common.util
  *
  * Models must be prepended with the `models/` prefix when communicating with the backend.
  */
-internal fun fullModelName(name: String): String = name.takeIf { it.contains("/") } ?: "models/$name"
+internal fun fullModelName(name: String): String =
+  name.takeIf { it.contains("/") } ?: "models/$name"

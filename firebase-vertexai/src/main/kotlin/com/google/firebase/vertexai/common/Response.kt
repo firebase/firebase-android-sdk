@@ -31,8 +31,10 @@ internal data class GenerateContentResponse(
 ) : Response
 
 @Serializable
-internal data class CountTokensResponse(val totalTokens: Int, val totalBillableCharacters: Int? = null) :
-  Response
+internal data class CountTokensResponse(
+  val totalTokens: Int,
+  val totalBillableCharacters: Int? = null
+) : Response
 
 @Serializable internal data class GRpcErrorResponse(val error: GRpcError) : Response
 

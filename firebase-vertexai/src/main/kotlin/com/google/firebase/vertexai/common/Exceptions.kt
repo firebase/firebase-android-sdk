@@ -65,7 +65,10 @@ internal class InvalidAPIKeyException(message: String, cause: Throwable? = null)
  *
  * @property response the full server response for the request.
  */
-internal class PromptBlockedException(val response: GenerateContentResponse, cause: Throwable? = null) :
+internal class PromptBlockedException(
+  val response: GenerateContentResponse,
+  cause: Throwable? = null
+) :
   GoogleGenerativeAIException(
     "Prompt was blocked: ${response.promptFeedback?.blockReason?.name}",
     cause,
@@ -94,7 +97,10 @@ internal class InvalidStateException(message: String, cause: Throwable? = null) 
  *
  * @property response the full server response for the request
  */
-internal class ResponseStoppedException(val response: GenerateContentResponse, cause: Throwable? = null) :
+internal class ResponseStoppedException(
+  val response: GenerateContentResponse,
+  cause: Throwable? = null
+) :
   GoogleGenerativeAIException(
     "Content generation stopped. Reason: ${response.candidates?.first()?.finishReason?.name}",
     cause,

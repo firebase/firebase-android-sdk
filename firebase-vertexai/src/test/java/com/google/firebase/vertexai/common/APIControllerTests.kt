@@ -343,11 +343,11 @@ internal class ModelNamingTests(private val modelName: String, private val actua
   }
 }
 
-fun textGenerateContentRequest(prompt: String) =
+internal fun textGenerateContentRequest(prompt: String) =
   GenerateContentRequest(
     model = "unused",
     contents = listOf(Content(parts = listOf(TextPart(prompt)))),
   )
 
-fun textCountTokenRequest(prompt: String) =
+internal fun textCountTokenRequest(prompt: String) =
   CountTokensRequest(generateContentRequest = textGenerateContentRequest(prompt))

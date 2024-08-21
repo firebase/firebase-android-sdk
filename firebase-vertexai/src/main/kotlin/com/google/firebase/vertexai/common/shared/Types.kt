@@ -55,7 +55,8 @@ internal data class Content(@EncodeDefault val role: String? = "user", val parts
 
 @Serializable internal data class FunctionCallPart(val functionCall: FunctionCall) : Part
 
-@Serializable internal data class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
+@Serializable
+internal data class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
 
 @Serializable internal data class ExecutableCodePart(val executableCode: ExecutableCode) : Part
 
@@ -64,9 +65,11 @@ internal data class CodeExecutionResultPart(val codeExecutionResult: CodeExecuti
 
 @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
 
-@Serializable internal  data class FunctionCall(val name: String, val args: Map<String, String?>? = null)
+@Serializable
+internal data class FunctionCall(val name: String, val args: Map<String, String?>? = null)
 
-@Serializable internal data class FileDataPart(@SerialName("file_data") val fileData: FileData) : Part
+@Serializable
+internal data class FileDataPart(@SerialName("file_data") val fileData: FileData) : Part
 
 @Serializable
 internal data class FileData(
@@ -74,7 +77,8 @@ internal data class FileData(
   @SerialName("file_uri") val fileUri: String,
 )
 
-@Serializable internal data class Blob(@SerialName("mime_type") val mimeType: String, val data: Base64)
+@Serializable
+internal data class Blob(@SerialName("mime_type") val mimeType: String, val data: Base64)
 
 @Serializable internal data class ExecutableCode(val language: String, val code: String)
 

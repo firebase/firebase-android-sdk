@@ -58,7 +58,11 @@ internal data class FunctionCallingConfig(val mode: Mode) {
 }
 
 @Serializable
-internal data class FunctionDeclaration(val name: String, val description: String, val parameters: Schema)
+internal data class FunctionDeclaration(
+  val name: String,
+  val description: String,
+  val parameters: Schema
+)
 
 @Serializable
 internal data class Schema(
