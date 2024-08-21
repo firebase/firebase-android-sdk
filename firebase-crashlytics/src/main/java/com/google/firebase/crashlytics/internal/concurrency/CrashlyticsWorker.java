@@ -23,12 +23,17 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.firebase.crashlytics.internal.Logger;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Worker for executing tasks sequentially on the given executor service.
@@ -50,8 +55,18 @@ public class CrashlyticsWorker implements Executor {
   private final Object tailLock = new Object();
   private Task<?> tail = Tasks.forResult(null);
 
+  private final Set<Integer> counts = Collections.synchronizedSet(new HashSet<>());
+  private final AtomicInteger count = new AtomicInteger(0);
+  private final String name;
+
   CrashlyticsWorker(ExecutorService executor) {
     this.executor = executor;
+    name = "unknow";
+  }
+
+  CrashlyticsWorker(ExecutorService executor, String name) {
+    this.executor = executor;
+    this.name = name;
   }
 
   /** Returns the executor used by this worker. */
@@ -70,8 +85,21 @@ public class CrashlyticsWorker implements Executor {
   @CanIgnoreReturnValue
   public <T> Task<T> submit(Callable<T> callable) {
     synchronized (tailLock) {
+      int localCount = count.incrementAndGet();
+      counts.add(localCount);
+      String caller = localCount + " - " + whoCalledMe();
+      log("submit: " + caller);
       // Chain the new callable onto the queue's tail.
-      Task<T> result = tail.continueWithTask(executor, task -> Tasks.forResult(callable.call()));
+      Task<T> result =
+          tail.continueWithTask(
+              executor,
+              task -> {
+                log("start : " + caller);
+                Task<T> r = Tasks.forResult(callable.call());
+                counts.remove(localCount);
+                log("done  : " + caller + " - " + counts);
+                return r;
+              });
       tail = result;
       return result;
     }
@@ -88,12 +116,19 @@ public class CrashlyticsWorker implements Executor {
   @CanIgnoreReturnValue
   public Task<Void> submit(Runnable runnable) {
     synchronized (tailLock) {
+      int localCount = count.incrementAndGet();
+      counts.add(localCount);
+      String caller = localCount + " - " + whoCalledMe();
+      log("submit: " + caller);
       // Chain the new runnable onto the queue's tail.
       Task<Void> result =
           tail.continueWithTask(
               executor,
               task -> {
+                log("start : " + caller);
                 runnable.run();
+                counts.remove(localCount);
+                log("done  : " + caller + " - " + counts);
                 return Tasks.forResult(null);
               });
       tail = result;
@@ -114,8 +149,21 @@ public class CrashlyticsWorker implements Executor {
   @CanIgnoreReturnValue
   public <T> Task<T> submitTask(Callable<Task<T>> callable) {
     synchronized (tailLock) {
+      int localCount = count.incrementAndGet();
+      counts.add(localCount);
+      String caller = localCount + " - " + whoCalledMe();
+      log("submit: " + caller);
       // Chain the new callable task onto the queue's tail.
-      Task<T> result = tail.continueWithTask(executor, task -> callable.call());
+      Task<T> result =
+          tail.continueWithTask(
+              executor,
+              task -> {
+                log("start : " + caller);
+                Task<T> r = callable.call();
+                counts.remove(localCount);
+                log("done  : " + caller + " - " + counts);
+                return r;
+              });
       tail = result;
       return result;
     }
@@ -193,7 +241,10 @@ public class CrashlyticsWorker implements Executor {
   @Override
   @Discouraged(message = "This is probably not that you want. Use {@link #submit(Runnable)}.")
   public void execute(Runnable runnable) {
+    String caller = count.incrementAndGet() + " - " + whoCalledMe();
+    log("execut: " + caller);
     executor.execute(runnable);
+    log("done  : " + caller);
   }
 
   /**
@@ -208,5 +259,28 @@ public class CrashlyticsWorker implements Executor {
 
     // Sleep for a bit here, instead of de-flaking individual test cases.
     Thread.sleep(1);
+  }
+
+  private void log(String msg) {
+    Logger.getLogger().d("worker log: " + name + ": " + msg);
+  }
+
+  private static String whoCalledMe() {
+    StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+    if (elements.length > 6) {
+      return compress(elements[4].toString())
+          + " - "
+          + compress(elements[5].toString())
+          + " - "
+          + compress(elements[6].toString());
+    }
+    return "unknown";
+  }
+
+  private static String compress(String line) {
+    if (line.startsWith("com.google.firebase.crashlytics")) {
+      return line.substring(31);
+    }
+    return line;
   }
 }

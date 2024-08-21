@@ -34,13 +34,13 @@ class CrashlyticsWorkers(
    * processing uncaught exceptions. This is the main worker of the sdk. This worker will never
    * block on a disk write or network call.
    */
-  @JvmField val common = CrashlyticsWorker(backgroundExecutorService)
+  @JvmField val common = CrashlyticsWorker(backgroundExecutorService, "common")
 
   /**
    * The disk write worker is for background tasks that persisting data to local disk. No user
    * action should wait on this. Use for fire and forget, safe to ignore exceptions.
    */
-  @JvmField val diskWrite = CrashlyticsWorker(backgroundExecutorService)
+  @JvmField val diskWrite = CrashlyticsWorker(backgroundExecutorService, "disk  ")
 
   /**
    * The data collect worker is for any background tasks that send data remotely, like fetching fid,
