@@ -232,6 +232,7 @@ public class CrashlyticsCore {
   @CanIgnoreReturnValue
   private Task<Settings> doBackgroundInitialization(SettingsProvider settingsProvider) {
     CrashlyticsWorkers.checkBackgroundThread();
+    controller.logThreadViolationIfNecessary();
     // create the marker for this run
     markInitializationStarted();
 
@@ -458,6 +459,7 @@ public class CrashlyticsCore {
   /** Synchronous call to mark start of initialization */
   void markInitializationStarted() {
     CrashlyticsWorkers.checkBackgroundThread();
+    controller.logThreadViolationIfNecessary();
 
     // Create the Crashlytics initialization marker file, which is used to determine
     // whether the app crashed before initialization could complete.

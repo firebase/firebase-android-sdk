@@ -38,6 +38,7 @@ import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.crashlytics.internal.model.InternalTracingMetrics;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
@@ -303,6 +304,7 @@ class CrashlyticsController {
   /** This function must be called before opening the first session * */
   boolean didCrashOnPreviousExecution() {
     CrashlyticsWorkers.checkBackgroundThread(); // To not violate strict mode.
+    logThreadViolationIfNecessary();
     if (!crashMarker.isPresent()) {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
@@ -495,6 +497,7 @@ class CrashlyticsController {
    */
   boolean finalizeSessions(SettingsProvider settingsProvider) {
     CrashlyticsWorkers.checkBackgroundThread();
+    logThreadViolationIfNecessary();
 
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
@@ -560,6 +563,7 @@ class CrashlyticsController {
   private void doCloseSessions(
       boolean skipCurrentSession, SettingsProvider settingsProvider, boolean isInitProcess) {
     CrashlyticsWorkers.checkBackgroundThread();
+    logThreadViolationIfNecessary();
     final int offset = skipCurrentSession ? 1 : 0;
 
     // :TODO HW2021 this implementation can be cleaned up.
@@ -886,6 +890,15 @@ class CrashlyticsController {
     return minidump == null || !minidump.exists()
         ? new BytesBackedNativeSessionFile("minidump_file", "minidump", new byte[] {0})
         : new FileBackedNativeSessionFile("minidump_file", "minidump", minidump);
+  }
+
+  void logThreadViolationIfNecessary() {
+    if (InternalTracingMetrics.InternalMetrics.getMetrics()
+        .containsValue("crashlytics_violate_thread")) {
+      writeNonFatalException(
+          Thread.currentThread(), new RuntimeException("Crashlytics thread violation"));
+      InternalTracingMetrics.InternalMetrics.removeThreadViolationLog();
+    }
   }
 
   // endregion

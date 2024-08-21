@@ -19,6 +19,7 @@ package com.google.firebase.crashlytics.internal.concurrency
 import android.os.Build
 import android.os.Looper
 import com.google.firebase.crashlytics.internal.Logger
+import com.google.firebase.crashlytics.internal.model.InternalTracingMetrics
 import java.util.concurrent.ExecutorService
 
 /**
@@ -93,6 +94,7 @@ class CrashlyticsWorkers(
     private fun checkThread(isCorrectThread: () -> Boolean, failureMessage: () -> String) {
       if (!isCorrectThread()) {
         Logger.getLogger().d(failureMessage())
+        InternalTracingMetrics.metrics["crashlytics_violate_thread"] = failureMessage()
         assert(!enforcement, failureMessage)
       }
     }

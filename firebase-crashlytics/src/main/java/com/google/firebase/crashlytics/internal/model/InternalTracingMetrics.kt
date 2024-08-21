@@ -6,5 +6,8 @@ internal class InternalTracingMetrics {
     fun put(key: String, value: String) {
       metrics[key] = value
     }
+    fun removeThreadViolationLog() {
+      metrics.remove("crashlytics_violate_thread")
+    }
   }
 }
