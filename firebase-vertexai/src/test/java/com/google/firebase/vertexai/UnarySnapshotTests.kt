@@ -56,10 +56,9 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().finishReason shouldBe FinishReason.STOP
-        response.candidates.first().content.parts.isEmpty() shouldBe false
-        response.candidates.first().safetyRatings.isEmpty() shouldBe false
+        response.finishReason shouldBe FinishReason.STOP
+        response.content!!.parts.isEmpty() shouldBe false
+        response.safetyRatings.isEmpty() shouldBe false
       }
     }
 
@@ -69,10 +68,9 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().finishReason shouldBe FinishReason.STOP
-        response.candidates.first().content.parts.isEmpty() shouldBe false
-        response.candidates.first().safetyRatings.isEmpty() shouldBe false
+        response.finishReason shouldBe FinishReason.STOP
+        response.content!!.parts.isEmpty() shouldBe false
+        response.safetyRatings.isEmpty() shouldBe false
       }
     }
 
@@ -82,9 +80,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        val candidate = response.candidates.first()
-        candidate.safetyRatings.any { it.category == HarmCategory.UNKNOWN } shouldBe true
+        response.safetyRatings.any { it.category == HarmCategory.UNKNOWN } shouldBe true
         response.promptFeedback?.safetyRatings?.any { it.category == HarmCategory.UNKNOWN } shouldBe
           true
       }
@@ -96,7 +92,7 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         shouldThrow<ResponseStoppedException> { model.generateContent("prompt") } should
           {
-            it.response.candidates.first().finishReason shouldBe FinishReason.UNKNOWN
+            it.response.finishReason shouldBe FinishReason.UNKNOWN
           }
       }
     }
@@ -118,9 +114,8 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().content.parts.isEmpty() shouldBe false
-        val part = response.candidates.first().content.parts.first() as TextPart
+        response.content!!.parts.isEmpty() shouldBe false
+        val part = response.content!!.parts.first() as TextPart
         part.text shouldContain "\""
       }
     }
@@ -131,9 +126,8 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().content.parts.isEmpty() shouldBe false
-        response.candidates.first().safetyRatings.isEmpty() shouldBe true
+        response.content!!.parts.isEmpty() shouldBe false
+        response.safetyRatings.isEmpty() shouldBe true
         response.promptFeedback?.safetyRatings?.isEmpty() shouldBe true
       }
     }
@@ -144,15 +138,14 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().safetyRatings.isEmpty() shouldBe false
-        response.candidates.first().safetyRatings.all {
+        response.safetyRatings.isEmpty() shouldBe false
+        response.safetyRatings.all {
           it.probability == HarmProbability.NEGLIGIBLE
         } shouldBe true
-        response.candidates.first().safetyRatings.all {
+        response.safetyRatings.all {
           it.severity == HarmSeverity.NEGLIGIBLE
         } shouldBe true
-        response.candidates.first().safetyRatings.all { it.severityScore != null } shouldBe true
+        response.safetyRatings.all { it.severityScore != null } shouldBe true
       }
     }
 
@@ -197,7 +190,7 @@ internal class UnarySnapshotTests {
     goldenUnaryFile("unary-failure-finish-reason-safety.json") {
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { model.generateContent("prompt") }
-        exception.response.candidates.first().finishReason shouldBe FinishReason.SAFETY
+        exception.response.finishReason shouldBe FinishReason.SAFETY
       }
     }
 
@@ -206,7 +199,7 @@ internal class UnarySnapshotTests {
     goldenUnaryFile("unary-failure-finish-reason-safety-no-content.json") {
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { model.generateContent("prompt") }
-        exception.response.candidates.first().finishReason shouldBe FinishReason.SAFETY
+        exception.response.finishReason shouldBe FinishReason.SAFETY
       }
     }
 
@@ -216,8 +209,8 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().citationMetadata.size shouldBe 3
+        response.content shouldNotBe null
+        response.citationMetadata.size shouldBe 3
       }
     }
 
@@ -227,10 +220,10 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().citationMetadata.isEmpty() shouldBe false
+        response.content shouldNotBe null
+        response.citationMetadata.isEmpty() shouldBe false
         // Verify the values in the citation source
-        with(response.candidates.first().citationMetadata.first()) {
+        with(response.citationMetadata.first()) {
           license shouldBe null
           startIndex shouldBe 0
         }
@@ -243,8 +236,8 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.content shouldNotBe null
+        response.finishReason shouldBe FinishReason.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.totalTokenCount shouldBe 363
       }
@@ -256,8 +249,8 @@ internal class UnarySnapshotTests {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
 
-        response.candidates.isEmpty() shouldBe false
-        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.content shouldNotBe null
+        response.finishReason shouldBe FinishReason.STOP
         response.usageMetadata shouldNotBe null
         response.usageMetadata?.promptTokenCount shouldBe 6
         response.usageMetadata?.totalTokenCount shouldBe 0
@@ -269,8 +262,8 @@ internal class UnarySnapshotTests {
     goldenUnaryFile("unary-success-constraint-decoding-json.json") {
       val response = model.generateContent("prompt")
 
-      response.candidates.isEmpty() shouldBe false
-      with(response.candidates.first().content.parts.first().shouldBeInstanceOf<TextPart>()) {
+      response.content shouldNotBe null
+      with(response.content!!.parts.first().shouldBeInstanceOf<TextPart>()) {
         shouldNotBeNull()
         val jsonArr = JSONArray(text)
         jsonArr.length() shouldBe 3
@@ -333,7 +326,7 @@ internal class UnarySnapshotTests {
     goldenUnaryFile("unary-success-function-call-null.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
-        val callPart = (response.candidates.first().content.parts.first() as FunctionCallPart)
+        val callPart = (response.content!!.parts.first() as FunctionCallPart)
 
         callPart.args["season"] shouldBe null
       }
@@ -344,7 +337,8 @@ internal class UnarySnapshotTests {
     goldenUnaryFile("unary-success-function-call-json-literal.json") {
       withTimeout(testTimeout) {
         val response = model.generateContent("prompt")
-        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
+        response.content shouldNotBe null
+        val content = response.content
         val callPart =
           content.let {
             it.shouldNotBeNull()

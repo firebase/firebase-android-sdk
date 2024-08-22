@@ -49,9 +49,9 @@ internal class StreamingSnapshotTests {
       withTimeout(testTimeout) {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
-        responseList.first().candidates.first().finishReason shouldBe FinishReason.STOP
-        responseList.first().candidates.first().content.parts.isEmpty() shouldBe false
-        responseList.first().candidates.first().safetyRatings.isEmpty() shouldBe false
+        responseList.first().finishReason shouldBe FinishReason.STOP
+        responseList.first().content!!.parts.isEmpty() shouldBe false
+        responseList.first().safetyRatings.isEmpty() shouldBe false
       }
     }
 
@@ -64,9 +64,9 @@ internal class StreamingSnapshotTests {
         val responseList = responses.toList()
         responseList.isEmpty() shouldBe false
         responseList.forEach {
-          it.candidates.first().finishReason shouldBe FinishReason.STOP
-          it.candidates.first().content.parts.isEmpty() shouldBe false
-          it.candidates.first().safetyRatings.isEmpty() shouldBe false
+          it.finishReason shouldBe FinishReason.STOP
+          it.content!!.parts.isEmpty() shouldBe false
+          it.safetyRatings.isEmpty() shouldBe false
         }
       }
     }
@@ -81,7 +81,7 @@ internal class StreamingSnapshotTests {
 
         responseList.isEmpty() shouldBe false
         responseList.any {
-          it.candidates.any { it.safetyRatings.any { it.category == HarmCategory.UNKNOWN } }
+          it.let { it.safetyRatings.any { it.category == HarmCategory.UNKNOWN } }
         } shouldBe true
       }
     }
@@ -93,7 +93,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { responses.collect() }
-        exception.response.candidates.first().finishReason shouldBe FinishReason.UNKNOWN
+        exception.response.finishReason shouldBe FinishReason.UNKNOWN
       }
     }
 
@@ -106,7 +106,7 @@ internal class StreamingSnapshotTests {
         val responseList = responses.toList()
 
         responseList.isEmpty() shouldBe false
-        val part = responseList.first().candidates.first().content.parts.first() as? TextPart
+        val part = responseList.first().content?.parts?.first() as? TextPart
         part.shouldNotBeNull()
         part.text shouldContain "\""
       }
@@ -146,7 +146,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { responses.collect() }
-        exception.response.candidates.first().finishReason shouldBe FinishReason.SAFETY
+        exception.response.finishReason shouldBe FinishReason.SAFETY
       }
     }
 
@@ -157,7 +157,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val responseList = responses.toList()
-        responseList.any { it.candidates.any { it.citationMetadata.isNotEmpty() } } shouldBe true
+        responseList.any { it.citationMetadata.isNotEmpty() } shouldBe true
       }
     }
 
@@ -168,7 +168,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val exception = shouldThrow<ResponseStoppedException> { responses.collect() }
-        exception.response.candidates.first().finishReason shouldBe FinishReason.RECITATION
+        exception.response.finishReason shouldBe FinishReason.RECITATION
       }
     }
 
