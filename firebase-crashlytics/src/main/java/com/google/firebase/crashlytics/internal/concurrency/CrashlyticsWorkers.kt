@@ -78,7 +78,7 @@ class CrashlyticsWorkers(
     private fun checkThread(isCorrectThread: () -> Boolean, failureMessage: () -> String) {
       if (!isCorrectThread()) {
         Logger.getLogger().d(failureMessage())
-        assert(enforcement, failureMessage)
+        assert(!enforcement, failureMessage)
       }
     }
   }
