@@ -1,0 +1,10 @@
+{
+  "name": "M135_1",
+  "libraries": [
+    ":firebase-crashlytics",
+    ":firebase-crashlytics-ndk",
+    ":firebase-sessions",
+    ":firebase-components",
+    ":firebase-crashlytics:ktx"
+  ]
+}
