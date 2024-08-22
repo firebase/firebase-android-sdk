@@ -104,7 +104,6 @@ public class IdManager implements InstallIdProvider {
   @Override
   @NonNull
   public synchronized InstallIds getInstallIds() {
-    CrashlyticsWorkers.checkBackgroundThread();
     if (!shouldRefresh()) {
       return installIds;
     }
@@ -183,7 +182,7 @@ public class IdManager implements InstallIdProvider {
    */
   @NonNull
   public FirebaseInstallationId fetchTrueFid(boolean validate) {
-    CrashlyticsWorkers.checkBackgroundThread(); // This fetch blocks, never do it on main.
+    CrashlyticsWorkers.checkNotMainThread(); // This fetch blocks, never do it on main.
     String fid = null;
     String authToken = null;
 
