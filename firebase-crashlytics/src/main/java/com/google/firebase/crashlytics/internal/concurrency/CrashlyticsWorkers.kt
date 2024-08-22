@@ -16,6 +16,8 @@
 
 package com.google.firebase.crashlytics.internal.concurrency
 
+import android.os.Build
+import android.os.Looper
 import com.google.firebase.crashlytics.internal.Logger
 import java.util.concurrent.ExecutorService
 
@@ -60,6 +62,12 @@ class CrashlyticsWorkers(
     @JvmStatic var enforcement: Boolean = false
 
     @JvmStatic
+    fun checkNotMainThread() =
+      checkThread(::isNotMainThread) {
+        "Must not be called on a main thread, was called on $threadName."
+      }
+
+    @JvmStatic
     fun checkBlockingThread() =
       checkThread(::isBlockingThread) {
         "Must be called on a blocking thread, was called on $threadName."
@@ -69,6 +77,13 @@ class CrashlyticsWorkers(
     fun checkBackgroundThread() =
       checkThread(::isBackgroundThread) {
         "Must be called on a background thread, was called on $threadName."
+      }
+
+    private fun isNotMainThread() =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        !Looper.getMainLooper().isCurrentThread
+      } else {
+        Looper.getMainLooper() != Looper.myLooper()
       }
 
     private fun isBlockingThread() = threadName.contains("Firebase Blocking Thread #")
