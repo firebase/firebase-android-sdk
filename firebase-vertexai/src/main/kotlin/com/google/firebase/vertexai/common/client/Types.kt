@@ -25,7 +25,6 @@ internal data class GenerationConfig(
   val temperature: Float?,
   @SerialName("top_p") val topP: Float?,
   @SerialName("top_k") val topK: Int?,
-  @SerialName("candidate_count") val candidateCount: Int?,
   @SerialName("max_output_tokens") val maxOutputTokens: Int?,
   @SerialName("stop_sequences") val stopSequences: List<String>?,
   @SerialName("response_mime_type") val responseMimeType: String? = null,

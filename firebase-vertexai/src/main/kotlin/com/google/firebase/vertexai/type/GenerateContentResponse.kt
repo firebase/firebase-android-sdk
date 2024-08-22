@@ -26,18 +26,21 @@ import android.util.Log
  * populated in the first response.
  */
 class GenerateContentResponse(
-  val candidates: List<Candidate>,
+  val content: Content?,
+  val safetyRatings: List<SafetyRating>,
+  val citationMetadata: List<CitationMetadata>,
+  val finishReason: FinishReason?,
   val promptFeedback: PromptFeedback?,
   val usageMetadata: UsageMetadata?,
 ) {
   /** Convenience field representing all the text parts in the response, if they exists. */
   val text: String? by lazy {
-    candidates.first().content.parts.filterIsInstance<TextPart>().joinToString(" ") { it.text }
+    content?.parts?.filterIsInstance<TextPart>()?.joinToString(" ") { it.text }
   }
 
   /** Convenience field to get all the function call parts in the request, if they exist */
   val functionCalls: List<FunctionCallPart> by lazy {
-    candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+    content?.parts?.filterIsInstance<FunctionCallPart>().orEmpty()
   }
 
   /**
@@ -46,12 +49,11 @@ class GenerateContentResponse(
   val functionResponse: FunctionResponsePart? by lazy { firstPartAs() }
 
   private inline fun <reified T : Part> firstPartAs(): T? {
-    if (candidates.isEmpty()) {
+    if (content == null) {
       warn("No candidates were found, but was asked to get a candidate.")
       return null
     }
-
-    val (parts, otherParts) = candidates.first().content.parts.partition { it is T }
+    val (parts, otherParts) = content.parts.partition { it is T }
     val type = T::class.simpleName ?: "of the part type you asked for"
 
     if (parts.isEmpty()) {

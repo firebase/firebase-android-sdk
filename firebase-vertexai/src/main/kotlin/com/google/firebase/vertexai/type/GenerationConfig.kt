@@ -22,7 +22,6 @@ package com.google.firebase.vertexai.type
  * @property temperature The degree of randomness in token selection, typically between 0 and 1
  * @property topK The sum of probabilities to collect to during token selection
  * @property topP How many tokens to select amongst the highest probabilities
- * @property candidateCount The max *unique* responses to return
  * @property maxOutputTokens The max tokens to generate per response
  * @property stopSequences A list of strings to stop generation on occurrence of
  * @property responseMimeType Response MIME type for the generated candidate text. For a list of
@@ -37,7 +36,6 @@ private constructor(
   val temperature: Float?,
   val topK: Int?,
   val topP: Float?,
-  val candidateCount: Int?,
   val maxOutputTokens: Int?,
   val stopSequences: List<String>?,
   val responseMimeType: String?,
@@ -74,7 +72,6 @@ private constructor(
         temperature = temperature,
         topK = topK,
         topP = topP,
-        candidateCount = candidateCount,
         maxOutputTokens = maxOutputTokens,
         stopSequences = stopSequences,
         responseMimeType = responseMimeType,

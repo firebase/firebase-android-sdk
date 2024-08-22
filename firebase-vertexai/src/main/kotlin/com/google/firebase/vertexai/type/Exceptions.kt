@@ -119,7 +119,7 @@ class InvalidStateException(message: String, cause: Throwable? = null) :
  */
 class ResponseStoppedException(val response: GenerateContentResponse, cause: Throwable? = null) :
   FirebaseVertexAIException(
-    "Content generation stopped. Reason: ${response.candidates.first().finishReason?.name}",
+    "Content generation stopped. Reason: ${response.finishReason?.name}",
     cause,
   )
 

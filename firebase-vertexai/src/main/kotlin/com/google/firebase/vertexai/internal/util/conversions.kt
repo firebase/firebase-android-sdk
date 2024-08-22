@@ -31,7 +31,6 @@ import com.google.firebase.vertexai.common.shared.HarmBlockThreshold
 import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.BlockThreshold
-import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
@@ -109,7 +108,6 @@ internal fun GenerationConfig.toInternal() =
     temperature = temperature,
     topP = topP,
     topK = topK,
-    candidateCount = candidateCount,
     maxOutputTokens = maxOutputTokens,
     stopSequences = stopSequences,
     responseMimeType = responseMimeType,
@@ -178,18 +176,6 @@ internal fun <T> com.google.firebase.vertexai.type.Schema<T>.toInternal(): Schem
 
 internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toString())
 
-internal fun com.google.firebase.vertexai.common.server.Candidate.toPublic(): Candidate {
-  val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
-  val citations = citationMetadata?.citationSources?.map { it.toPublic() }.orEmpty()
-  val finishReason = finishReason.toPublic()
-
-  return Candidate(
-    this.content?.toPublic() ?: content("model") {},
-    safetyRatings,
-    citations,
-    finishReason
-  )
-}
 
 internal fun com.google.firebase.vertexai.common.UsageMetadata.toPublic(): UsageMetadata =
   UsageMetadata(promptTokenCount ?: 0, candidatesTokenCount ?: 0, totalTokenCount ?: 0)
@@ -303,8 +289,15 @@ internal fun com.google.firebase.vertexai.common.server.BlockReason.toPublic() =
 
 internal fun com.google.firebase.vertexai.common.GenerateContentResponse.toPublic():
   GenerateContentResponse {
+  val candidate = candidates?.get(0)
+  val safetyRatings =  candidate?.safetyRatings?.map { it.toPublic() }.orEmpty()
+  val citations = candidate?.citationMetadata?.citationSources?.map { it.toPublic() }.orEmpty()
+  val finishReason = candidate?.finishReason.toPublic()
   return GenerateContentResponse(
-    candidates?.map { it.toPublic() }.orEmpty(),
+    candidates?.get(0)?.content?.toPublic(),
+    safetyRatings,
+    citations,
+    finishReason,
     promptFeedback?.toPublic(),
     usageMetadata?.toPublic()
   )

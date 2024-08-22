@@ -237,14 +237,13 @@ internal constructor(
     CountTokensRequest.forVertexAI(constructRequest(*prompt))
 
   private fun GenerateContentResponse.validate() = apply {
-    if (candidates.isEmpty() && promptFeedback == null) {
+    if (content == null  && finishReason == null && promptFeedback == null) {
       throw SerializationException("Error deserializing response, found no valid fields")
     }
     promptFeedback?.blockReason?.let { throw PromptBlockedException(this) }
-    candidates
-      .mapNotNull { it.finishReason }
-      .firstOrNull { it != FinishReason.STOP }
-      ?.let { throw ResponseStoppedException(this) }
+    if (finishReason != FinishReason.STOP) {
+      throw ResponseStoppedException(this)
+    }
   }
 
   companion object {

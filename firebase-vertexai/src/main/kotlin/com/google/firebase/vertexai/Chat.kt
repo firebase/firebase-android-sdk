@@ -59,7 +59,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
     try {
       val response = model.generateContent(*history.toTypedArray(), prompt)
       history.add(prompt)
-      history.add(response.candidates.first().content)
+      history.add(response.content!!)
       return response
     } finally {
       lock.release()
@@ -112,7 +112,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
      */
     return flow
       .onEach {
-        for (part in it.candidates.first().content.parts) {
+        for (part in it.content!!.parts) {
           when (part) {
             is TextPart -> text.append(part.text)
             is ImagePart -> bitmaps.add(part.image)
