@@ -187,7 +187,6 @@ tasks.withType<DokkaTask>().configureEach {
   val cacheRootDirectory = layout.buildDirectory.dir("dokka/cache")
   cacheRootDirectory.get().asFile.mkdirs()
   cacheRoot.set(cacheRootDirectory)
-  mustRunAfter("ktfmtFormat")
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -223,10 +222,13 @@ tasks.register("dokkaHtmlServe") {
     }
 
     javelin.start(port)
-    println("Starting HTTP server at http://localhost:$port which serves the contents of directory: $directory")
-    println("Press ENTER to stop the server")
-    readlnOrNull()
-    println("Stopping HTTP server at http://localhost:$port")
-    javelin.stop()
+    try {
+      println("Starting HTTP server at http://localhost:$port which serves the contents of directory: $directory")
+      println("Press ENTER to stop the server")
+      readlnOrNull()
+      println("Stopping HTTP server at http://localhost:$port")
+    } finally {
+      javelin.stop()
+    }
   }
 }
