@@ -20,6 +20,8 @@ import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
 import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
+import java.lang.Override;
+import java.lang.SuppressWarnings;
 
 /**
  * @hide */
