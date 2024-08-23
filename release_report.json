@@ -1,0 +1,28 @@
+{
+    "changesByLibraryName": {
+        "firebase-vertexai": [
+            {
+                "commitId": "3afffc127b1f17a596ce94075bec82f7bd0268b7",
+                "prId": "6186",
+                "author": "emilypgoogle",
+                "message": "Merge GenAI Common into Vertex (#6186)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3afffc127b1f17a596ce94075bec82f7bd0268b7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6186"
+            },
+            {
+                "commitId": "5fe51ebb554a9b141d65674be667935f01abd856",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Make citation metadata uri optional\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5fe51ebb554a9b141d65674be667935f01abd856",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx"
+    ]
+}
