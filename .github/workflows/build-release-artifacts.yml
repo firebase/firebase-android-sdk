@@ -29,19 +29,19 @@ jobs:
         uses: actions/upload-artifact@v4.3.3
         with:
           name: m2repository
-          path: build/m2repository.zip
+          path: build/m2repository/
           retention-days: 15
 
       - name: Upload release notes
         uses: actions/upload-artifact@v4.3.3
         with:
-          name: release_artifacts
-          path: build/release-notes.zip
+          name: release_notes
+          path: build/release-notes/
           retention-days: 15
 
       - name: Upload kotlindocs
         uses: actions/upload-artifact@v4.3.3
         with:
           name: kotlindocs
-          path: build/kotlindoc.zip
+          path: build/firebase-kotlindoc/
           retention-days: 15
