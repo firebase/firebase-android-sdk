@@ -35,7 +35,7 @@ jobs:
       - name: Upload release notes
         uses: actions/upload-artifact@v4.3.3
         with:
-          name: release_artifacts
+          name: release_notes
           path: build/release-notes.zip
           retention-days: 15
 
