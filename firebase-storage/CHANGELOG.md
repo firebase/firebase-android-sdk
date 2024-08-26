@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed an issue where `maxUploadRetryTimeMillis` parameter is ignored when uploading using 
+`putBytes()`
 
 # 21.0.0
 * [changed] Bump internal dependencies
