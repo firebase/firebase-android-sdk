@@ -21,7 +21,11 @@ import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.crashlytics.internal.Logger;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -41,6 +45,7 @@ public final class CrashlyticsTasks {
   public static <T> Task<T> race(Task<T> task1, Task<T> task2) {
     CancellationTokenSource cancellation = new CancellationTokenSource();
     TaskCompletionSource<T> result = new TaskCompletionSource<>(cancellation.getToken());
+    Timer timer = new Timer();
 
     AtomicBoolean otherTaskCancelled = new AtomicBoolean(false);
 
@@ -62,6 +67,15 @@ public final class CrashlyticsTasks {
     task1.continueWithTask(DIRECT, continuation);
     task2.continueWithTask(DIRECT, continuation);
 
+    timer.schedule(
+        new TimerTask() {
+          @Override
+          public void run() {
+            Logger.getLogger().d("Race gets timed out");
+            result.trySetException(new TimeoutException("Race result gets timed out"));
+          }
+        },
+        10 * 1000);
     return result.getTask();
   }
 

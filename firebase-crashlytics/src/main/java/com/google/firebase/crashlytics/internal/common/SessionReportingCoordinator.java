@@ -341,6 +341,7 @@ public class SessionReportingCoordinator {
     if (!isFatal) {
       crashlyticsWorkers.diskWrite.submit(
           () -> {
+            Logger.getLogger().d("disk worker: log non-fatal event to persistence");
             reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
           });
       return;

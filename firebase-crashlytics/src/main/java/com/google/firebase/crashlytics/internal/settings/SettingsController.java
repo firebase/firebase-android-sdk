@@ -18,8 +18,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.gms.tasks.SuccessContinuation;
+import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -190,38 +189,41 @@ public class SettingsController implements SettingsProvider {
     // TODO(mrober): Refactor to call worker directly, not expose executor.
     return dataCollectionArbiter
         .waitForDataCollectionPermission()
-        .onSuccessTask(
+        .continueWithTask(
             crashlyticsWorkers.common,
-            new SuccessContinuation<Void, Void>() {
-              @NonNull
+            new Continuation<Void, Task<Void>>() {
               @Override
-              public Task<Void> then(@Nullable Void aVoid) throws Exception {
-                // Waited for data collection permission, so this is safe.
-                final boolean dataCollectionToken = true;
-                Future<JSONObject> settingsFuture =
-                    crashlyticsWorkers
-                        .network
-                        .getExecutor()
-                        .submit(() -> settingsSpiCall.invoke(settingsRequest, dataCollectionToken));
-                // TODO(mrober): Should we add a timeout here, or let the entire init timeout?
-                JSONObject settingsJson = settingsFuture.get();
+              public Task<Void> then(@NonNull Task<Void> task) throws Exception {
+                if (task.isSuccessful()) {
+                  final boolean dataCollectionToken = true;
+                  Future<JSONObject> settingsFuture =
+                      crashlyticsWorkers
+                          .network
+                          .getExecutor()
+                          .submit(
+                              () -> settingsSpiCall.invoke(settingsRequest, dataCollectionToken));
+                  // TODO(mrober): Should we add a timeout here, or let the entire init timeout?
+                  JSONObject settingsJson = settingsFuture.get();
 
-                if (settingsJson != null) {
-                  final Settings fetchedSettings =
-                      settingsJsonParser.parseSettingsJson(settingsJson);
-                  cachedSettingsIo.writeCachedSettings(
-                      fetchedSettings.expiresAtMillis, settingsJson);
-                  logSettings(settingsJson, "Loaded settings: ");
+                  if (settingsJson != null) {
+                    final Settings fetchedSettings =
+                        settingsJsonParser.parseSettingsJson(settingsJson);
+                    cachedSettingsIo.writeCachedSettings(
+                        fetchedSettings.expiresAtMillis, settingsJson);
+                    logSettings(settingsJson, "Loaded settings: ");
 
-                  setStoredBuildInstanceIdentifier(settingsRequest.instanceId);
+                    setStoredBuildInstanceIdentifier(settingsRequest.instanceId);
 
-                  // Update the regular settings.
-                  settings.set(fetchedSettings);
+                    // Update the regular settings.
+                    settings.set(fetchedSettings);
 
-                  // Signal the Task that we have a new valid settings
-                  settingsTask.get().trySetResult(fetchedSettings);
+                    // Signal the Task that we have a new valid settings
+                    settingsTask.get().trySetResult(fetchedSettings);
+                    return Tasks.forResult(null);
+                  }
                 }
-
+                Logger.getLogger().d("waitForDataCollectionPermission failed, set setting to null");
+                settingsTask.get().trySetResult(null);
                 return Tasks.forResult(null);
               }
             });
