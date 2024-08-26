@@ -149,6 +149,7 @@ public class SettingsController implements SettingsProvider {
    * @return a task that is resolved when loading is completely finished.
    */
   public Task<Void> loadSettingsData(CrashlyticsWorkers crashlyticsWorkers) {
+    Logger.getLogger().i("loadSettingsData wrapper " + Thread.currentThread());
     return loadSettingsData(SettingsCacheBehavior.USE_CACHE, crashlyticsWorkers);
   }
 
@@ -161,7 +162,7 @@ public class SettingsController implements SettingsProvider {
       SettingsCacheBehavior cacheBehavior, CrashlyticsWorkers crashlyticsWorkers) {
     // TODO: Refactor this so that it doesn't do the cache lookup twice when settings are
     // expired.
-
+    Logger.getLogger().i("loadSettingsData " + Thread.currentThread());
     // We need to bypass the cache if this is the first time a new build has run so the
     // backend will know about it.
     if (!buildInstanceIdentifierChanged()) {
@@ -222,7 +223,10 @@ public class SettingsController implements SettingsProvider {
                     return Tasks.forResult(null);
                   }
                 }
-                Logger.getLogger().d("waitForDataCollectionPermission failed, set setting to null");
+                Logger.getLogger()
+                    .d(
+                        "waitForDataCollectionPermission failed, set setting to null "
+                            + Thread.currentThread());
                 settingsTask.get().trySetResult(null);
                 return Tasks.forResult(null);
               }

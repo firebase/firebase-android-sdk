@@ -46,7 +46,7 @@ public final class CrashlyticsTasks {
     CancellationTokenSource cancellation = new CancellationTokenSource();
     TaskCompletionSource<T> result = new TaskCompletionSource<>(cancellation.getToken());
     Timer timer = new Timer();
-
+    Logger.getLogger().d("Race starts " + Thread.currentThread());
     AtomicBoolean otherTaskCancelled = new AtomicBoolean(false);
 
     Continuation<T, Task<Void>> continuation =
@@ -71,8 +71,10 @@ public final class CrashlyticsTasks {
         new TimerTask() {
           @Override
           public void run() {
-            Logger.getLogger().d("Race gets timed out");
-            result.trySetException(new TimeoutException("Race result gets timed out"));
+            if (!result.getTask().isComplete()) {
+              Logger.getLogger().d("Race gets timed out " + Thread.currentThread());
+              result.trySetException(new TimeoutException("Race result gets timed out"));
+            }
           }
         },
         10 * 1000);

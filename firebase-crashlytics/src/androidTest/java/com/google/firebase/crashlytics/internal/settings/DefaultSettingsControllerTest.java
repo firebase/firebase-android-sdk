@@ -34,6 +34,7 @@ import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider.InstallIds;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.json.JSONObject;
 
 public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
@@ -366,13 +367,14 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     assertNotNull(controller.getSettingsSync());
     assertFalse(controller.getSettingsAsync().isComplete());
 
-    dataCollectionPermission.trySetResult(null);
+    dataCollectionPermission.trySetException(new TimeoutException("Timeout"));
+    crashlyticsWorkers.common.await();
     await(loadFinished);
 
     assertNotNull(controller.getSettingsSync());
-    assertFalse(controller.getSettingsAsync().isComplete());
+    assertTrue(controller.getSettingsAsync().isComplete());
 
-    verify(mockSettingsSpiCall).invoke(any(SettingsRequest.class), eq(true));
+    verify(mockSettingsSpiCall, times(0)).invoke(any(SettingsRequest.class), eq(true));
     verify(mockCachedSettingsIo, times(2)).readCachedSettings();
     verifyNoMoreInteractions(mockSettingsJsonParser);
     verify(mockCurrentTimeProvider).getCurrentTimeMillis();

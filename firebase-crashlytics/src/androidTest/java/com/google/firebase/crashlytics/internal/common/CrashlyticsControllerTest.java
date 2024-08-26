@@ -410,9 +410,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final CrashlyticsController controller = createController();
 
-    Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
+    controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
-    await(task);
+    crashlyticsWorkers.common.await();
 
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
@@ -426,9 +426,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     final CrashlyticsController controller = createController();
 
-    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
+    controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
-    await(task);
+    crashlyticsWorkers.common.await();
 
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockDataCollectionArbiter).isAutomaticDataCollectionEnabled();
@@ -452,15 +452,13 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     final ControllerBuilder builder = builder();
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
-
-    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
-
+    controller.submitAllReports(testSettingsProvider.getSettingsAsync());
     verify(arbiter).isAutomaticDataCollectionEnabled();
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockSessionReportingCoordinator, never()).sendReports(any(Executor.class));
 
     await(controller.sendUnsentReports());
-    await(task);
+    crashlyticsWorkers.common.await();
 
     verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);
@@ -481,14 +479,14 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
+    controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
     verify(arbiter).isAutomaticDataCollectionEnabled();
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockSessionReportingCoordinator, never()).removeAllReports();
 
     await(controller.deleteUnsentReports());
-    await(task);
+    crashlyticsWorkers.common.await();
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -525,7 +523,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     builder.setDataCollectionArbiter(arbiter);
     final CrashlyticsController controller = builder.build();
 
-    final Task<Void> task = controller.submitAllReports(testSettingsProvider.getSettingsAsync());
+    controller.submitAllReports(testSettingsProvider.getSettingsAsync());
 
     verify(mockSessionReportingCoordinator).hasReportsToSend();
     verify(mockSessionReportingCoordinator, never()).sendReports(any(Executor.class));
@@ -547,7 +545,7 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
     when(app.isDataCollectionDefaultEnabled()).thenReturn(false);
     assertFalse(arbiter.isAutomaticDataCollectionEnabled());
 
-    await(task);
+    crashlyticsWorkers.common.await();
 
     verify(mockSessionReportingCoordinator).sendReports(any(Executor.class));
     verifyNoMoreInteractions(mockSessionReportingCoordinator);

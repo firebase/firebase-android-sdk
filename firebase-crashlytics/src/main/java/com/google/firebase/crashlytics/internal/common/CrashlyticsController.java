@@ -339,16 +339,16 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  Task<Void> submitAllReports(Task<Settings> settingsDataTask) {
+  Void submitAllReports(Task<Settings> settingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().v("No crash reports are available to be sent.");
       unsentReportsAvailable.trySetResult(false);
-      return Tasks.forResult(null);
+      return null;
     }
     Logger.getLogger().v("Crash reports are available to be sent.");
 
-    return waitForReportAction()
+    waitForReportAction()
         .onSuccessTask(
             crashlyticsWorkers.common,
             new SuccessContinuation<Boolean, Void>() {
@@ -360,6 +360,7 @@ class CrashlyticsController {
                   deleteFiles(listAppExceptionMarkerFiles());
                   reportingCoordinator.removeAllReports();
                   unsentReportsHandled.trySetResult(null);
+
                   return Tasks.forResult(null);
                 }
 
@@ -371,7 +372,6 @@ class CrashlyticsController {
                 // Signal to the settings fetch and onboarding that we have explicit
                 // permission.
                 dataCollectionArbiter.grantDataCollectionPermission(dataCollectionToken);
-
                 return settingsDataTask.onSuccessTask(
                     crashlyticsWorkers.common,
                     new SuccessContinuation<Settings, Void>() {
@@ -393,6 +393,7 @@ class CrashlyticsController {
                     });
               }
             });
+    return null;
   }
 
   // region Internal "public" API for data capture
