@@ -21,7 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
@@ -224,13 +223,12 @@ public class CrashlyticsCore {
 
   /** Performs background initialization asynchronously on the common worker. */
   @CanIgnoreReturnValue
-  public Task<Settings> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
-    return crashlyticsWorkers.common.submitTask(() -> doBackgroundInitialization(settingsProvider));
+  public Task<Void> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
+    return crashlyticsWorkers.common.submit(() -> doBackgroundInitialization(settingsProvider));
   }
 
   /** Performs background initialization synchronously on the calling thread. */
-  @CanIgnoreReturnValue
-  private Task<Settings> doBackgroundInitialization(SettingsProvider settingsProvider) {
+  private void doBackgroundInitialization(SettingsProvider settingsProvider) {
     CrashlyticsWorkers.checkBackgroundThread();
     // create the marker for this run
     markInitializationStarted();
@@ -246,21 +244,17 @@ public class CrashlyticsCore {
         Logger.getLogger().d("Collection of crash reports disabled in Crashlytics settings.");
         // TODO: This isn't actually an error condition, so figure out the right way to
         // handle this case.
-        return Tasks.forException(
-            new RuntimeException("Collection of crash reports disabled in Crashlytics settings."));
+        throw new RuntimeException("Collection of crash reports disabled in Crashlytics settings.");
       }
 
       if (!controller.finalizeSessions(settingsProvider)) {
         Logger.getLogger().w("Previous sessions could not be finalized.");
       }
 
-      Task<Settings> settings = settingsProvider.getSettingsAsync();
-      controller.submitAllReports(settings);
-      return settings;
+      controller.submitAllReports(settingsProvider.getSettingsAsync());
     } catch (Exception e) {
       Logger.getLogger()
           .e("Crashlytics encountered a problem during asynchronous initialization.", e);
-      return Tasks.forException(e);
     } finally {
       // The only thing that compels us to leave the marker and start synchronously next time
       // is not executing all the way through this method. That would indicate that we perhaps

@@ -162,7 +162,6 @@ public class SettingsController implements SettingsProvider {
       SettingsCacheBehavior cacheBehavior, CrashlyticsWorkers crashlyticsWorkers) {
     // TODO: Refactor this so that it doesn't do the cache lookup twice when settings are
     // expired.
-
     // We need to bypass the cache if this is the first time a new build has run so the
     // backend will know about it.
     if (!buildInstanceIdentifierChanged()) {
