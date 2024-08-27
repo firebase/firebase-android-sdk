@@ -27,10 +27,10 @@ import java.util.concurrent.TimeoutException;
 @SuppressWarnings({"ResultOfMethodCallIgnored", "UnusedReturnValue"})
 public final class Utils {
   /** Timeout in milliseconds for blocking on background threads. */
-  private static final int BACKGROUND_TIMEOUT_MILLIS = 3_000;
+  private static final int BACKGROUND_TIMEOUT_MILLIS = 4_000;
 
   /** Timeout in milliseconds for blocking on the main thread. Be careful about ANRs. */
-  private static final int MAIN_TIMEOUT_MILLIS = 2_000;
+  private static final int MAIN_TIMEOUT_MILLIS = 3_000;
 
   /**
    * Blocks until the given Task completes, and then returns the value the Task was resolved with,
