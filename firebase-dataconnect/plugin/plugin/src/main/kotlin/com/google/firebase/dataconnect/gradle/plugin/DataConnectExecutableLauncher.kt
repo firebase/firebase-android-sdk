@@ -23,6 +23,7 @@ interface DataConnectExecutableConfig {
   var connectors: Collection<String>
   var listen: String?
   var localConnectionString: String?
+  var logFile: File?
 }
 
 fun Task.runDataConnectExecutable(
@@ -37,34 +38,51 @@ fun Task.runDataConnectExecutable(
         override var connectors: Collection<String> = emptyList()
         override var listen: String? = null
         override var localConnectionString: String? = null
+        override var logFile: File? = null
       }
       .apply(configure)
 
-  project.exec { execSpec ->
-    execSpec.run {
-      executable(dataConnectExecutable)
-      isIgnoreExitValue = false
+  val logFile = config.logFile?.also { project.mkdir(it.parentFile) }
+  val logFileStream = logFile?.outputStream()
 
-      if (logger.isDebugEnabled) {
-        args("-v").args("9")
-        args("-logtostderr")
-      } else if (logger.isInfoEnabled) {
-        args("-v").args("2")
-        args("-logtostderr")
-      }
+  try {
+    project.exec { execSpec ->
+      execSpec.run {
+        executable(dataConnectExecutable)
+        isIgnoreExitValue = false
 
-      args(subCommand)
-
-      args("-config_dir=$configDirectory")
-
-      config.outputDirectory?.let { args("-output_dir=${it.path}") }
-      config.connectors.let {
-        if (it.isNotEmpty()) {
-          args("-connectors=${it.joinToString(",")}")
+        if (logger.isDebugEnabled) {
+          args("-v").args("9")
+          args("-logtostderr")
+        } else if (logger.isInfoEnabled) {
+          args("-v").args("2")
+          args("-logtostderr")
+        } else if (logFileStream !== null) {
+          args("-v").args("2")
+          args("-logtostderr")
+          standardOutput = logFileStream
+          errorOutput = logFileStream
         }
+
+        args(subCommand)
+
+        args("-config_dir=$configDirectory")
+
+        config.outputDirectory?.let { args("-output_dir=${it.path}") }
+        config.connectors.let {
+          if (it.isNotEmpty()) {
+            args("-connectors=${it.joinToString(",")}")
+          }
+        }
+        config.listen?.let { args("-listen=${it}") }
+        config.localConnectionString?.let { args("-local_connection_string=${it}") }
       }
-      config.listen?.let { args("-listen=${it}") }
-      config.localConnectionString?.let { args("-local_connection_string=${it}") }
     }
+  } catch (e: Exception) {
+    logFileStream?.close()
+    logFile?.forEachLine { logger.error(it.trimEnd()) }
+    throw e
+  } finally {
+    logFileStream?.close()
   }
 }

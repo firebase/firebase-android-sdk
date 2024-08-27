@@ -153,6 +153,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
         "run${variantNameTitleCase}DataConnectEmulator"
       ) {
         outputs.upToDateWhen { false }
+        buildDirectory.set(baseBuildDirectory.map { it.dir("runEmulator") })
         dataConnectExecutable.set(downloadDataConnectExecutableTask.flatMap { it.outputFile })
         if (existingConfigDirectories.size > 1) {
           configDirectory.set(mergeConfigDirectoriesTask.flatMap { it.mergedDirectory })
@@ -183,6 +184,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             configDirectory.set(existingConfigDirectories.single())
           }
           connectors.set(dataConnectProviders.connectors)
+          buildDirectory.set(baseBuildDirectory.map { it.dir("generateCode") })
         }
 
       variant.sources.java!!.addGeneratedSourceDirectory(

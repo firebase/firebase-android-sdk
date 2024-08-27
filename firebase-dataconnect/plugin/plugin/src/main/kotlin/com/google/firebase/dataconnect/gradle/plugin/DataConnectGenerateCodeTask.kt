@@ -23,6 +23,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
@@ -35,6 +36,8 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:Input abstract val connectors: Property<Collection<String>>
 
+  @get:Internal abstract val buildDirectory: DirectoryProperty
+
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
   @TaskAction
@@ -42,11 +45,13 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     val dataConnectExecutable: File = dataConnectExecutable.get().asFile
     val configDirectory: File? = configDirectory.orNull?.asFile
     val connectors: Collection<String> = connectors.get().distinct().sorted()
+    val buildDirectory: File = buildDirectory.get().asFile
     val outputDirectory: File = outputDirectory.get().asFile
 
     logger.info("dataConnectExecutable={}", dataConnectExecutable.absolutePath)
     logger.info("configDirectory={}", configDirectory?.absolutePath)
     logger.info("connectors={}", connectors.joinToString(", "))
+    logger.info("buildDirectory={}", buildDirectory.absolutePath)
     logger.info("outputDirectory={}", outputDirectory.absolutePath)
 
     if (outputDirectory.exists()) {
@@ -66,6 +71,7 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     ) {
       this.connectors = connectors
       this.outputDirectory = outputDirectory
+      this.logFile = File(buildDirectory, "log.txt")
     }
 
     logger.info("Completed successfully")
