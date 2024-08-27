@@ -224,19 +224,11 @@ public class CrashlyticsCore {
   /** Performs background initialization asynchronously on the common worker. */
   @CanIgnoreReturnValue
   public Task<Void> doBackgroundInitializationAsync(SettingsProvider settingsProvider) {
-    return crashlyticsWorkers.common.submit(
-        () -> {
-          try {
-            doBackgroundInitialization(settingsProvider);
-          } catch (Exception e) {
-            Logger.getLogger().e(e.toString());
-          }
-        });
+    return crashlyticsWorkers.common.submit(() -> doBackgroundInitialization(settingsProvider));
   }
 
   /** Performs background initialization synchronously on the calling thread. */
-  @CanIgnoreReturnValue
-  private Void doBackgroundInitialization(SettingsProvider settingsProvider) throws Exception {
+  private void doBackgroundInitialization(SettingsProvider settingsProvider) {
     CrashlyticsWorkers.checkBackgroundThread();
     // create the marker for this run
     markInitializationStarted();
@@ -259,13 +251,10 @@ public class CrashlyticsCore {
         Logger.getLogger().w("Previous sessions could not be finalized.");
       }
 
-      Task<Settings> settings = settingsProvider.getSettingsAsync();
-      controller.submitAllReports(settings);
-      return null;
+      controller.submitAllReports(settingsProvider.getSettingsAsync());
     } catch (Exception e) {
       Logger.getLogger()
           .e("Crashlytics encountered a problem during asynchronous initialization.", e);
-      throw e;
     } finally {
       // The only thing that compels us to leave the marker and start synchronously next time
       // is not executing all the way through this method. That would indicate that we perhaps

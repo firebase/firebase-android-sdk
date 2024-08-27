@@ -339,12 +339,12 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  Void submitAllReports(Task<Settings> settingsDataTask) {
+  void submitAllReports(Task<Settings> settingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().v("No crash reports are available to be sent.");
       unsentReportsAvailable.trySetResult(false);
-      return null;
+      return;
     }
     Logger.getLogger().v("Crash reports are available to be sent.");
 
@@ -393,7 +393,6 @@ class CrashlyticsController {
                     });
               }
             });
-    return null;
   }
 
   // region Internal "public" API for data capture
