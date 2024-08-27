@@ -18,7 +18,8 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
-import com.google.android.gms.tasks.Continuation;
+import androidx.annotation.Nullable;
+import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -149,7 +150,6 @@ public class SettingsController implements SettingsProvider {
    * @return a task that is resolved when loading is completely finished.
    */
   public Task<Void> loadSettingsData(CrashlyticsWorkers crashlyticsWorkers) {
-    Logger.getLogger().i("loadSettingsData wrapper " + Thread.currentThread());
     return loadSettingsData(SettingsCacheBehavior.USE_CACHE, crashlyticsWorkers);
   }
 
@@ -162,7 +162,6 @@ public class SettingsController implements SettingsProvider {
       SettingsCacheBehavior cacheBehavior, CrashlyticsWorkers crashlyticsWorkers) {
     // TODO: Refactor this so that it doesn't do the cache lookup twice when settings are
     // expired.
-    Logger.getLogger().i("loadSettingsData " + Thread.currentThread());
     // We need to bypass the cache if this is the first time a new build has run so the
     // backend will know about it.
     if (!buildInstanceIdentifierChanged()) {
@@ -190,44 +189,38 @@ public class SettingsController implements SettingsProvider {
     // TODO(mrober): Refactor to call worker directly, not expose executor.
     return dataCollectionArbiter
         .waitForDataCollectionPermission()
-        .continueWithTask(
+        .onSuccessTask(
             crashlyticsWorkers.common,
-            new Continuation<Void, Task<Void>>() {
+            new SuccessContinuation<Void, Void>() {
+              @NonNull
               @Override
-              public Task<Void> then(@NonNull Task<Void> task) throws Exception {
-                if (task.isSuccessful()) {
-                  final boolean dataCollectionToken = true;
-                  Future<JSONObject> settingsFuture =
-                      crashlyticsWorkers
-                          .network
-                          .getExecutor()
-                          .submit(
-                              () -> settingsSpiCall.invoke(settingsRequest, dataCollectionToken));
-                  // TODO(mrober): Should we add a timeout here, or let the entire init timeout?
-                  JSONObject settingsJson = settingsFuture.get();
+              public Task<Void> then(@Nullable Void aVoid) throws Exception {
+                // Waited for data collection permission, so this is safe.
+                final boolean dataCollectionToken = true;
+                Future<JSONObject> settingsFuture =
+                    crashlyticsWorkers
+                        .network
+                        .getExecutor()
+                        .submit(() -> settingsSpiCall.invoke(settingsRequest, dataCollectionToken));
+                // TODO(mrober): Should we add a timeout here, or let the entire init timeout?
+                JSONObject settingsJson = settingsFuture.get();
 
-                  if (settingsJson != null) {
-                    final Settings fetchedSettings =
-                        settingsJsonParser.parseSettingsJson(settingsJson);
-                    cachedSettingsIo.writeCachedSettings(
-                        fetchedSettings.expiresAtMillis, settingsJson);
-                    logSettings(settingsJson, "Loaded settings: ");
+                if (settingsJson != null) {
+                  final Settings fetchedSettings =
+                      settingsJsonParser.parseSettingsJson(settingsJson);
+                  cachedSettingsIo.writeCachedSettings(
+                      fetchedSettings.expiresAtMillis, settingsJson);
+                  logSettings(settingsJson, "Loaded settings: ");
 
-                    setStoredBuildInstanceIdentifier(settingsRequest.instanceId);
+                  setStoredBuildInstanceIdentifier(settingsRequest.instanceId);
 
-                    // Update the regular settings.
-                    settings.set(fetchedSettings);
+                  // Update the regular settings.
+                  settings.set(fetchedSettings);
 
-                    // Signal the Task that we have a new valid settings
-                    settingsTask.get().trySetResult(fetchedSettings);
-                    return Tasks.forResult(null);
-                  }
+                  // Signal the Task that we have a new valid settings
+                  settingsTask.get().trySetResult(fetchedSettings);
                 }
-                Logger.getLogger()
-                    .d(
-                        "waitForDataCollectionPermission failed, set setting to null "
-                            + Thread.currentThread());
-                settingsTask.get().trySetResult(null);
+
                 return Tasks.forResult(null);
               }
             });

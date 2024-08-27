@@ -130,7 +130,6 @@ public class DataCollectionArbiter {
    * enabled, or 2) grantDataCollectionPermission has been called.
    */
   public Task<Void> waitForDataCollectionPermission() {
-    Logger.getLogger().i("waitForDataCollectionPermission " + Thread.currentThread());
     return CrashlyticsTasks.race(
         dataCollectionExplicitlyApproved.getTask(), waitForAutomaticDataCollectionEnabled());
   }
