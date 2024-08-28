@@ -44,6 +44,7 @@ import java.util.Set;
  * map to the same Target, each Target maps to a single WatchTarget in RemoteStore and a single
  * TargetData entry in persistence.
  */
+@SuppressWarnings("MissingCasesInEnumSwitch")
 public final class Target {
   public static final long NO_LIMIT = -1;
 

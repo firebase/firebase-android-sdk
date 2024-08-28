@@ -17,6 +17,7 @@ package com.google.firebase.inappmessaging.model;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.inappmessaging.MessagesProto;
 
 /** Encapsulates any button used in a Firebase In App Message. */
@@ -96,11 +97,13 @@ public class Button {
     @Nullable private Text text;
     @Nullable private String buttonHexColor;
 
+    @CanIgnoreReturnValue
     public Builder setText(@Nullable Text text) {
       this.text = text;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setText(MessagesProto.Text text) {
       Text.Builder textBuilder = new Text.Builder();
       textBuilder.setText(text);
@@ -108,6 +111,7 @@ public class Button {
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setButtonHexColor(@Nullable String buttonHexColor) {
       this.buttonHexColor = buttonHexColor;
       return this;
