@@ -63,7 +63,7 @@ public class FirebaseFunctions {
   private static boolean providerInstallStarted = false;
 
   // The network client to use for HTTPS requests.
-  private final OkHttpClient client;
+  private OkHttpClient client;
 
   // A serializer to encode/decode parameters and return values.
   private final Serializer serializer;
@@ -275,6 +275,20 @@ public class FirebaseFunctions {
    */
   public void useEmulator(@NonNull String host, int port) {
     this.emulatorSettings = new EmulatedServiceSettings(host, port);
+  }
+
+  /**
+   * Sets the OkHttpClient instance used by this FirebaseFunctions instance.
+   *
+   * @param client The OkHttpClient instance
+   */
+  public void setOkHttpClient(@NonNull OkHttpClient client) {
+    this.client = Preconditions.checkNotNull(client);
+  }
+
+  @NonNull
+  OkHttpClient getOkHttpClient() {
+    return this.client;
   }
 
   /**
