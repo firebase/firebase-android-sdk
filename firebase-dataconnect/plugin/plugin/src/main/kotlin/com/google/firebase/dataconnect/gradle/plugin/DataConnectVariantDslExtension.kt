@@ -144,6 +144,18 @@ abstract class DataConnectVariantDslExtension(
         DataConnectEmulatorDslExtension::postgresConnectionUrl
       )
     }
+
+    /** @see DataConnectEmulatorDslExtension.schemaExtensionsOutputEnabled */
+    abstract val schemaExtensionsOutputEnabled: Property<Boolean>
+    init {
+      schemaExtensionsOutputEnabled.setFrom(
+        variant,
+        buildTypeExtension,
+        productFlavorExtensions,
+        "schemaExtensionsOutputEnabled",
+        DataConnectEmulatorDslExtension::schemaExtensionsOutputEnabled
+      )
+    }
   }
 
   private companion object {

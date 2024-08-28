@@ -54,7 +54,7 @@ class DataConnectProviders(
   }
 
   val postgresConnectionUrl: Provider<String> = run {
-    val gradlePropertyName = "dataconnect.postgresConnectionUrl"
+    val gradlePropertyName = "dataconnect.emulator.postgresConnectionUrl"
     val valueFromLocalSettings: Provider<String> = localSettings.postgresConnectionUrl
     val valueFromGradleProperty: Provider<String> =
       project.providers.gradleProperty(gradlePropertyName)
@@ -81,6 +81,35 @@ class DataConnectProviders(
           )
         }
       )
+  }
+
+  val schemaExtensionsOutputEnabled: Provider<Boolean> = run {
+    val gradlePropertyName = "dataconnect.emulator.schemaExtensionsOutputEnabled"
+    val valueFromLocalSettings: Provider<Boolean> = localSettings.schemaExtensionsOutputEnabled
+    val valueFromGradleProperty: Provider<Boolean> =
+      project.providers.gradleProperty(gradlePropertyName).map {
+        when (it) {
+          "1" -> true
+          "true" -> true
+          "0" -> false
+          "false" -> false
+          else ->
+            throw DataConnectGradleException(
+              "shc2xwypgf",
+              "invalid value for gradle property $gradlePropertyName: $it" +
+                " (valid values are: 0, 1, true, false"
+            )
+        }
+      }
+    val valueFromVariant: Provider<Boolean> =
+      variantExtension.emulator.schemaExtensionsOutputEnabled
+    val valueFromProject: Provider<Boolean> =
+      project.provider { projectExtension.emulator.schemaExtensionsOutputEnabled }
+
+    valueFromLocalSettings
+      .orElse(valueFromGradleProperty)
+      .orElse(valueFromVariant)
+      .orElse(valueFromProject)
   }
 
   val customConfigDir: Provider<Directory> = run {

@@ -171,6 +171,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           )
         }
         postgresConnectionUrl.set(dataConnectProviders.postgresConnectionUrl)
+        schemaExtensionsOutputEnabled.set(dataConnectProviders.schemaExtensionsOutputEnabled)
       }
 
       val generateCodeTask =

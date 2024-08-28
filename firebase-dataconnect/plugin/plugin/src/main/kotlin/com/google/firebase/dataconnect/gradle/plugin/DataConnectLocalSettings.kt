@@ -51,11 +51,29 @@ class DataConnectLocalSettings(project: Project) {
   val postgresConnectionUrl: Provider<String> =
     project.providerForDataConnectLocalSetting(KEY_POSTGRES_CONNECTION_URL)
 
+  val schemaExtensionsOutputEnabled: Provider<Boolean> =
+    project.providerForDataConnectLocalSetting(KEY_SCHEMA_EXTENSIONS_OUTPUT_ENABLED).map {
+      when (it) {
+        "1" -> true
+        "true" -> true
+        "0" -> false
+        "false" -> false
+        // TODO: Find a way to include the file name in th exception's message.
+        else ->
+          throw DataConnectGradleException(
+            "whrtqh5wvy",
+            "invalid value for $KEY_SCHEMA_EXTENSIONS_OUTPUT_ENABLED: $it" +
+              " (valid values are: 0, 1, true, false"
+          )
+      }
+    }
+
   companion object {
     const val FILE_NAME = "dataconnect.local.properties"
     const val KEY_DATA_CONNECT_EXECUTABLE_FILE = "dataConnectExecutable.file"
     const val KEY_DATA_CONNECT_EXECUTABLE_VERSION = "dataConnectExecutable.version"
-    const val KEY_POSTGRES_CONNECTION_URL = "postgresConnectionUrl"
+    const val KEY_POSTGRES_CONNECTION_URL = "emulator.postgresConnectionUrl"
+    const val KEY_SCHEMA_EXTENSIONS_OUTPUT_ENABLED = "emulator.schemaExtensionsOutputEnabled"
 
     fun Project.providerForDataConnectLocalSetting(settingName: String): Provider<String> =
       providerForDataConnectLocalSetting(settingName) { value, _ -> value }

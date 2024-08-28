@@ -24,6 +24,7 @@ interface DataConnectExecutableConfig {
   var listen: String?
   var localConnectionString: String?
   var logFile: File?
+  var schemaExtensionsOutputEnabled: Boolean?
 }
 
 fun Task.runDataConnectExecutable(
@@ -39,6 +40,7 @@ fun Task.runDataConnectExecutable(
         override var listen: String? = null
         override var localConnectionString: String? = null
         override var logFile: File? = null
+        override var schemaExtensionsOutputEnabled: Boolean? = null
       }
       .apply(configure)
 
@@ -76,6 +78,7 @@ fun Task.runDataConnectExecutable(
         }
         config.listen?.let { args("-listen=${it}") }
         config.localConnectionString?.let { args("-local_connection_string=${it}") }
+        config.schemaExtensionsOutputEnabled?.let { args("-enable_output_schema_extensions=${it}") }
       }
     }
   } catch (e: Exception) {

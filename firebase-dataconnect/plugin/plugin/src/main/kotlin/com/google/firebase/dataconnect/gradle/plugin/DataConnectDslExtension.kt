@@ -82,6 +82,7 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
    */
   abstract class DataConnectEmulatorDslExtension {
     abstract var postgresConnectionUrl: String?
+    abstract var schemaExtensionsOutputEnabled: Boolean?
   }
 
   interface DataConnectExecutableBuilder {
