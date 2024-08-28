@@ -68,7 +68,7 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
-            "Vertex AI for Firebase",
+            "Vertex AI in Firebase",
             "vertex-dependency",
             "com.google.firebase:firebase-vertexai"));
     outputBuilder.append(
