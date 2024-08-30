@@ -55,6 +55,10 @@ public class WorkManagerScheduler implements WorkScheduler {
     this.config = config;
   }
 
+  private String getTag(int jobId) {
+    return "transport-" + jobId;
+  }
+
   @Override
   public void schedule(TransportContext transportContext, int attemptNumber) {
     schedule(transportContext, attemptNumber, false);
@@ -67,7 +71,7 @@ public class WorkManagerScheduler implements WorkScheduler {
     int jobId = WorkScheduler.getJobId(context, transportContext);
     if (!force) {
       try {
-        for (WorkInfo info : manager.getWorkInfosByTag("transport-" + jobId).get()) {
+        for (WorkInfo info : manager.getWorkInfosByTag(this.getTag(jobId)).get()) {
           if (!info.getState().isFinished()) {
             Logging.d(
                 LOG_TAG,
@@ -77,6 +81,8 @@ public class WorkManagerScheduler implements WorkScheduler {
           }
         }
       } catch (Exception e) {
+        // Various Future failure states that shouldn't be possible
+        throw new RuntimeException(e);
       }
     }
 
@@ -107,7 +113,7 @@ public class WorkManagerScheduler implements WorkScheduler {
         new OneTimeWorkRequest.Builder(WorkManagerSchedulerWorker.class)
             .setInitialDelay(scheduleDelay, TimeUnit.MILLISECONDS)
             .setInputData(dataBuilder.build())
-            .addTag("transport-" + jobId)
+            .addTag(this.getTag(jobId))
             .build();
     manager.enqueue(request);
   }
