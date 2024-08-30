@@ -22,6 +22,7 @@ import android.os.Build;
 import androidx.annotation.RequiresApi;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
 import com.google.android.datatransport.runtime.TransportContext;
@@ -41,7 +42,6 @@ public class WorkManagerScheduler implements WorkScheduler {
   static final String BACKEND_NAME = "backendName";
   static final String EVENT_PRIORITY = "priority";
   static final String EXTRAS = "extras";
-  private static final Map<Integer, UUID> JOBS = new ConcurrentHashMap<>();
   private final Context context;
 
   private final EventStore eventStore;
@@ -65,14 +65,16 @@ public class WorkManagerScheduler implements WorkScheduler {
     WorkManager manager = WorkManager.getInstance(context);
 
     int jobId = WorkScheduler.getJobId(context, transportContext);
-    if (!force && JOBS.containsKey(jobId)) {
+    if (!force) {
       try {
-        if (!manager.getWorkInfoById(JOBS.get(jobId)).get().getState().isFinished()) {
-          Logging.d(
-              LOG_TAG,
-              "Upload for context %s is already scheduled. Returning...",
-              transportContext);
-          return;
+        for (WorkInfo info : manager.getWorkInfosByTag("transport-" + jobId).get()) {
+          if (!info.getState().isFinished()) {
+            Logging.d(
+                LOG_TAG,
+                "Upload for context %s is already scheduled. Returning...",
+                transportContext);
+            return;
+          }
         }
       } catch (Exception e) {
       }
@@ -105,8 +107,8 @@ public class WorkManagerScheduler implements WorkScheduler {
         new OneTimeWorkRequest.Builder(WorkManagerSchedulerWorker.class)
             .setInitialDelay(scheduleDelay, TimeUnit.MILLISECONDS)
             .setInputData(dataBuilder.build())
+            .addTag("transport-" + jobId)
             .build();
-    JOBS.put(jobId, request.getId());
     manager.enqueue(request);
   }
 }
