@@ -18,7 +18,8 @@ import static android.util.Base64.DEFAULT;
 import static android.util.Base64.encodeToString;
 
 import android.content.Context;
-import androidx.annotation.VisibleForTesting;
+import android.os.Build;
+import androidx.annotation.RequiresApi;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
@@ -27,14 +28,12 @@ import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.Adler32;
 
+@RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class WorkManagerScheduler implements WorkScheduler {
   private static final String LOG_TAG = "JobInfoScheduler";
 
@@ -42,7 +41,7 @@ public class WorkManagerScheduler implements WorkScheduler {
   static final String BACKEND_NAME = "backendName";
   static final String EVENT_PRIORITY = "priority";
   static final String EXTRAS = "extras";
-  private static final Map<Integer, UUID> JOBS = new HashMap<>();
+  private static final Map<Integer, UUID> JOBS = new ConcurrentHashMap<>();
   private final Context context;
 
   private final EventStore eventStore;
@@ -56,21 +55,6 @@ public class WorkManagerScheduler implements WorkScheduler {
     this.config = config;
   }
 
-  @VisibleForTesting
-  int getJobId(TransportContext transportContext) {
-    Adler32 checksum = new Adler32();
-    checksum.update(context.getPackageName().getBytes(Charset.forName("UTF-8")));
-    checksum.update(transportContext.getBackendName().getBytes(Charset.forName("UTF-8")));
-    checksum.update(
-        ByteBuffer.allocate(4)
-            .putInt(PriorityMapping.toInt(transportContext.getPriority()))
-            .array());
-    if (transportContext.getExtras() != null) {
-      checksum.update(transportContext.getExtras());
-    }
-    return (int) checksum.getValue();
-  }
-
   @Override
   public void schedule(TransportContext transportContext, int attemptNumber) {
     schedule(transportContext, attemptNumber, false);
@@ -80,7 +64,7 @@ public class WorkManagerScheduler implements WorkScheduler {
   public void schedule(TransportContext transportContext, int attemptNumber, boolean force) {
     WorkManager manager = WorkManager.getInstance(context);
 
-    int jobId = getJobId(transportContext);
+    int jobId = WorkScheduler.getJobId(context, transportContext);
     if (!force && JOBS.containsKey(jobId)) {
       try {
         if (!manager.getWorkInfoById(JOBS.get(jobId)).get().getState().isFinished()) {
