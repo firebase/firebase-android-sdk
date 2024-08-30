@@ -1,10 +1,20 @@
 # Unreleased
+
+
+# 25.1.0
 * [feature] Add support for the VectorValue type. [#6154](//github.com/firebase/firebase-android-sdk/pull/6154)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 25.0.0
 * [feature] Enable queries with range & inequality filters on multiple fields. [#5729](//github.com/firebase/firebase-android-sdk/pull/5729)
 * [changed] Internal improvements.
 * [feature] Support conversion between `java.time.Instant` and `Timestamp` [#5853](//github.com/firebase/firebase-android-sdk/pull/5853)
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
