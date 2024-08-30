@@ -80,10 +80,10 @@ public class WorkManagerScheduler implements WorkScheduler {
       }
     }
 
-    Data.Builder dataBuilder = new Data.Builder();
-    dataBuilder.putInt(ATTEMPT_NUMBER, attemptNumber);
-    dataBuilder.putString(BACKEND_NAME, transportContext.getBackendName());
-    dataBuilder.putInt(EVENT_PRIORITY, PriorityMapping.toInt(transportContext.getPriority()));
+    Data.Builder dataBuilder = new Data.Builder()
+            .putInt(ATTEMPT_NUMBER, attemptNumber)
+            .putString(BACKEND_NAME, transportContext.getBackendName())
+            .putInt(EVENT_PRIORITY, PriorityMapping.toInt(transportContext.getPriority()));
     if (transportContext.getExtras() != null) {
       dataBuilder.putString(EXTRAS, encodeToString(transportContext.getExtras(), DEFAULT));
     }
