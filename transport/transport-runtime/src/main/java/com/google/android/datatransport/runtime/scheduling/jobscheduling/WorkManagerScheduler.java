@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 @RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class WorkManagerScheduler implements WorkScheduler {
-  private static final String LOG_TAG = "JobInfoScheduler";
+  private static final String LOG_TAG = "WorkManagerScheduler";
 
   static final String ATTEMPT_NUMBER = "attemptNumber";
   static final String BACKEND_NAME = "backendName";
