@@ -19,19 +19,16 @@ import static android.util.Base64.encodeToString;
 
 import android.content.Context;
 import android.os.Build;
-
 import androidx.annotation.RequiresApi;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkInfo;
 import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
-
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
-
 import java.util.concurrent.TimeUnit;
 
 @RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -86,7 +83,8 @@ public class WorkManagerScheduler implements WorkScheduler {
       }
     }
 
-    Data.Builder dataBuilder = new Data.Builder()
+    Data.Builder dataBuilder =
+        new Data.Builder()
             .putInt(ATTEMPT_NUMBER, attemptNumber)
             .putString(BACKEND_NAME, transportContext.getBackendName())
             .putInt(EVENT_PRIORITY, PriorityMapping.toInt(transportContext.getPriority()));
