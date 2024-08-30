@@ -15,31 +15,34 @@
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
 import android.content.Context;
+import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
+import androidx.work.Data;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
 
+@RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class WorkManagerSchedulerWorker extends Worker {
-  private WorkerParameters params;
 
   public WorkManagerSchedulerWorker(
       @NonNull Context context, @NonNull WorkerParameters workerParams) {
     super(context, workerParams);
-    this.params = workerParams;
   }
 
   @NonNull
   @Override
   public Result doWork() {
-    String backendName = params.getInputData().getString(JobInfoScheduler.BACKEND_NAME);
-    String extras = params.getInputData().getString(JobInfoScheduler.EXTRAS);
+    Data data = getInputData();
+    String backendName = data.getString(JobInfoScheduler.BACKEND_NAME);
+    String extras = data.getString(JobInfoScheduler.EXTRAS);
 
-    int priority = params.getInputData().getInt(JobInfoScheduler.EVENT_PRIORITY, 0);
-    int attemptNumber = params.getInputData().getInt(JobInfoScheduler.ATTEMPT_NUMBER, 0);
+    int priority = data.getInt(JobInfoScheduler.EVENT_PRIORITY, 0);
+    int attemptNumber = data.getInt(JobInfoScheduler.ATTEMPT_NUMBER, 0);
     TransportRuntime.initialize(getApplicationContext());
     TransportContext.Builder transportContext =
         TransportContext.builder()
