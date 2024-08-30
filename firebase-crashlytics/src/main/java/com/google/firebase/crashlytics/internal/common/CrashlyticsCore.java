@@ -74,7 +74,10 @@ public class CrashlyticsCore {
 
   private final Context context;
   private final FirebaseApp app;
+
+  /** This field is accessed by the Unity plugin via reflection. */
   private final DataCollectionArbiter dataCollectionArbiter;
+
   private final OnDemandCounter onDemandCounter;
 
   private final long startTime;
@@ -145,7 +148,7 @@ public class CrashlyticsCore {
       throw new IllegalStateException(MISSING_BUILD_ID_MSG);
     }
 
-    final String sessionIdentifier = new CLSUUID(idManager).toString();
+    String sessionIdentifier = new CLSUUID().getSessionId();
     try {
       crashMarker = new CrashlyticsFileMarker(CRASH_MARKER_FILE_NAME, fileStore);
       initializationMarker = new CrashlyticsFileMarker(INITIALIZATION_MARKER_FILE_NAME, fileStore);

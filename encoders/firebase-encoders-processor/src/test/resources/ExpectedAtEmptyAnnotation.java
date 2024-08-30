@@ -14,6 +14,10 @@
 
 package com.example;
 
+import java.lang.Class;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
 import java.lang.annotation.Annotation;
 
 public final class AtEmptyAnnotation {

@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics;
 
+import static com.google.firebase.crashlytics.internal.CrashlyticsPreconditions.StrictLevel.ASSERT;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.annotations.concurrent.Background;
@@ -24,7 +26,8 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.inject.Deferred;
+import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
@@ -66,26 +69,27 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   }
 
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
-    FirebaseApp app = container.get(FirebaseApp.class);
+    // TODO(mrober): Make this a build time configuration. Do not release like this.
+    CrashlyticsPreconditions.setStrictLevel(ASSERT); // Kill the process on violation for debugging.
 
-    Deferred<CrashlyticsNativeComponent> nativeComponent =
-        container.getDeferred(CrashlyticsNativeComponent.class);
+    // CrashlyticsPreconditions.checkMainThread();
+    long startTime = System.currentTimeMillis();
 
-    Deferred<AnalyticsConnector> analyticsConnector =
-        container.getDeferred(AnalyticsConnector.class);
+    FirebaseCrashlytics crashlytics =
+        FirebaseCrashlytics.init(
+            container.get(FirebaseApp.class),
+            container.get(FirebaseInstallationsApi.class),
+            container.getDeferred(CrashlyticsNativeComponent.class),
+            container.getDeferred(AnalyticsConnector.class),
+            container.getDeferred(FirebaseRemoteConfigInterop.class),
+            container.get(backgroundExecutorService),
+            container.get(blockingExecutorService));
 
-    FirebaseInstallationsApi firebaseInstallations = container.get(FirebaseInstallationsApi.class);
+    long duration = System.currentTimeMillis() - startTime;
+    if (duration > 30) {
+      Logger.getLogger().i("Initializing Crashlytics blocked main for " + duration + " ms");
+    }
 
-    Deferred<FirebaseRemoteConfigInterop> remoteConfigInterop =
-        container.getDeferred(FirebaseRemoteConfigInterop.class);
-
-    return FirebaseCrashlytics.init(
-        app,
-        firebaseInstallations,
-        nativeComponent,
-        analyticsConnector,
-        remoteConfigInterop,
-        container.get(backgroundExecutorService),
-        container.get(blockingExecutorService));
+    return crashlytics;
   }
 }

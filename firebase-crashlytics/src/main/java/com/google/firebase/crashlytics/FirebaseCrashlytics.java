@@ -188,8 +188,8 @@ public class FirebaseCrashlytics {
     return new FirebaseCrashlytics(core);
   }
 
-  @VisibleForTesting // accessible for smoke tests
-  final CrashlyticsCore core;
+  /** Accessible for smoke tests, Unity, and Flutter plugins. */
+  @VisibleForTesting final CrashlyticsCore core;
 
   private FirebaseCrashlytics(@NonNull CrashlyticsCore core) {
     this.core = core;

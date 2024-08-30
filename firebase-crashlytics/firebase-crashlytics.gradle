@@ -111,4 +111,6 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.playservices.tasks)
+    androidTestImplementation(project(":integ-testing"))
 }
