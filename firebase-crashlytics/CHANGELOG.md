@@ -1,5 +1,4 @@
 # Unreleased
-
 * [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is
   enabled.
   (GitHub [#5919](https://github.com/firebase/firebase-android-sdk/issues/5919){: .external})
