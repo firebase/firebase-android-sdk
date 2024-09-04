@@ -36,12 +36,13 @@ internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: Fireba
   SessionLifecycleServiceBinder {
 
   override fun bindToService(callback: Messenger, serviceConnection: ServiceConnection) {
-    val appContext = firebaseApp.applicationContext.applicationContext
+    val appContext: Context = firebaseApp.applicationContext.applicationContext
     Intent(appContext, SessionLifecycleService::class.java).also { intent ->
       Log.d(TAG, "Binding service to application.")
       // This is necessary for the onBind() to be called by each process
       intent.action = android.os.Process.myPid().toString()
       intent.putExtra(SessionLifecycleService.CLIENT_CALLBACK_MESSENGER, callback)
+      intent.setPackage(appContext.packageName)
 
       val isServiceBound =
         try {

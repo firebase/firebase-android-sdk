@@ -11,32 +11,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.functions
 
-package com.google.firebase.functions;
-
-import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
+import java.util.concurrent.TimeUnit
+import okhttp3.OkHttpClient
 
 /** An internal class for keeping track of options applied to an HttpsCallableReference. */
 class HttpsCallOptions {
-
-  // The default timeout to use for all calls.
-  private static final long DEFAULT_TIMEOUT = 70;
-  private static final TimeUnit DEFAULT_TIMEOUT_UNITS = TimeUnit.SECONDS;
-
   // The timeout to use for calls from references created by this Functions.
-  private long timeout = DEFAULT_TIMEOUT;
-  private TimeUnit timeoutUnits = DEFAULT_TIMEOUT_UNITS;
+  private var timeout = DEFAULT_TIMEOUT
+  private var timeoutUnits = DEFAULT_TIMEOUT_UNITS
+  @JvmField val limitedUseAppCheckTokens: Boolean
 
-  private final boolean limitedUseAppCheckTokens;
-
-  /** Creates an (internal) HttpsCallOptions from the (external) {@link HttpsCallableOptions}. */
-  HttpsCallOptions(HttpsCallableOptions publicCallableOptions) {
-    this.limitedUseAppCheckTokens = publicCallableOptions.getLimitedUseAppCheckTokens();
+  /** Creates an (internal) HttpsCallOptions from the (external) [HttpsCallableOptions]. */
+  constructor(publicCallableOptions: HttpsCallableOptions) {
+    limitedUseAppCheckTokens = publicCallableOptions.limitedUseAppCheckTokens
   }
 
-  HttpsCallOptions() {
-    this.limitedUseAppCheckTokens = false;
+  constructor() {
+    limitedUseAppCheckTokens = false
+  }
+
+  fun getLimitedUseAppCheckTokens(): Boolean {
+    return limitedUseAppCheckTokens
   }
 
   /**
@@ -45,9 +42,9 @@ class HttpsCallOptions {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  void setTimeout(long timeout, TimeUnit units) {
-    this.timeout = timeout;
-    this.timeoutUnits = units;
+  fun setTimeout(timeout: Long, units: TimeUnit) {
+    this.timeout = timeout
+    timeoutUnits = units
   }
 
   /**
@@ -55,20 +52,22 @@ class HttpsCallOptions {
    *
    * @return The timeout, in milliseconds.
    */
-  long getTimeout() {
-    return timeoutUnits.toMillis(timeout);
-  }
-
-  boolean getLimitedUseAppCheckTokens() {
-    return limitedUseAppCheckTokens;
+  fun getTimeout(): Long {
+    return timeoutUnits.toMillis(timeout)
   }
 
   /** Creates a new OkHttpClient with these options applied to it. */
-  OkHttpClient apply(OkHttpClient client) {
+  fun apply(client: OkHttpClient): OkHttpClient {
     return client
-        .newBuilder()
-        .callTimeout(timeout, timeoutUnits)
-        .readTimeout(timeout, timeoutUnits)
-        .build();
+      .newBuilder()
+      .callTimeout(timeout, timeoutUnits)
+      .readTimeout(timeout, timeoutUnits)
+      .build()
+  }
+
+  companion object {
+    // The default timeout to use for all calls.
+    private const val DEFAULT_TIMEOUT: Long = 70
+    private val DEFAULT_TIMEOUT_UNITS = TimeUnit.SECONDS
   }
 }
