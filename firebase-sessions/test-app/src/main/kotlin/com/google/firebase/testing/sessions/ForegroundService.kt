@@ -22,6 +22,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -42,7 +43,7 @@ class ForegroundService : Service() {
         this,
         0,
         Intent(this, MainActivity::class.java),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
       )
 
     val crashIntent = Intent(CrashBroadcastReceiver.CRASH_ACTION)
@@ -57,7 +58,7 @@ class ForegroundService : Service() {
         this,
         0,
         Intent(this, SecondActivity::class.java).setAction("MESSAGE"),
-        PendingIntent.FLAG_IMMUTABLE
+        PendingIntent.FLAG_IMMUTABLE,
       )
 
     val notification =
@@ -72,7 +73,11 @@ class ForegroundService : Service() {
         .addAction(R.drawable.ic_launcher_foreground, "Send Message", pendingMsg)
         .build()
 
-    startForeground(1, notification)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SHORT_SERVICE)
+    } else {
+      startForeground(1, notification)
+    }
     return START_STICKY
   }
 
@@ -91,7 +96,7 @@ class ForegroundService : Service() {
         NotificationChannel(
           CHANNEL_ID,
           "Foreground Service Channel",
-          NotificationManager.IMPORTANCE_DEFAULT
+          NotificationManager.IMPORTANCE_DEFAULT,
         )
       val manager = getSystemService(NotificationManager::class.java)
       manager!!.createNotificationChannel(serviceChannel)
@@ -105,7 +110,7 @@ class ForegroundService : Service() {
       Log.i(TAG, "Starting foreground serice")
       ContextCompat.startForegroundService(
         context,
-        Intent(context, ForegroundService::class.java).putExtra("inputExtra", message)
+        Intent(context, ForegroundService::class.java).putExtra("inputExtra", message),
       )
     }
 
