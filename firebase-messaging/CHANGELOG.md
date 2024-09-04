@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Included message priority when logging to Firelog.
 
 # 24.0.1
 * [changed] Retry Topic Subscribe/Unsubscribe operations with exponential
