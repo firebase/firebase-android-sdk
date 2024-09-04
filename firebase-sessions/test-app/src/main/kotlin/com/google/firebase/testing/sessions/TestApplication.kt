@@ -18,6 +18,7 @@ package com.google.firebase.testing.sessions
 
 import android.annotation.SuppressLint
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.widget.TextView
@@ -30,8 +31,21 @@ class TestApplication : MultiDexApplication() {
 
   override fun onCreate() {
     super.onCreate()
-    registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.CRASH_ACTION))
-    registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.TOAST_ACTION))
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      registerReceiver(
+        broadcastReceiver,
+        IntentFilter(CrashBroadcastReceiver.CRASH_ACTION),
+        RECEIVER_NOT_EXPORTED,
+      )
+      registerReceiver(
+        broadcastReceiver,
+        IntentFilter(CrashBroadcastReceiver.TOAST_ACTION),
+        RECEIVER_NOT_EXPORTED,
+      )
+    } else {
+      registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.CRASH_ACTION))
+      registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.TOAST_ACTION))
+    }
   }
 
   class FakeSessionSubscriber : SessionSubscriber {

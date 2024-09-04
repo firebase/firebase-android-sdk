@@ -24,13 +24,6 @@
     android:supportsRtl="true"
     android:theme="@style/Theme.Widget_test_app"
     tools:targetApi="31">
-    <meta-data
-      android:name="firebase_performance_logcat_enabled"
-      android:value="true" />
-    <!-- Override the background timeout for the test app to be 5s instead of 30m -->
-    <meta-data
-      android:name="firebase_sessions_sessions_restart_timeout"
-      android:value="5" />
     <activity
       android:exported="true"
       android:label="@string/app_name"
@@ -42,13 +35,21 @@
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
-
+    <!-- Override the background timeout for the test app to be 5s instead of 30m -->
     <activity
       android:exported="true"
       android:label="@string/app_name"
       android:name=".SecondActivity"
       android:process=":second"
       android:theme="@style/Theme.Widget_test_app.NoActionBar" />
+
+    <meta-data
+      android:name="firebase_performance_logcat_enabled"
+      android:value="true" />
+
+    <meta-data
+      android:name="firebase_sessions_sessions_restart_timeout"
+      android:value="5" />
 
     <receiver
       android:exported="false"
@@ -67,6 +68,7 @@
     <service
       android:enabled="true"
       android:exported="false"
+      android:foregroundServiceType="shortService"
       android:name=".ForegroundService"
       android:process=":foregroundServiceProcess" />
 
