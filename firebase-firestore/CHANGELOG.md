@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Improve efficiency of memory persistence when processing a large number of writes. [#NNNN](//github.com/firebase/firebase-android-sdk/pull/NNNN)
 
 # 25.1.0
 * [feature] Add support for the VectorValue type. [#6154](//github.com/firebase/firebase-android-sdk/pull/6154)
