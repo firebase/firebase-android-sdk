@@ -30,6 +30,7 @@ import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -54,7 +55,7 @@ final class MemoryMutationQueue implements MutationQueue {
    * <p>Once the held write acknowledgements become visible they are removed from the head of the
    * queue along with any tombstones that follow.
    */
-  private final List<MutationBatch> queue;
+  private final ArrayDeque<MutationBatch> queue = new ArrayDeque<>();
 
   /** An ordered mapping between documents and the mutation batch IDs. */
   private ImmutableSortedSet<DocumentReference> batchesByDocumentKey;
@@ -74,7 +75,6 @@ final class MemoryMutationQueue implements MutationQueue {
 
   MemoryMutationQueue(MemoryPersistence persistence, User user) {
     this.persistence = persistence;
-    queue = new ArrayList<>();
 
     batchesByDocumentKey = new ImmutableSortedSet<>(emptyList(), DocumentReference.BY_KEY);
     nextBatchId = 1;
@@ -109,7 +109,7 @@ final class MemoryMutationQueue implements MutationQueue {
     hardAssert(batchIndex == 0, "Can only acknowledge the first batch in the mutation queue");
 
     // Verify that the batch in the queue is the one to be acknowledged.
-    MutationBatch check = queue.get(batchIndex);
+    MutationBatch check = queue.getFirst();
     hardAssert(
         batchId == check.getBatchId(),
         "Queue ordering failure: expected batch %d, got batch %d",
@@ -292,12 +292,11 @@ final class MemoryMutationQueue implements MutationQueue {
 
   @Override
   public void removeMutationBatch(MutationBatch batch) {
-    // Find the position of the first batch for removal. This need not be the first entry in the
-    // queue.
+    // Find the position of the first batch for removal. This must be the first entry in the queue.
     int batchIndex = indexOfExistingBatchId(batch.getBatchId(), "removed");
     hardAssert(batchIndex == 0, "Can only remove the first entry of the mutation queue");
 
-    queue.remove(0);
+    queue.removeFirst();
 
     // Remove entries from the index too.
     ImmutableSortedSet<DocumentReference> references = batchesByDocumentKey;
@@ -353,7 +352,7 @@ final class MemoryMutationQueue implements MutationQueue {
     // Examine the front of the queue to figure out the difference between the batchId and indexes
     // in the array. Note that since the queue is ordered by batchId, if the first batch has a
     // larger batchId then the requested batchId doesn't exist in the queue.
-    MutationBatch firstBatch = queue.get(0);
+    MutationBatch firstBatch = queue.getFirst();
     int firstBatchId = firstBatch.getBatchId();
     return batchId - firstBatchId;
   }
