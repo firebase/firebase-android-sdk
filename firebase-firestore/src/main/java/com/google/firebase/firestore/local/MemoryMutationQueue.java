@@ -30,11 +30,13 @@ import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 final class MemoryMutationQueue implements MutationQueue {
 
@@ -55,7 +57,7 @@ final class MemoryMutationQueue implements MutationQueue {
    * <p>Once the held write acknowledgements become visible they are removed from the head of the
    * queue along with any tombstones that follow.
    */
-  private final ArrayDeque<MutationBatch> queue = new ArrayDeque<>();
+  private final TreeMap<Integer, MutationBatch> queue = new TreeMap<>();
 
   /** An ordered mapping between documents and the mutation batch IDs. */
   private ImmutableSortedSet<DocumentReference> batchesByDocumentKey;
@@ -145,7 +147,7 @@ final class MemoryMutationQueue implements MutationQueue {
     }
 
     MutationBatch batch = new MutationBatch(batchId, localWriteTime, baseMutations, mutations);
-    queue.add(batch);
+    queue.put(batchId, batch);
 
     // Track references by document key and index collection parents.
     for (Mutation mutation : mutations) {
@@ -188,8 +190,8 @@ final class MemoryMutationQueue implements MutationQueue {
   }
 
   @Override
-  public List<MutationBatch> getAllMutationBatches() {
-    return Collections.unmodifiableList(queue);
+  public SortedMap<Integer, MutationBatch> getAllMutationBatches() {
+    return Collections.unmodifiableSortedMap(queue);
   }
 
   @Override
@@ -335,45 +337,9 @@ final class MemoryMutationQueue implements MutationQueue {
 
   // Helpers
 
-  /**
-   * Finds the index of the given batchId in the mutation queue. This operation is O(1).
-   *
-   * @return The computed index of the batch with the given batchId, based on the state of the
-   *     queue. Note this index can be negative if the requested batchId has already been removed
-   *     from the queue or past the end of the queue if the batchId is larger than the last added
-   *     batch.
-   */
-  private int indexOfBatchId(int batchId) {
-    if (queue.isEmpty()) {
-      // As an index this is past the end of the queue
-      return 0;
-    }
-
-    // Examine the front of the queue to figure out the difference between the batchId and indexes
-    // in the array. Note that since the queue is ordered by batchId, if the first batch has a
-    // larger batchId then the requested batchId doesn't exist in the queue.
-    MutationBatch firstBatch = queue.getFirst();
-    int firstBatchId = firstBatch.getBatchId();
-    return batchId - firstBatchId;
-  }
-
-  /**
-   * Finds the index of the given batchId in the mutation queue and asserts that the resulting index
-   * is within the bounds of the queue.
-   *
-   * @param batchId The batchId to search for
-   * @param action A description of what the caller is doing, phrased in passive form (for example
-   *     "acknowledged" in a routine that acknowledges batches).
-   */
-  private int indexOfExistingBatchId(int batchId, String action) {
-    int index = indexOfBatchId(batchId);
-    hardAssert(index >= 0 && index < queue.size(), "Batches must exist to be %s", action);
-    return index;
-  }
-
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (MutationBatch batch : queue) {
+    for (MutationBatch batch : queue.values()) {
       count += serializer.encodeMutationBatch(batch).getSerializedSize();
     }
     return count;

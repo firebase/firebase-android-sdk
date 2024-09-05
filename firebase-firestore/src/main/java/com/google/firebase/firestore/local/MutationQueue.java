@@ -22,6 +22,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.protobuf.ByteString;
 import java.util.List;
+import java.util.SortedMap;
 
 /** A queue of mutations to apply to the remote store. */
 interface MutationQueue {
@@ -79,7 +80,7 @@ interface MutationQueue {
   /** Returns all mutation batches in the mutation queue. */
   // TODO: PERF: Current consumer only needs mutated keys; if we can provide that
   // cheaply, we should replace this.
-  List<MutationBatch> getAllMutationBatches();
+  SortedMap<Integer, MutationBatch> getAllMutationBatches();
 
   /**
    * Finds all mutation batches that could @em possibly affect the given document key. Not all
