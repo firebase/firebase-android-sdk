@@ -107,14 +107,20 @@ final class MemoryMutationQueue implements MutationQueue {
   @Override
   public void acknowledgeBatch(MutationBatch batch, ByteString streamToken) {
     int batchId = batch.getBatchId();
-    hardAssert(queue.containsKey(batchId), "Can not acknowledge unknown batch ID: %d", batchId);
-
-    int firstKey = queue.firstKey();
     hardAssert(
-        batchId == firstKey,
-        "Can only acknowledge the first batch in the mutation queue: got batchId %d, but expected %d",
+        queue.containsKey(batchId),
+        "Can not acknowledge unknown batch ID: %d (batch=%s)",
         batchId,
-        firstKey);
+        batch);
+
+    int firstBatchId = queue.firstKey();
+    hardAssert(
+        batchId == firstBatchId,
+        "Can only acknowledge the first batch in the mutation queue:"
+            + " got batchId %d, but expected %d (batch=%s)",
+        batchId,
+        firstBatchId,
+        batch);
 
     lastStreamToken = checkNotNull(streamToken);
   }
@@ -141,7 +147,7 @@ final class MemoryMutationQueue implements MutationQueue {
       int priorKey = queue.lastKey();
       hardAssert(
           priorKey < batchId,
-          "Mutation batchIds must be monotonically increasing order:" + " priorKey=%d, batchId=%d",
+          "Mutation batchIds must be monotonically increasing order: priorKey=%d, batchId=%d",
           priorKey,
           batchId);
     }
@@ -284,15 +290,20 @@ final class MemoryMutationQueue implements MutationQueue {
   @Override
   public void removeMutationBatch(MutationBatch batch) {
     int batchId = batch.getBatchId();
-    hardAssert(queue.containsKey(batchId), "Can not remove unknown batch ID: %d", batchId);
-
-    int firstKey = queue.firstKey();
     hardAssert(
-        batchId == firstKey,
-        "Can only remove the first batch in the mutation queue:"
-            + " got batchId %d, but expected %d",
+        queue.containsKey(batchId),
+        "Can not remove unknown batch ID: %d (batch=%s)",
         batchId,
-        firstKey);
+        batch);
+
+    int firstBatchId = queue.firstKey();
+    hardAssert(
+        batchId == firstBatchId,
+        "Can only remove the first batch in the mutation queue:"
+            + " got batchId %d, but expected %d (batch=%s)",
+        batchId,
+        firstBatchId,
+        batch);
 
     queue.remove(batchId);
 
