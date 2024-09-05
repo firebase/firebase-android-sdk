@@ -40,6 +40,7 @@ import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.remote.WriteStream;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -343,10 +344,10 @@ public abstract class MutationQueueTestCase {
     removeMutationBatches(batches.remove(0));
     assertEquals(9, batchCount());
 
-    List<MutationBatch> found;
+    Collection<MutationBatch> found;
 
     found = mutationQueue.getAllMutationBatches();
-    assertEquals(batches, found);
+    assertEquals(batches, new ArrayList<>(found));
     assertEquals(9, found.size());
 
     removeMutationBatches(batches.get(0), batches.get(1), batches.get(2));
@@ -356,14 +357,14 @@ public abstract class MutationQueueTestCase {
     assertEquals(6, batchCount());
 
     found = mutationQueue.getAllMutationBatches();
-    assertEquals(batches, found);
+    assertEquals(batches, new ArrayList<>(found));
     assertEquals(6, found.size());
 
     removeMutationBatches(batches.remove(0));
     assertEquals(5, batchCount());
 
     found = mutationQueue.getAllMutationBatches();
-    assertEquals(batches, found);
+    assertEquals(batches, new ArrayList<>(found));
     assertEquals(5, found.size());
 
     removeMutationBatches(batches.remove(0));
@@ -373,12 +374,12 @@ public abstract class MutationQueueTestCase {
     assertEquals(3, batchCount());
 
     found = mutationQueue.getAllMutationBatches();
-    assertEquals(batches, found);
+    assertEquals(batches, new ArrayList<>(found));
     assertEquals(3, found.size());
 
     removeMutationBatches(batches.toArray(new MutationBatch[0]));
     found = mutationQueue.getAllMutationBatches();
-    assertEquals(emptyList(), found);
+    assertEquals(emptyList(), new ArrayList<>(found));
     assertEquals(0, found.size());
     assertTrue(mutationQueue.isEmpty());
   }

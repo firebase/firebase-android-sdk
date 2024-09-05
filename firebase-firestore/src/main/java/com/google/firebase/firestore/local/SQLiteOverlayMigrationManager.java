@@ -20,8 +20,8 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
+import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 /** Manages overlay migrations required to have overlay support . */
@@ -58,7 +58,7 @@ public class SQLiteOverlayMigrationManager implements OverlayMigrationManager {
 
             // Get all document keys that have local mutations
             Set<DocumentKey> allDocumentKeys = new HashSet<>();
-            List<MutationBatch> batches = mutationQueue.getAllMutationBatches();
+            Collection<MutationBatch> batches = mutationQueue.getAllMutationBatches();
             for (MutationBatch batch : batches) {
               allDocumentKeys.addAll(batch.getKeys());
             }

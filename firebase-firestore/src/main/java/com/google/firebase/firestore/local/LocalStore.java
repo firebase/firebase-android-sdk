@@ -208,17 +208,17 @@ public final class LocalStore implements BundleCallback {
 
   public ImmutableSortedMap<DocumentKey, Document> handleUserChange(User user) {
     // Swap out the mutation queue, grabbing the pending mutation batches before and after.
-    List<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
+    Collection<MutationBatch> oldBatches = mutationQueue.getAllMutationBatches();
 
     initializeUserComponents(user);
     startIndexManager();
     startMutationQueue();
 
-    List<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
+    Collection<MutationBatch> newBatches = mutationQueue.getAllMutationBatches();
 
     // Union the old/new changed keys.
     ImmutableSortedSet<DocumentKey> changedKeys = DocumentKey.emptyKeySet();
-    for (List<MutationBatch> batches : asList(oldBatches, newBatches)) {
+    for (Collection<MutationBatch> batches : asList(oldBatches, newBatches)) {
       for (MutationBatch batch : batches) {
         for (Mutation mutation : batch.getMutations()) {
           changedKeys = changedKeys.insert(mutation.getKey());
