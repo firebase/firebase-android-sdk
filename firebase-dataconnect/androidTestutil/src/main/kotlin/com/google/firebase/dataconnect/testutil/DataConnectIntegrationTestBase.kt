@@ -40,7 +40,7 @@ abstract class DataConnectIntegrationTestBase {
       get() =
         ConnectorConfig(
           connector = "demo", // TODO: change to "ctrgqyawcfbm4" once it's ready
-          location = "us-central1",
+          location = "us-east1",
           serviceId = "sid2ehn9ct8te",
         )
   }

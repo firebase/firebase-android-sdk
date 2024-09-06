@@ -1,6 +1,6 @@
 specVersion: "v1alpha"
 serviceId: "sid2ehn9ct8te"
-location: "us-central1"
+location: "us-east1"
 schema:
   source: "./schema"
   datasource:

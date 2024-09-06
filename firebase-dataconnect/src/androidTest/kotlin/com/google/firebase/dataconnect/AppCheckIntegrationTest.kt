@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect
 
+import app.cash.turbine.test
 import com.google.firebase.appcheck.FirebaseAppCheck
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
@@ -29,10 +30,10 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.asClue
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeNotNull
 import org.junit.Assume.assumeTrue
@@ -111,45 +112,103 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun queryShouldRetryIfAppCheckTokenIsExpired() = runTest {
     val expiredToken = getInstrumentationArgument(APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG)
+    println("$APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG instrumentation argument: $expiredToken")
+    assumeNotNull(
+      "This test can only be run if an expired token is provided." +
+        " To get an expired token, set the $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG" +
+        " instrumentation argument to \"collect\", which will cause this test to simply get" +
+        " and print an App Check token in the logcat. Then, wait until that token expires," +
+        " which is typically 1 hour, and re-run this test, instead setting the" +
+        " $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG instrumentation argument to the token" +
+        " printed when \"collect\" was specified, which should now be expired" +
+        " (error code rqbahvqjk8)",
+      expiredToken
+    )
+
+    if (expiredToken == "collect") {
+      val appCheckProviderFactory = DataConnectTestAppCheckProviderFactory(appId)
+      val appCheckProvider = appCheckProviderFactory.create(firebaseAppFactory.newInstance())
+      val token = appCheckProvider.getToken().await().token
+      println("43nyfb9epw Here is the App Check token (without the quotes): \"$token\"")
+      return@runTest
+    }
+
+    // Install an App Check provider that will initially produce the expired token, and will fetch
+    // a new, valid token on subsequent requests.
     val appCheckProviderFactory =
       DataConnectTestAppCheckProviderFactory(appId, initialToken = expiredToken)
     appCheck.installAppCheckProviderFactory(appCheckProviderFactory)
 
+    // Make sure that the App Check doesn't refresh the expired token for us, as it races with
+    // the Data Connect SDKs logic to refresh the token.
+    appCheck.setTokenAutoRefreshEnabled(false)
+
+    // Send an ExecuteQuery request that should be retired because the first request is sent with
+    // the expired token, which should fail with UNAUTHORIZED, triggering a token refresh and
+    // request retry.
     personSchema.getPerson(id = randomPersonId()).execute()
 
-    val actualToken1 = appCheckProviderFactory.tokens.first().token
-    assumeNotNull(
-      "Test can only be run if an expired token is provided;" +
-        " to get an expired token, simply print \$actualToken1, wait for 1 hour," +
-        " then re-run the test, setting the $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG" +
-        " instrumentation argument to the token value (error code frsdh5dpxp)",
-      expiredToken
-    )
-    actualToken1 shouldBe expiredToken
-    val actualToken2 = appCheckProviderFactory.tokens.drop(1).first().token
-    actualToken2 shouldNotBe expiredToken
+    appCheckProviderFactory.tokens.test {
+      withClue("token1") {
+        val token = awaitItem()
+        token.token shouldBe expiredToken
+      }
+      withClue("token2") {
+        val token = awaitItem()
+        token.token shouldNotBe expiredToken
+      }
+    }
   }
 
   @Test
   fun mutationShouldRetryIfAppCheckTokenIsExpired() = runTest {
     val expiredToken = getInstrumentationArgument(APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG)
+    println("$APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG instrumentation argument: $expiredToken")
+    assumeNotNull(
+      "This test can only be run if an expired token is provided." +
+        " To get an expired token, set the $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG" +
+        " instrumentation argument to \"collect\", which will cause this test to simply get" +
+        " and print an App Check token in the logcat. Then, wait until that token expires," +
+        " which is typically 1 hour, and re-run this test, instead setting the" +
+        " $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG instrumentation argument to the token" +
+        " printed when \"collect\" was specified, which should now be expired" +
+        " (error code frsdh5dpxp)",
+      expiredToken
+    )
+
+    if (expiredToken == "collect") {
+      val appCheckProviderFactory = DataConnectTestAppCheckProviderFactory(appId)
+      val appCheckProvider = appCheckProviderFactory.create(firebaseAppFactory.newInstance())
+      val token = appCheckProvider.getToken().await().token
+      println("5xtk6tg4pe Here is the App Check token (without the quotes): \"$token\"")
+      return@runTest
+    }
+
+    // Install an App Check provider that will initially produce the expired token, and will fetch
+    // a new, valid token on subsequent requests.
     val appCheckProviderFactory =
       DataConnectTestAppCheckProviderFactory(appId, initialToken = expiredToken)
     appCheck.installAppCheckProviderFactory(appCheckProviderFactory)
 
+    // Make sure that the App Check doesn't refresh the expired token for us, as it races with
+    // the Data Connect SDKs logic to refresh the token.
+    appCheck.setTokenAutoRefreshEnabled(false)
+
+    // Send an ExecuteMutation request that should be retired because the first request is sent with
+    // the expired token, which should fail with UNAUTHORIZED, triggering a token refresh and
+    // request retry.
     personSchema.createPerson(id = randomPersonId(), name = randomPersonName()).execute()
 
-    val actualToken1 = appCheckProviderFactory.tokens.first().token
-    assumeNotNull(
-      "Test can only be run if an expired token is provided;" +
-        " to get an expired token, simply print \$actualToken1, wait for 1 hour," +
-        " then re-run the test, setting the $APP_CHECK_EXPIRED_TOKEN_INSTRUMENTATION_ARG" +
-        " instrumentation argument to the token value (error code frsdh5dpxp)",
-      expiredToken
-    )
-    actualToken1 shouldBe expiredToken
-    val actualToken2 = appCheckProviderFactory.tokens.drop(1).first().token
-    actualToken2 shouldNotBe expiredToken
+    appCheckProviderFactory.tokens.test {
+      withClue("token1") {
+        val token = awaitItem()
+        token.token shouldBe expiredToken
+      }
+      withClue("token2") {
+        val token = awaitItem()
+        token.token shouldNotBe expiredToken
+      }
+    }
   }
 
   private companion object {

@@ -30,6 +30,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.AppCheckToken
+import com.google.firebase.util.nextAlphanumericString
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.KeyFactory
@@ -38,6 +39,7 @@ import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Date
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -68,17 +70,17 @@ private const val TAG = "FDCTestAppCheckProvider"
  */
 class DataConnectTestAppCheckProviderFactory(
   private val appId: String,
-  private val initialToken: String? = null
+  private val initialToken: String? = null,
 ) : AppCheckProviderFactory {
 
-  private val _tokens = MutableSharedFlow<DataConnectTestAppCheckToken>(replay = Int.MAX_VALUE)
-  val tokens: SharedFlow<DataConnectTestAppCheckToken> = _tokens.asSharedFlow()
+  private val _tokens = MutableSharedFlow<AppCheckToken>(replay = Int.MAX_VALUE)
+  val tokens: SharedFlow<AppCheckToken> = _tokens.asSharedFlow()
 
   override fun create(firebaseApp: FirebaseApp): AppCheckProvider {
     return DataConnectTestAppCheckProvider(firebaseApp, appId, initialToken, ::onTokenProduced)
   }
 
-  private fun onTokenProduced(token: DataConnectTestAppCheckToken) {
+  private fun onTokenProduced(token: AppCheckToken) {
     check(_tokens.tryEmit(token)) {
       "tryEmit() should have succeeded since _tokens is configured with replay=Int.MAX_VALUE" +
         " (error code ty9kkxmqhp)"
@@ -90,7 +92,7 @@ private class DataConnectTestAppCheckProvider(
   firebaseApp: FirebaseApp,
   private val appId: String,
   private val initialToken: String?,
-  private val onTokenProduced: (DataConnectTestAppCheckToken) -> Unit
+  private val onTokenProduced: (AppCheckToken) -> Unit,
 ) : AppCheckProvider {
 
   private val applicationContext: Context = firebaseApp.applicationContext
@@ -99,12 +101,36 @@ private class DataConnectTestAppCheckProvider(
 
   override fun getToken(): Task<AppCheckToken> {
     Log.d(TAG, "getToken() called")
+    val task = getTokenImpl()
 
+    task.addOnCompleteListener {
+      if (it.isSuccessful) {
+        val appCheckToken = it.result
+
+        val decodedToken = runCatching { JWT.decode(appCheckToken.token) }.getOrNull()
+        Log.i(
+          TAG,
+          "getToken() succeeded with" +
+            " token=${appCheckToken.token.toScrubbedAccessToken()}" +
+            " expiresAt=${decodedToken?.expiresAt}"
+        )
+        onTokenProduced(appCheckToken)
+      } else {
+        Log.e(TAG, "getToken() failed", it.exception)
+      }
+    }
+
+    return task
+  }
+
+  private fun getTokenImpl(): Task<AppCheckToken> {
     if (!initialTokenUsed.getAndSet(true) && initialToken !== null) {
-      Log.d(TAG, "getToken() unconditionally returning initialToken: $initialToken")
+      Log.d(
+        TAG,
+        "getToken() unconditionally returning initialToken: " + initialToken.toScrubbedAccessToken()
+      )
       val expireTimeMillis = Date().time + 1.hours.inWholeMilliseconds
       val appCheckToken = DataConnectTestAppCheckToken(initialToken, expireTimeMillis)
-      onTokenProduced(appCheckToken)
       return Tasks.forResult(appCheckToken)
     }
 
@@ -113,15 +139,8 @@ private class DataConnectTestAppCheckProvider(
     thread(name = "DataConnectTestCustomAppCheckProvider") {
       runCatching { doTokenRefresh() }
         .fold(
-          onSuccess = {
-            Log.i(TAG, "getToken() succeeded with token: ${it.token.toScrubbedAccessToken()}")
-            onTokenProduced(it)
-            tcs.setResult(it)
-          },
-          onFailure = {
-            Log.e(TAG, "getToken() failed", it)
-            tcs.setException(if (it is Exception) it else Exception(it))
-          },
+          onSuccess = { tcs.setResult(it) },
+          onFailure = { tcs.setException(if (it is Exception) it else Exception(it)) }
         )
     }
 
@@ -167,6 +186,7 @@ class DataConnectTestAppCheckToken(
 private data class GoogleAuthToken(
   val accessToken: String,
   val tokenType: String,
+  val expiresIn: Long,
 )
 
 private data class FirebaseAdminServiceAccount(
@@ -287,13 +307,19 @@ private class AppCheckTokenRetriever(
     connection.setRequestProperty("Content-Length", "${requestBody.size}")
     connection.doOutput = true
 
-    Log.i(TAG, "Sending exchange token refresh request to ${connection.url}")
+    val requestId = "ect${Random.nextAlphanumericString(length=8)}"
+    Log.i(
+      TAG,
+      "[rid=$requestId]" +
+        " Sending exchange token refresh request at ${Date()} to ${connection.url}"
+    )
     connection.outputStream.use { it.write(requestBody) }
 
     val responseCode = connection.responseCode
+    Log.i(TAG, "[rid=$requestId] Got HTTP response code $responseCode")
     if (responseCode != 200) {
       throw AppCheckTokenRetrieverException(
-        "Unexpected response code from $exchangeTokenUrl: $responseCode " +
+        "[rid=$requestId] Unexpected response code from $exchangeTokenUrl: $responseCode " +
           "(error code bsywkft8rq)"
       )
     }
@@ -303,17 +329,20 @@ private class AppCheckTokenRetriever(
 
     if (!response.ttl.endsWith("s")) {
       throw AppCheckTokenRetrieverException(
-        "Expected \"ttl\" in response to end with \"s\", but got: ${response.ttl}" +
-          " (error code c2mqk3b5an)"
+        "[rid=$requestId] Expected \"ttl\" in response to end with \"s\"," +
+          " but got: ${response.ttl} (error code c2mqk3b5an)"
       )
     }
     val ttlMillis = response.ttl.dropLast(1).toLong()
     val expireTimeMillis = Date().time + ttlMillis
 
     return DataConnectTestAppCheckToken(response.token, expireTimeMillis).also {
+      val decodedToken = runCatching { JWT.decode(it.token) }.getOrNull()
       Log.i(
         TAG,
-        "Exchange token refresh request succeeded with token: " + it.token.toScrubbedAccessToken()
+        "[rid=$requestId] Exchange token refresh request succeeded with" +
+          " ttl=${response.ttl} expiresAt=${decodedToken?.expiresAt}" +
+          " token=${it.token.toScrubbedAccessToken()}"
       )
     }
   }
@@ -356,13 +385,18 @@ private class GoogleAuthTokenRetriever(private val account: FirebaseAdminService
     connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
     connection.doOutput = true
 
-    Log.i(TAG, "Sending auth token refresh request to ${connection.url}")
+    val requestId = "atr${Random.nextAlphanumericString(length=8)}"
+    Log.i(
+      TAG,
+      "[rid=$requestId]" + " Sending auth token refresh request at ${Date()} to ${connection.url}"
+    )
     connection.outputStream.use { it.write(requestBody.encodeToByteArray()) }
 
     val responseCode = connection.responseCode
+    Log.i(TAG, "[rid=$requestId] Got HTTP response code $responseCode")
     if (responseCode != 200) {
       throw GoogleAuthTokenRetrieverException(
-        "Unexpected response code from ${connection.url}: $responseCode " +
+        "[rid=$requestId] Unexpected response code from ${connection.url}: $responseCode " +
           "(error code 6dmw4wv4db)"
       )
     }
@@ -378,12 +412,16 @@ private class GoogleAuthTokenRetriever(private val account: FirebaseAdminService
     return GoogleAuthToken(
         accessToken = response.accessToken,
         tokenType = response.tokenType,
+        expiresIn = response.expiresIn,
       )
       .also {
+        val decodedToken = runCatching { JWT.decode(it.accessToken) }.getOrNull()
         Log.i(
           TAG,
-          "Auth token refresh request succeeded with token: " +
-            it.accessToken.toScrubbedAccessToken()
+          "[rid=$requestId] Auth token refresh request succeeded with" +
+            " expiresAt=${decodedToken?.expiresAt}" +
+            " expires_in=${it.expiresIn} token_type=${it.tokenType}" +
+            " token=${it.accessToken.toScrubbedAccessToken()}"
         )
       }
   }
