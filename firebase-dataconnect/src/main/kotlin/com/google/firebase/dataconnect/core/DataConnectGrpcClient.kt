@@ -106,7 +106,7 @@ internal class DataConnectGrpcClient(
     return try {
       block()
     } catch (e: StatusException) {
-      if (e.status != Status.UNAUTHENTICATED) {
+      if (e.status.code != Status.UNAUTHENTICATED.code) {
         throw e
       }
       logger.warn(e) {

@@ -238,7 +238,13 @@ class DataConnectGrpcClientUnitTest {
         if (forceRefresh.get()) {
           ExecuteQueryResponse.newBuilder().setData(responseData).build()
         } else {
-          throw StatusException(Status.UNAUTHENTICATED)
+          // Use a custom description to ensure that DataConnectGrpcClient is checking for just
+          // the code, and not the entire equality of Status.UNAUTHENTICATED.
+          throw StatusException(
+            Status.UNAUTHENTICATED.withDescription(
+              "this error should be ignored and result in a retry with a fresh token n2ak4cq6jr"
+            )
+          )
         }
       }
 
@@ -263,7 +269,13 @@ class DataConnectGrpcClientUnitTest {
         if (forceRefresh.get()) {
           ExecuteMutationResponse.newBuilder().setData(responseData).build()
         } else {
-          throw StatusException(Status.UNAUTHENTICATED)
+          // Use a custom description to ensure that DataConnectGrpcClient is checking for just
+          // the code, and not the entire equality of Status.UNAUTHENTICATED.
+          throw StatusException(
+            Status.UNAUTHENTICATED.withDescription(
+              "this error should be ignored and result in a retry with a fresh token p3vmc3gs5v"
+            )
+          )
         }
       }
 
@@ -288,7 +300,13 @@ class DataConnectGrpcClientUnitTest {
         if (forceRefresh.get()) {
           ExecuteQueryResponse.newBuilder().setData(responseData).build()
         } else {
-          throw StatusException(Status.UNAUTHENTICATED)
+          // Use a custom description to ensure that DataConnectGrpcClient is checking for just
+          // the code, and not the entire equality of Status.UNAUTHENTICATED.
+          throw StatusException(
+            Status.UNAUTHENTICATED.withDescription(
+              "this error should be ignored and result in a retry with a fresh token tepb5xq4kk"
+            )
+          )
         }
       }
 
@@ -313,7 +331,13 @@ class DataConnectGrpcClientUnitTest {
         if (forceRefresh.get()) {
           ExecuteMutationResponse.newBuilder().setData(responseData).build()
         } else {
-          throw StatusException(Status.UNAUTHENTICATED)
+          // Use a custom description to ensure that DataConnectGrpcClient is checking for just
+          // the code, and not the entire equality of Status.UNAUTHENTICATED.
+          throw StatusException(
+            Status.UNAUTHENTICATED.withDescription(
+              "this error should be ignored and result in a retry with a fresh token v2449h6ty8"
+            )
+          )
         }
       }
 
