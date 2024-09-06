@@ -94,7 +94,7 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
 
     val thrownException = shouldThrow<StatusException> { queryRef.execute() }
 
-    thrownException.asClue { it.status.code shouldBe Status.PERMISSION_DENIED.code }
+    thrownException.asClue { it.status.code shouldBe Status.UNAUTHENTICATED.code }
   }
 
   @Test
@@ -105,7 +105,7 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
 
     val thrownException = shouldThrow<StatusException> { mutationRef.execute() }
 
-    thrownException.asClue { it.status.code shouldBe Status.PERMISSION_DENIED.code }
+    thrownException.asClue { it.status.code shouldBe Status.UNAUTHENTICATED.code }
   }
 
   @Test
