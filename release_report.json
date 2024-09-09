@@ -1,0 +1,98 @@
+{
+    "changesByLibraryName": {
+        "firebase-appdistribution": [
+            {
+                "commitId": "6b4f0de81dfd1627f3e74b8ac4eb3494d1e57e61",
+                "prId": "",
+                "author": "Rodrigo Lazo",
+                "message": "Update CHANGELOG.md\n\nAdd entry about changes related to Android 14 compatibility",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6b4f0de81dfd1627f3e74b8ac4eb3494d1e57e61",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "2eb7cd7f52c0d610881ef1fc69de5f214f6b9f1b",
+                "prId": "6229",
+                "author": "Lee Kellogg",
+                "message": "Update firebase-appdistribution/test-app to target API level 34 (#6229)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2eb7cd7f52c0d610881ef1fc69de5f214f6b9f1b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6229"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "3da6adc2358f616c0236b0fded8e94fdcaff09e0",
+                "prId": "",
+                "author": "Rodrigo Lazo",
+                "message": "Update CHANGELOG.md\n\nAdd reference to appdistro release",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3da6adc2358f616c0236b0fded8e94fdcaff09e0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ],
+        "firebase-appdistribution-api/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "3ec4d00241f8a52035e25e462e45c4673779911f",
+                "prId": "6224",
+                "author": "Matthew Robertson",
+                "message": "Add issue link to changelog entry (#6224)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3ec4d00241f8a52035e25e462e45c4673779911f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6224"
+            },
+            {
+                "commitId": "4d6e112267814327da70b403113654d945436b90",
+                "prId": "6191",
+                "author": "Matthew Robertson",
+                "message": "Remove changes related to persistence issue (#6191)\n\nRevert changes related to persistence issue. These changes are still on\r\nthe `crashlytics-exception-handler` feature branch while we develop\r\nthere. `main` is now in a good state for the next release, including the\r\nODF and Session ID changes.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4d6e112267814327da70b403113654d945436b90",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6191"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "b994bd488f350c9bf552b4ab0b91d517ea4a8e08",
+                "prId": "6226",
+                "author": "Matthew Robertson",
+                "message": "Fix sessions test app for target api 34 (#6226)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b994bd488f350c9bf552b4ab0b91d517ea4a8e08",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6226"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-functions": [
+            {
+                "commitId": "adab25c949d7f82b093cb11c3495b0266af6074e",
+                "prId": "5351",
+                "author": "emilypgoogle",
+                "message": "Functions migration to Kotlin (#5351)\n\ndone with automated tooling, to investigate the viability of quick\r\nmigrations pre API changes.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/adab25c949d7f82b093cb11c3495b0266af6074e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5351"
+            }
+        ],
+        "firebase-functions/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "3afffc127b1f17a596ce94075bec82f7bd0268b7",
+                "prId": "6186",
+                "author": "emilypgoogle",
+                "message": "Merge GenAI Common into Vertex (#6186)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3afffc127b1f17a596ce94075bec82f7bd0268b7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6186"
+            },
+            {
+                "commitId": "5fe51ebb554a9b141d65674be667935f01abd856",
+                "prId": "",
+                "author": "Rodrigo Lazo Paz",
+                "message": "Make citation metadata uri optional\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5fe51ebb554a9b141d65674be667935f01abd856",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+    ]
+}
