@@ -62,7 +62,7 @@ dependencies {
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation("com.google.firebase:firebase-common:20.3.1")
     implementation("com.google.firebase:firebase-components:17.1.0")
-    implementation("com.google.firebasefirebase-appcheck-interop:17.1.0")
+    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
     implementation(libs.kotlin.stdlib)
     implementation(libs.playservices.base)
     implementation(libs.playservices.basement)
