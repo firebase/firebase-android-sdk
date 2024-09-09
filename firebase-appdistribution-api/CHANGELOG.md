@@ -1,5 +1,5 @@
 # Unreleased
-
+* [unchanged] Updated to accommodate the release of the updated [appdistro] library.
 
 # 16.0.0-beta13
 * [changed] Bump internal dependencies
