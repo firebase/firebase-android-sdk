@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Internal improvements to testing on Android 14
 
 # 16.0.0-beta13
 * [changed] Bump internal dependencies
