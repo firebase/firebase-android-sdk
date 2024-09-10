@@ -103,7 +103,7 @@
                 "commitId": "5fe51ebb554a9b141d65674be667935f01abd856",
                 "prId": "",
                 "author": "Rodrigo Lazo Paz",
-                "message": "Make citation metadata uri optional\n",
+                "message": "Make citation metadata uri optional (#9999)\n",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5fe51ebb554a9b141d65674be667935f01abd856",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
             }
