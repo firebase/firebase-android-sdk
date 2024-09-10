@@ -19,172 +19,54 @@ package com.google.firebase.vertexai.type
 import org.json.JSONObject
 
 /**
- * A declared zero param function, including implementation, that a model can be given access to in
- * order to gain info or complete tasks.
+ * Representation of a function that a model can invoke.
  *
- * @see [defineFunction] for how to create an instance of this class.
+ * @see defineFunction
  */
-class NoParameterFunction
-internal constructor(name: String, description: String, val function: suspend () -> JSONObject) :
-  FunctionDeclaration(name, description) {
-  override fun getParameters() = listOf<Schema<Any>>()
-
-  suspend fun execute() = function()
-
-  override suspend fun execute(part: FunctionCallPart) = function()
-}
-
-/**
- * A declared one param function, including implementation, that a model can be given access to in
- * order to gain info or complete tasks.
- *
- * @see [defineFunction] for how to create an instance of this class.
- */
-class OneParameterFunction<T>
-internal constructor(
-  name: String,
-  description: String,
-  val param: Schema<T>,
-  val function: suspend (T) -> JSONObject,
-) : FunctionDeclaration(name, description) {
-  override fun getParameters() = listOf(param)
-
-  override suspend fun execute(part: FunctionCallPart): JSONObject {
-    val arg1 = part.getArgOrThrow(param)
-    return function(arg1)
-  }
-}
-
-/**
- * A declared two param function, including implementation, that a model can be given access to in
- * order to gain info or complete tasks.
- *
- * @see [defineFunction] for how to create an instance of this class.
- */
-class TwoParameterFunction<T, U>
-internal constructor(
-  name: String,
-  description: String,
-  val param1: Schema<T>,
-  val param2: Schema<U>,
-  val function: suspend (T, U) -> JSONObject,
-) : FunctionDeclaration(name, description) {
-  override fun getParameters() = listOf(param1, param2)
-
-  override suspend fun execute(part: FunctionCallPart): JSONObject {
-    val arg1 = part.getArgOrThrow(param1)
-    val arg2 = part.getArgOrThrow(param2)
-    return function(arg1, arg2)
-  }
-}
-
-/**
- * A declared three param function, including implementation, that a model can be given access to in
- * order to gain info or complete tasks.
- *
- * @see [defineFunction] for how to create an instance of this class.
- */
-class ThreeParameterFunction<T, U, V>
-internal constructor(
-  name: String,
-  description: String,
-  val param1: Schema<T>,
-  val param2: Schema<U>,
-  val param3: Schema<V>,
-  val function: suspend (T, U, V) -> JSONObject,
-) : FunctionDeclaration(name, description) {
-  override fun getParameters() = listOf(param1, param2, param3)
-
-  override suspend fun execute(part: FunctionCallPart): JSONObject {
-    val arg1 = part.getArgOrThrow(param1)
-    val arg2 = part.getArgOrThrow(param2)
-    val arg3 = part.getArgOrThrow(param3)
-    return function(arg1, arg2, arg3)
-  }
-}
-
-/**
- * A declared four param function, including implementation, that a model can be given access to in
- * order to gain info or complete tasks.
- *
- * @see [defineFunction] for how to create an instance of this class.
- */
-class FourParameterFunction<T, U, V, W>
-internal constructor(
-  name: String,
-  description: String,
-  val param1: Schema<T>,
-  val param2: Schema<U>,
-  val param3: Schema<V>,
-  val param4: Schema<W>,
-  val function: suspend (T, U, V, W) -> JSONObject,
-) : FunctionDeclaration(name, description) {
-  override fun getParameters() = listOf(param1, param2, param3, param4)
-
-  override suspend fun execute(part: FunctionCallPart): JSONObject {
-    val arg1 = part.getArgOrThrow(param1)
-    val arg2 = part.getArgOrThrow(param2)
-    val arg3 = part.getArgOrThrow(param3)
-    val arg4 = part.getArgOrThrow(param4)
-    return function(arg1, arg2, arg3, arg4)
-  }
-}
-
-/**
- * A declared function, including implementation, that a model can be given access to in order to
- * gain info or complete tasks.
- *
- * @see [OneParameterFunction]
- * @see [TwoParameterFunction]
- * @see [ThreeParameterFunction]
- * @see [FourParameterFunction]
- */
-abstract class FunctionDeclaration(val name: String, val description: String) {
-
-  /** The parameters of the attached function as a list of [Schema]. */
-  abstract fun getParameters(): List<Schema<out Any?>>
-
-  /** Run the attached function with the provided [arguments][part]. */
-  abstract suspend fun execute(part: FunctionCallPart): JSONObject
-}
+class FunctionDeclaration(
+  val name: String,
+  val description: String,
+  val parameters: List<Schema>,
+  val requiredParameters: List<String>,
+)
 
 /**
  * Represents a parameter for a declared function
  *
+ * ```
+ * val currencyFrom = Schema.str("currencyFrom", "The currency to convert from.")
+ * ```
+ *
  * @property name: The name of the parameter
  * @property description: The description of what the parameter should contain or represent
  * @property format: format information for the parameter, this can include bitlength in the case of
- * int/float or keywords like "enum" for the string type
+ *   int/float or keywords like "enum" for the string type
  * @property enum: contains the enum values for a string enum
  * @property type: contains the type info and parser
  * @property properties: if type is OBJECT, then this contains the description of the fields of the
- * object by name
+ *   object by name
  * @property required: if type is OBJECT, then this contains the list of required keys
  * @property items: if the type is ARRAY, then this contains a description of the objects in the
- * array
+ *   array
  */
-class Schema<T>(
+class Schema(
   val name: String,
   val description: String,
   val format: String? = null,
   val nullable: Boolean? = null,
   val enum: List<String>? = null,
-  val properties: Map<String, Schema<out Any>>? = null,
+  val properties: Map<String, Schema>? = null,
   val required: List<String>? = null,
-  val items: Schema<out Any>? = null,
-  val type: FunctionType<T>,
+  val items: Schema? = null,
+  val type: FunctionType,
 ) {
-  /**
-   * Parses an instance of this [Schema] from the provided [String].
-   *
-   * This is done via the [parse][FunctionType.parse] method of [type].
-   */
-  fun fromString(value: String?) = type.parse(value)
 
   companion object {
-    /** Registers a schema for a 32-bit integer number */
+    /** Registers a schema for a 32 bit integer number */
+    @JvmStatic
+    @JvmName("numInt")
     fun int(name: String, description: String) =
-      Schema<Int>(
+      Schema(
         name = name,
         description = description,
         format = "int32",
@@ -192,9 +74,11 @@ class Schema<T>(
         nullable = false,
       )
 
-    /** Registers a schema for a 64-bit integer number */
+    /** Registers a schema for a 64 bit integer number */
+    @JvmStatic
+    @JvmName("numLong")
     fun long(name: String, description: String) =
-      Schema<Long>(
+      Schema(
         name = name,
         description = description,
         type = FunctionType.LONG,
@@ -202,8 +86,9 @@ class Schema<T>(
       )
 
     /** Registers a schema for a string */
+    @JvmStatic
     fun str(name: String, description: String) =
-      Schema<String>(
+      Schema(
         name = name,
         description = description,
         type = FunctionType.STRING,
@@ -211,8 +96,9 @@ class Schema<T>(
       )
 
     /** Registers a schema for a boolean */
+    @JvmStatic
     fun bool(name: String, description: String) =
-      Schema<Boolean>(
+      Schema(
         name = name,
         description = description,
         type = FunctionType.BOOLEAN,
@@ -220,21 +106,10 @@ class Schema<T>(
       )
 
     /** Registers a schema for a floating point number */
-    @Deprecated(
-      message = "Use `double` instead.",
-      replaceWith = ReplaceWith("double(name, description)"),
-    )
-    fun num(name: String, description: String) =
-      Schema<Double>(
-        name = name,
-        description = description,
-        type = FunctionType.NUMBER,
-        nullable = false,
-      )
-
-    /** Registers a schema for a floating point number */
+    @JvmStatic
+    @JvmName("numDouble")
     fun double(name: String, description: String) =
-      Schema<Double>(
+      Schema(
         name = name,
         description = description,
         type = FunctionType.NUMBER,
@@ -244,13 +119,15 @@ class Schema<T>(
     /**
      * Registers a schema for a complex object. In a function it will be returned as a [JSONObject]
      */
-    fun obj(name: String, description: String, vararg contents: Schema<out Any>) =
-      Schema<JSONObject>(
+    @JvmStatic
+    fun obj(name: String, description: String, vararg contents: Schema) =
+      Schema(
         name = name,
         description = description,
         type = FunctionType.OBJECT,
         required = contents.map { it.name },
         properties = contents.associateBy { it.name }.toMap(),
+        nullable = false,
       )
 
     /**
@@ -258,8 +135,9 @@ class Schema<T>(
      *
      * @param items can be used to specify the type of the array
      */
-    fun arr(name: String, description: String, items: Schema<out Any>? = null) =
-      Schema<List<String>>(
+    @JvmStatic
+    fun arr(name: String, description: String, items: Schema? = null) =
+      Schema(
         name = name,
         description = description,
         type = FunctionType.ARRAY,
@@ -268,8 +146,10 @@ class Schema<T>(
       )
 
     /** Registers a schema for an enum */
+    @JvmStatic
+    @JvmName("enumeration")
     fun enum(name: String, description: String, values: List<String>) =
-      Schema<String>(
+      Schema(
         name = name,
         description = description,
         format = "enum",
@@ -281,95 +161,30 @@ class Schema<T>(
 }
 
 /**
- * Defines a function with zero parameters, including its implementation, that a model can be given
- * access to in order to gain info or complete tasks.
+ * A declared function, including implementation, that a model can be given access to in order to
+ * gain info or complete tasks.
  *
- * @param name The name of the function call, this should be clear and descriptive for the model
- * @param description A description of what the function does and its output.
- * @param function the function implementation
- */
-fun defineFunction(name: String, description: String, function: suspend () -> JSONObject) =
-  NoParameterFunction(name, description, function)
-
-/**
- * Defines a function with one parameter, including its implementation, that a model can be given
- * access to in order to gain info or complete tasks.
+ * ```
+ * val getExchangeRate = defineFunction(
+ *    name = "getExchangeRate",
+ *    description = "Get the exchange rate for currencies between countries.",
+ *    parameters = listOf(
+ *      Schema.str("currencyFrom", "The currency to convert from."),
+ *      Schema.str("currencyTo", "The currency to convert to.")
+ *    ),
+ *    requiredParameters = listOf("currencyFrom", "currencyTo")
+ * )
+ * ```
  *
- * @param name The name of the function call, this should be clear and descriptive for the model
+ * @param name The name of the function call, this should be clear and descriptive for the model.
  * @param description A description of what the function does and its output.
- * @param arg1 A description of the first function parameter
- * @param function the function implementation
+ * @param parameters A list of parameters that the function accepts.
+ * @param requiredParameters A list of parameters that the function requires to run.
+ * @see Schema
  */
-fun <T> defineFunction(
+fun defineFunction(
   name: String,
   description: String,
-  arg1: Schema<T>,
-  function: suspend (T) -> JSONObject,
-) = OneParameterFunction(name, description, arg1, function)
-
-/**
- * Defines a function with two parameters, including its implementation, that a model can be given
- * access to in order to gain info or complete tasks.
- *
- * @param name The name of the function call, this should be clear and descriptive for the model
- * @param description A description of what the function does and its output.
- * @param arg1 A description of the first function parameter
- * @param arg2 A description of the second function parameter
- * @param function the function implementation
- */
-fun <T, U> defineFunction(
-  name: String,
-  description: String,
-  arg1: Schema<T>,
-  arg2: Schema<U>,
-  function: suspend (T, U) -> JSONObject,
-) = TwoParameterFunction(name, description, arg1, arg2, function)
-
-/**
- * Defines a function with three parameters, including its implementation, that a model can be given
- * access to in order to gain info or complete tasks.
- *
- * @param name The name of the function call, this should be clear and descriptive for the model
- * @param description A description of what the function does and its output.
- * @param arg1 A description of the first function parameter
- * @param arg2 A description of the second function parameter
- * @param arg3 A description of the third function parameter
- * @param function the function implementation
- */
-fun <T, U, W> defineFunction(
-  name: String,
-  description: String,
-  arg1: Schema<T>,
-  arg2: Schema<U>,
-  arg3: Schema<W>,
-  function: suspend (T, U, W) -> JSONObject,
-) = ThreeParameterFunction(name, description, arg1, arg2, arg3, function)
-
-/**
- * Defines a function with four parameters, including its implementation, that a model can be given
- * access to in order to gain info or complete tasks.
- *
- * @param name The name of the function call, this should be clear and descriptive for the model
- * @param description A description of what the function does and its output.
- * @param arg1 A description of the first function parameter
- * @param arg2 A description of the second function parameter
- * @param arg3 A description of the third function parameter
- * @param arg4 A description of the fourth function parameter
- * @param function the function implementation
- */
-fun <T, U, W, Z> defineFunction(
-  name: String,
-  description: String,
-  arg1: Schema<T>,
-  arg2: Schema<U>,
-  arg3: Schema<W>,
-  arg4: Schema<Z>,
-  function: suspend (T, U, W, Z) -> JSONObject,
-) = FourParameterFunction(name, description, arg1, arg2, arg3, arg4, function)
-
-private fun <T> FunctionCallPart.getArgOrThrow(param: Schema<T>): T {
-  return param.fromString(args[param.name])
-    ?: throw RuntimeException(
-      "Missing argument for parameter \"${param.name}\" for function \"$name\""
-    )
-}
+  parameters: List<Schema> = emptyList(),
+  requiredParameters: List<String> = emptyList(),
+) = FunctionDeclaration(name, description, parameters, requiredParameters)
