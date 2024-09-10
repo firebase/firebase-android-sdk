@@ -1,0 +1,15 @@
+{
+    "name": "m153",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-vertexai"
+    ]
+}
