@@ -453,7 +453,7 @@ public class FirebaseCrashlytics {
   }
 
   /**
-   * Indicates whether or not automatic data collection is enabled
+   * Indicates whether or not automatic data collection is enabled.
    *
    * @return In order of priority:
    *     <li>If {@link #setCrashlyticsCollectionEnabled(boolean)} is called with a value, use it.
