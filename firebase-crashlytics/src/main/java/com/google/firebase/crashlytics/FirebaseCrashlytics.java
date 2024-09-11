@@ -456,11 +456,11 @@ public class FirebaseCrashlytics {
    * Indicates whether or not automatic data collection is enabled
    *
    * @return In order of priority:
-   * <p>If {@link #setCrashlyticsCollectionEnabled(boolean)} is called with a value, use it</p>
-   *
-   * <p>If the <b>firebase_crashlytics_collection_enabled</b> key is in your app’s AndroidManifest.xml, use it</p>
-   *
-   * <p>Otherwise, use the default {@link FirebaseApp#isDataCollectionDefaultEnabled()} in FirebaseApp</p>
+   *     <li>If {@link #setCrashlyticsCollectionEnabled(boolean)} is called with a value, use it.
+   *     <li>If the <b>firebase_crashlytics_collection_enabled</b> key is in your app’s
+   *         AndroidManifest.xml, use it.
+   *     <li>Otherwise, use the default {@link FirebaseApp#isDataCollectionDefaultEnabled()} in
+   *         FirebaseApp.
    */
   public boolean isCrashlyticsCollectionEnabled() {
     return core.isCrashlyticsCollectionEnabled();
