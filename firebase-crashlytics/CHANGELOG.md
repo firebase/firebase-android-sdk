@@ -1,7 +1,9 @@
 # Unreleased
-* [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is enabled.
-  ([Github #5919](//github.com/firebase/firebase-android-sdk/issues/5919))
+* [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is
+  enabled.
+  (GitHub [#5919](https://github.com/firebase/firebase-android-sdk/issues/5919){: .external})
 * [fixed] Ensure that on-demand fatal events are never processed on the main thread.
+  (GitHub [#4345](https://github.com/firebase/firebase-android-sdk/issues/4345){: .external})
 * [changed] Internal changes to the way session IDs are generated.
 
 
