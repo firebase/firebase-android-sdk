@@ -394,7 +394,7 @@ enum class DeltaType {
           Delta(
             after.name,
             "",
-            String.format("Class %s made abstract.", after.name),
+            String.format("Class %s made final.", after.name),
             CLASS_MADE_FINAL,
             VersionDelta.MAJOR
           )
