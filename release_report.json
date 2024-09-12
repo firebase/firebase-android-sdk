@@ -61,7 +61,7 @@
                 "commitId": "68368c41f2f9592337b98e87f80acf210d0884d2",
                 "prId": "9999",
                 "author": "Rodrigo Lazo",
-                "message": "Update crashlytics ndk gradle.properties(#9999)\n\nShould match crashlytics version",
+                "message": "Update crashlytics ndk gradle.properties (#9999)\n\nShould match crashlytics version",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68368c41f2f9592337b98e87f80acf210d0884d2",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
             },
