@@ -4,7 +4,6 @@ import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.type.Schema
 import com.google.firebase.vertexai.type.StringFormat
 import io.kotest.assertions.json.shouldEqualJson
-import io.kotest.matchers.shouldBe
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Test
@@ -84,7 +83,7 @@ internal class SchemaTests {
 
   @Test
   fun `full schema declaration`() {
-    val simpleDeclaration =
+    val schemaDeclaration =
       Schema.array(
         Schema.obj(
           description = "generic description",
@@ -145,8 +144,63 @@ internal class SchemaTests {
         )
       )
 
-    val json = Json.encodeToString(simpleDeclaration.toInternal())
-    print(json)
-    4.shouldBe(2 + 2)
+    val expectedJson =
+      """
+          {
+            "type": "ARRAY",
+            "items": {
+              "type": "OBJECT",
+              "description": "generic description",
+              "nullable": true,
+              "properties": {
+                "name": {"type": "STRING"},
+                "country": {"type": "STRING", "description": "country name", "format": "custom format", "nullable": true},
+                "population": {"type": "INTEGER", "description": "population count", "nullable": true},
+                "coordinates": {
+                  "type": "OBJECT",
+                  "description": "coordinates",
+                  "nullable": true,
+                  "properties": {
+                    "latitude": {"type": "NUMBER", "description": "latitude", "format": "double"},
+                    "longitude": {"type": "NUMBER", "description": "longitude", "format": "double"}
+                  },
+                  "required": ["latitude","longitude"]
+                },
+                "hemisphere": {
+                  "type": "OBJECT",
+                  "description": "hemisphere",
+                  "properties": {
+                    "latitudinal": {
+                      "type": "STRING",
+                      "description": "latitudinal",
+                      "format": "enum",
+                      "nullable": true,
+                      "enum": ["N","S"]
+                    },
+                    "longitudinal": {
+                      "type": "STRING",
+                      "description": "longitudinal",
+                      "format": "enum",
+                      "nullable": true,
+                      "enum": ["E","W"]
+                    }
+                  },
+                  "required": ["latitudinal","longitudinal"]
+                },
+                "elevation": {"type": "NUMBER", "description": "elevation", "format": "float"},
+                "isCapital": {"type": "BOOLEAN", "description": "True if the city is the capital of the country"},
+                "foundingDate": {"type": "STRING", "description": "Founding date", "format": "date", "nullable": true}
+              },
+              "required": [
+                "name","country","population","coordinates","hemisphere",
+                "elevation","isCapital","foundingDate"
+              ]
+            }
+          }
+
+      """
+        .trimIndent()
+
+    Json.encodeToString(schemaDeclaration.toInternal()).shouldEqualJson(expectedJson)
   }
 }
