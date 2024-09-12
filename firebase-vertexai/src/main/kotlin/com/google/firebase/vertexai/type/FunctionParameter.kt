@@ -16,4 +16,4 @@
 
 package com.google.firebase.vertexai.type
 
-class FunctionParameter(val name: String, val description: String, val type: FunctionType) {}
+class FunctionParameter(val name: String, val description: String, val schema: Schema) {}

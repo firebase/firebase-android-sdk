@@ -158,7 +158,7 @@ internal fun FunctionDeclaration.toInternal() =
     name,
     description,
     Schema(
-      properties = parameters.associate { it.name to it.toInternal() },
+      properties = parameters.mapValues { it.value.toInternal() },
       required = requiredParameters,
       type = "OBJECT",
       nullable = false,
@@ -167,7 +167,7 @@ internal fun FunctionDeclaration.toInternal() =
 
 internal fun com.google.firebase.vertexai.type.Schema.toInternal(): Schema =
   Schema(
-    type.name,
+    type,
     description,
     format,
     nullable,
