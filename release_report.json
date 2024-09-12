@@ -33,9 +33,9 @@
         "firebase-crashlytics": [
             {
                 "commitId": "991059786173395260b2fb90b6cc05d44a786f05",
-                "prId": "",
+                "prId": "9999",
                 "author": "Rodrigo Lazo",
-                "message": "Update crashlytics gradle.properties\n\nDo a minor version bump due to the changes",
+                "message": "Update crashlytics gradle.properties (#9999)\n\nDo a minor version bump due to the changes",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/991059786173395260b2fb90b6cc05d44a786f05",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
             },
@@ -59,9 +59,9 @@
         "firebase-crashlytics-ndk": [
             {
                 "commitId": "68368c41f2f9592337b98e87f80acf210d0884d2",
-                "prId": "",
+                "prId": "9999",
                 "author": "Rodrigo Lazo",
-                "message": "Update crashlytics ndk gradle.properties\n\nShould match crashlytics version",
+                "message": "Update crashlytics ndk gradle.properties(#9999)\n\nShould match crashlytics version",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68368c41f2f9592337b98e87f80acf210d0884d2",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
             },
@@ -97,7 +97,7 @@
             },
             {
                 "commitId": "5fe51ebb554a9b141d65674be667935f01abd856",
-                "prId": "",
+                "prId": "9999",
                 "author": "Rodrigo Lazo Paz",
                 "message": "Make citation metadata uri optional (#9999)\n\n",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5fe51ebb554a9b141d65674be667935f01abd856",
