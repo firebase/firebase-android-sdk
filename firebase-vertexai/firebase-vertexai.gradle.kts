@@ -19,7 +19,7 @@
 plugins {
   id("firebase-library")
   id("kotlin-android")
-  kotlin("plugin.serialization")
+  alias(libs.plugins.kotlinx.serialization)
 }
 
 firebaseLibrary {
@@ -71,7 +71,7 @@ dependencies {
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation(libs.androidx.annotation)
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+  implementation(libs.kotlinx.serialization.json)
   implementation("androidx.core:core-ktx:1.12.0")
   implementation("org.slf4j:slf4j-nop:2.0.9")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
