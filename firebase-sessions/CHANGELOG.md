@@ -7,12 +7,6 @@
 * [fixed] Safely unbind malfunctioning session lifecycle service to release service connections.
   (GitHub [#5869](https://github.com/firebase/firebase-android-sdk/issues/5869))
 
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-sessions` library. The Kotlin extensions library has no additional
-updates.
-
 # 1.2.3
 * [fixed] Force validation or rotation of FIDs.
 
