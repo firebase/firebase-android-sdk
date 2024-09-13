@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 19.1.0
 * [changed] Updated `firebase-crashlytics` dependency to v19.0.4
 
 # 19.0.3
@@ -232,3 +235,4 @@ change. The following release notes describe changes in the new SDK.
  uploading symbol files to [crashlytics] servers. See the
  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
+
