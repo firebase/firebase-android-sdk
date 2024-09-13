@@ -28,12 +28,10 @@ import android.app.ApplicationExitInfo;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -166,7 +164,7 @@ public class CrashlyticsControllerRobolectricTest {
     final CrashlyticsController controller =
         new CrashlyticsController(
             testContext,
-            new CrashlyticsWorker(TestOnlyExecutors.background()),
+            new CrashlyticsBackgroundWorker(Runnable::run),
             idManager,
             mockDataCollectionArbiter,
             testFileStore,
@@ -177,8 +175,7 @@ public class CrashlyticsControllerRobolectricTest {
             mockSessionReportingCoordinator,
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class),
-            mock(CrashlyticsAppQualitySessionsSubscriber.class),
-            new CrashlyticsWorker(TestOnlyExecutors.background()));
+            mock(CrashlyticsAppQualitySessionsSubscriber.class));
     controller.openSession(SESSION_ID);
     return controller;
   }

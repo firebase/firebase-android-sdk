@@ -25,12 +25,16 @@ android {
 
     defaultConfig {
         applicationId "com.googletest.firebase.appdistribution.testapp"
-        minSdkVersion 23
-        targetSdkVersion 33
-        versionName "3.2"
-        versionCode 7
+        minSdk 23
+        targetSdk 34
+        versionName "3.3"
+        versionCode 8
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -54,8 +58,8 @@ android {
             versionNameSuffix "-beta"
 
             firebaseAppDistribution {
-                releaseNotes "Beta variant of Android SDK test app"
-                // testers "your email here"
+                releaseNotes = "Beta variant of Android SDK test app"
+                // testers = "your email here"
             }
         }
     }

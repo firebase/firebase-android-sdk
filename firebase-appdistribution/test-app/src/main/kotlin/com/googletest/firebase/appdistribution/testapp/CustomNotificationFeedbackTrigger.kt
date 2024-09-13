@@ -34,6 +34,7 @@ import androidx.core.content.ContextCompat
 import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.ktx.Firebase
 import java.io.IOException
+import com.google.firebase.appdistribution.testapp.R
 
 /**
  * Shows an ongoing notification that the user can tap to take a screenshot and send feedback to the

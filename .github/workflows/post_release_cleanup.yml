@@ -29,7 +29,7 @@ jobs:
         uses: peter-evans/create-pull-request@v4
         with:
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
-          committer: google-oss-bot <google-oss-bot@google.com>
+          committer: google-oss-bot <firebase-oss-bot@google.com>
           assignees: ${{ github.actor }}
           base: 'main'
           branch: 'releases/${{ inputs.name }}.mergeback'

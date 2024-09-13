@@ -17,6 +17,7 @@ plugins {
     id("kotlin-android")
     id("firebase-vendor")
     id("copy-google-services")
+    kotlin("kapt")
 }
 
 firebaseLibrary {
@@ -58,6 +59,23 @@ dependencies {
     javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
     javadocClasspath(libs.autovalue.annotations)
     javadocClasspath(libs.findbugs.jsr305)
+    implementation("com.google.firebase:firebase-annotations:16.2.0")
+    implementation("com.google.firebase:firebase-common:20.3.1")
+    implementation("com.google.firebase:firebase-components:17.1.0")
+    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.playservices.base)
+    implementation(libs.playservices.basement)
+    implementation(libs.playservices.tasks)
+    implementation("com.google.firebase:firebase-iid:21.1.0") {
+        exclude(group = "com.google.firebase", module = "firebase-common")
+        exclude(group = "com.google.firebase", module = "firebase-components")
+    }
+    implementation("com.google.firebase:firebase-auth-interop:18.0.0") {
+        exclude(group = "com.google.firebase", module = "firebase-common")
+    }
+    implementation("com.google.firebase:firebase-iid-interop:17.1.0")
+    implementation(libs.okhttp)
 
     api("com.google.firebase:firebase-appcheck-interop:17.1.0")
     api("com.google.firebase:firebase-common:21.0.0")
@@ -95,10 +113,12 @@ dependencies {
    }
 
     androidTestImplementation(project(":integ-testing"))
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.mockito.core)
     androidTestImplementation(libs.mockito.dexmaker)
-    androidTestImplementation(libs.truth)
+    kapt("com.google.dagger:dagger-android-processor:2.43.2")
+    kapt("com.google.dagger:dagger-compiler:2.43.2")
 }

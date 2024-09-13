@@ -30,11 +30,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -84,9 +82,7 @@ class CrashlyticsController {
   private final CrashlyticsFileMarker crashMarker;
   private final UserMetadata userMetadata;
 
-  private final CrashlyticsWorker backgroundWorker;
-
-  private final CrashlyticsWorker diskWriteWorker;
+  private final CrashlyticsBackgroundWorker backgroundWorker;
 
   private final IdManager idManager;
   private final FileStore fileStore;
@@ -120,7 +116,7 @@ class CrashlyticsController {
 
   CrashlyticsController(
       Context context,
-      CrashlyticsWorker commonWorker,
+      CrashlyticsBackgroundWorker backgroundWorker,
       IdManager idManager,
       DataCollectionArbiter dataCollectionArbiter,
       FileStore fileStore,
@@ -131,10 +127,9 @@ class CrashlyticsController {
       SessionReportingCoordinator sessionReportingCoordinator,
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
-      CrashlyticsWorker diskWriteWorker) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     this.context = context;
-    this.backgroundWorker = commonWorker;
+    this.backgroundWorker = backgroundWorker;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.fileStore = fileStore;
@@ -146,7 +141,6 @@ class CrashlyticsController {
     this.analyticsEventLogger = analyticsEventLogger;
     this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
-    this.diskWriteWorker = diskWriteWorker;
   }
 
   private Context getContext() {
@@ -222,7 +216,7 @@ class CrashlyticsController {
 
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsProvider);
-                doOpenSession(new CLSUUID(idManager).toString(), isOnDemand);
+                doOpenSession(new CLSUUID().getSessionId(), isOnDemand);
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.
@@ -314,7 +308,6 @@ class CrashlyticsController {
 
   /** This function must be called before opening the first session * */
   boolean didCrashOnPreviousExecution() {
-    CrashlyticsPreconditions.checkBackgroundThread(); // To not violate strict mode.
     if (!crashMarker.isPresent()) {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
@@ -422,9 +415,16 @@ class CrashlyticsController {
 
   /** Log a timestamped string to the log file. */
   void writeToLog(final long timestamp, final String msg) {
-    if (!isHandlingException()) {
-      logFileManager.writeToLog(timestamp, msg);
-    }
+    backgroundWorker.submit(
+        new Callable<Void>() {
+          @Override
+          public Void call() throws Exception {
+            if (!isHandlingException()) {
+              logFileManager.writeToLog(timestamp, msg);
+            }
+            return null;
+          }
+        });
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
@@ -433,15 +433,23 @@ class CrashlyticsController {
     // rather than the time at which the task executes.
     final long timestampMillis = System.currentTimeMillis();
 
-    if (!isHandlingException()) {
-      long timestampSeconds = getTimestampSeconds(timestampMillis);
-      final String currentSessionId = getCurrentSessionId();
-      if (currentSessionId == null) {
-        Logger.getLogger().w("Tried to write a non-fatal exception while no session was open.");
-        return;
-      }
-      reportingCoordinator.persistNonFatalEvent(ex, thread, currentSessionId, timestampSeconds);
-    }
+    backgroundWorker.submit(
+        new Runnable() {
+          @Override
+          public void run() {
+            if (!isHandlingException()) {
+              long timestampSeconds = getTimestampSeconds(timestampMillis);
+              final String currentSessionId = getCurrentSessionId();
+              if (currentSessionId == null) {
+                Logger.getLogger()
+                    .w("Tried to write a non-fatal exception while no session was open.");
+                return;
+              }
+              reportingCoordinator.persistNonFatalEvent(
+                  ex, thread, currentSessionId, timestampSeconds);
+            }
+          }
+        });
   }
 
   void logFatalException(Thread thread, Throwable ex) {
@@ -523,7 +531,7 @@ class CrashlyticsController {
    * @param settingsProvider
    */
   boolean finalizeSessions(SettingsProvider settingsProvider) {
-    CrashlyticsPreconditions.checkBackgroundThread();
+    backgroundWorker.checkRunningOnThread();
 
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
@@ -930,7 +938,7 @@ class CrashlyticsController {
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
-            UserMetadata.loadFromExistingSession(sessionId, fileStore, diskWriteWorker);
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, backgroundWorker);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

@@ -60,7 +60,10 @@ internal object CrashlyticsPreconditions {
 
   private fun isBlockingThread() = threadName.contains("Firebase Blocking Thread #")
 
-  private fun isBackgroundThread() = threadName.contains("Firebase Background Thread #")
+  // TODO(mrober): Remove the Crashlytics thread when fully migrated to Firebase common threads.
+  private fun isBackgroundThread() =
+    threadName.contains("Firebase Background Thread #") ||
+      threadName.contains("Crashlytics Exception Handler")
 
   private fun checkThread(isCorrectThread: () -> Boolean, failureMessage: () -> String) {
     if (strictLevel.level >= WARN.level && !isCorrectThread()) {

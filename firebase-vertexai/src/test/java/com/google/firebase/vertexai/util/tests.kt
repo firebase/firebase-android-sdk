@@ -16,9 +16,9 @@
 
 package com.google.firebase.vertexai.util
 
-import com.google.ai.client.generativeai.common.APIController
-import com.google.ai.client.generativeai.common.RequestOptions
 import com.google.firebase.vertexai.GenerativeModel
+import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.common.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.HttpStatusCode
