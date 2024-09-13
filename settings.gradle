@@ -13,7 +13,7 @@
 // limitations under the License.
 
 pluginManagement {
-  includeBuild("firebase-dataconnect/plugin")
+  includeBuild("firebase-dataconnect/gradleplugin")
 }
 
 rootProject.name = 'com.google.firebase'
