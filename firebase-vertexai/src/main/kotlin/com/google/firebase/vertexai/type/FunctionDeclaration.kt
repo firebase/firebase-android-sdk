@@ -17,42 +17,28 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Representation of a function that a model can invoke.
- *
- * @see defineFunction
- */
-class FunctionDeclaration(
-  val name: String,
-  val description: String,
-  val parameters: Map<String, Schema>,
-  val requiredParameters: List<String>,
-)
-
-/**
- * A declared function, including implementation, that a model can be given access to in order to
- * gain info or complete tasks.
+ * A declared function that a model can be given access to in order to gain info or complete tasks.
  *
  * ```
- * val getExchangeRate = defineFunction(
+ * val getExchangeRate = FunctionDeclaration(
  *    name = "getExchangeRate",
  *    description = "Get the exchange rate for currencies between countries.",
- *    parameters = listOf(
- *      Schema.str("currencyFrom", "The currency to convert from."),
- *      Schema.str("currencyTo", "The currency to convert to.")
- *    ),
- *    requiredParameters = listOf("currencyFrom", "currencyTo")
+ *    parameters = mapOf(
+ *      "currencyFrom" to Schema.str("The currency to convert from."),
+ *      "currencyTo" ot Schema.str("The currency to convert to.")
+ *    )
  * )
  * ```
  *
  * @param name The name of the function call, this should be clear and descriptive for the model.
  * @param description A description of what the function does and its output.
  * @param parameters A list of parameters that the function accepts.
- * @param requiredParameters A list of parameters that the function requires to run.
+ * @param optionalParameters A list of parameters that can be omitted.
  * @see Schema
  */
-fun defineFunction(
-  name: String,
-  description: String,
-  parameters: Map<String, Schema> = emptyMap(),
-  requiredParameters: List<String> = emptyList(),
-) = FunctionDeclaration(name, description, parameters, requiredParameters)
+class FunctionDeclaration(
+  val name: String,
+  val description: String,
+  val parameters: Map<String, Schema>,
+  val optionalParameters: List<String> = emptyList(),
+)

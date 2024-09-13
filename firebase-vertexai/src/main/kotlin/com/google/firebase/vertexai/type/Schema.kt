@@ -16,29 +16,12 @@
 
 package com.google.firebase.vertexai.type
 
-sealed class StringFormat(val value: String) {
+sealed class StringFormat(val value: String?) {
+  class None() : StringFormat(null)
   class Custom(format: String) : StringFormat(format)
 }
 
-/**
- * Represents a parameter for a declared function
- *
- * ```
- * val currencyFrom = Schema.str("currencyFrom", "The currency to convert from.")
- * ```
- *
- * @property name: The name of the parameter
- * @property description: The description of what the parameter should contain or represent
- * @property format: format information for the parameter, this can include bitlength in the case of
- * int/float or keywords like "enum" for the string type
- * @property enum: contains the enum values for a string enum
- * @property type: contains the type info and parser
- * @property properties: if type is OBJECT, then this contains the description of the fields of the
- * object by name
- * @property required: if type is OBJECT, then this contains the list of required keys
- * @property items: if the type is ARRAY, then this contains a description of the objects in the
- * array
- */
+/** Represents a Schema */
 class Schema
 internal constructor(
   val type: String,
@@ -52,17 +35,21 @@ internal constructor(
 ) {
 
   companion object {
-
     /** Registers a schema for a boolean */
     @JvmStatic
-    fun boolean(name: String? = null, description: String? = null, nullable: Boolean = false) =
+    fun boolean(description: String? = null, nullable: Boolean = false) =
       Schema(
         description = description,
         nullable = nullable,
         type = "BOOLEAN",
       )
 
-    /** Registers a schema for a 32 bit integer number */
+    /**
+     * Registers a schema for a 32 bit integer number
+     *
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
+     */
     @JvmStatic
     @JvmName("numInt")
     fun integer(description: String? = null, nullable: Boolean = false) =
@@ -73,7 +60,12 @@ internal constructor(
         type = "INTEGER",
       )
 
-    /** Registers a schema for a 64 bit integer number */
+    /**
+     * Registers a schema for a 64 bit integer number
+     *
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
+     */
     @JvmStatic
     @JvmName("numLong")
     fun long(description: String? = null, nullable: Boolean = false) =
@@ -83,36 +75,50 @@ internal constructor(
         type = "INTEGER",
       )
 
-    /** Registers a schema for a floating point number */
+    /**
+     * Registers a schema for a floating point number
+     *
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
+     */
     @JvmStatic
     @JvmName("numDouble")
     fun double(description: String? = null, nullable: Boolean = false) =
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "double")
 
-    /** Registers a schema for a floating point number */
+    /**
+     * Registers a schema for a floating point number
+     *
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
+     */
     @JvmStatic
     @JvmName("numFloat")
     fun float(description: String? = null, nullable: Boolean = false) =
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "float")
 
-    /** Registers a schema for a string */
+    /**
+     * Registers a schema for a string
+     *
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
+     * @property format: Pattern that values need to adhere to
+     */
     @JvmStatic
     @JvmName("str")
     fun string(
-      name: String? = null,
       description: String? = null,
       nullable: Boolean = false,
-      format: StringFormat? = null
+      format: StringFormat = StringFormat.None()
     ) =
-      Schema(
-        description = description,
-        format = format?.value,
-        nullable = nullable,
-        type = "STRING"
-      )
+      Schema(description = description, format = format.value, nullable = nullable, type = "STRING")
 
     /**
      * Registers a schema for a complex object. In a function it will be returned as a [JSONObject]
+     *
+     * @property properties: Map of the fields of the object to their schema
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     fun obj(
@@ -132,7 +138,9 @@ internal constructor(
     /**
      * Registers a schema for an array.
      *
-     * @param items can be used to specify the type of the array
+     * @property items: The schema of the elements of this array
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     fun array(items: Schema, description: String? = null, nullable: Boolean = false) =
@@ -143,9 +151,14 @@ internal constructor(
         type = "ARRAY",
       )
 
-    /** Registers a schema for an enum */
+    /**
+     * Registers a schema for an enum
+     *
+     * @property values: The list of valid values for this enumeration
+     * @property description: The description of what the parameter should contain or represent
+     * @property nullable: Whether null is a valid value for this schema
+     */
     @JvmStatic
-    @JvmName("enumeration")
     fun enumeration(values: List<String>, description: String? = null, nullable: Boolean = false) =
       Schema(
         description = description,

@@ -159,7 +159,7 @@ internal fun FunctionDeclaration.toInternal() =
     description,
     Schema(
       properties = parameters.mapValues { it.value.toInternal() },
-      required = requiredParameters,
+      required = parameters.keys.minus(optionalParameters.toSet()).toList(),
       type = "OBJECT",
       nullable = false,
     ),
