@@ -25,6 +25,8 @@ import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.spec.SpecTestCase;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.InitResponse;
+import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,6 +55,7 @@ public class MockDatastore extends Datastore {
     @Override
     public void start() {
       hardAssert(!open, "Trying to start already started watch stream");
+      handshakeComplete = false;
       open = true;
       listener.onOpen();
     }
@@ -62,6 +65,7 @@ public class MockDatastore extends Datastore {
       super.stop();
       activeTargets.clear();
       open = false;
+      handshakeComplete = false;
     }
 
     @Override
@@ -72,6 +76,18 @@ public class MockDatastore extends Datastore {
     @Override
     public boolean isOpen() {
       return open;
+    }
+
+    @Override
+    void sendHandshake(ByteString sessionToken) {
+      hardAssert(!handshakeComplete, "Handshake already completed");
+      handshakeComplete = true;
+      InitResponse initResponse =
+          InitResponse.newBuilder()
+              .setSessionToken(sessionToken == null ? ByteString.EMPTY : sessionToken)
+              .setClearCache(false)
+              .build();
+      getWorkerQueue().enqueue(() -> listener.onHandshake(initResponse));
     }
 
     @Override
@@ -172,11 +188,16 @@ public class MockDatastore extends Datastore {
     }
 
     @Override
-    public void writeHandshake() {
+    public void sendHandshake(ByteString sessionToken) {
       hardAssert(!handshakeComplete, "Handshake already completed");
       writeStreamRequestCount += 1;
       handshakeComplete = true;
-      listener.onHandshakeComplete();
+      InitResponse initResponse =
+          InitResponse.newBuilder()
+              .setSessionToken(sessionToken == null ? ByteString.EMPTY : sessionToken)
+              .setClearCache(false)
+              .build();
+      getWorkerQueue().enqueue(() -> listener.onHandshake(initResponse));
     }
 
     @Override

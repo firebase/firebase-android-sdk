@@ -131,11 +131,9 @@ public class AsyncQueueTest {
 
     // From this point on, `normal` tasks are not scheduled. Only those who explicitly request to
     // run after shutdown initiated will run.
-    queue.enqueueAndInitiateShutdown(runnableForStep(2));
+    queue.shutdown();
 
     queue.enqueueAndForget(runnableForStep(3));
-    queue.enqueueAndForgetEvenAfterShutdown(runnableForStep(4));
-
     queue.getExecutor().execute(runnableForStep(5));
     waitForExpectedSteps();
   }

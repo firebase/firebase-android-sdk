@@ -23,6 +23,8 @@ import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
 import com.google.firestore.v1.FirestoreGrpc;
+import com.google.firestore.v1.InitRequest;
+import com.google.firestore.v1.InitResponse;
 import com.google.firestore.v1.WriteRequest;
 import com.google.firestore.v1.WriteResponse;
 import com.google.protobuf.ByteString;
@@ -54,7 +56,7 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
   /** A callback interface for the set of events that can be emitted by the WriteStream */
   public interface Callback extends AbstractStream.StreamCallback {
     /** The handshake for this write stream has completed */
-    void onHandshakeComplete();
+    void onHandshake(InitResponse initResponse);
 
     /** Response for the last write. */
     void onWriteResponse(SnapshotVersion commitVersion, List<MutationResult> mutationResults);
@@ -95,12 +97,16 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
     }
   }
 
+  boolean isHandshakeInProgress() {
+    return isOpen() && !handshakeComplete;
+  }
+
   /**
    * Tracks whether or not a handshake has been successfully exchanged and the stream is ready to
    * accept mutations.
    */
   boolean isHandshakeComplete() {
-    return handshakeComplete;
+    return isOpen() && handshakeComplete;
   }
 
   /**
@@ -129,14 +135,21 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
   /**
    * Sends an initial streamToken to the server, performing the handshake required to make the
    * StreamingWrite RPC work. Subsequent {@link #writeMutations} calls should wait until a response
-   * has been delivered to {@link WriteStream.Callback#onHandshakeComplete}.
+   * has been delivered to {@link WriteStream.Callback#onHandshake}.
    */
-  void writeHandshake() {
+  void sendHandshake(ByteString sessionToken) {
     hardAssert(isOpen(), "Writing handshake requires an opened stream");
     hardAssert(!handshakeComplete, "Handshake already completed");
     // TODO: Support stream resumption. We intentionally do not set the stream token on the
     // handshake, ignoring any stream token we might have.
-    WriteRequest.Builder request = WriteRequest.newBuilder().setDatabase(serializer.databaseName());
+
+    InitRequest.Builder initRequest = InitRequest.newBuilder();
+    if (sessionToken != null) initRequest.setSessionToken(sessionToken);
+
+    WriteRequest.Builder request =
+        WriteRequest.newBuilder()
+            .setDatabase(serializer.databaseName())
+            .setInitRequest(initRequest);
 
     writeRequest(request.build());
   }
@@ -161,12 +174,13 @@ public class WriteStream extends AbstractStream<WriteRequest, WriteResponse, Wri
 
   @Override
   public void onFirst(WriteResponse response) {
+    hardAssert(response.hasInitResponse(), "InitResponse expected as part of Handshake response");
     lastStreamToken = response.getStreamToken();
 
     // The first response is the handshake response
     handshakeComplete = true;
 
-    listener.onHandshakeComplete();
+    listener.onHandshake(response.getInitResponse());
   }
 
   @Override
