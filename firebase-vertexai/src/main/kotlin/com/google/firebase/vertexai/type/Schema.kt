@@ -35,7 +35,7 @@ internal constructor(
 ) {
 
   companion object {
-    /** Registers a schema for a boolean */
+    /** Returns a schema for a boolean */
     @JvmStatic
     fun boolean(description: String? = null, nullable: Boolean = false) =
       Schema(
@@ -45,7 +45,7 @@ internal constructor(
       )
 
     /**
-     * Registers a schema for a 32 bit integer number
+     * Returns a schema for a 32 bit integer number
      *
      * @property description: The description of what the parameter should contain or represent
      * @property nullable: Whether null is a valid value for this schema
@@ -61,7 +61,7 @@ internal constructor(
       )
 
     /**
-     * Registers a schema for a 64 bit integer number
+     * Returns a schema for a 64 bit integer number
      *
      * @property description: The description of what the parameter should contain or represent
      * @property nullable: Whether null is a valid value for this schema
@@ -76,7 +76,7 @@ internal constructor(
       )
 
     /**
-     * Registers a schema for a floating point number
+     * Returns a schema for a floating point number
      *
      * @property description: The description of what the parameter should contain or represent
      * @property nullable: Whether null is a valid value for this schema
@@ -87,7 +87,7 @@ internal constructor(
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "double")
 
     /**
-     * Registers a schema for a floating point number
+     * Returns a schema for a floating point number
      *
      * @property description: The description of what the parameter should contain or represent
      * @property nullable: Whether null is a valid value for this schema
@@ -98,7 +98,7 @@ internal constructor(
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "float")
 
     /**
-     * Registers a schema for a string
+     * Returns a schema for a string
      *
      * @property description: The description of what the parameter should contain or represent
      * @property nullable: Whether null is a valid value for this schema
@@ -114,7 +114,7 @@ internal constructor(
       Schema(description = description, format = format.value, nullable = nullable, type = "STRING")
 
     /**
-     * Registers a schema for a complex object. In a function it will be returned as a [JSONObject]
+     * Returns a schema for a complex object. In a function it will be returned as a [JSONObject]
      *
      * @property properties: Map of the fields of the object to their schema
      * @property description: The description of what the parameter should contain or represent
@@ -136,7 +136,7 @@ internal constructor(
       )
 
     /**
-     * Registers a schema for an array.
+     * Returns a schema for an array.
      *
      * @property items: The schema of the elements of this array
      * @property description: The description of what the parameter should contain or represent
@@ -152,7 +152,7 @@ internal constructor(
       )
 
     /**
-     * Registers a schema for an enum
+     * Returns a schema for an enumeration
      *
      * @property values: The list of valid values for this enumeration
      * @property description: The description of what the parameter should contain or represent
