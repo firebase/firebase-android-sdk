@@ -47,8 +47,8 @@ internal constructor(
     /**
      * Returns a schema for a 32 bit integer number
      *
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     @JvmName("numInt")
@@ -63,8 +63,8 @@ internal constructor(
     /**
      * Returns a schema for a 64 bit integer number
      *
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     @JvmName("numLong")
@@ -78,8 +78,8 @@ internal constructor(
     /**
      * Returns a schema for a floating point number
      *
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     @JvmName("numDouble")
@@ -89,8 +89,8 @@ internal constructor(
     /**
      * Returns a schema for a floating point number
      *
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     @JvmName("numFloat")
@@ -100,9 +100,9 @@ internal constructor(
     /**
      * Returns a schema for a string
      *
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
-     * @property format: Pattern that values need to adhere to
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
+     * @param format: Pattern that values need to adhere to
      */
     @JvmStatic
     @JvmName("str")
@@ -116,9 +116,9 @@ internal constructor(
     /**
      * Returns a schema for a complex object. In a function it will be returned as a [JSONObject]
      *
-     * @property properties: Map of the fields of the object to their schema
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
+     * @param properties: Map of the fields of the object to their schema
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     fun obj(
@@ -138,9 +138,9 @@ internal constructor(
     /**
      * Returns a schema for an array.
      *
-     * @property items: The schema of the elements of this array
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
+     * @param items: The schema of the elements of this array
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     fun array(items: Schema, description: String? = null, nullable: Boolean = false) =
@@ -154,9 +154,9 @@ internal constructor(
     /**
      * Returns a schema for an enumeration
      *
-     * @property values: The list of valid values for this enumeration
-     * @property description: The description of what the parameter should contain or represent
-     * @property nullable: Whether null is a valid value for this schema
+     * @param values: The list of valid values for this enumeration
+     * @param description: The description of what the parameter should contain or represent
+     * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
     fun enumeration(values: List<String>, description: String? = null, nullable: Boolean = false) =
