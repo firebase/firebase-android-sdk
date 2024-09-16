@@ -106,7 +106,7 @@ internal class SchemaTests {
           nullable = true,
           properties =
             mapOf(
-              "name" to Schema.string(description = null, nullable = false, format = null),
+              "name" to Schema.string(description = null, nullable = false, format = StringFormat.None()),
               "country" to
                 Schema.string(
                   description = "country name",
