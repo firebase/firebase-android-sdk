@@ -16,8 +16,7 @@
 
 package com.google.firebase.vertexai.type
 
-sealed class StringFormat(val value: String?) {
-  class None() : StringFormat(null)
+sealed class StringFormat(val value: String) {
   class Custom(format: String) : StringFormat(format)
 }
 
@@ -109,9 +108,9 @@ internal constructor(
     fun string(
       description: String? = null,
       nullable: Boolean = false,
-      format: StringFormat = StringFormat.None()
+      format: StringFormat? = null
     ) =
-      Schema(description = description, format = format.value, nullable = nullable, type = "STRING")
+      Schema(description = description, format = format?.value, nullable = nullable, type = "STRING")
 
     /**
      * Returns a schema for a complex object. In a function it will be returned as a [JSONObject]
