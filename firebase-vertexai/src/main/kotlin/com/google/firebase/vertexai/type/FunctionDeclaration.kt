@@ -25,7 +25,7 @@ package com.google.firebase.vertexai.type
  *    description = "Get the exchange rate for currencies between countries.",
  *    parameters = mapOf(
  *      "currencyFrom" to Schema.str("The currency to convert from."),
- *      "currencyTo" ot Schema.str("The currency to convert to.")
+ *      "currencyTo" to Schema.str("The currency to convert to.")
  *    )
  * )
  * ```
