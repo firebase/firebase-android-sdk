@@ -20,7 +20,7 @@ sealed class StringFormat(val value: String) {
   class Custom(format: String) : StringFormat(format)
 }
 
-/** Represents a Schema */
+/** Represents a schema */
 class Schema
 internal constructor(
   val type: String,
@@ -44,7 +44,7 @@ internal constructor(
       )
 
     /**
-     * Returns a schema for a 32 bit integer number
+     * Returns a schema for a 32-bit integer number
      *
      * @param description: The description of what the parameter should contain or represent
      * @param nullable: Whether null is a valid value for this schema
@@ -60,7 +60,7 @@ internal constructor(
       )
 
     /**
-     * Returns a schema for a 64 bit integer number
+     * Returns a schema for a 64-bit integer number
      *
      * @param description: The description of what the parameter should contain or represent
      * @param nullable: Whether null is a valid value for this schema
@@ -101,7 +101,7 @@ internal constructor(
      *
      * @param description: The description of what the parameter should contain or represent
      * @param nullable: Whether null is a valid value for this schema
-     * @param format: Pattern that values need to adhere to
+     * @param format: The pattern that values need to adhere to
      */
     @JvmStatic
     @JvmName("str")
@@ -113,9 +113,9 @@ internal constructor(
       Schema(description = description, format = format?.value, nullable = nullable, type = "STRING")
 
     /**
-     * Returns a schema for a complex object. In a function it will be returned as a [JSONObject]
+     * Returns a schema for a complex object. In a function, it will be returned as a [JSONObject].
      *
-     * @param properties: Map of the fields of the object to their schema
+     * @param properties: The map of the object's fields to their schema
      * @param description: The description of what the parameter should contain or represent
      * @param nullable: Whether null is a valid value for this schema
      */
