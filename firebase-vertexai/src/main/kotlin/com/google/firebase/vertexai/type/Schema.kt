@@ -124,8 +124,8 @@ internal constructor(
     fun obj(
       properties: Map<String, Schema>,
       description: String? = null,
+      nullable: Boolean = false,
       optionalProperties: List<String> = emptyList(),
-      nullable: Boolean = false
     ) =
       Schema(
         description = description,
