@@ -38,6 +38,7 @@ internal object FinishReasonSerializer :
 internal data class PromptFeedback(
   val blockReason: BlockReason? = null,
   val safetyRatings: List<SafetyRating>? = null,
+  val blockReasonMessage: String? = null,
 )
 
 @Serializable(BlockReasonSerializer::class)
