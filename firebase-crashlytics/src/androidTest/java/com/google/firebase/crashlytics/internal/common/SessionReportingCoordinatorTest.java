@@ -33,6 +33,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -69,6 +71,9 @@ public class SessionReportingCoordinatorTest {
 
   private SessionReportingCoordinator reportingCoordinator;
 
+  private CrashlyticsWorkers crashlyticsWorkers =
+      new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -80,7 +85,8 @@ public class SessionReportingCoordinatorTest {
             reportSender,
             logFileManager,
             reportMetadata,
-            idManager);
+            idManager,
+            crashlyticsWorkers);
   }
 
   @Test
@@ -116,7 +122,8 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testNonFatalEvent_persistsNormalPriorityEventWithoutAllThreadsForSessionId() {
+  public void testNonFatalEvent_persistsNormalPriorityEventWithoutAllThreadsForSessionId()
+      throws Exception {
     final String eventType = "error";
     final String sessionId = "testSessionId";
     final long timestamp = System.currentTimeMillis();
@@ -125,6 +132,8 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+
+    crashlyticsWorkers.diskWrite.await();
 
     final boolean expectedAllThreads = false;
     final boolean expectedHighPriority = false;
@@ -136,7 +145,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testNonFatalEvent_addsLogsToEvent() {
+  public void testNonFatalEvent_addsLogsToEvent() throws Exception {
     long timestamp = System.currentTimeMillis();
 
     mockEventInteractions();
@@ -149,6 +158,8 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
+    crashlyticsWorkers.diskWrite.await();
+
     verify(mockEventBuilder)
         .setLog(CrashlyticsReport.Session.Event.Log.builder().setContent(testLog).build());
     verify(mockEventBuilder).build();
@@ -156,7 +167,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testNonFatalEvent_addsNoLogsToEventWhenNoneAvailable() {
+  public void testNonFatalEvent_addsNoLogsToEventWhenNoneAvailable() throws Exception {
     long timestamp = System.currentTimeMillis();
 
     mockEventInteractions();
@@ -167,6 +178,8 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+
+    crashlyticsWorkers.diskWrite.await();
 
     verify(mockEventBuilder, never()).setLog(any(CrashlyticsReport.Session.Event.Log.class));
     verify(mockEventBuilder).build();
@@ -212,7 +225,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testNonFatalEvent_addsSortedKeysToEvent() {
+  public void testNonFatalEvent_addsSortedKeysToEvent() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
     mockEventInteractions();
@@ -243,6 +256,8 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
+    crashlyticsWorkers.diskWrite.await();
+
     verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
     verify(mockEventAppBuilder).setInternalKeys(expectedCustomAttributes);
     verify(mockEventAppBuilder).build();
@@ -252,7 +267,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testNonFatalEvent_addsNoKeysToEventWhenNoneAvailable() {
+  public void testNonFatalEvent_addsNoKeysToEventWhenNoneAvailable() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
     mockEventInteractions();
@@ -266,6 +281,8 @@ public class SessionReportingCoordinatorTest {
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
 
+    crashlyticsWorkers.diskWrite.await();
+
     verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
@@ -274,7 +291,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testNonFatalEvent_addRolloutsEvent() {
+  public void testNonFatalEvent_addRolloutsEvent() throws Exception {
     long timestamp = System.currentTimeMillis();
     String sessionId = "testSessionId";
     mockEventInteractions();
@@ -286,6 +303,8 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+
+    crashlyticsWorkers.diskWrite.await();
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
@@ -415,35 +434,6 @@ public class SessionReportingCoordinatorTest {
     // first build for custom keys
     // second build for rollouts
     verify(mockEventBuilder, times(2)).build();
-  }
-
-  @Test
-  public void onLog_writesToLogFileManager() {
-    long timestamp = System.currentTimeMillis();
-    String log = "this is a log";
-
-    reportingCoordinator.onLog(timestamp, log);
-
-    verify(logFileManager).writeToLog(timestamp, log);
-  }
-
-  @Test
-  public void onCustomKey_writesToReportMetadata() {
-    final String key = "key";
-    final String value = "value";
-
-    reportingCoordinator.onCustomKey(key, value);
-
-    verify(reportMetadata).setCustomKey(key, value);
-  }
-
-  @Test
-  public void onUserId_writesUserToReportMetadata() {
-    final String userId = "testUser";
-
-    reportingCoordinator.onUserId(userId);
-
-    verify(reportMetadata).setUserId(userId);
   }
 
   @Test

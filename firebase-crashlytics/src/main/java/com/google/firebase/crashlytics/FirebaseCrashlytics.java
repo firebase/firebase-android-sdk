@@ -19,12 +19,9 @@ import android.content.pm.PackageManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
-import com.google.firebase.annotations.concurrent.Background;
-import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
@@ -36,8 +33,8 @@ import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
-import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.IdManager;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
@@ -46,7 +43,6 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -70,8 +66,8 @@ public class FirebaseCrashlytics {
       @NonNull Deferred<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector,
       @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred,
-      @Background ExecutorService backgroundExecutorService,
-      @Blocking ExecutorService blockingExecutorService) {
+      ExecutorService backgroundExecutorService,
+      ExecutorService blockingExecutorService) {
 
     Context context = app.getApplicationContext();
     final String appIdentifier = context.getPackageName();
@@ -81,6 +77,9 @@ public class FirebaseCrashlytics {
                 + CrashlyticsCore.getVersion()
                 + " for "
                 + appIdentifier);
+
+    CrashlyticsWorkers crashlyticsWorkers =
+        new CrashlyticsWorkers(backgroundExecutorService, blockingExecutorService);
 
     FileStore fileStore = new FileStore(context);
     final DataCollectionArbiter arbiter = new DataCollectionArbiter(app);
@@ -92,9 +91,6 @@ public class FirebaseCrashlytics {
     // Integration with Firebase Analytics
     final AnalyticsDeferredProxy analyticsDeferredProxy =
         new AnalyticsDeferredProxy(analyticsConnector);
-
-    final ExecutorService crashHandlerExecutor =
-        ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
 
     CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber =
         new CrashlyticsAppQualitySessionsSubscriber(arbiter, fileStore);
@@ -112,9 +108,9 @@ public class FirebaseCrashlytics {
             analyticsDeferredProxy.getDeferredBreadcrumbSource(),
             analyticsDeferredProxy.getAnalyticsEventLogger(),
             fileStore,
-            crashHandlerExecutor,
             sessionsSubscriber,
-            remoteConfigDeferredProxy);
+            remoteConfigDeferredProxy,
+            crashlyticsWorkers);
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);
@@ -150,10 +146,7 @@ public class FirebaseCrashlytics {
 
     Logger.getLogger().v("Installer package name is: " + appData.installerPackageName);
 
-    final Executor threadPoolExecutor =
-        ExecutorUtils.buildSequentialExecutor(backgroundExecutorService);
-
-    final SettingsController settingsController =
+    SettingsController settingsController =
         SettingsController.create(
             context,
             googleAppId,
@@ -166,18 +159,8 @@ public class FirebaseCrashlytics {
 
     // Kick off actually fetching the settings.
     settingsController
-        .loadSettingsData(threadPoolExecutor)
-        .continueWith(
-            threadPoolExecutor,
-            new Continuation<Void, Object>() {
-              @Override
-              public Object then(@NonNull Task<Void> task) throws Exception {
-                if (!task.isSuccessful()) {
-                  Logger.getLogger().e("Error fetching settings.", task.getException());
-                }
-                return null;
-              }
-            });
+        .loadSettingsData(crashlyticsWorkers)
+        .addOnFailureListener(ex -> Logger.getLogger().e("Error fetching settings.", ex));
 
     final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);
 
