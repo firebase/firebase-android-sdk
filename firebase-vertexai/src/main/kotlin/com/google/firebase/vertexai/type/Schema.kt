@@ -110,7 +110,12 @@ internal constructor(
       nullable: Boolean = false,
       format: StringFormat? = null
     ) =
-      Schema(description = description, format = format?.value, nullable = nullable, type = "STRING")
+      Schema(
+        description = description,
+        format = format?.value,
+        nullable = nullable,
+        type = "STRING"
+      )
 
     /**
      * Returns a schema for a complex object. In a function, it will be returned as a [JSONObject].
