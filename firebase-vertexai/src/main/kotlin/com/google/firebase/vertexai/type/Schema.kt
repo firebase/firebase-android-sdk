@@ -127,9 +127,9 @@ internal constructor(
     @JvmStatic
     fun obj(
       properties: Map<String, Schema>,
+      optionalProperties: List<String> = emptyList(),
       description: String? = null,
       nullable: Boolean = false,
-      optionalProperties: List<String> = emptyList(),
     ) =
       Schema(
         description = description,
