@@ -137,7 +137,8 @@ internal fun ToolConfig.toInternal() =
           com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.AUTO
         FunctionCallingConfig.Mode.NONE ->
           com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.NONE
-      }
+      },
+      functionCallingConfig.allowedFunctionNames
     )
   )
 

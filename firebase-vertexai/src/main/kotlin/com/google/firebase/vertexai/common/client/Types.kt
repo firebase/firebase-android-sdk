@@ -47,7 +47,10 @@ internal data class ToolConfig(
 )
 
 @Serializable
-internal data class FunctionCallingConfig(val mode: Mode) {
+internal data class FunctionCallingConfig(
+  val mode: Mode,
+  @SerialName("allowed_function_names") val allowedFunctionNames: List<String>? = null
+) {
   @Serializable
   enum class Mode {
     @SerialName("MODE_UNSPECIFIED") UNSPECIFIED,

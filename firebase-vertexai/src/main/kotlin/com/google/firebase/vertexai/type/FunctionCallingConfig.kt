@@ -21,8 +21,11 @@ package com.google.firebase.vertexai.type
  * calling predictions or disable them.
  *
  * @param mode The function calling mode of the model
+ * @param allowedFunctionNames Function names to call. Only set when the [Mode.ANY]. Function names
+ * should match [FunctionDeclaration.name]. With [Mode.ANY], model will predict a function call from
+ * the set of function names provided.
  */
-class FunctionCallingConfig(val mode: Mode) {
+class FunctionCallingConfig(val mode: Mode, val allowedFunctionNames: List<String>? = null) {
 
   /** Configuration for dictating when the model should call the attached function. */
   enum class Mode {
