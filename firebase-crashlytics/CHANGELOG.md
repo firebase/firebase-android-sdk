@@ -1,5 +1,8 @@
 # Unreleased
-
+* [fixed] Improved data consistency for rapid user actions.
+* [changed] Internal changes to improve startup time.
+* [changed] Internal changes to the way background tasks are scheduled.
+* [changed] Migrated SDK to use standard Firebase executors.
 
 # 19.1.0
 * [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is
