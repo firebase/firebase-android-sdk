@@ -124,6 +124,18 @@ internal class StreamingSnapshotTests {
     }
 
   @Test
+  fun `prompt blocked for safety with message`() =
+    goldenStreamingFile("streaming-failure-prompt-blocked-safety-with-message.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) {
+        val exception = shouldThrow<PromptBlockedException> { responses.collect() }
+        exception.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+        exception.response.promptFeedback?.blockReasonMessage shouldBe "Reasons"
+      }
+    }
+
+  @Test
   fun `empty content`() =
     goldenStreamingFile("streaming-failure-empty-content.txt") {
       val responses = model.generateContentStream("prompt")
