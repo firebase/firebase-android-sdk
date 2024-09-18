@@ -168,6 +168,18 @@ internal class UnarySnapshotTests {
     }
 
   @Test
+  fun `prompt blocked for safety with message`() =
+    goldenUnaryFile("unary-failure-prompt-blocked-safety-with-message.json") {
+      withTimeout(testTimeout) {
+        shouldThrow<PromptBlockedException> { model.generateContent("prompt") } should
+          {
+            it.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+            it.response.promptFeedback?.blockReasonMessage shouldContain "Reasons"
+          }
+      }
+    }
+
+  @Test
   fun `empty content`() =
     goldenUnaryFile("unary-failure-empty-content.json") {
       withTimeout(testTimeout) {
