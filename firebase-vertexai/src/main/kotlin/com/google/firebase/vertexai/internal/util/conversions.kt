@@ -245,6 +245,7 @@ internal fun com.google.firebase.vertexai.common.server.PromptFeedback.toPublic(
   return com.google.firebase.vertexai.type.PromptFeedback(
     blockReason?.toPublic(),
     safetyRatings,
+    blockReasonMessage
   )
 }
 
