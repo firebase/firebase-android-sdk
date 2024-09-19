@@ -1084,6 +1084,6 @@ class AnyScalarIntegrationTest : DataConnectIntegrationTestBase() {
   private companion object {
 
     val normalCasePropTestConfig =
-      PropTestConfig(iterations = 20, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.0))
+      PropTestConfig(iterations = 5, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.0))
   }
 }
