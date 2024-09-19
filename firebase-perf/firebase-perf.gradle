@@ -112,7 +112,7 @@ dependencies {
     implementation 'com.google.dagger:dagger:2.27'
     api 'com.google.firebase:firebase-annotations:16.2.0'
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
-    api 'com.google.firebase:protolite-well-known-types:18.0.0'
+    api project(':protolite-well-known-types')
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
@@ -130,7 +130,7 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    testCompileOnly "com.google.protobuf:protobuf-java:3.21.9"
+    testCompileOnly libs.protobuf.java
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
