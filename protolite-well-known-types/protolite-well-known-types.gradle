@@ -64,7 +64,7 @@ android {
 
 
 dependencies {
-    protobuf("com.google.api.grpc:proto-google-common-protos:1.18.0"){
+    protobuf("com.google.api.grpc:proto-google-common-protos:2.17.0"){
         exclude group: "com.google.protobuf", module: "protobuf-java"
     }
 
