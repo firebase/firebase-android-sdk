@@ -78,7 +78,7 @@ private constructor(
   val maxOutputTokens: Int?,
   val stopSequences: List<String>?,
   val responseMimeType: String?,
-  val responseSchema: Schema? = null,
+  val responseSchema: Schema?,
 ) {
 
   /**
