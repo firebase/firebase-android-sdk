@@ -169,7 +169,7 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val responseList = responses.toList()
-        responseList.any { it.candidates.any { it.citationMetadata.isNotEmpty() } } shouldBe true
+        responseList.any { it.candidates.any { it.citationMetadata?.citations?.isNotEmpty() ?: false} } shouldBe true
       }
     }
 

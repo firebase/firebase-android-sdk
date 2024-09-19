@@ -20,7 +20,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.google.firebase.vertexai.common.client.Schema
-import com.google.firebase.vertexai.common.server.CitationSources
 import com.google.firebase.vertexai.common.shared.Blob
 import com.google.firebase.vertexai.common.shared.FileData
 import com.google.firebase.vertexai.common.shared.FunctionCall
@@ -32,6 +31,7 @@ import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.BlockThreshold
 import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Citation
 import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
@@ -181,7 +181,7 @@ internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toStrin
 
 internal fun com.google.firebase.vertexai.common.server.Candidate.toPublic(): Candidate {
   val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
-  val citations = citationMetadata?.citationSources?.map { it.toPublic() }.orEmpty()
+  val citations = citationMetadata?.toPublic()
   val finishReason = finishReason.toPublic()
 
   return Candidate(
@@ -228,8 +228,12 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   }
 }
 
-internal fun CitationSources.toPublic() =
-  CitationMetadata(startIndex = startIndex, endIndex = endIndex, uri = uri ?: "", license = license)
+internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic() =
+  Citation(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
+
+
+internal fun com.google.firebase.vertexai.common.server.CitationMetadata.toPublic() =
+  CitationMetadata(citationSources.map { it.toPublic() })
 
 internal fun com.google.firebase.vertexai.common.server.SafetyRating.toPublic() =
   SafetyRating(
