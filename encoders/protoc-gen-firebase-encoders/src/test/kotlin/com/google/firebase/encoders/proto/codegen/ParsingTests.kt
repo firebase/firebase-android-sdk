@@ -25,7 +25,7 @@ import com.google.firebase.testing.LinkedListProto
 import com.google.firebase.testing.SimpleProto
 import com.google.firebase.testing.Types
 import com.google.protobuf.Descriptors.FileDescriptor
-import com.google.protobuf.GeneratedMessageV3
+import com.google.protobuf.GeneratedMessage
 import com.google.protobuf.Timestamp
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -153,7 +153,7 @@ class ParsingTests {
 
 private fun parse(
   vararg files: FileDescriptor,
-  include: List<GeneratedMessageV3> = listOf()
+  include: List<GeneratedMessage> = listOf()
 ): List<UserDefined> {
   return DefaultParser(
       CodeGenConfig.newBuilder()
