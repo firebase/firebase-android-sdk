@@ -62,27 +62,3 @@ type Farmer @table {
   name: String!
   parent: Farmer
 }
-
-type NonNullableAnyScalar @table {
-  value: Any!
-}
-
-type NullableAnyScalar @table {
-  value: Any
-}
-
-type AnyScalarNullableListNullable @table {
-  value: [Any]
-}
-
-type AnyScalarNonNullableListOfNullable @table {
-  value: [Any]!
-}
-
-type AnyScalarNullableListOfNonNullable @table {
-  value: [Any!]
-}
-
-type AnyScalarNonNullableListOfNonNullable @table {
-  value: [Any!]!
-}

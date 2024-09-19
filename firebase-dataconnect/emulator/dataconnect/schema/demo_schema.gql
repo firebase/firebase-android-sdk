@@ -301,3 +301,39 @@ type NullableTimestampsWithDefaults @table {
   requestTime1: Timestamp @default(expr: "request.time")
   requestTime2: Timestamp @default(expr: "request.time")
 }
+
+type AnyScalarNonNullable @table @index(fields: ["tag"]) {
+  value: Any!
+  tag: String
+  position: Int
+}
+
+type AnyScalarNullable @table @index(fields: ["tag"]) {
+  value: Any
+  tag: String
+  position: Int
+}
+
+type AnyScalarNullableListOfNullable @table @index(fields: ["tag"]) {
+  value: [Any]
+  tag: String
+  position: Int
+}
+
+type AnyScalarNullableListOfNonNullable @table @index(fields: ["tag"]) {
+  value: [Any!]
+  tag: String
+  position: Int
+}
+
+type AnyScalarNonNullableListOfNullable @table @index(fields: ["tag"]) {
+  value: [Any]!
+  tag: String
+  position: Int
+}
+
+type AnyScalarNonNullableListOfNonNullable @table @index(fields: ["tag"]) {
+  value: [Any!]!
+  tag: String
+  position: Int
+}
