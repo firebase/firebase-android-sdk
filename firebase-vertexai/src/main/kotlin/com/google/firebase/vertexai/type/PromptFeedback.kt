@@ -21,10 +21,12 @@ package com.google.firebase.vertexai.type
  *
  * @param blockReason The reason that content was blocked, if at all.
  * @param safetyRatings A list of relevant [SafetyRating].
+ * @param blockReasonMessage A message describing the reason that content was blocked, if any.
  */
 class PromptFeedback(
   val blockReason: BlockReason?,
   val safetyRatings: List<SafetyRating>,
+  val blockReasonMessage: String?
 )
 
 /** Describes why content was blocked. */

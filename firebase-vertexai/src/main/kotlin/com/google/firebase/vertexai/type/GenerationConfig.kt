@@ -78,7 +78,7 @@ private constructor(
   val maxOutputTokens: Int?,
   val stopSequences: List<String>?,
   val responseMimeType: String?,
-  val responseSchema: Schema<*>? = null,
+  val responseSchema: Schema? = null,
 ) {
 
   /**
@@ -112,7 +112,7 @@ private constructor(
     @JvmField var maxOutputTokens: Int? = null
     @JvmField var stopSequences: List<String>? = null
     @JvmField var responseMimeType: String? = null
-    @JvmField var responseSchema: Schema<*>? = null
+    @JvmField var responseSchema: Schema? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     fun build() =

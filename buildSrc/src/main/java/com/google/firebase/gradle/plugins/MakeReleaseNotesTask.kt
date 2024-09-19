@@ -134,7 +134,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         .trimMargin()
         .trim()
 
-    releaseNotesFile.asFile.get().writeText(releaseNotes)
+    releaseNotesFile.asFile.get().writeText(releaseNotes + "\n")
   }
 
   /**

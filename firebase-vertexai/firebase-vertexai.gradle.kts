@@ -66,7 +66,7 @@ dependencies {
   implementation("io.ktor:ktor-client-logging:$ktorVersion")
   compileOnly("io.ktor:ktor-client-mock:$ktorVersion")
 
-  implementation("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
