@@ -231,7 +231,6 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
 internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic() =
   Citation(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
 
-
 internal fun com.google.firebase.vertexai.common.server.CitationMetadata.toPublic() =
   CitationMetadata(citationSources.map { it.toPublic() })
 

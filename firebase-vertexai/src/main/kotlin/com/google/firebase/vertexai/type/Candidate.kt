@@ -39,23 +39,24 @@ internal constructor(
 /**
  * A collection of source attributions for a piece of content.
  *
- * @property citations A list of individual cited sources and the parts of the content to which they apply.
+ * @property citations A list of individual cited sources and the parts of the content to which they
+ * apply.
  */
-class CitationMetadata
-internal constructor(
-  val citations: List<Citation>
-)
+class CitationMetadata internal constructor(val citations: List<Citation>)
 
 /**
  * Provides citation information for sourcing of content provided by the model between a given
  * [startIndex] and [endIndex].
  *
- * @property startIndex The inclusive beginning of a sequence in a model response that derives from a cited source.
- * @property endIndex The exclusive end of a sequence in a model response that derives from a cited source.
+ * @property startIndex The inclusive beginning of a sequence in a model response that derives from
+ * a cited source.
+ * @property endIndex The exclusive end of a sequence in a model response that derives from a cited
+ * source.
  * @property uri A link to the cited source, if available.
  * @property license The license the cited source work is distributed under, if specified.
  */
-class Citation internal constructor(
+class Citation
+internal constructor(
   val startIndex: Int = 0,
   val endIndex: Int,
   val uri: String? = null,
