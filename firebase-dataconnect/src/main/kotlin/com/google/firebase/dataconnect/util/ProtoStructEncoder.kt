@@ -18,6 +18,8 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.AnyValue
+import com.google.firebase.dataconnect.serializers.AnyValueSerializer
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -36,31 +38,41 @@ internal inline fun <reified T> encodeToStruct(value: T): Struct =
   encodeToStruct(serializer(), value)
 
 internal fun <T> encodeToStruct(serializer: SerializationStrategy<T>, value: T): Struct {
-  val values = mutableListOf<Value>()
-  ProtoValueEncoder(path = null, onValue = values::add).encodeSerializableValue(serializer, value)
-  if (values.isEmpty()) {
+  val valueProto = encodeToValue(serializer, value)
+  if (valueProto.kindCase == KindCase.KIND_NOT_SET) {
     return Struct.getDefaultInstance()
   }
-  require(values.size == 1) {
-    "encoding produced ${values.size} Value objects, but expected either 0 or 1"
-  }
-  val valueProto = values.single()
   require(valueProto.hasStructValue()) {
-    "encoding produced ${valueProto.kindCase}, but expected ${KindCase.STRUCT_VALUE}"
+    "encoding produced ${valueProto.kindCase}, " +
+      "but expected ${KindCase.STRUCT_VALUE} or ${KindCase.KIND_NOT_SET}"
   }
   return valueProto.structValue
 }
 
-private class ProtoValueEncoder(private val path: String?, private val onValue: (Value) -> Unit) :
+internal inline fun <reified T> encodeToValue(value: T): Value = encodeToValue(serializer(), value)
+
+internal fun <T> encodeToValue(serializer: SerializationStrategy<T>, value: T): Value {
+  val values = mutableListOf<Value>()
+  ProtoValueEncoder(path = null, onValue = values::add).encodeSerializableValue(serializer, value)
+  if (values.isEmpty()) {
+    return Value.getDefaultInstance()
+  }
+  require(values.size == 1) {
+    "encoding produced ${values.size} Value objects, but expected either 0 or 1"
+  }
+  return values.single()
+}
+
+internal class ProtoValueEncoder(private val path: String?, val onValue: (Value) -> Unit) :
   Encoder {
 
   override val serializersModule = EmptySerializersModule()
 
   override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder =
     when (val kind = descriptor.kind) {
-      is StructureKind.MAP,
       is StructureKind.CLASS -> ProtoStructValueEncoder(path, onValue)
       is StructureKind.LIST -> ProtoListValueEncoder(path, onValue)
+      is StructureKind.MAP -> ProtoMapValueEncoder(path, onValue)
       is StructureKind.OBJECT -> ProtoObjectValueEncoder
       else -> throw IllegalArgumentException("unsupported SerialKind: ${kind::class.qualifiedName}")
     }
@@ -115,6 +127,16 @@ private class ProtoValueEncoder(private val path: String?, private val onValue: 
 
   override fun encodeString(value: String) {
     onValue(value.toValueProto())
+  }
+
+  override fun <T : Any?> encodeSerializableValue(serializer: SerializationStrategy<T>, value: T) {
+    when (serializer) {
+      is AnyValueSerializer -> {
+        val anyValue = value as AnyValue
+        onValue(anyValue.protoValue)
+      }
+      else -> super.encodeSerializableValue(serializer, value)
+    }
   }
 }
 
@@ -263,6 +285,127 @@ private class ProtoStructValueEncoder(path: String?, onValue: (Value) -> Unit) :
         }
       }
     )
+  }
+}
+
+private class ProtoMapValueEncoder(
+  private val path: String?,
+  private val onValue: (Value) -> Unit
+) : CompositeEncoder {
+
+  override val serializersModule = EmptySerializersModule()
+
+  private val keyByIndex = mutableMapOf<Int, String>()
+  private val valueByIndex = mutableMapOf<Int, Value>()
+
+  override fun encodeBooleanElement(descriptor: SerialDescriptor, index: Int, value: Boolean) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  override fun encodeByteElement(descriptor: SerialDescriptor, index: Int, value: Byte) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  override fun encodeCharElement(descriptor: SerialDescriptor, index: Int, value: Char) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  override fun encodeDoubleElement(descriptor: SerialDescriptor, index: Int, value: Double) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  override fun encodeFloatElement(descriptor: SerialDescriptor, index: Int, value: Float) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder {
+    throw UnsupportedOperationException("inline is not implemented yet")
+  }
+
+  override fun encodeIntElement(descriptor: SerialDescriptor, index: Int, value: Int) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  override fun encodeLongElement(descriptor: SerialDescriptor, index: Int, value: Long) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  @ExperimentalSerializationApi
+  override fun <T : Any> encodeNullableSerializableElement(
+    descriptor: SerialDescriptor,
+    index: Int,
+    serializer: SerializationStrategy<T>,
+    value: T?
+  ) {
+    if (index % 2 == 0) {
+      require(value is String) {
+        "even indexes must be a String, but got index=$index value=$value"
+      }
+      keyByIndex[index] = value
+      return
+    }
+
+    val protoValue =
+      if (value === null) {
+        null
+      } else {
+        val subPath = keyByIndex[index - 1] ?: "$index"
+        var encodedValue: Value? = null
+        val encoder = ProtoValueEncoder(subPath) { encodedValue = it }
+        encoder.encodeNullableSerializableValue(serializer, value)
+        requireNotNull(encodedValue) { "ProtoValueEncoder should have produced a value" }
+        encodedValue
+      }
+    valueByIndex[index] = protoValue ?: nullProtoValue
+  }
+
+  override fun <T> encodeSerializableElement(
+    descriptor: SerialDescriptor,
+    index: Int,
+    serializer: SerializationStrategy<T>,
+    value: T
+  ) {
+    if (index % 2 == 0) {
+      require(value is String) {
+        "even indexes must be a String, but got index=$index value=$value"
+      }
+      keyByIndex[index] = value
+    } else {
+      val subPath = keyByIndex[index - 1] ?: "$index"
+      val encoder = ProtoValueEncoder(subPath) { valueByIndex[index] = it }
+      encoder.encodeSerializableValue(serializer, value)
+    }
+  }
+
+  override fun encodeShortElement(descriptor: SerialDescriptor, index: Int, value: Short) {
+    require(index % 2 != 0) { "invalid index: $index (must be odd)" }
+    valueByIndex[index] = value.toValueProto()
+  }
+
+  override fun encodeStringElement(descriptor: SerialDescriptor, index: Int, value: String) {
+    if (index % 2 != 0) {
+      valueByIndex[index] = value.toValueProto()
+    } else {
+      keyByIndex[index] = value
+    }
+  }
+
+  override fun endStructure(descriptor: SerialDescriptor) {
+    var i = 0
+    val structBuilder = Struct.newBuilder()
+    while (keyByIndex.containsKey(i)) {
+      val key = keyByIndex[i++]
+      val value = valueByIndex[i++]
+      structBuilder.putFields(key, value)
+    }
+    onValue(structBuilder.build().toValueProto())
   }
 }
 

@@ -18,6 +18,8 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.AnyValue
+import com.google.firebase.dataconnect.serializers.AnyValueSerializer
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -32,6 +34,7 @@ import kotlinx.serialization.descriptors.elementNames
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 internal inline fun <reified T> decodeFromStruct(struct: Struct): T =
@@ -39,19 +42,14 @@ internal inline fun <reified T> decodeFromStruct(struct: Struct): T =
 
 internal fun <T> decodeFromStruct(deserializer: DeserializationStrategy<T>, struct: Struct): T {
   val protoValue = Value.newBuilder().setStructValue(struct).build()
-  return ProtoValueDecoder(protoValue, path = null).decodeSerializableValue(deserializer)
+  return decodeFromValue(deserializer, protoValue)
 }
 
-private fun Value.toAny(): Any? =
-  when (kindCase) {
-    KindCase.BOOL_VALUE -> boolValue
-    KindCase.NUMBER_VALUE -> numberValue
-    KindCase.STRING_VALUE -> stringValue
-    KindCase.LIST_VALUE -> listValue.valuesList
-    KindCase.STRUCT_VALUE -> structValue.fieldsMap
-    KindCase.NULL_VALUE -> null
-    else -> "ERROR: unsupported kindCase: $kindCase"
-  }
+internal inline fun <reified T> decodeFromValue(value: Value): T =
+  decodeFromValue(serializer(), value)
+
+internal fun <T> decodeFromValue(deserializer: DeserializationStrategy<T>, value: Value): T =
+  ProtoValueDecoder(value, path = null).decodeSerializableValue(deserializer)
 
 private fun <T> Value.decode(path: String?, expectedKindCase: KindCase, block: (Value) -> T): T =
   if (kindCase != expectedKindCase) {
@@ -102,8 +100,7 @@ private fun Value.decodeLong(path: String?): Long =
 private fun Value.decodeShort(path: String?): Short =
   decode(path, KindCase.NUMBER_VALUE) { it.numberValue.toInt().toShort() }
 
-private class ProtoValueDecoder(private val valueProto: Value, private val path: String?) :
-  Decoder {
+internal class ProtoValueDecoder(val valueProto: Value, private val path: String?) : Decoder {
 
   override val serializersModule = EmptySerializersModule()
 
@@ -111,6 +108,7 @@ private class ProtoValueDecoder(private val valueProto: Value, private val path:
     when (val kind = descriptor.kind) {
       is StructureKind.CLASS -> ProtoStructValueDecoder(valueProto.decodeStruct(path), path)
       is StructureKind.LIST -> ProtoListValueDecoder(valueProto.decodeList(path), path)
+      is StructureKind.MAP -> ProtoMapValueDecoder(valueProto.decodeStruct(path), path)
       is StructureKind.OBJECT -> ProtoObjectValueDecoder
       else -> throw IllegalArgumentException("unsupported SerialKind: ${kind::class.qualifiedName}")
     }
@@ -236,7 +234,16 @@ private class ProtoStructValueDecoder(private val struct: Struct, private val pa
         ?: if (elementKind is StructureKind.OBJECT) Value.getDefaultInstance()
         else throw SerializationException("element \"$elementPath\" missing; expected $elementKind")
 
-    return deserializer.deserialize(ProtoValueDecoder(valueProto, elementPath))
+    return when (deserializer) {
+      is AnyValueSerializer -> {
+        @Suppress("UNCHECKED_CAST")
+        AnyValue(valueProto) as T
+      }
+      else -> {
+        val protoValueDecoder = ProtoValueDecoder(valueProto, elementPath)
+        deserializer.deserialize(protoValueDecoder)
+      }
+    }
   }
 
   @ExperimentalSerializationApi
@@ -314,11 +321,16 @@ private class ProtoListValueDecoder(private val list: ListValue, private val pat
     deserializer: DeserializationStrategy<T>,
     previousValue: T?
   ): T =
-    if (previousValue !== null) previousValue
-    else
+    if (previousValue !== null) {
+      previousValue
+    } else if (deserializer is AnyValueSerializer) {
+      @Suppress("UNCHECKED_CAST")
+      AnyValue(list.valuesList[index]) as T
+    } else {
       deserializer.deserialize(
         ProtoValueDecoder(list.valuesList[index], elementPathForIndex(index))
       )
+    }
 
   @ExperimentalSerializationApi
   override fun <T : Any> decodeNullableSerializableElement(
@@ -337,6 +349,128 @@ private class ProtoListValueDecoder(private val list: ListValue, private val pat
   }
 
   private fun elementPathForIndex(index: Int) = if (path === null) "[$index]" else "${path}[$index]"
+}
+
+private class ProtoMapValueDecoder(private val struct: Struct, private val path: String?) :
+  CompositeDecoder {
+  override val serializersModule = EmptySerializersModule()
+
+  override fun decodeSequentially() = true
+
+  override fun decodeCollectionSize(descriptor: SerialDescriptor) = struct.fieldsCount
+
+  override fun endStructure(descriptor: SerialDescriptor) {}
+
+  private val structEntries: List<Map.Entry<String, Value>> = struct.fieldsMap.entries.toList()
+  private val elementIndexes: IntIterator = (0 until structEntries.size * 2).iterator()
+
+  private fun structEntryByElementIndex(index: Int): Map.Entry<String, Value> =
+    structEntries[index / 2]
+
+  override fun decodeElementIndex(descriptor: SerialDescriptor) =
+    if (elementIndexes.hasNext()) elementIndexes.next() else CompositeDecoder.DECODE_DONE
+
+  override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeBoolean)
+
+  override fun decodeByteElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeByte)
+
+  override fun decodeCharElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeChar)
+
+  override fun decodeDoubleElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeDouble)
+
+  override fun decodeFloatElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeFloat)
+
+  override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index) { ProtoValueDecoder(this, it) }
+
+  override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeInt)
+
+  override fun decodeLongElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeLong)
+
+  override fun decodeShortElement(descriptor: SerialDescriptor, index: Int) =
+    decodeValueElement(index, Value::decodeShort)
+
+  override fun decodeStringElement(descriptor: SerialDescriptor, index: Int) =
+    if (index % 2 == 0) {
+      structEntryByElementIndex(index).key
+    } else {
+      decodeValueElement(index, Value::decodeString)
+    }
+
+  private inline fun <T> decodeValueElement(index: Int, block: Value.(String?) -> T): T {
+    require(index % 2 != 0) { "invalid value index: $index" }
+    val value = structEntryByElementIndex(index).value
+    val elementPath = elementPathForIndex(index)
+    return block(value, elementPath)
+  }
+
+  override fun <T> decodeSerializableElement(
+    descriptor: SerialDescriptor,
+    index: Int,
+    deserializer: DeserializationStrategy<T>,
+    previousValue: T?
+  ): T =
+    if (previousValue !== null) {
+      previousValue
+    } else {
+      decodeSerializableElement(index, deserializer)
+    }
+
+  override fun <T : Any> decodeNullableSerializableElement(
+    descriptor: SerialDescriptor,
+    index: Int,
+    deserializer: DeserializationStrategy<T?>,
+    previousValue: T?
+  ): T? {
+    if (previousValue !== null) {
+      return previousValue
+    }
+
+    if (index % 2 != 0) {
+      val structEntry = structEntryByElementIndex(index)
+      if (structEntry.value.hasNullValue()) {
+        return null
+      }
+    }
+
+    return decodeSerializableElement(index, deserializer)
+  }
+
+  private fun <T> decodeSerializableElement(
+    index: Int,
+    deserializer: DeserializationStrategy<T>
+  ): T {
+    val structEntry = structEntryByElementIndex(index)
+    val elementPath = elementPathForIndex(index)
+
+    val elementDecoder =
+      if (index % 2 == 0) {
+        MapKeyDecoder(structEntry.key, elementPath, serializersModule)
+      } else {
+        ProtoValueDecoder(structEntry.value, elementPath)
+      }
+
+    return deserializer.deserialize(elementDecoder)
+  }
+
+  private fun elementPathForIndex(index: Int): String {
+    val structEntry = structEntryByElementIndex(index)
+    val key = structEntry.key
+    return if (index % 2 == 0) {
+      if (path === null) "[$key]" else "${path}[$key]"
+    } else {
+      if (path === null) "[$key].value" else "${path}[$key].value"
+    }
+  }
+
+  override fun toString() = "ProtoMapValueDecoder{path=$path, size=${struct.fieldsCount}"
 }
 
 private object ProtoObjectValueDecoder : CompositeDecoder {
@@ -386,4 +520,46 @@ private object ProtoObjectValueDecoder : CompositeDecoder {
   override fun decodeElementIndex(descriptor: SerialDescriptor) = CompositeDecoder.DECODE_DONE
 
   override fun endStructure(descriptor: SerialDescriptor) {}
+}
+
+private class MapKeyDecoder(
+  val key: String,
+  val path: String,
+  override val serializersModule: SerializersModule
+) : Decoder {
+
+  override fun decodeString() = key
+
+  override fun beginStructure(descriptor: SerialDescriptor) = notSupported()
+
+  override fun decodeBoolean() = notSupported()
+
+  override fun decodeByte() = notSupported()
+
+  override fun decodeChar() = notSupported()
+
+  override fun decodeDouble() = notSupported()
+
+  override fun decodeEnum(enumDescriptor: SerialDescriptor) = notSupported()
+
+  override fun decodeFloat() = notSupported()
+
+  override fun decodeInline(descriptor: SerialDescriptor) = notSupported()
+
+  override fun decodeInt() = notSupported()
+
+  override fun decodeLong() = notSupported()
+
+  override fun decodeNotNullMark() = notSupported()
+
+  override fun decodeNull() = notSupported()
+
+  override fun decodeShort() = notSupported()
+
+  private fun notSupported(): Nothing =
+    throw UnsupportedOperationException(
+      "The only valid method call on MapKeyDecoder is decodeString()"
+    )
+
+  override fun toString() = "MapKeyDecoder{path=$path}"
 }

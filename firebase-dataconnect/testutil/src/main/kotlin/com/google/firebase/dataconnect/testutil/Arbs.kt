@@ -84,6 +84,10 @@ fun Arb.Companion.dataConnectSettings(
   DataConnectSettings(host = host.next(rs), sslEnabled = sslEnabled.next(rs))
 }
 
+fun Arb.Companion.anyNumberScalar(): Arb<Double> = anyScalar().filterIsInstance<Double>()
+
+fun Arb.Companion.anyStringScalar(): Arb<String> = anyScalar().filterIsInstance<String>()
+
 fun Arb.Companion.anyListScalar(): Arb<List<Any?>> = anyScalar().filterIsInstance<List<Any?>>()
 
 fun Arb.Companion.anyMapScalar(): Arb<Map<String, Any?>> =

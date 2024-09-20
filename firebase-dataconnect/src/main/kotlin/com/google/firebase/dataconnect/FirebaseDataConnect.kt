@@ -101,6 +101,10 @@ import kotlinx.serialization.SerializationStrategy
  * or later; otherwise, a compilation error like `Class 'FooConnector' is not abstract and does not
  * implement abstract member public abstract fun equals(other: Any?): Boolean defined in
  * com.google.firebase.dataconnect.generated.GeneratedConnector` will occur.
+ * - [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN]) Added [AnyValue] class to
+ * support the custom `Any` GraphQL scalar type. Support for `Any` scalars in the Android SDK code
+ * generation was added in the dataconnect toolkit v1.3.8 (released Sept 20, 2024), which will be
+ * included in the next release of firebase-tools (the release following v13.18.0).
  *
  * #### 16.0.0-alpha05 (June 24, 2024)
  * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
