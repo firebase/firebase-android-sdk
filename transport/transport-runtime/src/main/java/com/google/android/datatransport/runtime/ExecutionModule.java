@@ -15,6 +15,9 @@
 package com.google.android.datatransport.runtime;
 
 import android.annotation.SuppressLint;
+
+import com.google.firebase.annotations.concurrent.Background;
+
 import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
@@ -28,5 +31,13 @@ abstract class ExecutionModule {
   @SuppressLint("ThreadPoolCreation")
   static Executor executor() {
     return new SafeLoggingExecutor(Executors.newSingleThreadExecutor());
+  }
+
+  @Singleton
+  @Provides
+  @Background
+  @SuppressLint("ThreadPoolCreation")
+  static Executor backgroundExecutor() {
+    return Executors.newSingleThreadExecutor();
   }
 }
