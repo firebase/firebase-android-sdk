@@ -1,6 +1,26 @@
 // Signature format: 2.0
 package com.google.firebase.dataconnect {
 
+  @kotlinx.serialization.Serializable(with=AnyValueSerializer::class) public final class AnyValue {
+    ctor public AnyValue(@NonNull java.util.Map<java.lang.String,?> value);
+    ctor public AnyValue(@NonNull java.util.List<?> value);
+    ctor public AnyValue(@NonNull String value);
+    ctor public AnyValue(boolean value);
+    ctor public AnyValue(double value);
+    method public <T> T decode(@NonNull kotlinx.serialization.DeserializationStrategy<? extends T> deserializer);
+    method public inline <reified T> T decode();
+    method @NonNull public Object getValue();
+    property @NonNull public final Object value;
+    field @NonNull public static final com.google.firebase.dataconnect.AnyValue.Companion Companion;
+  }
+
+  public static final class AnyValue.Companion {
+    method @NonNull public <T> com.google.firebase.dataconnect.AnyValue encode(@Nullable T value, @NonNull kotlinx.serialization.SerializationStrategy<? super T> serializer);
+    method public inline <reified T> com.google.firebase.dataconnect.AnyValue encode(@Nullable T value);
+    method @NonNull public com.google.firebase.dataconnect.AnyValue fromAny(@NonNull Object value);
+    method @Nullable public com.google.firebase.dataconnect.AnyValue fromNullableAny(@Nullable Object value);
+  }
+
   public final class ConnectorConfig {
     ctor public ConnectorConfig(@NonNull String connector, @NonNull String location, @NonNull String serviceId);
     method @NonNull public com.google.firebase.dataconnect.ConnectorConfig copy(@NonNull String connector = connector, @NonNull String location = location, @NonNull String serviceId = serviceId);
@@ -222,6 +242,14 @@ package com.google.firebase.dataconnect.querymgr {
 }
 
 package com.google.firebase.dataconnect.serializers {
+
+  public final class AnyValueSerializer implements kotlinx.serialization.KSerializer<com.google.firebase.dataconnect.AnyValue> {
+    method @NonNull public com.google.firebase.dataconnect.AnyValue deserialize(@NonNull kotlinx.serialization.encoding.Decoder decoder);
+    method @NonNull public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method public void serialize(@NonNull kotlinx.serialization.encoding.Encoder encoder, @NonNull com.google.firebase.dataconnect.AnyValue value);
+    property @NonNull public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
+    field @NonNull public static final com.google.firebase.dataconnect.serializers.AnyValueSerializer INSTANCE;
+  }
 
   public final class DateSerializer implements kotlinx.serialization.KSerializer<java.util.Date> {
     method @NonNull public java.util.Date deserialize(@NonNull kotlinx.serialization.encoding.Decoder decoder);
