@@ -45,6 +45,20 @@ sealed interface DataConnectExecutable {
                 "630391e3c50568cca36e562e51b300e673fa7190c0cae0475a03e4af4003babe711" +
                   "98c5b0309ecd261b3a3362e8c4d49bdb6cbc6f2b2d3297444112a018a0c10"
             )
+          "1.3.6" ->
+            VerificationInfo(
+              fileSizeInBytes = 24_785_048L,
+              sha512DigestHex =
+                "77b2fd79a8a70e47defb1592a092c63642fda6c33715f1977d7a44daed3d7e181c3" +
+                  "870aad0fee7b035aabea7778a244135ab3e633247ccd5f937105f6d495a26"
+            )
+          "1.3.7" ->
+            VerificationInfo(
+              fileSizeInBytes = 24_928_408L,
+              sha512DigestHex =
+                "99d9774f3b29a6845f0e096893d1205e69b6f8654797a3fc7d54d22e8f7059d1b65" +
+                  "49ae23b8e8f18c952c1c7d25a07b0b8b29a957abd97e1a79c703448497cef"
+            )
           else ->
             throw DataConnectGradleException(
               "3svd27ch8y",

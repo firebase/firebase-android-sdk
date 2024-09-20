@@ -50,7 +50,7 @@ class DataConnectProviders(
       .orElse(versionValueFromGradleProperty)
       .orElse(valueFromVariant)
       .orElse(valueFromProject)
-      .orElse(DataConnectExecutable.Version.forVersionWithDefaultVerificationInfo("1.3.5"))
+      .orElse(DataConnectExecutable.Version.forVersionWithDefaultVerificationInfo("1.3.7"))
   }
 
   val postgresConnectionUrl: Provider<String> = run {
