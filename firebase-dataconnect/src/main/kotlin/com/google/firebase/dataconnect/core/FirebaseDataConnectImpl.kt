@@ -23,10 +23,10 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-import com.google.firebase.dataconnect.oldquerymgr.LiveQueries
-import com.google.firebase.dataconnect.oldquerymgr.LiveQuery
-import com.google.firebase.dataconnect.oldquerymgr.OldQueryManager
-import com.google.firebase.dataconnect.oldquerymgr.RegisteredDataDeserialzer
+import com.google.firebase.dataconnect.querymgr.LiveQueries
+import com.google.firebase.dataconnect.querymgr.LiveQuery
+import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserialzer
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.util.nextAlphanumericString
@@ -49,7 +49,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingDispatcher: CoroutineDispatcher
 
   val lazyGrpcClient: SuspendingLazy<DataConnectGrpcClient>
-  val lazyQueryManager: SuspendingLazy<OldQueryManager>
+  val lazyQueryManager: SuspendingLazy<QueryManager>
 }
 
 internal class FirebaseDataConnectImpl(
@@ -231,7 +231,7 @@ internal class FirebaseDataConnectImpl(
             )
         }
       val liveQueries = LiveQueries(liveQueryFactory, parentLogger = logger)
-      OldQueryManager(liveQueries)
+      QueryManager(liveQueries)
     }
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {

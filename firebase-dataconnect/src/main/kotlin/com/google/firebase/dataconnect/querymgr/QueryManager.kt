@@ -16,54 +16,31 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
-import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.debug
+import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.withAcquiredValue
 
-// TODO: Rename "NewQueryManager" to just "QueryManager" once "OldQueryManager" is deleted.
-internal class NewQueryManager(val dataConnect: FirebaseDataConnectImpl) {
-
-  private val logger =
-    Logger("NewQueryManager").apply { debug { "Created by ${dataConnect.logger.nameWithId}" } }
-
-  private val activeQueries = ActiveQueries(dataConnect, parentLogger = logger)
-
+internal class QueryManager(private val liveQueries: LiveQueries) {
   suspend fun <Data, Variables> execute(
-    query: QueryRef<Data, Variables>,
-    isFromGeneratedSdk: Boolean,
+    query: QueryRefImpl<Data, Variables>,
   ): SequencedReference<Result<Data>> =
-    withActiveQuery(query) {
-        execute(
-          query.dataDeserializer,
-          isFromGeneratedSdk = isFromGeneratedSdk,
-        )
-      }
-      .toSequencedDataResult()
+    liveQueries.withLiveQuery(query) {
+      it.execute(
+        dataDeserializer = query.dataDeserializer,
+        isFromGeneratedSdk = query.isFromGeneratedSdk,
+      )
+    }
 
   suspend fun <Data, Variables> subscribe(
-    query: QueryRef<Data, Variables>,
+    query: QueryRefImpl<Data, Variables>,
     executeQuery: Boolean,
-    isFromGeneratedSdk: Boolean,
     callback: suspend (SequencedReference<Result<Data>>) -> Unit,
   ): Nothing =
-    withActiveQuery(query) {
-      subscribe(query.dataDeserializer, isFromGeneratedSdk, executeQuery) { activeQueryResult ->
-        callback(activeQueryResult.toSequencedDataResult())
-      }
+    liveQueries.withLiveQuery(query) { liveQuery ->
+      liveQuery.subscribe(
+        dataDeserializer = query.dataDeserializer,
+        executeQuery = executeQuery,
+        isFromGeneratedSdk = query.isFromGeneratedSdk,
+        callback = callback,
+      )
     }
-
-  private suspend fun <Data, Variables, ReturnType> withActiveQuery(
-    query: QueryRef<Data, Variables>,
-    callback: suspend ActiveQuery.() -> ReturnType
-  ): ReturnType {
-    require(query.dataConnect === dataConnect) {
-      "The given query belongs to a different FirebaseDataConnect; " +
-        "query belongs to ${query.dataConnect}, but expected ${dataConnect}"
-    }
-    val key = ActiveQueryKey.forQueryRef(query)
-    return activeQueries.withAcquiredValue(key) { callback(it) }
-  }
 }
