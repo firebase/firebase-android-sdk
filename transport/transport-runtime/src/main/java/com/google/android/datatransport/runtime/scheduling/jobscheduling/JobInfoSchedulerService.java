@@ -29,24 +29,32 @@ public class JobInfoSchedulerService extends JobService {
 
   @Override
   public boolean onStartJob(JobParameters params) {
-    String backendName = params.getExtras().getString(JobInfoScheduler.BACKEND_NAME);
-    String extras = params.getExtras().getString(JobInfoScheduler.EXTRAS);
-
-    int priority = params.getExtras().getInt(JobInfoScheduler.EVENT_PRIORITY);
-    int attemptNumber = params.getExtras().getInt(JobInfoScheduler.ATTEMPT_NUMBER);
-    TransportRuntime.initialize(getApplicationContext());
-    TransportContext.Builder transportContext =
-        TransportContext.builder()
-            .setBackendName(backendName)
-            .setPriority(PriorityMapping.valueOf(priority));
-
-    if (extras != null) {
-      transportContext.setExtras(Base64.decode(extras, Base64.DEFAULT));
-    }
-
     TransportRuntime.getInstance()
-        .getUploader()
-        .upload(transportContext.build(), attemptNumber, () -> this.jobFinished(params, false));
+        .getBackgroundExecutor()
+        .execute(
+            () -> {
+              String backendName = params.getExtras().getString(JobInfoScheduler.BACKEND_NAME);
+              String extras = params.getExtras().getString(JobInfoScheduler.EXTRAS);
+
+              int priority = params.getExtras().getInt(JobInfoScheduler.EVENT_PRIORITY);
+              int attemptNumber = params.getExtras().getInt(JobInfoScheduler.ATTEMPT_NUMBER);
+              TransportRuntime.initialize(getApplicationContext());
+              TransportContext.Builder transportContext =
+                  TransportContext.builder()
+                      .setBackendName(backendName)
+                      .setPriority(PriorityMapping.valueOf(priority));
+
+              if (extras != null) {
+                transportContext.setExtras(Base64.decode(extras, Base64.DEFAULT));
+              }
+
+              TransportRuntime.getInstance()
+                  .getUploader()
+                  .upload(
+                      transportContext.build(),
+                      attemptNumber,
+                      () -> this.jobFinished(params, false));
+            });
     return true;
   }
 

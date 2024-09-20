@@ -27,9 +27,11 @@ import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkIni
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
+import com.google.firebase.annotations.concurrent.Background;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -48,6 +50,7 @@ public class TransportRuntime implements TransportInternal {
   private final Clock uptimeClock;
   private final Scheduler scheduler;
   private final Uploader uploader;
+  private final Executor backgroundExecutor;
 
   @Inject
   TransportRuntime(
@@ -55,11 +58,13 @@ public class TransportRuntime implements TransportInternal {
       @Monotonic Clock uptimeClock,
       Scheduler scheduler,
       Uploader uploader,
-      WorkInitializer initializer) {
+      WorkInitializer initializer,
+      @Background Executor executor) {
     this.eventClock = eventClock;
     this.uptimeClock = uptimeClock;
     this.scheduler = scheduler;
     this.uploader = uploader;
+    this.backgroundExecutor = executor;
 
     initializer.ensureContextsScheduled();
   }
@@ -145,6 +150,11 @@ public class TransportRuntime implements TransportInternal {
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
   public Uploader getUploader() {
     return uploader;
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public Executor getBackgroundExecutor() {
+    return backgroundExecutor;
   }
 
   @Override
