@@ -231,16 +231,6 @@ package com.google.firebase.dataconnect.generated {
 
 }
 
-package com.google.firebase.dataconnect.querymgr {
-
-  public final class ActiveQueryResultKt {
-  }
-
-  public final class QueryExecutorResultKt {
-  }
-
-}
-
 package com.google.firebase.dataconnect.serializers {
 
   public final class AnyValueSerializer implements kotlinx.serialization.KSerializer<com.google.firebase.dataconnect.AnyValue> {
