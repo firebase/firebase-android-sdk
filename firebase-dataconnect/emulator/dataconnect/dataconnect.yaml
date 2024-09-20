@@ -1,0 +1,17 @@
+specVersion: "v1alpha"
+serviceId: "sid2ehn9ct8te"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "dba6g7djscd5"
+      cloudSql:
+        instanceId: "iidtpktdqb8gxm"
+connectorDirs: [
+  "./connector/demo",
+  "./connector/alltypes",
+  "./connector/keywords",
+  "./connector/person",
+  "./connector/posts",
+]

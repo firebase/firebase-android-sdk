@@ -1,20 +1,24 @@
 [versions]
 # javalite, protoc and protobufjavautil versions should be in sync while updating and
-# it needs to match the protobuf version which grpc has transitive dependency on.
+# it needs to match the protobuf version which grpc has transitive dependency on, which
+# needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
 autovalue = "1.10.1"
-coroutines = "1.6.4"
+coroutines = "1.7.3"
 dagger = "2.43.2"
 grpc = "1.62.2"
+grpcKotlin = "1.4.1"
 javalite = "3.21.11"
 kotlin = "1.8.22"
+mockk = "1.13.11"
 serialization-plugin = "1.8.22"
 protoc = "3.21.11"
 truth = "1.4.2"
 robolectric = "4.12"
 protobufjavautil = "3.21.11"
-kotest = "5.5.5"
+kotest = "5.9.1"
 quickcheck = "0.6"
+serialization = "1.5.0"
 androidx-test-core="1.5.0"
 androidx-test-junit="1.1.5"
 androidx-test-truth = "1.5.0"
@@ -28,22 +32,36 @@ android-lint-testutils = { module = "com.android.tools:testutils", version.ref =
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
 androidx-core = { module = "androidx.core:core", version = "1.2.0" }
 androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
+auth0-jwt = { module = "com.auth0:java-jwt", version = "4.4.0" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.26.0" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
+grpc-android = { module = "io.grpc:grpc-android", version.ref = "grpc" }
+grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlin" }
+grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
+grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grpc" }
+grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
+grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "grpcKotlin" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+javax-annotation-jsr250 = { module = "javax.annotation:jsr250-api", version = "1.0" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.5.1" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version = "3.12.13" }
 org-json = { module = "org.json:json", version = "20210307" }
 playservices-base = { module = "com.google.android.gms:play-services-base", version = "18.1.0" }
 playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.3.0" }
 playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.1.0" }
+protoc = { module = "com.google.protobuf:protoc", version.ref = "protoc" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
+protobuf-java-lite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
+protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "javalite" }
 
 # Test libs
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
@@ -55,18 +73,22 @@ junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 mockito-core = { module = "org.mockito:mockito-core", version = "5.2.0" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
+truth-liteproto-extension = { module = "com.google.truth.extensions:truth-liteproto-extension", version.ref = "truth" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit4-jvm", version.ref = "kotest" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 quickcheck = { module = "net.java:quickcheck", version.ref = "quickcheck" }
-protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
+turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property"]
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
 
 [plugins]
+dokka = { id = "org.jetbrains.dokka", version = "1.9.10" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
