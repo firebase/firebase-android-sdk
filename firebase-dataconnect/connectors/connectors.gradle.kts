@@ -84,6 +84,8 @@ dependencies {
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.kotest.assertions)
+  androidTestImplementation(libs.kotest.property)
   androidTestImplementation(libs.kotlin.coroutines.test)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
