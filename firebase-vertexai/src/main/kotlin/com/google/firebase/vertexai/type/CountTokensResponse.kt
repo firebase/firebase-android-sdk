@@ -20,9 +20,9 @@ package com.google.firebase.vertexai.type
  * Represents a response measuring model input.
  *
  * @property totalTokens A count of the tokens in the input
- * @property totalBillableCharacters A count of the characters that are billable in the input
+ * @property totalBillableCharacters A count of the characters that are billable in the input, if available.
  */
-class CountTokensResponse(val totalTokens: Int, val totalBillableCharacters: Int) {
+class CountTokensResponse(val totalTokens: Int, val totalBillableCharacters: Int? = null) {
   operator fun component1() = totalTokens
 
   operator fun component2() = totalBillableCharacters

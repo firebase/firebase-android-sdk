@@ -68,9 +68,6 @@ enum class FinishReason {
   /** A new and not yet supported value. */
   UNKNOWN,
 
-  /** Reason is unspecified. */
-  UNSPECIFIED,
-
   /** Model finished successfully and stopped. */
   STOP,
 

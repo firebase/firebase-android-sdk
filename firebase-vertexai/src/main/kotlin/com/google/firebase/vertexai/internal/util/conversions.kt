@@ -26,10 +26,9 @@ import com.google.firebase.vertexai.common.shared.FunctionCall
 import com.google.firebase.vertexai.common.shared.FunctionCallPart
 import com.google.firebase.vertexai.common.shared.FunctionResponse
 import com.google.firebase.vertexai.common.shared.FunctionResponsePart
-import com.google.firebase.vertexai.common.shared.HarmBlockThreshold
 import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.BlockReason
-import com.google.firebase.vertexai.type.BlockThreshold
+import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Citation
 import com.google.firebase.vertexai.type.CitationMetadata
@@ -142,13 +141,13 @@ internal fun ToolConfig.toInternal() =
     )
   )
 
-internal fun BlockThreshold.toInternal() =
+internal fun HarmBlockThreshold.toInternal() =
   when (this) {
-    BlockThreshold.NONE -> HarmBlockThreshold.BLOCK_NONE
-    BlockThreshold.ONLY_HIGH -> HarmBlockThreshold.BLOCK_ONLY_HIGH
-    BlockThreshold.MEDIUM_AND_ABOVE -> HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-    BlockThreshold.LOW_AND_ABOVE -> HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
-    BlockThreshold.UNSPECIFIED -> HarmBlockThreshold.UNSPECIFIED
+    HarmBlockThreshold.NONE -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_NONE
+    HarmBlockThreshold.ONLY_HIGH -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_ONLY_HIGH
+    HarmBlockThreshold.MEDIUM_AND_ABOVE -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+    HarmBlockThreshold.LOW_AND_ABOVE -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+    HarmBlockThreshold.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.UNSPECIFIED
   }
 
 internal fun Tool.toInternal() =
@@ -262,8 +261,7 @@ internal fun com.google.firebase.vertexai.common.server.FinishReason?.toPublic()
     com.google.firebase.vertexai.common.server.FinishReason.SAFETY -> FinishReason.SAFETY
     com.google.firebase.vertexai.common.server.FinishReason.STOP -> FinishReason.STOP
     com.google.firebase.vertexai.common.server.FinishReason.OTHER -> FinishReason.OTHER
-    com.google.firebase.vertexai.common.server.FinishReason.UNSPECIFIED -> FinishReason.UNSPECIFIED
-    com.google.firebase.vertexai.common.server.FinishReason.UNKNOWN -> FinishReason.UNKNOWN
+    else -> FinishReason.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.shared.HarmCategory.toPublic() =
@@ -274,7 +272,7 @@ internal fun com.google.firebase.vertexai.common.shared.HarmCategory.toPublic() 
       HarmCategory.SEXUALLY_EXPLICIT
     com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT ->
       HarmCategory.DANGEROUS_CONTENT
-    com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN -> HarmCategory.UNKNOWN
+    else -> HarmCategory.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.server.HarmProbability.toPublic() =
@@ -284,9 +282,7 @@ internal fun com.google.firebase.vertexai.common.server.HarmProbability.toPublic
     com.google.firebase.vertexai.common.server.HarmProbability.LOW -> HarmProbability.LOW
     com.google.firebase.vertexai.common.server.HarmProbability.NEGLIGIBLE ->
       HarmProbability.NEGLIGIBLE
-    com.google.firebase.vertexai.common.server.HarmProbability.UNSPECIFIED ->
-      HarmProbability.UNSPECIFIED
-    com.google.firebase.vertexai.common.server.HarmProbability.UNKNOWN -> HarmProbability.UNKNOWN
+    else -> HarmProbability.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.server.HarmSeverity.toPublic() =
@@ -295,16 +291,14 @@ internal fun com.google.firebase.vertexai.common.server.HarmSeverity.toPublic() 
     com.google.firebase.vertexai.common.server.HarmSeverity.MEDIUM -> HarmSeverity.MEDIUM
     com.google.firebase.vertexai.common.server.HarmSeverity.LOW -> HarmSeverity.LOW
     com.google.firebase.vertexai.common.server.HarmSeverity.NEGLIGIBLE -> HarmSeverity.NEGLIGIBLE
-    com.google.firebase.vertexai.common.server.HarmSeverity.UNSPECIFIED -> HarmSeverity.UNSPECIFIED
-    com.google.firebase.vertexai.common.server.HarmSeverity.UNKNOWN -> HarmSeverity.UNKNOWN
+    else -> HarmSeverity.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.server.BlockReason.toPublic() =
   when (this) {
-    com.google.firebase.vertexai.common.server.BlockReason.UNSPECIFIED -> BlockReason.UNSPECIFIED
     com.google.firebase.vertexai.common.server.BlockReason.SAFETY -> BlockReason.SAFETY
     com.google.firebase.vertexai.common.server.BlockReason.OTHER -> BlockReason.OTHER
-    com.google.firebase.vertexai.common.server.BlockReason.UNKNOWN -> BlockReason.UNKNOWN
+    else -> BlockReason.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.GenerateContentResponse.toPublic():
