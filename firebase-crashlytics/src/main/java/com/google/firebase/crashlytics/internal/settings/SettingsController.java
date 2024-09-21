@@ -30,12 +30,12 @@ import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.common.SystemCurrentTimeProvider;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.Locale;
-import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Implements the logic of when to use cached settings, and when to load them from the network. */
@@ -149,8 +149,8 @@ public class SettingsController implements SettingsProvider {
    *
    * @return a task that is resolved when loading is completely finished.
    */
-  public Task<Void> loadSettingsData(Executor executor) {
-    return loadSettingsData(SettingsCacheBehavior.USE_CACHE, executor);
+  public Task<Void> loadSettingsData(CrashlyticsWorkers crashlyticsWorkers) {
+    return loadSettingsData(SettingsCacheBehavior.USE_CACHE, crashlyticsWorkers);
   }
 
   /**
@@ -158,10 +158,10 @@ public class SettingsController implements SettingsProvider {
    *
    * @return a task that is resolved when loading is completely finished.
    */
-  public Task<Void> loadSettingsData(SettingsCacheBehavior cacheBehavior, Executor executor) {
+  public Task<Void> loadSettingsData(
+      SettingsCacheBehavior cacheBehavior, CrashlyticsWorkers crashlyticsWorkers) {
     // TODO: Refactor this so that it doesn't do the cache lookup twice when settings are
     // expired.
-
     // We need to bypass the cache if this is the first time a new build has run so the
     // backend will know about it.
     if (!buildInstanceIdentifierChanged()) {
@@ -186,18 +186,24 @@ public class SettingsController implements SettingsProvider {
     }
 
     // Kick off fetching fresh settings.
+    // TODO(mrober): Refactor to call worker directly, not expose executor.
     return dataCollectionArbiter
-        .waitForDataCollectionPermission(executor)
+        .waitForDataCollectionPermission()
         .onSuccessTask(
-            executor,
+            crashlyticsWorkers.common,
             new SuccessContinuation<Void, Void>() {
               @NonNull
               @Override
               public Task<Void> then(@Nullable Void aVoid) throws Exception {
                 // Waited for data collection permission, so this is safe.
                 final boolean dataCollectionToken = true;
-                final JSONObject settingsJson =
-                    settingsSpiCall.invoke(settingsRequest, dataCollectionToken);
+                Future<JSONObject> settingsFuture =
+                    crashlyticsWorkers
+                        .network
+                        .getExecutor()
+                        .submit(() -> settingsSpiCall.invoke(settingsRequest, dataCollectionToken));
+                // TODO(mrober): Should we add a timeout here, or let the entire init timeout?
+                JSONObject settingsJson = settingsFuture.get();
 
                 if (settingsJson != null) {
                   final Settings fetchedSettings =
@@ -256,7 +262,7 @@ public class SettingsController implements SettingsProvider {
     return toReturn;
   }
 
-  private void logSettings(JSONObject json, String message) throws JSONException {
+  private void logSettings(JSONObject json, String message) {
     Logger.getLogger().d(message + json.toString());
   }
 

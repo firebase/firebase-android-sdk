@@ -14,6 +14,5 @@
  * limitations under the License.
  */
 
-package com.google.firebase.vertexai.type
-
-class FunctionParameter<T>(val name: String, val description: String, val type: FunctionType<T>) {}
+/** @hide */
+package com.google.firebase.crashlytics.internal.concurrency;

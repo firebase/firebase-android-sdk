@@ -20,7 +20,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.google.firebase.vertexai.common.client.Schema
-import com.google.firebase.vertexai.common.server.CitationSources
 import com.google.firebase.vertexai.common.shared.Blob
 import com.google.firebase.vertexai.common.shared.FileData
 import com.google.firebase.vertexai.common.shared.FunctionCall
@@ -30,6 +29,7 @@ import com.google.firebase.vertexai.common.shared.FunctionResponsePart
 import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Citation
 import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
@@ -136,7 +136,8 @@ internal fun ToolConfig.toInternal() =
           com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.AUTO
         FunctionCallingConfig.Mode.NONE ->
           com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.NONE
-      }
+      },
+      functionCallingConfig.allowedFunctionNames
     )
   )
 
@@ -162,15 +163,16 @@ internal fun FunctionDeclaration.toInternal() =
     name,
     description,
     Schema(
-      properties = getParameters().associate { it.name to it.toInternal() },
-      required = getParameters().map { it.name },
+      properties = parameters.mapValues { it.value.toInternal() },
+      required = parameters.keys.minus(optionalParameters.toSet()).toList(),
       type = "OBJECT",
+      nullable = false,
     ),
   )
 
-internal fun <T> com.google.firebase.vertexai.type.Schema<T>.toInternal(): Schema =
+internal fun com.google.firebase.vertexai.type.Schema.toInternal(): Schema =
   Schema(
-    type.name,
+    type,
     description,
     format,
     nullable,
@@ -184,7 +186,7 @@ internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toStrin
 
 internal fun com.google.firebase.vertexai.common.server.Candidate.toPublic(): Candidate {
   val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
-  val citations = citationMetadata?.citationSources?.map { it.toPublic() }.orEmpty()
+  val citations = citationMetadata?.toPublic()
   val finishReason = finishReason.toPublic()
 
   return Candidate(
@@ -231,8 +233,11 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   }
 }
 
-internal fun CitationSources.toPublic() =
-  CitationMetadata(startIndex = startIndex, endIndex = endIndex, uri = uri ?: "", license = license)
+internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic() =
+  Citation(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
+
+internal fun com.google.firebase.vertexai.common.server.CitationMetadata.toPublic() =
+  CitationMetadata(citationSources.map { it.toPublic() })
 
 internal fun com.google.firebase.vertexai.common.server.SafetyRating.toPublic() =
   SafetyRating(
@@ -249,6 +254,7 @@ internal fun com.google.firebase.vertexai.common.server.PromptFeedback.toPublic(
   return com.google.firebase.vertexai.type.PromptFeedback(
     blockReason?.toPublic(),
     safetyRatings,
+    blockReasonMessage
   )
 }
 
