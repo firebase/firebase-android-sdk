@@ -55,10 +55,10 @@ internal constructor(
     modelName: String,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
-    requestOptions: RequestOptions = RequestOptions(),
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
+    requestOptions: RequestOptions = RequestOptions(),
   ): GenerativeModel {
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
