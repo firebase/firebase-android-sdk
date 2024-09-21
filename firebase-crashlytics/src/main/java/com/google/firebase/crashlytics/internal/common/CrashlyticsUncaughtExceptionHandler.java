@@ -58,8 +58,13 @@ class CrashlyticsUncaughtExceptionHandler implements Thread.UncaughtExceptionHan
     } catch (Exception e) {
       Logger.getLogger().e("An error occurred in the uncaught exception handler", e);
     } finally {
-      Logger.getLogger().d("Completed exception processing. Invoking default exception handler.");
-      defaultHandler.uncaughtException(thread, ex);
+      if (defaultHandler != null) {
+        Logger.getLogger().d("Completed exception processing. Invoking default exception handler.");
+        defaultHandler.uncaughtException(thread, ex);
+      } else {
+        Logger.getLogger().d("Completed exception processing, but no default exception handler.");
+        System.exit(1);
+      }
       isHandlingException.set(false);
     }
   }

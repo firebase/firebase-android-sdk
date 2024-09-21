@@ -185,10 +185,12 @@ internal class RequestFormatTests {
             contents = listOf(Content(parts = listOf(TextPart("Arbitrary")))),
             toolConfig =
               ToolConfig(
-                functionCallingConfig =
-                  FunctionCallingConfig(mode = FunctionCallingConfig.Mode.AUTO)
-              ),
-          )
+                FunctionCallingConfig(
+                  mode = FunctionCallingConfig.Mode.ANY,
+                  allowedFunctionNames = listOf("allowedFunctionName")
+                )
+              )
+          ),
         )
         .collect { channel.close() }
     }
@@ -196,6 +198,8 @@ internal class RequestFormatTests {
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
     requestBodyAsText shouldContainJsonKey "tool_config.function_calling_config.mode"
+    requestBodyAsText shouldContainJsonKey
+      "tool_config.function_calling_config.allowed_function_names"
   }
 
   @Test

@@ -2,8 +2,6 @@
 package com.google.firebase.functions {
 
   public final class FirebaseFunctions {
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(@NonNull String name, @Nullable Object data, @NonNull com.google.firebase.functions.HttpsCallOptions options);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.functions.HttpsCallableResult> call(@NonNull java.net.URL url, @Nullable Object data, @NonNull com.google.firebase.functions.HttpsCallOptions options);
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String name);
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String name, @NonNull com.google.firebase.functions.HttpsCallableOptions options);
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull java.net.URL url);
@@ -12,7 +10,6 @@ package com.google.firebase.functions {
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp app);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance();
-    method @NonNull @VisibleForTesting public java.net.URL getURL(@NonNull String function);
     method public void useEmulator(@NonNull String host, int port);
     method @Deprecated public void useFunctionsEmulator(@NonNull String origin);
     field @NonNull public static final com.google.firebase.functions.FirebaseFunctions.Companion Companion;

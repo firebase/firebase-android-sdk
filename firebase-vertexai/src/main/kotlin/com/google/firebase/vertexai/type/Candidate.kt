@@ -21,7 +21,7 @@ class Candidate
 internal constructor(
   val content: Content,
   val safetyRatings: List<SafetyRating>,
-  val citationMetadata: List<CitationMetadata>,
+  val citationMetadata: CitationMetadata?,
   val finishReason: FinishReason?
 )
 
@@ -37,15 +37,25 @@ internal constructor(
 )
 
 /**
- * Provides citation metadata for sourcing of content provided by the model between a given
+ * A collection of source attributions for a piece of content.
+ *
+ * @property citations A list of individual cited sources and the parts of the content to which they
+ * apply.
+ */
+class CitationMetadata internal constructor(val citations: List<Citation>)
+
+/**
+ * Provides citation information for sourcing of content provided by the model between a given
  * [startIndex] and [endIndex].
  *
- * @property startIndex The beginning of the citation.
- * @property endIndex The end of the citation.
- * @property uri The URI of the cited work.
- * @property license The license under which the cited work is distributed.
+ * @property startIndex The inclusive beginning of a sequence in a model response that derives from
+ * a cited source.
+ * @property endIndex The exclusive end of a sequence in a model response that derives from a cited
+ * source.
+ * @property uri A link to the cited source, if available.
+ * @property license The license the cited source work is distributed under, if specified.
  */
-class CitationMetadata
+class Citation
 internal constructor(
   val startIndex: Int = 0,
   val endIndex: Int,
