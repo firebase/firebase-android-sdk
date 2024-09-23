@@ -18,7 +18,7 @@ package com.google.firebase.vertexai.util
 
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.RequestOptions
+import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.HttpStatusCode

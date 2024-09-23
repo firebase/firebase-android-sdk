@@ -47,7 +47,6 @@ import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.ImagePart
 import com.google.firebase.vertexai.type.Part
 import com.google.firebase.vertexai.type.PromptFeedback
-import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetyRating
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
@@ -62,9 +61,6 @@ import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
 
 private const val BASE_64_FLAGS = Base64.NO_WRAP
-
-internal fun RequestOptions.toInternal() =
-  com.google.firebase.vertexai.common.RequestOptions(timeout, apiVersion, endpoint)
 
 internal fun Content.toInternal() =
   com.google.firebase.vertexai.common.shared.Content(
