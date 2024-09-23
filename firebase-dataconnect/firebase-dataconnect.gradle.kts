@@ -33,7 +33,13 @@ firebaseLibrary {
   testLab.enabled = false
   publishSources = true
   publishJavadoc = false
-  previewMode = "alpha"
+  previewMode = "beta"
+  releaseNotes {
+    name.set("{{firebase_data_connect}}")
+    versionName.set("dataconnect")
+    hasKTX.set(false)
+  }
+
 }
 
 android {
