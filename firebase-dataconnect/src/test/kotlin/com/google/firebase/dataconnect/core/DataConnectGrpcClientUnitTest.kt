@@ -16,16 +16,22 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataConnectError
+import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.connectorConfig
+import com.google.firebase.dataconnect.testutil.dataConnectError
 import com.google.firebase.dataconnect.testutil.iterator
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.operationName
+import com.google.firebase.dataconnect.testutil.operationResult
 import com.google.firebase.dataconnect.testutil.projectId
 import com.google.firebase.dataconnect.testutil.requestId
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
 import com.google.firebase.dataconnect.util.buildStructProto
+import com.google.firebase.dataconnect.util.encodeToStruct
+import com.google.firebase.dataconnect.util.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
@@ -36,8 +42,12 @@ import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.SourceLocation
 import io.grpc.Status
 import io.grpc.StatusException
+import io.kotest.assertions.asClue
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
@@ -45,15 +55,25 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.egyptianHieroglyphs
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbs.firstName
+import io.kotest.property.arbs.travel.airline
+import io.kotest.property.checkAll
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.spyk
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
 
@@ -583,4 +603,108 @@ class DataConnectGrpcClientUnitTest {
       }
     }
   }
+}
+
+@Suppress("IMPLICIT_NOTHING_TYPE_ARGUMENT_AGAINST_NOT_NOTHING_EXPECTED_TYPE")
+class DataConnectGrpcClientOperationResultUnitTest {
+
+  @Test
+  fun `deserialize() should ignore the module given with DataConnectUntypedData`() {
+    val errors = listOf(Arb.dataConnectError().next())
+    val operationResult = OperationResult(buildStructProto { put("foo", 42.0) }, errors)
+    val result = operationResult.deserialize(DataConnectUntypedData)
+    result shouldBe DataConnectUntypedData(mapOf("foo" to 42.0), errors)
+  }
+
+  @Test
+  fun `deserialize() should treat DataConnectUntypedData specially`() = runTest {
+    checkAll(iterations = 1000, Arb.operationResult()) { operationResult ->
+      val result = operationResult.deserialize(DataConnectUntypedData)
+
+      result.asClue {
+        if (operationResult.data === null) {
+          it.data.shouldBeNull()
+        } else {
+          it.data shouldBe operationResult.data.toMap()
+        }
+        it.errors shouldContainExactly operationResult.errors
+      }
+    }
+  }
+
+  @Test
+  fun `deserialize() should throw if one or more errors and data is null`() = runTest {
+    val arb = Arb.operationResult().filter { it.errors.isNotEmpty() }.map { it.copy(data = null) }
+    checkAll(iterations = 5, arb) { operationResult ->
+      val exception =
+        shouldThrow<DataConnectException> { operationResult.deserialize<Nothing>(mockk()) }
+      exception.message shouldContain "${operationResult.errors}"
+    }
+  }
+
+  @Test
+  fun `deserialize() should throw if one or more errors and data is _not_ null`() = runTest {
+    val arb = Arb.operationResult().filter { it.data !== null && it.errors.isNotEmpty() }
+    checkAll(iterations = 5, arb) { operationResult ->
+      val exception =
+        shouldThrow<DataConnectException> { operationResult.deserialize<Nothing>(mockk()) }
+      exception.message shouldContain "${operationResult.errors}"
+    }
+  }
+
+  @Test
+  fun `deserialize() should throw if data is null and errors is empty`() {
+    val operationResult = OperationResult(data = null, errors = emptyList())
+    val exception =
+      shouldThrow<DataConnectException> { operationResult.deserialize<Nothing>(mockk()) }
+    exception.message shouldContain "no data"
+  }
+
+  @Test
+  fun `deserialize() successfully deserializes`() = runTest {
+    val testData = TestData(Arb.firstName().next().name)
+    val operationResult = OperationResult(encodeToStruct(testData), errors = emptyList())
+
+    val deserializedData = operationResult.deserialize(serializer<TestData>())
+
+    deserializedData shouldBe testData
+  }
+
+  @Test
+  fun `deserialize() throws if decoding fails`() = runTest {
+    val data = buildStructProto { put("zzzz", 42) }
+    val operationResult = OperationResult(data, errors = emptyList())
+    shouldThrow<DataConnectException> { operationResult.deserialize(serializer<TestData>()) }
+  }
+
+  @Test
+  fun `deserialize() re-throws DataConnectException`() = runTest {
+    val data = encodeToStruct(TestData("fe45zhyd3m"))
+    val operationResult = OperationResult(data = data, errors = emptyList())
+    val deserializer: DeserializationStrategy<TestData> = spyk(serializer())
+    val exception = DataConnectException(message = Arb.airline().next().name)
+    every { deserializer.deserialize(any()) } throws (exception)
+
+    val thrownException =
+      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer) }
+
+    thrownException shouldBeSameInstanceAs exception
+  }
+
+  @Test
+  fun `deserialize() wraps non-DataConnectException in DataConnectException`() = runTest {
+    val data = encodeToStruct(TestData("rbmkny6b4r"))
+    val operationResult = OperationResult(data = data, errors = emptyList())
+    val deserializer: DeserializationStrategy<TestData> = spyk(serializer())
+    class MyException : Exception("y3cx44q43q")
+    val exception = MyException()
+    every { deserializer.deserialize(any()) } throws (exception)
+
+    val thrownException =
+      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer) }
+
+    thrownException.cause shouldBeSameInstanceAs exception
+  }
+
+  @Serializable data class TestData(val foo: String)
 }

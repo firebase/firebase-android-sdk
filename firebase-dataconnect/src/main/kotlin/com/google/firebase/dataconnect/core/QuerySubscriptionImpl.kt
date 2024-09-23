@@ -69,7 +69,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
   }
 
   override suspend fun update(variables: Variables) {
-    _query.value = _query.value.withVariables(variables)
+    _query.value = _query.value.copy(variables = variables)
     reload()
   }
 
