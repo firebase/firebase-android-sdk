@@ -22,10 +22,10 @@ import com.google.firebase.vertexai.common.APIController
 import com.google.firebase.vertexai.common.GenerateContentRequest
 import com.google.firebase.vertexai.common.GenerateContentResponse
 import com.google.firebase.vertexai.common.JSON
-import com.google.firebase.vertexai.common.RequestOptions
 import com.google.firebase.vertexai.common.server.Candidate
 import com.google.firebase.vertexai.common.shared.Content
 import com.google.firebase.vertexai.common.shared.TextPart
+import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.http.HttpStatusCode
