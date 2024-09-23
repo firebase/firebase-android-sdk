@@ -83,7 +83,7 @@ internal constructor(
     APIController(
       apiKey,
       modelName,
-      requestOptions.toInternal(),
+      requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
       object : HeaderProvider {
         override val timeout: Duration
