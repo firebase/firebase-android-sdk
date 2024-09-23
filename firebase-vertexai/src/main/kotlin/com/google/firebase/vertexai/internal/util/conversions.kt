@@ -28,7 +28,6 @@ import com.google.firebase.vertexai.common.shared.FunctionResponse
 import com.google.firebase.vertexai.common.shared.FunctionResponsePart
 import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.BlockReason
-import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Citation
 import com.google.firebase.vertexai.type.CitationMetadata
@@ -40,6 +39,7 @@ import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
@@ -139,11 +139,14 @@ internal fun ToolConfig.toInternal() =
 
 internal fun HarmBlockThreshold.toInternal() =
   when (this) {
-    HarmBlockThreshold.NONE -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_NONE
-    HarmBlockThreshold.ONLY_HIGH -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_ONLY_HIGH
-    HarmBlockThreshold.MEDIUM_AND_ABOVE -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-    HarmBlockThreshold.LOW_AND_ABOVE -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
-    HarmBlockThreshold.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmBlockThreshold.UNSPECIFIED
+    HarmBlockThreshold.NONE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_NONE
+    HarmBlockThreshold.ONLY_HIGH ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_ONLY_HIGH
+    HarmBlockThreshold.MEDIUM_AND_ABOVE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+    HarmBlockThreshold.LOW_AND_ABOVE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
   }
 
 internal fun Tool.toInternal() =

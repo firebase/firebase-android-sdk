@@ -17,7 +17,8 @@
 package com.google.firebase.vertexai.type
 
 /**
- * A configuration for a [HarmBlockThreshold] of some [HarmCategory] allowed and blocked in responses.
+ * A configuration for a [HarmBlockThreshold] of some [HarmCategory] allowed and blocked in
+ * responses.
  *
  * @param harmCategory The relevant [HarmCategory].
  * @param threshold The threshold form harm allowable.
