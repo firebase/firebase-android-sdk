@@ -186,8 +186,6 @@ tasks.withType<KotlinCompile>().all {
   }
 }
 
-extra["packageName"] = "com.google.firebase.dataconnect"
-
 tasks.withType<DokkaTask>().configureEach {
   moduleName.set("firebase-dataconnect")
   val cacheRootDirectory = layout.buildDirectory.dir("dokka/cache")
