@@ -21,6 +21,7 @@ import androidx.annotation.VisibleForTesting
 import com.google.firebase.vertexai.common.server.FinishReason
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
+import com.google.firebase.vertexai.type.RequestOptions
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
@@ -44,7 +45,9 @@ import io.ktor.http.contentType
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteChannel
+import kotlin.math.max
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
@@ -115,7 +118,8 @@ internal constructor(
     HttpClient(httpEngine) {
       install(HttpTimeout) {
         requestTimeoutMillis = requestOptions.timeout.inWholeMilliseconds
-        socketTimeoutMillis = 80_000
+        socketTimeoutMillis =
+          max(180.seconds.inWholeMilliseconds, requestOptions.timeout.inWholeMilliseconds)
       }
       install(ContentNegotiation) { json(JSON) }
     }
