@@ -32,15 +32,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
-internal class RegisteredDataDeserialzer<T>(
+internal class RegisteredDataDeserializer<T>(
   val dataDeserializer: DeserializationStrategy<T>,
+  val dataSerializersModule: SerializersModule?,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
   parentLogger: Logger,
 ) {
   private val logger =
-    Logger("RegisteredDataDeserialzer").apply {
-      debug { "created by ${parentLogger.nameWithId} with dataDeserializer=$dataDeserializer" }
+    Logger("RegisteredDataDeserializer").apply {
+      debug {
+        "created by ${parentLogger.nameWithId} with" +
+          " dataDeserializer=$dataDeserializer," +
+          " dataSerializersModule=$dataSerializersModule"
+      }
     }
   // A flow that emits a value every time that there is an update, either a successful or an
   // unsuccessful update. There is no replay cache in this shared flow because there is no way to
@@ -126,7 +132,11 @@ internal class RegisteredDataDeserialzer<T>(
     sequencedResult: SequencedReference<Result<OperationResult>>
   ): SuspendingLazy<Result<T>> = SuspendingLazy {
     sequencedResult.ref
-      .mapCatching { withContext(blockingCoroutineDispatcher) { it.deserialize(dataDeserializer) } }
+      .mapCatching {
+        withContext(blockingCoroutineDispatcher) {
+          it.deserialize(dataDeserializer, dataSerializersModule)
+        }
+      }
       .onFailure {
         // If the overall result was successful then the failure _must_ have occurred during
         // deserialization. Log the deserialization failure so it doesn't go unnoticed.

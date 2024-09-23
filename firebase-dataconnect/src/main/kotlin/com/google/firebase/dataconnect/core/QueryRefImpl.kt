@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.*
 import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class QueryRefImpl<Data, Variables>(
   dataConnect: FirebaseDataConnectInternal,
@@ -28,6 +29,8 @@ internal class QueryRefImpl<Data, Variables>(
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
   val isFromGeneratedSdk: Boolean,
+  variablesSerializersModule: SerializersModule?,
+  dataSerializersModule: SerializersModule?,
 ) :
   QueryRef<Data, Variables>,
   OperationRefImpl<Data, Variables>(
@@ -36,6 +39,8 @@ internal class QueryRefImpl<Data, Variables>(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
+    variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   ) {
   override suspend fun execute(): QueryResultImpl =
     dataConnect.lazyQueryManager.get().execute(this).let { QueryResultImpl(it.ref.getOrThrow()) }
@@ -52,7 +57,9 @@ internal class QueryRefImpl<Data, Variables>(
       "operationName=$operationName, " +
       "variables=$variables, " +
       "dataDeserializer=$dataDeserializer, " +
-      "variablesSerializer=$variablesSerializer" +
+      "variablesSerializer=$variablesSerializer, " +
+      "variablesSerializersModule=$variablesSerializersModule, " +
+      "dataSerializersModule=$dataSerializersModule" +
       ")"
 
   inner class QueryResultImpl(data: Data) :
@@ -76,6 +83,8 @@ internal fun <Data, Variables> QueryRefImpl<Data, Variables>.copy(
   dataDeserializer: DeserializationStrategy<Data> = this.dataDeserializer,
   variablesSerializer: SerializationStrategy<Variables> = this.variablesSerializer,
   isFromGeneratedSdk: Boolean = this.isFromGeneratedSdk,
+  variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
+  dataSerializersModule: SerializersModule? = this.dataSerializersModule,
 ) =
   QueryRefImpl(
     dataConnect = dataConnect,
@@ -84,4 +93,6 @@ internal fun <Data, Variables> QueryRefImpl<Data, Variables>.copy(
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
     isFromGeneratedSdk = isFromGeneratedSdk,
+    variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   )

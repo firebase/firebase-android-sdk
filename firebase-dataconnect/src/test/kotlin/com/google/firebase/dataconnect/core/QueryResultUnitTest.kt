@@ -18,9 +18,11 @@ package com.google.firebase.dataconnect.core
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import io.kotest.property.arbitrary.next
 import io.mockk.mockk
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 import org.junit.Test
 
 @Suppress("ReplaceCallWithBinaryOperator")
@@ -29,6 +31,7 @@ class QueryResultImplUnitTest {
   private val mockFirebaseDataConnectInternal = mockk<FirebaseDataConnectInternal>()
   private val mockDataDeserializer = mockk<DeserializationStrategy<TestData?>>()
   private val mockVariablesSerializer = mockk<SerializationStrategy<TestVariables>>()
+  private val mockSerializersModule: SerializersModule = mockk()
 
   private val sampleQuery =
     QueryRefImpl(
@@ -38,6 +41,8 @@ class QueryResultImplUnitTest {
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
       isFromGeneratedSdk = true,
+      dataSerializersModule = mockSerializersModule,
+      variablesSerializersModule = mockSerializersModule,
     )
 
   private val sampleQuery1 =
@@ -48,6 +53,8 @@ class QueryResultImplUnitTest {
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
       isFromGeneratedSdk = false,
+      dataSerializersModule = mockSerializersModule,
+      variablesSerializersModule = mockSerializersModule,
     )
 
   private val sampleQuery2 =
@@ -58,6 +65,8 @@ class QueryResultImplUnitTest {
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
       isFromGeneratedSdk = true,
+      dataSerializersModule = mockSerializersModule,
+      variablesSerializersModule = mockSerializersModule,
     )
 
   @Test

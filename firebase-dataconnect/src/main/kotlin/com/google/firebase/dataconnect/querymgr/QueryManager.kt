@@ -26,6 +26,7 @@ internal class QueryManager(private val liveQueries: LiveQueries) {
     liveQueries.withLiveQuery(query) {
       it.execute(
         dataDeserializer = query.dataDeserializer,
+        dataSerializersModule = query.dataSerializersModule,
         isFromGeneratedSdk = query.isFromGeneratedSdk,
       )
     }
@@ -38,6 +39,7 @@ internal class QueryManager(private val liveQueries: LiveQueries) {
     liveQueries.withLiveQuery(query) { liveQuery ->
       liveQuery.subscribe(
         dataDeserializer = query.dataDeserializer,
+        dataSerializersModule = query.dataSerializersModule,
         executeQuery = executeQuery,
         isFromGeneratedSdk = query.isFromGeneratedSdk,
         callback = callback,

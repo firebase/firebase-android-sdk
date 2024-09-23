@@ -29,6 +29,7 @@ import google.firebase.dataconnect.proto.executeQueryRequest
 import io.grpc.Status
 import io.grpc.StatusException
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class DataConnectGrpcClient(
   projectId: String,
@@ -148,9 +149,10 @@ internal fun GraphqlError.toDataConnectError() =
   )
 
 internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
-  dataDeserializer: DeserializationStrategy<T>
+  deserializer: DeserializationStrategy<T>,
+  serializersModule: SerializersModule?,
 ): T =
-  if (dataDeserializer === DataConnectUntypedData) {
+  if (deserializer === DataConnectUntypedData) {
     @Suppress("UNCHECKED_CAST")
     DataConnectUntypedData(data?.toMap(), errors) as T
   } else if (data === null) {
@@ -163,7 +165,7 @@ internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
     throw DataConnectException("operation failed: errors=$errors (data=$data)")
   } else {
     try {
-      decodeFromStruct(dataDeserializer, data)
+      decodeFromStruct(data, deserializer, serializersModule)
     } catch (dataConnectException: DataConnectException) {
       throw dataConnectException
     } catch (throwable: Throwable) {

@@ -18,17 +18,20 @@ package com.google.firebase.dataconnect.core
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import io.kotest.property.arbitrary.next
 import io.mockk.mockk
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 import org.junit.Test
 
 @Suppress("ReplaceCallWithBinaryOperator")
 class MutationResultImplUnitTest {
 
-  private val mockFirebaseDataConnectInternal = mockk<FirebaseDataConnectInternal>()
-  private val mockDataDeserializer = mockk<DeserializationStrategy<TestData?>>()
-  private val mockVariablesSerializer = mockk<SerializationStrategy<TestVariables>>()
+  private val mockFirebaseDataConnectInternal: FirebaseDataConnectInternal = mockk()
+  private val mockDataDeserializer: DeserializationStrategy<TestData?> = mockk()
+  private val mockVariablesSerializer: SerializationStrategy<TestVariables> = mockk()
+  private val mockSerializersModule: SerializersModule = mockk()
 
   private val sampleMutation =
     MutationRefImpl(
@@ -38,6 +41,8 @@ class MutationResultImplUnitTest {
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
       isFromGeneratedSdk = true,
+      dataSerializersModule = mockSerializersModule,
+      variablesSerializersModule = mockSerializersModule,
     )
 
   private val sampleMutation1 =
@@ -48,6 +53,8 @@ class MutationResultImplUnitTest {
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
       isFromGeneratedSdk = false,
+      dataSerializersModule = mockSerializersModule,
+      variablesSerializersModule = mockSerializersModule,
     )
 
   private val sampleMutation2 =
@@ -58,6 +65,8 @@ class MutationResultImplUnitTest {
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
       isFromGeneratedSdk = true,
+      dataSerializersModule = mockSerializersModule,
+      variablesSerializersModule = mockSerializersModule,
     )
 
   @Test

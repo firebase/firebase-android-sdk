@@ -32,6 +32,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.retry
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -203,6 +204,8 @@ class MutationRefImplUnitTest {
         dataDeserializer = values.dataDeserializer,
         variablesSerializer = values.variablesSerializer,
         isFromGeneratedSdk = values.isFromGeneratedSdk,
+        variablesSerializersModule = values.variablesSerializersModule,
+        dataSerializersModule = values.dataSerializersModule,
       )
 
     mutationRefImpl.asClue {
@@ -213,6 +216,37 @@ class MutationRefImplUnitTest {
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
         it.isFromGeneratedSdk shouldBe values.isFromGeneratedSdk
+        it.variablesSerializersModule shouldBeSameInstanceAs values.variablesSerializersModule
+        it.dataSerializersModule shouldBeSameInstanceAs values.dataSerializersModule
+      }
+    }
+  }
+
+  @Test
+  fun `constructor accepts null values for nullable parameters`() {
+    val values = Arb.mutationRefImpl().next()
+    val mutationRefImpl =
+      MutationRefImpl(
+        dataConnect = values.dataConnect,
+        operationName = values.operationName,
+        variables = values.variables,
+        dataDeserializer = values.dataDeserializer,
+        variablesSerializer = values.variablesSerializer,
+        isFromGeneratedSdk = values.isFromGeneratedSdk,
+        variablesSerializersModule = null,
+        dataSerializersModule = null,
+      )
+
+    mutationRefImpl.asClue {
+      assertSoftly {
+        it.dataConnect shouldBeSameInstanceAs values.dataConnect
+        it.operationName shouldBeSameInstanceAs values.operationName
+        it.variables shouldBeSameInstanceAs values.variables
+        it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
+        it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
+        it.isFromGeneratedSdk shouldBe values.isFromGeneratedSdk
+        it.variablesSerializersModule.shouldBeNull()
+        it.dataSerializersModule.shouldBeNull()
       }
     }
   }
@@ -264,6 +298,32 @@ class MutationRefImplUnitTest {
     val mutationRef1 = Arb.mutationRefImpl().next()
     val mutationRef2 = mutationRef1.copy(isFromGeneratedSdk = !mutationRef1.isFromGeneratedSdk)
     mutationRef1.hashCode() shouldBe mutationRef2.hashCode()
+  }
+
+  @Test
+  fun `hashCode() should incorporate variablesSerializersModule`() = runTest {
+    verifyHashCodeEventuallyDiffers {
+      it.copy(variablesSerializersModule = mockk(name = stringArb.next()))
+    }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(
+        variablesSerializersModule =
+          if (it.variablesSerializersModule === null) mockk(name = stringArb.next()) else null
+      )
+    }
+  }
+
+  @Test
+  fun `hashCode() should incorporate dataSerializersModule`() = runTest {
+    verifyHashCodeEventuallyDiffers {
+      it.copy(dataSerializersModule = mockk(name = stringArb.next()))
+    }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(
+        dataSerializersModule =
+          if (it.dataSerializersModule === null) mockk(name = stringArb.next()) else null
+      )
+    }
   }
 
   private suspend fun verifyHashCodeEventuallyDiffers(
@@ -349,12 +409,35 @@ class MutationRefImplUnitTest {
   }
 
   @Test
+  fun `equals() should return false when only dataSerializersModule differs`() = runTest {
+    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
+    val mutationRefImpl2 = mutationRefImpl1.copy(dataSerializersModule = mockk(stringArb.next()))
+    val mutationRefImplNull = mutationRefImpl1.copy(dataSerializersModule = null)
+    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    mutationRefImplNull.equals(mutationRefImpl1) shouldBe false
+    mutationRefImpl1.equals(mutationRefImplNull) shouldBe false
+  }
+
+  @Test
+  fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
+    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
+    val mutationRefImpl2 =
+      mutationRefImpl1.copy(variablesSerializersModule = mockk(stringArb.next()))
+    val mutationRefImplNull = mutationRefImpl1.copy(variablesSerializersModule = null)
+    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    mutationRefImplNull.equals(mutationRefImpl1) shouldBe false
+    mutationRefImpl1.equals(mutationRefImplNull) shouldBe false
+  }
+
+  @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
     val mutationRefImpl: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
     val mutationRefImpls =
       listOf(
         mutationRefImpl,
         mutationRefImpl.copy(isFromGeneratedSdk = !mutationRefImpl.isFromGeneratedSdk),
+        mutationRefImpl.copy(dataSerializersModule = null),
+        mutationRefImpl.copy(variablesSerializersModule = null),
       )
     val toStringResult = mutationRefImpl.toString()
 
@@ -366,8 +449,50 @@ class MutationRefImplUnitTest {
           toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
           toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
           toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
+          toStringResult.shouldContain(
+            "dataSerializersModule=${mutationRefImpl.dataSerializersModule}"
+          )
+          toStringResult.shouldContain(
+            "variablesSerializersModule=${mutationRefImpl.variablesSerializersModule}"
+          )
         }
       }
+    }
+  }
+
+  @Test
+  fun `toString() should include null when dataSerializersModule is null`() = runTest {
+    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> =
+      Arb.mutationRefImpl().next().copy(dataSerializersModule = null)
+    val toStringResult = mutationRefImpl.toString()
+
+    assertSoftly {
+      toStringResult.shouldContain("dataConnect=${mutationRefImpl.dataConnect}")
+      toStringResult.shouldContain("operationName=${mutationRefImpl.operationName}")
+      toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
+      toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
+      toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("dataSerializersModule=null")
+      toStringResult.shouldContain(
+        "variablesSerializersModule=${mutationRefImpl.variablesSerializersModule}"
+      )
+    }
+  }
+
+  @Test
+  fun `toString() should include null when variablesSerializersModule is null`() = runTest {
+    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> =
+      Arb.mutationRefImpl().next().copy(variablesSerializersModule = null)
+    val toStringResult = mutationRefImpl.toString()
+
+    assertSoftly {
+      toStringResult.shouldContain("dataConnect=${mutationRefImpl.dataConnect}")
+      toStringResult.shouldContain("operationName=${mutationRefImpl.operationName}")
+      toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
+      toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
+      toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("dataSerializersModule=${mutationRefImpl.dataSerializersModule}")
+      toStringResult.shouldContain("variablesSerializersModule=null")
     }
   }
 

@@ -38,18 +38,28 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 internal inline fun <reified T> decodeFromStruct(struct: Struct): T =
-  decodeFromStruct(serializer(), struct)
+  decodeFromStruct(struct, serializer(), serializersModule = null)
 
-internal fun <T> decodeFromStruct(deserializer: DeserializationStrategy<T>, struct: Struct): T {
+internal fun <T> decodeFromStruct(
+  struct: Struct,
+  deserializer: DeserializationStrategy<T>,
+  serializersModule: SerializersModule?
+): T {
   val protoValue = Value.newBuilder().setStructValue(struct).build()
-  return decodeFromValue(deserializer, protoValue)
+  return decodeFromValue(protoValue, deserializer, serializersModule)
 }
 
 internal inline fun <reified T> decodeFromValue(value: Value): T =
-  decodeFromValue(serializer(), value)
+  decodeFromValue(value, serializer(), serializersModule = null)
 
-internal fun <T> decodeFromValue(deserializer: DeserializationStrategy<T>, value: Value): T =
-  ProtoValueDecoder(value, path = null).decodeSerializableValue(deserializer)
+internal fun <T> decodeFromValue(
+  value: Value,
+  deserializer: DeserializationStrategy<T>,
+  serializersModule: SerializersModule?
+): T {
+  val decoder = ProtoValueDecoder(value, path = null, serializersModule ?: EmptySerializersModule())
+  return decoder.decodeSerializableValue(deserializer)
+}
 
 private fun <T> Value.decode(path: String?, expectedKindCase: KindCase, block: (Value) -> T): T =
   if (kindCase != expectedKindCase) {
@@ -100,16 +110,21 @@ private fun Value.decodeLong(path: String?): Long =
 private fun Value.decodeShort(path: String?): Short =
   decode(path, KindCase.NUMBER_VALUE) { it.numberValue.toInt().toShort() }
 
-internal class ProtoValueDecoder(val valueProto: Value, private val path: String?) : Decoder {
-
-  override val serializersModule = EmptySerializersModule()
+internal class ProtoValueDecoder(
+  internal val valueProto: Value,
+  private val path: String?,
+  override val serializersModule: SerializersModule
+) : Decoder {
 
   override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder =
     when (val kind = descriptor.kind) {
-      is StructureKind.CLASS -> ProtoStructValueDecoder(valueProto.decodeStruct(path), path)
-      is StructureKind.LIST -> ProtoListValueDecoder(valueProto.decodeList(path), path)
-      is StructureKind.MAP -> ProtoMapValueDecoder(valueProto.decodeStruct(path), path)
-      is StructureKind.OBJECT -> ProtoObjectValueDecoder
+      is StructureKind.CLASS ->
+        ProtoStructValueDecoder(valueProto.decodeStruct(path), path, serializersModule)
+      is StructureKind.LIST ->
+        ProtoListValueDecoder(valueProto.decodeList(path), path, serializersModule)
+      is StructureKind.MAP ->
+        ProtoMapValueDecoder(valueProto.decodeStruct(path), path, serializersModule)
+      is StructureKind.OBJECT -> ProtoObjectValueDecoder(path, serializersModule)
       else -> throw IllegalArgumentException("unsupported SerialKind: ${kind::class.qualifiedName}")
     }
 
@@ -125,7 +140,8 @@ internal class ProtoValueDecoder(val valueProto: Value, private val path: String
 
   override fun decodeFloat() = valueProto.decodeFloat(path)
 
-  override fun decodeInline(descriptor: SerialDescriptor) = ProtoValueDecoder(valueProto, path)
+  override fun decodeInline(descriptor: SerialDescriptor) =
+    ProtoValueDecoder(valueProto, path, serializersModule)
 
   override fun decodeInt(): Int = valueProto.decodeInt(path)
 
@@ -135,38 +151,40 @@ internal class ProtoValueDecoder(val valueProto: Value, private val path: String
 
   override fun decodeString() = valueProto.decodeString(path)
 
-  @ExperimentalSerializationApi
-  override fun decodeNotNullMark(): Boolean {
-    return !valueProto.hasNullValue()
-  }
+  override fun decodeNotNullMark() = !valueProto.hasNullValue()
 
-  @ExperimentalSerializationApi
   override fun decodeNull(): Nothing? {
     valueProto.decodeNull(path)
     return null
   }
 }
 
-private class ProtoStructValueDecoder(private val struct: Struct, private val path: String?) :
-  CompositeDecoder {
-  override val serializersModule = EmptySerializersModule()
+private class ProtoStructValueDecoder(
+  private val struct: Struct,
+  private val path: String?,
+  override val serializersModule: SerializersModule
+) : CompositeDecoder {
 
   override fun endStructure(descriptor: SerialDescriptor) {}
 
-  private lateinit var elementIndexes: Iterator<Int>
+  @Volatile private lateinit var elementIndexes: Iterator<Int>
 
-  private fun computeElementIndexSet(descriptor: SerialDescriptor) =
-    buildSet<String> {
-        addAll(struct.fieldsMap.keys)
-        addAll(descriptor.elementNames)
-      }
-      .map(descriptor::getElementIndex)
+  private fun getOrInitializeElementIndexes(descriptor: SerialDescriptor): Iterator<Int> {
+    if (!::elementIndexes.isInitialized) {
+      val names =
+        buildSet<String> {
+          addAll(struct.fieldsMap.keys)
+          addAll(descriptor.elementNames)
+        }
+      elementIndexes = names.map(descriptor::getElementIndex).sorted().iterator()
+    }
+
+    return elementIndexes
+  }
 
   override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
-    if (!::elementIndexes.isInitialized) {
-      elementIndexes = computeElementIndexSet(descriptor).sorted().iterator()
-    }
-    return if (elementIndexes.hasNext()) elementIndexes.next() else CompositeDecoder.DECODE_DONE
+    val indexes = getOrInitializeElementIndexes(descriptor)
+    return if (indexes.hasNext()) indexes.next() else CompositeDecoder.DECODE_DONE
   }
 
   override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int) =
@@ -185,7 +203,7 @@ private class ProtoStructValueDecoder(private val struct: Struct, private val pa
     decodeValueElement(descriptor, index, Value::decodeFloat)
 
   override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int) =
-    decodeValueElement(descriptor, index, ::ProtoValueDecoder)
+    decodeValueElement(descriptor, index) { ProtoValueDecoder(this, it, serializersModule) }
 
   override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(descriptor, index, Value::decodeInt)
@@ -240,13 +258,12 @@ private class ProtoStructValueDecoder(private val struct: Struct, private val pa
         AnyValue(valueProto) as T
       }
       else -> {
-        val protoValueDecoder = ProtoValueDecoder(valueProto, elementPath)
+        val protoValueDecoder = ProtoValueDecoder(valueProto, elementPath, serializersModule)
         deserializer.deserialize(protoValueDecoder)
       }
     }
   }
 
-  @ExperimentalSerializationApi
   override fun <T : Any> decodeNullableSerializableElement(
     descriptor: SerialDescriptor,
     index: Int,
@@ -269,15 +286,15 @@ private class ProtoStructValueDecoder(private val struct: Struct, private val pa
     if (path === null) elementName else "${path}.${elementName}"
 }
 
-private class ProtoListValueDecoder(private val list: ListValue, private val path: String?) :
-  CompositeDecoder {
-  override val serializersModule = EmptySerializersModule()
+private class ProtoListValueDecoder(
+  private val list: ListValue,
+  private val path: String?,
+  override val serializersModule: SerializersModule
+) : CompositeDecoder {
 
   override fun endStructure(descriptor: SerialDescriptor) {}
 
-  private val elementIndexes: Iterator<Int> by lazy {
-    list.valuesList.mapIndexed { index, _ -> index }.iterator()
-  }
+  private val elementIndexes: IntIterator = list.valuesList.indices.iterator()
 
   override fun decodeElementIndex(descriptor: SerialDescriptor) =
     if (elementIndexes.hasNext()) elementIndexes.next() else CompositeDecoder.DECODE_DONE
@@ -298,7 +315,7 @@ private class ProtoListValueDecoder(private val list: ListValue, private val pat
     decodeValueElement(index, Value::decodeFloat)
 
   override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int) =
-    decodeValueElement(index, ::ProtoValueDecoder)
+    decodeValueElement(index) { ProtoValueDecoder(this, it, serializersModule) }
 
   override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(index, Value::decodeInt)
@@ -328,32 +345,34 @@ private class ProtoListValueDecoder(private val list: ListValue, private val pat
       AnyValue(list.valuesList[index]) as T
     } else {
       deserializer.deserialize(
-        ProtoValueDecoder(list.valuesList[index], elementPathForIndex(index))
+        ProtoValueDecoder(list.valuesList[index], elementPathForIndex(index), serializersModule)
       )
     }
 
-  @ExperimentalSerializationApi
   override fun <T : Any> decodeNullableSerializableElement(
     descriptor: SerialDescriptor,
     index: Int,
     deserializer: DeserializationStrategy<T?>,
     previousValue: T?
-  ): T? {
-    return if (previousValue !== null) {
+  ): T? =
+    if (previousValue !== null) {
       previousValue
     } else if (list.valuesList[index].hasNullValue()) {
       null
     } else {
       decodeSerializableElement(descriptor, index, deserializer, previousValue = null)
     }
-  }
 
   private fun elementPathForIndex(index: Int) = if (path === null) "[$index]" else "${path}[$index]"
+
+  override fun toString() = "ProtoListValueDecoder{path=$path, size=${list.valuesList.size}"
 }
 
-private class ProtoMapValueDecoder(private val struct: Struct, private val path: String?) :
-  CompositeDecoder {
-  override val serializersModule = EmptySerializersModule()
+private class ProtoMapValueDecoder(
+  private val struct: Struct,
+  private val path: String?,
+  override val serializersModule: SerializersModule
+) : CompositeDecoder {
 
   override fun decodeSequentially() = true
 
@@ -386,7 +405,7 @@ private class ProtoMapValueDecoder(private val struct: Struct, private val path:
     decodeValueElement(index, Value::decodeFloat)
 
   override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int) =
-    decodeValueElement(index) { ProtoValueDecoder(this, it) }
+    decodeValueElement(index) { ProtoValueDecoder(this, it, serializersModule) }
 
   override fun decodeIntElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(index, Value::decodeInt)
@@ -454,7 +473,7 @@ private class ProtoMapValueDecoder(private val struct: Struct, private val path:
       if (index % 2 == 0) {
         MapKeyDecoder(structEntry.key, elementPath, serializersModule)
       } else {
-        ProtoValueDecoder(structEntry.value, elementPath)
+        ProtoValueDecoder(structEntry.value, elementPath, serializersModule)
       }
 
     return deserializer.deserialize(elementDecoder)
@@ -473,8 +492,10 @@ private class ProtoMapValueDecoder(private val struct: Struct, private val path:
   override fun toString() = "ProtoMapValueDecoder{path=$path, size=${struct.fieldsCount}"
 }
 
-private object ProtoObjectValueDecoder : CompositeDecoder {
-  override val serializersModule = EmptySerializersModule()
+private class ProtoObjectValueDecoder(
+  val path: String?,
+  override val serializersModule: SerializersModule
+) : CompositeDecoder {
 
   override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int) = notSupported()
 
@@ -503,7 +524,6 @@ private object ProtoObjectValueDecoder : CompositeDecoder {
     previousValue: T?
   ) = notSupported()
 
-  @ExperimentalSerializationApi
   override fun <T : Any> decodeNullableSerializableElement(
     descriptor: SerialDescriptor,
     index: Int,
@@ -520,6 +540,8 @@ private object ProtoObjectValueDecoder : CompositeDecoder {
   override fun decodeElementIndex(descriptor: SerialDescriptor) = CompositeDecoder.DECODE_DONE
 
   override fun endStructure(descriptor: SerialDescriptor) {}
+
+  override fun toString() = "ProtoObjectValueDecoder{path=$path}"
 }
 
 private class MapKeyDecoder(

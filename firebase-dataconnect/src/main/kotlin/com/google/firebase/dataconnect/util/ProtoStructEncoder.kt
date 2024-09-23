@@ -32,13 +32,18 @@ import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 internal inline fun <reified T> encodeToStruct(value: T): Struct =
-  encodeToStruct(serializer(), value)
+  encodeToStruct(value, serializer(), serializersModule = null)
 
-internal fun <T> encodeToStruct(serializer: SerializationStrategy<T>, value: T): Struct {
-  val valueProto = encodeToValue(serializer, value)
+internal fun <T> encodeToStruct(
+  value: T,
+  serializer: SerializationStrategy<T>,
+  serializersModule: SerializersModule?
+): Struct {
+  val valueProto = encodeToValue(value, serializer, serializersModule)
   if (valueProto.kindCase == KindCase.KIND_NOT_SET) {
     return Struct.getDefaultInstance()
   }
@@ -49,11 +54,17 @@ internal fun <T> encodeToStruct(serializer: SerializationStrategy<T>, value: T):
   return valueProto.structValue
 }
 
-internal inline fun <reified T> encodeToValue(value: T): Value = encodeToValue(serializer(), value)
+internal inline fun <reified T> encodeToValue(value: T): Value =
+  encodeToValue(value, serializer(), serializersModule = null)
 
-internal fun <T> encodeToValue(serializer: SerializationStrategy<T>, value: T): Value {
+internal fun <T> encodeToValue(
+  value: T,
+  serializer: SerializationStrategy<T>,
+  serializersModule: SerializersModule?
+): Value {
   val values = mutableListOf<Value>()
-  ProtoValueEncoder(path = null, onValue = values::add).encodeSerializableValue(serializer, value)
+  ProtoValueEncoder(null, serializersModule ?: EmptySerializersModule(), values::add)
+    .encodeSerializableValue(serializer, value)
   if (values.isEmpty()) {
     return Value.getDefaultInstance()
   }
@@ -63,16 +74,17 @@ internal fun <T> encodeToValue(serializer: SerializationStrategy<T>, value: T): 
   return values.single()
 }
 
-internal class ProtoValueEncoder(private val path: String?, val onValue: (Value) -> Unit) :
-  Encoder {
-
-  override val serializersModule = EmptySerializersModule()
+internal class ProtoValueEncoder(
+  private val path: String?,
+  override val serializersModule: SerializersModule,
+  val onValue: (Value) -> Unit
+) : Encoder {
 
   override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder =
     when (val kind = descriptor.kind) {
-      is StructureKind.CLASS -> ProtoStructValueEncoder(path, onValue)
-      is StructureKind.LIST -> ProtoListValueEncoder(path, onValue)
-      is StructureKind.MAP -> ProtoMapValueEncoder(path, onValue)
+      is StructureKind.CLASS -> ProtoStructValueEncoder(path, serializersModule, onValue)
+      is StructureKind.LIST -> ProtoListValueEncoder(path, serializersModule, onValue)
+      is StructureKind.MAP -> ProtoMapValueEncoder(path, serializersModule, onValue)
       is StructureKind.OBJECT -> ProtoObjectValueEncoder
       else -> throw IllegalArgumentException("unsupported SerialKind: ${kind::class.qualifiedName}")
     }
@@ -142,10 +154,9 @@ internal class ProtoValueEncoder(private val path: String?, val onValue: (Value)
 
 private abstract class ProtoCompositeValueEncoder<K>(
   private val path: String?,
+  override val serializersModule: SerializersModule,
   private val onValue: (Value) -> Unit
 ) : CompositeEncoder {
-  override val serializersModule = EmptySerializersModule()
-
   private val valueByKey = mutableMapOf<K, Value>()
 
   private fun putValue(descriptor: SerialDescriptor, index: Int, value: Value) {
@@ -204,7 +215,8 @@ private abstract class ProtoCompositeValueEncoder<K>(
     value: T?
   ) {
     val key = keyOf(descriptor, index)
-    val encoder = ProtoValueEncoder(elementPathForKey(key)) { valueByKey[key] = it }
+    val encoder =
+      ProtoValueEncoder(elementPathForKey(key), serializersModule) { valueByKey[key] = it }
     encoder.encodeNullableSerializableValue(serializer, value)
   }
 
@@ -215,7 +227,8 @@ private abstract class ProtoCompositeValueEncoder<K>(
     value: T
   ) {
     val key = keyOf(descriptor, index)
-    val encoder = ProtoValueEncoder(elementPathForKey(key)) { valueByKey[key] = it }
+    val encoder =
+      ProtoValueEncoder(elementPathForKey(key), serializersModule) { valueByKey[key] = it }
     encoder.encodeSerializableValue(serializer, value)
   }
 
@@ -233,8 +246,11 @@ private abstract class ProtoCompositeValueEncoder<K>(
   )
 }
 
-private class ProtoListValueEncoder(private val path: String?, onValue: (Value) -> Unit) :
-  ProtoCompositeValueEncoder<Int>(path, onValue) {
+private class ProtoListValueEncoder(
+  private val path: String?,
+  serializersModule: SerializersModule,
+  onValue: (Value) -> Unit
+) : ProtoCompositeValueEncoder<Int>(path, serializersModule, onValue) {
 
   override fun keyOf(descriptor: SerialDescriptor, index: Int) = index
 
@@ -262,8 +278,11 @@ private class ProtoListValueEncoder(private val path: String?, onValue: (Value) 
   }
 }
 
-private class ProtoStructValueEncoder(path: String?, onValue: (Value) -> Unit) :
-  ProtoCompositeValueEncoder<String>(path, onValue) {
+private class ProtoStructValueEncoder(
+  path: String?,
+  serializersModule: SerializersModule,
+  onValue: (Value) -> Unit
+) : ProtoCompositeValueEncoder<String>(path, serializersModule, onValue) {
 
   override fun keyOf(descriptor: SerialDescriptor, index: Int) = descriptor.getElementName(index)
 
@@ -290,10 +309,9 @@ private class ProtoStructValueEncoder(path: String?, onValue: (Value) -> Unit) :
 
 private class ProtoMapValueEncoder(
   private val path: String?,
+  override val serializersModule: SerializersModule,
   private val onValue: (Value) -> Unit
 ) : CompositeEncoder {
-
-  override val serializersModule = EmptySerializersModule()
 
   private val keyByIndex = mutableMapOf<Int, String>()
   private val valueByIndex = mutableMapOf<Int, Value>()
@@ -358,7 +376,7 @@ private class ProtoMapValueEncoder(
       } else {
         val subPath = keyByIndex[index - 1] ?: "$index"
         var encodedValue: Value? = null
-        val encoder = ProtoValueEncoder(subPath) { encodedValue = it }
+        val encoder = ProtoValueEncoder(subPath, serializersModule) { encodedValue = it }
         encoder.encodeNullableSerializableValue(serializer, value)
         requireNotNull(encodedValue) { "ProtoValueEncoder should have produced a value" }
         encodedValue
@@ -379,7 +397,7 @@ private class ProtoMapValueEncoder(
       keyByIndex[index] = value
     } else {
       val subPath = keyByIndex[index - 1] ?: "$index"
-      val encoder = ProtoValueEncoder(subPath) { valueByIndex[index] = it }
+      val encoder = ProtoValueEncoder(subPath, serializersModule) { valueByIndex[index] = it }
       encoder.encodeSerializableValue(serializer, value)
     }
   }

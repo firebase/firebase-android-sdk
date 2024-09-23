@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect
 
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 /**
  * Information about a Firebase Data Connect "operation" (i.e. a query or mutation).
@@ -142,6 +143,18 @@ public interface OperationRef<Data, Variables> {
    * ```
    */
   public val variablesSerializer: SerializationStrategy<Variables>
+
+  /**
+   * A [SerializersModule] to use when encoding the variables using [variablesSerializer]. May be
+   * `null`, to not use a [SerializersModule].
+   */
+  public val variablesSerializersModule: SerializersModule?
+
+  /**
+   * A [SerializersModule] to use when decoding the response data using [dataDeserializer]. May be
+   * `null`, to not use a [SerializersModule].
+   */
+  public val dataSerializersModule: SerializersModule?
 
   /**
    * Executes this operation and returns the result.

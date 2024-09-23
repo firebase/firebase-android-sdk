@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.testutil.operationRefImpl
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.retry
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
@@ -55,6 +56,8 @@ class OperationRefImplUnitTest {
           variables = values.variables,
           dataDeserializer = values.dataDeserializer,
           variablesSerializer = values.variablesSerializer,
+          variablesSerializersModule = values.variablesSerializersModule,
+          dataSerializersModule = values.dataSerializersModule,
         ) {
         override suspend fun execute() = TODO()
       }
@@ -66,6 +69,37 @@ class OperationRefImplUnitTest {
         it.variables shouldBeSameInstanceAs values.variables
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
+        it.variablesSerializersModule shouldBeSameInstanceAs values.variablesSerializersModule
+        it.dataSerializersModule shouldBeSameInstanceAs values.dataSerializersModule
+      }
+    }
+  }
+
+  @Test
+  fun `constructor accepts null values for nullable parameters`() {
+    val values = Arb.operationRefImpl().next()
+    val operationRefImpl =
+      object :
+        OperationRefImpl<TestData, TestVariables>(
+          dataConnect = values.dataConnect,
+          operationName = values.operationName,
+          variables = values.variables,
+          dataDeserializer = values.dataDeserializer,
+          variablesSerializer = values.variablesSerializer,
+          variablesSerializersModule = null,
+          dataSerializersModule = null,
+        ) {
+        override suspend fun execute() = TODO()
+      }
+    operationRefImpl.asClue {
+      assertSoftly {
+        it.dataConnect shouldBeSameInstanceAs values.dataConnect
+        it.operationName shouldBeSameInstanceAs values.operationName
+        it.variables shouldBeSameInstanceAs values.variables
+        it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
+        it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
+        it.variablesSerializersModule.shouldBeNull()
+        it.dataSerializersModule.shouldBeNull()
       }
     }
   }
@@ -109,6 +143,32 @@ class OperationRefImplUnitTest {
   fun `hashCode() should incorporate variablesSerializer`() = runTest {
     verifyHashCodeEventuallyDiffers {
       it.copy(variablesSerializer = mockk(name = stringArb.next()))
+    }
+  }
+
+  @Test
+  fun `hashCode() should incorporate variablesSerializersModule`() = runTest {
+    verifyHashCodeEventuallyDiffers {
+      it.copy(variablesSerializersModule = mockk(name = stringArb.next()))
+    }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(
+        variablesSerializersModule =
+          if (it.variablesSerializersModule === null) mockk(name = stringArb.next()) else null
+      )
+    }
+  }
+
+  @Test
+  fun `hashCode() should incorporate dataSerializersModule`() = runTest {
+    verifyHashCodeEventuallyDiffers {
+      it.copy(dataSerializersModule = mockk(name = stringArb.next()))
+    }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(
+        dataSerializersModule =
+          if (it.dataSerializersModule === null) mockk(name = stringArb.next()) else null
+      )
     }
   }
 
@@ -189,8 +249,61 @@ class OperationRefImplUnitTest {
   }
 
   @Test
+  fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
+    val operationRefImpl1 = Arb.operationRefImpl().next()
+    val operationRefImpl2 =
+      operationRefImpl1.copy(variablesSerializersModule = mockk(stringArb.next()))
+    val operationRefImplNull = operationRefImpl1.copy(variablesSerializersModule = null)
+    operationRefImpl1.equals(operationRefImpl2) shouldBe false
+    operationRefImplNull.equals(operationRefImpl1) shouldBe false
+    operationRefImpl1.equals(operationRefImplNull) shouldBe false
+  }
+
+  @Test
+  fun `equals() should return false when only dataSerializersModule differs`() = runTest {
+    val operationRefImpl1 = Arb.operationRefImpl().next()
+    val operationRefImpl2 = operationRefImpl1.copy(dataSerializersModule = mockk(stringArb.next()))
+    val operationRefImplNull = operationRefImpl1.copy(dataSerializersModule = null)
+    operationRefImpl1.equals(operationRefImpl2) shouldBe false
+    operationRefImplNull.equals(operationRefImpl1) shouldBe false
+    operationRefImpl1.equals(operationRefImplNull) shouldBe false
+  }
+
+  @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
     val operationRefImpl = Arb.operationRefImpl().next()
+    val operationRefImpls =
+      listOf(
+        operationRefImpl,
+        operationRefImpl.copy(dataSerializersModule = null),
+        operationRefImpl.copy(variablesSerializersModule = null),
+      )
+    val toStringResult = operationRefImpl.toString()
+
+    assertSoftly {
+      operationRefImpls.forEach {
+        it.asClue {
+          toStringResult.shouldContain("dataConnect=${operationRefImpl.dataConnect}")
+          toStringResult.shouldContain("operationName=${operationRefImpl.operationName}")
+          toStringResult.shouldContain("variables=${operationRefImpl.variables}")
+          toStringResult.shouldContain("dataDeserializer=${operationRefImpl.dataDeserializer}")
+          toStringResult.shouldContain(
+            "variablesSerializer=${operationRefImpl.variablesSerializer}"
+          )
+          toStringResult.shouldContain(
+            "dataSerializersModule=${operationRefImpl.dataSerializersModule}"
+          )
+          toStringResult.shouldContain(
+            "variablesSerializersModule=${operationRefImpl.variablesSerializersModule}"
+          )
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `toString() should include null when dataSerializersModule is null`() = runTest {
+    val operationRefImpl = Arb.operationRefImpl().next().copy(dataSerializersModule = null)
     val toStringResult = operationRefImpl.toString()
 
     assertSoftly {
@@ -199,6 +312,28 @@ class OperationRefImplUnitTest {
       toStringResult.shouldContain("variables=${operationRefImpl.variables}")
       toStringResult.shouldContain("dataDeserializer=${operationRefImpl.dataDeserializer}")
       toStringResult.shouldContain("variablesSerializer=${operationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("dataSerializersModule=null")
+      toStringResult.shouldContain(
+        "variablesSerializersModule=${operationRefImpl.variablesSerializersModule}"
+      )
+    }
+  }
+
+  @Test
+  fun `toString() should include null when variablesSerializersModule is null`() = runTest {
+    val operationRefImpl = Arb.operationRefImpl().next().copy(variablesSerializersModule = null)
+    val toStringResult = operationRefImpl.toString()
+
+    assertSoftly {
+      toStringResult.shouldContain("dataConnect=${operationRefImpl.dataConnect}")
+      toStringResult.shouldContain("operationName=${operationRefImpl.operationName}")
+      toStringResult.shouldContain("variables=${operationRefImpl.variables}")
+      toStringResult.shouldContain("dataDeserializer=${operationRefImpl.dataDeserializer}")
+      toStringResult.shouldContain("variablesSerializer=${operationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain(
+        "dataSerializersModule=${operationRefImpl.dataSerializersModule}"
+      )
+      toStringResult.shouldContain("variablesSerializersModule=null")
     }
   }
 

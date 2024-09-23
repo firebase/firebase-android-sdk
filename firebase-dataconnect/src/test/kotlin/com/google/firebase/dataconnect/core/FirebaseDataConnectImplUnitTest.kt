@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.dataConnectSettings
 import com.google.firebase.dataconnect.testutil.operationName
 import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
@@ -32,6 +33,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 import org.junit.After
 import org.junit.Rule
 import org.junit.Test
@@ -75,7 +77,7 @@ class FirebaseDataConnectImplUnitTest {
   }
 
   @Test
-  fun `query() with generatedQuery=null should return query not from generated sdk`() = runTest {
+  fun `query() with no options set should use default values for each option`() = runTest {
     val operationName = Arb.operationName(key).next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
@@ -87,7 +89,6 @@ class FirebaseDataConnectImplUnitTest {
         variables = variables,
         dataDeserializer = dataDeserializer,
         variablesSerializer = variablesSerializer,
-        generatedQuery = null,
       )
 
     assertSoftly {
@@ -96,15 +97,19 @@ class FirebaseDataConnectImplUnitTest {
       queryRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
       queryRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
       queryRef.isFromGeneratedSdk shouldBe false
+      queryRef.variablesSerializersModule.shouldBeNull()
+      queryRef.dataSerializersModule.shouldBeNull()
     }
   }
 
   @Test
-  fun `query() with generatedQuery!=null should return query from generated sdk`() = runTest {
+  fun `query() with all options specified should use the given options`() = runTest {
     val operationName = Arb.operationName(key).next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
+    val dataSerializersModule: SerializersModule = mockk()
+    val variablesSerializersModule: SerializersModule = mockk()
 
     val queryRef =
       dataConnect.query(
@@ -112,8 +117,11 @@ class FirebaseDataConnectImplUnitTest {
         variables = variables,
         dataDeserializer = dataDeserializer,
         variablesSerializer = variablesSerializer,
-        generatedQuery = mockk(),
-      )
+      ) {
+        this.generatedQuery = mockk()
+        this.dataSerializersModule = dataSerializersModule
+        this.variablesSerializersModule = variablesSerializersModule
+      }
 
     assertSoftly {
       queryRef.operationName shouldBe operationName
@@ -121,11 +129,13 @@ class FirebaseDataConnectImplUnitTest {
       queryRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
       queryRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
       queryRef.isFromGeneratedSdk shouldBe true
+      queryRef.dataSerializersModule shouldBeSameInstanceAs dataSerializersModule
+      queryRef.variablesSerializersModule shouldBeSameInstanceAs variablesSerializersModule
     }
   }
 
   @Test
-  fun `mutation() with generatedQuery=null should return query not from generated sdk`() = runTest {
+  fun `mutation() with no options set should use default values for each option`() = runTest {
     val operationName = Arb.operationName(key).next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
@@ -137,7 +147,6 @@ class FirebaseDataConnectImplUnitTest {
         variables = variables,
         dataDeserializer = dataDeserializer,
         variablesSerializer = variablesSerializer,
-        generatedMutation = null,
       )
 
     assertSoftly {
@@ -146,34 +155,42 @@ class FirebaseDataConnectImplUnitTest {
       mutationRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
       mutationRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
       mutationRef.isFromGeneratedSdk shouldBe false
+      mutationRef.variablesSerializersModule.shouldBeNull()
+      mutationRef.dataSerializersModule.shouldBeNull()
     }
   }
 
   @Test
-  fun `mutation() with generatedQuery!=null should return query not from generated sdk`() =
-    runTest {
-      val operationName = Arb.operationName(key).next(rs)
-      val variables = TestVariables(Arb.string(size = 8).next(rs))
-      val dataDeserializer: DeserializationStrategy<TestData> = mockk()
-      val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
+  fun `mutation() with all options specified should use the given options`() = runTest {
+    val operationName = Arb.operationName(key).next(rs)
+    val variables = TestVariables(Arb.string(size = 8).next(rs))
+    val dataDeserializer: DeserializationStrategy<TestData> = mockk()
+    val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
+    val dataSerializersModule: SerializersModule = mockk()
+    val variablesSerializersModule: SerializersModule = mockk()
 
-      val mutationRef =
-        dataConnect.mutation(
-          operationName = operationName,
-          variables = variables,
-          dataDeserializer = dataDeserializer,
-          variablesSerializer = variablesSerializer,
-          generatedMutation = mockk(),
-        )
-
-      assertSoftly {
-        mutationRef.operationName shouldBe operationName
-        mutationRef.variables shouldBeSameInstanceAs variables
-        mutationRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
-        mutationRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
-        mutationRef.isFromGeneratedSdk shouldBe true
+    val mutationRef =
+      dataConnect.mutation(
+        operationName = operationName,
+        variables = variables,
+        dataDeserializer = dataDeserializer,
+        variablesSerializer = variablesSerializer,
+      ) {
+        this.generatedMutation = mockk()
+        this.dataSerializersModule = dataSerializersModule
+        this.variablesSerializersModule = variablesSerializersModule
       }
+
+    assertSoftly {
+      mutationRef.operationName shouldBe operationName
+      mutationRef.variables shouldBeSameInstanceAs variables
+      mutationRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
+      mutationRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
+      mutationRef.isFromGeneratedSdk shouldBe true
+      mutationRef.dataSerializersModule shouldBeSameInstanceAs dataSerializersModule
+      mutationRef.variablesSerializersModule shouldBeSameInstanceAs variablesSerializersModule
     }
+  }
 
   private data class TestVariables(val foo: String)
 

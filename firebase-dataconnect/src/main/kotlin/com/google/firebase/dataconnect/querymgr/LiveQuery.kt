@@ -40,6 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class LiveQuery(
   val key: Key,
@@ -48,7 +49,7 @@ internal class LiveQuery(
   parentCoroutineScope: CoroutineScope,
   nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcClient: DataConnectGrpcClient,
-  private val registeredDataDeserialzerFactory: RegisteredDataDeserialzerFactory,
+  private val registeredDataDeserializerFactory: RegisteredDataDeserializerFactory,
   parentLogger: Logger,
 ) : AutoCloseable {
   private val logger =
@@ -74,7 +75,7 @@ internal class LiveQuery(
   // performed while the `dataDeserializersWriteMutex` mutex is locked, so that
   // read-write-modify operations can be done atomically.
   private val dataDeserializersWriteMutex = Mutex()
-  private val dataDeserializers = CopyOnWriteArrayList<RegisteredDataDeserialzer<*>>()
+  private val dataDeserializers = CopyOnWriteArrayList<RegisteredDataDeserializer<*>>()
   private data class Update(
     val requestId: String,
     val sequencedResult: SequencedReference<Result<OperationResult>>
@@ -89,12 +90,14 @@ internal class LiveQuery(
 
   suspend fun <T> execute(
     dataDeserializer: DeserializationStrategy<T>,
+    dataSerializersModule: SerializersModule?,
     isFromGeneratedSdk: Boolean,
   ): SequencedReference<Result<T>> {
-    // Register the data deserialzier _before_ waiting for the current job to complete. This
+    // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
-    val registeredDataDeserializer = registerDataDeserializer(dataDeserializer)
+    val registeredDataDeserializer =
+      registerDataDeserializer(dataDeserializer, dataSerializersModule)
 
     // Wait for the current job to complete (if any), and ignore its result. Waiting avoids running
     // multiple queries in parallel, which would not scale.
@@ -124,11 +127,13 @@ internal class LiveQuery(
 
   suspend fun <T> subscribe(
     dataDeserializer: DeserializationStrategy<T>,
+    dataSerializersModule: SerializersModule?,
     executeQuery: Boolean,
     isFromGeneratedSdk: Boolean,
     callback: suspend (SequencedReference<Result<T>>) -> Unit,
   ): Nothing {
-    val registeredDataDeserializer = registerDataDeserializer(dataDeserializer)
+    val registeredDataDeserializer =
+      registerDataDeserializer(dataDeserializer, dataSerializersModule)
 
     // Immediately deliver the most recent update to the callback, so the collector has some data
     // to work with while waiting for the network requests to complete.
@@ -145,7 +150,9 @@ internal class LiveQuery(
     // get invoked with cached results first (if any), then updated results after the query
     // executes.
     if (executeQuery) {
-      coroutineScope.launch { runCatching { execute(dataDeserializer, isFromGeneratedSdk) } }
+      coroutineScope.launch {
+        runCatching { execute(dataDeserializer, dataSerializersModule, isFromGeneratedSdk) }
+      }
     }
 
     registeredDataDeserializer.onSuccessfulUpdate(
@@ -196,28 +203,42 @@ internal class LiveQuery(
 
   @Suppress("UNCHECKED_CAST")
   private suspend fun <T> registerDataDeserializer(
-    dataDeserializer: DeserializationStrategy<T>
-  ): RegisteredDataDeserialzer<T> =
+    dataDeserializer: DeserializationStrategy<T>,
+    dataSerializersModule: SerializersModule?,
+  ): RegisteredDataDeserializer<T> =
     // First, check if the deserializer is already registered and, if it is, just return it.
     // Otherwise, lock the "write" mutex and register it. We still have to check again if it is
     // already registered because another thread could have concurrently registered it since we last
     // checked above.
     dataDeserializers
-      .firstOrNull { it.dataDeserializer === dataDeserializer }
-      ?.let { it as RegisteredDataDeserialzer<T> }
+      .firstOrNull {
+        it.dataDeserializer === dataDeserializer &&
+          it.dataSerializersModule === dataSerializersModule
+      }
+      ?.let { it as RegisteredDataDeserializer<T> }
       ?: dataDeserializersWriteMutex.withLock {
         dataDeserializers
-          .firstOrNull { it.dataDeserializer === dataDeserializer }
-          ?.let { it as RegisteredDataDeserialzer<T> }
+          .firstOrNull {
+            it.dataDeserializer === dataDeserializer &&
+              it.dataSerializersModule === dataSerializersModule
+          }
+          ?.let { it as RegisteredDataDeserializer<T> }
           ?: run {
-            logger.debug { "Registering data deserializer $dataDeserializer" }
-            val registeredDataDeserialzer =
-              registeredDataDeserialzerFactory.newInstance(dataDeserializer, logger)
-            dataDeserializers.add(registeredDataDeserialzer)
-            initialDataDeserializerUpdate.value.ref?.run {
-              registeredDataDeserialzer.update(requestId, sequencedResult)
+            logger.debug {
+              "Registering data deserializer $dataDeserializer " +
+                "(dataSerializersModule=$dataSerializersModule)"
             }
-            registeredDataDeserialzer
+            val registeredDataDeserializer =
+              registeredDataDeserializerFactory.newInstance(
+                dataDeserializer,
+                dataSerializersModule,
+                logger
+              )
+            dataDeserializers.add(registeredDataDeserializer)
+            initialDataDeserializerUpdate.value.ref?.run {
+              registeredDataDeserializer.update(requestId, sequencedResult)
+            }
+            registeredDataDeserializer
           }
       }
 
@@ -228,10 +249,11 @@ internal class LiveQuery(
     coroutineScope.cancel()
   }
 
-  interface RegisteredDataDeserialzerFactory {
+  interface RegisteredDataDeserializerFactory {
     fun <T> newInstance(
       dataDeserializer: DeserializationStrategy<T>,
+      dataSerializersModule: SerializersModule?,
       parentLogger: Logger
-    ): RegisteredDataDeserialzer<T>
+    ): RegisteredDataDeserializer<T>
   }
 }
