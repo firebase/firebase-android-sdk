@@ -19,6 +19,7 @@ import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.core.OperationRefImpl
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class StubOperationRefImpl<Data, Variables>(
   dataConnect: FirebaseDataConnectInternal,
@@ -26,6 +27,8 @@ internal class StubOperationRefImpl<Data, Variables>(
   variables: Variables,
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
+  dataSerializersModule: SerializersModule?,
+  variablesSerializersModule: SerializersModule?,
 ) :
   OperationRefImpl<Data, Variables>(
     dataConnect = dataConnect,
@@ -33,6 +36,8 @@ internal class StubOperationRefImpl<Data, Variables>(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
+    dataSerializersModule = dataSerializersModule,
+    variablesSerializersModule = variablesSerializersModule,
   ) {
   override suspend fun execute(): OperationResultImpl {
     throw UnsupportedOperationException("this stub method is not supported")
@@ -45,6 +50,8 @@ internal fun <Data, Variables> StubOperationRefImpl<Data, Variables>.copy(
   variables: Variables = this.variables,
   dataDeserializer: DeserializationStrategy<Data> = this.dataDeserializer,
   variablesSerializer: SerializationStrategy<Variables> = this.variablesSerializer,
+  dataSerializersModule: SerializersModule? = this.dataSerializersModule,
+  variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
 ): StubOperationRefImpl<Data, Variables> =
   StubOperationRefImpl(
     dataConnect = dataConnect,
@@ -52,4 +59,6 @@ internal fun <Data, Variables> StubOperationRefImpl<Data, Variables>.copy(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
+    dataSerializersModule = dataSerializersModule,
+    variablesSerializersModule = variablesSerializersModule,
   )

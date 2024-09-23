@@ -25,6 +25,7 @@ import kotlin.random.Random
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class MutationRefImpl<Data, Variables>(
   dataConnect: FirebaseDataConnectInternal,
@@ -33,6 +34,8 @@ internal class MutationRefImpl<Data, Variables>(
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
   val isFromGeneratedSdk: Boolean,
+  variablesSerializersModule: SerializersModule?,
+  dataSerializersModule: SerializersModule?,
 ) :
   MutationRef<Data, Variables>,
   OperationRefImpl<Data, Variables>(
@@ -41,6 +44,8 @@ internal class MutationRefImpl<Data, Variables>(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
+    variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   ) {
 
   internal val logger = Logger("MutationRefImpl[$operationName]")
@@ -53,14 +58,20 @@ internal class MutationRefImpl<Data, Variables>(
         requestId = requestId,
         operationName = operationName,
         variables =
-          if (variablesSerializer === DataConnectUntypedVariables.Serializer)
-            (variables as DataConnectUntypedVariables).variables.toStructProto()
-          else {
-            encodeToStruct(variablesSerializer, variables)
+          withContext(dataConnect.blockingDispatcher) {
+            if (variablesSerializer === DataConnectUntypedVariables.Serializer) {
+              (variables as DataConnectUntypedVariables).variables.toStructProto()
+            } else {
+              encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
+            }
           },
-        isFromGeneratedSdk = isFromGeneratedSdk,
+        isFromGeneratedSdk,
       )
-      .runCatching { withContext(dataConnect.blockingDispatcher) { deserialize(dataDeserializer) } }
+      .runCatching {
+        withContext(dataConnect.blockingDispatcher) {
+          deserialize(dataDeserializer, dataSerializersModule)
+        }
+      }
       .onFailure {
         logger.warn(it) { "executeMutation() [rid=$requestId] decoding response data failed: $it" }
       }
@@ -78,7 +89,9 @@ internal class MutationRefImpl<Data, Variables>(
       "operationName=$operationName, " +
       "variables=$variables, " +
       "dataDeserializer=$dataDeserializer, " +
-      "variablesSerializer=$variablesSerializer" +
+      "variablesSerializer=$variablesSerializer, " +
+      "variablesSerializersModule=$variablesSerializersModule, " +
+      "dataSerializersModule=$dataSerializersModule" +
       ")"
 
   inner class MutationResultImpl(data: Data) :
@@ -102,6 +115,8 @@ internal fun <Data, Variables> MutationRefImpl<Data, Variables>.copy(
   dataDeserializer: DeserializationStrategy<Data> = this.dataDeserializer,
   variablesSerializer: SerializationStrategy<Variables> = this.variablesSerializer,
   isFromGeneratedSdk: Boolean = this.isFromGeneratedSdk,
+  variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
+  dataSerializersModule: SerializersModule? = this.dataSerializersModule,
 ) =
   MutationRefImpl(
     dataConnect = dataConnect,
@@ -110,11 +125,14 @@ internal fun <Data, Variables> MutationRefImpl<Data, Variables>.copy(
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
     isFromGeneratedSdk = isFromGeneratedSdk,
+    variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   )
 
 internal fun <Data, NewVariables> MutationRefImpl<Data, *>.withVariablesSerializer(
   variables: NewVariables,
   variablesSerializer: SerializationStrategy<NewVariables>,
+  variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
 ): MutationRefImpl<Data, NewVariables> =
   MutationRefImpl(
     dataConnect = dataConnect,
@@ -123,10 +141,13 @@ internal fun <Data, NewVariables> MutationRefImpl<Data, *>.withVariablesSerializ
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
     isFromGeneratedSdk = isFromGeneratedSdk,
+    variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   )
 
 internal fun <NewData, Variables> MutationRefImpl<*, Variables>.withDataDeserializer(
   dataDeserializer: DeserializationStrategy<NewData>,
+  dataSerializersModule: SerializersModule? = this.dataSerializersModule,
 ): MutationRefImpl<NewData, Variables> =
   MutationRefImpl(
     dataConnect = dataConnect,
@@ -135,4 +156,6 @@ internal fun <NewData, Variables> MutationRefImpl<*, Variables>.withDataDeserial
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
     isFromGeneratedSdk = isFromGeneratedSdk,
+    variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   )

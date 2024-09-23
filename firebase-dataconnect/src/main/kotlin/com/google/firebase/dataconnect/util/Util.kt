@@ -267,3 +267,15 @@ internal suspend fun <K, V, R> ReferenceCountedSet<K, V>.withAcquiredValue(
     release(entry)
   }
 }
+
+internal fun String.ellipsize(maxLength: Int = 13, ellipsis: String = "..."): String {
+  check(maxLength > ellipsis.length) {
+    "maxLength ($maxLength) must be greater than" + " the length of ellipsis (${ellipsis.length})"
+  }
+
+  if (length <= maxLength) {
+    return this
+  }
+  val numCharsOnEitherEnd = (maxLength - ellipsis.length) / 2
+  return substring(0, numCharsOnEitherEnd) + ellipsis + substring(length - numCharsOnEitherEnd)
+}

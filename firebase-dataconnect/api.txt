@@ -7,7 +7,7 @@ package com.google.firebase.dataconnect {
     ctor public AnyValue(@NonNull String value);
     ctor public AnyValue(boolean value);
     ctor public AnyValue(double value);
-    method public <T> T decode(@NonNull kotlinx.serialization.DeserializationStrategy<? extends T> deserializer);
+    method public <T> T decode(@NonNull kotlinx.serialization.DeserializationStrategy<? extends T> deserializer, @Nullable kotlinx.serialization.modules.SerializersModule serializersModule = null);
     method public inline <reified T> T decode();
     method @NonNull public Object getValue();
     property @NonNull public final Object value;
@@ -15,7 +15,7 @@ package com.google.firebase.dataconnect {
   }
 
   public static final class AnyValue.Companion {
-    method @NonNull public <T> com.google.firebase.dataconnect.AnyValue encode(@Nullable T value, @NonNull kotlinx.serialization.SerializationStrategy<? super T> serializer);
+    method @NonNull public <T> com.google.firebase.dataconnect.AnyValue encode(@Nullable T value, @NonNull kotlinx.serialization.SerializationStrategy<? super T> serializer, @Nullable kotlinx.serialization.modules.SerializersModule serializersModule = null);
     method public inline <reified T> com.google.firebase.dataconnect.AnyValue encode(@Nullable T value);
     method @NonNull public com.google.firebase.dataconnect.AnyValue fromAny(@NonNull Object value);
     method @Nullable public com.google.firebase.dataconnect.AnyValue fromNullableAny(@Nullable Object value);
@@ -55,8 +55,8 @@ package com.google.firebase.dataconnect {
     method @NonNull public com.google.firebase.dataconnect.ConnectorConfig getConfig();
     method @NonNull public com.google.firebase.dataconnect.DataConnectSettings getSettings();
     method public int hashCode();
-    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.MutationRef<Data,Variables> mutation(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, @Nullable com.google.firebase.dataconnect.generated.GeneratedMutation<?,Data,Variables> generatedMutation = null);
-    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.QueryRef<Data,Variables> query(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, @Nullable com.google.firebase.dataconnect.generated.GeneratedQuery<?,Data,Variables> generatedQuery = null);
+    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.MutationRef<Data,Variables> mutation(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, @Nullable kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.FirebaseDataConnect.MutationRefOptionsBuilder<Data,Variables>,kotlin.Unit> optionsBuilder = null);
+    method @NonNull public <Data, Variables> com.google.firebase.dataconnect.QueryRef<Data,Variables> query(@NonNull String operationName, @Nullable Variables variables, @NonNull kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, @NonNull kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, @Nullable kotlin.jvm.functions.Function1<? super com.google.firebase.dataconnect.FirebaseDataConnect.QueryRefOptionsBuilder<Data,Variables>,kotlin.Unit> optionsBuilder = null);
     method @Nullable public suspend Object suspendingClose(@NonNull kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @NonNull public String toString();
     method public void useEmulator(@NonNull String host = "10.0.2.2", int port = 9399);
@@ -67,6 +67,30 @@ package com.google.firebase.dataconnect {
   }
 
   public static final class FirebaseDataConnect.Companion {
+  }
+
+  public static interface FirebaseDataConnect.MutationRefOptionsBuilder<Data, Variables> {
+    method @Nullable public kotlinx.serialization.modules.SerializersModule getDataSerializersModule();
+    method @Nullable public com.google.firebase.dataconnect.generated.GeneratedMutation<?,Data,Variables> getGeneratedMutation();
+    method @Nullable public kotlinx.serialization.modules.SerializersModule getVariablesSerializersModule();
+    method public void setDataSerializersModule(@Nullable kotlinx.serialization.modules.SerializersModule);
+    method public void setGeneratedMutation(@Nullable com.google.firebase.dataconnect.generated.GeneratedMutation<?,Data,Variables>);
+    method public void setVariablesSerializersModule(@Nullable kotlinx.serialization.modules.SerializersModule);
+    property @Nullable public abstract kotlinx.serialization.modules.SerializersModule dataSerializersModule;
+    property @Nullable public abstract com.google.firebase.dataconnect.generated.GeneratedMutation<?,Data,Variables> generatedMutation;
+    property @Nullable public abstract kotlinx.serialization.modules.SerializersModule variablesSerializersModule;
+  }
+
+  public static interface FirebaseDataConnect.QueryRefOptionsBuilder<Data, Variables> {
+    method @Nullable public kotlinx.serialization.modules.SerializersModule getDataSerializersModule();
+    method @Nullable public com.google.firebase.dataconnect.generated.GeneratedQuery<?,Data,Variables> getGeneratedQuery();
+    method @Nullable public kotlinx.serialization.modules.SerializersModule getVariablesSerializersModule();
+    method public void setDataSerializersModule(@Nullable kotlinx.serialization.modules.SerializersModule);
+    method public void setGeneratedQuery(@Nullable com.google.firebase.dataconnect.generated.GeneratedQuery<?,Data,Variables>);
+    method public void setVariablesSerializersModule(@Nullable kotlinx.serialization.modules.SerializersModule);
+    property @Nullable public abstract kotlinx.serialization.modules.SerializersModule dataSerializersModule;
+    property @Nullable public abstract com.google.firebase.dataconnect.generated.GeneratedQuery<?,Data,Variables> generatedQuery;
+    property @Nullable public abstract kotlinx.serialization.modules.SerializersModule variablesSerializersModule;
   }
 
   public final class FirebaseDataConnectKt {
@@ -98,16 +122,20 @@ package com.google.firebase.dataconnect {
     method @Nullable public suspend Object execute(@NonNull kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.OperationResult<Data,Variables>>);
     method @NonNull public com.google.firebase.dataconnect.FirebaseDataConnect getDataConnect();
     method @NonNull public kotlinx.serialization.DeserializationStrategy<Data> getDataDeserializer();
+    method @Nullable public kotlinx.serialization.modules.SerializersModule getDataSerializersModule();
     method @NonNull public String getOperationName();
     method public Variables getVariables();
     method @NonNull public kotlinx.serialization.SerializationStrategy<Variables> getVariablesSerializer();
+    method @Nullable public kotlinx.serialization.modules.SerializersModule getVariablesSerializersModule();
     method public int hashCode();
     method @NonNull public String toString();
     property @NonNull public abstract com.google.firebase.dataconnect.FirebaseDataConnect dataConnect;
     property @NonNull public abstract kotlinx.serialization.DeserializationStrategy<Data> dataDeserializer;
+    property @Nullable public abstract kotlinx.serialization.modules.SerializersModule dataSerializersModule;
     property @NonNull public abstract String operationName;
     property public abstract Variables variables;
     property @NonNull public abstract kotlinx.serialization.SerializationStrategy<Variables> variablesSerializer;
+    property @Nullable public abstract kotlinx.serialization.modules.SerializersModule variablesSerializersModule;
   }
 
   public interface OperationResult<Data, Variables> {

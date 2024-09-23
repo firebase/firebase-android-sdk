@@ -42,6 +42,7 @@ public interface GeneratedMutation<C : GeneratedConnector, Data, Variables> :
       variables,
       dataDeserializer,
       variablesSerializer,
-      this,
-    )
+    ) {
+      generatedMutation = this@GeneratedMutation
+    }
 }

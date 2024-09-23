@@ -68,11 +68,15 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.spyk
+import io.mockk.verify
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
@@ -612,14 +616,14 @@ class DataConnectGrpcClientOperationResultUnitTest {
   fun `deserialize() should ignore the module given with DataConnectUntypedData`() {
     val errors = listOf(Arb.dataConnectError().next())
     val operationResult = OperationResult(buildStructProto { put("foo", 42.0) }, errors)
-    val result = operationResult.deserialize(DataConnectUntypedData)
+    val result = operationResult.deserialize(DataConnectUntypedData, mockk<SerializersModule>())
     result shouldBe DataConnectUntypedData(mapOf("foo" to 42.0), errors)
   }
 
   @Test
   fun `deserialize() should treat DataConnectUntypedData specially`() = runTest {
     checkAll(iterations = 1000, Arb.operationResult()) { operationResult ->
-      val result = operationResult.deserialize(DataConnectUntypedData)
+      val result = operationResult.deserialize(DataConnectUntypedData, serializersModule = null)
 
       result.asClue {
         if (operationResult.data === null) {
@@ -637,7 +641,9 @@ class DataConnectGrpcClientOperationResultUnitTest {
     val arb = Arb.operationResult().filter { it.errors.isNotEmpty() }.map { it.copy(data = null) }
     checkAll(iterations = 5, arb) { operationResult ->
       val exception =
-        shouldThrow<DataConnectException> { operationResult.deserialize<Nothing>(mockk()) }
+        shouldThrow<DataConnectException> {
+          operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
+        }
       exception.message shouldContain "${operationResult.errors}"
     }
   }
@@ -647,7 +653,9 @@ class DataConnectGrpcClientOperationResultUnitTest {
     val arb = Arb.operationResult().filter { it.data !== null && it.errors.isNotEmpty() }
     checkAll(iterations = 5, arb) { operationResult ->
       val exception =
-        shouldThrow<DataConnectException> { operationResult.deserialize<Nothing>(mockk()) }
+        shouldThrow<DataConnectException> {
+          operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
+        }
       exception.message shouldContain "${operationResult.errors}"
     }
   }
@@ -656,8 +664,24 @@ class DataConnectGrpcClientOperationResultUnitTest {
   fun `deserialize() should throw if data is null and errors is empty`() {
     val operationResult = OperationResult(data = null, errors = emptyList())
     val exception =
-      shouldThrow<DataConnectException> { operationResult.deserialize<Nothing>(mockk()) }
+      shouldThrow<DataConnectException> {
+        operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
+      }
     exception.message shouldContain "no data"
+  }
+
+  @Test
+  fun `deserialize() should pass through the SerializersModule`() {
+    val data = encodeToStruct(TestData("4jv7vkrs7a"))
+    val serializersModule: SerializersModule = mockk()
+    val operationResult = OperationResult(data = data, errors = emptyList())
+    val deserializer: DeserializationStrategy<TestData> = spyk(serializer())
+
+    operationResult.deserialize(deserializer, serializersModule)
+
+    val slot = slot<Decoder>()
+    verify { deserializer.deserialize(capture(slot)) }
+    slot.captured.serializersModule shouldBeSameInstanceAs serializersModule
   }
 
   @Test
@@ -665,7 +689,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
     val testData = TestData(Arb.firstName().next().name)
     val operationResult = OperationResult(encodeToStruct(testData), errors = emptyList())
 
-    val deserializedData = operationResult.deserialize(serializer<TestData>())
+    val deserializedData = operationResult.deserialize(serializer<TestData>(), null)
 
     deserializedData shouldBe testData
   }
@@ -674,7 +698,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
   fun `deserialize() throws if decoding fails`() = runTest {
     val data = buildStructProto { put("zzzz", 42) }
     val operationResult = OperationResult(data, errors = emptyList())
-    shouldThrow<DataConnectException> { operationResult.deserialize(serializer<TestData>()) }
+    shouldThrow<DataConnectException> { operationResult.deserialize(serializer<TestData>(), null) }
   }
 
   @Test
@@ -686,7 +710,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
     every { deserializer.deserialize(any()) } throws (exception)
 
     val thrownException =
-      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer) }
+      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer, null) }
 
     thrownException shouldBeSameInstanceAs exception
   }
@@ -701,7 +725,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
     every { deserializer.deserialize(any()) } throws (exception)
 
     val thrownException =
-      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer) }
+      shouldThrow<DataConnectException> { operationResult.deserialize(deserializer, null) }
 
     thrownException.cause shouldBeSameInstanceAs exception
   }

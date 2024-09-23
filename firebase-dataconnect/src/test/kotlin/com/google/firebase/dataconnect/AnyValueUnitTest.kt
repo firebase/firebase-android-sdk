@@ -42,10 +42,16 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import org.junit.Test
 
@@ -262,6 +268,25 @@ class AnyValueUnitTest {
     val anyValue = AnyValue(encodeToValue(testData))
 
     anyValue.decode(serializer<TestData>()) shouldBe testData
+  }
+
+  @Test
+  fun `decode() passes along the serialization module`() {
+    val capturedSerializerModule = MutableStateFlow<SerializersModule?>(null)
+    val stringSerializer = serializer<String>()
+    val serializer =
+      object : DeserializationStrategy<String> by stringSerializer {
+        override fun deserialize(decoder: Decoder): String {
+          capturedSerializerModule.value = decoder.serializersModule
+          return stringSerializer.deserialize(decoder)
+        }
+      }
+    val serializerModule = SerializersModule {}
+    val anyValue = AnyValue("yqvjgabk2e")
+
+    anyValue.decode(serializer, serializerModule)
+
+    capturedSerializerModule.value shouldBeSameInstanceAs serializerModule
   }
 
   @Test
@@ -499,6 +524,24 @@ class AnyValueUnitTest {
           ),
         "foo" to mapOf("int" to 444.0, "foo" to mapOf("int" to 555.0, "foo" to null))
       ))
+  }
+
+  @Test
+  fun `encode() passes along the serialization module`() {
+    val capturedSerializerModule = MutableStateFlow<SerializersModule?>(null)
+    val stringSerializer = serializer<String>()
+    val serializer =
+      object : SerializationStrategy<String> by stringSerializer {
+        override fun serialize(encoder: Encoder, value: String) {
+          capturedSerializerModule.value = encoder.serializersModule
+          return stringSerializer.serialize(encoder, value)
+        }
+      }
+    val serializerModule = SerializersModule {}
+
+    AnyValue.encode("jn7wve4qwt", serializer, serializerModule)
+
+    capturedSerializerModule.value shouldBeSameInstanceAs serializerModule
   }
 
   @Test

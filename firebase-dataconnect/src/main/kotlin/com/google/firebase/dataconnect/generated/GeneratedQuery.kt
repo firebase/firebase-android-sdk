@@ -42,6 +42,7 @@ public interface GeneratedQuery<C : GeneratedConnector, Data, Variables> :
       variables,
       dataDeserializer,
       variablesSerializer,
-      this,
-    )
+    ) {
+      generatedQuery = this@GeneratedQuery
+    }
 }

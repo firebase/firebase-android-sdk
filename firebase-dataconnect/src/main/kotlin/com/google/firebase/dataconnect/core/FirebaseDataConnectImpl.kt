@@ -20,24 +20,45 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
-import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.FirebaseDataConnect.MutationRefOptionsBuilder
+import com.google.firebase.dataconnect.FirebaseDataConnect.QueryRefOptionsBuilder
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
+import com.google.firebase.dataconnect.isDefaultHost
 import com.google.firebase.dataconnect.querymgr.LiveQueries
 import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
-import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserialzer
+import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlin.random.Random
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.sync.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val logger: Logger
@@ -199,14 +220,16 @@ internal class FirebaseDataConnectImpl(
       if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
       val grpcClient = lazyGrpcClient.getLocked()
 
-      val registeredDataDeserialzerFactory =
-        object : LiveQuery.RegisteredDataDeserialzerFactory {
+      val registeredDataDeserializerFactory =
+        object : LiveQuery.RegisteredDataDeserializerFactory {
           override fun <T> newInstance(
             dataDeserializer: DeserializationStrategy<T>,
+            dataSerializersModule: SerializersModule?,
             parentLogger: Logger
           ) =
-            RegisteredDataDeserialzer<T>(
+            RegisteredDataDeserializer(
               dataDeserializer = dataDeserializer,
+              dataSerializersModule = dataSerializersModule,
               blockingCoroutineDispatcher = blockingDispatcher,
               parentLogger = parentLogger,
             )
@@ -226,11 +249,11 @@ internal class FirebaseDataConnectImpl(
               parentCoroutineScope = coroutineScope,
               nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
               grpcClient = grpcClient,
-              registeredDataDeserialzerFactory = registeredDataDeserialzerFactory,
+              registeredDataDeserializerFactory = registeredDataDeserializerFactory,
               parentLogger = parentLogger,
             )
         }
-      val liveQueries = LiveQueries(liveQueryFactory, parentLogger = logger)
+      val liveQueries = LiveQueries(liveQueryFactory, blockingDispatcher, parentLogger = logger)
       QueryManager(liveQueries)
     }
 
@@ -300,32 +323,54 @@ internal class FirebaseDataConnectImpl(
     variables: Variables,
     dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>,
-    generatedQuery: GeneratedQuery<*, Data, Variables>?,
-  ) =
-    QueryRefImpl(
+    optionsBuilder: (QueryRefOptionsBuilder<Data, Variables>.() -> Unit)?,
+  ): QueryRefImpl<Data, Variables> {
+    val options =
+      object : QueryRefOptionsBuilder<Data, Variables> {
+        override var generatedQuery: GeneratedQuery<*, Data, Variables>? = null
+        override var variablesSerializersModule: SerializersModule? = null
+        override var dataSerializersModule: SerializersModule? = null
+      }
+    optionsBuilder?.let { it(options) }
+
+    return QueryRefImpl(
       dataConnect = this,
       operationName = operationName,
       variables = variables,
       dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
-      isFromGeneratedSdk = generatedQuery !== null,
+      isFromGeneratedSdk = options.generatedQuery !== null,
+      variablesSerializersModule = options.variablesSerializersModule,
+      dataSerializersModule = options.dataSerializersModule,
     )
+  }
 
   override fun <Data, Variables> mutation(
     operationName: String,
     variables: Variables,
     dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>,
-    generatedMutation: GeneratedMutation<*, Data, Variables>?,
-  ) =
-    MutationRefImpl(
+    optionsBuilder: (MutationRefOptionsBuilder<Data, Variables>.() -> Unit)?,
+  ): MutationRefImpl<Data, Variables> {
+    val options =
+      object : MutationRefOptionsBuilder<Data, Variables> {
+        override var generatedMutation: GeneratedMutation<*, Data, Variables>? = null
+        override var variablesSerializersModule: SerializersModule? = null
+        override var dataSerializersModule: SerializersModule? = null
+      }
+    optionsBuilder?.let { it(options) }
+
+    return MutationRefImpl(
       dataConnect = this,
       operationName = operationName,
       variables = variables,
       dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
-      isFromGeneratedSdk = generatedMutation !== null,
+      isFromGeneratedSdk = options.generatedMutation !== null,
+      variablesSerializersModule = options.variablesSerializersModule,
+      dataSerializersModule = options.dataSerializersModule,
     )
+  }
 
   private val closeJob = MutableStateFlow(NullableReference<Deferred<Unit>>(null))
 

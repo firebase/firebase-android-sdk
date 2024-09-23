@@ -27,6 +27,7 @@ import com.google.protobuf.Value
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 /**
@@ -144,12 +145,16 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    * Decodes the encapsulated value using the given deserializer.
    *
    * @param deserializer The deserializer for the decoder to use.
+   * @param serializersModule a [SerializersModule] to use during deserialization; may be `null`
+   * (the default) to _not_ use a [SerializersModule] to use during deserialization.
    *
    * @return the object of type `T` created by decoding the encapsulated value using the given
    * deserializer.
    */
-  public fun <T> decode(deserializer: DeserializationStrategy<T>): T =
-    decodeFromValue(deserializer, protoValue)
+  public fun <T> decode(
+    deserializer: DeserializationStrategy<T>,
+    serializersModule: SerializersModule? = null
+  ): T = decodeFromValue(protoValue, deserializer, serializersModule)
 
   /**
    * Decodes the encapsulated value using the _default_ serializer for the return type, as computed
@@ -198,12 +203,17 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
      *
      * @param value the value to serialize.
      * @param serializer the serializer for the encoder to use.
+     * @param serializersModule a [SerializersModule] to use during serialization; may be `null`
+     * (the default) to _not_ use a [SerializersModule] to use during serialization.
      *
      * @return a new `AnyValue` object whose encapsulated value is the encoding of the given value
      * when decoded with the given serializer.
      */
-    public fun <T> encode(value: T, serializer: SerializationStrategy<T>): AnyValue =
-      AnyValue(encodeToValue(serializer, value))
+    public fun <T> encode(
+      value: T,
+      serializer: SerializationStrategy<T>,
+      serializersModule: SerializersModule? = null
+    ): AnyValue = AnyValue(encodeToValue(value, serializer, serializersModule))
 
     /**
      * Encodes the given value using the given _default_ serializer for the given object, as

@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.util.encodeToStruct
 import com.google.firebase.dataconnect.util.toAlphaNumericString
 import com.google.firebase.dataconnect.util.toStructProto
 import com.google.protobuf.Struct
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -32,6 +33,7 @@ import kotlinx.coroutines.withContext
 
 internal class LiveQueries(
   private val liveQueryFactory: LiveQueryFactory,
+  private val blockingDispatcher: CoroutineDispatcher,
   parentLogger: Logger,
 ) {
   private val logger =
@@ -58,14 +60,23 @@ internal class LiveQueries(
   }
 
   // NOTE: This function MUST be called from a coroutine that has locked `mutex`.
-  private fun <R, V> acquireLiveQuery(query: QueryRef<R, V>): LiveQuery {
+  private suspend fun <R, V> acquireLiveQuery(query: QueryRef<R, V>): LiveQuery {
     val variablesStruct =
-      if (query.variablesSerializer === DataConnectUntypedVariables.Serializer) {
-        (query.variables as DataConnectUntypedVariables).variables.toStructProto()
-      } else {
-        encodeToStruct(query.variablesSerializer, query.variables)
+      withContext(blockingDispatcher) {
+        if (query.variablesSerializer === DataConnectUntypedVariables.Serializer) {
+          (query.variables as DataConnectUntypedVariables).variables.toStructProto()
+        } else {
+          encodeToStruct(
+            query.variables,
+            query.variablesSerializer,
+            query.variablesSerializersModule
+          )
+        }
       }
-    val variablesHash = variablesStruct.calculateSha512().toAlphaNumericString()
+
+    val variablesHash =
+      withContext(blockingDispatcher) { variablesStruct.calculateSha512().toAlphaNumericString() }
+
     val key = LiveQuery.Key(operationName = query.operationName, variablesHash = variablesHash)
 
     val referenceCountedLiveQuery =

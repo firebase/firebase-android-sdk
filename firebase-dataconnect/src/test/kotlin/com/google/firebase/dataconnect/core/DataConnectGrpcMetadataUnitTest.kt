@@ -54,7 +54,7 @@ class DataConnectGrpcMetadataUnitTest {
     )
 
   @Test
-  fun `should include x-goog-api-client when isFromGeneratedSdk=true`() = runTest {
+  fun `should include x-goog-api-client when isFromGeneratedSdk is true`() = runTest {
     val key = "pkprzbns45"
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectGrpcMetadata =
@@ -77,7 +77,7 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
-  fun `should include x-goog-api-client when isFromGeneratedSdk=false`() = runTest {
+  fun `should include x-goog-api-client when isFromGeneratedSdk is false`() = runTest {
     val key = "pkprzbns45"
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectGrpcMetadata =

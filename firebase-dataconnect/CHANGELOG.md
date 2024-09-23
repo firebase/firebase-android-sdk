@@ -1,5 +1,3 @@
 # Unreleased
-
-
-# 16.0.0-beta01
+* [feature] Add ability to specify SerializersModule when serializing.
 * [feature] initial beta release.
