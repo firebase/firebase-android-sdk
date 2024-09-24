@@ -1,6 +1,6 @@
 # firebase-dataconnect
 
-This is the Firebase Data Connect component of the Firebase Android SDK.
+This is the Firebase Android Data Connect SDK.
 
 ## Building
 
@@ -22,8 +22,8 @@ To run unit tests for Firebase Data Connect, from the source root run:
 
 ## Integration Testing
 
-Running integration tests requires a Firebase project because they would try
-to connect to the Firebase Data Connect backends.
+Running integration tests requires a Firebase project because they connect to
+the Firebase Data Connect backend.
 
 See [here](../README.md#project-setup) for how to setup a project.
 
@@ -38,8 +38,7 @@ By default, integration tests run against the Firebase Data Connect emulator.
 ### Setting up the Firebase Data Connect Emulator
 
 The integration tests require that the Firebase Data Connect emulator is running
-on port NNNN (TODO: fill in correct value), which is default when running it via
-CLI.
+on port 9399, which is default when running it via the Data Connect Toolkit.
 
   * [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
     ```
@@ -62,7 +61,7 @@ To run the integration tests against prod, select
 
 ### Run on Local Android Emulator
 
-Then simply run:
+Then run:
 ```bash
 ./gradlew :firebase-dataconnect:connectedCheck
 ```
@@ -70,7 +69,7 @@ Then simply run:
 ### Run on Firebase Test Lab
 
 You can also test on Firebase Test Lab, which allow you to run the integration
-tests on devices hosted in Google data center.
+tests on devices hosted in a Google data center.
 
 See [here](../README.md#running-integration-tests-on-firebase-test-lab) for
 instructions of how to setup Firebase Test Lab for your project.
@@ -82,14 +81,9 @@ Run:
 
 ## Code Formatting
 
-Run below to format Kotlin code:
+Run below to format Kotlin and Java code:
 ```bash
-./gradlew :firebase-dataconnect:ktfmtFormat
-```
-
-Run below to format Java code:
-```bash
-./gradlew :firebase-dataconnect:googleJavaFormat
+./gradlew :firebase-dataconnect:spotlessApply
 ```
 
 See [here](../README.md#code-formatting) if you want to be able to format code
