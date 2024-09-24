@@ -20,8 +20,8 @@ package com.google.firebase.dataconnect
 
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.extensions.proto.LiteProtoTruth.assertThat
-import com.google.firebase.dataconnect.util.buildStructProto
-import com.google.firebase.dataconnect.util.encodeToStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.protobuf.Struct
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.serialization.ExperimentalSerializationApi

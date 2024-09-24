@@ -18,12 +18,13 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.debug
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
+import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
+import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.ReferenceCounted
-import com.google.firebase.dataconnect.util.calculateSha512
-import com.google.firebase.dataconnect.util.encodeToStruct
-import com.google.firebase.dataconnect.util.toAlphaNumericString
-import com.google.firebase.dataconnect.util.toStructProto
 import com.google.protobuf.Struct
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.NonCancellable

@@ -16,12 +16,13 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.AnyValue.Companion.serializer
 import com.google.firebase.dataconnect.serializers.AnyValueSerializer
-import com.google.firebase.dataconnect.util.decodeFromValue
-import com.google.firebase.dataconnect.util.encodeToValue
-import com.google.firebase.dataconnect.util.toAny
-import com.google.firebase.dataconnect.util.toCompactString
-import com.google.firebase.dataconnect.util.toValueProto
+import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromValue
+import com.google.firebase.dataconnect.util.ProtoUtil.encodeToValue
+import com.google.firebase.dataconnect.util.ProtoUtil.toAny
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import kotlinx.serialization.DeserializationStrategy
@@ -142,30 +143,6 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
     get() = protoValue.toAny()!!
 
   /**
-   * Decodes the encapsulated value using the given deserializer.
-   *
-   * @param deserializer The deserializer for the decoder to use.
-   * @param serializersModule a [SerializersModule] to use during deserialization; may be `null`
-   * (the default) to _not_ use a [SerializersModule] to use during deserialization.
-   *
-   * @return the object of type `T` created by decoding the encapsulated value using the given
-   * deserializer.
-   */
-  public fun <T> decode(
-    deserializer: DeserializationStrategy<T>,
-    serializersModule: SerializersModule? = null
-  ): T = decodeFromValue(protoValue, deserializer, serializersModule)
-
-  /**
-   * Decodes the encapsulated value using the _default_ serializer for the return type, as computed
-   * by [serializer].
-   *
-   * @return the object of type `T` created by decoding the encapsulated value using the _default_
-   * serializer for the return type, as computed by [serializer].
-   */
-  public inline fun <reified T> decode(): T = decode(serializer<T>())
-
-  /**
    * Compares this object with another object for equality.
    *
    * @param other The object to compare to this for equality.
@@ -196,67 +173,95 @@ public class AnyValue internal constructor(internal val protoValue: Value) {
    */
   override fun toString(): String = protoValue.toCompactString(keySortSelector = { it })
 
-  public companion object {
+  /**
+   * Provides extension functions that can be used independently of a specified [AnyValue] instance.
+   */
+  public companion object
+}
 
-    /**
-     * Encodes the given value using the given serializer to an [AnyValue] object, and returns it.
-     *
-     * @param value the value to serialize.
-     * @param serializer the serializer for the encoder to use.
-     * @param serializersModule a [SerializersModule] to use during serialization; may be `null`
-     * (the default) to _not_ use a [SerializersModule] to use during serialization.
-     *
-     * @return a new `AnyValue` object whose encapsulated value is the encoding of the given value
-     * when decoded with the given serializer.
-     */
-    public fun <T> encode(
-      value: T,
-      serializer: SerializationStrategy<T>,
-      serializersModule: SerializersModule? = null
-    ): AnyValue = AnyValue(encodeToValue(value, serializer, serializersModule))
+/**
+ * Decodes the encapsulated value using the given deserializer.
+ *
+ * @param deserializer The deserializer for the decoder to use.
+ * @param serializersModule a [SerializersModule] to use during deserialization; may be `null` (the
+ * default) to _not_ use a [SerializersModule] to use during deserialization.
+ *
+ * @return the object of type `T` created by decoding the encapsulated value using the given
+ * deserializer.
+ */
+public fun <T> AnyValue.decode(
+  deserializer: DeserializationStrategy<T>,
+  serializersModule: SerializersModule? = null
+): T = decodeFromValue(protoValue, deserializer, serializersModule)
 
-    /**
-     * Encodes the given value using the given _default_ serializer for the given object, as
-     * computed by [serializer].
-     *
-     * @param value the value to serialize.
-     * @return a new `AnyValue` object whose encapsulated value is the encoding of the given value
-     * when decoded with the _default_ serializer for the given object, as computed by [serializer].
-     */
-    public inline fun <reified T> encode(value: T): AnyValue = encode(value, serializer<T>())
+/**
+ * Decodes the encapsulated value using the _default_ serializer for the return type, as computed by
+ * [serializer].
+ *
+ * @return the object of type `T` created by decoding the encapsulated value using the _default_
+ * serializer for the return type, as computed by [serializer].
+ */
+public inline fun <reified T> AnyValue.decode(): T = decode(serializer<T>())
 
-    /**
-     * Creates and returns an `AnyValue` object created using the `AnyValue` constructor that
-     * corresponds to the runtime type of the given value, or returns `null` if the given value is
-     * `null`.
-     *
-     * @throws IllegalArgumentException if the given value is not supported by `AnyValue`; see the
-     * `AnyValue` constructor for details.
-     */
-    @JvmName("fromNullableAny")
-    public fun fromAny(value: Any?): AnyValue? = if (value === null) null else fromAny(value)
+/**
+ * Encodes the given value using the given serializer to an [AnyValue] object, and returns it.
+ *
+ * @param value the value to serialize.
+ * @param serializer the serializer for the encoder to use.
+ * @param serializersModule a [SerializersModule] to use during serialization; may be `null` (the
+ * default) to _not_ use a [SerializersModule] to use during serialization.
+ *
+ * @return a new `AnyValue` object whose encapsulated value is the encoding of the given value when
+ * decoded with the given serializer.
+ */
+public fun <T> AnyValue.Companion.encode(
+  value: T,
+  serializer: SerializationStrategy<T>,
+  serializersModule: SerializersModule? = null
+): AnyValue = AnyValue(encodeToValue(value, serializer, serializersModule))
 
-    /**
-     * Creates and returns an `AnyValue` object created using the `AnyValue` constructor that
-     * corresponds to the runtime type of the given value.
-     *
-     * @throws IllegalArgumentException if the given value is not supported by `AnyValue`; see the
-     * `AnyValue` constructor for details.
-     */
-    public fun fromAny(value: Any): AnyValue {
-      @Suppress("UNCHECKED_CAST")
-      return when (value) {
-        is String -> AnyValue(value)
-        is Boolean -> AnyValue(value)
-        is Double -> AnyValue(value)
-        is List<*> -> AnyValue(value)
-        is Map<*, *> -> AnyValue(value as Map<String, Any?>)
-        else ->
-          throw IllegalArgumentException(
-            "unsupported type: ${value::class.qualifiedName}" +
-              " (supported types: null, String, Boolean, Double, List<Any?>, Map<String, Any?>)"
-          )
-      }
-    }
+/**
+ * Encodes the given value using the given _default_ serializer for the given object, as computed by
+ * [serializer].
+ *
+ * @param value the value to serialize.
+ * @return a new `AnyValue` object whose encapsulated value is the encoding of the given value when
+ * decoded with the _default_ serializer for the given object, as computed by [serializer].
+ */
+public inline fun <reified T> AnyValue.Companion.encode(value: T): AnyValue =
+  encode(value, serializer<T>())
+
+/**
+ * Creates and returns an `AnyValue` object created using the `AnyValue` constructor that
+ * corresponds to the runtime type of the given value, or returns `null` if the given value is
+ * `null`.
+ *
+ * @throws IllegalArgumentException if the given value is not supported by `AnyValue`; see the
+ * `AnyValue` constructor for details.
+ */
+@JvmName("fromNullableAny")
+public fun AnyValue.Companion.fromAny(value: Any?): AnyValue? =
+  if (value === null) null else fromAny(value)
+
+/**
+ * Creates and returns an `AnyValue` object created using the `AnyValue` constructor that
+ * corresponds to the runtime type of the given value.
+ *
+ * @throws IllegalArgumentException if the given value is not supported by `AnyValue`; see the
+ * `AnyValue` constructor for details.
+ */
+public fun AnyValue.Companion.fromAny(value: Any): AnyValue {
+  @Suppress("UNCHECKED_CAST")
+  return when (value) {
+    is String -> AnyValue(value)
+    is Boolean -> AnyValue(value)
+    is Double -> AnyValue(value)
+    is List<*> -> AnyValue(value)
+    is Map<*, *> -> AnyValue(value as Map<String, Any?>)
+    else ->
+      throw IllegalArgumentException(
+        "unsupported type: ${value::class.qualifiedName}" +
+          " (supported types: null, String, Boolean, Double, List<Any?>, Map<String, Any?>)"
+      )
   }
 }

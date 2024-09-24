@@ -19,10 +19,9 @@ package com.google.firebase.dataconnect.core
 import android.util.Log
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.LogLevel
+import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
-
-@Volatile internal var logLevel: LogLevel = LogLevel.WARN
 
 internal interface Logger {
   val name: String
@@ -31,34 +30,6 @@ internal interface Logger {
 
   fun log(exception: Throwable?, level: LogLevel, message: String)
 }
-
-internal inline fun Logger.debug(message: () -> Any?) {
-  if (logLevel <= LogLevel.DEBUG) debug("${message()}")
-}
-
-internal fun Logger.debug(message: String) {
-  if (logLevel <= LogLevel.DEBUG) log(null, LogLevel.DEBUG, message)
-}
-
-internal inline fun Logger.warn(message: () -> Any?) {
-  if (logLevel <= LogLevel.WARN) warn("${message()}")
-}
-
-internal inline fun Logger.warn(exception: Throwable?, message: () -> Any?) {
-  if (logLevel <= LogLevel.WARN) warn(exception, "${message()}")
-}
-
-internal fun Logger.warn(message: String) {
-  warn(null, message)
-}
-
-internal fun Logger.warn(exception: Throwable?, message: String) {
-  if (logLevel <= LogLevel.WARN) log(exception, LogLevel.WARN, message)
-}
-
-internal fun Logger(name: String): Logger = LoggerImpl(name)
-
-private const val LOG_TAG = "FirebaseDataConnect"
 
 private class LoggerImpl(override val name: String) : Logger {
 
@@ -75,4 +46,43 @@ private class LoggerImpl(override val name: String) : Logger {
       LogLevel.NONE -> {}
     }
   }
+}
+
+/**
+ * Holder for "global" functions related to [Logger].
+ *
+ * Technically, these functions _could_ be defined as free functions; however, doing so creates a
+ * LoggerKt Java class with public visibility, which pollutes the public API. Using an "internal"
+ * object, instead, to gather together the top-level functions avoids this public API pollution.
+ */
+internal object LoggerGlobals {
+  const val LOG_TAG = "FirebaseDataConnect"
+
+  @Volatile var logLevel: LogLevel = LogLevel.WARN
+
+  inline fun Logger.debug(message: () -> Any?) {
+    if (logLevel <= LogLevel.DEBUG) debug("${message()}")
+  }
+
+  fun Logger.debug(message: String) {
+    if (logLevel <= LogLevel.DEBUG) log(null, LogLevel.DEBUG, message)
+  }
+
+  inline fun Logger.warn(message: () -> Any?) {
+    if (logLevel <= LogLevel.WARN) warn("${message()}")
+  }
+
+  inline fun Logger.warn(exception: Throwable?, message: () -> Any?) {
+    if (logLevel <= LogLevel.WARN) warn(exception, "${message()}")
+  }
+
+  fun Logger.warn(message: String) {
+    warn(null, message)
+  }
+
+  fun Logger.warn(exception: Throwable?, message: String) {
+    if (logLevel <= LogLevel.WARN) log(exception, LogLevel.WARN, message)
+  }
+
+  fun Logger(name: String): Logger = LoggerImpl(name)
 }

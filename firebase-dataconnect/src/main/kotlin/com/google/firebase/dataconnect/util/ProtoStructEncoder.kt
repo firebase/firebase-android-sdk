@@ -20,10 +20,11 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.AnyValue
 import com.google.firebase.dataconnect.serializers.AnyValueSerializer
+import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import com.google.protobuf.Value.KindCase
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.SerializationStrategy
@@ -34,45 +35,6 @@ import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
-
-internal inline fun <reified T> encodeToStruct(value: T): Struct =
-  encodeToStruct(value, serializer(), serializersModule = null)
-
-internal fun <T> encodeToStruct(
-  value: T,
-  serializer: SerializationStrategy<T>,
-  serializersModule: SerializersModule?
-): Struct {
-  val valueProto = encodeToValue(value, serializer, serializersModule)
-  if (valueProto.kindCase == KindCase.KIND_NOT_SET) {
-    return Struct.getDefaultInstance()
-  }
-  require(valueProto.hasStructValue()) {
-    "encoding produced ${valueProto.kindCase}, " +
-      "but expected ${KindCase.STRUCT_VALUE} or ${KindCase.KIND_NOT_SET}"
-  }
-  return valueProto.structValue
-}
-
-internal inline fun <reified T> encodeToValue(value: T): Value =
-  encodeToValue(value, serializer(), serializersModule = null)
-
-internal fun <T> encodeToValue(
-  value: T,
-  serializer: SerializationStrategy<T>,
-  serializersModule: SerializersModule?
-): Value {
-  val values = mutableListOf<Value>()
-  ProtoValueEncoder(null, serializersModule ?: EmptySerializersModule(), values::add)
-    .encodeSerializableValue(serializer, value)
-  if (values.isEmpty()) {
-    return Value.getDefaultInstance()
-  }
-  require(values.size == 1) {
-    "encoding produced ${values.size} Value objects, but expected either 0 or 1"
-  }
-  return values.single()
-}
 
 internal class ProtoValueEncoder(
   private val path: String?,

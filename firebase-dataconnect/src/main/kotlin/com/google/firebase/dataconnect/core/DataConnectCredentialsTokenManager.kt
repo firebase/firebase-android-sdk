@@ -20,8 +20,11 @@ import com.google.firebase.annotations.DeferredApi
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.nextSequenceNumber
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.inject.Deferred.DeferredHandler
 import com.google.firebase.inject.Provider
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException
@@ -506,30 +509,3 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
     }
   }
 }
-
-/**
- * Returns a new string that is equal to this string but only includes a chunk from the beginning
- * and the end.
- *
- * This method assumes that the contents of this string are an access token. The returned string
- * will have enough information to reason about the access token in logs without giving its value
- * away.
- */
-internal fun String.toScrubbedAccessToken(): String =
-  if (this == PLACEHOLDER_APP_CHECK_TOKEN) {
-    "$this (the \"placeholder\" AppCheck token)"
-  } else if (length < 30) {
-    "<redacted>"
-  } else {
-    buildString {
-      append(this@toScrubbedAccessToken, 0, 6)
-      append("<redacted>")
-      append(
-        this@toScrubbedAccessToken,
-        this@toScrubbedAccessToken.length - 6,
-        this@toScrubbedAccessToken.length
-      )
-    }
-  }
-
-private const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="

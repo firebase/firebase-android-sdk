@@ -7,23 +7,25 @@ package com.google.firebase.dataconnect {
     ctor public AnyValue(@NonNull String value);
     ctor public AnyValue(boolean value);
     ctor public AnyValue(double value);
-    method public <T> T decode(@NonNull kotlinx.serialization.DeserializationStrategy<? extends T> deserializer, @Nullable kotlinx.serialization.modules.SerializersModule serializersModule = null);
-    method public inline <reified T> T decode();
     method @NonNull public Object getValue();
     property @NonNull public final Object value;
     field @NonNull public static final com.google.firebase.dataconnect.AnyValue.Companion Companion;
   }
 
   public static final class AnyValue.Companion {
-    method @NonNull public <T> com.google.firebase.dataconnect.AnyValue encode(@Nullable T value, @NonNull kotlinx.serialization.SerializationStrategy<? super T> serializer, @Nullable kotlinx.serialization.modules.SerializersModule serializersModule = null);
-    method public inline <reified T> com.google.firebase.dataconnect.AnyValue encode(@Nullable T value);
-    method @NonNull public com.google.firebase.dataconnect.AnyValue fromAny(@NonNull Object value);
-    method @Nullable public com.google.firebase.dataconnect.AnyValue fromNullableAny(@Nullable Object value);
+  }
+
+  public final class AnyValueKt {
+    method public static <T> T decode(@NonNull com.google.firebase.dataconnect.AnyValue, @NonNull kotlinx.serialization.DeserializationStrategy<? extends T> deserializer, @Nullable kotlinx.serialization.modules.SerializersModule serializersModule = null);
+    method public static inline <reified T> T decode(@NonNull com.google.firebase.dataconnect.AnyValue);
+    method @NonNull public static <T> com.google.firebase.dataconnect.AnyValue encode(@NonNull com.google.firebase.dataconnect.AnyValue.Companion, @Nullable T value, @NonNull kotlinx.serialization.SerializationStrategy<? super T> serializer, @Nullable kotlinx.serialization.modules.SerializersModule serializersModule = null);
+    method public static inline <reified T> com.google.firebase.dataconnect.AnyValue encode(@NonNull com.google.firebase.dataconnect.AnyValue.Companion, @Nullable T value);
+    method @NonNull public static com.google.firebase.dataconnect.AnyValue fromAny(@NonNull com.google.firebase.dataconnect.AnyValue.Companion, @NonNull Object value);
+    method @Nullable public static com.google.firebase.dataconnect.AnyValue fromNullableAny(@NonNull com.google.firebase.dataconnect.AnyValue.Companion, @Nullable Object value);
   }
 
   public final class ConnectorConfig {
     ctor public ConnectorConfig(@NonNull String connector, @NonNull String location, @NonNull String serviceId);
-    method @NonNull public com.google.firebase.dataconnect.ConnectorConfig copy(@NonNull String connector = connector, @NonNull String location = location, @NonNull String serviceId = serviceId);
     method @NonNull public String getConnector();
     method @NonNull public String getLocation();
     method @NonNull public String getServiceId();
@@ -32,13 +34,16 @@ package com.google.firebase.dataconnect {
     property @NonNull public final String serviceId;
   }
 
+  public final class ConnectorConfigKt {
+    method @NonNull public static com.google.firebase.dataconnect.ConnectorConfig copy(@NonNull com.google.firebase.dataconnect.ConnectorConfig, @NonNull String connector = connector, @NonNull String location = location, @NonNull String serviceId = serviceId);
+  }
+
   public class DataConnectException extends java.lang.Exception {
     ctor public DataConnectException(@NonNull String message, @Nullable Throwable cause = null);
   }
 
   public final class DataConnectSettings {
     ctor public DataConnectSettings(@NonNull String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
-    method @NonNull public com.google.firebase.dataconnect.DataConnectSettings copy(@NonNull String host = host, boolean sslEnabled = sslEnabled);
     method @NonNull public String getHost();
     method public boolean getSslEnabled();
     property @NonNull public final String host;
@@ -46,6 +51,7 @@ package com.google.firebase.dataconnect {
   }
 
   public final class DataConnectSettingsKt {
+    method @NonNull public static com.google.firebase.dataconnect.DataConnectSettings copy(@NonNull com.google.firebase.dataconnect.DataConnectSettings, @NonNull String host = host, boolean sslEnabled = sslEnabled);
   }
 
   public interface FirebaseDataConnect extends java.lang.AutoCloseable {
@@ -216,28 +222,6 @@ package com.google.firebase.dataconnect {
 
 }
 
-package com.google.firebase.dataconnect.core {
-
-  public final class DataConnectCredentialsTokenManagerKt {
-  }
-
-  public final class DataConnectGrpcClientKt {
-  }
-
-  public final class FirebaseDataConnectFactoryKt {
-  }
-
-  public final class LoggerKt {
-  }
-
-  public final class MutationRefImplKt {
-  }
-
-  public final class QueryRefImplKt {
-  }
-
-}
-
 package com.google.firebase.dataconnect.generated {
 
   public interface GeneratedConnector {
@@ -303,22 +287,6 @@ package com.google.firebase.dataconnect.serializers {
     method public void serialize(@NonNull kotlinx.serialization.encoding.Encoder encoder, @NonNull java.util.UUID value);
     property @NonNull public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
     field @NonNull public static final com.google.firebase.dataconnect.serializers.UUIDSerializer INSTANCE;
-  }
-
-}
-
-package com.google.firebase.dataconnect.util {
-
-  public final class ProtoStructDecoderKt {
-  }
-
-  public final class ProtoStructEncoderKt {
-  }
-
-  public final class ProtoUtilKt {
-  }
-
-  public final class UtilKt {
   }
 
 }

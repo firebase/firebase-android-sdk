@@ -37,12 +37,6 @@ public class DataConnectSettings(
   public val sslEnabled: Boolean = true
 ) {
 
-  /** Creates and returns a new [DataConnectSettings] instance with the given property values. */
-  public fun copy(
-    host: String = this.host,
-    sslEnabled: Boolean = this.sslEnabled
-  ): DataConnectSettings = DataConnectSettings(host = host, sslEnabled = sslEnabled)
-
   /**
    * Compares this object with another object for equality.
    *
@@ -78,5 +72,11 @@ public class DataConnectSettings(
    */
   override fun toString(): String = "DataConnectSettings(host=$host, sslEnabled=$sslEnabled)"
 }
+
+/** Creates and returns a new [DataConnectSettings] instance with the given property values. */
+public fun DataConnectSettings.copy(
+  host: String = this.host,
+  sslEnabled: Boolean = this.sslEnabled
+): DataConnectSettings = DataConnectSettings(host = host, sslEnabled = sslEnabled)
 
 internal fun DataConnectSettings.isDefaultHost() = host == DataConnectSettings().host
