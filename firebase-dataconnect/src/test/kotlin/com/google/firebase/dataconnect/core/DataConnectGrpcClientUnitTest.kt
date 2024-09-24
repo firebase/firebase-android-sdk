@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.dataConnectError
 import com.google.firebase.dataconnect.testutil.iterator
@@ -53,7 +54,6 @@ import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
-import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
@@ -92,7 +92,7 @@ class DataConnectGrpcClientUnitTest {
   private val requestId = Arb.requestId(key).next(rs)
   private val operationName = Arb.operationName(key).next(rs)
   private val variables = buildStructProto { put("dhxpwjtb6s", key) }
-  private val isFromGeneratedSdk = Arb.boolean().next(rs)
+  private val callerSdkType = Arb.callerSdkType().next(rs)
 
   private val mockDataConnectAuth: DataConnectAuth =
     mockk(relaxed = true, name = "mockDataConnectAuth-$key")
@@ -121,7 +121,7 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeQuery() should send the right request`() = runTest {
-    dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
+    dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     val expectedName =
       "projects/${projectId}" +
@@ -134,14 +134,12 @@ class DataConnectGrpcClientUnitTest {
         .setOperationName(operationName)
         .setVariables(variables)
         .build()
-    coVerify {
-      mockDataConnectGrpcRPCs.executeQuery(requestId, expectedRequest, isFromGeneratedSdk)
-    }
+    coVerify { mockDataConnectGrpcRPCs.executeQuery(requestId, expectedRequest, callerSdkType) }
   }
 
   @Test
   fun `executeMutation() should send the right request`() = runTest {
-    dataConnectGrpcClient.executeMutation(requestId, operationName, variables, isFromGeneratedSdk)
+    dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
     val expectedName =
       "projects/${projectId}" +
@@ -154,9 +152,7 @@ class DataConnectGrpcClientUnitTest {
         .setOperationName(operationName)
         .setVariables(variables)
         .build()
-    coVerify {
-      mockDataConnectGrpcRPCs.executeMutation(requestId, expectedRequest, isFromGeneratedSdk)
-    }
+    coVerify { mockDataConnectGrpcRPCs.executeMutation(requestId, expectedRequest, callerSdkType) }
   }
 
   @Test
@@ -165,7 +161,7 @@ class DataConnectGrpcClientUnitTest {
       ExecuteQueryResponse.getDefaultInstance()
 
     val operationResult =
-      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
+      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe OperationResult(data = null, errors = emptyList())
   }
@@ -177,12 +173,7 @@ class DataConnectGrpcClientUnitTest {
         ExecuteMutationResponse.getDefaultInstance()
 
       val operationResult =
-        dataConnectGrpcClient.executeMutation(
-          requestId,
-          operationName,
-          variables,
-          isFromGeneratedSdk
-        )
+        dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
       operationResult shouldBe OperationResult(data = null, errors = emptyList())
     }
@@ -198,7 +189,7 @@ class DataConnectGrpcClientUnitTest {
         .build()
 
     val operationResult =
-      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
+      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe
       OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
@@ -215,7 +206,7 @@ class DataConnectGrpcClientUnitTest {
         .build()
 
     val operationResult =
-      dataConnectGrpcClient.executeMutation(requestId, operationName, variables, isFromGeneratedSdk)
+      dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe
       OperationResult(data = responseData, errors = responseErrors.map { it.dataConnectError })
@@ -228,7 +219,7 @@ class DataConnectGrpcClientUnitTest {
 
     val thrownException =
       shouldThrow<TestException> {
-        dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
+        dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
       }
 
     thrownException shouldBe exception
@@ -241,12 +232,7 @@ class DataConnectGrpcClientUnitTest {
 
     val thrownException =
       shouldThrow<TestException> {
-        dataConnectGrpcClient.executeMutation(
-          requestId,
-          operationName,
-          variables,
-          isFromGeneratedSdk
-        )
+        dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
       }
 
     thrownException shouldBe exception
@@ -273,7 +259,7 @@ class DataConnectGrpcClientUnitTest {
       }
 
     val result =
-      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
+      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
     coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) }
@@ -304,7 +290,7 @@ class DataConnectGrpcClientUnitTest {
       }
 
     val result =
-      dataConnectGrpcClient.executeMutation(requestId, operationName, variables, isFromGeneratedSdk)
+      dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
     coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) }
@@ -335,7 +321,7 @@ class DataConnectGrpcClientUnitTest {
       }
 
     val result =
-      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
+      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
     coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) }
@@ -366,7 +352,7 @@ class DataConnectGrpcClientUnitTest {
       }
 
     val result =
-      dataConnectGrpcClient.executeMutation(requestId, operationName, variables, isFromGeneratedSdk)
+      dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
     result shouldBe OperationResult(data = responseData, errors = emptyList())
     coVerify(exactly = 2) { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) }
@@ -383,7 +369,7 @@ class DataConnectGrpcClientUnitTest {
 
     val thrownException =
       shouldThrow<StatusException> {
-        dataConnectGrpcClient.executeQuery(requestId, operationName, variables, isFromGeneratedSdk)
+        dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
       }
 
     thrownException shouldBeSameInstanceAs exception
@@ -398,12 +384,7 @@ class DataConnectGrpcClientUnitTest {
 
     val thrownException =
       shouldThrow<StatusException> {
-        dataConnectGrpcClient.executeMutation(
-          requestId,
-          operationName,
-          variables,
-          isFromGeneratedSdk
-        )
+        dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
       }
 
     thrownException shouldBeSameInstanceAs exception
@@ -421,12 +402,7 @@ class DataConnectGrpcClientUnitTest {
 
       val thrownException =
         shouldThrow<StatusException> {
-          dataConnectGrpcClient.executeQuery(
-            requestId,
-            operationName,
-            variables,
-            isFromGeneratedSdk
-          )
+          dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
         }
 
       thrownException shouldBeSameInstanceAs exception2
@@ -442,12 +418,7 @@ class DataConnectGrpcClientUnitTest {
 
       val thrownException =
         shouldThrow<StatusException> {
-          dataConnectGrpcClient.executeMutation(
-            requestId,
-            operationName,
-            variables,
-            isFromGeneratedSdk
-          )
+          dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
         }
 
       thrownException shouldBeSameInstanceAs exception2
@@ -463,12 +434,7 @@ class DataConnectGrpcClientUnitTest {
 
       val thrownException =
         shouldThrow<StatusException> {
-          dataConnectGrpcClient.executeQuery(
-            requestId,
-            operationName,
-            variables,
-            isFromGeneratedSdk
-          )
+          dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
         }
 
       thrownException shouldBeSameInstanceAs exception2
@@ -484,12 +450,7 @@ class DataConnectGrpcClientUnitTest {
 
       val thrownException =
         shouldThrow<StatusException> {
-          dataConnectGrpcClient.executeMutation(
-            requestId,
-            operationName,
-            variables,
-            isFromGeneratedSdk
-          )
+          dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
         }
 
       thrownException shouldBeSameInstanceAs exception2
@@ -505,12 +466,7 @@ class DataConnectGrpcClientUnitTest {
 
       val thrownException =
         shouldThrow<TestException> {
-          dataConnectGrpcClient.executeQuery(
-            requestId,
-            operationName,
-            variables,
-            isFromGeneratedSdk
-          )
+          dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
         }
 
       thrownException shouldBeSameInstanceAs exception2
@@ -526,12 +482,7 @@ class DataConnectGrpcClientUnitTest {
 
       val thrownException =
         shouldThrow<TestException> {
-          dataConnectGrpcClient.executeMutation(
-            requestId,
-            operationName,
-            variables,
-            isFromGeneratedSdk
-          )
+          dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
         }
 
       thrownException shouldBeSameInstanceAs exception2

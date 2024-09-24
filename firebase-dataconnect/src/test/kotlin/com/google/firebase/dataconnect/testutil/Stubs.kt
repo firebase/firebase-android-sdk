@@ -15,6 +15,7 @@
  */
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.core.OperationRefImpl
 import kotlinx.serialization.DeserializationStrategy
@@ -27,8 +28,9 @@ internal class StubOperationRefImpl<Data, Variables>(
   variables: Variables,
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
-  dataSerializersModule: SerializersModule?,
+  callerSdkType: FirebaseDataConnect.CallerSdkType,
   variablesSerializersModule: SerializersModule?,
+  dataSerializersModule: SerializersModule?,
 ) :
   OperationRefImpl<Data, Variables>(
     dataConnect = dataConnect,
@@ -36,8 +38,9 @@ internal class StubOperationRefImpl<Data, Variables>(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
-    dataSerializersModule = dataSerializersModule,
+    callerSdkType = callerSdkType,
     variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   ) {
   override suspend fun execute(): OperationResultImpl {
     throw UnsupportedOperationException("this stub method is not supported")
@@ -50,8 +53,9 @@ internal fun <Data, Variables> StubOperationRefImpl<Data, Variables>.copy(
   variables: Variables = this.variables,
   dataDeserializer: DeserializationStrategy<Data> = this.dataDeserializer,
   variablesSerializer: SerializationStrategy<Variables> = this.variablesSerializer,
-  dataSerializersModule: SerializersModule? = this.dataSerializersModule,
+  callerSdkType: FirebaseDataConnect.CallerSdkType = this.callerSdkType,
   variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
+  dataSerializersModule: SerializersModule? = this.dataSerializersModule,
 ): StubOperationRefImpl<Data, Variables> =
   StubOperationRefImpl(
     dataConnect = dataConnect,
@@ -59,6 +63,7 @@ internal fun <Data, Variables> StubOperationRefImpl<Data, Variables>.copy(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
-    dataSerializersModule = dataSerializersModule,
+    callerSdkType = callerSdkType,
     variablesSerializersModule = variablesSerializersModule,
+    dataSerializersModule = dataSerializersModule,
   )

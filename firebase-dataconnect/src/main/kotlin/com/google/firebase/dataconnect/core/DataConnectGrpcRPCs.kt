@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.buildStructProto
@@ -133,9 +134,9 @@ internal class DataConnectGrpcRPCs(
   suspend fun executeMutation(
     requestId: String,
     request: ExecuteMutationRequest,
-    isFromGeneratedSdk: Boolean,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteMutationResponse {
-    val metadata = grpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeMutation(${request.operationName})"
 
     logger.logGrpcSending(
@@ -171,9 +172,9 @@ internal class DataConnectGrpcRPCs(
   suspend fun executeQuery(
     requestId: String,
     request: ExecuteQueryRequest,
-    isFromGeneratedSdk: Boolean,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteQueryResponse {
-    val metadata = grpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
     logger.logGrpcSending(

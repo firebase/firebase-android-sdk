@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.core
 import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.BuildConfig
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.util.buildStructProto
 import com.google.protobuf.Struct
 import io.grpc.Metadata
@@ -53,25 +54,31 @@ internal class DataConnectGrpcMetadata(
   @Suppress("SpellCheckingInspection")
   private val googRequestParamsHeaderValue = "location=${connectorLocation}&frontend=data"
 
-  private fun googApiClientHeaderValue(isFromGeneratedSdk: Boolean): String {
+  private fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
     val components = buildList {
       add("gl-kotlin/$kotlinVersion")
       add("gl-android/$androidVersion")
       add("fire/$dataConnectSdkVersion")
       add("grpc/$grpcVersion")
-      if (isFromGeneratedSdk) {
-        add("kotlin/gen")
+
+      when (callerSdkType) {
+        FirebaseDataConnect.CallerSdkType.Base -> {
+          /* nothing to add for Base */
+        }
+        FirebaseDataConnect.CallerSdkType.Generated -> {
+          add("kotlin/gen")
+        }
       }
     }
     return components.joinToString(" ")
   }
 
-  suspend fun get(requestId: String, isFromGeneratedSdk: Boolean): Metadata {
+  suspend fun get(requestId: String, callerSdkType: FirebaseDataConnect.CallerSdkType): Metadata {
     val authToken = dataConnectAuth.getToken(requestId)
     val appCheckToken = dataConnectAppCheck.getToken(requestId)
     return Metadata().also {
       it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
-      it.put(googApiClientHeader, googApiClientHeaderValue(isFromGeneratedSdk))
+      it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
       if (appId.isNotBlank()) {
         it.put(gmpAppIdHeader, appId)
       }

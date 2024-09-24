@@ -28,8 +28,9 @@ internal abstract class OperationRefImpl<Data, Variables>(
   override val variables: Variables,
   override val dataDeserializer: DeserializationStrategy<Data>,
   override val variablesSerializer: SerializationStrategy<Variables>,
-  override val dataSerializersModule: SerializersModule?,
+  override val callerSdkType: FirebaseDataConnect.CallerSdkType,
   override val variablesSerializersModule: SerializersModule?,
+  override val dataSerializersModule: SerializersModule?,
 ) : OperationRef<Data, Variables> {
   abstract override suspend fun execute(): OperationResultImpl
 
@@ -40,8 +41,9 @@ internal abstract class OperationRefImpl<Data, Variables>(
       variables,
       dataDeserializer,
       variablesSerializer,
-      dataSerializersModule,
+      callerSdkType,
       variablesSerializersModule,
+      dataSerializersModule
     )
 
   override fun equals(other: Any?) =
@@ -51,8 +53,9 @@ internal abstract class OperationRefImpl<Data, Variables>(
       other.variables == variables &&
       other.dataDeserializer == dataDeserializer &&
       other.variablesSerializer == variablesSerializer &&
-      other.dataSerializersModule == dataSerializersModule &&
-      other.variablesSerializersModule == variablesSerializersModule
+      other.callerSdkType == callerSdkType &&
+      other.variablesSerializersModule == variablesSerializersModule &&
+      other.dataSerializersModule == dataSerializersModule
 
   override fun toString() =
     "OperationRefImpl(" +
@@ -60,9 +63,10 @@ internal abstract class OperationRefImpl<Data, Variables>(
       "operationName=$operationName, " +
       "variables=$variables, " +
       "dataDeserializer=$dataDeserializer, " +
-      "variablesSerializer=$variablesSerializer, " +
-      "dataSerializersModule=$dataSerializersModule, " +
-      "variablesSerializersModule=$variablesSerializersModule" +
+      "variablesSerializer=$variablesSerializer" +
+      "callerSdkType=$callerSdkType, " +
+      "variablesSerializersModule=$variablesSerializersModule, " +
+      "dataSerializersModule=$dataSerializersModule" +
       ")"
 
   abstract inner class OperationResultImpl(override val data: Data) :

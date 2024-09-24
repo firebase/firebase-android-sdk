@@ -19,8 +19,11 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.dataConnectError
+import com.google.firebase.dataconnect.testutil.filterNotEqual
 import com.google.firebase.dataconnect.testutil.mutationRefImpl
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.firebase.dataconnect.util.buildStructProto
@@ -31,7 +34,6 @@ import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.retry
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.assertions.withClue
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -89,12 +91,14 @@ class MutationRefImplUnitTest {
     val requestIdSlot: CapturingSlot<String> = slot()
     val operationNameSlot: CapturingSlot<String> = slot()
     val variablesSlot: CapturingSlot<Struct> = slot()
+    val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot()
     val dataConnect =
       dataConnectWithMutationResult(
         Result.success(operationResult),
         requestIdSlot,
         operationNameSlot,
-        variablesSlot
+        variablesSlot,
+        callerSdkTypeSlot,
       )
     val mutationRefImpl = Arb.mutationRefImpl().next().copy(dataConnect = dataConnect)
 
@@ -102,14 +106,17 @@ class MutationRefImplUnitTest {
     val requestId1 = requestIdSlot.captured
     val operationName1 = operationNameSlot.captured
     val variables1 = variablesSlot.captured
+    val callerSdkType1 = callerSdkTypeSlot.captured
 
     requestIdSlot.clear()
     operationNameSlot.clear()
     variablesSlot.clear()
+    callerSdkTypeSlot.clear()
     mutationRefImpl.execute()
     val requestId2 = requestIdSlot.captured
     val operationName2 = operationNameSlot.captured
     val variables2 = variablesSlot.captured
+    val callerSdkType2 = callerSdkTypeSlot.captured
 
     assertSoftly {
       requestId1.shouldNotBeBlank()
@@ -119,43 +126,8 @@ class MutationRefImplUnitTest {
       operationName2 shouldBe operationName1
       variables1 shouldBe encodeToStruct(mutationRefImpl.variables)
       variables2 shouldBe variables1
-    }
-  }
-
-  @Test
-  fun `execute() calls executeMutation with the correct isFromGeneratedSdk`() {
-    assertSoftly {
-      for (isFromGeneratedSdk in listOf(true, false)) {
-        withClue("isFromGeneratedSdk=$isFromGeneratedSdk") {
-          verifyIsFromGeneratedSdkRoundTrip(isFromGeneratedSdk)
-        }
-      }
-    }
-  }
-
-  private fun verifyIsFromGeneratedSdkRoundTrip(isFromGeneratedSdk: Boolean) = runTest {
-    val data = Arb.testData().next()
-    val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
-    val isFromGeneratedSdkSlot: CapturingSlot<Boolean> = slot()
-    val dataConnect =
-      dataConnectWithMutationResult(
-        Result.success(operationResult),
-        isFromGeneratedSdkSlot = isFromGeneratedSdkSlot
-      )
-    val mutationRefImpl =
-      Arb.mutationRefImpl()
-        .next()
-        .copy(dataConnect = dataConnect, isFromGeneratedSdk = isFromGeneratedSdk)
-
-    mutationRefImpl.execute()
-    val isFromGeneratedSdk1 = isFromGeneratedSdkSlot.captured
-    isFromGeneratedSdkSlot.clear()
-    mutationRefImpl.execute()
-    val isFromGeneratedSdk2 = isFromGeneratedSdkSlot.captured
-
-    assertSoftly {
-      isFromGeneratedSdk1 shouldBe isFromGeneratedSdk
-      isFromGeneratedSdk2 shouldBe isFromGeneratedSdk
+      callerSdkType1 shouldBe mutationRefImpl.callerSdkType
+      callerSdkType2 shouldBe mutationRefImpl.callerSdkType
     }
   }
 
@@ -194,7 +166,7 @@ class MutationRefImplUnitTest {
   }
 
   @Test
-  fun `constructor assigns public properties to the given arguments`() {
+  fun `constructor accepts non-null values`() {
     val values = Arb.mutationRefImpl().next()
     val mutationRefImpl =
       MutationRefImpl(
@@ -203,7 +175,7 @@ class MutationRefImplUnitTest {
         variables = values.variables,
         dataDeserializer = values.dataDeserializer,
         variablesSerializer = values.variablesSerializer,
-        isFromGeneratedSdk = values.isFromGeneratedSdk,
+        callerSdkType = values.callerSdkType,
         variablesSerializersModule = values.variablesSerializersModule,
         dataSerializersModule = values.dataSerializersModule,
       )
@@ -215,7 +187,7 @@ class MutationRefImplUnitTest {
         it.variables shouldBeSameInstanceAs values.variables
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
-        it.isFromGeneratedSdk shouldBe values.isFromGeneratedSdk
+        it.callerSdkType shouldBe values.callerSdkType
         it.variablesSerializersModule shouldBeSameInstanceAs values.variablesSerializersModule
         it.dataSerializersModule shouldBeSameInstanceAs values.dataSerializersModule
       }
@@ -232,7 +204,7 @@ class MutationRefImplUnitTest {
         variables = values.variables,
         dataDeserializer = values.dataDeserializer,
         variablesSerializer = values.variablesSerializer,
-        isFromGeneratedSdk = values.isFromGeneratedSdk,
+        callerSdkType = values.callerSdkType,
         variablesSerializersModule = null,
         dataSerializersModule = null,
       )
@@ -244,7 +216,7 @@ class MutationRefImplUnitTest {
         it.variables shouldBeSameInstanceAs values.variables
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
-        it.isFromGeneratedSdk shouldBe values.isFromGeneratedSdk
+        it.callerSdkType shouldBe values.callerSdkType
         it.variablesSerializersModule.shouldBeNull()
         it.dataSerializersModule.shouldBeNull()
       }
@@ -294,10 +266,10 @@ class MutationRefImplUnitTest {
   }
 
   @Test
-  fun `hashCode() should NOT incorporate isFromGeneratedSdk`() = runTest {
-    val mutationRef1 = Arb.mutationRefImpl().next()
-    val mutationRef2 = mutationRef1.copy(isFromGeneratedSdk = !mutationRef1.isFromGeneratedSdk)
-    mutationRef1.hashCode() shouldBe mutationRef2.hashCode()
+  fun `hashCode() should incorporate callerSdkType`() = runTest {
+    verifyHashCodeEventuallyDiffers {
+      it.copy(callerSdkType = Arb.callerSdkType().filterNotEqual(it.callerSdkType).next())
+    }
   }
 
   @Test
@@ -401,21 +373,11 @@ class MutationRefImplUnitTest {
   }
 
   @Test
-  fun `equals() should return _TRUE_ when only isFromGeneratedSdk differs`() = runTest {
+  fun `equals() should return false when only callerSdkType differs`() = runTest {
     val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 =
-      mutationRefImpl1.copy(isFromGeneratedSdk = !mutationRefImpl1.isFromGeneratedSdk)
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe true
-  }
-
-  @Test
-  fun `equals() should return false when only dataSerializersModule differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 = mutationRefImpl1.copy(dataSerializersModule = mockk(stringArb.next()))
-    val mutationRefImplNull = mutationRefImpl1.copy(dataSerializersModule = null)
+    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(mutationRefImpl1.callerSdkType).next()
+    val mutationRefImpl2 = mutationRefImpl1.copy(callerSdkType = callerSdkType2)
     mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
-    mutationRefImplNull.equals(mutationRefImpl1) shouldBe false
-    mutationRefImpl1.equals(mutationRefImplNull) shouldBe false
   }
 
   @Test
@@ -430,12 +392,23 @@ class MutationRefImplUnitTest {
   }
 
   @Test
+  fun `equals() should return false when only dataSerializersModule differs`() = runTest {
+    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
+    val mutationRefImpl2 = mutationRefImpl1.copy(dataSerializersModule = mockk(stringArb.next()))
+    val mutationRefImplNull = mutationRefImpl1.copy(dataSerializersModule = null)
+    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    mutationRefImplNull.equals(mutationRefImpl1) shouldBe false
+    mutationRefImpl1.equals(mutationRefImplNull) shouldBe false
+  }
+
+  @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
     val mutationRefImpl: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
+    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(mutationRefImpl.callerSdkType).next()
     val mutationRefImpls =
       listOf(
         mutationRefImpl,
-        mutationRefImpl.copy(isFromGeneratedSdk = !mutationRefImpl.isFromGeneratedSdk),
+        mutationRefImpl.copy(callerSdkType = callerSdkType2),
         mutationRefImpl.copy(dataSerializersModule = null),
         mutationRefImpl.copy(variablesSerializersModule = null),
       )
@@ -449,6 +422,7 @@ class MutationRefImplUnitTest {
           toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
           toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
           toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
+          toStringResult.shouldContain("callerSdkType=${mutationRefImpl.callerSdkType}")
           toStringResult.shouldContain(
             "dataSerializersModule=${mutationRefImpl.dataSerializersModule}"
           )
@@ -472,6 +446,7 @@ class MutationRefImplUnitTest {
       toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
       toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
       toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("callerSdkType=${mutationRefImpl.callerSdkType}")
       toStringResult.shouldContain("dataSerializersModule=null")
       toStringResult.shouldContain(
         "variablesSerializersModule=${mutationRefImpl.variablesSerializersModule}"
@@ -491,6 +466,7 @@ class MutationRefImplUnitTest {
       toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
       toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
       toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("callerSdkType=${mutationRefImpl.callerSdkType}")
       toStringResult.shouldContain("dataSerializersModule=${mutationRefImpl.dataSerializersModule}")
       toStringResult.shouldContain("variablesSerializersModule=null")
     }
@@ -522,7 +498,7 @@ class MutationRefImplUnitTest {
       requestIdSlot: CapturingSlot<String> = slot(),
       operationNameSlot: CapturingSlot<String> = slot(),
       variablesSlot: CapturingSlot<Struct> = slot(),
-      isFromGeneratedSdkSlot: CapturingSlot<Boolean> = slot(),
+      callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
         every { blockingDispatcher } returns UnconfinedTestDispatcher(testScheduler)
@@ -534,7 +510,7 @@ class MutationRefImplUnitTest {
                   capture(requestIdSlot),
                   capture(operationNameSlot),
                   capture(variablesSlot),
-                  capture(isFromGeneratedSdkSlot),
+                  capture(callerSdkTypeSlot),
                 )
               } returns result.getOrThrow()
             }

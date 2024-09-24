@@ -25,8 +25,6 @@ import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect.MutationRefOptionsBuilder
 import com.google.firebase.dataconnect.FirebaseDataConnect.QueryRefOptionsBuilder
-import com.google.firebase.dataconnect.generated.GeneratedMutation
-import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.isDefaultHost
 import com.google.firebase.dataconnect.querymgr.LiveQueries
 import com.google.firebase.dataconnect.querymgr.LiveQuery
@@ -327,7 +325,7 @@ internal class FirebaseDataConnectImpl(
   ): QueryRefImpl<Data, Variables> {
     val options =
       object : QueryRefOptionsBuilder<Data, Variables> {
-        override var generatedQuery: GeneratedQuery<*, Data, Variables>? = null
+        override var callerSdkType: FirebaseDataConnect.CallerSdkType? = null
         override var variablesSerializersModule: SerializersModule? = null
         override var dataSerializersModule: SerializersModule? = null
       }
@@ -339,7 +337,7 @@ internal class FirebaseDataConnectImpl(
       variables = variables,
       dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
-      isFromGeneratedSdk = options.generatedQuery !== null,
+      callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
       variablesSerializersModule = options.variablesSerializersModule,
       dataSerializersModule = options.dataSerializersModule,
     )
@@ -354,7 +352,7 @@ internal class FirebaseDataConnectImpl(
   ): MutationRefImpl<Data, Variables> {
     val options =
       object : MutationRefOptionsBuilder<Data, Variables> {
-        override var generatedMutation: GeneratedMutation<*, Data, Variables>? = null
+        override var callerSdkType: FirebaseDataConnect.CallerSdkType? = null
         override var variablesSerializersModule: SerializersModule? = null
         override var dataSerializersModule: SerializersModule? = null
       }
@@ -366,7 +364,7 @@ internal class FirebaseDataConnectImpl(
       variables = variables,
       dataDeserializer = dataDeserializer,
       variablesSerializer = variablesSerializer,
-      isFromGeneratedSdk = options.generatedMutation !== null,
+      callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
       variablesSerializersModule = options.variablesSerializersModule,
       dataSerializersModule = options.dataSerializersModule,
     )

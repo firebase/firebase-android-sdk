@@ -16,8 +16,10 @@
 package com.google.firebase.dataconnect.core
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
+import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.dataConnectSettings
 import com.google.firebase.dataconnect.testutil.operationName
@@ -77,7 +79,7 @@ class FirebaseDataConnectImplUnitTest {
   }
 
   @Test
-  fun `query() with no options set should use default values for each option`() = runTest {
+  fun `query() with no options set should use null for each option`() = runTest {
     val operationName = Arb.operationName(key).next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
@@ -96,7 +98,7 @@ class FirebaseDataConnectImplUnitTest {
       queryRef.variables shouldBeSameInstanceAs variables
       queryRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
       queryRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
-      queryRef.isFromGeneratedSdk shouldBe false
+      queryRef.callerSdkType shouldBe CallerSdkType.Base
       queryRef.variablesSerializersModule.shouldBeNull()
       queryRef.dataSerializersModule.shouldBeNull()
     }
@@ -108,6 +110,7 @@ class FirebaseDataConnectImplUnitTest {
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
+    val callerSdkType = Arb.callerSdkType().next()
     val dataSerializersModule: SerializersModule = mockk()
     val variablesSerializersModule: SerializersModule = mockk()
 
@@ -118,7 +121,7 @@ class FirebaseDataConnectImplUnitTest {
         dataDeserializer = dataDeserializer,
         variablesSerializer = variablesSerializer,
       ) {
-        this.generatedQuery = mockk()
+        this.callerSdkType = callerSdkType
         this.dataSerializersModule = dataSerializersModule
         this.variablesSerializersModule = variablesSerializersModule
       }
@@ -128,14 +131,14 @@ class FirebaseDataConnectImplUnitTest {
       queryRef.variables shouldBeSameInstanceAs variables
       queryRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
       queryRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
-      queryRef.isFromGeneratedSdk shouldBe true
+      queryRef.callerSdkType shouldBe callerSdkType
       queryRef.dataSerializersModule shouldBeSameInstanceAs dataSerializersModule
       queryRef.variablesSerializersModule shouldBeSameInstanceAs variablesSerializersModule
     }
   }
 
   @Test
-  fun `mutation() with no options set should use default values for each option`() = runTest {
+  fun `mutation() with no options set should use null for each option`() = runTest {
     val operationName = Arb.operationName(key).next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
@@ -154,7 +157,7 @@ class FirebaseDataConnectImplUnitTest {
       mutationRef.variables shouldBeSameInstanceAs variables
       mutationRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
       mutationRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
-      mutationRef.isFromGeneratedSdk shouldBe false
+      mutationRef.callerSdkType shouldBe CallerSdkType.Base
       mutationRef.variablesSerializersModule.shouldBeNull()
       mutationRef.dataSerializersModule.shouldBeNull()
     }
@@ -166,6 +169,7 @@ class FirebaseDataConnectImplUnitTest {
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
+    val callerSdkType = Arb.callerSdkType().next()
     val dataSerializersModule: SerializersModule = mockk()
     val variablesSerializersModule: SerializersModule = mockk()
 
@@ -176,7 +180,7 @@ class FirebaseDataConnectImplUnitTest {
         dataDeserializer = dataDeserializer,
         variablesSerializer = variablesSerializer,
       ) {
-        this.generatedMutation = mockk()
+        this.callerSdkType = callerSdkType
         this.dataSerializersModule = dataSerializersModule
         this.variablesSerializersModule = variablesSerializersModule
       }
@@ -186,7 +190,7 @@ class FirebaseDataConnectImplUnitTest {
       mutationRef.variables shouldBeSameInstanceAs variables
       mutationRef.dataDeserializer shouldBeSameInstanceAs dataDeserializer
       mutationRef.variablesSerializer shouldBeSameInstanceAs variablesSerializer
-      mutationRef.isFromGeneratedSdk shouldBe true
+      mutationRef.callerSdkType shouldBe callerSdkType
       mutationRef.dataSerializersModule shouldBeSameInstanceAs dataSerializersModule
       mutationRef.variablesSerializersModule shouldBeSameInstanceAs variablesSerializersModule
     }

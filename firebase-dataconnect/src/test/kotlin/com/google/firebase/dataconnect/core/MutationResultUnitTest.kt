@@ -17,7 +17,9 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import io.mockk.mockk
 import kotlinx.serialization.DeserializationStrategy
@@ -40,7 +42,7 @@ class MutationResultImplUnitTest {
       variables = TestVariables("sampleMutationTestData"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
-      isFromGeneratedSdk = true,
+      callerSdkType = Arb.callerSdkType().next(),
       dataSerializersModule = mockSerializersModule,
       variablesSerializersModule = mockSerializersModule,
     )
@@ -52,7 +54,7 @@ class MutationResultImplUnitTest {
       variables = TestVariables("sampleMutationTestData1"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
-      isFromGeneratedSdk = false,
+      callerSdkType = Arb.callerSdkType().next(),
       dataSerializersModule = mockSerializersModule,
       variablesSerializersModule = mockSerializersModule,
     )
@@ -64,7 +66,7 @@ class MutationResultImplUnitTest {
       variables = TestVariables("sampleMutationTestData2"),
       dataDeserializer = mockDataDeserializer,
       variablesSerializer = mockVariablesSerializer,
-      isFromGeneratedSdk = true,
+      callerSdkType = Arb.callerSdkType().next(),
       dataSerializersModule = mockSerializersModule,
       variablesSerializersModule = mockSerializersModule,
     )

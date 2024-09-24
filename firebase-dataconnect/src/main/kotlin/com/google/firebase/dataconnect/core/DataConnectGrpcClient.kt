@@ -57,7 +57,7 @@ internal class DataConnectGrpcClient(
     requestId: String,
     operationName: String,
     variables: Struct,
-    isFromGeneratedSdk: Boolean,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): OperationResult {
     val request = executeQueryRequest {
       this.name = requestName
@@ -67,7 +67,7 @@ internal class DataConnectGrpcClient(
 
     val response =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") {
-        executeQuery(requestId, request, isFromGeneratedSdk)
+        executeQuery(requestId, request, callerSdkType)
       }
 
     return OperationResult(
@@ -80,7 +80,7 @@ internal class DataConnectGrpcClient(
     requestId: String,
     operationName: String,
     variables: Struct,
-    isFromGeneratedSdk: Boolean,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): OperationResult {
     val request = executeMutationRequest {
       this.name = requestName
@@ -90,7 +90,7 @@ internal class DataConnectGrpcClient(
 
     val response =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeMutation") {
-        executeMutation(requestId, request, isFromGeneratedSdk = isFromGeneratedSdk)
+        executeMutation(requestId, request, callerSdkType)
       }
 
     return OperationResult(

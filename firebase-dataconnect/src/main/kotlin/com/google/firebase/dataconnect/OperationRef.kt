@@ -145,6 +145,12 @@ public interface OperationRef<Data, Variables> {
   public val variablesSerializer: SerializationStrategy<Variables>
 
   /**
+   * The [FirebaseDataConnect.CallerSdkType] that will be associated with all operations performed
+   * by this object for analytics purposes.
+   */
+  public val callerSdkType: FirebaseDataConnect.CallerSdkType
+
+  /**
    * A [SerializersModule] to use when encoding the variables using [variablesSerializer]. May be
    * `null`, to not use a [SerializersModule].
    */
