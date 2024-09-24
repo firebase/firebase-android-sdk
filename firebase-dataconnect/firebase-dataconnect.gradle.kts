@@ -118,7 +118,6 @@ dependencies {
 
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
-  implementation(project(":protolite-well-known-types"))
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
 
