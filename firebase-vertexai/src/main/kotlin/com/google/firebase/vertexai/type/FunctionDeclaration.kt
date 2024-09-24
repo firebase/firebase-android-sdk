@@ -41,4 +41,7 @@ class FunctionDeclaration(
   val description: String,
   val parameters: Map<String, Schema>,
   val optionalParameters: List<String> = emptyList(),
-)
+) {
+  private val schema: Schema =
+    Schema.obj(properties = parameters, optionalProperties = optionalParameters, nullable = false)
+}
