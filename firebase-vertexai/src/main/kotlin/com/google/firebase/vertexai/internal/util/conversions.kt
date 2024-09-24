@@ -153,16 +153,7 @@ internal fun Tool.toInternal() =
   com.google.firebase.vertexai.common.client.Tool(functionDeclarations.map { it.toInternal() })
 
 internal fun FunctionDeclaration.toInternal() =
-  com.google.firebase.vertexai.common.client.FunctionDeclaration(
-    name,
-    description,
-    Schema(
-      properties = parameters.mapValues { it.value.toInternal() },
-      required = parameters.keys.minus(optionalParameters.toSet()).toList(),
-      type = "OBJECT",
-      nullable = false,
-    ),
-  )
+  com.google.firebase.vertexai.common.client.FunctionDeclaration(name, "", schema.toInternal())
 
 internal fun com.google.firebase.vertexai.type.Schema.toInternal(): Schema =
   Schema(
