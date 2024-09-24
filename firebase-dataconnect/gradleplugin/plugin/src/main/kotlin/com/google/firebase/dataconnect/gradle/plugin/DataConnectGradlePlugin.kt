@@ -26,7 +26,6 @@ import java.util.Locale
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
-import org.gradle.api.file.RegularFile
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.provider.Provider
@@ -89,31 +88,38 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           val dataConnectExecutable = dataConnectProviders.dataConnectExecutable
           buildDirectory.set(baseBuildDirectory.map { it.dir("executable") })
           inputFile.set(
-            dataConnectExecutable.map {
-              when (it) {
-                is DataConnectExecutable.File -> project.layout.projectDirectory.file(it.file.path)
-                is DataConnectExecutable.RegularFile -> it.file
-                is DataConnectExecutable.Version -> null
+            dataConnectExecutable.map(
+              TransformerInterop {
+                when (it) {
+                  is DataConnectExecutable.File ->
+                    project.layout.projectDirectory.file(it.file.path)
+                  is DataConnectExecutable.RegularFile -> it.file
+                  is DataConnectExecutable.Version -> null
+                }
               }
-            }
+            )
           )
           version.set(
-            dataConnectExecutable.map {
-              when (it) {
-                is DataConnectExecutable.File -> null
-                is DataConnectExecutable.RegularFile -> null
-                is DataConnectExecutable.Version -> it.version
+            dataConnectExecutable.map(
+              TransformerInterop {
+                when (it) {
+                  is DataConnectExecutable.File -> null
+                  is DataConnectExecutable.RegularFile -> null
+                  is DataConnectExecutable.Version -> it.version
+                }
               }
-            }
+            )
           )
           verificationInfo.set(
-            dataConnectExecutable.map {
-              when (it) {
-                is DataConnectExecutable.File -> it.verificationInfo
-                is DataConnectExecutable.RegularFile -> it.verificationInfo
-                is DataConnectExecutable.Version -> it.verificationInfo
+            dataConnectExecutable.map(
+              TransformerInterop {
+                when (it) {
+                  is DataConnectExecutable.File -> it.verificationInfo
+                  is DataConnectExecutable.RegularFile -> it.verificationInfo
+                  is DataConnectExecutable.Version -> it.verificationInfo
+                }
               }
-            }
+            )
           )
           outputFile.set(
             dataConnectExecutable.map {
