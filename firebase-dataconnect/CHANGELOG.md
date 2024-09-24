@@ -1,5 +1,5 @@
 # Unreleased
-* [feature] initial beta release.
+* [feature] Initial beta release.
 * [feature] Add ability to specify SerializersModule when serializing.
 * [feature] CallerSdkType added, to enable tracking generated SDK usage.
 * [changed] Changed gRPC proto package to v1beta (was v1alpha).
