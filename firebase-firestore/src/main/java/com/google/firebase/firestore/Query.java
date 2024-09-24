@@ -20,8 +20,13 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import android.app.Activity;
+import android.util.Log;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -43,6 +48,8 @@ import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
@@ -51,6 +58,27 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.logs.Severity;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.exporter.logging.LoggingSpanExporter;
+import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.logs.LogRecordProcessor;
+import io.opentelemetry.sdk.logs.SdkLoggerProvider;
+import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+
+import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 
 /**
  * A {@code Query} which you can read or listen to. You can also construct refined {@code Query}
@@ -961,17 +989,50 @@ public class Query {
    */
   @NonNull
   public Task<QuerySnapshot> get(@NonNull Source source) {
-    validateHasExplicitOrderByForLimitToLast();
-    if (source == Source.CACHE) {
-      return firestore
-          .callClient(client -> client.getDocumentsFromLocalCache(query))
-          .continueWith(
-              Executors.DIRECT_EXECUTOR,
-              (Task<ViewSnapshot> viewSnap) ->
-                  new QuerySnapshot(new Query(query, firestore), viewSnap.getResult(), firestore));
-    } else {
-      return getViaSnapshotListener(source);
-    }
+//    System.out.println("inside Query.get()");
+//    OtlpGrpcSpanExporter otlpGrpcSpanExporter = OtlpGrpcSpanExporter.builder()
+//            .setEndpoint("http://34.72.58.143:4317") // Replace with your OTLP endpoint
+//            .build();
+//    // Configure a batch span processor
+//    BatchSpanProcessor otlpGrpcSpanProcessor = BatchSpanProcessor.builder(otlpGrpcSpanExporter)
+//            .setScheduleDelay(50, TimeUnit.MILLISECONDS) // Adjust the delay as needed
+//            .build();
+//    LoggingSpanExporter loggingSpanExporter = LoggingSpanExporter.create();
+//    SpanProcessor loggingSpanProcessor = BatchSpanProcessor.builder(loggingSpanExporter).build();
+//
+//
+//    SdkTracerProvider sdkTracerProvider =
+//            SdkTracerProvider
+//                    .builder()
+//                    .addSpanProcessor(otlpGrpcSpanProcessor)
+//                    .addSpanProcessor(loggingSpanProcessor)
+//                    .build();
+//
+//    OpenTelemetry otel = OpenTelemetrySdk.builder()
+//            .setTracerProvider(sdkTracerProvider)
+//            .buildAndRegisterGlobal();
+//
+//    Span span = otel.getTracer("Sparky").spanBuilder("Query.get()").startSpan();
+
+//    try (Scope ignored = span.makeCurrent()) {
+      validateHasExplicitOrderByForLimitToLast();
+      if (source == Source.CACHE) {
+        return firestore
+                .callClient(client -> client.getDocumentsFromLocalCache(query))
+                .continueWith(
+                        Executors.DIRECT_EXECUTOR,
+                        (Task<ViewSnapshot> viewSnap) ->
+                                new QuerySnapshot(new Query(query, firestore), viewSnap.getResult(), firestore));
+      } else {
+        Task<QuerySnapshot> result = getViaSnapshotListener(source);
+//        result.addOnSuccessListener(firestore.clientProvider.getAsyncQueue().getExecutor(),
+//                queryDocumentSnapshots -> {
+//                  span.end();
+//                  sdkTracerProvider.forceFlush();
+//                });
+        return result;
+      }
+//    }
   }
 
   private Task<QuerySnapshot> getViaSnapshotListener(Source source) {
@@ -1161,6 +1222,59 @@ public class Query {
       @Nullable Activity activity,
       EventListener<QuerySnapshot> userListener) {
     validateHasExplicitOrderByForLimitToLast();
+
+    System.out.println("inside Query.addSnapshotListenerInternal");
+    Resource resource =
+            Resource.getDefault().merge(Resource.builder().put("service.name", "firebase-android-sdk").build());
+    OtlpGrpcSpanExporter otlpGrpcSpanExporter = OtlpGrpcSpanExporter.builder()
+            .setEndpoint("http://34.41.223.29:4317")
+            .build();
+    // Configure a batch span processor
+    BatchSpanProcessor otlpGrpcSpanProcessor = BatchSpanProcessor.builder(otlpGrpcSpanExporter)
+            .setScheduleDelay(50, TimeUnit.MILLISECONDS) // Adjust the delay as needed
+            .build();
+    LoggingSpanExporter loggingSpanExporter = LoggingSpanExporter.create();
+    SpanProcessor loggingSpanProcessor = BatchSpanProcessor.builder(loggingSpanExporter).build();
+
+
+    OtlpGrpcLogRecordExporter otlpGrpcLogRecordExporter =
+            OtlpGrpcLogRecordExporter.builder()
+                    .setEndpoint("http://34.41.223.29:4317") // Replace with your OTLP endpoint
+                    .build();
+    LogRecordProcessor otlpGrpcLogRecordProcessor = BatchLogRecordProcessor.builder(otlpGrpcLogRecordExporter).build();
+
+    SdkTracerProvider sdkTracerProvider =
+            SdkTracerProvider
+                    .builder()
+                    .setResource(resource)
+                    .addSpanProcessor(otlpGrpcSpanProcessor)
+                    .addSpanProcessor(loggingSpanProcessor)
+                    .build();
+
+    OpenTelemetry otel = OpenTelemetrySdk.builder()
+            .setTracerProvider(sdkTracerProvider)
+            .setLoggerProvider(
+                    SdkLoggerProvider.builder()
+                            .addLogRecordProcessor(otlpGrpcLogRecordProcessor)
+                            .build()
+            )
+            .build();
+
+    otel.getLogsBridge()
+            .get("loggingScope")
+            .logRecordBuilder()
+            .setSeverity(Severity.INFO)
+            .setBody("Client started a snapshot listener for the query")
+            // TODO: Replace this with a unieque identifier for this client.
+            .setAttribute(AttributeKey.stringKey("gcp.log_name"), "MY_ANDROID_APP_UUID")
+            .emit();
+    Span span = otel.getTracer("com.google.firebase.firestore").spanBuilder("Query.get()").startSpan();
+
+    try (Scope ignored = span.makeCurrent()) {
+      System.out.println("inside the span's current scope");
+      span.addEvent("Sample Event Log message");
+    }
+    span.end();
 
     // Convert from ViewSnapshots to QuerySnapshots.
     EventListener<ViewSnapshot> viewListener =

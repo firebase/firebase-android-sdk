@@ -119,6 +119,7 @@ tasks.withType(Test) {
 }
 
 dependencies {
+    implementation project(':firebase-config')
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
     api project(':protolite-well-known-types')
@@ -143,6 +144,12 @@ dependencies {
     implementation "io.grpc:grpc-stub:$grpcVersion"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+
+    implementation platform("io.opentelemetry:opentelemetry-bom:1.42.0")
+    implementation('io.opentelemetry:opentelemetry-api')
+    implementation('io.opentelemetry:opentelemetry-sdk')
+    implementation('io.opentelemetry:opentelemetry-exporter-otlp')
+    implementation('io.opentelemetry:opentelemetry-exporter-logging')
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
     compileOnly 'javax.annotation:jsr250-api:1.0'
