@@ -20,7 +20,6 @@ syntax = "proto3";
 
 package google.firebase.dataconnect.v1beta;
 
-import "google/api/field_behavior.proto";
 import "google/firebase/dataconnect/proto/graphql_error.proto";
 import "google/protobuf/struct.proto";
 
@@ -55,17 +54,17 @@ message ExecuteQueryRequest {
   // ```
   // projects/{project}/locations/{location}/services/{service}/connectors/{connector}
   // ```
-  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 1;
 
   // The name of the GraphQL operation name.
   // Required because all Connector operations must be named.
   // See https://graphql.org/learn/queries/#operation-name.
   // (-- api-linter: core::0122::name-suffix=disabled
   //     aip.dev/not-precedent: Must conform to GraphQL HTTP spec standard. --)
-  string operation_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string operation_name = 2;
 
   // Values for GraphQL variables provided in this request.
-  google.protobuf.Struct variables = 3 [(google.api.field_behavior) = OPTIONAL];
+  google.protobuf.Struct variables = 3;
 }
 
 // The ExecuteMutation request to Firebase Data Connect.
@@ -75,17 +74,17 @@ message ExecuteMutationRequest {
   // ```
   // projects/{project}/locations/{location}/services/{service}/connectors/{connector}
   // ```
-  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  string name = 1;
 
   // The name of the GraphQL operation name.
   // Required because all Connector operations must be named.
   // See https://graphql.org/learn/queries/#operation-name.
   // (-- api-linter: core::0122::name-suffix=disabled
   //     aip.dev/not-precedent: Must conform to GraphQL HTTP spec standard. --)
-  string operation_name = 2 [(google.api.field_behavior) = REQUIRED];
+  string operation_name = 2;
 
   // Values for GraphQL variables provided in this request.
-  google.protobuf.Struct variables = 3 [(google.api.field_behavior) = OPTIONAL];
+  google.protobuf.Struct variables = 3;
 }
 
 // The ExecuteQuery response from Firebase Data Connect.
