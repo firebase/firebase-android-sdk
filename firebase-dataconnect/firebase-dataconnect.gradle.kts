@@ -14,17 +14,13 @@
  * limitations under the License.
  */
 
-import org.jetbrains.dokka.gradle.DokkaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import io.javalin.Javalin
-import io.javalin.http.staticfiles.Location
 
 plugins {
   id("firebase-library")
   id("kotlin-android")
   id("com.google.protobuf")
   id("copy-google-services")
-  alias(libs.plugins.dokka)
   alias(libs.plugins.kotlinx.serialization)
 }
 
@@ -188,13 +184,6 @@ tasks.withType<KotlinCompile>().all {
   }
 }
 
-tasks.withType<DokkaTask>().configureEach {
-  moduleName.set("firebase-dataconnect")
-  val cacheRootDirectory = layout.buildDirectory.dir("dokka/cache")
-  cacheRootDirectory.get().asFile.mkdirs()
-  cacheRoot.set(cacheRootDirectory)
-}
-
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
 // classes, methods, or properties have implicit `public` visibility. This check helps
 // avoid  accidentally leaking elements into the public API, requiring that any public
@@ -205,36 +194,6 @@ tasks.withType<KotlinCompile>().all {
   if (!name.contains("test", ignoreCase = true)) {
     if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
       kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
-    }
-  }
-}
-
-// Runs dokkaHtml and starts a web server to serve it locally.
-tasks.register("dokkaHtmlServe") {
-  group = "documentation"
-  description = "Run a web server to serve the HTML output of the dokkaHtml task"
-  mustRunAfter("dokkaHtml")
-
-  doLast {
-    val port = 8000
-    val directory = layout.buildDirectory.dir("dokka/html").get().asFile.absolutePath
-
-    val javelin = Javalin.create { javalinConfig ->
-      javalinConfig.staticFiles.add { staticFileConfig ->
-        staticFileConfig.directory = directory
-        staticFileConfig.location = Location.EXTERNAL
-        staticFileConfig.hostedPath = "/"
-      }
-    }
-
-    javelin.start(port)
-    try {
-      println("Starting HTTP server at http://localhost:$port which serves the contents of directory: $directory")
-      println("Press ENTER to stop the server")
-      readlnOrNull()
-      println("Stopping HTTP server at http://localhost:$port")
-    } finally {
-      javelin.stop()
     }
   }
 }

@@ -91,5 +91,4 @@ kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-prope
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
 
 [plugins]
-dokka = { id = "org.jetbrains.dokka", version = "1.9.10" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
