@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.core.Globals.copy
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.filterNotEqual

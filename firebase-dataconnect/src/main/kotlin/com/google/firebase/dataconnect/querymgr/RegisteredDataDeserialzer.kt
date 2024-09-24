@@ -17,14 +17,15 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.debug
-import com.google.firebase.dataconnect.core.deserialize
-import com.google.firebase.dataconnect.core.warn
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.mapSuspending
 import com.google.firebase.dataconnect.util.SuspendingLazy
-import com.google.firebase.dataconnect.util.mapSuspending
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow

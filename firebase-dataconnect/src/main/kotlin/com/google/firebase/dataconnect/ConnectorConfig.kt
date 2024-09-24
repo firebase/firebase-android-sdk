@@ -37,14 +37,6 @@ public class ConnectorConfig(
   public val serviceId: String
 ) {
 
-  /** Creates and returns a new [ConnectorConfig] instance with the given property values. */
-  public fun copy(
-    connector: String = this.connector,
-    location: String = this.location,
-    serviceId: String = this.serviceId
-  ): ConnectorConfig =
-    ConnectorConfig(connector = connector, location = location, serviceId = serviceId)
-
   /**
    * Compares this object with another object for equality.
    *
@@ -85,3 +77,11 @@ public class ConnectorConfig(
   override fun toString(): String =
     "ConnectorConfig(connector=$connector, location=$location, serviceId=$serviceId)"
 }
+
+/** Creates and returns a new [ConnectorConfig] instance with the given property values. */
+public fun ConnectorConfig.copy(
+  connector: String = this.connector,
+  location: String = this.location,
+  serviceId: String = this.serviceId
+): ConnectorConfig =
+  ConnectorConfig(connector = connector, location = location, serviceId = serviceId)

@@ -20,11 +20,12 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.debug
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.map
-import com.google.firebase.dataconnect.util.nextSequenceNumber
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.CopyOnWriteArrayList

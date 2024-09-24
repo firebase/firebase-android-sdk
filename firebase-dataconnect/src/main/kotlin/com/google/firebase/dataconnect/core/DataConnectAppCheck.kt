@@ -20,6 +20,8 @@ import com.google.firebase.annotations.DeferredApi
 import com.google.firebase.appcheck.AppCheckTokenResult
 import com.google.firebase.appcheck.interop.AppCheckTokenListener
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.tasks.await

@@ -19,6 +19,7 @@ import com.google.firebase.dataconnect.DataConnectError
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.connectorConfig
@@ -30,9 +31,9 @@ import com.google.firebase.dataconnect.testutil.operationResult
 import com.google.firebase.dataconnect.testutil.projectId
 import com.google.firebase.dataconnect.testutil.requestId
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
-import com.google.firebase.dataconnect.util.buildStructProto
-import com.google.firebase.dataconnect.util.encodeToStruct
-import com.google.firebase.dataconnect.util.toMap
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ExecuteMutationRequest

@@ -15,12 +15,12 @@
  */
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
+import com.google.firebase.dataconnect.util.ProtoUtil.toListOfAny
+import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.ProtoValueDecoder
 import com.google.firebase.dataconnect.util.ProtoValueEncoder
-import com.google.firebase.dataconnect.util.nullProtoValue
-import com.google.firebase.dataconnect.util.toListOfAny
-import com.google.firebase.dataconnect.util.toMap
-import com.google.firebase.dataconnect.util.toValueProto
 import com.google.protobuf.Value
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi

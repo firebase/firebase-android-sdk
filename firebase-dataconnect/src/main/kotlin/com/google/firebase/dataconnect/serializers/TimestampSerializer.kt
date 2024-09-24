@@ -20,7 +20,9 @@ import com.google.firebase.Timestamp
 import java.text.DateFormat
 import java.text.ParsePosition
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -35,6 +37,23 @@ import kotlinx.serialization.encoding.Encoder
  * wire format expected by the Firebase Data Connect backend.
  */
 public object TimestampSerializer : KSerializer<Timestamp> {
+
+  override val descriptor: SerialDescriptor =
+    PrimitiveSerialDescriptor("Timestamp", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: Timestamp) {
+    val rfc3339String = TimestampSerializerImpl.timestampToString(value)
+    encoder.encodeString(rfc3339String)
+  }
+
+  override fun deserialize(decoder: Decoder): Timestamp {
+    val rfc3339String = decoder.decodeString()
+    return TimestampSerializerImpl.timestampFromString(rfc3339String)
+  }
+}
+
+internal object TimestampSerializerImpl {
+
   private val threadLocalDateFormatter =
     object : ThreadLocal<SimpleDateFormat>() {
       override fun initialValue(): SimpleDateFormat {
@@ -47,23 +66,9 @@ public object TimestampSerializer : KSerializer<Timestamp> {
   private val dateFormatter: DateFormat
     get() = threadLocalDateFormatter.get()!!
 
-  override val descriptor: SerialDescriptor =
-    PrimitiveSerialDescriptor("Timestamp", PrimitiveKind.STRING)
-
-  /**
-   * The expected serialized timestamp format is RFC3339: `yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS'Z'`, it
-   * can be constructed by two parts. First, we use `dateFormatter` to serialize seconds. Then, we
-   * pad nanoseconds into a 9 digits string.
-   */
-  private fun timestampToString(timestamp: Timestamp): String {
-    val serializedSecond = dateFormatter.format(Date(timestamp.seconds * 1000))
-    val serializedNano = timestamp.nanoseconds.toString().padStart(9, '0')
-    return "$serializedSecond.${serializedNano}Z"
-  }
-
   // TODO: Replace this implementation with Instant.parse() once minSdkVersion is bumped to at
   //  least 26 (Build.VERSION_CODES.O).
-  private fun timestampFromString(str: String): Timestamp {
+  fun timestampFromString(str: String): Timestamp {
     val strUppercase = str.uppercase()
 
     // If the timestamp string is 1985-04-12T23:20:50.123456789-07:00, the time-secfrac part
@@ -111,13 +116,14 @@ public object TimestampSerializer : KSerializer<Timestamp> {
     return Timestamp(seconds + if (addTimeDiffer) -timeZoneDiffer else timeZoneDiffer, nanoseconds)
   }
 
-  override fun serialize(encoder: Encoder, value: Timestamp) {
-    val rfc3339String = timestampToString(value)
-    encoder.encodeString(rfc3339String)
-  }
-
-  override fun deserialize(decoder: Decoder): Timestamp {
-    val rfc3339String = decoder.decodeString()
-    return timestampFromString(rfc3339String)
+  /**
+   * The expected serialized timestamp format is RFC3339: `yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSS'Z'`, it
+   * can be constructed by two parts. First, we use `dateFormatter` to serialize seconds. Then, we
+   * pad nanoseconds into a 9 digits string.
+   */
+  fun timestampToString(timestamp: Timestamp): String {
+    val serializedSecond = dateFormatter.format(Date(timestamp.seconds * 1000))
+    val serializedNano = timestamp.nanoseconds.toString().padStart(9, '0')
+    return "$serializedSecond.${serializedNano}Z"
   }
 }

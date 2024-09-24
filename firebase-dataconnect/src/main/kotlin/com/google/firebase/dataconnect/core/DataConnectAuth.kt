@@ -19,6 +19,8 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.annotations.DeferredApi
 import com.google.firebase.auth.internal.IdTokenListener
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.internal.InternalTokenResult
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

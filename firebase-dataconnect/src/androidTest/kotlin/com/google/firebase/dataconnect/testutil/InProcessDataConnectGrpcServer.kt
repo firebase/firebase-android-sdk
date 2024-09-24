@@ -18,7 +18,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.util.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse

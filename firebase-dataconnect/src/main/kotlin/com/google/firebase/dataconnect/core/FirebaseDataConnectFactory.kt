@@ -123,6 +123,27 @@ internal class FirebaseDataConnectFactory(
       }
     }
   }
+
+  private companion object {
+    private fun throwIfIncompatible(
+      key: FirebaseDataConnectInstanceKey,
+      instance: FirebaseDataConnect,
+      settings: DataConnectSettings?
+    ) {
+      val keyStr = key.run { "serviceId=$serviceId, location=$location, connector=$connector" }
+      if (settings !== null && instance.settings != settings) {
+        throw IllegalArgumentException(
+          "The settings of the FirebaseDataConnect instance with [$keyStr] is " +
+            "'${instance.settings}', which is different from the given settings: $settings; " +
+            "to get a FirebaseDataConnect with [$keyStr] but different settings, first call " +
+            "close() on the existing FirebaseDataConnect instance, then call getInstance() " +
+            "again with the desired settings. Alternately, call getInstance() with null " +
+            "settings to use whatever settings are configured in the existing " +
+            "FirebaseDataConnect instance."
+        )
+      }
+    }
+  }
 }
 
 private data class FirebaseDataConnectInstanceKey(
@@ -131,22 +152,4 @@ private data class FirebaseDataConnectInstanceKey(
   val serviceId: String,
 ) {
   override fun toString() = "serviceId=$serviceId, location=$location, connector=$connector"
-}
-
-private fun throwIfIncompatible(
-  key: FirebaseDataConnectInstanceKey,
-  instance: FirebaseDataConnect,
-  settings: DataConnectSettings?
-) {
-  val keyStr = key.run { "serviceId=$serviceId, location=$location, connector=$connector" }
-  if (settings !== null && instance.settings != settings) {
-    throw IllegalArgumentException(
-      "The settings of the FirebaseDataConnect instance with [$keyStr] is " +
-        "'${instance.settings}', which is different from the given settings: $settings; " +
-        "to get a FirebaseDataConnect with [$keyStr] but different settings, first call " +
-        "close() on the existing FirebaseDataConnect instance, then call getInstance() again " +
-        "with the desired settings. Alternately, call getInstance() with null settings to " +
-        "use whatever settings are configured in the existing FirebaseDataConnect instance."
-    )
-  }
 }

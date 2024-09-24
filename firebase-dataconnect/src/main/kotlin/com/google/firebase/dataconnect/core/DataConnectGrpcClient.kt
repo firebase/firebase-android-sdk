@@ -17,8 +17,10 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.util.decodeFromStruct
-import com.google.firebase.dataconnect.util.toMap
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toDataConnectError
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -125,50 +127,61 @@ internal class DataConnectGrpcClient(
   }
 }
 
-internal fun ListValue.toPathSegment() =
-  valuesList.map {
-    when (val kind = it.kindCase) {
-      Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
-      Value.KindCase.NUMBER_VALUE -> DataConnectError.PathSegment.ListIndex(it.numberValue.toInt())
-      else -> DataConnectError.PathSegment.Field("invalid PathSegment kind: $kind")
+/**
+ * Holder for "global" functions related to [DataConnectGrpcClient].
+ *
+ * Technically, these functions _could_ be defined as free functions; however, doing so creates a
+ * DataConnectGrpcClientKit Java class with public visibility, which pollutes the public API. Using
+ * an "internal" object, instead, to gather together the top-level functions avoids this public API
+ * pollution.
+ */
+internal object DataConnectGrpcClientGlobals {
+  private fun ListValue.toPathSegment() =
+    valuesList.map {
+      when (val kind = it.kindCase) {
+        Value.KindCase.STRING_VALUE -> DataConnectError.PathSegment.Field(it.stringValue)
+        Value.KindCase.NUMBER_VALUE ->
+          DataConnectError.PathSegment.ListIndex(it.numberValue.toInt())
+        else -> DataConnectError.PathSegment.Field("invalid PathSegment kind: $kind")
+      }
     }
-  }
 
-internal fun List<SourceLocation>.toSourceLocations(): List<DataConnectError.SourceLocation> =
-  buildList {
-    this@toSourceLocations.forEach {
-      add(DataConnectError.SourceLocation(line = it.line, column = it.column))
+  private fun List<SourceLocation>.toSourceLocations(): List<DataConnectError.SourceLocation> =
+    buildList {
+      this@toSourceLocations.forEach {
+        add(DataConnectError.SourceLocation(line = it.line, column = it.column))
+      }
     }
-  }
 
-internal fun GraphqlError.toDataConnectError() =
-  DataConnectError(
-    message = message,
-    path = path.toPathSegment(),
-    this.locationsList.toSourceLocations()
-  )
+  fun GraphqlError.toDataConnectError() =
+    DataConnectError(
+      message = message,
+      path = path.toPathSegment(),
+      this.locationsList.toSourceLocations()
+    )
 
-internal fun <T> DataConnectGrpcClient.OperationResult.deserialize(
-  deserializer: DeserializationStrategy<T>,
-  serializersModule: SerializersModule?,
-): T =
-  if (deserializer === DataConnectUntypedData) {
-    @Suppress("UNCHECKED_CAST")
-    DataConnectUntypedData(data?.toMap(), errors) as T
-  } else if (data === null) {
-    if (errors.isNotEmpty()) {
-      throw DataConnectException("operation failed: errors=$errors")
+  fun <T> DataConnectGrpcClient.OperationResult.deserialize(
+    deserializer: DeserializationStrategy<T>,
+    serializersModule: SerializersModule?,
+  ): T =
+    if (deserializer === DataConnectUntypedData) {
+      @Suppress("UNCHECKED_CAST")
+      DataConnectUntypedData(data?.toMap(), errors) as T
+    } else if (data === null) {
+      if (errors.isNotEmpty()) {
+        throw DataConnectException("operation failed: errors=$errors")
+      } else {
+        throw DataConnectException("no data included in result")
+      }
+    } else if (errors.isNotEmpty()) {
+      throw DataConnectException("operation failed: errors=$errors (data=$data)")
     } else {
-      throw DataConnectException("no data included in result")
+      try {
+        decodeFromStruct(data, deserializer, serializersModule)
+      } catch (dataConnectException: DataConnectException) {
+        throw dataConnectException
+      } catch (throwable: Throwable) {
+        throw DataConnectException("decoding response data failed: $throwable", throwable)
+      }
     }
-  } else if (errors.isNotEmpty()) {
-    throw DataConnectException("operation failed: errors=$errors (data=$data)")
-  } else {
-    try {
-      decodeFromStruct(data, deserializer, serializersModule)
-    } catch (dataConnectException: DataConnectException) {
-      throw dataConnectException
-    } catch (throwable: Throwable) {
-      throw DataConnectException("decoding response data failed: $throwable", throwable)
-    }
-  }
+}

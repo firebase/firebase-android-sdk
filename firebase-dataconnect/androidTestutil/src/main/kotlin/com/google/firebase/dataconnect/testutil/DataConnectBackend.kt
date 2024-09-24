@@ -21,6 +21,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.copy
 import com.google.firebase.dataconnect.getInstance
 import com.google.firebase.dataconnect.testutil.DataConnectBackend.Autopush
 import com.google.firebase.dataconnect.testutil.DataConnectBackend.Companion.fromInstrumentationArguments

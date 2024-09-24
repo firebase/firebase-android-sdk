@@ -19,9 +19,9 @@ package com.google.firebase.dataconnect.serializers
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.testutil.assertThrows
-import com.google.firebase.dataconnect.util.buildStructProto
-import com.google.firebase.dataconnect.util.decodeFromStruct
-import com.google.firebase.dataconnect.util.encodeToStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import kotlinx.serialization.Serializable
 import org.junit.Test
 

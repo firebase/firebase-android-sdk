@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.copy
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase.Companion.testConnectorConfig
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory

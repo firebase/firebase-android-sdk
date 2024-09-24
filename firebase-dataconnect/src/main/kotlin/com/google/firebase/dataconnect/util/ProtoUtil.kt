@@ -16,7 +16,9 @@
 
 package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.core.toDataConnectError
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toDataConnectError
+import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -37,77 +39,376 @@ import java.io.CharArrayWriter
 import java.io.DataOutputStream
 import java.security.DigestOutputStream
 import java.security.MessageDigest
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.serializer
 
-/** Calculates a SHA-512 digest of a [Struct]. */
-internal fun Struct.calculateSha512(): ByteArray =
-  Value.newBuilder().setStructValue(this).build().calculateSha512()
+/**
+ * Holder for "global" functions related to protocol buffers.
+ *
+ * Technically, these functions _could_ be defined as free functions; however, doing so creates a
+ * ProtoStructEncoderKt, ProtoUtilKt, etc. Java class with public visibility, which pollutes the
+ * public API. Using an "internal" object, instead, to gather together the top-level functions
+ * avoids this public API pollution.
+ */
+internal object ProtoUtil {
 
-/** Calculates a SHA-512 digest of a [Value]. */
-internal fun Value.calculateSha512(): ByteArray {
-  val digest = MessageDigest.getInstance("SHA-512")
-  val out = DataOutputStream(DigestOutputStream(NullOutputStream, digest))
+  /** Calculates a SHA-512 digest of a [Struct]. */
+  fun Struct.calculateSha512(): ByteArray =
+    Value.newBuilder().setStructValue(this).build().calculateSha512()
 
-  val calculateDigest =
-    DeepRecursiveFunction<Value, Unit> {
-      val kind = it.kindCase
-      out.writeInt(kind.ordinal)
+  /** Calculates a SHA-512 digest of a [Value]. */
+  fun Value.calculateSha512(): ByteArray {
+    val digest = MessageDigest.getInstance("SHA-512")
+    val out = DataOutputStream(DigestOutputStream(NullOutputStream, digest))
 
-      when (kind) {
-        KindCase.NULL_VALUE -> {
-          /* nothing to write for null */
-        }
-        KindCase.BOOL_VALUE -> out.writeBoolean(it.boolValue)
-        KindCase.NUMBER_VALUE -> out.writeDouble(it.numberValue)
-        KindCase.STRING_VALUE -> out.writeUTF(it.stringValue)
-        KindCase.LIST_VALUE ->
-          it.listValue.valuesList.forEachIndexed { index, elementValue ->
-            out.writeInt(index)
-            callRecursive(elementValue)
+    val calculateDigest =
+      DeepRecursiveFunction<Value, Unit> {
+        val kind = it.kindCase
+        out.writeInt(kind.ordinal)
+
+        when (kind) {
+          KindCase.NULL_VALUE -> {
+            /* nothing to write for null */
           }
-        KindCase.STRUCT_VALUE ->
-          it.structValue.fieldsMap.entries
-            .sortedBy { (key, _) -> key }
-            .forEach { (key, elementValue) ->
-              out.writeUTF(key)
+          KindCase.BOOL_VALUE -> out.writeBoolean(it.boolValue)
+          KindCase.NUMBER_VALUE -> out.writeDouble(it.numberValue)
+          KindCase.STRING_VALUE -> out.writeUTF(it.stringValue)
+          KindCase.LIST_VALUE ->
+            it.listValue.valuesList.forEachIndexed { index, elementValue ->
+              out.writeInt(index)
               callRecursive(elementValue)
             }
-        else -> throw IllegalArgumentException("unsupported kind: $kind")
+          KindCase.STRUCT_VALUE ->
+            it.structValue.fieldsMap.entries
+              .sortedBy { (key, _) -> key }
+              .forEach { (key, elementValue) ->
+                out.writeUTF(key)
+                callRecursive(elementValue)
+              }
+          else -> throw IllegalArgumentException("unsupported kind: $kind")
+        }
+
+        out.writeInt(kind.ordinal)
       }
 
-      out.writeInt(kind.ordinal)
+    calculateDigest(this)
+
+    return digest.digest()
+  }
+
+  fun Boolean.toValueProto(): Value = Value.newBuilder().setBoolValue(this).build()
+
+  fun Byte.toValueProto(): Value = toInt().toValueProto()
+
+  fun Char.toValueProto(): Value = code.toValueProto()
+
+  fun Double.toValueProto(): Value = Value.newBuilder().setNumberValue(this).build()
+
+  fun Float.toValueProto(): Value = toDouble().toValueProto()
+
+  fun Int.toValueProto(): Value = toDouble().toValueProto()
+
+  fun Long.toValueProto(): Value = toString().toValueProto()
+
+  fun Short.toValueProto(): Value = toInt().toValueProto()
+
+  fun String.toValueProto(): Value = Value.newBuilder().setStringValue(this).build()
+
+  fun ListValue.toValueProto(): Value = Value.newBuilder().setListValue(this).build()
+
+  fun Struct.toValueProto(): Value = Value.newBuilder().setStructValue(this).build()
+
+  val nullProtoValue: Value
+    get() {
+      return Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
     }
 
-  calculateDigest(this)
+  /** A more convenient builder for [Struct] than [com.google.protobuf.struct]. */
+  fun buildStructProto(
+    initialValues: Struct? = null,
+    block: StructProtoBuilder.() -> Unit
+  ): Struct = StructProtoBuilder(initialValues).apply(block).build()
 
-  return digest.digest()
-}
+  /** Generates and returns a string similar to [Struct.toString] but more compact. */
+  fun Struct.toCompactString(keySortSelector: ((String) -> String)? = null): String =
+    Value.newBuilder().setStructValue(this).build().toCompactString(keySortSelector)
 
-internal fun Boolean.toValueProto(): Value = Value.newBuilder().setBoolValue(this).build()
+  /** Generates and returns a string similar to [Value.toString] but more compact. */
+  fun Value.toCompactString(keySortSelector: ((String) -> String)? = null): String {
+    val charArrayWriter = CharArrayWriter()
+    val out = BufferedWriter(charArrayWriter)
+    var indent = 0
 
-internal fun Byte.toValueProto(): Value = toInt().toValueProto()
+    fun BufferedWriter.writeIndent() {
+      repeat(indent * 2) { write(" ") }
+    }
 
-internal fun Char.toValueProto(): Value = code.toValueProto()
+    val calculateCompactString =
+      DeepRecursiveFunction<Value, Unit> {
+        when (val kind = it.kindCase) {
+          KindCase.NULL_VALUE -> out.write("null")
+          KindCase.BOOL_VALUE -> out.write(if (it.boolValue) "true" else "false")
+          KindCase.NUMBER_VALUE -> out.write(it.numberValue.toString())
+          KindCase.STRING_VALUE -> out.write("\"${it.stringValue}\"")
+          KindCase.LIST_VALUE -> {
+            out.write("[")
+            indent++
+            it.listValue.valuesList.forEach { listElementValue ->
+              out.newLine()
+              out.writeIndent()
+              callRecursive(listElementValue)
+            }
+            indent--
+            out.newLine()
+            out.writeIndent()
+            out.write("]")
+          }
+          KindCase.STRUCT_VALUE -> {
+            out.write("{")
+            indent++
+            it.structValue.fieldsMap.entries
+              .sortedBy { (key, _) -> keySortSelector?.invoke(key) ?: key }
+              .forEach { (structElementKey, structElementValue) ->
+                out.newLine()
+                out.writeIndent()
+                out.write("$structElementKey: ")
+                callRecursive(structElementValue)
+              }
+            indent--
+            out.newLine()
+            out.writeIndent()
+            out.write("}")
+          }
+          else -> throw IllegalArgumentException("unsupported kind: $kind")
+        }
+      }
 
-internal fun Double.toValueProto(): Value = Value.newBuilder().setNumberValue(this).build()
+    calculateCompactString(this)
 
-internal fun Float.toValueProto(): Value = toDouble().toValueProto()
-
-internal fun Int.toValueProto(): Value = toDouble().toValueProto()
-
-internal fun Long.toValueProto(): Value = toString().toValueProto()
-
-internal fun Short.toValueProto(): Value = toInt().toValueProto()
-
-internal fun String.toValueProto(): Value = Value.newBuilder().setStringValue(this).build()
-
-internal fun ListValue.toValueProto(): Value = Value.newBuilder().setListValue(this).build()
-
-internal fun Struct.toValueProto(): Value = Value.newBuilder().setStructValue(this).build()
-
-internal val nullProtoValue: Value
-  get() {
-    return Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+    out.close()
+    return charArrayWriter.toString()
   }
+
+  fun ExecuteQueryRequest.toCompactString(): String = toStructProto().toCompactString()
+
+  fun ExecuteQueryRequest.toStructProto(): Struct = buildStructProto {
+    put("name", name)
+    put("operationName", operationName)
+    if (hasVariables()) put("variables", variables)
+  }
+
+  fun ExecuteQueryResponse.toCompactString(): String = toStructProto().toCompactString()
+
+  fun ExecuteQueryResponse.toStructProto(): Struct = buildStructProto {
+    if (hasData()) put("data", data)
+    putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
+  }
+
+  fun ExecuteMutationRequest.toCompactString(): String = toStructProto().toCompactString()
+
+  fun ExecuteMutationRequest.toStructProto(): Struct = buildStructProto {
+    put("name", name)
+    put("operationName", operationName)
+    if (hasVariables()) put("variables", variables)
+  }
+
+  fun ExecuteMutationResponse.toCompactString(): String = toStructProto().toCompactString()
+
+  fun ExecuteMutationResponse.toStructProto(): Struct = buildStructProto {
+    if (hasData()) put("data", data)
+    putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
+  }
+
+  fun EmulatorInfo.toStructProto(): Struct = buildStructProto {
+    put("version", version)
+    putList("services") { servicesList.forEach { add(it.toStructProto()) } }
+  }
+
+  fun ServiceInfo.toStructProto(): Struct = buildStructProto {
+    put("service_id", serviceId)
+    put("connection_string", connectionString)
+  }
+
+  fun EmulatorIssuesResponse.toStructProto(): Struct = buildStructProto {
+    putList("issues") { issuesList.forEach { add(it.toStructProto()) } }
+  }
+
+  fun EmulatorIssue.toStructProto(): Struct = buildStructProto {
+    put("kind", kind.name)
+    put("severity", severity.name)
+    put("message", message)
+  }
+
+  fun ListValue.toListOfAny(): List<Any?> = valueToAnyMutualRecursion.anyFromListValue(this)
+
+  fun Struct.toMap(): Map<String, Any?> = valueToAnyMutualRecursion.anyValueFromStruct(this)
+
+  fun Value.toAny(): Any? = valueToAnyMutualRecursion.anyValueFromValue(this)
+
+  fun List<Any?>.toValueProto(): Value {
+    val key = "y8czq9rh75"
+    return mapOf(key to this).toStructProto().getFieldsOrThrow(key)
+  }
+
+  fun Map<String, Any?>.toValueProto(): Value =
+    Value.newBuilder().setStructValue(toStructProto()).build()
+
+  fun Map<String, Any?>.toStructProto(): Struct = mapToStructProtoMutualRecursion.structForMap(this)
+
+  private val mapToStructProtoMutualRecursion =
+    object {
+      val listValueForList: DeepRecursiveFunction<List<*>, ListValue> = DeepRecursiveFunction {
+        val listValueProtoBuilder = ListValue.newBuilder()
+        it.forEach { value ->
+          listValueProtoBuilder.addValues(
+            when (value) {
+              null -> nullProtoValue
+              is Boolean -> value.toValueProto()
+              is Double -> value.toValueProto()
+              is String -> value.toValueProto()
+              is List<*> -> callRecursive(value).toValueProto()
+              is Map<*, *> -> structForMap.callRecursive(value).toValueProto()
+              else ->
+                throw IllegalArgumentException(
+                  "unsupported type: ${value::class.qualifiedName}; " +
+                    "supported types are: Boolean, Double, String, List, and Map"
+                )
+            }
+          )
+        }
+        listValueProtoBuilder.build()
+      }
+
+      val structForMap: DeepRecursiveFunction<Map<*, *>, Struct> = DeepRecursiveFunction {
+        val structProtoBuilder = Struct.newBuilder()
+        it.entries.forEach { (untypedKey, value) ->
+          val key =
+            (untypedKey as? String)
+              ?: throw IllegalArgumentException(
+                "map keys must be string, but got: " +
+                  if (untypedKey === null) "null" else untypedKey::class.qualifiedName
+              )
+          structProtoBuilder.putFields(
+            key,
+            when (value) {
+              null -> nullProtoValue
+              is Double -> value.toValueProto()
+              is Boolean -> value.toValueProto()
+              is String -> value.toValueProto()
+              is List<*> -> listValueForList.callRecursive(value).toValueProto()
+              is Map<*, *> -> callRecursive(value).toValueProto()
+              else ->
+                throw IllegalArgumentException(
+                  "unsupported type: ${value::class.qualifiedName}; " +
+                    "supported types are: Boolean, Double, String, List, and Map"
+                )
+            }
+          )
+        }
+        structProtoBuilder.build()
+      }
+    }
+
+  private val valueToAnyMutualRecursion =
+    object {
+      val anyFromListValue: DeepRecursiveFunction<ListValue, List<Any?>> =
+        DeepRecursiveFunction { listValue ->
+          buildList {
+            for (element in listValue.valuesList) {
+              add(anyValueFromValue.callRecursive(element))
+            }
+          }
+        }
+
+      val anyValueFromStruct: DeepRecursiveFunction<Struct, Map<String, Any?>> =
+        DeepRecursiveFunction { struct ->
+          buildMap {
+            for (entry in struct.fieldsMap) {
+              put(entry.key, anyValueFromValue.callRecursive(entry.value))
+            }
+          }
+        }
+
+      val anyValueFromValue: DeepRecursiveFunction<Value, Any?> = DeepRecursiveFunction { value ->
+        when (value.kindCase) {
+          KindCase.BOOL_VALUE -> value.boolValue
+          KindCase.NUMBER_VALUE -> value.numberValue
+          KindCase.STRING_VALUE -> value.stringValue
+          KindCase.LIST_VALUE -> anyFromListValue.callRecursive(value.listValue)
+          KindCase.STRUCT_VALUE -> anyValueFromStruct.callRecursive(value.structValue)
+          KindCase.NULL_VALUE -> null
+          else -> "ERROR: unsupported kindCase: ${value.kindCase}"
+        }
+      }
+    }
+
+  inline fun <reified T> encodeToStruct(value: T): Struct =
+    encodeToStruct(value, serializer(), serializersModule = null)
+
+  fun <T> encodeToStruct(
+    value: T,
+    serializer: SerializationStrategy<T>,
+    serializersModule: SerializersModule?
+  ): Struct {
+    val valueProto = encodeToValue(value, serializer, serializersModule)
+    if (valueProto.kindCase == KindCase.KIND_NOT_SET) {
+      return Struct.getDefaultInstance()
+    }
+    require(valueProto.hasStructValue()) {
+      "encoding produced ${valueProto.kindCase}, " +
+        "but expected ${KindCase.STRUCT_VALUE} or ${KindCase.KIND_NOT_SET}"
+    }
+    return valueProto.structValue
+  }
+
+  inline fun <reified T> encodeToValue(value: T): Value =
+    encodeToValue(value, serializer(), serializersModule = null)
+
+  fun <T> encodeToValue(
+    value: T,
+    serializer: SerializationStrategy<T>,
+    serializersModule: SerializersModule?
+  ): Value {
+    val values = mutableListOf<Value>()
+    ProtoValueEncoder(null, serializersModule ?: EmptySerializersModule(), values::add)
+      .encodeSerializableValue(serializer, value)
+    if (values.isEmpty()) {
+      return Value.getDefaultInstance()
+    }
+    require(values.size == 1) {
+      "encoding produced ${values.size} Value objects, but expected either 0 or 1"
+    }
+    return values.single()
+  }
+
+  inline fun <reified T> decodeFromStruct(struct: Struct): T =
+    decodeFromStruct(struct, serializer(), serializersModule = null)
+
+  fun <T> decodeFromStruct(
+    struct: Struct,
+    deserializer: DeserializationStrategy<T>,
+    serializersModule: SerializersModule?
+  ): T {
+    val protoValue = Value.newBuilder().setStructValue(struct).build()
+    return decodeFromValue(protoValue, deserializer, serializersModule)
+  }
+
+  inline fun <reified T> decodeFromValue(value: Value): T =
+    decodeFromValue(value, serializer(), serializersModule = null)
+
+  fun <T> decodeFromValue(
+    value: Value,
+    deserializer: DeserializationStrategy<T>,
+    serializersModule: SerializersModule?
+  ): T {
+    val decoder =
+      ProtoValueDecoder(value, path = null, serializersModule ?: EmptySerializersModule())
+    return decoder.decodeSerializableValue(deserializer)
+  }
+}
 
 @DslMarker internal annotation class StructProtoBuilderDslMarker
 
@@ -214,223 +515,3 @@ internal class ListValueProtoBuilder(listValue: ListValue? = null) {
     builder.addValues(nullProtoValue)
   }
 }
-
-/** A more convenient builder for [Struct] than [com.google.protobuf.struct]. */
-internal fun buildStructProto(
-  initialValues: Struct? = null,
-  block: StructProtoBuilder.() -> Unit
-): Struct = StructProtoBuilder(initialValues).apply(block).build()
-
-/** Generates and returns a string similar to [Struct.toString] but more compact. */
-internal fun Struct.toCompactString(keySortSelector: ((String) -> String)? = null): String =
-  Value.newBuilder().setStructValue(this).build().toCompactString(keySortSelector)
-
-/** Generates and returns a string similar to [Value.toString] but more compact. */
-internal fun Value.toCompactString(keySortSelector: ((String) -> String)? = null): String {
-  val charArrayWriter = CharArrayWriter()
-  val out = BufferedWriter(charArrayWriter)
-  var indent = 0
-
-  fun BufferedWriter.writeIndent() {
-    repeat(indent * 2) { write(" ") }
-  }
-
-  val calculateCompactString =
-    DeepRecursiveFunction<Value, Unit> {
-      when (val kind = it.kindCase) {
-        KindCase.NULL_VALUE -> out.write("null")
-        KindCase.BOOL_VALUE -> out.write(if (it.boolValue) "true" else "false")
-        KindCase.NUMBER_VALUE -> out.write(it.numberValue.toString())
-        KindCase.STRING_VALUE -> out.write("\"${it.stringValue}\"")
-        KindCase.LIST_VALUE -> {
-          out.write("[")
-          indent++
-          it.listValue.valuesList.forEach { listElementValue ->
-            out.newLine()
-            out.writeIndent()
-            callRecursive(listElementValue)
-          }
-          indent--
-          out.newLine()
-          out.writeIndent()
-          out.write("]")
-        }
-        KindCase.STRUCT_VALUE -> {
-          out.write("{")
-          indent++
-          it.structValue.fieldsMap.entries
-            .sortedBy { (key, _) -> keySortSelector?.invoke(key) ?: key }
-            .forEach { (structElementKey, structElementValue) ->
-              out.newLine()
-              out.writeIndent()
-              out.write("$structElementKey: ")
-              callRecursive(structElementValue)
-            }
-          indent--
-          out.newLine()
-          out.writeIndent()
-          out.write("}")
-        }
-        else -> throw IllegalArgumentException("unsupported kind: $kind")
-      }
-    }
-
-  calculateCompactString(this)
-
-  out.close()
-  return charArrayWriter.toString()
-}
-
-internal fun ExecuteQueryRequest.toCompactString(): String = toStructProto().toCompactString()
-
-internal fun ExecuteQueryRequest.toStructProto(): Struct = buildStructProto {
-  put("name", name)
-  put("operationName", operationName)
-  if (hasVariables()) put("variables", variables)
-}
-
-internal fun ExecuteQueryResponse.toCompactString(): String = toStructProto().toCompactString()
-
-internal fun ExecuteQueryResponse.toStructProto(): Struct = buildStructProto {
-  if (hasData()) put("data", data)
-  putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
-}
-
-internal fun ExecuteMutationRequest.toCompactString(): String = toStructProto().toCompactString()
-
-internal fun ExecuteMutationRequest.toStructProto(): Struct = buildStructProto {
-  put("name", name)
-  put("operationName", operationName)
-  if (hasVariables()) put("variables", variables)
-}
-
-internal fun ExecuteMutationResponse.toCompactString(): String = toStructProto().toCompactString()
-
-internal fun ExecuteMutationResponse.toStructProto(): Struct = buildStructProto {
-  if (hasData()) put("data", data)
-  putList("errors") { errorsList.forEach { add(it.toDataConnectError().toString()) } }
-}
-
-internal fun EmulatorInfo.toStructProto(): Struct = buildStructProto {
-  put("version", version)
-  putList("services") { servicesList.forEach { add(it.toStructProto()) } }
-}
-
-internal fun ServiceInfo.toStructProto(): Struct = buildStructProto {
-  put("service_id", serviceId)
-  put("connection_string", connectionString)
-}
-
-internal fun EmulatorIssuesResponse.toStructProto(): Struct = buildStructProto {
-  putList("issues") { issuesList.forEach { add(it.toStructProto()) } }
-}
-
-internal fun EmulatorIssue.toStructProto(): Struct = buildStructProto {
-  put("kind", kind.name)
-  put("severity", severity.name)
-  put("message", message)
-}
-
-internal fun ListValue.toListOfAny(): List<Any?> = valueToAnyMutualRecursion.anyFromListValue(this)
-
-internal fun Struct.toMap(): Map<String, Any?> = valueToAnyMutualRecursion.anyValueFromStruct(this)
-
-internal fun Value.toAny(): Any? = valueToAnyMutualRecursion.anyValueFromValue(this)
-
-internal fun List<Any?>.toValueProto(): Value {
-  val key = "y8czq9rh75"
-  return mapOf(key to this).toStructProto().getFieldsOrThrow(key)
-}
-
-internal fun Map<String, Any?>.toValueProto(): Value =
-  Value.newBuilder().setStructValue(toStructProto()).build()
-
-internal fun Map<String, Any?>.toStructProto(): Struct =
-  mapToStructProtoMutualRecursion.structForMap(this)
-
-private val mapToStructProtoMutualRecursion =
-  object {
-    val listValueForList: DeepRecursiveFunction<List<*>, ListValue> = DeepRecursiveFunction {
-      val listValueProtoBuilder = ListValue.newBuilder()
-      it.forEach { value ->
-        listValueProtoBuilder.addValues(
-          when (value) {
-            null -> nullProtoValue
-            is Boolean -> value.toValueProto()
-            is Double -> value.toValueProto()
-            is String -> value.toValueProto()
-            is List<*> -> callRecursive(value).toValueProto()
-            is Map<*, *> -> structForMap.callRecursive(value).toValueProto()
-            else ->
-              throw IllegalArgumentException(
-                "unsupported type: ${value::class.qualifiedName}; " +
-                  "supported types are: Boolean, Double, String, List, and Map"
-              )
-          }
-        )
-      }
-      listValueProtoBuilder.build()
-    }
-
-    val structForMap: DeepRecursiveFunction<Map<*, *>, Struct> = DeepRecursiveFunction {
-      val structProtoBuilder = Struct.newBuilder()
-      it.entries.forEach { (untypedKey, value) ->
-        val key =
-          (untypedKey as? String)
-            ?: throw IllegalArgumentException(
-              "map keys must be string, but got: " +
-                if (untypedKey === null) "null" else untypedKey::class.qualifiedName
-            )
-        structProtoBuilder.putFields(
-          key,
-          when (value) {
-            null -> nullProtoValue
-            is Double -> value.toValueProto()
-            is Boolean -> value.toValueProto()
-            is String -> value.toValueProto()
-            is List<*> -> listValueForList.callRecursive(value).toValueProto()
-            is Map<*, *> -> callRecursive(value).toValueProto()
-            else ->
-              throw IllegalArgumentException(
-                "unsupported type: ${value::class.qualifiedName}; " +
-                  "supported types are: Boolean, Double, String, List, and Map"
-              )
-          }
-        )
-      }
-      structProtoBuilder.build()
-    }
-  }
-
-private val valueToAnyMutualRecursion =
-  object {
-    val anyFromListValue: DeepRecursiveFunction<ListValue, List<Any?>> =
-      DeepRecursiveFunction { listValue ->
-        buildList {
-          for (element in listValue.valuesList) {
-            add(anyValueFromValue.callRecursive(element))
-          }
-        }
-      }
-
-    val anyValueFromStruct: DeepRecursiveFunction<Struct, Map<String, Any?>> =
-      DeepRecursiveFunction { struct ->
-        buildMap {
-          for (entry in struct.fieldsMap) {
-            put(entry.key, anyValueFromValue.callRecursive(entry.value))
-          }
-        }
-      }
-
-    val anyValueFromValue: DeepRecursiveFunction<Value, Any?> = DeepRecursiveFunction { value ->
-      when (value.kindCase) {
-        KindCase.BOOL_VALUE -> value.boolValue
-        KindCase.NUMBER_VALUE -> value.numberValue
-        KindCase.STRING_VALUE -> value.stringValue
-        KindCase.LIST_VALUE -> anyFromListValue.callRecursive(value.listValue)
-        KindCase.STRUCT_VALUE -> anyValueFromStruct.callRecursive(value.structValue)
-        KindCase.NULL_VALUE -> null
-        else -> "ERROR: unsupported kindCase: ${value.kindCase}"
-      }
-    }
-  }

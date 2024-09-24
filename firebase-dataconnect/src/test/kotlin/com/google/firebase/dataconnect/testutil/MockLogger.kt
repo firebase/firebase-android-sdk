@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import io.mockk.Matcher
 import io.mockk.MockKMatcherScope
 import io.mockk.every

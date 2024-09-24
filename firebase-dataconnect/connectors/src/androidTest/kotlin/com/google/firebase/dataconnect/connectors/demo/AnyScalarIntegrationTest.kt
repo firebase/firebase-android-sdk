@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.AnyValue
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.fromAny
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.testutil.EdgeCases

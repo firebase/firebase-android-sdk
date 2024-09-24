@@ -20,7 +20,10 @@ import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.util.buildStructProto
+import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.protobuf.Struct
 import io.grpc.Metadata
 

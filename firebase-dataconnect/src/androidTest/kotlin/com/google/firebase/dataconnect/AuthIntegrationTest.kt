@@ -26,7 +26,7 @@ import com.google.firebase.dataconnect.testutil.operationName
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
-import com.google.firebase.dataconnect.util.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
 import google.firebase.dataconnect.proto.executeMutationResponse
 import google.firebase.dataconnect.proto.executeQueryResponse
