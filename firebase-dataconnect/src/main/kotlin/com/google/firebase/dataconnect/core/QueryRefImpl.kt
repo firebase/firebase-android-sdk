@@ -28,7 +28,7 @@ internal class QueryRefImpl<Data, Variables>(
   variables: Variables,
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
-  val isFromGeneratedSdk: Boolean,
+  callerSdkType: FirebaseDataConnect.CallerSdkType,
   variablesSerializersModule: SerializersModule?,
   dataSerializersModule: SerializersModule?,
 ) :
@@ -39,6 +39,7 @@ internal class QueryRefImpl<Data, Variables>(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
+    callerSdkType = callerSdkType,
     variablesSerializersModule = variablesSerializersModule,
     dataSerializersModule = dataSerializersModule,
   ) {
@@ -58,6 +59,7 @@ internal class QueryRefImpl<Data, Variables>(
       "variables=$variables, " +
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +
+      "callerSdkType=$callerSdkType, " +
       "variablesSerializersModule=$variablesSerializersModule, " +
       "dataSerializersModule=$dataSerializersModule" +
       ")"
@@ -82,7 +84,7 @@ internal fun <Data, Variables> QueryRefImpl<Data, Variables>.copy(
   variables: Variables = this.variables,
   dataDeserializer: DeserializationStrategy<Data> = this.dataDeserializer,
   variablesSerializer: SerializationStrategy<Variables> = this.variablesSerializer,
-  isFromGeneratedSdk: Boolean = this.isFromGeneratedSdk,
+  callerSdkType: FirebaseDataConnect.CallerSdkType = this.callerSdkType,
   variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
   dataSerializersModule: SerializersModule? = this.dataSerializersModule,
 ) =
@@ -92,7 +94,7 @@ internal fun <Data, Variables> QueryRefImpl<Data, Variables>.copy(
     variables = variables,
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
-    isFromGeneratedSdk = isFromGeneratedSdk,
+    callerSdkType = callerSdkType,
     variablesSerializersModule = variablesSerializersModule,
     dataSerializersModule = dataSerializersModule,
   )

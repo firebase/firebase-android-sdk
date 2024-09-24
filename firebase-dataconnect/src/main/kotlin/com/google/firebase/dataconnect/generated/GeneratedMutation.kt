@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 
 /**
@@ -43,6 +44,6 @@ public interface GeneratedMutation<C : GeneratedConnector, Data, Variables> :
       dataDeserializer,
       variablesSerializer,
     ) {
-      generatedMutation = this@GeneratedMutation
+      callerSdkType = FirebaseDataConnect.CallerSdkType.Generated
     }
 }

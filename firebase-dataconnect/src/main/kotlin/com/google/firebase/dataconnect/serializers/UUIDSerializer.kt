@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.serializers
 
+import androidx.annotation.VisibleForTesting
 import java.util.UUID
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -33,13 +34,23 @@ public object UUIDSerializer : KSerializer<UUID> {
     PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
 
   override fun serialize(encoder: Encoder, value: UUID) {
-    // Remove dashes from the UUID since the server will remove them anyways (see cl/629562890).
-    val uuidString = value.toString().replace("-", "")
+    val uuidString = serialize(value)
     encoder.encodeString(uuidString)
+  }
+
+  @VisibleForTesting
+  internal fun serialize(value: UUID): String {
+    // Remove dashes from the UUID since the server will remove them anyways (see cl/629562890).
+    return value.toString().replace("-", "")
   }
 
   override fun deserialize(decoder: Decoder): UUID {
     val decodedString = decoder.decodeString()
+    return deserialize(decodedString)
+  }
+
+  @VisibleForTesting
+  internal fun deserialize(decodedString: String): UUID {
     require(decodedString.length == 32) {
       "invalid UUID string: $decodedString (length=${decodedString.length}, expected=32)"
     }

@@ -17,7 +17,9 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
+import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.copy
+import com.google.firebase.dataconnect.testutil.filterNotEqual
 import com.google.firebase.dataconnect.testutil.operationRefImpl
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
@@ -46,7 +48,7 @@ class OperationRefImplUnitTest {
   private class TestVariables(val bar: String)
 
   @Test
-  fun `constructor assigns public properties to the given arguments`() {
+  fun `constructor accepts non-null values`() {
     val values = Arb.operationRefImpl().next()
     val operationRefImpl =
       object :
@@ -56,6 +58,7 @@ class OperationRefImplUnitTest {
           variables = values.variables,
           dataDeserializer = values.dataDeserializer,
           variablesSerializer = values.variablesSerializer,
+          callerSdkType = values.callerSdkType,
           variablesSerializersModule = values.variablesSerializersModule,
           dataSerializersModule = values.dataSerializersModule,
         ) {
@@ -69,6 +72,7 @@ class OperationRefImplUnitTest {
         it.variables shouldBeSameInstanceAs values.variables
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
+        it.callerSdkType shouldBe values.callerSdkType
         it.variablesSerializersModule shouldBeSameInstanceAs values.variablesSerializersModule
         it.dataSerializersModule shouldBeSameInstanceAs values.dataSerializersModule
       }
@@ -86,6 +90,7 @@ class OperationRefImplUnitTest {
           variables = values.variables,
           dataDeserializer = values.dataDeserializer,
           variablesSerializer = values.variablesSerializer,
+          callerSdkType = values.callerSdkType,
           variablesSerializersModule = null,
           dataSerializersModule = null,
         ) {
@@ -98,6 +103,7 @@ class OperationRefImplUnitTest {
         it.variables shouldBeSameInstanceAs values.variables
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
+        it.callerSdkType shouldBe values.callerSdkType
         it.variablesSerializersModule.shouldBeNull()
         it.dataSerializersModule.shouldBeNull()
       }
@@ -143,6 +149,13 @@ class OperationRefImplUnitTest {
   fun `hashCode() should incorporate variablesSerializer`() = runTest {
     verifyHashCodeEventuallyDiffers {
       it.copy(variablesSerializer = mockk(name = stringArb.next()))
+    }
+  }
+
+  @Test
+  fun `hashCode() should incorporate callerSdkType`() = runTest {
+    verifyHashCodeEventuallyDiffers {
+      it.copy(callerSdkType = Arb.callerSdkType().filterNotEqual(it.callerSdkType).next())
     }
   }
 
@@ -249,6 +262,14 @@ class OperationRefImplUnitTest {
   }
 
   @Test
+  fun `equals() should return false when only callerSdkType differs`() = runTest {
+    val operationRefImpl1 = Arb.operationRefImpl().next()
+    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(operationRefImpl1.callerSdkType).next()
+    val operationRefImpl2 = operationRefImpl1.copy(callerSdkType = callerSdkType2)
+    operationRefImpl1.equals(operationRefImpl2) shouldBe false
+  }
+
+  @Test
   fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
     val operationRefImpl1 = Arb.operationRefImpl().next()
     val operationRefImpl2 =
@@ -272,9 +293,11 @@ class OperationRefImplUnitTest {
   @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
     val operationRefImpl = Arb.operationRefImpl().next()
+    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(operationRefImpl.callerSdkType).next()
     val operationRefImpls =
       listOf(
         operationRefImpl,
+        operationRefImpl.copy(callerSdkType = callerSdkType2),
         operationRefImpl.copy(dataSerializersModule = null),
         operationRefImpl.copy(variablesSerializersModule = null),
       )
@@ -290,6 +313,7 @@ class OperationRefImplUnitTest {
           toStringResult.shouldContain(
             "variablesSerializer=${operationRefImpl.variablesSerializer}"
           )
+          toStringResult.shouldContain("callerSdkType=${operationRefImpl.callerSdkType}")
           toStringResult.shouldContain(
             "dataSerializersModule=${operationRefImpl.dataSerializersModule}"
           )
@@ -312,6 +336,7 @@ class OperationRefImplUnitTest {
       toStringResult.shouldContain("variables=${operationRefImpl.variables}")
       toStringResult.shouldContain("dataDeserializer=${operationRefImpl.dataDeserializer}")
       toStringResult.shouldContain("variablesSerializer=${operationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("callerSdkType=${operationRefImpl.callerSdkType}")
       toStringResult.shouldContain("dataSerializersModule=null")
       toStringResult.shouldContain(
         "variablesSerializersModule=${operationRefImpl.variablesSerializersModule}"
@@ -330,6 +355,7 @@ class OperationRefImplUnitTest {
       toStringResult.shouldContain("variables=${operationRefImpl.variables}")
       toStringResult.shouldContain("dataDeserializer=${operationRefImpl.dataDeserializer}")
       toStringResult.shouldContain("variablesSerializer=${operationRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("callerSdkType=${operationRefImpl.callerSdkType}")
       toStringResult.shouldContain(
         "dataSerializersModule=${operationRefImpl.dataSerializersModule}"
       )

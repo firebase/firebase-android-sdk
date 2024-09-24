@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
 
 /**
@@ -43,6 +44,6 @@ public interface GeneratedQuery<C : GeneratedConnector, Data, Variables> :
       dataDeserializer,
       variablesSerializer,
     ) {
-      generatedQuery = this@GeneratedQuery
+      callerSdkType = FirebaseDataConnect.CallerSdkType.Generated
     }
 }

@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.util.nextAlphanumericString
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
@@ -40,6 +41,8 @@ import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
 
 fun <A> Arb<A>.filterNotNull(): Arb<A & Any> = filter { it !== null }.map { it!! }
+
+fun <A> Arb<A>.filterNotEqual(other: A) = filter { it != other }
 
 fun Arb.Companion.keyedString(id: String, key: String, length: Int = 8): Arb<String> =
   arbitrary { rs ->
@@ -155,4 +158,8 @@ fun <A> Arb<List<A>>.filterNotIncludesAllMatchingAnyScalars(values: List<Any?>) 
     .map { Pair(it, expectedAnyScalarRoundTripValue(it)) }
     .map { allValues.contains(it.first) || allValues.contains(it.second) }
     .reduce { acc, contained -> acc && contained }
+}
+
+fun Arb.Companion.callerSdkType(): Arb<CallerSdkType> = arbitrary {
+  if (Arb.boolean().bind()) CallerSdkType.Base else CallerSdkType.Generated
 }

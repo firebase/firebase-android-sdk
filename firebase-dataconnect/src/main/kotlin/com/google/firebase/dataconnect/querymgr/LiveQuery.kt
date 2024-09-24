@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.querymgr
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.Logger
@@ -91,7 +92,7 @@ internal class LiveQuery(
   suspend fun <T> execute(
     dataDeserializer: DeserializationStrategy<T>,
     dataSerializersModule: SerializersModule?,
-    isFromGeneratedSdk: Boolean,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<Result<T>> {
     // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
@@ -115,7 +116,7 @@ internal class LiveQuery(
             currentJob
           } else {
             logger.debug { "creating new job to execute query" }
-            coroutineScope.async { doExecute(isFromGeneratedSdk) }.also { newJob -> job = newJob }
+            coroutineScope.async { doExecute(callerSdkType) }.also { newJob -> job = newJob }
           }
         }
       }
@@ -129,7 +130,7 @@ internal class LiveQuery(
     dataDeserializer: DeserializationStrategy<T>,
     dataSerializersModule: SerializersModule?,
     executeQuery: Boolean,
-    isFromGeneratedSdk: Boolean,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
     callback: suspend (SequencedReference<Result<T>>) -> Unit,
   ): Nothing {
     val registeredDataDeserializer =
@@ -151,7 +152,7 @@ internal class LiveQuery(
     // executes.
     if (executeQuery) {
       coroutineScope.launch {
-        runCatching { execute(dataDeserializer, dataSerializersModule, isFromGeneratedSdk) }
+        runCatching { execute(dataDeserializer, dataSerializersModule, callerSdkType) }
       }
     }
 
@@ -162,20 +163,20 @@ internal class LiveQuery(
     }
   }
 
-  private suspend fun doExecute(isFromGeneratedSdk: Boolean) {
+  private suspend fun doExecute(callerSdkType: FirebaseDataConnect.CallerSdkType) {
     val requestId = "qry" + Random.nextAlphanumericString(length = 10)
     val sequenceNumber = nextSequenceNumber()
 
     val executeQueryResult =
       grpcClient.runCatching {
         logger.debug(
-          "Calling executeQuery() with requestId=$requestId isFromGeneratedSdk=$isFromGeneratedSdk"
+          "Calling executeQuery() with requestId=$requestId callerSdkType=$callerSdkType"
         )
         executeQuery(
           requestId = requestId,
           operationName = operationName,
           variables = variables,
-          isFromGeneratedSdk = isFromGeneratedSdk,
+          callerSdkType = callerSdkType,
         )
       }
 

@@ -19,8 +19,10 @@ import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.accessToken
+import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.requestId
 import io.grpc.Metadata
@@ -31,7 +33,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
-import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.next
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
@@ -54,7 +55,7 @@ class DataConnectGrpcMetadataUnitTest {
     )
 
   @Test
-  fun `should include x-goog-api-client when isFromGeneratedSdk is true`() = runTest {
+  fun `should include x-goog-api-client when callerSdkType is Generated`() = runTest {
     val key = "pkprzbns45"
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectGrpcMetadata =
@@ -66,7 +67,7 @@ class DataConnectGrpcMetadataUnitTest {
       )
     val requestId = Arb.requestId(key).next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk = true)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType = CallerSdkType.Generated)
 
     metadata.asClue {
       it.keys() shouldContain "x-goog-api-client"
@@ -77,7 +78,7 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
-  fun `should include x-goog-api-client when isFromGeneratedSdk is false`() = runTest {
+  fun `should include x-goog-api-client when callerSdkType is Base`() = runTest {
     val key = "pkprzbns45"
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectGrpcMetadata =
@@ -89,7 +90,7 @@ class DataConnectGrpcMetadataUnitTest {
       )
     val requestId = Arb.requestId(key).next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk = false)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType = CallerSdkType.Base)
 
     metadata.asClue {
       it.keys() shouldContain "x-goog-api-client"
@@ -106,9 +107,9 @@ class DataConnectGrpcMetadataUnitTest {
     val location = testValues.connectorConfig.location
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue {
       it.keys() shouldContain "x-goog-request-params"
@@ -123,9 +124,9 @@ class DataConnectGrpcMetadataUnitTest {
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata(appId = "tvsxjeb745.appId")
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue {
       it.keys() shouldContain "x-firebase-gmpid"
@@ -140,9 +141,9 @@ class DataConnectGrpcMetadataUnitTest {
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata(appId = "")
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue { it.keys() shouldNotContain "x-firebase-gmpid" }
   }
@@ -153,9 +154,9 @@ class DataConnectGrpcMetadataUnitTest {
     val testValues = DataConnectGrpcMetadataTestValues.fromKey(key)
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata(appId = " \r\n\t ")
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue { it.keys() shouldNotContain "x-firebase-gmpid" }
   }
@@ -167,9 +168,9 @@ class DataConnectGrpcMetadataUnitTest {
     coEvery { testValues.dataConnectAuth.getToken(any()) } returns null
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue { it.keys() shouldNotContain "x-firebase-auth-token" }
   }
@@ -182,9 +183,9 @@ class DataConnectGrpcMetadataUnitTest {
     coEvery { testValues.dataConnectAuth.getToken(any()) } returns accessToken
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue {
       it.keys() shouldContain "x-firebase-auth-token"
@@ -200,9 +201,9 @@ class DataConnectGrpcMetadataUnitTest {
     coEvery { testValues.dataConnectAppCheck.getToken(any()) } returns null
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue { it.keys() shouldNotContain "x-firebase-appcheck" }
   }
@@ -215,9 +216,9 @@ class DataConnectGrpcMetadataUnitTest {
     coEvery { testValues.dataConnectAppCheck.getToken(any()) } returns accessToken
     val dataConnectGrpcMetadata = testValues.newDataConnectGrpcMetadata()
     val requestId = Arb.requestId(key).next()
-    val isFromGeneratedSdk = Arb.boolean().next()
+    val callerSdkType = Arb.callerSdkType().next()
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, isFromGeneratedSdk)
+    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
     metadata.asClue {
       it.keys() shouldContain "x-firebase-appcheck"

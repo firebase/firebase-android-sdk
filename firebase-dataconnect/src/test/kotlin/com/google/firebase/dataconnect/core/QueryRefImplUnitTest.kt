@@ -17,6 +17,8 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.testutil.callerSdkType
+import com.google.firebase.dataconnect.testutil.filterNotEqual
 import com.google.firebase.dataconnect.testutil.queryRefImpl
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
@@ -102,7 +104,7 @@ class QueryRefImplUnitTest {
   }
 
   @Test
-  fun `constructor assigns public properties to the given arguments`() {
+  fun `constructor accepts non-null values`() {
     val values = Arb.queryRefImpl().next()
     val queryRefImpl =
       QueryRefImpl(
@@ -111,7 +113,7 @@ class QueryRefImplUnitTest {
         variables = values.variables,
         dataDeserializer = values.dataDeserializer,
         variablesSerializer = values.variablesSerializer,
-        isFromGeneratedSdk = values.isFromGeneratedSdk,
+        callerSdkType = values.callerSdkType,
         variablesSerializersModule = values.variablesSerializersModule,
         dataSerializersModule = values.dataSerializersModule,
       )
@@ -123,7 +125,7 @@ class QueryRefImplUnitTest {
         it.variables shouldBeSameInstanceAs values.variables
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
-        it.isFromGeneratedSdk shouldBe values.isFromGeneratedSdk
+        it.callerSdkType shouldBe values.callerSdkType
         it.variablesSerializersModule shouldBeSameInstanceAs values.variablesSerializersModule
         it.dataSerializersModule shouldBeSameInstanceAs values.dataSerializersModule
       }
@@ -140,9 +142,9 @@ class QueryRefImplUnitTest {
         variables = values.variables,
         dataDeserializer = values.dataDeserializer,
         variablesSerializer = values.variablesSerializer,
-        isFromGeneratedSdk = values.isFromGeneratedSdk,
-        dataSerializersModule = null,
+        callerSdkType = values.callerSdkType,
         variablesSerializersModule = null,
+        dataSerializersModule = null,
       )
 
     queryRefImpl.asClue {
@@ -152,7 +154,7 @@ class QueryRefImplUnitTest {
         it.variables shouldBeSameInstanceAs values.variables
         it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
         it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
-        it.isFromGeneratedSdk shouldBe values.isFromGeneratedSdk
+        it.callerSdkType shouldBe values.callerSdkType
         it.variablesSerializersModule.shouldBeNull()
         it.dataSerializersModule.shouldBeNull()
       }
@@ -202,10 +204,10 @@ class QueryRefImplUnitTest {
   }
 
   @Test
-  fun `hashCode() should NOT incorporate isFromGeneratedSdk`() = runTest {
-    val queryRef1 = Arb.queryRefImpl().next()
-    val queryRef2 = queryRef1.copy(isFromGeneratedSdk = !queryRef1.isFromGeneratedSdk)
-    queryRef1.hashCode() shouldBe queryRef2.hashCode()
+  fun `hashCode() should incorporate callerSdkType`() = runTest {
+    verifyHashCodeEventuallyDiffers {
+      it.copy(callerSdkType = Arb.callerSdkType().filterNotEqual(it.callerSdkType).next())
+    }
   }
 
   @Test
@@ -308,10 +310,11 @@ class QueryRefImplUnitTest {
   }
 
   @Test
-  fun `equals() should return _TRUE_ when only isFromGeneratedSdk differs`() = runTest {
+  fun `equals() should return false when only callerSdkType differs`() = runTest {
     val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 = queryRefImpl1.copy(isFromGeneratedSdk = !queryRefImpl1.isFromGeneratedSdk)
-    queryRefImpl1.equals(queryRefImpl2) shouldBe true
+    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(queryRefImpl1.callerSdkType).next()
+    val queryRefImpl2 = queryRefImpl1.copy(callerSdkType = callerSdkType2)
+    queryRefImpl1.equals(queryRefImpl2) shouldBe false
   }
 
   @Test
@@ -337,10 +340,11 @@ class QueryRefImplUnitTest {
   @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
     val queryRefImpl: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
+    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(queryRefImpl.callerSdkType).next()
     val queryRefImpls =
       listOf(
         queryRefImpl,
-        queryRefImpl.copy(isFromGeneratedSdk = !queryRefImpl.isFromGeneratedSdk),
+        queryRefImpl.copy(callerSdkType = callerSdkType2),
         queryRefImpl.copy(dataSerializersModule = null),
         queryRefImpl.copy(variablesSerializersModule = null),
       )
@@ -354,6 +358,7 @@ class QueryRefImplUnitTest {
           toStringResult.shouldContain("variables=${queryRefImpl.variables}")
           toStringResult.shouldContain("dataDeserializer=${queryRefImpl.dataDeserializer}")
           toStringResult.shouldContain("variablesSerializer=${queryRefImpl.variablesSerializer}")
+          toStringResult.shouldContain("callerSdkType=${queryRefImpl.callerSdkType}")
           toStringResult.shouldContain(
             "dataSerializersModule=${queryRefImpl.dataSerializersModule}"
           )
@@ -377,6 +382,7 @@ class QueryRefImplUnitTest {
       toStringResult.shouldContain("variables=${queryRefImpl.variables}")
       toStringResult.shouldContain("dataDeserializer=${queryRefImpl.dataDeserializer}")
       toStringResult.shouldContain("variablesSerializer=${queryRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("callerSdkType=${queryRefImpl.callerSdkType}")
       toStringResult.shouldContain("dataSerializersModule=null")
       toStringResult.shouldContain(
         "variablesSerializersModule=${queryRefImpl.variablesSerializersModule}"
@@ -396,6 +402,7 @@ class QueryRefImplUnitTest {
       toStringResult.shouldContain("variables=${queryRefImpl.variables}")
       toStringResult.shouldContain("dataDeserializer=${queryRefImpl.dataDeserializer}")
       toStringResult.shouldContain("variablesSerializer=${queryRefImpl.variablesSerializer}")
+      toStringResult.shouldContain("callerSdkType=${queryRefImpl.callerSdkType}")
       toStringResult.shouldContain("dataSerializersModule=${queryRefImpl.dataSerializersModule}")
       toStringResult.shouldContain("variablesSerializersModule=null")
     }

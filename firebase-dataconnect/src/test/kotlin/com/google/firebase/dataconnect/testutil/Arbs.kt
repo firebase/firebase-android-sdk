@@ -90,7 +90,7 @@ internal fun <Data, Variables> Arb.Companion.queryRefImpl(
     variables = variablesArb.bind(),
     dataDeserializer = mockk(stringArb.bind()),
     variablesSerializer = mockk(stringArb.bind()),
-    isFromGeneratedSdk = boolean().bind(),
+    callerSdkType = callerSdkType().bind(),
     variablesSerializersModule = mockk(stringArb.bind()),
     dataSerializersModule = mockk(stringArb.bind()),
   )
@@ -106,7 +106,7 @@ internal fun <Data, Variables> Arb.Companion.mutationRefImpl(
     variables = variablesArb.bind(),
     dataDeserializer = mockk(stringArb.bind()),
     variablesSerializer = mockk(stringArb.bind()),
-    isFromGeneratedSdk = boolean().bind(),
+    callerSdkType = callerSdkType().bind(),
     variablesSerializersModule = mockk(stringArb.bind()),
     dataSerializersModule = mockk(stringArb.bind()),
   )
@@ -122,7 +122,8 @@ internal fun <Data, Variables> Arb.Companion.operationRefImpl(
     variables = variablesArb.bind(),
     dataDeserializer = mockk(stringArb.bind()),
     variablesSerializer = mockk(stringArb.bind()),
-    dataSerializersModule = mockk(stringArb.bind()),
+    callerSdkType = callerSdkType().bind(),
     variablesSerializersModule = mockk(stringArb.bind()),
+    dataSerializersModule = mockk(stringArb.bind()),
   )
 }
