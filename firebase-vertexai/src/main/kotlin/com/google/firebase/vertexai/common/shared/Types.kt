@@ -32,8 +32,7 @@ import kotlinx.serialization.json.jsonObject
 internal object HarmCategorySerializer :
   KSerializer<HarmCategory> by FirstOrdinalSerializer(HarmCategory::class)
 
-internal object OutcomeSerializer :
-  KSerializer<Outcome> by FirstOrdinalSerializer(Outcome::class)
+internal object OutcomeSerializer : KSerializer<Outcome> by FirstOrdinalSerializer(Outcome::class)
 
 @Serializable(HarmCategorySerializer::class)
 internal enum class HarmCategory {
