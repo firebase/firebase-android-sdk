@@ -113,9 +113,6 @@ protobuf {
 dependencies {
   api("com.google.firebase:firebase-common:21.0.0")
 
-  api(libs.kotlinx.coroutines.core)
-  api(libs.kotlinx.serialization.core)
-
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
@@ -123,10 +120,12 @@ dependencies {
 
   compileOnly(libs.javax.annotation.jsr250)
   implementation(libs.grpc.android)
+  implementation(libs.grpc.kotlin.stub)
   implementation(libs.grpc.okhttp)
   implementation(libs.grpc.protobuf.lite)
-  implementation(libs.grpc.kotlin.stub)
   implementation(libs.grpc.stub)
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.serialization.core)
   implementation(libs.protobuf.java.lite)
   implementation(libs.protobuf.kotlin.lite)
 
