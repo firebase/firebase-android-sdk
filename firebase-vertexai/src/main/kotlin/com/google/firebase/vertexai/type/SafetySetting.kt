@@ -17,9 +17,10 @@
 package com.google.firebase.vertexai.type
 
 /**
- * A configuration for a [BlockThreshold] of some [HarmCategory] allowed and blocked in responses.
+ * A configuration for a [HarmBlockThreshold] of some [HarmCategory] allowed and blocked in
+ * responses.
  *
  * @param harmCategory The relevant [HarmCategory].
  * @param threshold The threshold form harm allowable.
  */
-class SafetySetting(val harmCategory: HarmCategory, val threshold: BlockThreshold) {}
+class SafetySetting(val harmCategory: HarmCategory, val threshold: HarmBlockThreshold) {}
