@@ -72,8 +72,8 @@ internal class StreamingSnapshotTests {
     }
 
   @Test
-  fun `unknown enum`() =
-    goldenStreamingFile("streaming-success-unknown-enum.txt") {
+  fun `unknown enum in safety ratings`() =
+    goldenStreamingFile("streaming-success-unknown-safety-enum.txt") {
       val responses = model.generateContentStream("prompt")
 
       withTimeout(testTimeout) {
@@ -124,6 +124,18 @@ internal class StreamingSnapshotTests {
     }
 
   @Test
+  fun `prompt blocked for safety with message`() =
+    goldenStreamingFile("streaming-failure-prompt-blocked-safety-with-message.txt") {
+      val responses = model.generateContentStream("prompt")
+
+      withTimeout(testTimeout) {
+        val exception = shouldThrow<PromptBlockedException> { responses.collect() }
+        exception.response.promptFeedback?.blockReason shouldBe BlockReason.SAFETY
+        exception.response.promptFeedback?.blockReasonMessage shouldBe "Reasons"
+      }
+    }
+
+  @Test
   fun `empty content`() =
     goldenStreamingFile("streaming-failure-empty-content.txt") {
       val responses = model.generateContentStream("prompt")
@@ -157,7 +169,9 @@ internal class StreamingSnapshotTests {
 
       withTimeout(testTimeout) {
         val responseList = responses.toList()
-        responseList.any { it.candidates.any { it.citationMetadata.isNotEmpty() } } shouldBe true
+        responseList.any {
+          it.candidates.any { it.citationMetadata?.citations?.isNotEmpty() ?: false }
+        } shouldBe true
       }
     }
 

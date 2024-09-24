@@ -18,12 +18,12 @@ package com.google.firebase.vertexai
 
 import android.graphics.Bitmap
 import android.util.Log
-import com.google.ai.client.generativeai.common.APIController
-import com.google.ai.client.generativeai.common.CountTokensRequest
-import com.google.ai.client.generativeai.common.GenerateContentRequest
-import com.google.ai.client.generativeai.common.HeaderProvider
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.common.CountTokensRequest
+import com.google.firebase.vertexai.common.GenerateContentRequest
+import com.google.firebase.vertexai.common.HeaderProvider
 import com.google.firebase.vertexai.internal.util.toInternal
 import com.google.firebase.vertexai.internal.util.toPublic
 import com.google.firebase.vertexai.type.Content
@@ -83,7 +83,7 @@ internal constructor(
     APIController(
       apiKey,
       modelName,
-      requestOptions.toInternal(),
+      requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
       object : HeaderProvider {
         override val timeout: Duration

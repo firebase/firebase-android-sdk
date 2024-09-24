@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class NumericTransformsTest {
-  private static final double DOUBLE_EPSILON = 0.000001;
+  public static final double DOUBLE_EPSILON = 0.000001;
 
   // A document reference to read and write to.
   private DocumentReference docRef;

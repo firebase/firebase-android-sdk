@@ -19,18 +19,55 @@ package com.google.firebase.vertexai.type
 /**
  * Configuration parameters to use for content generation.
  *
- * @property temperature The degree of randomness in token selection, typically between 0 and 1
- * @property topK The sum of probabilities to collect to during token selection
- * @property topP How many tokens to select amongst the highest probabilities
- * @property candidateCount The max *unique* responses to return
- * @property maxOutputTokens The max tokens to generate per response
- * @property stopSequences A list of strings to stop generation on occurrence of
- * @property responseMimeType Response MIME type for the generated candidate text. For a list of
- * supported response MIME types, see the
- * [Vertex AI documentation](https://cloud.google.com/vertex-ai/docs/reference/rest/v1beta1/GenerationConfig#FIELDS.response_mime_type)
- * for a list of supported types.
- * @property responseSchema A schema that the response must adhere to, used with the
- * `application/json` MINE type.
+ * @property temperature A parameter controlling the degree of randomness in token selection. A
+ * temperature of 0 means that the highest probability tokens are always selected. In this case,
+ * responses for a given prompt are mostly deterministic, but a small amount of variation is still
+ * possible.
+ *
+ * @property topK The `topK` parameter changes how the model selects tokens for output. A `topK` of
+ * 1 means the selected token is the most probable among all the tokens in the model's vocabulary,
+ * while a `topK` of 3 means that the next token is selected from among the 3 most probable using
+ * the `temperature`. For each token selection step, the `topK` tokens with the highest
+ * probabilities are sampled. Tokens are then further filtered based on `topP` with the final token
+ * selected using `temperature` sampling. Defaults to 40 if unspecified.
+ *
+ * @property topP The `topP` parameter changes how the model selects tokens for output. Tokens are
+ * selected from the most to least probable until the sum of their probabilities equals the `topP`
+ * value. For example, if tokens A, B, and C have probabilities of 0.3, 0.2, and 0.1 respectively
+ * and the topP value is 0.5, then the model will select either A or B as the next token by using
+ * the `temperature` and exclude C as a candidate. Defaults to 0.95 if unset.
+ *
+ * @property candidateCount The maximum number of generated response messages to return. This value
+ * must be between [1, 8], inclusive. If unset, this will default to 1.
+ *
+ * - Note: Only unique candidates are returned. Higher temperatures are more likely to produce
+ * unique candidates. Setting `temperature` to 0 will always produce exactly one candidate
+ * regardless of the `candidateCount`.
+ *
+ * @property maxOutputTokens Specifies the maximum number of tokens that can be generated in the
+ * response. The number of tokens per word varies depending on the language outputted. Defaults to 0
+ * (unbounded).
+ *
+ * @property stopSequences A set of up to 5 `String`s that will stop output generation. If
+ * specified, the API will stop at the first appearance of a stop sequence. The stop sequence will
+ * not be included as part of the response.
+ *
+ * @property responseMimeType Output response MIME type of the generated candidate text (IANA
+ * standard).
+ *
+ * Supported MIME types depend on the model used, but could include:
+ * - `text/plain`: Text output; the default behavior if unspecified.
+ * - `application/json`: JSON response in the candidates.
+ *
+ * @property responseSchema Output schema of the generated candidate text. If set, a compatible
+ * [responseMimeType] must also be set.
+ *
+ * Compatible MIME types:
+ * - `application/json`: Schema for JSON response.
+ *
+ * Refer to the
+ * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
+ * guide for more details.
  */
 class GenerationConfig
 private constructor(
@@ -41,7 +78,7 @@ private constructor(
   val maxOutputTokens: Int?,
   val stopSequences: List<String>?,
   val responseMimeType: String?,
-  val responseSchema: Schema<*>? = null,
+  val responseSchema: Schema?,
 ) {
 
   /**
@@ -50,12 +87,21 @@ private constructor(
    * Mainly intended for Java interop. Kotlin consumers should use [generationConfig] for a more
    * idiomatic experience.
    *
-   * @property temperature The degree of randomness in token selection, typically between 0 and 1
-   * @property topK The sum of probabilities to collect to during token selection
-   * @property topP How many tokens to select amongst the highest probabilities
-   * @property candidateCount The max *unique* responses to return
-   * @property maxOutputTokens The max tokens to generate per response
-   * @property stopSequences A list of strings to stop generation on occurrence of
+   * @property temperature See [GenerationConfig.temperature].
+   *
+   * @property topK See [GenerationConfig.topK].
+   *
+   * @property topP See [GenerationConfig.topP].
+   *
+   * @property candidateCount See [GenerationConfig.candidateCount].
+   *
+   * @property maxOutputTokens See [GenerationConfig.maxOutputTokens].
+   *
+   * @property stopSequences See [GenerationConfig.stopSequences].
+   *
+   * @property responseMimeType See [GenerationConfig.responseMimeType].
+   *
+   * @property responseSchema See [GenerationConfig.responseSchema].
    * @see [generationConfig]
    */
   class Builder {
@@ -66,7 +112,7 @@ private constructor(
     @JvmField var maxOutputTokens: Int? = null
     @JvmField var stopSequences: List<String>? = null
     @JvmField var responseMimeType: String? = null
-    @JvmField var responseSchema: Schema<*>? = null
+    @JvmField var responseSchema: Schema? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     fun build() =

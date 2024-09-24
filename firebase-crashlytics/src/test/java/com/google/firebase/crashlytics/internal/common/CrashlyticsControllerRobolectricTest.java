@@ -33,7 +33,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -43,6 +43,7 @@ import com.google.firebase.crashlytics.internal.settings.Settings.SessionData;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.inject.Deferred;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
@@ -65,6 +66,8 @@ public class CrashlyticsControllerRobolectricTest {
   @Mock private SessionReportingCoordinator mockSessionReportingCoordinator;
   @Mock private DataCollectionArbiter mockDataCollectionArbiter;
 
+  private CrashlyticsWorkers crashlyticsWorkers;
+
   private static final CrashlyticsNativeComponent MISSING_NATIVE_COMPONENT =
       new CrashlyticsNativeComponentDeferredProxy(
           new Deferred<CrashlyticsNativeComponent>() {
@@ -80,17 +83,24 @@ public class CrashlyticsControllerRobolectricTest {
     MockitoAnnotations.openMocks(this);
     testContext = getApplicationContext();
     testFileStore = new FileStore(testContext);
+    crashlyticsWorkers =
+        new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
   }
 
   @Test
-  public void testDoCloseSession_enabledAnrs_doesNotPersistsAppExitInfoIfItDoesntExist() {
+  public void testDoCloseSession_enabledAnrs_doesNotPersistsAppExitInfoIfItDoesntExist()
+      throws Exception {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
     mockSettingsProvider(true, false);
-    controller.doCloseSessions(mockSettingsProvider);
+
+    crashlyticsWorkers.common.submit(() -> controller.doCloseSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(10);
+
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
     // single app exit info, and so this method won't be called.
     verify(mockSessionReportingCoordinator, never())
@@ -99,7 +109,8 @@ public class CrashlyticsControllerRobolectricTest {
   }
 
   @Test
-  public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() {
+  public void testDoCloseSession_enabledAnrs_persistsAppExitInfoIfItExists() throws Exception {
+    final String sessionIdPrevious = "sessionIdPrevious";
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
     // Adds multiple AppExitInfos to confirm that Crashlytics loops through
@@ -109,26 +120,30 @@ public class CrashlyticsControllerRobolectricTest {
     List<ApplicationExitInfo> testApplicationExitInfo = getApplicationExitInfoList();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
-        .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
+        .thenReturn(new TreeSet<>(Arrays.asList(sessionId, sessionIdPrevious)));
     mockSettingsProvider(true, false);
-    controller.doCloseSessions(mockSettingsProvider);
+    crashlyticsWorkers.common.submit(() -> controller.finalizeSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(100);
     verify(mockSessionReportingCoordinator)
         .persistRelevantAppExitInfoEvent(
-            eq(sessionId),
+            eq(sessionIdPrevious),
             eq(testApplicationExitInfo),
             any(LogFileManager.class),
             any(UserMetadata.class));
   }
 
   @Test
-  public void testDoCloseSession_disabledAnrs_doesNotPersistsAppExitInfo() {
+  public void testDoCloseSession_disabledAnrs_doesNotPersistsAppExitInfo() throws Exception {
     final String sessionId = "sessionId";
     final CrashlyticsController controller = createController();
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
     mockSettingsProvider(false, false);
-    controller.doCloseSessions(mockSettingsProvider);
+    crashlyticsWorkers.common.submit(() -> controller.doCloseSessions(mockSettingsProvider));
+    // cannot use await since it check preconditions if blocking main thread
+    Thread.sleep(10);
     verify(mockSessionReportingCoordinator, never())
         .persistRelevantAppExitInfoEvent(
             eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
@@ -166,7 +181,6 @@ public class CrashlyticsControllerRobolectricTest {
     final CrashlyticsController controller =
         new CrashlyticsController(
             testContext,
-            new CrashlyticsWorker(TestOnlyExecutors.background()),
             idManager,
             mockDataCollectionArbiter,
             testFileStore,
@@ -178,7 +192,7 @@ public class CrashlyticsControllerRobolectricTest {
             MISSING_NATIVE_COMPONENT,
             mock(AnalyticsEventLogger.class),
             mock(CrashlyticsAppQualitySessionsSubscriber.class),
-            new CrashlyticsWorker(TestOnlyExecutors.background()));
+            crashlyticsWorkers);
     controller.openSession(SESSION_ID);
     return controller;
   }

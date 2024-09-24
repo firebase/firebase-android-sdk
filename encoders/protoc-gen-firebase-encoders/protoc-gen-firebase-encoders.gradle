@@ -37,13 +37,13 @@ jar {
 
 
 dependencies {
-    implementation 'com.google.dagger:dagger:2.43.2'
+    implementation libs.dagger.dagger
     implementation 'com.google.guava:guava:30.0-jre'
-    implementation "com.google.protobuf:protobuf-java:3.21.9"
+    implementation libs.protobuf.java
     implementation 'com.squareup:javapoet:1.13.0'
 
-    kapt 'com.google.dagger:dagger-compiler:2.43.2'
+    kapt libs.dagger.compiler
 
-    testImplementation "com.google.truth:truth:1.0.1"
-    testImplementation 'junit:junit:4.13.1'
+    testImplementation libs.truth
+    testImplementation libs.junit
 }

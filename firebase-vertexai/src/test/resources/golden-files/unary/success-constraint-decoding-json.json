@@ -1,0 +1,34 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "[\n  {\n    \"name\": \"Fuji Dawn\",\n    \"colors\": [\n      \"#FEE4C4\",\n      \"#FCDEC0\",\n      \"#FBC7BB\",\n      \"#F2A194\",\n      \"#ED8571\"\n    ]\n  },\n  {\n    \"name\": \"Hawaiian Sunset\",\n    \"colors\": [\n      \"#F25C54\",\n      \"#F24545\",\n      \"#F22E35\",\n      \"#C92127\",\n      \"#96141A\"\n    ]\n  },\n  {\n    \"name\": \"Jakarta Noon\",\n    \"colors\": [\n      \"#037F8C\",\n      \"#026773\",\n      \"#014F59\",\n      \"#F2C777\",\n      \"#F2A857\"\n    ]\n  }\n]\n\n"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0,
+      "safetyRatings": [
+        {
+          "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_HATE_SPEECH",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_HARASSMENT",
+          "probability": "NEGLIGIBLE"
+        },
+        {
+          "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+          "probability": "NEGLIGIBLE"
+        }
+      ]
+    }
+  ]
+}

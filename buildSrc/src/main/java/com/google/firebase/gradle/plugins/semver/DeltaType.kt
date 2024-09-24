@@ -394,7 +394,7 @@ enum class DeltaType {
           Delta(
             after.name,
             "",
-            String.format("Class %s made abstract.", after.name),
+            String.format("Class %s made final.", after.name),
             CLASS_MADE_FINAL,
             VersionDelta.MAJOR
           )
@@ -594,6 +594,10 @@ enum class DeltaType {
   },
   CHANGED_FROM_STATIC {
     override fun getViolations(before: ClassInfo?, after: ClassInfo?): List<Delta> {
+      // Safe to ignore: if `after` is null, then it has been removed and another check will
+      // report this.
+      if (after == null) return emptyList()
+
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val afterStaticMethods =

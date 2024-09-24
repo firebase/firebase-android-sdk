@@ -35,7 +35,7 @@ import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.DisabledBreadcrumbSource;
-import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorker;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
@@ -91,8 +91,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     private CrashlyticsNativeComponent nativeComponent;
     private DataCollectionArbiter arbiter;
     private FileStore fileStore;
-    private CrashlyticsWorker commonWorker;
-    private CrashlyticsWorker diskWriteWorker;
+    private CrashlyticsWorkers crashlyticsWorkers;
 
     public CoreBuilder(Context context, FirebaseOptions firebaseOptions) {
       app = mock(FirebaseApp.class);
@@ -121,8 +120,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
       arbiter = mock(DataCollectionArbiter.class);
       when(arbiter.isAutomaticDataCollectionEnabled()).thenReturn(true);
 
-      commonWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
-      diskWriteWorker = new CrashlyticsWorker(TestOnlyExecutors.background());
+      crashlyticsWorkers =
+          new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
       fileStore = new FileStore(context);
     }
 
@@ -147,8 +146,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
           fileStore,
           mock(CrashlyticsAppQualitySessionsSubscriber.class),
           mock(RemoteConfigDeferredProxy.class),
-          commonWorker,
-          diskWriteWorker);
+          crashlyticsWorkers);
     }
   }
 
