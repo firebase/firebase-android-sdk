@@ -117,18 +117,10 @@ dependencies {
   api(libs.kotlinx.serialization.core)
 
   implementation("com.google.firebase:firebase-annotations:16.2.0")
-  implementation("com.google.firebase:firebase-components:18.0.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-  }
+  implementation("com.google.firebase:firebase-components:18.0.0")
   implementation(project(":protolite-well-known-types"))
-  implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-  }
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-  }
+  implementation("com.google.firebase:firebase-auth-interop:20.0.0")
+  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
 
   compileOnly(libs.javax.annotation.jsr250)
   implementation(libs.grpc.android)
@@ -155,14 +147,8 @@ dependencies {
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))
-  androidTestImplementation("com.google.firebase:firebase-auth:22.3.1") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-  }
-  androidTestImplementation("com.google.firebase:firebase-appcheck:18.0.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-  }
+  androidTestImplementation("com.google.firebase:firebase-auth:22.3.1")
+  androidTestImplementation("com.google.firebase:firebase-appcheck:18.0.0")
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)

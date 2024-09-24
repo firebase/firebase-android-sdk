@@ -53,13 +53,8 @@ dependencies {
   api(libs.kotlinx.coroutines.core)
   api(libs.kotlinx.serialization.core)
 
-  implementation("com.google.firebase:firebase-components:18.0.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-  }
-  implementation("com.google.firebase:firebase-auth:22.3.1") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-  }
+  implementation("com.google.firebase:firebase-components:18.0.0")
+  implementation("com.google.firebase:firebase-auth:22.3.1")
 
   implementation(libs.kotest.property)
   implementation(libs.mockk)
