@@ -23,6 +23,8 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import java.util.concurrent.Executor;
 
+import io.opentelemetry.api.OpenTelemetry;
+
 /**
  * The `FirestoreClientProvider` handles the life cycle of `FirestoreClient`s within a `Firestore`
  * instance.
@@ -155,4 +157,20 @@ final class FirestoreClientProvider {
   AsyncQueue getAsyncQueue() {
     return asyncQueue;
   }
+
+  synchronized boolean isLoggingEnabled() {
+    ensureConfigured();
+    return client.isLoggingEnabled();
+  }
+
+  synchronized boolean isTracingEnabled() {
+    ensureConfigured();
+    return client.isTracingEnabled();
+  }
+
+  synchronized OpenTelemetry getOpenTelemetry() {
+    ensureConfigured();
+    return client.getOpenTelemetry();
+  }
+
 }

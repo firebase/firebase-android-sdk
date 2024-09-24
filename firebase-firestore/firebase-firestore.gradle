@@ -119,7 +119,6 @@ tasks.withType(Test) {
 }
 
 dependencies {
-    implementation project(':firebase-config')
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
     api project(':protolite-well-known-types')
@@ -130,6 +129,7 @@ dependencies {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
+    api project(':firebase-config')
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
     api("com.google.firebase:firebase-components:18.0.0")

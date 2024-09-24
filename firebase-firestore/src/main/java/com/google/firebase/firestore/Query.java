@@ -1224,57 +1224,33 @@ public class Query {
     validateHasExplicitOrderByForLimitToLast();
 
     System.out.println("inside Query.addSnapshotListenerInternal");
-    Resource resource =
-            Resource.getDefault().merge(Resource.builder().put("service.name", "firebase-android-sdk").build());
-    OtlpGrpcSpanExporter otlpGrpcSpanExporter = OtlpGrpcSpanExporter.builder()
-            .setEndpoint("http://34.41.223.29:4317")
-            .build();
-    // Configure a batch span processor
-    BatchSpanProcessor otlpGrpcSpanProcessor = BatchSpanProcessor.builder(otlpGrpcSpanExporter)
-            .setScheduleDelay(50, TimeUnit.MILLISECONDS) // Adjust the delay as needed
-            .build();
-    LoggingSpanExporter loggingSpanExporter = LoggingSpanExporter.create();
-    SpanProcessor loggingSpanProcessor = BatchSpanProcessor.builder(loggingSpanExporter).build();
 
+    @Nullable
+    OpenTelemetry openTelemetry = firestore.clientProvider.getOpenTelemetry();
 
-    OtlpGrpcLogRecordExporter otlpGrpcLogRecordExporter =
-            OtlpGrpcLogRecordExporter.builder()
-                    .setEndpoint("http://34.41.223.29:4317") // Replace with your OTLP endpoint
-                    .build();
-    LogRecordProcessor otlpGrpcLogRecordProcessor = BatchLogRecordProcessor.builder(otlpGrpcLogRecordExporter).build();
-
-    SdkTracerProvider sdkTracerProvider =
-            SdkTracerProvider
-                    .builder()
-                    .setResource(resource)
-                    .addSpanProcessor(otlpGrpcSpanProcessor)
-                    .addSpanProcessor(loggingSpanProcessor)
-                    .build();
-
-    OpenTelemetry otel = OpenTelemetrySdk.builder()
-            .setTracerProvider(sdkTracerProvider)
-            .setLoggerProvider(
-                    SdkLoggerProvider.builder()
-                            .addLogRecordProcessor(otlpGrpcLogRecordProcessor)
-                            .build()
-            )
-            .build();
-
-    otel.getLogsBridge()
-            .get("loggingScope")
-            .logRecordBuilder()
-            .setSeverity(Severity.INFO)
-            .setBody("Client started a snapshot listener for the query")
-            // TODO: Replace this with a unieque identifier for this client.
-            .setAttribute(AttributeKey.stringKey("gcp.log_name"), "MY_ANDROID_APP_UUID")
-            .emit();
-    Span span = otel.getTracer("com.google.firebase.firestore").spanBuilder("Query.get()").startSpan();
-
-    try (Scope ignored = span.makeCurrent()) {
-      System.out.println("inside the span's current scope");
-      span.addEvent("Sample Event Log message");
+    if (openTelemetry != null && firestore.clientProvider.isLoggingEnabled()) {
+      openTelemetry.getLogsBridge()
+              .get("loggingScope")
+              .logRecordBuilder()
+              .setSeverity(Severity.INFO)
+              .setBody("Client started a snapshot listener for the query")
+              // TODO: Replace this with a unieque identifier for this client.
+              .setAttribute(AttributeKey.stringKey("gcp.log_name"), "MY_ANDROID_APP_UUID")
+              .emit();
     }
-    span.end();
+
+    // Generate a sample trace.
+    if (openTelemetry != null && firestore.clientProvider.isTracingEnabled()) {
+      Span span = openTelemetry
+              .getTracer("com.google.firebase.firestore")
+              .spanBuilder("Query.get()")
+              .startSpan();
+      try (Scope ignored = span.makeCurrent()) {
+        System.out.println("inside the span's current scope");
+        span.addEvent("Sample Event Log message");
+      }
+      span.end();
+    }
 
     // Convert from ViewSnapshots to QuerySnapshots.
     EventListener<ViewSnapshot> viewListener =

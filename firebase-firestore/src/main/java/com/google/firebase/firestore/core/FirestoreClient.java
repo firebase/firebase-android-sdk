@@ -18,7 +18,12 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -49,12 +54,31 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firebase.remoteconfig.ConfigUpdate;
+import com.google.firebase.remoteconfig.ConfigUpdateListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firestore.v1.Value;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.exporter.logging.LoggingSpanExporter;
+import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
+import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.logs.LogRecordProcessor;
+import io.opentelemetry.sdk.logs.SdkLoggerProvider;
+import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
+import io.opentelemetry.sdk.resources.Resource;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SpanProcessor;
+import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 
 /**
  * FirestoreClient is a top-level class that constructs and owns all of the pieces of the client SDK
@@ -75,6 +99,14 @@ public final class FirestoreClient {
   private RemoteStore remoteStore;
   private SyncEngine syncEngine;
   private EventManager eventManager;
+
+  // Telemetry-related
+  private static final String FIRESTORE_LOGGING_ENABLED_PARAMETER_NAME = "__firestore_logging_enabled__";
+  private static final String FIRESTORE_TRACING_ENABLED_PARAMETER_NAME = "__firestore_tracing_enabled__";
+  private OpenTelemetry openTelemetry;
+  private FirebaseRemoteConfig remoteConfig;
+  private boolean loggingEnabled;
+  private boolean tracingEnabled;
 
   // LRU-related
   @Nullable private Scheduler indexBackfillScheduler;
@@ -132,6 +164,18 @@ public final class FirestoreClient {
           // Register an empty credentials change listener to activate token
           // refresh.
         });
+  }
+
+  public boolean isLoggingEnabled() {
+    return loggingEnabled;
+  }
+
+  public boolean isTracingEnabled() {
+    return tracingEnabled;
+  }
+
+  public OpenTelemetry getOpenTelemetry() {
+    return openTelemetry;
   }
 
   public Task<Void> disableNetwork() {
@@ -298,6 +342,95 @@ public final class FirestoreClient {
       indexBackfillScheduler = indexBackfiller.getScheduler();
       indexBackfillScheduler.start();
     }
+
+    // Fetch and listen to Remotely-configured telemetry configurations.
+    loggingEnabled = false;
+    tracingEnabled = false;
+    remoteConfig = FirebaseRemoteConfig.getInstance();
+    // TESTING: Set the fetch interval to 0 for testing so we always get fresh values.
+    // Revert back to a reasonable number (e.g. 3600 - every one hour).
+    remoteConfig.setConfigSettingsAsync(new FirebaseRemoteConfigSettings.Builder()
+            .setMinimumFetchIntervalInSeconds(0)
+            .build());
+    remoteConfig
+      .fetchAndActivate()
+      .addOnCompleteListener(asyncQueue.getExecutor(),
+        new OnCompleteListener<Boolean>() {
+          @Override
+          public void onComplete(@NonNull Task<Boolean> task) {
+            if (task.isSuccessful()) {
+              boolean updated = task.getResult();
+              Log.d(LOG_TAG, "Config params updated: " + updated);
+              loggingEnabled = remoteConfig.getBoolean(FIRESTORE_LOGGING_ENABLED_PARAMETER_NAME);
+              tracingEnabled = remoteConfig.getBoolean(FIRESTORE_TRACING_ENABLED_PARAMETER_NAME);
+              Log.d(LOG_TAG, "loggingEnabled: " + loggingEnabled);
+              Log.d(LOG_TAG, "tracingEnabled: " + tracingEnabled);
+            } else {
+              Log.d(LOG_TAG, "Config params fetch failed.");
+            }
+          }
+        }
+      );
+
+    remoteConfig.addOnConfigUpdateListener(new ConfigUpdateListener() {
+      @Override
+      public void onUpdate(ConfigUpdate configUpdate) {
+        Log.d(LOG_TAG, "Updated keys: " + configUpdate.getUpdatedKeys());
+        remoteConfig.activate().addOnCompleteListener(asyncQueue.getExecutor(), new OnCompleteListener<Boolean>() {
+          @Override
+          public void onComplete(@NonNull Task<Boolean> task) {
+            loggingEnabled = remoteConfig.getBoolean(FIRESTORE_LOGGING_ENABLED_PARAMETER_NAME);
+            tracingEnabled = remoteConfig.getBoolean(FIRESTORE_TRACING_ENABLED_PARAMETER_NAME);
+            Log.d(LOG_TAG, "loggingEnabled: " + loggingEnabled);
+            Log.d(LOG_TAG, "tracingEnabled: " + tracingEnabled);
+          }
+        });
+      }
+      @Override
+      public void onError(FirebaseRemoteConfigException error) {
+        Log.w(LOG_TAG, "Config update error with code: " + error.getCode(), error);
+      }
+    });
+
+    // Set up OpenTelemetry.
+    System.out.println("inside Query.addSnapshotListenerInternal");
+    Resource resource =
+            Resource.getDefault().merge(Resource.builder().put("service.name", "firebase-android-sdk").build());
+    OtlpGrpcSpanExporter otlpGrpcSpanExporter = OtlpGrpcSpanExporter.builder()
+            .setEndpoint("http://34.30.191.38:4317")
+            .build();
+
+    // Configure a batch span processor
+    BatchSpanProcessor otlpGrpcSpanProcessor = BatchSpanProcessor.builder(otlpGrpcSpanExporter)
+            .setScheduleDelay(50, TimeUnit.MILLISECONDS)
+            .build();
+    LoggingSpanExporter loggingSpanExporter = LoggingSpanExporter.create();
+    SpanProcessor loggingSpanProcessor = BatchSpanProcessor.builder(loggingSpanExporter).build();
+
+    OtlpGrpcLogRecordExporter otlpGrpcLogRecordExporter =
+            OtlpGrpcLogRecordExporter.builder()
+                    .setEndpoint("http://34.30.191.38:4317")
+                    .build();
+    LogRecordProcessor otlpGrpcLogRecordProcessor = BatchLogRecordProcessor.builder(otlpGrpcLogRecordExporter).build();
+
+    // Ideally we shouldn't even set up an OTEL instance if all of logging, tracing, and metrics are disabled.
+    SdkTracerProvider sdkTracerProvider =
+            SdkTracerProvider
+                    .builder()
+                    .setResource(resource)
+                    .addSpanProcessor(otlpGrpcSpanProcessor)
+                    .addSpanProcessor(loggingSpanProcessor)
+                    .build();
+
+    openTelemetry = OpenTelemetrySdk
+            .builder()
+            .setTracerProvider(sdkTracerProvider)
+            .setLoggerProvider(
+                    SdkLoggerProvider.builder()
+                            .addLogRecordProcessor(otlpGrpcLogRecordProcessor)
+                            .build()
+            )
+            .build();
   }
 
   public void addSnapshotsInSyncListener(EventListener<Void> listener) {
