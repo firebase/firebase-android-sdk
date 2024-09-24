@@ -34,9 +34,6 @@ enum class BlockReason {
   /** A new and not yet supported value. */
   UNKNOWN,
 
-  /** Content was blocked for an unspecified reason. */
-  UNSPECIFIED,
-
   /** Content was blocked for violating provided [SafetySetting]. */
   SAFETY,
 
