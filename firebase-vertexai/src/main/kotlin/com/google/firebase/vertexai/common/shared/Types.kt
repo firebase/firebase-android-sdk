@@ -32,6 +32,9 @@ import kotlinx.serialization.json.jsonObject
 internal object HarmCategorySerializer :
   KSerializer<HarmCategory> by FirstOrdinalSerializer(HarmCategory::class)
 
+internal object OutcomeSerializer :
+  KSerializer<Outcome> by FirstOrdinalSerializer(Outcome::class)
+
 @Serializable(HarmCategorySerializer::class)
 internal enum class HarmCategory {
   UNKNOWN,
@@ -84,7 +87,7 @@ internal data class Blob(@SerialName("mime_type") val mimeType: String, val data
 
 @Serializable internal data class CodeExecutionResult(val outcome: Outcome, val output: String)
 
-@Serializable
+@Serializable(OutcomeSerializer::class)
 internal enum class Outcome {
   @SerialName("OUTCOME_UNSPECIFIED") UNSPECIFIED,
   OUTCOME_OK,

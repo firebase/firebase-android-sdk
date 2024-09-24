@@ -31,6 +31,9 @@ internal object BlockReasonSerializer :
 internal object HarmProbabilitySerializer :
   KSerializer<HarmProbability> by FirstOrdinalSerializer(HarmProbability::class)
 
+internal object HarmSeveritySerializer :
+  KSerializer<HarmSeverity> by FirstOrdinalSerializer(HarmSeverity::class)
+
 internal object FinishReasonSerializer :
   KSerializer<FinishReason> by FirstOrdinalSerializer(FinishReason::class)
 
@@ -117,7 +120,7 @@ internal enum class HarmProbability {
   HIGH
 }
 
-@Serializable
+@Serializable(HarmSeveritySerializer::class)
 internal enum class HarmSeverity {
   UNKNOWN,
   @SerialName("HARM_SEVERITY_UNSPECIFIED") UNSPECIFIED,
