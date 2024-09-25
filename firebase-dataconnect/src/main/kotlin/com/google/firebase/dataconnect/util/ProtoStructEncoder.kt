@@ -68,7 +68,7 @@ internal class ProtoValueEncoder(
   }
 
   override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
-    onValue(index.toValueProto())
+    onValue(enumDescriptor.getElementName(index).toValueProto())
   }
 
   override fun encodeFloat(value: Float) {

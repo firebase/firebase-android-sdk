@@ -231,3 +231,14 @@ fun TestScope.newBackgroundScopeThatAdvancesLikeForeground(): CoroutineScope {
     backgroundContextWithoutBackgroundWork + Job(backgroundContextWithoutBackgroundWork[Job])
   )
 }
+
+/** Sorts the given list and makes the same transformation on this list. */
+fun <T, U : Comparable<U>> List<T>.sortedParallelTo(other: List<U>): List<T> {
+  require(size == other.size) {
+    "size must equal other.size, but they are unequal: size=$size other.size=${other.size}"
+  }
+  val zippedList = other.zip(this)
+  val sortedZippedList = zippedList.sortedBy { it.first }
+  val (_, sortedThis) = sortedZippedList.unzip()
+  return sortedThis
+}
