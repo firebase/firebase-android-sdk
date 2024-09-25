@@ -6,6 +6,8 @@
   ([#6176](https://github.com/firebase/firebase-android-sdk/pull/6176))
 * [feature] Added `AnyValue` to support the `Any` custom GraphQL scalar type.
   ([#6285](https://github.com/firebase/firebase-android-sdk/pull/6285))
+* [feature] Added `OrderDirection` enum support.
+  ([#6307](https://github.com/firebase/firebase-android-sdk/pull/6307))
 * [feature] Added ability to specify `SerializersModule` when serializing.
   ([#6297](https://github.com/firebase/firebase-android-sdk/pull/6297))
 * [feature] Added `CallerSdkType`, which enables tracking of the generated SDK usage.

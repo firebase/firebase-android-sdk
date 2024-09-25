@@ -190,3 +190,33 @@ query getFarm($id: String!) @auth(level: PUBLIC) {
     }
   }
 }
+
+###############################################################################
+# Operations for table: OrderDirectionTest
+###############################################################################
+
+mutation OrderDirectionTestInsert5(
+  $tag: String!,
+  $value1: Int!,
+  $value2: Int!,
+  $value3: Int!,
+  $value4: Int!,
+  $value5: Int!,
+) @auth(level: PUBLIC) {
+  key1: orderDirectionTest_insert(data: { tag: $tag, value: $value1 })
+  key2: orderDirectionTest_insert(data: { tag: $tag, value: $value2 })
+  key3: orderDirectionTest_insert(data: { tag: $tag, value: $value3 })
+  key4: orderDirectionTest_insert(data: { tag: $tag, value: $value4 })
+  key5: orderDirectionTest_insert(data: { tag: $tag, value: $value5 })
+}
+
+query OrderDirectionTestGetAllByTag(
+  $tag: String!,
+  $orderDirection: OrderDirection,
+) @auth(level: PUBLIC) {
+  items: orderDirectionTests(
+    limit: 10,
+    orderBy: { value: $orderDirection },
+    where: { tag: { eq: $tag } },
+  ) { id }
+}
