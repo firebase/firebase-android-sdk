@@ -107,6 +107,8 @@ internal fun GenerationConfig.toInternal() =
     candidateCount = candidateCount,
     maxOutputTokens = maxOutputTokens,
     stopSequences = stopSequences,
+    frequencyPenalty = frequencyPenalty,
+    presencePenalty = presencePenalty,
     responseMimeType = responseMimeType,
     responseSchema = responseSchema?.toInternal()
   )
