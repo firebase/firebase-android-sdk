@@ -88,24 +88,6 @@ import kotlinx.serialization.modules.SerializersModule
  * into the `master` branch of https://github.com/firebase/firebase-android-sdk, at which point the
  * release notes will become part of the regular Android SDK releases.
  *
- * #### 16.0.0-alpha06 (not yet released)
- * - [#6176](https://github.com/firebase/firebase-android-sdk/pull/6176]) Added App Check support.
- * To use App Check, simply enable it like for any other Firebase product, as documented at
- * https://firebase.google.com/docs/app-check.
- * - [#6179](https://github.com/firebase/firebase-android-sdk/pull/6179]) Added metrics to track if
- * Data Connect queries and mutations are invoked from the generated SDK or from direct usage of the
- * Data Connect SDK, not using the code generation offered by Data Connect.
- * - [#6177](https://github.com/firebase/firebase-android-sdk/pull/6177]) Added `equals` and
- * `hashCode` methods to [com.google.firebase.dataconnect.generated.GeneratedConnector]. This is
- * purely a cosmetic change, but requires using dataconnect emulator v1.1.18 (released May 23, 2024)
- * or later; otherwise, a compilation error like `Class 'FooConnector' is not abstract and does not
- * implement abstract member public abstract fun equals(other: Any?): Boolean defined in
- * com.google.firebase.dataconnect.generated.GeneratedConnector` will occur.
- * - [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN]) Added [AnyValue] class to
- * support the custom `Any` GraphQL scalar type. Support for `Any` scalars in the Android SDK code
- * generation was added in the dataconnect toolkit v1.3.8 (released Sept 20, 2024), which will be
- * included in the next release of firebase-tools (the release following v13.18.0).
- *
  * #### 16.0.0-alpha05 (June 24, 2024)
  * - [#6003](https://github.com/firebase/firebase-android-sdk/pull/6003]) Fixed [close] to
  * _actually_ close the underlying grpc network resources. Also, added [suspendingClose] to allow
