@@ -78,8 +78,6 @@ dependencies {
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))
-  //TODO: change to androidTestImplementation(libs.kotlin.reflect) when it added to the catalog
-  androidTestImplementation(kotlin("reflect"))
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)
