@@ -38,6 +38,7 @@ import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.HarmBlockMethod
 import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
@@ -96,7 +97,8 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
 internal fun SafetySetting.toInternal() =
   com.google.firebase.vertexai.common.shared.SafetySetting(
     harmCategory.toInternal(),
-    threshold.toInternal()
+    threshold.toInternal(),
+    method.toInternal()
   )
 
 internal fun GenerationConfig.toInternal() =
@@ -113,7 +115,7 @@ internal fun GenerationConfig.toInternal() =
     responseSchema = responseSchema?.toInternal()
   )
 
-internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
+internal fun HarmCategory.toInternal() =
   when (this) {
     HarmCategory.HARASSMENT -> com.google.firebase.vertexai.common.shared.HarmCategory.HARASSMENT
     HarmCategory.HATE_SPEECH -> com.google.firebase.vertexai.common.shared.HarmCategory.HATE_SPEECH
@@ -122,6 +124,13 @@ internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
     HarmCategory.DANGEROUS_CONTENT ->
       com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
     HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+  }
+
+internal fun HarmBlockMethod.toInternal() =
+  when (this) {
+    HarmBlockMethod.SEVERITY -> com.google.firebase.vertexai.common.shared.HarmBlockMethod.SEVERITY
+    HarmBlockMethod.PROBABILITY ->
+      com.google.firebase.vertexai.common.shared.HarmBlockMethod.PROBABILITY
   }
 
 internal fun ToolConfig.toInternal() =
