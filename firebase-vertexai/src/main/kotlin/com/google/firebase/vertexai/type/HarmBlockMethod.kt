@@ -17,10 +17,15 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Specify if the threshold is used for probability or severity score. If not specified, the
- * threshold is used for probability score.
+ * Specifies how the block method computes the score that will be compared against the
+ * [HarmBlockThreshold] in [SafetySetting].
  */
 enum class HarmBlockMethod {
+  /**
+   * The harm block method uses both probability and severity scores. See [HarmSeverity] and
+   * [HarmProbability].
+   */
   SEVERITY,
+  /** The harm block method uses the probability score. See [HarmProbability]. */
   PROBABILITY,
 }
