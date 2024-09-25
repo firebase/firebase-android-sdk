@@ -56,6 +56,7 @@ import com.google.firebase.vertexai.type.ToolConfig
 import com.google.firebase.vertexai.type.UsageMetadata
 import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
+import java.util.Calendar
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
@@ -240,8 +241,29 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   }
 }
 
-internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic() =
-  Citation(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
+internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic(): Citation {
+  val publicationDateAsCalendar =
+    publicationDate?.let {
+      val calendar = Calendar.getInstance()
+      // Internal `Date.year` uses 0 to represent not specified. We use 1 as default.
+      val year = if (it.year == null || it.year < 1) 1 else it.year
+      // Internal `Date.month` uses 0 to represent not specified, or is 1-12 as months. The month as
+      // expected by [Calendar] is 0-based, so we subtract 1 or use 0 as default.
+      val month = if (it.month == null || it.month < 1) 0 else it.month - 1
+      // Internal `Date.day` uses 0 to represent not specified. We use 1 as default.
+      val day = if (it.day == null || it.day < 1) 1 else it.day
+      calendar.set(year, month, day)
+      calendar
+    }
+  return Citation(
+    title = title,
+    startIndex = startIndex,
+    endIndex = endIndex,
+    uri = uri,
+    license = license,
+    publicationDate = publicationDateAsCalendar
+  )
+}
 
 internal fun com.google.firebase.vertexai.common.server.CitationMetadata.toPublic() =
   CitationMetadata(citationSources.map { it.toPublic() })
