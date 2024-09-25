@@ -229,7 +229,7 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
 
         response.candidates.isEmpty() shouldBe false
-        response.candidates.first().citationMetadata.size shouldBe 3
+        response.candidates.first().citationMetadata?.citations?.size shouldBe 3
       }
     }
 
@@ -240,11 +240,14 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
 
         response.candidates.isEmpty() shouldBe false
-        response.candidates.first().citationMetadata.isEmpty() shouldBe false
+        response.candidates.first().citationMetadata?.citations?.isEmpty() shouldBe false
         // Verify the values in the citation source
-        with(response.candidates.first().citationMetadata.first()) {
-          license shouldBe null
-          startIndex shouldBe 0
+        val firstCitation = response.candidates.first().citationMetadata?.citations?.first()
+        if (firstCitation != null) {
+          with(firstCitation) {
+            license shouldBe null
+            startIndex shouldBe 0
+          }
         }
       }
     }

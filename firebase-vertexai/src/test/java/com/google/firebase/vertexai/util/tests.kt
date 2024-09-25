@@ -18,7 +18,7 @@ package com.google.firebase.vertexai.util
 
 import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.common.APIController
-import com.google.firebase.vertexai.common.RequestOptions
+import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.client.engine.mock.MockEngine
@@ -97,7 +97,9 @@ internal fun commonTest(
       "super_cool_test_key",
       "gemini-pro",
       requestOptions,
-      MockEngine { respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json")) },
+      MockEngine {
+        respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
+      },
       TEST_CLIENT_ID,
       null,
     )

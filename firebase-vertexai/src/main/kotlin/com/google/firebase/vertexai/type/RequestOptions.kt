@@ -17,23 +17,26 @@
 package com.google.firebase.vertexai.type
 
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-/**
- * Configurable options unique to how requests to the backend are performed.
- *
- * @property timeout the maximum amount of time for a request to take, from the first request to
- * first response.
- * @property apiVersion the api endpoint to call.
- */
-class RequestOptions(val timeout: Duration) {
+/** Configurable options unique to how requests to the backend are performed. */
+class RequestOptions
+internal constructor(
+  internal val timeout: Duration,
+  internal val endpoint: String = "https://firebaseml.googleapis.com",
+  internal val apiVersion: String = "v2beta",
+) {
 
-  internal val endpoint = "https://firebaseml.googleapis.com"
-  internal val apiVersion = "v2beta"
-
+  /**
+   * Constructor for RequestOptions.
+   *
+   * @param timeoutInMillis the maximum amount of time, in milliseconds, for a request to take, from
+   * the first request to first response.
+   */
   @JvmOverloads
   constructor(
-    timeout: Long? = Long.MAX_VALUE,
-  ) : this((timeout ?: Long.MAX_VALUE).toDuration(DurationUnit.MILLISECONDS))
+    timeoutInMillis: Long = 180.seconds.inWholeMilliseconds
+  ) : this(timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS))
 }
