@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.util.nextAlphanumericString
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
@@ -162,4 +163,8 @@ fun <A> Arb<List<A>>.filterNotIncludesAllMatchingAnyScalars(values: List<Any?>) 
 
 fun Arb.Companion.callerSdkType(): Arb<CallerSdkType> = arbitrary {
   if (Arb.boolean().bind()) CallerSdkType.Base else CallerSdkType.Generated
+}
+
+fun Arb.Companion.tag(): Arb<String> = arbitrary {
+  "tag" + Arb.string(size = 10, Codepoint.alphanumeric()).bind()
 }
