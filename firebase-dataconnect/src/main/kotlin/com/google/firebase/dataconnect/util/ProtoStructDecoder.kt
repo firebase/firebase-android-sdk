@@ -80,8 +80,8 @@ private object ProtoDecoderUtil {
   fun decodeDouble(value: Value, path: String?): Double =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue }
 
-  fun decodeEnum(value: Value, path: String?): Int =
-    decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue.toInt() }
+  fun decodeEnum(value: Value, path: String?): String =
+    decode(value, path, KindCase.STRING_VALUE) { it.stringValue }
 
   fun decodeFloat(value: Value, path: String?): Float =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue.toFloat() }
@@ -134,7 +134,10 @@ internal class ProtoValueDecoder(
 
   override fun decodeDouble() = decodeDouble(valueProto, path)
 
-  override fun decodeEnum(enumDescriptor: SerialDescriptor) = decodeEnum(valueProto, path)
+  override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
+    val enumValueName = decodeEnum(valueProto, path)
+    return enumDescriptor.getElementIndex(enumValueName)
+  }
 
   override fun decodeFloat() = decodeFloat(valueProto, path)
 
