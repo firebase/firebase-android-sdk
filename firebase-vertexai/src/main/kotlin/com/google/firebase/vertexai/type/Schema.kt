@@ -130,14 +130,20 @@ internal constructor(
       optionalProperties: List<String> = emptyList(),
       description: String? = null,
       nullable: Boolean = false,
-    ) =
-      Schema(
+    ): Schema {
+      if (!properties.keys.containsAll(optionalProperties)) {
+        throw IllegalArgumentException(
+          "All optional properties must be present in properties. Missing: ${optionalProperties.minus(properties.keys)}"
+        )
+      }
+      return Schema(
         description = description,
         nullable = nullable,
         properties = properties,
         required = properties.keys.minus(optionalProperties.toSet()).toList(),
         type = "OBJECT",
       )
+    }
 
     /**
      * Returns a schema for an array.

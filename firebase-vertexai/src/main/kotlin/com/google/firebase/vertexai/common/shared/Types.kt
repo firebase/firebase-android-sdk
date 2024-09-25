@@ -59,11 +59,6 @@ internal data class InlineDataPart(@SerialName("inline_data") val inlineData: In
 @Serializable
 internal data class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
 
-@Serializable internal data class ExecutableCodePart(val executableCode: ExecutableCode) : Part
-
-@Serializable
-internal data class CodeExecutionResultPart(val codeExecutionResult: CodeExecutionResult) : Part
-
 @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
 
 @Serializable
@@ -80,18 +75,6 @@ internal data class FileData(
 
 @Serializable
 internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
-
-@Serializable internal data class ExecutableCode(val language: String, val code: String)
-
-@Serializable internal data class CodeExecutionResult(val outcome: Outcome, val output: String)
-
-@Serializable
-internal enum class Outcome {
-  @SerialName("OUTCOME_UNSPECIFIED") UNSPECIFIED,
-  OUTCOME_OK,
-  OUTCOME_FAILED,
-  OUTCOME_DEADLINE_EXCEEDED,
-}
 
 @Serializable
 internal data class SafetySetting(
@@ -125,8 +108,6 @@ internal object PartSerializer : JsonContentPolymorphicSerializer<Part>(Part::cl
       "functionResponse" in jsonObject -> FunctionResponsePart.serializer()
       "inlineData" in jsonObject -> InlineDataPart.serializer()
       "fileData" in jsonObject -> FileDataPart.serializer()
-      "executableCode" in jsonObject -> ExecutableCodePart.serializer()
-      "codeExecutionResult" in jsonObject -> CodeExecutionResultPart.serializer()
       else -> throw SerializationException("Unknown Part type")
     }
   }
