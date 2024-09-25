@@ -57,7 +57,7 @@ class CitationMetadata internal constructor(val citations: List<Citation>)
  * source.
  * @property uri A link to the cited source, if available.
  * @property license The license the cited source work is distributed under, if specified.
- * @property publicationDate Publication date of the attribution.
+ * @property publicationDate Publication date of the attribution, if available.
  */
 class Citation
 internal constructor(
