@@ -34,7 +34,7 @@ import org.junit.Test
 class OrderDirectionIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val dataConnect: FirebaseDataConnect by lazy {
-    val connectorConfig = testConnectorConfig.copy(connector = "alltypes")
+    val connectorConfig = testConnectorConfig.copy(connector = "demo")
     dataConnectFactory.newInstance(connectorConfig)
   }
 
