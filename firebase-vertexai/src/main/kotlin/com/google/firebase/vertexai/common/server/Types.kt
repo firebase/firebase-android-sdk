@@ -159,7 +159,7 @@ internal enum class FinishReason {
 internal data class GRpcError(
   val code: Int,
   val message: String,
-  val details: List<GRpcErrorDetails>
+  val details: List<GRpcErrorDetails>? = null
 )
 
 @Serializable internal data class GRpcErrorDetails(val reason: String? = null)
