@@ -27,7 +27,11 @@ import com.google.firebase.vertexai.common.client.FunctionCallingConfig
  * should match [FunctionDeclaration.name]. With [Mode.ANY], model will predict a function call from
  * the set of function names provided.
  */
-class FunctionCallingConfig internal constructor(private val mode: Mode, private val allowedFunctionNames: List<String>? = null) {
+class FunctionCallingConfig
+internal constructor(
+  internal val mode: Mode,
+  internal val allowedFunctionNames: List<String>? = null
+) {
 
   /** Configuration for dictating when the model should call the attached function. */
   internal enum class Mode {
@@ -52,19 +56,18 @@ class FunctionCallingConfig internal constructor(private val mode: Mode, private
      * The default behavior for function calling. The model calls functions to answer queries at its
      * discretion
      */
-    @JvmStatic
-    fun auto() = FunctionCallingConfig(Mode.AUTO)
+    @JvmStatic fun auto() = FunctionCallingConfig(Mode.AUTO)
 
     /** The model always predicts a provided function call to answer every query. */
     @JvmStatic
     @JvmOverloads
-    fun any(allowedFunctionNames: List<String>? = null) = FunctionCallingConfig(Mode.ANY, allowedFunctionNames)
+    fun any(allowedFunctionNames: List<String>? = null) =
+      FunctionCallingConfig(Mode.ANY, allowedFunctionNames)
 
     /**
      * The model will never predict a function call to answer a query. This can also be achieved by
      * not passing any tools to the model.
      */
-    @JvmStatic
-    fun none() = FunctionCallingConfig(Mode.NONE)
+    @JvmStatic fun none() = FunctionCallingConfig(Mode.NONE)
   }
 }
