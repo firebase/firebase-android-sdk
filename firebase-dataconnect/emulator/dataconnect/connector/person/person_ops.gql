@@ -1,0 +1,90 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mutation createPerson($id: String, $name: String!, $age: Int) @auth(level: PUBLIC) {
+  person_insert(data: {
+    id: $id,
+    name: $name,
+    age: $age
+  })
+}
+
+mutation createDefaultPerson @auth(level: PUBLIC) {
+  person_insert(data: {name: "DefaultName", age: 42})
+}
+
+mutation deletePerson($id: String!) @auth(level: PUBLIC) {
+  person_delete(id: $id)
+}
+
+mutation updatePerson($id: String!, $name: String!, $age: Int) @auth(level: PUBLIC) {
+  person_update(id: $id, data: {
+    name: $name,
+    age: $age
+  })
+}
+
+query getPerson($id: String!) @auth(level: PUBLIC) {
+  person(id: $id) {
+    name
+    age
+  }
+}
+
+query getNoPeople @auth(level: PUBLIC) {
+  people(where: {id: {eq: "Some ID that does not match any rows"}}) {
+    id
+  }
+}
+
+query getPeopleByName($name: String!) @auth(level: PUBLIC) {
+  people(where: {name: {eq: $name}}) {
+    id
+    age
+  }
+}
+
+query getPeopleWithHardcodedName @auth(level: PUBLIC) {
+  people(where: {name: {eq: "HardcodedName_v1"}}) {
+    id
+    age
+  }
+}
+
+mutation createPeopleWithHardcodedName @auth(level: PUBLIC) {
+  person1: person_upsert(data: {
+    id: "HardcodedNamePerson1Id_v1",
+    name: "HardcodedName_v1"
+  })
+  person2: person_upsert(data: {
+    id: "HardcodedNamePerson2Id_v1",
+    name: "HardcodedName_v1",
+    age: 42
+  })
+}
+
+mutation createPersonAuth($id: String, $name: String!, $age: Int) @auth(level: USER_ANON) {
+  person_insert(data: {
+    id: $id,
+    name: $name,
+    age: $age
+  })
+}
+
+query getPersonAuth($id: String!) @auth(level: USER_ANON) {
+  person(id: $id) {
+    name
+    age
+  }
+}
