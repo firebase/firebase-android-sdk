@@ -22,6 +22,11 @@ package com.google.firebase.vertexai.type
  *
  * @param functionDeclarations The set of functions that this tool allows the model access to
  */
-class Tool(
-  val functionDeclarations: List<FunctionDeclaration>,
-)
+class Tool internal constructor(internal val functionDeclarations: List<FunctionDeclaration>?) {
+  companion object {
+    @JvmStatic
+    fun functionDeclarations(functionDeclarations: List<FunctionDeclaration>): Tool {
+      return Tool(functionDeclarations)
+    }
+  }
+}
