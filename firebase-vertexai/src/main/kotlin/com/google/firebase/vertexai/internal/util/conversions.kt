@@ -20,13 +20,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.google.firebase.vertexai.common.client.Schema
-import com.google.firebase.vertexai.common.shared.Blob
 import com.google.firebase.vertexai.common.shared.FileData
 import com.google.firebase.vertexai.common.shared.FunctionCall
 import com.google.firebase.vertexai.common.shared.FunctionCallPart
 import com.google.firebase.vertexai.common.shared.FunctionResponse
 import com.google.firebase.vertexai.common.shared.FunctionResponsePart
-import com.google.firebase.vertexai.type.BlobPart
+import com.google.firebase.vertexai.common.shared.InlineData
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Citation
@@ -44,6 +43,7 @@ import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.ImagePart
+import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.Part
 import com.google.firebase.vertexai.type.PromptFeedback
 import com.google.firebase.vertexai.type.SafetyRating
@@ -71,12 +71,12 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
   return when (this) {
     is TextPart -> com.google.firebase.vertexai.common.shared.TextPart(text)
     is ImagePart ->
-      com.google.firebase.vertexai.common.shared.BlobPart(
-        Blob("image/jpeg", encodeBitmapToBase64Png(image))
+      com.google.firebase.vertexai.common.shared.InlineDataPart(
+        InlineData("image/jpeg", encodeBitmapToBase64Png(image))
       )
-    is BlobPart ->
-      com.google.firebase.vertexai.common.shared.BlobPart(
-        Blob(mimeType, Base64.encodeToString(blob, BASE_64_FLAGS))
+    is InlineDataPart ->
+      com.google.firebase.vertexai.common.shared.InlineDataPart(
+        InlineData(mimeType, Base64.encodeToString(inlineData, BASE_64_FLAGS))
       )
     is com.google.firebase.vertexai.type.FunctionCallPart ->
       FunctionCallPart(FunctionCall(name, args.orEmpty()))
@@ -150,7 +150,9 @@ internal fun HarmBlockThreshold.toInternal() =
   }
 
 internal fun Tool.toInternal() =
-  com.google.firebase.vertexai.common.client.Tool(functionDeclarations.map { it.toInternal() })
+  com.google.firebase.vertexai.common.client.Tool(
+    functionDeclarations?.map { it.toInternal() } ?: emptyList()
+  )
 
 internal fun FunctionDeclaration.toInternal() =
   com.google.firebase.vertexai.common.client.FunctionDeclaration(
@@ -200,12 +202,12 @@ internal fun com.google.firebase.vertexai.common.shared.Content.toPublic(): Cont
 internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   return when (this) {
     is com.google.firebase.vertexai.common.shared.TextPart -> TextPart(text)
-    is com.google.firebase.vertexai.common.shared.BlobPart -> {
+    is com.google.firebase.vertexai.common.shared.InlineDataPart -> {
       val data = Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {
-        BlobPart(inlineData.mimeType, data)
+        InlineDataPart(inlineData.mimeType, data)
       }
     }
     is FunctionCallPart ->

@@ -48,9 +48,11 @@ class Content @JvmOverloads constructor(val role: String? = "user", val parts: L
     @JvmName("addText") fun text(text: String) = part(TextPart(text))
 
     /**
-     * Wraps the provided [blob] and [mimeType] inside a [BlobPart] and adds it to the [parts] list.
+     * Wraps the provided [bytes] and [mimeType] inside a [InlineDataPart] and adds it to the
+     * [parts] list.
      */
-    @JvmName("addBlob") fun blob(mimeType: String, blob: ByteArray) = part(BlobPart(mimeType, blob))
+    @JvmName("addInlineData")
+    fun inlineData(mimeType: String, bytes: ByteArray) = part(InlineDataPart(mimeType, bytes))
 
     /** Wraps the provided [image] inside an [ImagePart] and adds it to the [parts] list. */
     @JvmName("addImage") fun image(image: Bitmap) = part(ImagePart(image))
