@@ -39,9 +39,9 @@ class ImagePart(val image: Bitmap) : Part
  * @param mimeType an IANA standard MIME type. For supported values, see the
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
  * .
- * @param blob the binary data as a [ByteArray]
+ * @param inlineData the binary data as a [ByteArray]
  */
-class BlobPart(val mimeType: String, val blob: ByteArray) : Part
+class InlineDataPart(val mimeType: String, val inlineData: ByteArray) : Part
 
 /**
  * Represents function call name and params received from requests.
@@ -75,8 +75,8 @@ fun Part.asTextOrNull(): String? = (this as? TextPart)?.text
 /** Returns the part as a [Bitmap] if it represents an image, and null otherwise */
 fun Part.asImageOrNull(): Bitmap? = (this as? ImagePart)?.image
 
-/** Returns the part as a [BlobPart] if it represents a blob, and null otherwise */
-fun Part.asBlobPartOrNull(): BlobPart? = this as? BlobPart
+/** Returns the part as a [InlineDataPart] if it represents inline data, and null otherwise */
+fun Part.asInlineDataPartOrNull(): InlineDataPart? = this as? InlineDataPart
 
 /** Returns the part as a [FileDataPart] if it represents a file, and null otherwise */
 fun Part.asFileDataOrNull(): FileDataPart? = this as? FileDataPart

@@ -51,7 +51,8 @@ internal data class Content(@EncodeDefault val role: String? = "user", val parts
 
 @Serializable internal data class TextPart(val text: String) : Part
 
-@Serializable internal data class BlobPart(@SerialName("inline_data") val inlineData: Blob) : Part
+@Serializable
+internal data class InlineDataPart(@SerialName("inline_data") val inlineData: InlineData) : Part
 
 @Serializable internal data class FunctionCallPart(val functionCall: FunctionCall) : Part
 
@@ -73,7 +74,7 @@ internal data class FileData(
 )
 
 @Serializable
-internal data class Blob(@SerialName("mime_type") val mimeType: String, val data: Base64)
+internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
 
 @Serializable
 internal data class SafetySetting(
@@ -105,7 +106,7 @@ internal object PartSerializer : JsonContentPolymorphicSerializer<Part>(Part::cl
       "text" in jsonObject -> TextPart.serializer()
       "functionCall" in jsonObject -> FunctionCallPart.serializer()
       "functionResponse" in jsonObject -> FunctionResponsePart.serializer()
-      "inlineData" in jsonObject -> BlobPart.serializer()
+      "inlineData" in jsonObject -> InlineDataPart.serializer()
       "fileData" in jsonObject -> FileDataPart.serializer()
       else -> throw SerializationException("Unknown Part type")
     }

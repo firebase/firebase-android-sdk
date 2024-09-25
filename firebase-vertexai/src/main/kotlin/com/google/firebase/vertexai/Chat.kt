@@ -17,10 +17,10 @@
 package com.google.firebase.vertexai
 
 import android.graphics.Bitmap
-import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.ImagePart
+import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.InvalidStateException
 import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.content
@@ -102,13 +102,13 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
 
     val flow = model.generateContentStream(*history.toTypedArray(), prompt)
     val bitmaps = LinkedList<Bitmap>()
-    val blobs = LinkedList<BlobPart>()
+    val inlineDataParts = LinkedList<InlineDataPart>()
     val text = StringBuilder()
 
     /**
-     * TODO: revisit when images and blobs are returned. This will cause issues with how things are
-     * structured in the response. eg; a text/image/text response will be (incorrectly) represented
-     * as image/text
+     * TODO: revisit when images and inline data are returned. This will cause issues with how
+     * things are structured in the response. eg; a text/image/text response will be (incorrectly)
+     * represented as image/text
      */
     return flow
       .onEach {
@@ -116,7 +116,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
           when (part) {
             is TextPart -> text.append(part.text)
             is ImagePart -> bitmaps.add(part.image)
-            is BlobPart -> blobs.add(part)
+            is InlineDataPart -> inlineDataParts.add(part)
           }
         }
       }
@@ -128,8 +128,8 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
               for (bitmap in bitmaps) {
                 image(bitmap)
               }
-              for (blob in blobs) {
-                blob(blob.mimeType, blob.blob)
+              for (inlineDataPart in inlineDataParts) {
+                inlineData(inlineDataPart.mimeType, inlineDataPart.inlineData)
               }
               if (text.isNotBlank()) {
                 text(text.toString())
