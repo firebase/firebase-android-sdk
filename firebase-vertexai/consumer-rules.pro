@@ -21,3 +21,8 @@
 #-renamesourcefileattribute SourceFile
 
 -keep class com.google.firebase.vertexai.common.** { *; }
+
+-dontwarn io.ktor.client.engine.mock.MockEngine$Companion
+-dontwarn io.ktor.client.engine.mock.MockEngine
+-dontwarn io.ktor.client.engine.mock.MockRequestHandleScope
+-dontwarn io.ktor.client.engine.mock.MockUtilsKt
