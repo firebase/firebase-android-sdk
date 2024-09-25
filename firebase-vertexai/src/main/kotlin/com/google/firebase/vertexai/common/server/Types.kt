@@ -86,9 +86,11 @@ internal data class Date(
    * 1-based index for month. Must be from 1 to 12, or 0 to specify a year without a month.
    */
   val month: Int? = null,
-  // Day of a month. Must be from 1 to 31 and valid for the year and month, or 0
-  // to specify a year by itself or a year and month where the day isn't
-  // significant.
+  /**
+   * Day of a month. Must be from 1 to 31 and valid for the year and month, or 0
+   * to specify a year by itself or a year and month where the day isn't
+   * significant.
+   */
   val day: Int? = null,
 )
 
