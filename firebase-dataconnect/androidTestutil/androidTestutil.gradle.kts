@@ -49,21 +49,20 @@ android {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:21.0.0")
-  api(project(":firebase-dataconnect"))
-  api(project(":firebase-dataconnect:testutil"))
-  api(libs.kotlinx.coroutines.core)
+  implementation(project(":firebase-dataconnect"))
+  implementation(project(":firebase-dataconnect:testutil"))
+
+  implementation("com.google.firebase:firebase-auth:22.3.1")
+  implementation("com.google.firebase:firebase-appcheck:18.0.0")
 
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)
   implementation(libs.auth0.jwt)
+  implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.serialization.core)
   implementation(libs.kotlinx.serialization.json)
-  implementation(libs.turbine)
   implementation(libs.truth)
-
-  implementation("com.google.firebase:firebase-auth:22.3.1")
-  implementation("com.google.firebase:firebase-appcheck:18.0.0")
+  implementation(libs.turbine)
 }
 
 tasks.withType<KotlinCompile>().all {

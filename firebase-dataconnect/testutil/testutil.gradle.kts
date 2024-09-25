@@ -49,19 +49,19 @@ android {
 }
 
 dependencies {
-  api(project(":firebase-dataconnect"))
-  api(libs.kotlinx.coroutines.core)
-  api(libs.kotlinx.serialization.core)
+  implementation(project(":firebase-dataconnect"))
 
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-auth:22.3.1")
 
-  implementation(libs.kotest.property)
-  implementation(libs.mockk)
   implementation(libs.androidx.test.junit)
+  implementation(libs.kotest.property)
+  implementation(libs.kotlin.coroutines.test)
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.serialization.core)
+  implementation(libs.mockk)
   implementation(libs.robolectric)
   implementation(libs.truth)
-  implementation(libs.kotlin.coroutines.test)
 }
 
 tasks.withType<KotlinCompile>().all {

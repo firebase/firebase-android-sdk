@@ -65,9 +65,9 @@ android {
 }
 
 dependencies {
-  api(project(":firebase-dataconnect"))
-  api(libs.kotlinx.coroutines.core)
-  api(libs.kotlinx.serialization.core)
+  implementation(project(":firebase-dataconnect"))
+  implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.serialization.core)
 
   testImplementation(project(":firebase-dataconnect:testutil"))
   testImplementation(libs.androidx.test.junit)
