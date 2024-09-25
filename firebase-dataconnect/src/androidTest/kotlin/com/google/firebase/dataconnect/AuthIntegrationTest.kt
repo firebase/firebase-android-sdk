@@ -41,7 +41,6 @@ import io.kotest.matchers.collections.shouldNotContainNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.next
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
@@ -60,7 +59,6 @@ import org.junit.runner.RunWith
 class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val key = "e6w33rw36t"
-  private val rs = RandomSource.default()
 
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
 

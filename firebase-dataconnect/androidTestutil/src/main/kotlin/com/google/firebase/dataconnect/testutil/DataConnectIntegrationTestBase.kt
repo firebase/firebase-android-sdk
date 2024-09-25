@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.testutil
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.util.nextAlphanumericString
+import io.kotest.property.RandomSource
 import kotlin.random.Random
 import org.junit.Rule
 import org.junit.rules.TestName
@@ -34,6 +35,10 @@ abstract class DataConnectIntegrationTestBase {
   @get:Rule val firebaseAppFactory = TestFirebaseAppFactory()
 
   @get:Rule val dataConnectFactory = TestDataConnectFactory(firebaseAppFactory)
+
+  @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
+
+  val rs: RandomSource by randomSeedTestRule.rs
 
   companion object {
     val testConnectorConfig: ConnectorConfig
