@@ -73,18 +73,18 @@ package com.google.firebase.vertexai.type
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
  */
-class GenerationConfig
+public class GenerationConfig
 private constructor(
-  val temperature: Float?,
-  val topK: Int?,
-  val topP: Float?,
-  val candidateCount: Int?,
-  val maxOutputTokens: Int?,
-  val presencePenalty: Float?,
-  val frequencyPenalty: Float?,
-  val stopSequences: List<String>?,
-  val responseMimeType: String?,
-  val responseSchema: Schema?,
+  public val temperature: Float?,
+  public val topK: Int?,
+  public val topP: Float?,
+  public val candidateCount: Int?,
+  public val maxOutputTokens: Int?,
+  public val presencePenalty: Float?,
+  public val frequencyPenalty: Float?,
+  public val stopSequences: List<String>?,
+  public val responseMimeType: String?,
+  public val responseSchema: Schema?,
 ) {
 
   /**
@@ -114,20 +114,20 @@ private constructor(
    * @property responseSchema See [GenerationConfig.responseSchema].
    * @see [generationConfig]
    */
-  class Builder {
-    @JvmField var temperature: Float? = null
-    @JvmField var topK: Int? = null
-    @JvmField var topP: Float? = null
-    @JvmField var candidateCount: Int? = null
-    @JvmField var maxOutputTokens: Int? = null
-    @JvmField var presencePenalty: Float? = null
-    @JvmField var frequencyPenalty: Float? = null
-    @JvmField var stopSequences: List<String>? = null
-    @JvmField var responseMimeType: String? = null
-    @JvmField var responseSchema: Schema? = null
+  public class Builder {
+    @JvmField public var temperature: Float? = null
+    @JvmField public var topK: Int? = null
+    @JvmField public var topP: Float? = null
+    @JvmField public var candidateCount: Int? = null
+    @JvmField public var maxOutputTokens: Int? = null
+    @JvmField public var presencePenalty: Float? = null
+    @JvmField public var frequencyPenalty: Float? = null
+    @JvmField public var stopSequences: List<String>? = null
+    @JvmField public var responseMimeType: String? = null
+    @JvmField public var responseSchema: Schema? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
-    fun build() =
+    public fun build(): GenerationConfig =
       GenerationConfig(
         temperature = temperature,
         topK = topK,
@@ -142,7 +142,7 @@ private constructor(
       )
   }
 
-  companion object {
+  public companion object {
 
     /**
      * Alternative casing for [GenerationConfig.Builder]:
@@ -150,7 +150,7 @@ private constructor(
      * val config = GenerationConfig.builder()
      * ```
      */
-    fun builder() = Builder()
+    public fun builder(): Builder = Builder()
   }
 }
 
@@ -169,7 +169,7 @@ private constructor(
  * }
  * ```
  */
-fun generationConfig(init: GenerationConfig.Builder.() -> Unit): GenerationConfig {
+public fun generationConfig(init: GenerationConfig.Builder.() -> Unit): GenerationConfig {
   val builder = GenerationConfig.builder()
   builder.init()
   return builder.build()

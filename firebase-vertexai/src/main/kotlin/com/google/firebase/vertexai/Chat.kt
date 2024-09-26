@@ -42,7 +42,10 @@ import kotlinx.coroutines.flow.onEach
  * @param model The model to use for the interaction
  * @property history The previous interactions with the model
  */
-class Chat(private val model: GenerativeModel, val history: MutableList<Content> = ArrayList()) {
+public class Chat(
+  private val model: GenerativeModel,
+  public val history: MutableList<Content> = ArrayList()
+) {
   private var lock = Semaphore(1)
 
   /**
@@ -53,7 +56,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @throws InvalidStateException if the prompt is not coming from the 'user' role
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  suspend fun sendMessage(prompt: Content): GenerateContentResponse {
+  public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
     prompt.assertComesFromUser()
     attemptLock()
     try {
@@ -72,7 +75,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @param prompt The text to be converted into a single piece of [Content] to send to the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  suspend fun sendMessage(prompt: String): GenerateContentResponse {
+  public suspend fun sendMessage(prompt: String): GenerateContentResponse {
     val content = content { text(prompt) }
     return sendMessage(content)
   }
@@ -83,7 +86,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @param prompt The image to be converted into a single piece of [Content] to send to the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  suspend fun sendMessage(prompt: Bitmap): GenerateContentResponse {
+  public suspend fun sendMessage(prompt: Bitmap): GenerateContentResponse {
     val content = content { image(prompt) }
     return sendMessage(content)
   }
@@ -96,7 +99,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @throws InvalidStateException if the prompt is not coming from the 'user' role
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  fun sendMessageStream(prompt: Content): Flow<GenerateContentResponse> {
+  public fun sendMessageStream(prompt: Content): Flow<GenerateContentResponse> {
     prompt.assertComesFromUser()
     attemptLock()
 
@@ -149,7 +152,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @return A [Flow] which will emit responses as they are returned from the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  fun sendMessageStream(prompt: String): Flow<GenerateContentResponse> {
+  public fun sendMessageStream(prompt: String): Flow<GenerateContentResponse> {
     val content = content { text(prompt) }
     return sendMessageStream(content)
   }
@@ -161,7 +164,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @return A [Flow] which will emit responses as they are returned from the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
+  public fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
     val content = content { image(prompt) }
     return sendMessageStream(content)
   }

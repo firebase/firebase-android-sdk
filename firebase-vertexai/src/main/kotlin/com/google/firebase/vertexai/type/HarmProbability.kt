@@ -17,7 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /** Represents the probability that some [HarmCategory] is applicable in a [SafetyRating]. */
-enum class HarmProbability {
+public enum class HarmProbability {
   /** A new and not yet supported value. */
   UNKNOWN,
 
