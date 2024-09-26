@@ -151,6 +151,7 @@ def ci(pull_request: bool, changed_modules_file: Path, repeat: int):
   """Run tests in CI and upload results to the metric service."""
 
   output_path = Path("macrobenchmark-test-output.json")
+  exception = None
 
   try:
     if pull_request:
@@ -165,54 +166,32 @@ def ci(pull_request: bool, changed_modules_file: Path, repeat: int):
       )
     else:
       asyncio.run(runner.start(build_only=False, local=False, repeat=repeat, output=output_path))
-    run_succeeded = True
-  except:
-    run_succeeded = False
-    logger.exception("Macrobenchmark failed")
-    raise
-  finally:
+  except Exception as e:
+    logger.error(f"Error: {e}")
+    exception = e
+
+  with open(output_path) as output_file:
+    output = json.load(output_file)
     project_name = 'test-changed' if pull_request else 'test-all'
-    try:
-      with open(output_path) as output_file:
-        output = json.load(output_file)
-    except:
-      logger.exception("Unable to parse JSON from file: %s", output_path)
-      if run_succeeded:
-        raise
-    else:
-      projects_by_project_name = {}
-      for project in output:
-        cur_project_name = project['project']
-        projects_by_project_name.setdefault(cur_project_name, []).append(project)
+    ftl_dirs = list(filter(lambda x: x['project'] == project_name, output))[0]['successful_runs']
+    ftl_bucket_name = 'fireescape-benchmark-results'
 
-      matching_projects = projects_by_project_name.get(project_name)
-      if not matching_projects:
-        project_names = projects_by_project_name.keys()
-        project_names_str = ", ".join(sorted(project_names))
-        message = f'Project "{project_name}" not found in output file: {output_path} ' \
-            f'(projects are: {project_names_str})',
-        logging.error(message)
-        raise ProjectNotFoundError(message)
+    log = ci_utils.ci_log_link()
+    ftl_results = list(map(lambda x: {'bucket': ftl_bucket_name, 'dir': x}, ftl_dirs))
+    startup_time_data = {'log': log, 'ftlResults': ftl_results}
 
-      ftl_dirs = matching_projects[0]['successful_runs']
-      ftl_bucket_name = 'fireescape-benchmark-results'
+    if ftl_results:
+      metric_service_url = 'https://metric-service-tv5rmd4a6q-uc.a.run.app'
+      access_token = ci_utils.gcloud_identity_token()
+      uploader.post_report(
+        test_report=startup_time_data,
+        metrics_service_url=metric_service_url,
+        access_token=access_token,
+        metric_type='startup-time',
+        asynchronous=True
+      )
 
-      log = ci_utils.ci_log_link()
-      ftl_results = list(map(lambda x: {'bucket': ftl_bucket_name, 'dir': x}, ftl_dirs))
-      startup_time_data = {'log': log, 'ftlResults': ftl_results}
-
-      if ftl_results:
-        metric_service_url = 'https://metric-service-tv5rmd4a6q-uc.a.run.app'
-        access_token = ci_utils.gcloud_identity_token()
-        uploader.post_report(
-          test_report=startup_time_data,
-          metrics_service_url=metric_service_url,
-          access_token=access_token,
-          metric_type='startup-time',
-          asynchronous=True
-        )
-
-class ProjectNotFoundError(Exception):
-  pass
+  if exception:
+    raise exception
 
 # TODO(yifany): support of command chaining
