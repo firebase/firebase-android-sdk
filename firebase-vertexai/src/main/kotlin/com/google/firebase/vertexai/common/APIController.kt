@@ -17,15 +17,12 @@
 package com.google.firebase.vertexai.common
 
 import android.util.Log
-import androidx.annotation.VisibleForTesting
 import com.google.firebase.vertexai.common.server.FinishReason
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -38,12 +35,9 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.utils.io.ByteChannel
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.TimeoutCancellationException
@@ -90,24 +84,6 @@ internal constructor(
     apiClient: String,
     headerProvider: HeaderProvider? = null,
   ) : this(key, model, requestOptions, OkHttp.create(), apiClient, headerProvider)
-
-  @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-  constructor(
-    key: String,
-    model: String,
-    requestOptions: RequestOptions,
-    apiClient: String,
-    headerProvider: HeaderProvider?,
-    channel: ByteChannel,
-    status: HttpStatusCode,
-  ) : this(
-    key,
-    model,
-    requestOptions,
-    MockEngine { respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json")) },
-    apiClient,
-    headerProvider,
-  )
 
   private val model = fullModelName(model)
 
