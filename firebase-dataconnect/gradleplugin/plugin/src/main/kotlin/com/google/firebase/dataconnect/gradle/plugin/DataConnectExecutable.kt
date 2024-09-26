@@ -73,6 +73,13 @@ sealed interface DataConnectExecutable {
                 "4558928c2a84b54113e0d6918907eb75bdeb9bd059dcc4b6f22cb4a7c9c7421a357" +
                   "7f3b0d2eeb246b1df739b38f1eb91e5a6166b0e559707746d79e6ccdf9ed4"
             )
+          "1.4.0" ->
+            VerificationInfo(
+              fileSizeInBytes = 25_018_520L,
+              sha512DigestHex =
+                "c06ccade89cb46459452f71c6d49a01b4b30c9f96cc4cb770ed168e7420ef0cb368" +
+                  "cd602ff596137e6586270046cf0ffd9f8d294e44b036e5c5b373a074b7e5a"
+            )
           else ->
             throw DataConnectGradleException(
               "3svd27ch8y",
@@ -94,7 +101,7 @@ sealed interface DataConnectExecutable {
     DataConnectExecutable {
     companion object {
 
-      private const val DEFAULT_VERSION = "1.3.9"
+      private const val DEFAULT_VERSION = "1.4.0"
 
       fun forVersionWithDefaultVerificationInfo(version: String): Version {
         val verificationInfo = DataConnectExecutable.VerificationInfo.forVersion(version)
