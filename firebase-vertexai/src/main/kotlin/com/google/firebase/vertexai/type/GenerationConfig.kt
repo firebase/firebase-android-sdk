@@ -75,16 +75,16 @@ package com.google.firebase.vertexai.type
  */
 public class GenerationConfig
 private constructor(
-  public val temperature: Float?,
-  public val topK: Int?,
-  public val topP: Float?,
-  public val candidateCount: Int?,
-  public val maxOutputTokens: Int?,
-  public val presencePenalty: Float?,
-  public val frequencyPenalty: Float?,
-  public val stopSequences: List<String>?,
-  public val responseMimeType: String?,
-  public val responseSchema: Schema?,
+  internal val temperature: Float?,
+  internal val topK: Int?,
+  internal val topP: Float?,
+  internal val candidateCount: Int?,
+  internal val maxOutputTokens: Int?,
+  internal val presencePenalty: Float?,
+  internal val frequencyPenalty: Float?,
+  internal val stopSequences: List<String>?,
+  internal val responseMimeType: String?,
+  internal val responseSchema: Schema?,
 ) {
 
   /**
