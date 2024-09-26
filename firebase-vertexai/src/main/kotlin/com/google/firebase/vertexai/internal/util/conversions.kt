@@ -20,16 +20,13 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import com.google.firebase.vertexai.common.client.Schema
-import com.google.firebase.vertexai.common.shared.Blob
 import com.google.firebase.vertexai.common.shared.FileData
 import com.google.firebase.vertexai.common.shared.FunctionCall
 import com.google.firebase.vertexai.common.shared.FunctionCallPart
 import com.google.firebase.vertexai.common.shared.FunctionResponse
 import com.google.firebase.vertexai.common.shared.FunctionResponsePart
-import com.google.firebase.vertexai.common.shared.HarmBlockThreshold
-import com.google.firebase.vertexai.type.BlobPart
+import com.google.firebase.vertexai.common.shared.InlineData
 import com.google.firebase.vertexai.type.BlockReason
-import com.google.firebase.vertexai.type.BlockThreshold
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Citation
 import com.google.firebase.vertexai.type.CitationMetadata
@@ -41,10 +38,13 @@ import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.HarmBlockMethod
+import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.ImagePart
+import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.Part
 import com.google.firebase.vertexai.type.PromptFeedback
 import com.google.firebase.vertexai.type.SafetyRating
@@ -56,6 +56,7 @@ import com.google.firebase.vertexai.type.ToolConfig
 import com.google.firebase.vertexai.type.UsageMetadata
 import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
+import java.util.Calendar
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
@@ -72,12 +73,12 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
   return when (this) {
     is TextPart -> com.google.firebase.vertexai.common.shared.TextPart(text)
     is ImagePart ->
-      com.google.firebase.vertexai.common.shared.BlobPart(
-        Blob("image/jpeg", encodeBitmapToBase64Png(image))
+      com.google.firebase.vertexai.common.shared.InlineDataPart(
+        InlineData("image/jpeg", encodeBitmapToBase64Png(image))
       )
-    is BlobPart ->
-      com.google.firebase.vertexai.common.shared.BlobPart(
-        Blob(mimeType, Base64.encodeToString(blob, BASE_64_FLAGS))
+    is InlineDataPart ->
+      com.google.firebase.vertexai.common.shared.InlineDataPart(
+        InlineData(mimeType, Base64.encodeToString(inlineData, BASE_64_FLAGS))
       )
     is com.google.firebase.vertexai.type.FunctionCallPart ->
       FunctionCallPart(FunctionCall(name, args.orEmpty()))
@@ -97,7 +98,8 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
 internal fun SafetySetting.toInternal() =
   com.google.firebase.vertexai.common.shared.SafetySetting(
     harmCategory.toInternal(),
-    threshold.toInternal()
+    threshold.toInternal(),
+    method.toInternal()
   )
 
 internal fun GenerationConfig.toInternal() =
@@ -108,11 +110,13 @@ internal fun GenerationConfig.toInternal() =
     candidateCount = candidateCount,
     maxOutputTokens = maxOutputTokens,
     stopSequences = stopSequences,
+    frequencyPenalty = frequencyPenalty,
+    presencePenalty = presencePenalty,
     responseMimeType = responseMimeType,
     responseSchema = responseSchema?.toInternal()
   )
 
-internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
+internal fun HarmCategory.toInternal() =
   when (this) {
     HarmCategory.HARASSMENT -> com.google.firebase.vertexai.common.shared.HarmCategory.HARASSMENT
     HarmCategory.HATE_SPEECH -> com.google.firebase.vertexai.common.shared.HarmCategory.HATE_SPEECH
@@ -121,6 +125,13 @@ internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
     HarmCategory.DANGEROUS_CONTENT ->
       com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
     HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+  }
+
+internal fun HarmBlockMethod.toInternal() =
+  when (this) {
+    HarmBlockMethod.SEVERITY -> com.google.firebase.vertexai.common.shared.HarmBlockMethod.SEVERITY
+    HarmBlockMethod.PROBABILITY ->
+      com.google.firebase.vertexai.common.shared.HarmBlockMethod.PROBABILITY
   }
 
 internal fun ToolConfig.toInternal() =
@@ -138,29 +149,25 @@ internal fun ToolConfig.toInternal() =
     )
   )
 
-internal fun BlockThreshold.toInternal() =
+internal fun HarmBlockThreshold.toInternal() =
   when (this) {
-    BlockThreshold.NONE -> HarmBlockThreshold.BLOCK_NONE
-    BlockThreshold.ONLY_HIGH -> HarmBlockThreshold.BLOCK_ONLY_HIGH
-    BlockThreshold.MEDIUM_AND_ABOVE -> HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-    BlockThreshold.LOW_AND_ABOVE -> HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
-    BlockThreshold.UNSPECIFIED -> HarmBlockThreshold.UNSPECIFIED
+    HarmBlockThreshold.NONE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_NONE
+    HarmBlockThreshold.ONLY_HIGH ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_ONLY_HIGH
+    HarmBlockThreshold.MEDIUM_AND_ABOVE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+    HarmBlockThreshold.LOW_AND_ABOVE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
   }
 
 internal fun Tool.toInternal() =
-  com.google.firebase.vertexai.common.client.Tool(functionDeclarations.map { it.toInternal() })
+  com.google.firebase.vertexai.common.client.Tool(
+    functionDeclarations?.map { it.toInternal() } ?: emptyList()
+  )
 
 internal fun FunctionDeclaration.toInternal() =
-  com.google.firebase.vertexai.common.client.FunctionDeclaration(
-    name,
-    description,
-    Schema(
-      properties = parameters.mapValues { it.value.toInternal() },
-      required = parameters.keys.minus(optionalParameters.toSet()).toList(),
-      type = "OBJECT",
-      nullable = false,
-    ),
-  )
+  com.google.firebase.vertexai.common.client.FunctionDeclaration(name, "", schema.toInternal())
 
 internal fun com.google.firebase.vertexai.type.Schema.toInternal(): Schema =
   Schema(
@@ -198,12 +205,12 @@ internal fun com.google.firebase.vertexai.common.shared.Content.toPublic(): Cont
 internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   return when (this) {
     is com.google.firebase.vertexai.common.shared.TextPart -> TextPart(text)
-    is com.google.firebase.vertexai.common.shared.BlobPart -> {
+    is com.google.firebase.vertexai.common.shared.InlineDataPart -> {
       val data = Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {
-        BlobPart(inlineData.mimeType, data)
+        InlineDataPart(inlineData.mimeType, data)
       }
     }
     is FunctionCallPart ->
@@ -225,8 +232,29 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   }
 }
 
-internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic() =
-  Citation(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
+internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic(): Citation {
+  val publicationDateAsCalendar =
+    publicationDate?.let {
+      val calendar = Calendar.getInstance()
+      // Internal `Date.year` uses 0 to represent not specified. We use 1 as default.
+      val year = if (it.year == null || it.year < 1) 1 else it.year
+      // Internal `Date.month` uses 0 to represent not specified, or is 1-12 as months. The month as
+      // expected by [Calendar] is 0-based, so we subtract 1 or use 0 as default.
+      val month = if (it.month == null || it.month < 1) 0 else it.month - 1
+      // Internal `Date.day` uses 0 to represent not specified. We use 1 as default.
+      val day = if (it.day == null || it.day < 1) 1 else it.day
+      calendar.set(year, month, day)
+      calendar
+    }
+  return Citation(
+    title = title,
+    startIndex = startIndex,
+    endIndex = endIndex,
+    uri = uri,
+    license = license,
+    publicationDate = publicationDateAsCalendar
+  )
+}
 
 internal fun com.google.firebase.vertexai.common.server.CitationMetadata.toPublic() =
   CitationMetadata(citationSources.map { it.toPublic() })
@@ -258,8 +286,7 @@ internal fun com.google.firebase.vertexai.common.server.FinishReason?.toPublic()
     com.google.firebase.vertexai.common.server.FinishReason.SAFETY -> FinishReason.SAFETY
     com.google.firebase.vertexai.common.server.FinishReason.STOP -> FinishReason.STOP
     com.google.firebase.vertexai.common.server.FinishReason.OTHER -> FinishReason.OTHER
-    com.google.firebase.vertexai.common.server.FinishReason.UNSPECIFIED -> FinishReason.UNSPECIFIED
-    com.google.firebase.vertexai.common.server.FinishReason.UNKNOWN -> FinishReason.UNKNOWN
+    else -> FinishReason.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.shared.HarmCategory.toPublic() =
@@ -270,7 +297,7 @@ internal fun com.google.firebase.vertexai.common.shared.HarmCategory.toPublic() 
       HarmCategory.SEXUALLY_EXPLICIT
     com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT ->
       HarmCategory.DANGEROUS_CONTENT
-    com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN -> HarmCategory.UNKNOWN
+    else -> HarmCategory.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.server.HarmProbability.toPublic() =
@@ -280,9 +307,7 @@ internal fun com.google.firebase.vertexai.common.server.HarmProbability.toPublic
     com.google.firebase.vertexai.common.server.HarmProbability.LOW -> HarmProbability.LOW
     com.google.firebase.vertexai.common.server.HarmProbability.NEGLIGIBLE ->
       HarmProbability.NEGLIGIBLE
-    com.google.firebase.vertexai.common.server.HarmProbability.UNSPECIFIED ->
-      HarmProbability.UNSPECIFIED
-    com.google.firebase.vertexai.common.server.HarmProbability.UNKNOWN -> HarmProbability.UNKNOWN
+    else -> HarmProbability.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.server.HarmSeverity.toPublic() =
@@ -291,16 +316,14 @@ internal fun com.google.firebase.vertexai.common.server.HarmSeverity.toPublic() 
     com.google.firebase.vertexai.common.server.HarmSeverity.MEDIUM -> HarmSeverity.MEDIUM
     com.google.firebase.vertexai.common.server.HarmSeverity.LOW -> HarmSeverity.LOW
     com.google.firebase.vertexai.common.server.HarmSeverity.NEGLIGIBLE -> HarmSeverity.NEGLIGIBLE
-    com.google.firebase.vertexai.common.server.HarmSeverity.UNSPECIFIED -> HarmSeverity.UNSPECIFIED
-    com.google.firebase.vertexai.common.server.HarmSeverity.UNKNOWN -> HarmSeverity.UNKNOWN
+    else -> HarmSeverity.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.server.BlockReason.toPublic() =
   when (this) {
-    com.google.firebase.vertexai.common.server.BlockReason.UNSPECIFIED -> BlockReason.UNSPECIFIED
     com.google.firebase.vertexai.common.server.BlockReason.SAFETY -> BlockReason.SAFETY
     com.google.firebase.vertexai.common.server.BlockReason.OTHER -> BlockReason.OTHER
-    com.google.firebase.vertexai.common.server.BlockReason.UNKNOWN -> BlockReason.UNKNOWN
+    else -> BlockReason.UNKNOWN
   }
 
 internal fun com.google.firebase.vertexai.common.GenerateContentResponse.toPublic():

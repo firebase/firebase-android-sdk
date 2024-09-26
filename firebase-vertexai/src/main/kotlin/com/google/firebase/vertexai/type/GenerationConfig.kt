@@ -44,6 +44,10 @@ package com.google.firebase.vertexai.type
  * unique candidates. Setting `temperature` to 0 will always produce exactly one candidate
  * regardless of the `candidateCount`.
  *
+ * @property presencePenalty Positive penalties.
+ *
+ * @property frequencyPenalty Frequency penalties.
+ *
  * @property maxOutputTokens Specifies the maximum number of tokens that can be generated in the
  * response. The number of tokens per word varies depending on the language outputted. Defaults to 0
  * (unbounded).
@@ -76,6 +80,8 @@ private constructor(
   val topP: Float?,
   val candidateCount: Int?,
   val maxOutputTokens: Int?,
+  val presencePenalty: Float?,
+  val frequencyPenalty: Float?,
   val stopSequences: List<String>?,
   val responseMimeType: String?,
   val responseSchema: Schema?,
@@ -92,6 +98,10 @@ private constructor(
    * @property topK See [GenerationConfig.topK].
    *
    * @property topP See [GenerationConfig.topP].
+   *
+   * @property presencePenalty See [GenerationConfig.presencePenalty]
+   *
+   * @property frequencyPenalty See [GenerationConfig.frequencyPenalty]
    *
    * @property candidateCount See [GenerationConfig.candidateCount].
    *
@@ -110,6 +120,8 @@ private constructor(
     @JvmField var topP: Float? = null
     @JvmField var candidateCount: Int? = null
     @JvmField var maxOutputTokens: Int? = null
+    @JvmField var presencePenalty: Float? = null
+    @JvmField var frequencyPenalty: Float? = null
     @JvmField var stopSequences: List<String>? = null
     @JvmField var responseMimeType: String? = null
     @JvmField var responseSchema: Schema? = null
@@ -123,6 +135,8 @@ private constructor(
         candidateCount = candidateCount,
         maxOutputTokens = maxOutputTokens,
         stopSequences = stopSequences,
+        presencePenalty = presencePenalty,
+        frequencyPenalty = frequencyPenalty,
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
       )
