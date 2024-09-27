@@ -1,0 +1,37 @@
+{
+    "changesByLibraryName": {
+        "firebase-messaging": [
+            {
+                "commitId": "8ad9ef563c6748d1b110d06ab29e8caa6ce94ac2",
+                "prId": "6227",
+                "author": "Greg Sakakihara",
+                "message": "Include message priority when logging to Firelog. (#6227)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8ad9ef563c6748d1b110d06ab29e8caa6ce94ac2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6227"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "27a16a117683248fa08bd55397d67727d2f76eda",
+                "prId": "6216",
+                "author": "lehcar09",
+                "message": "Fix `putBytes()`API to use `maxUploadRetryTimeMillis` parameter  (#6216)\n\nFix issue https://github.com/firebase/firebase-android-sdk/issues/6214",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/27a16a117683248fa08bd55397d67727d2f76eda",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6216"
+            }
+        ],
+        "firebase-storage/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-vertexai"
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "name": "m154_vertex",
+    "libraries": [
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx",
+        ":firebase-storage",
+        ":firebase-storage:ktx"
+    ]
+}
