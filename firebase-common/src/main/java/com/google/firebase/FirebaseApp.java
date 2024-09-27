@@ -51,6 +51,7 @@ import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
 import com.google.firebase.provider.FirebaseInitProvider;
+import com.google.firebase.provider.FirebaseInitializer;
 import com.google.firebase.tracing.ComponentMonitor;
 import com.google.firebase.tracing.FirebaseTrace;
 import java.nio.charset.Charset;
@@ -409,7 +410,7 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
-    StartupTime startupTime = FirebaseInitProvider.getStartupTime();
+    StartupTime startupTime = FirebaseInitializer.getStartupTime();
 
     FirebaseTrace.pushTrace("Firebase");
 

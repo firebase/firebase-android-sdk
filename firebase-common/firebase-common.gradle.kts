@@ -63,11 +63,14 @@ dependencies {
 
     api("com.google.firebase:firebase-components:18.0.0")
     api("com.google.firebase:firebase-annotations:16.2.0")
+    implementation("androidx.startup:startup-runtime:1.2.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.futures)
     implementation(libs.kotlin.stdlib)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
+    implementation(libs.androidx.work.runtime.ktx)
 
     compileOnly(libs.autovalue.annotations)
     compileOnly(libs.findbugs.jsr305)

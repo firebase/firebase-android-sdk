@@ -18,13 +18,15 @@
     <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
     <!--<uses-sdk android:minSdkVersion="21"/>-->
     <application>
-
         <provider
-            android:name="com.google.firebase.provider.FirebaseInitProvider"
-            android:authorities="${applicationId}.firebaseinitprovider"
-            android:directBootAware="true"
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
             android:exported="false"
-            android:initOrder="100" />
+            tools:node="merge">
+        <!-- This entry makes ExampleLoggerInitializer discoverable. -->
+        <meta-data  android:name="com.google.firebase.provider.FirebaseInitializer"
+            android:value="androidx.startup" />
+        </provider>
         <service
             android:name="com.google.firebase.components.ComponentDiscoveryService"
             android:directBootAware="true"
