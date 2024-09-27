@@ -30,6 +30,13 @@ dependencyResolutionManagement {
     google()
     mavenCentral()
   }
+
+  // Reuse libs.version.toml from the main Gradle project.
+  versionCatalogs {
+    create("firebaseLibs") {
+      from(files("../../gradle/libs.versions.toml"))
+    }
+  }
 }
 
 include(":plugin")

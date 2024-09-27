@@ -163,4 +163,9 @@ internal data class GRpcError(
   val details: List<GRpcErrorDetails>? = null
 )
 
-@Serializable internal data class GRpcErrorDetails(val reason: String? = null)
+@Serializable
+internal data class GRpcErrorDetails(
+  val reason: String? = null,
+  val domain: String? = null,
+  val metadata: Map<String, String>? = null
+)
