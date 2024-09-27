@@ -70,7 +70,6 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
-    implementation(libs.androidx.work.runtime.ktx)
 
     compileOnly(libs.autovalue.annotations)
     compileOnly(libs.findbugs.jsr305)
