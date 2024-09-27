@@ -91,4 +91,5 @@ kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-prope
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
 
 [plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
