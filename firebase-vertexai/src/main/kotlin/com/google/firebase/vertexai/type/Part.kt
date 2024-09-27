@@ -21,10 +21,10 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /** Interface representing data sent to and received from requests. */
-interface Part
+public interface Part
 
 /** Represents text or string based data sent to and received from requests. */
-class TextPart(val text: String) : Part
+public class TextPart(public val text: String) : Part
 
 /**
  * Represents image data sent to and received from requests. When this is sent to the server it is
@@ -32,7 +32,7 @@ class TextPart(val text: String) : Part
  *
  * @param image [Bitmap] to convert into a [Part]
  */
-class ImagePart(val image: Bitmap) : Part
+public class ImagePart(public val image: Bitmap) : Part
 
 /**
  * Represents binary data with an associated MIME type sent to and received from requests.
@@ -42,14 +42,14 @@ class ImagePart(val image: Bitmap) : Part
  * .
  * @param inlineData the binary data as a [ByteArray]
  */
-class InlineDataPart(val mimeType: String, val inlineData: ByteArray) : Part
+public class InlineDataPart(public val mimeType: String, public val inlineData: ByteArray) : Part
 
 /**
  * Represents a function call request from the model
  *
  * @param functionCall The information provided by the model to call a function.
  */
-class FunctionCallPart(val functionCall: FunctionCall) : Part
+public class FunctionCallPart(public val functionCall: FunctionCall) : Part
 
 /**
  * The result of calling a function as requested by the model.
@@ -57,7 +57,7 @@ class FunctionCallPart(val functionCall: FunctionCall) : Part
  * @param functionResponse The information to send back to the model as the result of a functions
  * call.
  */
-class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
+public class FunctionResponsePart(public val functionResponse: FunctionResponse) : Part
 
 /**
  * The data necessary to invoke function [name] using the arguments [args].
@@ -65,7 +65,7 @@ class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-class FunctionCall(val name: String, val args: Map<String, JsonElement>)
+public class FunctionCall(public val name: String, public val args: Map<String, JsonElement>)
 
 /**
  * The [response] generated after calling function [name].
@@ -73,7 +73,7 @@ class FunctionCall(val name: String, val args: Map<String, JsonElement>)
  * @param name the name of the called function
  * @param response the response produced by the function as a [JsonObject]
  */
-class FunctionResponse(val name: String, val response: JsonObject)
+public class FunctionResponse(public val name: String, public val response: JsonObject)
 
 /**
  * Represents file data stored in Cloud Storage for Firebase, referenced by URI.
@@ -83,16 +83,16 @@ class FunctionResponse(val name: String, val response: JsonObject)
  * @param mimeType an IANA standard MIME type. For supported MIME type values see the
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
-class FileDataPart(val uri: String, val mimeType: String) : Part
+public class FileDataPart(public val uri: String, public val mimeType: String) : Part
 
 /** Returns the part as a [String] if it represents text, and null otherwise */
-fun Part.asTextOrNull(): String? = (this as? TextPart)?.text
+public fun Part.asTextOrNull(): String? = (this as? TextPart)?.text
 
 /** Returns the part as a [Bitmap] if it represents an image, and null otherwise */
-fun Part.asImageOrNull(): Bitmap? = (this as? ImagePart)?.image
+public fun Part.asImageOrNull(): Bitmap? = (this as? ImagePart)?.image
 
 /** Returns the part as a [InlineDataPart] if it represents inline data, and null otherwise */
-fun Part.asInlineDataPartOrNull(): InlineDataPart? = this as? InlineDataPart
+public fun Part.asInlineDataPartOrNull(): InlineDataPart? = this as? InlineDataPart
 
 /** Returns the part as a [FileDataPart] if it represents a file, and null otherwise */
-fun Part.asFileDataOrNull(): FileDataPart? = this as? FileDataPart
+public fun Part.asFileDataOrNull(): FileDataPart? = this as? FileDataPart

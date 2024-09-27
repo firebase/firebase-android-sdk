@@ -22,7 +22,7 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 /** Configurable options unique to how requests to the backend are performed. */
-class RequestOptions
+public class RequestOptions
 internal constructor(
   internal val timeout: Duration,
   internal val endpoint: String = "https://firebasevertexai.googleapis.com",
@@ -36,7 +36,7 @@ internal constructor(
    * the first request to first response.
    */
   @JvmOverloads
-  constructor(
+  public constructor(
     timeoutInMillis: Long = 180.seconds.inWholeMilliseconds
   ) : this(timeout = timeoutInMillis.toDuration(DurationUnit.MILLISECONDS))
 }

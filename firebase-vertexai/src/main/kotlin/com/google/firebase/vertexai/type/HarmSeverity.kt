@@ -17,7 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /** Represents the severity of a [HarmCategory] being applicable in a [SafetyRating]. */
-enum class HarmSeverity {
+public enum class HarmSeverity {
   /** A new and not yet supported value. */
   UNKNOWN,
 

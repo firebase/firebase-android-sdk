@@ -31,41 +31,45 @@ import org.reactivestreams.Publisher
  *
  * @see from
  */
-abstract class GenerativeModelFutures internal constructor() {
+public abstract class GenerativeModelFutures internal constructor() {
 
   /**
    * Generates a response from the backend with the provided [Content].
    *
    * @param prompt A group of [Content] to send to the model.
    */
-  abstract fun generateContent(vararg prompt: Content): ListenableFuture<GenerateContentResponse>
+  public abstract fun generateContent(
+    vararg prompt: Content
+  ): ListenableFuture<GenerateContentResponse>
 
   /**
    * Generates a streaming response from the backend with the provided [Content].
    *
    * @param prompt A group of [Content] to send to the model.
    */
-  abstract fun generateContentStream(vararg prompt: Content): Publisher<GenerateContentResponse>
+  public abstract fun generateContentStream(
+    vararg prompt: Content
+  ): Publisher<GenerateContentResponse>
 
   /**
    * Counts the number of tokens used in a prompt.
    *
    * @param prompt A group of [Content] to count tokens of.
    */
-  abstract fun countTokens(vararg prompt: Content): ListenableFuture<CountTokensResponse>
+  public abstract fun countTokens(vararg prompt: Content): ListenableFuture<CountTokensResponse>
 
   /** Creates a chat instance which internally tracks the ongoing conversation with the model */
-  abstract fun startChat(): ChatFutures
+  public abstract fun startChat(): ChatFutures
 
   /**
    * Creates a chat instance which internally tracks the ongoing conversation with the model
    *
    * @param history an existing history of context to use as a starting point
    */
-  abstract fun startChat(history: List<Content>): ChatFutures
+  public abstract fun startChat(history: List<Content>): ChatFutures
 
   /** Returns the [GenerativeModel] instance that was used to create this object */
-  abstract fun getGenerativeModel(): GenerativeModel
+  public abstract fun getGenerativeModel(): GenerativeModel
 
   private class FuturesImpl(private val model: GenerativeModel) : GenerativeModelFutures() {
     override fun generateContent(
@@ -86,9 +90,9 @@ abstract class GenerativeModelFutures internal constructor() {
     override fun getGenerativeModel(): GenerativeModel = model
   }
 
-  companion object {
+  public companion object {
 
     /** @return a [GenerativeModelFutures] created around the provided [GenerativeModel] */
-    @JvmStatic fun from(model: GenerativeModel): GenerativeModelFutures = FuturesImpl(model)
+    @JvmStatic public fun from(model: GenerativeModel): GenerativeModelFutures = FuturesImpl(model)
   }
 }
