@@ -16,7 +16,7 @@
 
 plugins {
   `java-gradle-plugin`
-  alias(libs.plugins.kotlin.jvm)
+  alias(firebaseLibs.plugins.kotlin.jvm)
   alias(libs.plugins.spotless)
 }
 
