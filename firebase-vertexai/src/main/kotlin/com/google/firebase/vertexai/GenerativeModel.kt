@@ -52,12 +52,12 @@ import kotlinx.coroutines.tasks.await
  */
 class GenerativeModel
 internal constructor(
-  val modelName: String,
-  val generationConfig: GenerationConfig? = null,
-  val safetySettings: List<SafetySetting>? = null,
-  val tools: List<Tool>? = null,
-  val toolConfig: ToolConfig? = null,
-  val systemInstruction: Content? = null,
+  private val modelName: String,
+  private val generationConfig: GenerationConfig? = null,
+  private val safetySettings: List<SafetySetting>? = null,
+  private val tools: List<Tool>? = null,
+  private val toolConfig: ToolConfig? = null,
+  private val systemInstruction: Content? = null,
   private val controller: APIController
 ) {
 
@@ -83,7 +83,7 @@ internal constructor(
     APIController(
       apiKey,
       modelName,
-      requestOptions.toInternal(),
+      requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
       object : HeaderProvider {
         override val timeout: Duration

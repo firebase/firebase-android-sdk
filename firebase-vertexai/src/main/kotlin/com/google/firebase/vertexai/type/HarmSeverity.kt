@@ -21,9 +21,6 @@ enum class HarmSeverity {
   /** A new and not yet supported value. */
   UNKNOWN,
 
-  /** Severity for harm is unspecified. */
-  UNSPECIFIED,
-
   /** Severity for harm is negligible. */
   NEGLIGIBLE,
 
