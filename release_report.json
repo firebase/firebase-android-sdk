@@ -1,0 +1,117 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "da0eefa65023bcac006b2eaae924a4282782fe4a",
+                "prId": "6280",
+                "author": "Matthew Robertson",
+                "message": "Fixed exception propagation on null default uncaught exception handler (#6280)\n\nFixed exception propagation in the case of no default uncaught exception\r\nhandler. Exit code 1 is what the default java uncaught exception handler\r\nexits with.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/da0eefa65023bcac006b2eaae924a4282782fe4a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6280"
+            },
+            {
+                "commitId": "48d460cc430589b3ebc8a668772ab351e1ff559b",
+                "prId": "6270",
+                "author": "themiswang",
+                "message": "version bump (#6270)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/48d460cc430589b3ebc8a668772ab351e1ff559b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6270"
+            },
+            {
+                "commitId": "6e7e04e1b52b531b8ac95555c1adda90393aded0",
+                "prId": "6267",
+                "author": "themiswang",
+                "message": "Crashlytics exception handler (#6267)\n\nRevert the old reversion\r\nhttps://github.com/firebase/firebase-android-sdk/pull/6191\r\nmerge back feature branch\r\n\r\n---------\r\n\r\nCo-authored-by: Matthew Robertson <mrober@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6e7e04e1b52b531b8ac95555c1adda90393aded0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6267"
+            },
+            {
+                "commitId": "ddc169ff9ebe9e91e39bf2ec69a183146182d2a8",
+                "prId": "6252",
+                "author": "Matthew Robertson",
+                "message": "Fix Javadoc in FirebaseCrashlytics (#6252)\n\nFix Javadoc for `isCrashlyticsCollectionEnabled()` in\r\nFirebaseCrashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ddc169ff9ebe9e91e39bf2ec69a183146182d2a8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6252"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "48d460cc430589b3ebc8a668772ab351e1ff559b",
+                "prId": "6270",
+                "author": "themiswang",
+                "message": "version bump (#6270)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/48d460cc430589b3ebc8a668772ab351e1ff559b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6270"
+            },
+            {
+                "commitId": "6e7e04e1b52b531b8ac95555c1adda90393aded0",
+                "prId": "6267",
+                "author": "themiswang",
+                "message": "Crashlytics exception handler (#6267)\n\nRevert the old reversion\r\nhttps://github.com/firebase/firebase-android-sdk/pull/6191\r\nmerge back feature branch\r\n\r\n---------\r\n\r\nCo-authored-by: Matthew Robertson <mrober@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6e7e04e1b52b531b8ac95555c1adda90393aded0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6267"
+            }
+        ],
+        "firebase-sessions": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "cb132ab4263cd01aa6f506af5cc75394b3d0d9b5",
+                "prId": "6307",
+                "author": "Denver Coneybeare",
+                "message": "Add OrderDirection support (#6307)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cb132ab4263cd01aa6f506af5cc75394b3d0d9b5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6307"
+            },
+            {
+                "commitId": "a95da3f98b29c07a3ac0ba6bb9e862cc07c978ed",
+                "prId": "6290",
+                "author": "Denver Coneybeare",
+                "message": "firebase-dataconnect merge into main branch (#6290)\n\nIncludes contributions by @cherylEnkidu\r\n\r\n---------\r\n\r\nCo-authored-by: cherylEnkidu <96084918+cherylEnkidu@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a95da3f98b29c07a3ac0ba6bb9e862cc07c978ed",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6290"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "8ad9ef563c6748d1b110d06ab29e8caa6ce94ac2",
+                "prId": "6227",
+                "author": "Greg Sakakihara",
+                "message": "Include message priority when logging to Firelog. (#6227)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8ad9ef563c6748d1b110d06ab29e8caa6ce94ac2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6227"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "27a16a117683248fa08bd55397d67727d2f76eda",
+                "prId": "6216",
+                "author": "lehcar09",
+                "message": "Fix `putBytes()`API to use `maxUploadRetryTimeMillis` parameter  (#6216)\n\nFix issue https://github.com/firebase/firebase-android-sdk/issues/6214",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/27a16a117683248fa08bd55397d67727d2f76eda",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6216"
+            }
+        ],
+        "firebase-storage/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-vertexai"
+    ]
+}
