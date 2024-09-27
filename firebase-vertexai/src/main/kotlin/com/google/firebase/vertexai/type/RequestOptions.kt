@@ -25,8 +25,8 @@ import kotlin.time.toDuration
 class RequestOptions
 internal constructor(
   internal val timeout: Duration,
-  internal val endpoint: String = "https://firebaseml.googleapis.com",
-  internal val apiVersion: String = "v2beta",
+  internal val endpoint: String = "https://firebasevertexai.googleapis.com",
+  internal val apiVersion: String = "v1beta",
 ) {
 
   /**

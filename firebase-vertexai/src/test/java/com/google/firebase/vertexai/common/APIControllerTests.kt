@@ -108,7 +108,7 @@ internal class RequestFormatTests {
       }
     }
 
-    mockEngine.requestHistory.first().url.host shouldBe "firebaseml.googleapis.com"
+    mockEngine.requestHistory.first().url.host shouldBe "firebasevertexai.googleapis.com"
   }
 
   @Test
