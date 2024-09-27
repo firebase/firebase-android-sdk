@@ -17,16 +17,17 @@
 package com.google.firebase.vertexai.common
 
 import android.util.Log
-import androidx.annotation.VisibleForTesting
+import com.google.firebase.Firebase
+import com.google.firebase.options
 import com.google.firebase.vertexai.common.server.FinishReason
+import com.google.firebase.vertexai.common.server.GRpcError
+import com.google.firebase.vertexai.common.server.GRpcErrorDetails
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
 import com.google.firebase.vertexai.type.RequestOptions
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
-import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -39,12 +40,9 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.utils.io.ByteChannel
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -93,24 +91,6 @@ internal constructor(
     apiClient: String,
     headerProvider: HeaderProvider? = null,
   ) : this(key, model, requestOptions, OkHttp.create(), apiClient, headerProvider)
-
-  @VisibleForTesting(otherwise = VisibleForTesting.NONE)
-  constructor(
-    key: String,
-    model: String,
-    requestOptions: RequestOptions,
-    apiClient: String,
-    headerProvider: HeaderProvider?,
-    channel: ByteChannel,
-    status: HttpStatusCode,
-  ) : this(
-    key,
-    model,
-    requestOptions,
-    MockEngine { respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json")) },
-    apiClient,
-    headerProvider,
-  )
 
   private val model = fullModelName(model)
 
@@ -263,10 +243,30 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (message.contains("quota")) {
     throw QuotaExceededException(message)
   }
-  if (error.details?.any { "SERVICE_DISABLED" == it.reason } == true) {
-    throw ServiceDisabledException(message)
+  getServiceDisabledErrorDetailsOrNull(error)?.let {
+    val errorMessage =
+      if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
+        """
+        The Vertex AI for Firebase SDK requires the Firebase Vertex AI API
+        `firebasevertexai.googleapis.com` to be enabled for your project. Enable it by visiting 
+        the Firebase Console at https://console.firebase.google.com/project/${Firebase.options.projectId}/genai/vertex then 
+        retry. If you enabled this API recently, wait a few minutes for the action to propagate
+        to our systems and retry.
+      """
+          .trimIndent()
+      } else {
+        error.message
+      }
+
+    throw ServiceDisabledException(errorMessage)
   }
   throw ServerException(message)
+}
+
+private fun getServiceDisabledErrorDetailsOrNull(error: GRpcError): GRpcErrorDetails? {
+  return error.details?.firstOrNull {
+    it.reason == "SERVICE_DISABLED" && it.domain == "googleapis.com"
+  }
 }
 
 private fun GenerateContentResponse.validate() = apply {
