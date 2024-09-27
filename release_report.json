@@ -1,0 +1,52 @@
+{
+    "changesByLibraryName": {
+        "firebase-vertexai": [
+            {
+                "commitId": "4f235ad9e376eed61ad1550bff01b1d8d9ae5ca5",
+                "prId": "",
+                "author": "Rodrigo Lazo",
+                "message": "Add missing entries to vertexAI changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4f235ad9e376eed61ad1550bff01b1d8d9ae5ca5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/"
+            },
+            {
+                "commitId": "e9208cd1c4df58a0c0dabbecfc0af949a0c3cf96",
+                "prId": "6279",
+                "author": "emilypgoogle",
+                "message": "Add consumer proguard rules (#6279)\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9208cd1c4df58a0c0dabbecfc0af949a0c3cf96",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6279"
+            },
+            {
+                "commitId": "954d9b01d5ba4b561071f92b0e74c327b8981942",
+                "prId": "6272",
+                "author": "Rosário P. Fernandes",
+                "message": "fix(vertexai): export the firebase-common dependency (#6272)\n\nThis should address #6271",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/954d9b01d5ba4b561071f92b0e74c327b8981942",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6272"
+            },
+            {
+                "commitId": "e128eedc6fb450648a687af0f0648d7a75d215de",
+                "prId": "6254",
+                "author": "Denver Coneybeare",
+                "message": "Move Kotlin serialization gradle plugin into libs.versions.toml (#6254)\n\nA previous change,\r\nhttps://github.com/firebase/firebase-android-sdk/pull/6186, added the\r\nKotlin serialization plugin to every single Gradle module; however, only\r\none module actually used it. Moreover, it is becoming more conventional\r\nto define dependency versions in `gradle/libs.versions.toml`. This PR\r\nremoves the global dependency on the Kotlin serialization plugin and,\r\ninstead, moves the version into `gradle/libs.versions.toml`, and also\r\nmodifies the dependency on the Kotlin JSON serialization library to use\r\n`gradle/libs.versions.toml`. This will make sure that every module uses\r\nthe same version, which will become important once Data Connect, which\r\nalso uses these libraries, is merged into main.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e128eedc6fb450648a687af0f0648d7a75d215de",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6254"
+            },
+            {
+                "commitId": "994542e58e3694681867d3bbe331c20ee86abe0c",
+                "prId": "6250",
+                "author": "Rodrigo Lazo",
+                "message": "Fix typo in GenerationConfig.kt (#6250)\n\ns/MINE/MIME/g",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/994542e58e3694681867d3bbe331c20ee86abe0c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6250"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx"
+    ]
+}

@@ -1,0 +1,6 @@
+{
+    "name": "m154_vertex",
+    "libraries": [
+        ":firebase-vertexai"
+    ]
+}
