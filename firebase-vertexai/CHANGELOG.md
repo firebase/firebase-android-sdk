@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed the missing exported dependency on firebase-common dependency [#6271](//github.com/firebase/firebase-android-sdk/issues/6271)
+* [fixed] Fixed missing proguard configuration that broke the SDK when using R8 minimization [#6279](//github.com/firebase/firebase-android-sdk/issues/6279)
 
 # 16.0.0-beta05
 * [changed] Merged core networking code into VertexAI from a separate library
