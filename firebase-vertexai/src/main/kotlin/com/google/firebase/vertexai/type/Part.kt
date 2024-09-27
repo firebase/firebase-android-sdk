@@ -49,7 +49,7 @@ public class InlineDataPart(public val mimeType: String, public val inlineData: 
  *
  * @param functionCall The information provided by the model to call a function.
  */
-class FunctionCallPart(public val functionCall: FunctionCall) : Part
+public class FunctionCallPart(public val functionCall: FunctionCall) : Part
 
 /**
  * The result of calling a function as requested by the model.
@@ -57,7 +57,7 @@ class FunctionCallPart(public val functionCall: FunctionCall) : Part
  * @param functionResponse The information to send back to the model as the result of a functions
  * call.
  */
-class FunctionResponsePart(public val functionResponse: FunctionResponse) : Part
+public class FunctionResponsePart(public val functionResponse: FunctionResponse) : Part
 
 /**
  * The data necessary to invoke function [name] using the arguments [args].
@@ -65,7 +65,6 @@ class FunctionResponsePart(public val functionResponse: FunctionResponse) : Part
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-
 public class FunctionCall(public val name: String, public val args: Map<String, JsonElement>)
 
 /**
