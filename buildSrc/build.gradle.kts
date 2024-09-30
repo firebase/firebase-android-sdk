@@ -14,7 +14,7 @@
 
 plugins {
     id("com.ncorti.ktfmt.gradle") version "0.11.0"
-    kotlin("plugin.serialization") version "1.8.22"
+    alias(libs.plugins.kotlinx.serialization)
     `kotlin-dsl`
 }
 
