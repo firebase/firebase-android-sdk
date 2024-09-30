@@ -1,8 +1,2 @@
-[versions]
-androidGradlePlugin = "8.2.1"
-
-[libraries]
-android-gradlePlugin-api = { group = "com.android.tools.build", name = "gradle-api", version.ref = "androidGradlePlugin" }
-
 [plugins]
 spotless = { id = "com.diffplug.spotless", version = "7.0.0.BETA1" }
