@@ -1,2 +1,0 @@
-[plugins]
-spotless = { id = "com.diffplug.spotless", version = "7.0.0.BETA1" }

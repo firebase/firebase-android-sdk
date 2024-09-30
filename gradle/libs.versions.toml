@@ -20,6 +20,7 @@ protobufjavautil = "3.21.11"
 kotest = "5.9.1"
 quickcheck = "0.6"
 serialization = "1.5.1"
+spotless = "7.0.0.BETA1"
 androidx-test-core="1.5.0"
 androidx-test-junit="1.1.5"
 androidx-test-truth = "1.5.0"
@@ -88,6 +89,7 @@ kotest-assertions = { module = "io.kotest:kotest-assertions-core-jvm", version.r
 kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 kotest-property-arbs = { module = "io.kotest.extensions:kotest-property-arbs", version = "2.1.2" }
 quickcheck = { module = "net.java:quickcheck", version.ref = "quickcheck" }
+spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
 
 [bundles]
@@ -97,3 +99,4 @@ playservices = ["playservices-base", "playservices-basement", "playservices-task
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
