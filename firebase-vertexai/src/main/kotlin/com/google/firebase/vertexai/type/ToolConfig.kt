@@ -22,4 +22,4 @@ package com.google.firebase.vertexai.type
  *
  * @param functionCallingConfig The config for function calling
  */
-class ToolConfig(val functionCallingConfig: FunctionCallingConfig)
+public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfig)

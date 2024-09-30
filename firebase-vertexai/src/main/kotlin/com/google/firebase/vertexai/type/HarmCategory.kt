@@ -17,7 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /** Category for a given harm rating. */
-enum class HarmCategory {
+public enum class HarmCategory {
   /** A new and not yet supported value. */
   UNKNOWN,
 
