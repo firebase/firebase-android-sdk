@@ -41,7 +41,7 @@ class OrderDirectionIntegrationTest : DataConnectIntegrationTestBase() {
   @OptIn(DelicateKotest::class) private val uniqueInts = Arb.int().distinct()
 
   @Test
-  fun orderDirectionQueryVariableOmittedShouldUseAscendingOrder() = runTest {
+  fun orderDirectionQueryVariableOmittedShouldUseUnspecifiedOrder() = runTest {
     val tag = Arb.tag().next(rs)
     val values = List(5) { uniqueInts.next(rs) }
     val insertedIds = insertRow(tag, values)
