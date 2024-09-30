@@ -25,25 +25,25 @@ import android.util.Log
  * @property promptFeedback optional feedback for the given prompt. When streaming, it's only
  * populated in the first response.
  */
-class GenerateContentResponse(
-  val candidates: List<Candidate>,
-  val promptFeedback: PromptFeedback?,
-  val usageMetadata: UsageMetadata?,
+public class GenerateContentResponse(
+  public val candidates: List<Candidate>,
+  public val promptFeedback: PromptFeedback?,
+  public val usageMetadata: UsageMetadata?,
 ) {
   /** Convenience field representing all the text parts in the response, if they exists. */
-  val text: String? by lazy {
+  public val text: String? by lazy {
     candidates.first().content.parts.filterIsInstance<TextPart>().joinToString(" ") { it.text }
   }
 
   /** Convenience field to get all the function call parts in the request, if they exist */
-  val functionCalls: List<FunctionCallPart> by lazy {
+  public val functionCalls: List<FunctionCallPart> by lazy {
     candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
   }
 
   /**
    * Convenience field representing the first function response part in the response, if it exists.
    */
-  val functionResponse: FunctionResponsePart? by lazy { firstPartAs() }
+  public val functionResponse: FunctionResponsePart? by lazy { firstPartAs() }
 
   private inline fun <reified T : Part> firstPartAs(): T? {
     if (candidates.isEmpty()) {

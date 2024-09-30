@@ -23,14 +23,14 @@ package com.google.firebase.vertexai.type
  * @param safetyRatings A list of relevant [SafetyRating].
  * @param blockReasonMessage A message describing the reason that content was blocked, if any.
  */
-class PromptFeedback(
-  val blockReason: BlockReason?,
-  val safetyRatings: List<SafetyRating>,
-  val blockReasonMessage: String?
+public class PromptFeedback(
+  public val blockReason: BlockReason?,
+  public val safetyRatings: List<SafetyRating>,
+  public val blockReasonMessage: String?
 )
 
 /** Describes why content was blocked. */
-enum class BlockReason {
+public enum class BlockReason {
   /** A new and not yet supported value. */
   UNKNOWN,
 

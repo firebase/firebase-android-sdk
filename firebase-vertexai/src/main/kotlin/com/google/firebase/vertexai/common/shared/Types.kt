@@ -41,7 +41,7 @@ internal enum class HarmCategory {
   @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT
 }
 
-typealias Base64 = String
+internal typealias Base64 = String
 
 @ExperimentalSerializationApi
 @Serializable
