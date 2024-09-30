@@ -17,7 +17,7 @@
 plugins {
   `java-gradle-plugin`
   alias(firebaseLibs.plugins.kotlin.jvm)
-  alias(libs.plugins.spotless)
+  alias(firebaseLibs.plugins.spotless)
 }
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
