@@ -337,3 +337,8 @@ type AnyScalarNonNullableListOfNonNullable @table @index(fields: ["tag"]) {
   tag: String
   position: Int
 }
+
+type OrderDirectionTest @table @index(fields: ["tag"]) {
+  value: Int
+  tag: String
+}

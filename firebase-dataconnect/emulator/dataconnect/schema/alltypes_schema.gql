@@ -62,8 +62,3 @@ type Farmer @table {
   name: String!
   parent: Farmer
 }
-
-type OrderDirectionTest @table @index(fields: ["tag"]) {
-  value: Int
-  tag: String
-}
