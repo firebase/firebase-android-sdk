@@ -15,7 +15,6 @@
 package com.google.firebase.remoteconfig;
 
 import androidx.annotation.NonNull;
-import javax.annotation.Nonnull;
 
 /**
  * Event listener interface for real-time Remote Config updates. Implement {@code
@@ -38,5 +37,5 @@ public interface ConfigUpdateListener {
    *
    * @param error A {@link FirebaseRemoteConfigException} with information about the error.
    */
-  void onError(@Nonnull FirebaseRemoteConfigException error);
+  void onError(@NonNull FirebaseRemoteConfigException error);
 }

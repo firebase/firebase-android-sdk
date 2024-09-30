@@ -44,6 +44,10 @@ package com.google.firebase.vertexai.type
  * unique candidates. Setting `temperature` to 0 will always produce exactly one candidate
  * regardless of the `candidateCount`.
  *
+ * @property presencePenalty Positive penalties.
+ *
+ * @property frequencyPenalty Frequency penalties.
+ *
  * @property maxOutputTokens Specifies the maximum number of tokens that can be generated in the
  * response. The number of tokens per word varies depending on the language outputted. Defaults to 0
  * (unbounded).
@@ -69,16 +73,18 @@ package com.google.firebase.vertexai.type
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
  */
-class GenerationConfig
+public class GenerationConfig
 private constructor(
-  val temperature: Float?,
-  val topK: Int?,
-  val topP: Float?,
-  val candidateCount: Int?,
-  val maxOutputTokens: Int?,
-  val stopSequences: List<String>?,
-  val responseMimeType: String?,
-  val responseSchema: Schema?,
+  internal val temperature: Float?,
+  internal val topK: Int?,
+  internal val topP: Float?,
+  internal val candidateCount: Int?,
+  internal val maxOutputTokens: Int?,
+  internal val presencePenalty: Float?,
+  internal val frequencyPenalty: Float?,
+  internal val stopSequences: List<String>?,
+  internal val responseMimeType: String?,
+  internal val responseSchema: Schema?,
 ) {
 
   /**
@@ -93,6 +99,10 @@ private constructor(
    *
    * @property topP See [GenerationConfig.topP].
    *
+   * @property presencePenalty See [GenerationConfig.presencePenalty]
+   *
+   * @property frequencyPenalty See [GenerationConfig.frequencyPenalty]
+   *
    * @property candidateCount See [GenerationConfig.candidateCount].
    *
    * @property maxOutputTokens See [GenerationConfig.maxOutputTokens].
@@ -104,18 +114,20 @@ private constructor(
    * @property responseSchema See [GenerationConfig.responseSchema].
    * @see [generationConfig]
    */
-  class Builder {
-    @JvmField var temperature: Float? = null
-    @JvmField var topK: Int? = null
-    @JvmField var topP: Float? = null
-    @JvmField var candidateCount: Int? = null
-    @JvmField var maxOutputTokens: Int? = null
-    @JvmField var stopSequences: List<String>? = null
-    @JvmField var responseMimeType: String? = null
-    @JvmField var responseSchema: Schema? = null
+  public class Builder {
+    @JvmField public var temperature: Float? = null
+    @JvmField public var topK: Int? = null
+    @JvmField public var topP: Float? = null
+    @JvmField public var candidateCount: Int? = null
+    @JvmField public var maxOutputTokens: Int? = null
+    @JvmField public var presencePenalty: Float? = null
+    @JvmField public var frequencyPenalty: Float? = null
+    @JvmField public var stopSequences: List<String>? = null
+    @JvmField public var responseMimeType: String? = null
+    @JvmField public var responseSchema: Schema? = null
 
     /** Create a new [GenerationConfig] with the attached arguments. */
-    fun build() =
+    public fun build(): GenerationConfig =
       GenerationConfig(
         temperature = temperature,
         topK = topK,
@@ -123,12 +135,14 @@ private constructor(
         candidateCount = candidateCount,
         maxOutputTokens = maxOutputTokens,
         stopSequences = stopSequences,
+        presencePenalty = presencePenalty,
+        frequencyPenalty = frequencyPenalty,
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
       )
   }
 
-  companion object {
+  public companion object {
 
     /**
      * Alternative casing for [GenerationConfig.Builder]:
@@ -136,7 +150,7 @@ private constructor(
      * val config = GenerationConfig.builder()
      * ```
      */
-    fun builder() = Builder()
+    public fun builder(): Builder = Builder()
   }
 }
 
@@ -155,7 +169,7 @@ private constructor(
  * }
  * ```
  */
-fun generationConfig(init: GenerationConfig.Builder.() -> Unit): GenerationConfig {
+public fun generationConfig(init: GenerationConfig.Builder.() -> Unit): GenerationConfig {
   val builder = GenerationConfig.builder()
   builder.init()
   return builder.build()
