@@ -16,265 +16,217 @@
 
 package com.google.firebase.dataconnect
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
-import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
-import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import com.google.firebase.dataconnect.testutil.connectorConfig
+import com.google.firebase.dataconnect.testutil.dataConnectSettings
 import com.google.firebase.dataconnect.testutil.newInstance
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.matchers.types.shouldNotBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.serializer
-import org.junit.Assert.assertThrows
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
 
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
 
+  private val connectorConfig1 = Arb.connectorConfig("foo").next(rs)
+  private val connectorConfig2 = Arb.connectorConfig("bar").next(rs)
+  private val connectorConfig3 = Arb.connectorConfig("baz").next(rs)
+
+  private val settings1 = Arb.dataConnectSettings("foo").next(rs)
+  private val settings2 = Arb.dataConnectSettings("bar").next(rs)
+
+  @Before
+  fun validateInvariants() {
+    connectorConfig1 shouldNotBe connectorConfig2
+    connectorConfig2 shouldNotBe connectorConfig3
+    connectorConfig1 shouldNotBe connectorConfig3
+    settings1 shouldNotBe settings2
+  }
+
   @Test
   fun getInstance_without_specifying_an_app_should_use_the_default_app() {
-    val instance1 = FirebaseDataConnect.getInstance(Firebase.app, SAMPLE_CONNECTOR_CONFIG1)
-    val instance2 = FirebaseDataConnect.getInstance(Firebase.app, SAMPLE_CONNECTOR_CONFIG2)
+    val instance1 = FirebaseDataConnect.getInstance(Firebase.app, connectorConfig1)
+    val instance2 = FirebaseDataConnect.getInstance(Firebase.app, connectorConfig2)
 
     // Validate the assumption that different location and serviceId yield distinct instances.
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+    instance1 shouldNotBeSameInstanceAs instance2
 
-    val instance1DefaultApp = FirebaseDataConnect.getInstance(SAMPLE_CONNECTOR_CONFIG1)
-    val instance2DefaultApp = FirebaseDataConnect.getInstance(SAMPLE_CONNECTOR_CONFIG2)
+    val instance1DefaultApp = FirebaseDataConnect.getInstance(connectorConfig1)
+    val instance2DefaultApp = FirebaseDataConnect.getInstance(connectorConfig2)
 
-    assertThat(instance1DefaultApp).isSameInstanceAs(instance1)
-    assertThat(instance2DefaultApp).isSameInstanceAs(instance2)
+    instance1DefaultApp shouldBeSameInstanceAs instance1
+    instance2DefaultApp shouldBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_with_default_app_should_return_non_null() {
-    val instance = FirebaseDataConnect.getInstance(Firebase.app, SAMPLE_CONNECTOR_CONFIG1)
-    assertThat(instance).isNotNull()
+    val instance = FirebaseDataConnect.getInstance(Firebase.app, connectorConfig1)
+    instance.shouldNotBeNull()
   }
 
   @Test
   fun getInstance_with_default_app_should_return_the_same_instance_every_time() {
-    val instance1 = FirebaseDataConnect.getInstance(Firebase.app, SAMPLE_CONNECTOR_CONFIG1)
-    val instance2 = FirebaseDataConnect.getInstance(Firebase.app, SAMPLE_CONNECTOR_CONFIG1)
-    assertThat(instance1).isSameInstanceAs(instance2)
+    val instance1 = FirebaseDataConnect.getInstance(Firebase.app, connectorConfig1)
+    val instance2 = FirebaseDataConnect.getInstance(Firebase.app, connectorConfig1)
+    instance1 shouldBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_return_new_instance_after_terminate() {
-    val instance1 = FirebaseDataConnect.getInstance(Firebase.app, SAMPLE_CONNECTOR_CONFIG1)
+    val instance1 = FirebaseDataConnect.getInstance(Firebase.app, connectorConfig1)
     instance1.close()
-    val instance2 = FirebaseDataConnect.getInstance(Firebase.app, SAMPLE_CONNECTOR_CONFIG1)
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+    val instance2 = FirebaseDataConnect.getInstance(Firebase.app, connectorConfig1)
+    instance1 shouldNotBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_apps() {
     val nonDefaultApp1 = firebaseAppFactory.newInstance()
     val nonDefaultApp2 = firebaseAppFactory.newInstance()
-    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp1, SAMPLE_CONNECTOR_CONFIG1)
-    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp2, SAMPLE_CONNECTOR_CONFIG1)
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp1, connectorConfig1)
+    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp2, connectorConfig1)
+    instance1 shouldNotBeSameInstanceAs instance2
   }
 
   @Test
-  fun getInstance_should_return_distinct_instances_for_distinct_configs() {
+  fun getInstance_should_return_distinct_instances_for_distinct_serviceIds() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val config1 = SAMPLE_CONNECTOR_CONFIG1.copy(serviceId = "foo")
-    val config2 = config1.copy(serviceId = "bar")
+    val config1 = connectorConfig1
+    val config2 = config1.copy(serviceId = connectorConfig1.serviceId + "DIFF")
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, config1)
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, config2)
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+    instance1 shouldNotBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_locations() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val config1 = SAMPLE_CONNECTOR_CONFIG1.copy(location = "foo")
-    val config2 = config1.copy(location = "bar")
+    val config1 = connectorConfig1
+    val config2 = config1.copy(location = config1.location + "DIFF")
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, config1)
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, config2)
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+    instance1 shouldNotBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_connectors() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val config1 = SAMPLE_CONNECTOR_CONFIG1.copy(connector = "foo")
-    val config2 = config1.copy(connector = "bar")
+    val config1 = connectorConfig1
+    val config2 = config1.copy(connector = connectorConfig1.connector + "DIFF")
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, config1)
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, config2)
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+    instance1 shouldNotBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_return_a_new_instance_after_the_instance_is_terminated() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1A = FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_CONNECTOR_CONFIG1)
-    val instance2A = FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_CONNECTOR_CONFIG2)
-    assertThat(instance1A).isNotSameInstanceAs(instance2A)
+    val instance1A = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1)
+    val instance2A = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig2)
+    instance1A shouldNotBeSameInstanceAs instance2A
 
     instance1A.close()
-    val instance1B = FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_CONNECTOR_CONFIG1)
-    assertThat(instance1A).isNotSameInstanceAs(instance1B)
-    assertThat(instance1A).isNotSameInstanceAs(instance2A)
+    val instance1B = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1)
+    instance1A shouldNotBeSameInstanceAs instance1B
+    instance1A shouldNotBeSameInstanceAs instance2A
 
     instance2A.close()
-    val instance2B = FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_CONNECTOR_CONFIG2)
-    assertThat(instance2A).isNotSameInstanceAs(instance2B)
-    assertThat(instance2A).isNotSameInstanceAs(instance1A)
-    assertThat(instance2A).isNotSameInstanceAs(instance1B)
+    val instance2B = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig2)
+    instance2A shouldNotBeSameInstanceAs instance2B
+    instance2A shouldNotBeSameInstanceAs instance1A
+    instance2A shouldNotBeSameInstanceAs instance1B
   }
 
   @Test
   fun getInstance_should_return_the_cached_instance_if_settings_compare_equal() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName")
-      )
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName")
-      )
-    assertThat(instance1).isSameInstanceAs(instance2)
+    val settings1Copy = settings1.copy()
+    settings1 shouldNotBeSameInstanceAs settings1Copy
+    settings1 shouldBe settings1Copy
+    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings1)
+    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings1Copy)
+    instance1 shouldBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_throw_if_settings_compare_unequal_to_settings_of_cached_instance() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName1")
-      )
+    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings1)
 
-    assertThrows(IllegalArgumentException::class.java) {
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName2")
-      )
+    shouldThrow<IllegalArgumentException> {
+      FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings2)
     }
 
-    assertThrows(IllegalArgumentException::class.java) {
-      FirebaseDataConnect.getInstance(nonDefaultApp, SAMPLE_CONNECTOR_CONFIG1)
+    shouldThrow<IllegalArgumentException> {
+      FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1)
     }
 
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName1")
-      )
-    assertThat(instance1).isSameInstanceAs(instance2)
+    val settings1Copy = settings1.copy()
+    settings1 shouldNotBeSameInstanceAs settings1Copy
+    settings1 shouldBe settings1Copy
+    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings1Copy)
+    instance1 shouldBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_allow_different_settings_after_first_instance_is_closed() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName")
-      )
+
+    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings1)
     instance1.close()
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName2")
-      )
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+
+    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings2)
+    instance1 shouldNotBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_return_new_instance_if_settings_and_app_are_both_different() {
     val nonDefaultApp1 = firebaseAppFactory.newInstance()
     val nonDefaultApp2 = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp1,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName1")
-      )
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp2,
-        SAMPLE_CONNECTOR_CONFIG1,
-        DataConnectSettings(host = "TestHostName2")
-      )
-    assertThat(instance1).isNotSameInstanceAs(instance2)
+
+    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp1, connectorConfig1, settings1)
+    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp2, connectorConfig1, settings2)
+
+    instance1 shouldNotBeSameInstanceAs instance2
   }
 
   @Test
   fun getInstance_should_return_new_instance_if_settings_and_config_are_both_different() {
     val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1.copy(serviceId = "foo"),
-        DataConnectSettings(host = "TestHostName1")
-      )
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1.copy(serviceId = "bar"),
-        DataConnectSettings(host = "TestHostName2")
-      )
+    val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig1, settings1)
+    val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, connectorConfig2, settings2)
 
-    assertThat(instance1).isNotSameInstanceAs(instance2)
-    assertThat(instance1.settings).isEqualTo(DataConnectSettings(host = "TestHostName1"))
-    assertThat(instance2.settings).isEqualTo(DataConnectSettings(host = "TestHostName2"))
-  }
-
-  @Test
-  fun getInstance_should_return_new_instance_if_settings_and_location_are_both_different() {
-    val nonDefaultApp = firebaseAppFactory.newInstance()
-    val instance1 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1.copy(location = "foo"),
-        DataConnectSettings(host = "TestHostName1")
-      )
-    val instance2 =
-      FirebaseDataConnect.getInstance(
-        nonDefaultApp,
-        SAMPLE_CONNECTOR_CONFIG1.copy(location = "bar"),
-        DataConnectSettings(host = "TestHostName2")
-      )
-
-    assertThat(instance1).isNotSameInstanceAs(instance2)
-    assertThat(instance1.settings).isEqualTo(DataConnectSettings(host = "TestHostName1"))
-    assertThat(instance2.settings).isEqualTo(DataConnectSettings(host = "TestHostName2"))
+    instance1 shouldNotBeSameInstanceAs instance2
+    instance1.settings shouldBe settings1
+    instance2.settings shouldBe settings2
   }
 
   @Test
   fun getInstance_should_be_thread_safe() {
-    val apps =
-      mutableListOf<FirebaseApp>().run {
-        for (i in 0..4) {
-          add(firebaseAppFactory.newInstance())
-        }
-        toList()
-      }
-
+    val apps = List(5) { firebaseAppFactory.newInstance() }
     val createdInstancesByThreadIdLock = ReentrantLock()
     val createdInstancesByThreadId = mutableMapOf<Int, List<FirebaseDataConnect>>()
     val numThreads = 8
@@ -290,9 +242,9 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
             }
             val instances = buildList {
               for (app in apps) {
-                add(FirebaseDataConnect.getInstance(app, SAMPLE_CONNECTOR_CONFIG1))
-                add(FirebaseDataConnect.getInstance(app, SAMPLE_CONNECTOR_CONFIG2))
-                add(FirebaseDataConnect.getInstance(app, SAMPLE_CONNECTOR_CONFIG3))
+                add(FirebaseDataConnect.getInstance(app, connectorConfig1))
+                add(FirebaseDataConnect.getInstance(app, connectorConfig2))
+                add(FirebaseDataConnect.getInstance(app, connectorConfig3))
               }
             }
             createdInstancesByThreadIdLock.withLock { createdInstancesByThreadId[i] = instances }
@@ -304,18 +256,15 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
     threads.forEach { it.join() }
 
     // Verify that each thread reported its result.
-    assertThat(createdInstancesByThreadId.size).isEqualTo(8)
+    createdInstancesByThreadId shouldHaveSize 8
 
     // Choose an arbitrary list of created instances from one of the threads, and use it as the
     // "expected" value for all other threads.
     val expectedInstances = createdInstancesByThreadId.values.toList()[0]
-    assertThat(expectedInstances.size).isEqualTo(15)
+    expectedInstances shouldHaveSize 15
 
     createdInstancesByThreadId.entries.forEach { (threadId, createdInstances) ->
-      assertWithMessage("instances created by threadId=${threadId}")
-        .that(createdInstances)
-        .containsExactlyElementsIn(expectedInstances)
-        .inOrder()
+      withClue("threadId=${threadId}") { createdInstances shouldContainExactly expectedInstances }
     }
   }
 
@@ -334,19 +283,20 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
 
     val toStringResult = instance.toString()
 
-    assertThat(toStringResult).containsWithNonAdjacentText("app=${app.name}")
-    assertThat(toStringResult).containsWithNonAdjacentText("projectId=${app.options.projectId}")
-    assertThat(toStringResult).containsWithNonAdjacentText("connector=TestConnector")
-    assertThat(toStringResult).containsWithNonAdjacentText("location=TestLocation")
-    assertThat(toStringResult).containsWithNonAdjacentText("serviceId=TestServiceId")
+    assertSoftly {
+      toStringResult shouldContainWithNonAbuttingText "app=${app.name}"
+      toStringResult shouldContainWithNonAbuttingText "projectId=${app.options.projectId}"
+      toStringResult shouldContainWithNonAbuttingText "connector=TestConnector"
+      toStringResult shouldContainWithNonAbuttingText "location=TestLocation"
+      toStringResult shouldContainWithNonAbuttingText "serviceId=TestServiceId"
+    }
   }
 
   @Test
   fun useEmulator_should_set_the_emulator_host() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val app = firebaseAppFactory.newInstance()
-    val settings = DataConnectSettings(host = "hosty63pw33994")
-    val dataConnect = FirebaseDataConnect.getInstance(app, testConnectorConfig, settings)
+    val dataConnect = FirebaseDataConnect.getInstance(app, testConnectorConfig, settings1)
     dataConnectFactory.adoptInstance(dataConnect)
 
     dataConnect.useEmulator(host = "127.0.0.1", port = grpcServer.server.port)
@@ -363,37 +313,7 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
 
     dataConnect.query("qrymgbqrc2hj9", Unit, DataConnectUntypedData, serializer<Unit>()).execute()
 
-    val exception = assertThrows(IllegalStateException::class.java) { dataConnect.useEmulator() }
-    assertThat(exception).hasMessageThat().ignoringCase().contains("already been initialized")
+    val exception = shouldThrow<IllegalStateException> { dataConnect.useEmulator() }
+    exception.message shouldContainWithNonAbuttingText "already been initialized"
   }
 }
-
-private val SAMPLE_SERVICE_ID1 = "SampleServiceId1"
-private val SAMPLE_LOCATION1 = "SampleLocation1"
-private val SAMPLE_CONNECTOR1 = "SampleConnector1"
-private val SAMPLE_CONNECTOR_CONFIG1 =
-  ConnectorConfig(
-    connector = SAMPLE_CONNECTOR1,
-    location = SAMPLE_LOCATION1,
-    serviceId = SAMPLE_SERVICE_ID1,
-  )
-
-private val SAMPLE_SERVICE_ID2 = "SampleServiceId2"
-private val SAMPLE_LOCATION2 = "SampleLocation2"
-private val SAMPLE_CONNECTOR2 = "SampleConnector2"
-private val SAMPLE_CONNECTOR_CONFIG2 =
-  ConnectorConfig(
-    connector = SAMPLE_CONNECTOR2,
-    location = SAMPLE_LOCATION2,
-    serviceId = SAMPLE_SERVICE_ID2,
-  )
-
-private val SAMPLE_SERVICE_ID3 = "SampleServiceId3"
-private val SAMPLE_LOCATION3 = "SampleLocation3"
-private val SAMPLE_CONNECTOR3 = "SampleConnector3"
-private val SAMPLE_CONNECTOR_CONFIG3 =
-  ConnectorConfig(
-    connector = SAMPLE_CONNECTOR3,
-    location = SAMPLE_LOCATION3,
-    serviceId = SAMPLE_SERVICE_ID3,
-  )

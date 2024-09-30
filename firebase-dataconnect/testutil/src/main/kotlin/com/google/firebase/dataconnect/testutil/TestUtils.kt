@@ -21,6 +21,11 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.util.nextAlphanumericString
+import io.kotest.assertions.print.print
+import io.kotest.matchers.Matcher
+import io.kotest.matchers.MatcherResult
+import io.kotest.matchers.neverNullMatcher
+import io.kotest.matchers.should
 import java.util.UUID
 import java.util.regex.Pattern
 import kotlin.coroutines.CoroutineContext
@@ -41,11 +46,50 @@ import kotlinx.coroutines.withContext
 import org.junit.Assert
 
 /**
+ * Creates and returns a [Matcher] that can be used with kotest assertions for verifying that a
+ * string contains the given string with non-abutting text. See [shouldContainWithNonAbuttingText]
+ * for full details.
+ */
+fun containWithNonAbuttingText(s: String): Matcher<String?> = neverNullMatcher { value ->
+  val fullPattern = "(^|\\W)${Pattern.quote(s)}($|\\W)"
+  val expr = Pattern.compile(fullPattern)
+  MatcherResult(
+    expr.matcher(value).find(),
+    {
+      "${value.print().value} should contain the substring ${s.print().value} with non-abutting text"
+    },
+    {
+      "${value.print().value} should not contain the substring ${s.print().value} with non-abutting text"
+    }
+  )
+}
+
+/**
+ * Asserts that a string contains another string, verifying that the character immediately preceding
+ * the text, if any, is a non-word character, and that the character immediately following the text,
+ * if any, is also a non-word character. This effectively verifies that the given string is included
+ * in a string without being "mashed" into adjacent text, such as can happen when constructing error
+ * messages and forgetting to leave a space between words.
+ */
+infix fun String?.shouldContainWithNonAbuttingText(s: String): String? {
+  this should containWithNonAbuttingText(s)
+  return this
+}
+
+/**
  * Asserts that a string contains another string, verifying that the character immediately preceding
  * the text, if any, is a non-word character, and that the character immediately following the text,
  * if any, is also a non-word character. This effectively verifies that the given string is included
  * in the string being checked without being "mashed" into adjacent text.
  */
+@Deprecated(
+  message = "use shouldContainWithNonAbuttingText instead",
+  replaceWith =
+    ReplaceWith(
+      expression = "shouldContainWithNonAbuttingText(...)",
+      "com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText"
+    )
+)
 fun StringSubject.containsWithNonAdjacentText(text: String, ignoreCase: Boolean = false) =
   containsMatchWithNonAdjacentText(Pattern.quote(text), ignoreCase = ignoreCase)
 
@@ -55,6 +99,14 @@ fun StringSubject.containsWithNonAdjacentText(text: String, ignoreCase: Boolean 
  * any, is also a non-word character. This effectively verifies that the given pattern is included
  * in the string being checked without being "mashed" into adjacent text.
  */
+@Deprecated(
+  message = "use shouldContainWithNonAbuttingText instead",
+  replaceWith =
+    ReplaceWith(
+      expression = "shouldContainWithNonAbuttingText(...)",
+      "com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText"
+    )
+)
 fun StringSubject.containsMatchWithNonAdjacentText(pattern: String, ignoreCase: Boolean = false) {
   val fullPattern = "(^|\\W)${pattern}($|\\W)"
   val expr = Pattern.compile(fullPattern, if (ignoreCase) Pattern.CASE_INSENSITIVE else 0)
