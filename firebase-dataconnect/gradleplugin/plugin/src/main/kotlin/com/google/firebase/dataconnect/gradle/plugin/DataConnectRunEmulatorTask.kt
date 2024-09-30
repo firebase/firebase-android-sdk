@@ -24,6 +24,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 
 abstract class DataConnectRunEmulatorTask : DefaultTask() {
@@ -34,7 +35,7 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
 
   @get:Input abstract val postgresConnectionUrl: Property<String>
 
-  @get:Input abstract val schemaExtensionsOutputEnabled: Property<Boolean>
+  @get:Optional @get:Input abstract val schemaExtensionsOutputEnabled: Property<Boolean>
 
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
@@ -43,7 +44,7 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
     val dataConnectExecutable: File = dataConnectExecutable.get().asFile
     val configDirectory: File = configDirectory.get().asFile
     val postgresConnectionUrl: String = postgresConnectionUrl.get()
-    val schemaExtensionsOutputEnabled: Boolean = schemaExtensionsOutputEnabled.get()
+    val schemaExtensionsOutputEnabled: Boolean = schemaExtensionsOutputEnabled.orNull ?: false
     val buildDirectory: File = buildDirectory.get().asFile
 
     logger.info("dataConnectExecutable={}", dataConnectExecutable.absolutePath)
