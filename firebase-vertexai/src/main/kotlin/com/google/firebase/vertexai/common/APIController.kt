@@ -247,11 +247,12 @@ private suspend fun validateResponse(response: HttpResponse) {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
         """
-        The Vertex AI for Firebase SDK requires the Firebase Vertex AI API
-        `firebasevertexai.googleapis.com` to be enabled for your project. Enable it by visiting 
-        the Firebase Console at https://console.firebase.google.com/project/${Firebase.options.projectId}/genai/vertex then 
-        retry. If you enabled this API recently, wait a few minutes for the action to propagate
-        to our systems and retry.
+        The Vertex AI in Firebase SDK requires the Vertex AI in Firebase API
+        (`firebasevertexai.googleapis.com`) to be enabled in your Firebase project. Enable this API
+        by visiting the Firebase Console at
+        https://console.firebase.google.com/project/${Firebase.options.projectId}/genai
+        and clicking "Get started". If you enabled this API recently, wait a few minutes for the
+        action to propagate to our systems and then retry.
       """
           .trimIndent()
       } else {
