@@ -29,7 +29,7 @@ import org.reactivestreams.Publisher
  *
  * @see from
  */
-abstract class ChatFutures internal constructor() {
+public abstract class ChatFutures internal constructor() {
 
   /**
    * Generates a response from the backend with the provided [Content], and any previous ones
@@ -37,17 +37,17 @@ abstract class ChatFutures internal constructor() {
    *
    * @param prompt A [Content] to send to the model.
    */
-  abstract fun sendMessage(prompt: Content): ListenableFuture<GenerateContentResponse>
+  public abstract fun sendMessage(prompt: Content): ListenableFuture<GenerateContentResponse>
 
   /**
    * Generates a streaming response from the backend with the provided [Content].
    *
    * @param prompt A [Content] to send to the model.
    */
-  abstract fun sendMessageStream(prompt: Content): Publisher<GenerateContentResponse>
+  public abstract fun sendMessageStream(prompt: Content): Publisher<GenerateContentResponse>
 
   /** Returns the [Chat] instance that was used to create this instance */
-  abstract fun getChat(): Chat
+  public abstract fun getChat(): Chat
 
   private class FuturesImpl(private val chat: Chat) : ChatFutures() {
     override fun sendMessage(prompt: Content): ListenableFuture<GenerateContentResponse> =
@@ -59,9 +59,9 @@ abstract class ChatFutures internal constructor() {
     override fun getChat(): Chat = chat
   }
 
-  companion object {
+  public companion object {
 
     /** @return a [ChatFutures] created around the provided [Chat] */
-    @JvmStatic fun from(chat: Chat): ChatFutures = FuturesImpl(chat)
+    @JvmStatic public fun from(chat: Chat): ChatFutures = FuturesImpl(chat)
   }
 }
