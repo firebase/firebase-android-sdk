@@ -58,7 +58,6 @@ import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
 import java.util.Calendar
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
@@ -98,10 +97,7 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
 }
 
 internal fun FunctionCall.toInternal() =
-  com.google.firebase.vertexai.common.shared.FunctionCall(
-    name,
-    args
-  )
+  com.google.firebase.vertexai.common.shared.FunctionCall(name, args)
 
 internal fun FunctionResponse.toInternal() =
   com.google.firebase.vertexai.common.shared.FunctionResponse(name, response)
@@ -238,12 +234,7 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
 }
 
 internal fun com.google.firebase.vertexai.common.shared.FunctionCall.toPublic() =
-  FunctionCall(
-    name,
-    args.orEmpty().mapValues {
-      it.value ?: JsonNull
-    }
-  )
+  FunctionCall(name, args.orEmpty().mapValues { it.value ?: JsonNull })
 
 internal fun com.google.firebase.vertexai.common.shared.FunctionResponse.toPublic() =
   FunctionResponse(
