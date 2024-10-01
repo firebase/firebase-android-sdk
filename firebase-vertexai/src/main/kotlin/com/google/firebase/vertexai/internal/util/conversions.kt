@@ -58,8 +58,9 @@ import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
 import java.util.Calendar
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import org.json.JSONObject
 
 private const val BASE_64_FLAGS = Base64.NO_WRAP
@@ -99,7 +100,7 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
 internal fun FunctionCall.toInternal() =
   com.google.firebase.vertexai.common.shared.FunctionCall(
     name,
-    args.orEmpty().mapValues { it.value.toString() }
+    args
   )
 
 internal fun FunctionResponse.toInternal() =
@@ -240,8 +241,7 @@ internal fun com.google.firebase.vertexai.common.shared.FunctionCall.toPublic() 
   FunctionCall(
     name,
     args.orEmpty().mapValues {
-      val argValue = it.value
-      if (argValue == null) JsonPrimitive(null) else Json.parseToJsonElement(argValue)
+      it.value ?: JsonNull
     }
   )
 
