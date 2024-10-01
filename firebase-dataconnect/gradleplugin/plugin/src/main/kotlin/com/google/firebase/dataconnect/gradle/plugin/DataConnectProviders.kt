@@ -35,11 +35,11 @@ class DataConnectProviders(
     val fileValueFromGradleProperty: Provider<DataConnectExecutable> =
       project.providers.gradleProperty(fileGradlePropertyName).map {
         val regularFile = project.layout.projectDirectory.file(it)
-        DataConnectExecutable.RegularFile(regularFile, verificationInfo = null)
+        DataConnectExecutable.RegularFile(regularFile)
       }
     val versionValueFromGradleProperty: Provider<DataConnectExecutable> =
       project.providers.gradleProperty(versionGradlePropertyName).map {
-        DataConnectExecutable.Version.forVersionWithDefaultVerificationInfo(it)
+        DataConnectExecutable.Version(it)
       }
     val valueFromVariant: Provider<DataConnectExecutable> = variantExtension.dataConnectExecutable
     val valueFromProject: Provider<DataConnectExecutable> =
@@ -50,7 +50,7 @@ class DataConnectProviders(
       .orElse(versionValueFromGradleProperty)
       .orElse(valueFromVariant)
       .orElse(valueFromProject)
-      .orElse(DataConnectExecutable.Version.forDefaultVersionWithDefaultVerificationInfo())
+      .orElse(DataConnectExecutable.Version.default)
   }
 
   val postgresConnectionUrl: Provider<String> = run {
