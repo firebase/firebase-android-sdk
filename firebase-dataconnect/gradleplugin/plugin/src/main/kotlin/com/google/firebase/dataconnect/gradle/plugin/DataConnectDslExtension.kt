@@ -89,9 +89,6 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
     var version: String?
     var file: File?
     var regularFile: RegularFile?
-    var fileSizeInBytes: Long?
-    var sha512DigestHex: String?
-    var verificationEnabled: Boolean
   }
 
   private class DataConnectExecutableBuilderImpl(initialValues: DataConnectExecutable?) :
@@ -121,29 +118,16 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
         _regularFile = value
       }
 
-    override var fileSizeInBytes: Long? = null
-    override var sha512DigestHex: String? = null
-    override var verificationEnabled: Boolean = true
-
     fun updateFrom(info: DataConnectExecutable.File) {
       file = info.file
-      updateFrom(info.verificationInfo)
     }
 
     fun updateFrom(info: DataConnectExecutable.RegularFile) {
       regularFile = info.file
-      updateFrom(info.verificationInfo)
     }
 
     fun updateFrom(info: DataConnectExecutable.Version) {
       version = info.version
-      updateFrom(info.verificationInfo)
-    }
-
-    fun updateFrom(info: DataConnectExecutable.VerificationInfo?) {
-      verificationEnabled = info !== null
-      fileSizeInBytes = info?.fileSizeInBytes
-      sha512DigestHex = info?.sha512DigestHex
     }
 
     init {
@@ -159,9 +143,6 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
       val version = version
       val file = file
       val regularFile = regularFile
-      val fileSizeInBytes = fileSizeInBytes
-      val sha512DigestHex = sha512DigestHex
-      val verificationEnabled = verificationEnabled
 
       if (version === null && file === null && regularFile === null) {
         return null
@@ -195,41 +176,12 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
         )
       }
 
-      val verificationInfo: DataConnectExecutable.VerificationInfo? =
-        if (!verificationEnabled) {
-          null
-        } else if (fileSizeInBytes === null && sha512DigestHex === null) {
-          if (version !== null) {
-            DataConnectExecutable.VerificationInfo.forVersion(version)
-          } else {
-            throw DataConnectGradleException(
-              "8s9venv4ch",
-              "Both 'fileSizeInBytes' and 'sha512DigestHex' were null" +
-                " but _both_ must be set when verificationEnabled==true" +
-                " and file!=null or regularFile!=null" +
-                " (file=$file regularFile=$regularFile)"
-            )
-          }
-        } else if (fileSizeInBytes === null || sha512DigestHex === null) {
-          throw DataConnectGradleException(
-            "gjzykv9pqq",
-            "Both 'fileSizeInBytes' and 'sha512DigestHex' have to be set or both unset" +
-              " when verificationEnabled==true, but one of them was set and the other was not" +
-              " (fileSizeInBytes=$fileSizeInBytes, sha512DigestHex=$sha512DigestHex)"
-          )
-        } else {
-          DataConnectExecutable.VerificationInfo(
-            fileSizeInBytes = fileSizeInBytes,
-            sha512DigestHex = sha512DigestHex,
-          )
-        }
-
       return if (version !== null) {
-        DataConnectExecutable.Version(version = version, verificationInfo = verificationInfo)
+        DataConnectExecutable.Version(version = version)
       } else if (file !== null) {
-        DataConnectExecutable.File(file = file, verificationInfo = verificationInfo)
+        DataConnectExecutable.File(file = file)
       } else if (regularFile !== null) {
-        DataConnectExecutable.RegularFile(file = regularFile, verificationInfo = verificationInfo)
+        DataConnectExecutable.RegularFile(file = regularFile)
       } else {
         throw DataConnectGradleException(
           "yg49q5nzxt",

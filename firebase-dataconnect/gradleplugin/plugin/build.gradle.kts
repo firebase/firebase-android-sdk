@@ -17,7 +17,8 @@
 plugins {
   `java-gradle-plugin`
   alias(firebaseLibs.plugins.kotlin.jvm)
-  alias(libs.plugins.spotless)
+  alias(firebaseLibs.plugins.kotlinx.serialization)
+  alias(firebaseLibs.plugins.spotless)
 }
 
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
@@ -25,6 +26,8 @@ java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 dependencies {
   compileOnly(firebaseLibs.android.gradlePlugin.gradle.api)
   implementation(gradleKotlinDsl())
+  implementation(firebaseLibs.kotlinx.serialization.core)
+  implementation(firebaseLibs.kotlinx.serialization.json)
 }
 
 gradlePlugin {

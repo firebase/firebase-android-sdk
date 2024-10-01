@@ -1,0 +1,45 @@
+{
+  "default": "1.4.3",
+  "versions": {
+    "1.3.4": {
+      "size": 24125592,
+      "sha512DigestHex": "3ec9317db593ebeacfea9756cdd08a02849296fbab67f32f3d811a766be6ce2506fc7a0cf5f5ea880926f0c4defa5ded965268f5dfe5d07eb80cef926f216c7e"
+    },
+    "1.3.5": {
+      "size": 24146072,
+      "sha512DigestHex": "630391e3c50568cca36e562e51b300e673fa7190c0cae0475a03e4af4003babe71198c5b0309ecd261b3a3362e8c4d49bdb6cbc6f2b2d3297444112a018a0c10"
+    },
+    "1.3.6": {
+      "size": 24785048,
+      "sha512DigestHex": "77b2fd79a8a70e47defb1592a092c63642fda6c33715f1977d7a44daed3d7e181c3870aad0fee7b035aabea7778a244135ab3e633247ccd5f937105f6d495a26"
+    },
+    "1.3.7": {
+      "size": 24928408,
+      "sha512DigestHex": "99d9774f3b29a6845f0e096893d1205e69b6f8654797a3fc7d54d22e8f7059d1b6549ae23b8e8f18c952c1c7d25a07b0b8b29a957abd97e1a79c703448497cef"
+    },
+    "1.3.8": {
+      "size": 24940696,
+      "sha512DigestHex": "aea3583ebe1a36938eec5164de79405951ddf05b70a857ddb4f346f1424666f1d96989a5f81326c7e2aef4a195d31ff356fdf2331ed98fa1048c4bd469cbfd97"
+    },
+    "1.3.9": {
+      "size": 24977560,
+      "sha512DigestHex": "4558928c2a84b54113e0d6918907eb75bdeb9bd059dcc4b6f22cb4a7c9c7421a3577f3b0d2eeb246b1df739b38f1eb91e5a6166b0e559707746d79e6ccdf9ed4"
+    },
+    "1.4.0": {
+      "size": 25018520,
+      "sha512DigestHex": "c06ccade89cb46459452f71c6d49a01b4b30c9f96cc4cb770ed168e7420ef0cb368cd602ff596137e6586270046cf0ffd9f8d294e44b036e5c5b373a074b7e5a"
+    },
+    "1.4.1": {
+      "size": 25034904,
+      "sha512DigestHex": "f4a16aca3a68c431407fc88a900940c73612a0046d9603ca80195c8c9641ee38fd81b67cc158af600e173de1abc3cb0df9377b1a6012c808ab0871bb1bdbc0b1"
+    },
+    "1.4.2": {
+      "size": 25034904,
+      "sha512DigestHex": "24ee2db55a034dcb95000715919e1dc35c91403000dbd3b912e6b5b55587b862eca886bb1ca86e19cdaa25c77c29492e5d3b0c740c8649a90297cf84e9c9123b"
+    },
+    "1.4.3": {
+      "size": 25034904,
+      "sha512DigestHex": "c25fd2cb9ef4896cadc05fab79f767f8fc8212e3b967f2ae535855befd63339539a4f6cd648743c024f40139b668cc69fb9c6691490259664af5821d116896cf"
+    }
+  }
+}
