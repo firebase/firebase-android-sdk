@@ -1,6 +1,7 @@
 {
     "name": "m154",
     "libraries": [
+        ":firebase-dataconnect",
         ":firebase-crashlytics",
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",
