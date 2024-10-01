@@ -110,17 +110,6 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
               }
             )
           )
-          verificationInfo.set(
-            dataConnectExecutable.map(
-              TransformerInterop {
-                when (it) {
-                  is DataConnectExecutable.File -> it.verificationInfo
-                  is DataConnectExecutable.RegularFile -> it.verificationInfo
-                  is DataConnectExecutable.Version -> it.verificationInfo
-                }
-              }
-            )
-          )
           outputFile.set(
             dataConnectExecutable.map {
               when (it) {

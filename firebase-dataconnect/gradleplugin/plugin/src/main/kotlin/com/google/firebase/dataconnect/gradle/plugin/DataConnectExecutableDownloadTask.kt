@@ -15,7 +15,6 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
-import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutable.VerificationInfo
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
@@ -24,6 +23,8 @@ import java.util.regex.Pattern
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
@@ -41,8 +42,6 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
 
   @get:Input @get:Optional abstract val version: Property<String>
 
-  @get:Input @get:Optional abstract val verificationInfo: Property<VerificationInfo>
-
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
@@ -51,13 +50,11 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
   fun run() {
     val inputFile: File? = inputFile.orNull?.asFile
     val version: String? = version.orNull
-    val verificationInfo: VerificationInfo? = verificationInfo.orNull
     val buildDirectory: File = buildDirectory.get().asFile
     val outputFile: File = outputFile.get().asFile
 
     logger.info("inputFile: {}", inputFile)
     logger.info("version: {}", version)
-    logger.info("verificationInfo: {}", verificationInfo)
     logger.info("buildDirectory: {}", buildDirectory)
     logger.info("outputFile: {}", outputFile)
 
@@ -75,6 +72,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
       runWithFile(inputFile = inputFile, outputFile = outputFile)
     } else if (version !== null) {
       runWithVersion(version = version, outputFile = outputFile)
+      verifyOutputFile(outputFile, version)
     } else {
       throw DataConnectGradleException(
         "chc94cq7vx",
@@ -82,30 +80,68 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
           " but exactly _one_ of them is required to be specified"
       )
     }
-
-    if (verificationInfo !== null) {
-      verifyOutputFile(outputFile, verificationInfo)
-    }
   }
 
-  private fun verifyOutputFile(outputFile: File, verificationInfo: VerificationInfo) {
+  private fun verifyOutputFile(outputFile: File, version: String) {
     logger.info("Verifying file size and SHA512 digest of file: {}", outputFile)
     val fileInfo = FileInfo.forFile(outputFile)
-    if (fileInfo.sizeInBytes != verificationInfo.fileSizeInBytes) {
-      throw DataConnectGradleException(
-        "zjdpbsjv42",
-        "File $outputFile has an unexpected size (in bytes): actual=" +
-          fileInfo.sizeInBytes.toStringWithThousandsSeparator() +
-          " expected=" +
-          verificationInfo.fileSizeInBytes.toStringWithThousandsSeparator()
+
+    val verificationInfoJsonString =
+      jsonPrettyPrint.encodeToString(
+        DataConnectExecutable.VersionsJson.VerificationInfo(
+          size = fileInfo.sizeInBytes,
+          sha512DigestHex = fileInfo.sha512DigestHex,
+        )
       )
-    } else if (fileInfo.sha512DigestHex != verificationInfo.sha512DigestHex) {
-      throw DataConnectGradleException(
-        "3yyma4dqga",
-        "File $outputFile has an unexpected SHA512 digest:" +
-          " actual=${fileInfo.sha512DigestHex} expected=${verificationInfo.sha512DigestHex}"
+
+    val verificationInfoByVersion = DataConnectExecutable.VersionsJson.load().versions
+    val verificationInfo = verificationInfoByVersion[version]
+    if (verificationInfo === null) {
+      val message =
+        "verification information for ${outputFile.absolutePath}" +
+          " (version $version) is not known; known versions are: " +
+          verificationInfoByVersion.keys.sorted().joinToString(", ")
+      logger.error("ERROR: $message")
+      logger.error(
+        "To update ${DataConnectExecutable.VersionsJson.RESOURCE_PATH} with" +
+          " information about this version, add this JSON blob: $verificationInfoJsonString"
       )
+      throw DataConnectGradleException("ym8assbfgw", message)
     }
+
+    val verificationErrors = mutableListOf<String>()
+    if (fileInfo.sizeInBytes != verificationInfo.size) {
+      logger.error(
+        "ERROR: File ${outputFile.absolutePath} has an unexpected size (in bytes): actual is " +
+          fileInfo.sizeInBytes.toStringWithThousandsSeparator() +
+          " but expected " +
+          verificationInfo.size.toStringWithThousandsSeparator()
+      )
+      verificationErrors.add("file size mismatch")
+    }
+    if (fileInfo.sha512DigestHex != verificationInfo.sha512DigestHex) {
+      logger.error(
+        "ERROR: File ${outputFile.absolutePath} has an unexpected SHA512 digest:" +
+          " actual is ${fileInfo.sha512DigestHex}" +
+          " but expected ${verificationInfo.sha512DigestHex}"
+      )
+      verificationErrors.add("SHA512 digest mismatch")
+    }
+
+    if (verificationErrors.isEmpty()) {
+      logger.info("Verifying file size and SHA512 digest succeeded")
+      return
+    }
+
+    logger.error(
+      "To update ${DataConnectExecutable.VersionsJson.RESOURCE_PATH} with" +
+        " information about this version, add this JSON blob: $verificationInfoJsonString"
+    )
+
+    throw DataConnectGradleException(
+      "x9dfwhjr9c",
+      "Verification of ${outputFile.absolutePath} failed: ${verificationErrors.joinToString(", ")}"
+    )
   }
 
   data class FileInfo(val sizeInBytes: Long, val sha512DigestHex: String) {
@@ -198,5 +234,9 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
         args = listOf("a+x", outputFile.absolutePath)
       }
     }
+  }
+
+  private companion object {
+    val jsonPrettyPrint = Json { prettyPrint = true }
   }
 }
