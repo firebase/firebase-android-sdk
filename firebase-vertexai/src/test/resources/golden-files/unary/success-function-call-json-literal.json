@@ -7,7 +7,7 @@
             "functionCall": {
               "name": "functionName",
               "args": {
-                "original_title": "String test",
+                "original_title": "String",
                 "current": true
               }
             }
