@@ -373,6 +373,23 @@ internal class UnarySnapshotTests {
     }
 
   @Test
+  fun `function call with complex json literal parses correctly`() =
+    goldenUnaryFile("unary-success-function-call-complex-json-literal.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
+        val callPart =
+          content.let {
+            it.shouldNotBeNull()
+            it.parts.shouldNotBeEmpty()
+            it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
+          }
+
+        callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
+      }
+    }
+
+  @Test
   fun `function call contains no arguments`() =
     goldenUnaryFile("unary-success-function-call-no-arguments.json") {
       withTimeout(testTimeout) {
