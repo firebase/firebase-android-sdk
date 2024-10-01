@@ -63,6 +63,7 @@ import com.google.firestore.v1.Value;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -103,6 +104,8 @@ public final class FirestoreClient {
   // Telemetry-related
   private static final String FIRESTORE_LOGGING_ENABLED_PARAMETER_NAME = "__firestore_logging_enabled__";
   private static final String FIRESTORE_TRACING_ENABLED_PARAMETER_NAME = "__firestore_tracing_enabled__";
+  // Unique identifier for this client.
+  private String uuid;
   private OpenTelemetry openTelemetry;
   private FirebaseRemoteConfig remoteConfig;
   private boolean loggingEnabled;
@@ -176,6 +179,10 @@ public final class FirestoreClient {
 
   public OpenTelemetry getOpenTelemetry() {
     return openTelemetry;
+  }
+
+  public String getUuid() {
+    return uuid;
   }
 
   public Task<Void> disableNetwork() {
@@ -343,6 +350,8 @@ public final class FirestoreClient {
       indexBackfillScheduler.start();
     }
 
+    // TELEMETRY-RELATED
+
     // Fetch and listen to Remotely-configured telemetry configurations.
     loggingEnabled = false;
     tracingEnabled = false;
@@ -397,7 +406,7 @@ public final class FirestoreClient {
     Resource resource =
             Resource.getDefault().merge(Resource.builder().put("service.name", "firebase-android-sdk").build());
     OtlpGrpcSpanExporter otlpGrpcSpanExporter = OtlpGrpcSpanExporter.builder()
-            .setEndpoint("http://34.30.191.38:4317")
+            .setEndpoint("http://34.44.91.83:4317")
             .build();
 
     // Configure a batch span processor
@@ -409,7 +418,7 @@ public final class FirestoreClient {
 
     OtlpGrpcLogRecordExporter otlpGrpcLogRecordExporter =
             OtlpGrpcLogRecordExporter.builder()
-                    .setEndpoint("http://34.30.191.38:4317")
+                    .setEndpoint("http://34.44.91.83:4317")
                     .build();
     LogRecordProcessor otlpGrpcLogRecordProcessor = BatchLogRecordProcessor.builder(otlpGrpcLogRecordExporter).build();
 
@@ -431,6 +440,8 @@ public final class FirestoreClient {
                             .build()
             )
             .build();
+
+    uuid = UUID.randomUUID().toString();
   }
 
   public void addSnapshotsInSyncListener(EventListener<Void> listener) {

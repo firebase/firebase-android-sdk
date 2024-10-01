@@ -173,4 +173,9 @@ final class FirestoreClientProvider {
     return client.getOpenTelemetry();
   }
 
+  synchronized String getClientUuid() {
+    ensureConfigured();
+    return client.getUuid();
+  }
+
 }
