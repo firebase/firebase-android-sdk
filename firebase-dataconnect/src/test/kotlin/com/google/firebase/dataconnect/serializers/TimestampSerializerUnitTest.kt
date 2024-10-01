@@ -95,22 +95,28 @@ class TimestampSerializerUnitTest {
   @Test
   fun `decoding should succeed when there are both time-secfrac and - time offset`() {
     assertSoftly {
-      decodeTimestamp("2023-05-21T11:04:05.462-11:07") shouldBe decodeTimestamp("2023-05-21T22:11:05.462Z")
+      decodeTimestamp("2023-05-21T11:04:05.462-11:07") shouldBe
+        decodeTimestamp("2023-05-21T22:11:05.462Z")
 
-      decodeTimestamp("2053-11-02T15:04:05.743393-05:10") shouldBe decodeTimestamp("2053-11-02T20:14:05.743393Z")
+      decodeTimestamp("2053-11-02T15:04:05.743393-05:10") shouldBe
+        decodeTimestamp("2053-11-02T20:14:05.743393Z")
 
-      decodeTimestamp("1538-03-05T15:04:05.653498752-03:01") shouldBe decodeTimestamp("1538-03-05T18:05:05.653498752Z")
+      decodeTimestamp("1538-03-05T15:04:05.653498752-03:01") shouldBe
+        decodeTimestamp("1538-03-05T18:05:05.653498752Z")
     }
   }
 
   @Test
   fun `decoding should succeed when there are both time-secfrac and + time offset`() {
     assertSoftly {
-      decodeTimestamp("2023-05-21T11:04:05.662+11:01") shouldBe decodeTimestamp("2023-05-21T00:03:05.662Z")
+      decodeTimestamp("2023-05-21T11:04:05.662+11:01") shouldBe
+        decodeTimestamp("2023-05-21T00:03:05.662Z")
 
-      decodeTimestamp("2144-01-02T15:04:05.753493+01:00") shouldBe decodeTimestamp("2144-01-02T14:04:05.753493Z")
+      decodeTimestamp("2144-01-02T15:04:05.753493+01:00") shouldBe
+        decodeTimestamp("2144-01-02T14:04:05.753493Z")
 
-      decodeTimestamp("1358-03-05T15:04:05.527094582+11:03") shouldBe decodeTimestamp("1358-03-05T04:01:05.527094582Z")
+      decodeTimestamp("1358-03-05T15:04:05.527094582+11:03") shouldBe
+        decodeTimestamp("1358-03-05T04:01:05.527094582Z")
     }
   }
 
@@ -118,7 +124,8 @@ class TimestampSerializerUnitTest {
   fun `decoding should be case-insensitive`() {
     // According to https://www.rfc-editor.org/rfc/rfc3339#section-5.6 the "t" and "z" are
     // case-insensitive.
-    decodeTimestamp("2006-01-02t15:04:05.123456789z") shouldBe decodeTimestamp("2006-01-02T15:04:05.123456789Z")
+    decodeTimestamp("2006-01-02t15:04:05.123456789z") shouldBe
+      decodeTimestamp("2006-01-02T15:04:05.123456789Z")
   }
 
   @Test
@@ -133,51 +140,37 @@ class TimestampSerializerUnitTest {
 
   @Test
   fun `decoding should fail for an empty string`() {
-    shouldThrow<IllegalArgumentException> {
-      decodeTimestamp("")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("") }
   }
 
   @Test
   fun `decoding should fail if 'time-offset' is omitted`() {
-    shouldThrow<IllegalArgumentException> {
-      decodeTimestamp("2006-01-02T15:04:05.123456789")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05.123456789") }
   }
 
   @Test
   fun `decoding should fail if 'time-offset' when 'time-secfrac' and time offset are both omitted`() {
-    shouldThrow<IllegalArgumentException> {
-      decodeTimestamp("2006-01-02T15:04:05")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05") }
   }
 
   @Test
   fun `decoding should fail if the date portion cannot be parsed`() {
-    shouldThrow<IllegalArgumentException> {
-      decodeTimestamp("200X-01-02T15:04:05.123456789Z")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("200X-01-02T15:04:05.123456789Z") }
   }
 
   @Test
   fun `decoding should fail if some character other than period delimits the 'time-secfrac'`() {
-    shouldThrow<IllegalArgumentException> {
-      decodeTimestamp("2006-01-02T15:04:05 123456789Z")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05 123456789Z") }
   }
 
   @Test
   fun `decoding should fail if 'time-secfrac' contains an invalid character`() {
-    shouldThrow<IllegalArgumentException> {
-      decodeTimestamp("2006-01-02T15:04:05.123456X89Z")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05.123456X89Z") }
   }
 
   @Test
   fun `decoding should fail if time offset has no + or - sign`() {
-    shouldThrow<IllegalArgumentException> {
-      decodeTimestamp("1985-04-12T23:20:5007:00")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("1985-04-12T23:20:5007:00") }
   }
 
   @Test
