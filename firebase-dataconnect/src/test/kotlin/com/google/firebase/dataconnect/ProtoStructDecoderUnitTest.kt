@@ -13,505 +13,457 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:OptIn(ExperimentalSerializationApi::class, ExperimentalSerializationApi::class)
-
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
-import java.util.regex.Pattern
-import kotlin.reflect.KClass
-import kotlinx.serialization.ExperimentalSerializationApi
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.orNull
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import org.junit.Assert.assertThrows
+import org.junit.Ignore
 import org.junit.Test
 
 class ProtoStructDecoderUnitTest {
 
   @Test
-  fun `decodeFromStruct() can encode and decode a complex object A`() {
-    val obj =
-      SerializationTestData.AllTheTypes.newInstance(seed = "TheQuickBrown").withEmptyUnitLists()
-    val struct = encodeToStruct(obj)
-    val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
-    assertThat(decodedObj).isEqualTo(obj)
+  fun `decodeFromStruct() can encode and decode complex objects`() = runTest {
+    checkAll(iterations = 20, Arb.string().filterNot { it.hashCode() == 0 }) { seed ->
+      val obj = SerializationTestData.AllTheTypes.newInstance(seed).withEmptyUnitLists()
+      val struct = encodeToStruct(obj)
+      val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
+      decodedObj shouldBe obj
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can encode and decode a complex object B`() {
-    val obj =
-      SerializationTestData.AllTheTypes.newInstance(seed = "FoxJumpsOver").withEmptyUnitLists()
-    val struct = encodeToStruct(obj)
-    val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
-    assertThat(decodedObj).isEqualTo(obj)
+  @Ignore("A List<Unit> gets decoded as an empty list; if anyone cares, fix it.")
+  fun `decodeFromStruct() can encode and decode a list of non-nullable Unit`() = runTest {
+    @Serializable data class TestData(val list: List<Unit>)
+    checkAll(Arb.list(Arb.constant(Unit))) { list ->
+      val struct = encodeToStruct(TestData(list))
+      val decodedObj = decodeFromStruct<TestData>(struct)
+      decodedObj shouldBe TestData(list)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can encode and decode a complex object C`() {
-    val obj =
-      SerializationTestData.AllTheTypes.newInstance(seed = "TheLazyDog").withEmptyUnitLists()
-    val struct = encodeToStruct(obj)
-    val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
-    assertThat(decodedObj).isEqualTo(obj)
-  }
-
-  @Test
-  fun `decodeFromStruct() can encode and decode a list of nullable Unit ending in null`() {
+  fun `decodeFromStruct() can encode and decode a list of nullable Unit`() = runTest {
     @Serializable data class TestData(val list: List<Unit?>)
-    val struct = encodeToStruct(TestData(listOf(null, Unit, null)))
-    val decodedObj = decodeFromStruct<TestData>(struct)
-    assertThat(decodedObj).isEqualTo(TestData(listOf(null, Unit, null)))
-  }
-
-  @Test
-  fun `decodeFromStruct() can encode and decode a list of nullable Unit ending in Unit`() {
-    @Serializable data class TestData(val list: List<Unit?>)
-    val struct = encodeToStruct(TestData(listOf(null, Unit, null, Unit)))
-    val decodedObj = decodeFromStruct<TestData>(struct)
-    assertThat(decodedObj).isEqualTo(TestData(listOf(null, Unit, null, Unit)))
+    checkAll(Arb.list(Arb.constant(Unit).orNull())) { list ->
+      val struct = encodeToStruct(TestData(list))
+      val decodedObj = decodeFromStruct<TestData>(struct)
+      decodedObj shouldBe TestData(list)
+    }
   }
 
   @Test
   fun `decodeFromStruct() can decode a Struct to Unit`() {
     val decodedTestData = decodeFromStruct<Unit>(Struct.getDefaultInstance())
-    assertThat(decodedTestData).isSameInstanceAs(Unit)
+    decodedTestData shouldBeSameInstanceAs Unit
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with String values`() {
+  fun `decodeFromStruct() can decode a Struct with String values`() = runTest {
     @Serializable data class TestData(val value1: String, val value2: String)
-    val struct = encodeToStruct(TestData(value1 = "foo", value2 = "bar"))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(value1 = "foo", value2 = "bar"))
+    val strings = Arb.string()
+    checkAll(strings, strings) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with _nullable_ String values`() {
-    @Serializable data class TestData(val isNull: String?, val isNotNull: String?)
-    val struct = encodeToStruct(TestData(isNull = null, isNotNull = "NotNull"))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = "NotNull"))
+  fun `decodeFromStruct() can decode a Struct with _nullable_ String values`() = runTest {
+    @Serializable data class TestData(val value1: String?, val value2: String?)
+    val nullableStrings = Arb.string().orNull()
+    checkAll(nullableStrings, nullableStrings) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with Boolean values`() {
+  fun `decodeFromStruct() can decode a Struct with Boolean values`() = runTest {
     @Serializable data class TestData(val value1: Boolean, val value2: Boolean)
-    val struct = encodeToStruct(TestData(value1 = true, value2 = false))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(value1 = true, value2 = false))
+    val booleans = Arb.boolean()
+    checkAll(booleans, booleans) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with _nullable_ Boolean values`() {
-    @Serializable data class TestData(val isNull: Boolean?, val isNotNull: Boolean?)
-    val struct = encodeToStruct(TestData(isNull = null, isNotNull = true))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = true))
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Boolean values`() = runTest {
+    @Serializable data class TestData(val value1: Boolean?, val value2: Boolean?)
+    val nullableBooleans = Arb.boolean().orNull()
+    checkAll(nullableBooleans, nullableBooleans) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with Int values`() {
+  fun `decodeFromStruct() can decode a Struct with Int values`() = runTest {
     @Serializable data class TestData(val value1: Int, val value2: Int)
-    val struct = encodeToStruct(TestData(value1 = 123, value2 = -456))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(value1 = 123, value2 = -456))
+    val ints = Arb.int()
+    checkAll(ints, ints) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with _nullable_ Int values`() {
-    @Serializable data class TestData(val isNull: Int?, val isNotNull: Int?)
-    val struct = encodeToStruct(TestData(isNull = null, isNotNull = 42))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = 42))
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Int values`() = runTest {
+    @Serializable data class TestData(val value1: Int?, val value2: Int?)
+    val nullableInts = Arb.int().orNull()
+    checkAll(nullableInts, nullableInts) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with extreme Int values`() {
-    @Serializable data class TestData(val max: Int, val min: Int)
-    val struct = encodeToStruct(TestData(max = Int.MAX_VALUE, min = Int.MIN_VALUE))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(max = Int.MAX_VALUE, min = Int.MIN_VALUE))
-  }
-
-  @Test
-  fun `decodeFromStruct() can decode a Struct with Double values`() {
+  fun `decodeFromStruct() can decode a Struct with Double values`() = runTest {
     @Serializable data class TestData(val value1: Double, val value2: Double)
-    val struct = encodeToStruct(TestData(value1 = 123.45, value2 = -456.78))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(value1 = 123.45, value2 = -456.78))
+    val doubles = Arb.double()
+    checkAll(doubles, doubles) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with _nullable_ Double values`() {
-    @Serializable data class TestData(val isNull: Double?, val isNotNull: Double?)
-    val struct = encodeToStruct(TestData(isNull = null, isNotNull = 987.654))
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(isNull = null, isNotNull = 987.654))
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Double values`() = runTest {
+    @Serializable data class TestData(val value1: Double?, val value2: Double?)
+    val nullableDoubles = Arb.double().orNull()
+    checkAll(nullableDoubles, nullableDoubles) { value1, value2 ->
+      val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with extreme Double values`() {
-    @Serializable
-    data class TestData(
-      val min: Double,
-      val max: Double,
-      val positiveInfinity: Double,
-      val negativeInfinity: Double,
-      val nan: Double
-    )
-    val struct =
-      encodeToStruct(
-        TestData(
-          min = Double.MIN_VALUE,
-          max = Double.MAX_VALUE,
-          positiveInfinity = Double.POSITIVE_INFINITY,
-          negativeInfinity = Double.NEGATIVE_INFINITY,
-          nan = Double.NaN
-        )
-      )
-
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(
-        TestData(
-          min = Double.MIN_VALUE,
-          max = Double.MAX_VALUE,
-          positiveInfinity = Double.POSITIVE_INFINITY,
-          negativeInfinity = Double.NEGATIVE_INFINITY,
-          nan = Double.NaN
-        )
-      )
-  }
-
-  @Test
-  fun `decodeFromStruct() can decode a Struct with nested Struct values`() {
+  fun `decodeFromStruct() can decode a Struct with nested Struct values`() = runTest {
     @Serializable data class TestDataA(val base: String)
     @Serializable data class TestDataB(val dataA: TestDataA)
     @Serializable data class TestDataC(val dataB: TestDataB)
     @Serializable data class TestDataD(val dataC: TestDataC)
+    val arb: Arb<TestDataD> = arbitrary {
+      TestDataD(TestDataC(TestDataB(TestDataA(Arb.string().bind()))))
+    }
 
-    val struct = encodeToStruct(TestDataD(TestDataC(TestDataB(TestDataA("hello")))))
-
-    val decodedTestData = decodeFromStruct<TestDataD>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestDataD(TestDataC(TestDataB(TestDataA("hello")))))
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestDataD>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with nested _nullable_ Struct values`() {
+  fun `decodeFromStruct() can decode a Struct with nested _nullable_ Struct values`() = runTest {
     @Serializable data class TestDataA(val base: String)
-    @Serializable data class TestDataB(val dataANull: TestDataA?, val dataANotNull: TestDataA?)
-    @Serializable data class TestDataC(val dataBNull: TestDataB?, val dataBNotNull: TestDataB?)
-    @Serializable data class TestDataD(val dataCNull: TestDataC?, val dataCNotNull: TestDataC?)
+    @Serializable data class TestDataB(val child1: TestDataA?, val child2: TestDataA?)
+    @Serializable data class TestDataC(val child1: TestDataB?, val child2: TestDataB?)
+    @Serializable data class TestDataD(val child1: TestDataC?, val child2: TestDataC?)
+    val arbA: Arb<TestDataA> = arbitrary { TestDataA(Arb.string().bind()) }
+    val arbB: Arb<TestDataB> = arbitrary { arbA.orNull(0.2).run { TestDataB(bind(), bind()) } }
+    val arbC: Arb<TestDataC> = arbitrary { arbB.orNull(0.2).run { TestDataC(bind(), bind()) } }
+    val arbD: Arb<TestDataD> = arbitrary { arbC.orNull(0.2).run { TestDataD(bind(), bind()) } }
 
-    val struct =
-      encodeToStruct(TestDataD(null, TestDataC(null, TestDataB(null, TestDataA("hello")))))
-
-    val decodedTestData = decodeFromStruct<TestDataD>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(TestDataD(null, TestDataC(null, TestDataB(null, TestDataA("hello")))))
+    checkAll(arbD) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestDataD>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with nullable ListValue values`() {
-    @Serializable data class TestData(val nullList: List<String>?, val nonNullList: List<String>?)
-    val struct = encodeToStruct(TestData(nullList = null, nonNullList = listOf("a", "b")))
+  fun `decodeFromStruct() can decode a Struct with nullable ListValue values`() = runTest {
+    @Serializable data class TestData(val value1: List<String>?, val value2: List<String>?)
+    val arb: Arb<TestData> = arbitrary {
+      Arb.list(Arb.string()).orNull(0.33).run { TestData(bind(), bind()) }
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(nullList = null, nonNullList = listOf("a", "b")))
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of String`() {
-    @Serializable data class TestData(val list: List<String>)
-    val struct = encodeToStruct(TestData(listOf("elem1", "elem2")))
+  fun `decodeFromStruct() can decode a ListValue of String`() = runTest {
+    @Serializable data class TestData(val value1: List<String>, val value2: List<String>)
+    val arb: Arb<TestData> = arbitrary { Arb.list(Arb.string()).run { TestData(bind(), bind()) } }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(listOf("elem1", "elem2")))
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of _nullable_ String`() {
-    @Serializable data class TestData(val list: List<String?>)
-    val struct = encodeToStruct(TestData(listOf(null, "aaa", null, "bbb")))
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ String`() = runTest {
+    @Serializable data class TestData(val value1: List<String?>, val value2: List<String?>)
+    val arb: Arb<TestData> = arbitrary {
+      Arb.list(Arb.string().orNull(0.33)).run { TestData(bind(), bind()) }
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(listOf(null, "aaa", null, "bbb")))
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of Boolean`() {
-    @Serializable data class TestData(val list: List<Boolean>)
-    val struct = encodeToStruct(TestData(listOf(true, false, true, false)))
+  fun `decodeFromStruct() can decode a ListValue of Boolean`() = runTest {
+    @Serializable data class TestData(val value1: List<Boolean>, val value2: List<Boolean>)
+    val arb: Arb<TestData> = arbitrary { Arb.list(Arb.boolean()).run { TestData(bind(), bind()) } }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(listOf(true, false, true, false)))
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of _nullable_ Boolean`() {
-    @Serializable data class TestData(val list: List<Boolean?>)
-    val struct = encodeToStruct(TestData(listOf(null, true, false, null, true, false)))
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Boolean`() = runTest {
+    @Serializable data class TestData(val value1: List<Boolean?>, val value2: List<Boolean?>)
+    val arb: Arb<TestData> = arbitrary {
+      Arb.list(Arb.boolean().orNull(0.33)).run { TestData(bind(), bind()) }
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(listOf(null, true, false, null, true, false)))
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of Int`() {
-    @Serializable data class TestData(val list: List<Int>)
-    val struct = encodeToStruct(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE)))
+  fun `decodeFromStruct() can decode a ListValue of Int`() = runTest {
+    @Serializable data class TestData(val value1: List<Int>, val value2: List<Int>)
+    val arb: Arb<TestData> = arbitrary { Arb.list(Arb.int()).run { TestData(bind(), bind()) } }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE)))
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of _nullable_ Int`() {
-    @Serializable data class TestData(val list: List<Int?>)
-    val struct = encodeToStruct(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE, null)))
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Int`() = runTest {
+    @Serializable data class TestData(val value1: List<Int?>, val value2: List<Int?>)
+    val arb: Arb<TestData> = arbitrary {
+      Arb.list(Arb.int().orNull(0.33)).run { TestData(bind(), bind()) }
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(TestData(listOf(1, 0, -1, Int.MAX_VALUE, Int.MIN_VALUE, null)))
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of Double`() {
-    @Serializable data class TestData(val list: List<Double>)
-    val struct =
-      encodeToStruct(
-        TestData(
-          listOf(
-            1.0,
-            0.0,
-            -0.0,
-            -1.0,
-            Double.MAX_VALUE,
-            Double.MIN_VALUE,
-            Double.NaN,
-            Double.POSITIVE_INFINITY,
-            Double.NEGATIVE_INFINITY
-          )
-        )
-      )
+  fun `decodeFromStruct() can decode a ListValue of Double`() = runTest {
+    @Serializable data class TestData(val value1: List<Double>, val value2: List<Double>)
+    val arb: Arb<TestData> = arbitrary { Arb.list(Arb.double()).run { TestData(bind(), bind()) } }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(
-        TestData(
-          listOf(
-            1.0,
-            0.0,
-            -0.0,
-            -1.0,
-            Double.MAX_VALUE,
-            Double.MIN_VALUE,
-            Double.NaN,
-            Double.POSITIVE_INFINITY,
-            Double.NEGATIVE_INFINITY
-          )
-        )
-      )
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of _nullable_ Double`() {
-    @Serializable data class TestData(val list: List<Double?>)
-    val struct =
-      encodeToStruct(
-        TestData(
-          listOf(
-            1.0,
-            0.0,
-            -0.0,
-            -1.0,
-            Double.MAX_VALUE,
-            Double.MIN_VALUE,
-            Double.NaN,
-            Double.POSITIVE_INFINITY,
-            Double.NEGATIVE_INFINITY,
-            null
-          )
-        )
-      )
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Double`() = runTest {
+    @Serializable data class TestData(val value1: List<Double?>, val value2: List<Double?>)
+    val arb: Arb<TestData> = arbitrary {
+      Arb.list(Arb.double().orNull(0.33)).run { TestData(bind(), bind()) }
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(
-        TestData(
-          listOf(
-            1.0,
-            0.0,
-            -0.0,
-            -1.0,
-            Double.MAX_VALUE,
-            Double.MIN_VALUE,
-            Double.NaN,
-            Double.POSITIVE_INFINITY,
-            Double.NEGATIVE_INFINITY,
-            null
-          )
-        )
-      )
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of Struct`() {
+  fun `decodeFromStruct() can decode a ListValue of Struct`() = runTest {
     @Serializable data class TestDataA(val s1: String, val s2: String?)
-    @Serializable data class TestData(val list: List<TestDataA>)
-    val struct = encodeToStruct(TestData(listOf(TestDataA("aa", null), TestDataA("bb", null))))
+    @Serializable data class TestDataB(val value1: List<TestDataA>, val value2: List<TestDataA>)
+    val arbA: Arb<TestDataA> = arbitrary {
+      val value1 = Arb.string().bind()
+      val value2 = Arb.string().orNull(0.33).bind()
+      TestDataA(value1, value2)
+    }
+    val arb: Arb<TestDataB> = arbitrary { Arb.list(arbA).run { TestDataB(bind(), bind()) } }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(TestData(listOf(TestDataA("aa", null), TestDataA("bb", null))))
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestDataB>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of _nullable_ Struct`() {
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ Struct`() = runTest {
     @Serializable data class TestDataA(val s1: String, val s2: String?)
-    @Serializable data class TestData(val list: List<TestDataA?>)
-    val struct =
-      encodeToStruct(TestData(listOf(null, TestDataA("aa", null), TestDataA("bb", null), null)))
+    @Serializable data class TestDataB(val value1: List<TestDataA?>, val value2: List<TestDataA?>)
+    val arbA: Arb<TestDataA> = arbitrary {
+      val value1 = Arb.string().bind()
+      val value2 = Arb.string().orNull(0.33).bind()
+      TestDataA(value1, value2)
+    }
+    val arb: Arb<TestDataB> = arbitrary {
+      Arb.list(arbA.orNull(0.33)).run { TestDataB(bind(), bind()) }
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(TestData(listOf(null, TestDataA("aa", null), TestDataA("bb", null), null)))
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestDataB>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of ListValue`() {
-    @Serializable data class TestData(val list: List<List<Int>>)
-    val struct = encodeToStruct(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6))))
+  fun `decodeFromStruct() can decode a ListValue of ListValue`() = runTest {
+    @Serializable data class TestData(val value1: List<List<Int>>, val value2: List<List<Int>>)
+    val arb: Arb<TestData> = arbitrary {
+      Arb.list(Arb.list(Arb.int())).run { TestData(bind(), bind()) }
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6))))
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue of _nullable_ ListValue`() {
-    @Serializable data class TestData(val list: List<List<Int>?>)
-    val struct = encodeToStruct(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6), null)))
+  fun `decodeFromStruct() can decode a ListValue of _nullable_ ListValue`() = runTest {
+    @Serializable data class TestData(val value1: List<List<Int?>>, val value2: List<List<Int>?>)
+    val arb: Arb<TestData> = arbitrary {
+      val value1 = Arb.list(Arb.list(Arb.int().orNull(0.33))).bind()
+      val value2 = Arb.list(Arb.list(Arb.int()).orNull(0.33)).bind()
+      TestData(value1, value2)
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData).isEqualTo(TestData(listOf(listOf(1, 2, 3), listOf(4, 5, 6), null)))
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with Inline values`() {
+  fun `decodeFromStruct() can decode a Struct with Inline values`() = runTest {
     @Serializable data class TestData(val s: TestStringValueClass, val i: TestIntValueClass)
-    val struct = encodeToStruct(TestData(TestStringValueClass("TestString"), TestIntValueClass(42)))
+    val arb: Arb<TestData> = arbitrary {
+      TestData(Arb.testStringValueClass().bind(), Arb.testIntValueClass().bind())
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(TestData(TestStringValueClass("TestString"), TestIntValueClass(42)))
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a Struct with _nullable_ Inline values`() {
+  fun `decodeFromStruct() can decode a Struct with _nullable_ Inline values`() = runTest {
     @Serializable
     data class TestData(
-      val s: TestStringValueClass?,
-      val snull: TestStringValueClass?,
-      val i: TestIntValueClass?,
-      val inull: TestIntValueClass?
+      val string: TestStringValueClass?,
+      val nullString: TestStringValueClass?,
+      val int: TestIntValueClass?,
+      val nullInt: TestIntValueClass?
     )
-    val struct =
-      encodeToStruct(
-        TestData(TestStringValueClass("TestString"), null, TestIntValueClass(42), null)
+    val arb: Arb<TestData> = arbitrary {
+      TestData(
+        Arb.testStringValueClass().bind(),
+        Arb.testStringValueClass().orNull(0.33).bind(),
+        Arb.testIntValueClass().bind(),
+        Arb.testIntValueClass().orNull(0.33).bind(),
       )
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(TestData(TestStringValueClass("TestString"), null, TestIntValueClass(42), null))
+    checkAll(arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue with Inline values`() {
+  fun `decodeFromStruct() can decode a ListValue with Inline values`() = runTest {
     @Serializable
     data class TestData(val s: List<TestStringValueClass>, val i: List<TestIntValueClass>)
-    val struct =
-      encodeToStruct(
-        TestData(
-          listOf(TestStringValueClass("TestString1"), TestStringValueClass("TestString2")),
-          listOf(TestIntValueClass(42), TestIntValueClass(43))
-        )
+    val arb: Arb<TestData> = arbitrary {
+      TestData(
+        Arb.list(Arb.testStringValueClass()).bind(),
+        Arb.list(Arb.testIntValueClass()).bind(),
       )
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(
-        TestData(
-          listOf(TestStringValueClass("TestString1"), TestStringValueClass("TestString2")),
-          listOf(TestIntValueClass(42), TestIntValueClass(43))
-        )
-      )
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
-  fun `decodeFromStruct() can decode a ListValue with _nullable_ Inline values`() {
+  fun `decodeFromStruct() can decode a ListValue with _nullable_ Inline values`() = runTest {
     @Serializable
     data class TestData(val s: List<TestStringValueClass?>, val i: List<TestIntValueClass?>)
-    val struct =
-      encodeToStruct(
-        TestData(
-          listOf(TestStringValueClass("TestString1"), null, TestStringValueClass("TestString2")),
-          listOf(TestIntValueClass(42), null, TestIntValueClass(43))
-        )
+    val arb: Arb<TestData> = arbitrary {
+      TestData(
+        Arb.list(Arb.testStringValueClass().orNull(0.33)).bind(),
+        Arb.list(Arb.testIntValueClass().orNull(0.33)).bind(),
       )
+    }
 
-    val decodedTestData = decodeFromStruct<TestData>(struct)
-
-    assertThat(decodedTestData)
-      .isEqualTo(
-        TestData(
-          listOf(TestStringValueClass("TestString1"), null, TestStringValueClass("TestString2")),
-          listOf(TestIntValueClass(42), null, TestIntValueClass(43))
-        )
-      )
+    checkAll(iterations = 20, arb) { value ->
+      val struct = encodeToStruct(value)
+      val decodedTestData = decodeFromStruct<TestData>(struct)
+      decodedTestData shouldBe value
+    }
   }
 
   @Test
@@ -667,18 +619,18 @@ class ProtoStructDecoderUnitTest {
     )
   }
 
-  private enum class TestEnum {
-    A,
-    B,
-    C,
-    D
-  }
-
   @Serializable @JvmInline private value class TestStringValueClass(val a: String)
 
   @Serializable @JvmInline private value class TestIntValueClass(val a: Int)
 
-  @Serializable @JvmInline private value class TestByteValueClass(val a: Byte)
+  private companion object {
+    fun Arb.Companion.testStringValueClass(): Arb<TestStringValueClass> = arbitrary {
+      TestStringValueClass(Arb.string().bind())
+    }
+    fun Arb.Companion.testIntValueClass(): Arb<TestIntValueClass> = arbitrary {
+      TestIntValueClass(Arb.int().bind())
+    }
+  }
 
   // TODO: Add tests for decoding to objects with unsupported field types (e.g. Byte, Char) and
   // list elements of unsupported field types (e.g. Byte, Char).
@@ -704,35 +656,12 @@ private inline fun <reified T> assertDecodeFromStructThrowsIncorrectKindCase(
   val exception = assertThrows(SerializationException::class.java) { decodeFromStruct<T>(struct) }
   // The error message is expected to look something like this:
   // "expected NUMBER_VALUE, but got STRUCT_VALUE"
-  assertThat(exception).hasMessageThat().ignoringCase().contains("expected $expectedKind")
-  assertThat(exception).hasMessageThat().ignoringCase().contains("got $actualKind")
-  assertThat(exception).hasMessageThat().ignoringCase().contains("($actualValue)")
-  if (path !== null) {
-    assertThat(exception).hasMessageThat().ignoringCase().contains("decoding \"$path\"")
-  }
-}
-
-/**
- * Asserts that `decodeFromStruct<T>` throws [SerializationException], with a message that indicates
- * that the type `T` being decoded is not supported.
- *
- * @param expectedTypeInMessage The type that the exception's message should indicate is not
- * supported; if not specified, use `T`. Note that the only case where this argument's value should
- * be anything _other_ than `T` is for _value classes_ that are mapped to a primitive type.
- */
-private inline fun <reified T : Any> assertThrowsNotSupported(
-  expectedTypeInMessage: KClass<*> = T::class
-) {
-  val exception =
-    assertThrows(SerializationException::class.java) {
-      decodeFromStruct<T>(Struct.getDefaultInstance())
+  assertSoftly {
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "expected $expectedKind"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "got $actualKind"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "($actualValue)"
+    if (path !== null) {
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "decoding \"$path\""
     }
-  assertThat(exception)
-    .hasMessageThat()
-    .containsMatch(
-      Pattern.compile(
-        "decoding.*${Pattern.quote(expectedTypeInMessage.qualifiedName!!)}.*not supported",
-        Pattern.CASE_INSENSITIVE
-      )
-    )
+  }
 }
