@@ -36,6 +36,7 @@ import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Test
 
 @Serializable internal data class MountainColors(val name: String, val colors: List<String>)
@@ -330,7 +331,7 @@ internal class UnarySnapshotTests {
           }
 
         callPart.functionCall.args shouldNotBe null
-        callPart.functionCall.args?.get("current") shouldBe "true"
+        callPart.functionCall.args?.get("current") shouldBe JsonPrimitive(true)
       }
     }
 
