@@ -45,6 +45,8 @@ import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
 
@@ -386,6 +388,10 @@ internal class UnarySnapshotTests {
           }
 
         callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
+        callPart.functionCall.args["testObject"]!!
+          .jsonObject["testProperty"]!!
+          .jsonPrimitive
+          .content shouldBe "string property"
       }
     }
 
