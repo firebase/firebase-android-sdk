@@ -214,10 +214,9 @@ object SerializationTestData {
    * [Unit] to be empty. This may be useful if testing an encoder/decoder that does not support
    * [kotlinx.serialization.descriptors.StructureKind.OBJECT] in lists.
    */
-  fun AllTheTypes.withEmptyUnitLists(): SerializationTestData.AllTheTypes =
+  fun AllTheTypes.withEmptyListOfUnitRecursive(): AllTheTypes =
     copy(
       listOfUnit = emptyList(),
-      listOfNullableUnit = emptyList(),
-      nested = nested?.withEmptyUnitLists()
+      nested = nested?.withEmptyListOfUnitRecursive(),
     )
 }
