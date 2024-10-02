@@ -16,8 +16,15 @@
 
 package com.google.firebase.dataconnect
 
-import kotlin.math.PI
-import kotlin.math.abs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.*
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.byte
+import io.kotest.property.arbitrary.char
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.orNull
+import io.kotest.property.arbitrary.string
 import kotlinx.serialization.Serializable
 
 object SerializationTestData {
@@ -26,32 +33,25 @@ object SerializationTestData {
     A,
     B,
     C,
-    D,
+    D
   }
 
   @Serializable @JvmInline value class TestStringValueClass(val a: String)
 
   @Serializable @JvmInline value class TestIntValueClass(val a: Int)
 
-  @Serializable
-  data class TestData1(val s: String, val i: Int) {
-    companion object {
-      fun newInstance(seed: String = "abcdef01234567890"): TestData1 =
-        seed.run { TestData1(s = seededString("s"), i = seededInt("i")) }
-    }
-  }
+  @Serializable data class TestData1(val s: String, val i: Int)
 
-  @Serializable
-  data class TestData2(val td: TestData1, val ntd: TestData1?, val noll: TestData1?) {
-    companion object {
-      fun newInstance(seed: String = "abcdef01234567890"): TestData2 =
-        TestData2(
-          td = TestData1.newInstance(seed + "td"),
-          ntd = TestData1.newInstance(seed + "ntd"),
-          noll = null
-        )
-    }
-  }
+  fun Arb.Companion.serializationTestData1(
+    s: Arb<String> = Arb.string(),
+    i: Arb<Int> = Arb.int()
+  ): Arb<TestData1> = arbitrary { TestData1(s.bind(), i.bind()) }
+
+  @Serializable data class TestData2(val td: TestData1, val ntd: TestData1?)
+
+  fun Arb.Companion.serializationTestData2(
+    testData1: Arb<TestData1> = Arb.serializationTestData1()
+  ): Arb<TestData2> = arbitrary { TestData2(testData1.bind(), testData1.orNull(0.33).bind()) }
 
   @Serializable
   data class AllTheTypes(
@@ -59,23 +59,13 @@ object SerializationTestData {
     val byte: Byte,
     val char: Char,
     val double: Double,
-    val doubleMinValue: Double,
-    val doubleMaxValue: Double,
-    val doubleNegativeInfinity: Double,
-    val doublePositiveInfinity: Double,
-    val doubleNaN: Double,
     val enum: TestEnum,
     val float: Float,
-    val floatMinValue: Float,
-    val floatMaxValue: Float,
-    val floatNegativeInfinity: Float,
-    val floatPositiveInfinity: Float,
-    val floatNaN: Float,
     val inlineString: TestStringValueClass,
     val inlineInt: TestIntValueClass,
     val int: Int,
     val long: Long,
-    val noll: Unit?,
+    val unit: Unit,
     val short: Short,
     val string: String,
     val testData: TestData2,
@@ -92,19 +82,6 @@ object SerializationTestData {
     val shortList: List<Short>,
     val stringList: List<String>,
     val testDataList: List<TestData2>,
-    val booleanNull: Boolean?,
-    val byteNull: Byte?,
-    val charNull: Char?,
-    val doubleNull: Double?,
-    val enumNull: TestEnum?,
-    val floatNull: Float?,
-    val inlineStringNull: TestStringValueClass?,
-    val inlineIntNull: TestIntValueClass?,
-    val intNull: Int?,
-    val longNull: Long?,
-    val shortNull: Short?,
-    val stringNull: String?,
-    val testDataNull: TestData2?,
     val booleanNullable: Boolean?,
     val byteNullable: Byte?,
     val charNullable: Char?,
@@ -132,157 +109,115 @@ object SerializationTestData {
     val stringNullableList: List<String?>,
     val testDataNullableList: List<TestData2?>,
     val nested: AllTheTypes?,
-    val unit: Unit,
-    val nullUnit: Unit?,
     val nullableUnit: Unit?,
     val listOfUnit: List<Unit>,
     val listOfNullableUnit: List<Unit?>,
-  ) {
-    companion object {
-
-      fun newInstance(seed: String = "abcdef01234567890", nesting: Int = 1): AllTheTypes =
-        seed.run {
-          AllTheTypes(
-            boolean = seededBoolean("plain"),
-            byte = seededByte("plain"),
-            char = seededChar("plain"),
-            double = seededDouble("plain"),
-            doubleMinValue = Double.MIN_VALUE,
-            doubleMaxValue = Double.MAX_VALUE,
-            doubleNegativeInfinity = Double.POSITIVE_INFINITY,
-            doublePositiveInfinity = Double.NEGATIVE_INFINITY,
-            doubleNaN = Double.NaN,
-            enum = seededEnum("plain"),
-            float = seededFloat("plain"),
-            floatMinValue = Float.MIN_VALUE,
-            floatMaxValue = Float.MAX_VALUE,
-            floatNegativeInfinity = Float.POSITIVE_INFINITY,
-            floatPositiveInfinity = Float.NEGATIVE_INFINITY,
-            floatNaN = Float.NaN,
-            inlineString = TestStringValueClass(seededString("value")),
-            inlineInt = TestIntValueClass(seededInt("value")),
-            int = seededInt("plain"),
-            long = seededLong("plain"),
-            noll = null,
-            short = seededShort("plain"),
-            string = seededString("plain"),
-            testData = TestData2.newInstance(seededString("plain")),
-            booleanList = listOf(seededBoolean("list0"), seededBoolean("list1")),
-            byteList = listOf(seededByte("list0"), seededByte("list1")),
-            charList = listOf(seededChar("list0"), seededChar("list1")),
-            doubleList = listOf(seededDouble("list0"), seededDouble("list1")),
-            enumList = listOf(seededEnum("list0"), seededEnum("list1")),
-            floatList = listOf(seededFloat("list0"), seededFloat("list1")),
-            inlineStringList =
-              listOf(
-                TestStringValueClass(seededString("list0")),
-                TestStringValueClass(seededString("list1"))
-              ),
-            inlineIntList =
-              listOf(TestIntValueClass(seededInt("list0")), TestIntValueClass(seededInt("list1"))),
-            intList = listOf(seededInt("list0"), seededInt("list1")),
-            longList = listOf(seededLong("list0"), seededLong("list1")),
-            shortList = listOf(seededShort("list0"), seededShort("list1")),
-            stringList = listOf(seededString("list0"), seededString("list1")),
-            testDataList =
-              listOf(
-                TestData2.newInstance(seededString("list0")),
-                TestData2.newInstance(seededString("list1"))
-              ),
-            booleanNull = null,
-            byteNull = null,
-            charNull = null,
-            doubleNull = null,
-            enumNull = null,
-            floatNull = null,
-            inlineStringNull = null,
-            inlineIntNull = null,
-            intNull = null,
-            longNull = null,
-            shortNull = null,
-            stringNull = null,
-            testDataNull = null,
-            booleanNullable = seededBoolean("nullable"),
-            byteNullable = seededByte("nullable"),
-            charNullable = seededChar("nullable"),
-            doubleNullable = seededDouble("nullable"),
-            enumNullable = seededEnum("nullable"),
-            floatNullable = seededFloat("nullable"),
-            inlineStringNullable = TestStringValueClass(seededString("nullable")),
-            inlineIntNullable = TestIntValueClass(seededInt("nullable")),
-            intNullable = seededInt("nullable"),
-            longNullable = seededLong("nullable"),
-            shortNullable = seededShort("nullable"),
-            stringNullable = seededString("nullable"),
-            testDataNullable = TestData2.newInstance(seededString("nullable")),
-            booleanNullableList = listOf(seededBoolean("nlist0"), seededBoolean("nlist1"), null),
-            byteNullableList = listOf(seededByte("nlist0"), seededByte("nlist1"), null),
-            charNullableList = listOf(seededChar("nlist0"), seededChar("nlist1"), null),
-            doubleNullableList = listOf(seededDouble("nlist0"), seededDouble("nlist1"), null),
-            enumNullableList = listOf(seededEnum("nlist0"), seededEnum("nlist1"), null),
-            floatNullableList = listOf(seededFloat("nlist0"), seededFloat("nlist1"), null),
-            inlineStringNullableList =
-              listOf(
-                TestStringValueClass(seededString("nlist0")),
-                TestStringValueClass(seededString("nlist1")),
-                null
-              ),
-            inlineIntNullableList =
-              listOf(
-                TestIntValueClass(seededInt("nlist0")),
-                TestIntValueClass(seededInt("nlist1")),
-                null
-              ),
-            intNullableList = listOf(seededInt("nlist0"), seededInt("nlist1"), null),
-            longNullableList = listOf(seededLong("nlist0"), seededLong("nlist1"), null),
-            shortNullableList = listOf(seededShort("nlist0"), seededShort("nlist1"), null),
-            stringNullableList = listOf(seededString("nlist0"), seededString("nlist1"), null),
-            testDataNullableList =
-              listOf(
-                TestData2.newInstance(seededString("nlist0")),
-                TestData2.newInstance(seededString("nlist1"))
-              ),
-            nested = if (nesting <= 0) null else newInstance("${seed}nest${nesting}", nesting - 1),
-            unit = Unit,
-            nullUnit = null,
-            nullableUnit = Unit,
-            listOfUnit = listOf(Unit, Unit),
-            listOfNullableUnit = listOf(Unit, null, Unit, null),
-          )
-        }
-    }
-  }
-}
-
-/**
- * Creates and returns a new instance with the exact same property values but with all lists of
- * [Unit] to be empty. This may be useful if testing an encoder/decoder that does not support
- * [kotlinx.serialization.descriptors.StructureKind.OBJECT] in lists.
- */
-fun SerializationTestData.AllTheTypes.withEmptyUnitLists(): SerializationTestData.AllTheTypes =
-  copy(
-    listOfUnit = emptyList(),
-    listOfNullableUnit = emptyList(),
-    nested = nested?.withEmptyUnitLists()
   )
 
-private fun String.seededBoolean(id: String): Boolean = seededInt(id) % 2 == 0
+  fun Arb.Companion.serializationTestDataAllTypes(
+    boolean: Arb<Boolean> = Arb.boolean(),
+    byte: Arb<Byte> = Arb.byte(),
+    char: Arb<Char> = Arb.char(),
+    short: Arb<Short> = Arb.short(),
+    int: Arb<Int> = Arb.int(),
+    long: Arb<Long> = Arb.long(),
+    float: Arb<Float> = Arb.float(),
+    double: Arb<Double> = Arb.double(),
+    string: Arb<String> = Arb.string(),
+    enum: Arb<TestEnum> = Arb.enum<TestEnum>(),
+    testData2: Arb<TestData2> = Arb.serializationTestData2(),
+    listSize: Arb<IntRange> = Arb.intRange(0..20),
+  ): Arb<AllTheTypes> = arbitrary {
+    val inlineString: Arb<TestStringValueClass> = arbitrary { TestStringValueClass(string.bind()) }
+    val inlineInt: Arb<TestIntValueClass> = arbitrary { TestIntValueClass(int.bind()) }
+    val nullProbability = 0.33
 
-private fun String.seededByte(id: String): Byte = seededInt(id).toByte()
+    AllTheTypes(
+      boolean = boolean.bind(),
+      byte = byte.bind(),
+      char = char.bind(),
+      double = double.bind(),
+      enum = enum.bind(),
+      float = float.bind(),
+      inlineString = inlineString.bind(),
+      inlineInt = inlineInt.bind(),
+      int = int.bind(),
+      long = long.bind(),
+      unit = Unit,
+      short = short.bind(),
+      string = string.bind(),
+      testData = testData2.bind(),
+      booleanList = Arb.list(boolean, listSize).bind(),
+      byteList = Arb.list(byte, listSize).bind(),
+      charList = Arb.list(char, listSize).bind(),
+      doubleList = Arb.list(double, listSize).bind(),
+      enumList = Arb.list(enum, listSize).bind(),
+      floatList = Arb.list(float, listSize).bind(),
+      inlineStringList = Arb.list(inlineString, listSize).bind(),
+      inlineIntList = Arb.list(inlineInt, listSize).bind(),
+      intList = Arb.list(int, listSize).bind(),
+      longList = Arb.list(long, listSize).bind(),
+      shortList = Arb.list(short, listSize).bind(),
+      stringList = Arb.list(string, listSize).bind(),
+      testDataList = Arb.list(testData2, listSize).bind(),
+      booleanNullable = boolean.orNull(nullProbability).bind(),
+      byteNullable = byte.orNull(nullProbability).bind(),
+      charNullable = char.orNull(nullProbability).bind(),
+      doubleNullable = double.orNull(nullProbability).bind(),
+      enumNullable = enum.orNull(nullProbability).bind(),
+      floatNullable = float.orNull(nullProbability).bind(),
+      inlineStringNullable = inlineString.orNull(nullProbability).bind(),
+      inlineIntNullable = inlineInt.orNull(nullProbability).bind(),
+      intNullable = int.orNull(nullProbability).bind(),
+      longNullable = long.orNull(nullProbability).bind(),
+      shortNullable = short.orNull(nullProbability).bind(),
+      stringNullable = string.orNull(nullProbability).bind(),
+      testDataNullable = testData2.orNull(nullProbability).bind(),
+      booleanNullableList = Arb.list(boolean.orNull(nullProbability), listSize).bind(),
+      byteNullableList = Arb.list(byte.orNull(nullProbability), listSize).bind(),
+      charNullableList = Arb.list(char.orNull(nullProbability), listSize).bind(),
+      doubleNullableList = Arb.list(double.orNull(nullProbability), listSize).bind(),
+      enumNullableList = Arb.list(enum.orNull(nullProbability), listSize).bind(),
+      floatNullableList = Arb.list(float.orNull(nullProbability), listSize).bind(),
+      inlineStringNullableList = Arb.list(inlineString.orNull(nullProbability), listSize).bind(),
+      inlineIntNullableList = Arb.list(inlineInt.orNull(nullProbability), listSize).bind(),
+      intNullableList = Arb.list(int.orNull(nullProbability), listSize).bind(),
+      longNullableList = Arb.list(long.orNull(nullProbability), listSize).bind(),
+      shortNullableList = Arb.list(short.orNull(nullProbability), listSize).bind(),
+      stringNullableList = Arb.list(string.orNull(nullProbability), listSize).bind(),
+      testDataNullableList = Arb.list(testData2.orNull(nullProbability), listSize).bind(),
+      nested =
+        Arb.serializationTestDataAllTypes(
+            boolean = boolean,
+            byte = byte,
+            char = char,
+            short = short,
+            int = int,
+            long = long,
+            float = float,
+            double = double,
+            string = string,
+            enum = enum,
+            testData2 = testData2,
+            listSize = listSize,
+          )
+          .orNull(nullProbability = 0.15)
+          .bind(),
+      nullableUnit = Arb.constant(Unit).orNull(nullProbability).bind(),
+      listOfUnit = Arb.list(Arb.constant(Unit), listSize).bind(),
+      listOfNullableUnit = Arb.list(Arb.constant(Unit).orNull(nullProbability), listSize).bind(),
+    )
+  }
 
-private fun String.seededChar(id: String): Char = get(abs(id.hashCode()) % length)
-
-private fun String.seededDouble(id: String): Double = seededLong(id).toDouble() / PI
-
-private fun String.seededEnum(id: String): SerializationTestData.TestEnum =
-  SerializationTestData.TestEnum.values().let { it[abs(seededInt(id)) % it.size] }
-
-private fun String.seededFloat(id: String): Float = (seededInt(id).toFloat() / PI.toFloat())
-
-private fun String.seededInt(id: String): Int = (hashCode() * id.hashCode())
-
-private fun String.seededLong(id: String): Long = (hashCode().toLong() * id.hashCode().toLong())
-
-private fun String.seededShort(id: String): Short = seededInt(id).toShort()
-
-private fun String.seededString(id: String): String = "${this}_${id}"
+  /**
+   * Creates and returns a new instance with the exact same property values but with all lists of
+   * [Unit] to be empty. This may be useful if testing an encoder/decoder that does not support
+   * [kotlinx.serialization.descriptors.StructureKind.OBJECT] in lists.
+   */
+  fun AllTheTypes.withEmptyUnitLists(): SerializationTestData.AllTheTypes =
+    copy(
+      listOfUnit = emptyList(),
+      listOfNullableUnit = emptyList(),
+      nested = nested?.withEmptyUnitLists()
+    )
+}
