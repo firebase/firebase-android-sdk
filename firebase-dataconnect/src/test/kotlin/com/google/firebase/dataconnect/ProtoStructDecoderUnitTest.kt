@@ -23,6 +23,7 @@ import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
@@ -30,7 +31,7 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.orNull
@@ -39,7 +40,6 @@ import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import org.junit.Assert.assertThrows
 import org.junit.Ignore
 import org.junit.Test
 
@@ -47,7 +47,8 @@ class ProtoStructDecoderUnitTest {
 
   @Test
   fun `decodeFromStruct() can encode and decode complex objects`() = runTest {
-    checkAll(iterations = 20, Arb.string().filterNot { it.hashCode() == 0 }) { seed ->
+    val seeds = Arb.string().filter { it.hashCode() != 0 }
+    checkAll(iterations = 20, seeds) { seed ->
       val obj = SerializationTestData.AllTheTypes.newInstance(seed).withEmptyUnitLists()
       val struct = encodeToStruct(obj)
       val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
@@ -653,7 +654,7 @@ private inline fun <reified T> assertDecodeFromStructThrowsIncorrectKindCase(
   struct: Struct = Struct.getDefaultInstance(),
   path: String? = null
 ) {
-  val exception = assertThrows(SerializationException::class.java) { decodeFromStruct<T>(struct) }
+  val exception = shouldThrow<SerializationException> { decodeFromStruct<T>(struct) }
   // The error message is expected to look something like this:
   // "expected NUMBER_VALUE, but got STRUCT_VALUE"
   assertSoftly {
