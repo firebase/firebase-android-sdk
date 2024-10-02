@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Breaking Change: refactored enum classes to be normal classes (#TODO). 
 
 
 # 16.0.0-beta05
