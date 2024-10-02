@@ -15,29 +15,3 @@
  */
 
 package com.google.firebase.vertexai.type
-
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import org.json.JSONObject
-
-/**
- * Represents and passes the type information for an automated function call.
- *
- * @property name: the enum name of the type
- * @property parse: the deserialization function
- * @property T: the type of the object that this maps to in code.
- */
-class FunctionType<T>(val name: String, val parse: (String?) -> T?) {
-  companion object {
-    val STRING = FunctionType<String>("STRING") { it }
-    val INTEGER = FunctionType<Int>("INTEGER") { it?.toIntOrNull() }
-    val LONG = FunctionType<Long>("INTEGER") { it?.toLongOrNull() }
-    val NUMBER = FunctionType<Double>("NUMBER") { it?.toDoubleOrNull() }
-    val BOOLEAN = FunctionType<Boolean>("BOOLEAN") { it?.toBoolean() }
-    val ARRAY =
-      FunctionType<List<String>>("ARRAY") { it ->
-        it?.let { Json.parseToJsonElement(it).jsonArray.map { element -> element.toString() } }
-      }
-    val OBJECT = FunctionType<JSONObject>("OBJECT") { it?.let { JSONObject(it) } }
-  }
-}

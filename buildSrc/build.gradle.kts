@@ -14,7 +14,7 @@
 
 plugins {
     id("com.ncorti.ktfmt.gradle") version "0.11.0"
-    kotlin("plugin.serialization") version "1.8.22"
+    alias(libs.plugins.kotlinx.serialization)
     `kotlin-dsl`
 }
 
@@ -59,8 +59,8 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:8.2.1")
-    implementation("com.android.tools.build:builder-test-api:8.2.1")
+    implementation(libs.android.gradlePlugin.gradle)
+    implementation(libs.android.gradlePlugin.builder.test.api)
 
     testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")

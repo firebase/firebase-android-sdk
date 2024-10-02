@@ -16,6 +16,9 @@
 
 @file:Suppress("UnstableApiUsage")
 
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -42,8 +45,18 @@ android {
   defaultConfig {
     minSdk = 21
     targetSdk = 34
+    consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
+  buildTypes {
+    release {
+      isMinifyEnabled = false
+      proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+      )
+    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -56,6 +69,21 @@ android {
   }
 }
 
+// Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
+// classes, methods, or properties have implicit `public` visibility. This check helps
+// avoid  accidentally leaking elements into the public API, requiring that any public
+// element be explicitly declared as `public`.
+// https://github.com/Kotlin/KEEP/blob/master/proposals/explicit-api-mode.md
+// https://chao2zhang.medium.com/explicit-api-mode-for-kotlin-on-android-b8264fdd76d1
+tasks.withType<KotlinCompile>().all {
+  if (!name.contains("test", ignoreCase = true)) {
+    if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
+      kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
+    }
+  }
+}
+
+
 dependencies {
   val ktorVersion = "2.3.2"
 
@@ -66,7 +94,7 @@ dependencies {
   implementation("io.ktor:ktor-client-logging:$ktorVersion")
   compileOnly("io.ktor:ktor-client-mock:$ktorVersion")
 
-  implementation("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")

@@ -1,0 +1,55 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# A mutation named using a Kotlin keyword.
+mutation do($id: String!, $bar: String)
+    @auth(level: PUBLIC) {
+  foo_insert(data: {id: $id, bar: $bar})
+}
+
+# A query named using a Kotlin keyword.
+query return($id: String!)
+    @auth(level: PUBLIC) {
+  foo(id: $id) {
+    bar
+  }
+}
+
+# A mutation with a variable named using a Kotlin keyword.
+mutation DeleteFoo($is: String!)
+    @auth(level: PUBLIC) {
+  foo_delete(id: $is)
+}
+
+# A query with a variable named using a Kotlin keyword.
+query GetFoosByBar($as: String)
+    @auth(level: PUBLIC) {
+  foos(where: {bar: {eq: $as}}) {
+    id
+  }
+}
+
+# A mutation with fields in the selection set that are Kotlin keywords.
+mutation InsertTwoFoos($id1: String!, $id2: String!, $bar1: String, $bar2: String)
+    @auth(level: PUBLIC) {
+  val: foo_insert(data: {id: $id1, bar: $bar1})
+  var: foo_insert(data: {id: $id2, bar: $bar2})
+}
+
+# A query with fields in the selection set that are Kotlin keywords.
+query GetTwoFoosById($id1: String!, $id2: String!)
+    @auth(level: PUBLIC) {
+  super: foo(id: $id1) { id bar }
+  this: foo(id: $id2) { id bar }
+}

@@ -14,8 +14,6 @@
 
 package com.google.firebase.crashlytics;
 
-import static com.google.firebase.crashlytics.internal.CrashlyticsPreconditions.StrictLevel.ASSERT;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.annotations.concurrent.Background;
@@ -26,8 +24,8 @@ import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
-import com.google.firebase.crashlytics.internal.CrashlyticsPreconditions;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
@@ -69,10 +67,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   }
 
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
-    // TODO(mrober): Make this a build time configuration. Do not release like this.
-    CrashlyticsPreconditions.setStrictLevel(ASSERT); // Kill the process on violation for debugging.
+    CrashlyticsWorkers.setEnforcement(BuildConfig.DEBUG);
 
-    // CrashlyticsPreconditions.checkMainThread();
     long startTime = System.currentTimeMillis();
 
     FirebaseCrashlytics crashlytics =
@@ -86,8 +82,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             container.get(blockingExecutorService));
 
     long duration = System.currentTimeMillis() - startTime;
-    if (duration > 30) {
-      Logger.getLogger().i("Initializing Crashlytics blocked main for " + duration + " ms");
+    if (duration > 16) {
+      Logger.getLogger().d("Initializing Crashlytics blocked main for " + duration + " ms");
     }
 
     return crashlytics;

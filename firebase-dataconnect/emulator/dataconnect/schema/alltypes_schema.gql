@@ -1,0 +1,64 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+type Primitive @table {
+  id: UUID!
+  idFieldNullable: UUID
+  intField: Int!
+  intFieldNullable: Int
+  floatField: Float!
+  floatFieldNullable: Float
+  booleanField: Boolean!
+  booleanFieldNullable: Boolean
+  stringField: String!
+  stringFieldNullable: String
+}
+
+type PrimitiveList @table {
+  id: UUID!
+  idListNullable: [UUID!]
+  idListOfNullable: [UUID]!
+  intList: [Int!]!
+  intListNullable: [Int!]
+  intListOfNullable: [Int]!
+  floatList: [Float!]!
+  floatListNullable: [Float!]
+  floatListOfNullable: [Float]!
+  booleanList: [Boolean!]!
+  booleanListNullable: [Boolean!]
+  booleanListOfNullable: [Boolean]!
+  stringList: [String!]!
+  stringListNullable: [String!]
+  stringListOfNullable: [String]!
+}
+
+type Farm @table {
+  id: String!
+  name: String!
+  farmer: Farmer!
+}
+
+type Animal @table {
+  id: String!
+  farm: Farm!
+  name: String!
+  species: String!
+  age: Int
+}
+
+type Farmer @table {
+  id: String!
+  name: String!
+  parent: Farmer
+}
