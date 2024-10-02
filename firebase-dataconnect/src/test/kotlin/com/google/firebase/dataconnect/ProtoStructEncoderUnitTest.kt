@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:OptIn(ExperimentalSerializationApi::class)
-
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -23,9 +20,20 @@ import com.google.firebase.dataconnect.testutil.shouldBeDefaultInstance
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toListValueProto
 import com.google.protobuf.Struct
 import io.kotest.assertions.throwables.shouldThrow
-import kotlinx.serialization.ExperimentalSerializationApi
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import org.junit.Test
 
@@ -33,27 +41,29 @@ class ProtoStructEncoderUnitTest {
 
   @Test
   fun `encodeToStruct() should throw if a NUMBER_VALUE is produced`() {
-    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(42) }
+    val intValue: Int = Arb.int().next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(intValue) }
     exception.message shouldContainWithNonAbuttingText "NUMBER_VALUE"
   }
 
   @Test
   fun `encodeToStruct() should throw if a BOOL_VALUE is produced`() {
-    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(true) }
+    val booleanValue: Boolean = Arb.boolean().next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(booleanValue) }
     exception.message shouldContainWithNonAbuttingText "BOOL_VALUE"
   }
 
   @Test
   fun `encodeToStruct() should throw if a STRING_VALUE is produced`() {
-    val exception =
-      shouldThrow<IllegalArgumentException> { encodeToStruct("arbitrary string value") }
+    val stringValue: String = Arb.string().next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(stringValue) }
     exception.message shouldContainWithNonAbuttingText "STRING_VALUE"
   }
 
   @Test
   fun `encodeToStruct() should throw if a LIST_VALUE is produced`() {
-    val exception =
-      shouldThrow<IllegalArgumentException> { encodeToStruct(listOf("element1", "element2")) }
+    val listValue: List<String> = Arb.list(Arb.string(5..10), 1..10).next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(listValue) }
     exception.message shouldContainWithNonAbuttingText "LIST_VALUE"
   }
 
@@ -70,109 +80,79 @@ class ProtoStructEncoderUnitTest {
   }
 
   @Test
-  fun `encodeToStruct() should encode an class with all primitive types`() {
+  fun `encodeToStruct() should encode an class with all primitive types`() = runTest {
     @Serializable
     data class TestData(
       val iv: Int,
       val dv: Double,
-      val bvt: Boolean,
-      val bvf: Boolean,
+      val bv: Boolean,
       val sv: String,
-      val nsvn: String?,
-      val nsvnn: String?
+      val svn: String?,
     )
-    val encodedStruct =
-      encodeToStruct(
-        TestData(
-          iv = 42,
-          dv = 1234.5,
-          bvt = true,
-          bvf = false,
-          sv = "blah blah",
-          nsvn = null,
-          nsvnn = "I'm not null"
-        )
-      )
+    val arb: Arb<Pair<TestData, Struct>> = arbitrary {
+      val iv = Arb.int().bind()
+      val dv = Arb.double().bind()
+      val bv = Arb.boolean().bind()
+      val sv = Arb.string().bind()
+      val svn = Arb.string().orNull(0.33).bind()
 
-    encodedStruct.shouldBe(
-      buildStructProto {
-        put("iv", 42.0)
-        put("dv", 1234.5)
-        put("bvt", true)
-        put("bvf", false)
-        put("sv", "blah blah")
-        putNull("nsvn")
-        put("nsvnn", "I'm not null")
+      val testData = TestData(iv = iv, dv = dv, bv = bv, sv = sv, svn = svn)
+
+      val struct = buildStructProto {
+        put("iv", iv)
+        put("dv", dv)
+        put("bv", bv)
+        put("sv", sv)
+        if (svn === null) {
+          putNull("svn")
+        } else {
+          put("svn", svn)
+        }
       }
-    )
+
+      Pair(testData, struct)
+    }
+
+    checkAll(arb) { (testData, expectedStruct) ->
+      val encodedStruct = encodeToStruct(testData)
+      encodedStruct shouldBe expectedStruct
+    }
   }
 
   @Test
-  fun `encodeToStruct() should encode lists with all primitive types`() {
+  fun `encodeToStruct() should encode lists with all primitive types`() = runTest {
     @Serializable
     data class TestData(
       val iv: List<Int>,
       val dv: List<Double>,
       val bv: List<Boolean>,
       val sv: List<String>,
-      val nsv: List<String?>
+      val svn: List<String?>
     )
-    val encodedStruct =
-      encodeToStruct(
-        TestData(
-          iv = listOf(42, 43),
-          dv = listOf(1234.5, 5678.9),
-          bv = listOf(true, false, false, true),
-          sv = listOf("abcde", "fghij"),
-          nsv = listOf("klmno", null, "pqrst", null)
-        )
-      )
+    val arb: Arb<Pair<TestData, Struct>> = arbitrary {
+      val iv = Arb.list(Arb.int()).bind()
+      val dv = Arb.list(Arb.double()).bind()
+      val bv = Arb.list(Arb.boolean()).bind()
+      val sv = Arb.list(Arb.string()).bind()
+      val svn = Arb.list(Arb.string().orNull(0.33)).bind()
 
-    encodedStruct.shouldBe(
-      buildStructProto {
-        putList("iv") {
-          add(42.0)
-          add(43.0)
-        }
-        putList("dv") {
-          add(1234.5)
-          add(5678.9)
-        }
-        putList("bv") {
-          add(true)
-          add(false)
-          add(false)
-          add(true)
-        }
-        putList("sv") {
-          add("abcde")
-          add("fghij")
-        }
-        putList("nsv") {
-          add("klmno")
-          addNull()
-          add("pqrst")
-          addNull()
-        }
+      val testData = TestData(iv = iv, dv = dv, bv = bv, sv = sv, svn = svn)
+
+      val struct = buildStructProto {
+        put("iv", iv.map { it.toDouble() }.toListValueProto())
+        put("dv", dv.toListValueProto())
+        put("bv", bv.toListValueProto())
+        put("sv", sv.toListValueProto())
+        put("svn", svn.toListValueProto())
       }
-    )
-  }
 
-  @Test
-  fun `encodeToStruct() should support nested composite types`() {
-    @Serializable data class TestData3(val s: String)
-    @Serializable data class TestData2(val data3: TestData3, val data3N: TestData3?)
-    @Serializable data class TestData1(val data2: TestData2)
-    val encodedStruct = encodeToStruct(TestData1(TestData2(TestData3("zzzz"), null)))
+      Pair(testData, struct)
+    }
 
-    encodedStruct.shouldBe(
-      buildStructProto {
-        putStruct("data2") {
-          putNull("data3N")
-          putStruct("data3") { put("s", "zzzz") }
-        }
-      }
-    )
+    checkAll(arb) { (testData, expectedStruct) ->
+      val encodedStruct = encodeToStruct(testData)
+      encodedStruct shouldBe expectedStruct
+    }
   }
 
   @Test
@@ -194,29 +174,45 @@ class ProtoStructEncoderUnitTest {
   }
 
   @Test
-  fun `encodeToStruct() should support OptionalVariable Value when T is not nullable`() {
-    @Serializable data class TestData(val s: OptionalVariable<String>)
+  fun `encodeToStruct() should support OptionalVariable Value when T is not nullable`() = runTest {
+    @Serializable
+    data class TestData(val s: OptionalVariable<String>, val i: OptionalVariable<Int>)
+    val arb = arbitrary {
+      val s = OptionalVariable.Value(Arb.string().bind())
+      val i = OptionalVariable.Value(Arb.int().bind())
+      TestData(s, i)
+    }
 
-    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value("Hello")))
-
-    encodedStruct shouldBe buildStructProto { put("s", "Hello") }
+    checkAll(arb) { testData ->
+      val encodedStruct = encodeToStruct(testData)
+      val expected = buildStructProto {
+        put("s", testData.s.valueOrThrow())
+        put("i", testData.i.valueOrThrow())
+      }
+      encodedStruct shouldBe expected
+    }
   }
 
   @Test
-  fun `encodeToStruct() should support OptionalVariable Value when T is nullable but not null`() {
-    @Serializable data class TestData(val s: OptionalVariable<String?>)
+  fun `encodeToStruct() should support OptionalVariable Value when T is nullable`() = runTest {
+    @Serializable
+    data class TestData(
+      val s: OptionalVariable<String?>,
+      val i: OptionalVariable<Int?>,
+    )
+    val arb = arbitrary {
+      val s = OptionalVariable.Value(Arb.string().orNull(0.33).bind())
+      val i = OptionalVariable.Value(Arb.int().orNull(0.33).bind())
+      TestData(s, i)
+    }
 
-    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value("World")))
-
-    encodedStruct shouldBe buildStructProto { put("s", "World") }
-  }
-
-  @Test
-  fun `encodeToStruct() should support OptionalVariable Value when T is nullable and null`() {
-    @Serializable data class TestData(val s: OptionalVariable<String?>)
-
-    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value(null)))
-
-    encodedStruct shouldBe buildStructProto { putNull("s") }
+    checkAll(arb) { testData ->
+      val encodedStruct = encodeToStruct(testData)
+      val expected = buildStructProto {
+        put("s", testData.s.valueOrThrow())
+        put("i", testData.i.valueOrThrow())
+      }
+      encodedStruct shouldBe expected
+    }
   }
 }
