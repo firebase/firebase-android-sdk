@@ -126,7 +126,7 @@ object SerializationTestData {
     string: Arb<String> = Arb.string(),
     enum: Arb<TestEnum> = Arb.enum<TestEnum>(),
     testData2: Arb<TestData2> = Arb.serializationTestData2(),
-    listSize: Arb<IntRange> = Arb.intRange(0..20),
+    listSize: Arb<IntRange> = Arb.intRange(0..20).filterNot { it.isEmpty() },
   ): Arb<AllTheTypes> = arbitrary {
     val inlineString: Arb<TestStringValueClass> = arbitrary { TestStringValueClass(string.bind()) }
     val inlineInt: Arb<TestIntValueClass> = arbitrary { TestIntValueClass(int.bind()) }
