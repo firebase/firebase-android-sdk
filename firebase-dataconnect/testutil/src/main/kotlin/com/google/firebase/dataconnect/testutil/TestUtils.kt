@@ -50,19 +50,26 @@ import org.junit.Assert
  * string contains the given string with non-abutting text. See [shouldContainWithNonAbuttingText]
  * for full details.
  */
-fun containWithNonAbuttingText(s: String): Matcher<String?> = neverNullMatcher { value ->
-  val fullPattern = "(^|\\W)${Pattern.quote(s)}($|\\W)"
-  val expr = Pattern.compile(fullPattern)
-  MatcherResult(
-    expr.matcher(value).find(),
-    {
-      "${value.print().value} should contain the substring ${s.print().value} with non-abutting text"
-    },
-    {
-      "${value.print().value} should not contain the substring ${s.print().value} with non-abutting text"
-    }
-  )
-}
+fun containWithNonAbuttingText(s: String, ignoreCase: Boolean = false): Matcher<String?> =
+  neverNullMatcher { value ->
+    val fullPattern = "(^|\\W)${Pattern.quote(s)}($|\\W)"
+    val expr =
+      if (ignoreCase) {
+        Pattern.compile(fullPattern)
+      } else {
+        Pattern.compile(fullPattern, Pattern.CASE_INSENSITIVE)
+      }
+
+    MatcherResult(
+      expr.matcher(value).find(),
+      {
+        "${value.print().value} should contain the substring ${s.print().value} with non-abutting text"
+      },
+      {
+        "${value.print().value} should not contain the substring ${s.print().value} with non-abutting text"
+      }
+    )
+  }
 
 /**
  * Asserts that a string contains another string, verifying that the character immediately preceding
@@ -72,7 +79,13 @@ fun containWithNonAbuttingText(s: String): Matcher<String?> = neverNullMatcher {
  * messages and forgetting to leave a space between words.
  */
 infix fun String?.shouldContainWithNonAbuttingText(s: String): String? {
-  this should containWithNonAbuttingText(s)
+  this should containWithNonAbuttingText(s, ignoreCase = false)
+  return this
+}
+
+/** Same as [shouldContainWithNonAbuttingText] but ignoring case. */
+infix fun String?.shouldContainWithNonAbuttingTextIgnoringCase(s: String): String? {
+  this should containWithNonAbuttingText(s, ignoreCase = false)
   return this
 }
 

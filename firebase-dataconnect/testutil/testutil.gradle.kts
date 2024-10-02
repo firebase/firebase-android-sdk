@@ -60,6 +60,7 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.serialization.core)
   implementation(libs.mockk)
+  implementation(libs.protobuf.java.lite)
   implementation(libs.robolectric)
   implementation(libs.truth)
 }
