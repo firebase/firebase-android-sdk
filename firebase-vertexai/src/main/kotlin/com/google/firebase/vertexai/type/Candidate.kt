@@ -70,22 +70,24 @@ internal constructor(
 )
 
 /** The reason for content finishing. */
-public enum class FinishReason {
-  /** A new and not yet supported value. */
-  UNKNOWN,
+public class FinishReason private constructor(public val ordinal: Int) {
+  public companion object {
+    /** A new and not yet supported value. */
+    @JvmField public val UNKNOWN: FinishReason = FinishReason(0)
 
-  /** Model finished successfully and stopped. */
-  STOP,
+    /** Model finished successfully and stopped. */
+    @JvmField public val STOP: FinishReason = FinishReason(1)
 
-  /** Model hit the token limit. */
-  MAX_TOKENS,
+    /** Model hit the token limit. */
+    @JvmField public val MAX_TOKENS: FinishReason = FinishReason(2)
 
-  /** [SafetySetting] prevented the model from outputting content. */
-  SAFETY,
+    /** [SafetySetting] prevented the model from outputting content. */
+    @JvmField public val SAFETY: FinishReason = FinishReason(3)
 
-  /** Model began looping. */
-  RECITATION,
+    /** Model began looping. */
+    @JvmField public val RECITATION: FinishReason = FinishReason(4)
 
-  /** Model stopped for another reason. */
-  OTHER
+    /** Model stopped for another reason. */
+    @JvmField public val OTHER: FinishReason = FinishReason(5)
+  }
 }
