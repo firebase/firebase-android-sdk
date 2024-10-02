@@ -45,6 +45,8 @@ import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
 
@@ -369,6 +371,27 @@ internal class UnarySnapshotTests {
           }
 
         callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
+      }
+    }
+
+  @Test
+  fun `function call with complex json literal parses correctly`() =
+    goldenUnaryFile("unary-success-function-call-complex-json-literal.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
+        val callPart =
+          content.let {
+            it.shouldNotBeNull()
+            it.parts.shouldNotBeEmpty()
+            it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
+          }
+
+        callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
+        callPart.functionCall.args["testObject"]!!
+          .jsonObject["testProperty"]!!
+          .jsonPrimitive
+          .content shouldBe "string property"
       }
     }
 
