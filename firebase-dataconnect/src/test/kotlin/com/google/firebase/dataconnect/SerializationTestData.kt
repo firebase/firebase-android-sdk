@@ -33,7 +33,7 @@ object SerializationTestData {
     A,
     B,
     C,
-    D
+    D,
   }
 
   @Serializable @JvmInline value class TestStringValueClass(val a: String)
