@@ -32,7 +32,7 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     plugins {
         grpc {

@@ -26,7 +26,7 @@ firebaseLibrary {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     generateProtoTasks {
         all().each { task ->
@@ -68,5 +68,5 @@ dependencies {
         exclude group: "com.google.protobuf", module: "protobuf-java"
     }
 
-    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+    implementation libs.protobuf.java.lite
 }
