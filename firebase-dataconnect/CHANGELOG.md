@@ -17,3 +17,6 @@
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
 * [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
+

@@ -4,6 +4,8 @@
 * [changed] Internal changes to improve startup time.
 * [changed] Internal changes to the way background tasks are scheduled.
 * [changed] Migrated SDK to use standard Firebase executors.
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
 
 # 19.1.0
 * [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is
