@@ -30,15 +30,15 @@ public class PromptFeedback(
 )
 
 /** Describes why content was blocked. */
-public class BlockReason private constructor(public val ordinal: Int) {
+public class BlockReason private constructor(public val name: String, public val ordinal: Int) {
   public companion object {
     /** A new and not yet supported value. */
-    @JvmField public val UNKNOWN: BlockReason = BlockReason(0)
+    @JvmField public val UNKNOWN: BlockReason = BlockReason("UNKNOWN", 0)
 
     /** Content was blocked for violating provided [SafetySetting]. */
-    @JvmField public val SAFETY: BlockReason = BlockReason(1)
+    @JvmField public val SAFETY: BlockReason = BlockReason("SAFETY", 1)
 
     /** Content was blocked for another reason. */
-    @JvmField public val OTHER: BlockReason = BlockReason(2)
+    @JvmField public val OTHER: BlockReason = BlockReason("OTHER",2)
   }
 }
