@@ -172,6 +172,6 @@ jobs:
           path: artifacts
 
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.9.0
+        uses: EnricoMi/publish-unit-test-result-action@82082dac68ad6a19d980f8ce817e108b9f496c2a
         with:
           files: "artifacts/**/*.xml"
