@@ -131,7 +131,9 @@ internal fun HarmCategory.toInternal() =
       com.google.firebase.vertexai.common.shared.HarmCategory.SEXUALLY_EXPLICIT
     HarmCategory.DANGEROUS_CONTENT ->
       com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
-    HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+    HarmCategory.UNKNOWN ->
+      com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+    else ->  throw SerializationException("Missing case for a HarmCategory: $ordinal")
   }
 
 internal fun HarmBlockMethod.toInternal() =
@@ -139,6 +141,7 @@ internal fun HarmBlockMethod.toInternal() =
     HarmBlockMethod.SEVERITY -> com.google.firebase.vertexai.common.shared.HarmBlockMethod.SEVERITY
     HarmBlockMethod.PROBABILITY ->
       com.google.firebase.vertexai.common.shared.HarmBlockMethod.PROBABILITY
+    else -> throw SerializationException("Missing case for a HarmBlockMethod: $ordinal")
   }
 
 internal fun ToolConfig.toInternal() =
@@ -166,6 +169,7 @@ internal fun HarmBlockThreshold.toInternal() =
       com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
     HarmBlockThreshold.LOW_AND_ABOVE ->
       com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+    else -> throw SerializationException("Missing case for a HarmBlockThreshold: $ordinal")
   }
 
 internal fun Tool.toInternal() =
