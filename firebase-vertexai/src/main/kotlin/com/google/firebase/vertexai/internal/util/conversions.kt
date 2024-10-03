@@ -217,7 +217,7 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {
-        InlineDataPart(inlineData.mimeType, data)
+        InlineDataPart(data, inlineData.mimeType)
       }
     }
     is com.google.firebase.vertexai.common.shared.FunctionCallPart ->
