@@ -15,6 +15,8 @@
  */
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.SerializationTestData.serializationTestDataAllTypes
+import com.google.firebase.dataconnect.SerializationTestData.withEmptyListOfUnitRecursive
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -31,9 +33,9 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -47,17 +49,21 @@ class ProtoStructDecoderUnitTest {
 
   @Test
   fun `decodeFromStruct() can encode and decode complex objects`() = runTest {
-    val seeds = Arb.string().filter { it.hashCode() != 0 }
-    checkAll(iterations = 20, seeds) { seed ->
-      val obj = SerializationTestData.AllTheTypes.newInstance(seed).withEmptyUnitLists()
+    // TODO(b/370992204) Remove the call to withEmptyListOfUnitRecursive() once the bug that a list
+    //  of Unit is incorrectly decoded as an empty list is fixed.
+    val arb = Arb.serializationTestDataAllTypes().map { it.withEmptyListOfUnitRecursive() }
+    checkAll(iterations = 20, arb) { obj ->
       val struct = encodeToStruct(obj)
       val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
       decodedObj shouldBe obj
     }
   }
 
+  @Ignore(
+    "b/370992204: Re-enable this test once the bug that a list of Unit is incorrectly " +
+      "decoded as an empty list is fixed"
+  )
   @Test
-  @Ignore("A List<Unit> gets decoded as an empty list; if anyone cares, fix it.")
   fun `decodeFromStruct() can encode and decode a list of non-nullable Unit`() = runTest {
     @Serializable data class TestData(val list: List<Unit>)
     checkAll(Arb.list(Arb.constant(Unit))) { list ->
