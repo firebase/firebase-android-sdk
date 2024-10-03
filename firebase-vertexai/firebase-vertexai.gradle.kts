@@ -29,7 +29,6 @@ firebaseLibrary {
   testLab.enabled = false
   publishSources = true
   publishJavadoc = true
-  previewMode = "beta"
   releaseNotes {
     name.set("{{firebase_vertexai}}")
     versionName.set("vertex-ai")
