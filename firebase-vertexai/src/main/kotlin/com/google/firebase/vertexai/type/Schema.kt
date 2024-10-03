@@ -16,8 +16,8 @@
 
 package com.google.firebase.vertexai.type
 
-public sealed class StringFormat(public val value: String) {
-  public class Custom(format: String) : StringFormat(format)
+public abstract class StringFormat private constructor(internal val value: String) {
+  public class Custom(value: String) : StringFormat(value)
 }
 
 /** Represents a schema */

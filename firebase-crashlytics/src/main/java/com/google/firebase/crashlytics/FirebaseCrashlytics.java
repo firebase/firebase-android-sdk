@@ -441,10 +441,10 @@ public class FirebaseCrashlytics {
    * @return In order of priority:
    *     <ul>
    *       <li>If {@link #setCrashlyticsCollectionEnabled(boolean)} is called with a value, use it.
-   *       <li>If the <b>firebase_crashlytics_collection_enabled</b> key is in your app’s
-   *           AndroidManifest.xml, use it.
+   *       <li>If the <b>firebase_crashlytics_collection_enabled</b> key is in your app’s {@code
+   *           AndroidManifest.xml}, use it.
    *       <li>Otherwise, use the default {@link FirebaseApp#isDataCollectionDefaultEnabled()} in
-   *           FirebaseApp.
+   *           {@link FirebaseApp}.
    *     </ul>
    */
   public boolean isCrashlyticsCollectionEnabled() {
@@ -454,8 +454,8 @@ public class FirebaseCrashlytics {
   /**
    * Enables or disables the automatic data collection configuration for Crashlytics.
    *
-   * <p>If this is set, it overrides any automatic data collection settings configured in the
-   * AndroidManifest.xml as well as any Firebase-wide settings.
+   * <p>If this is set, it overrides any automatic data collection settings configured in the {@code
+   * AndroidManifest.xml} as well as any Firebase-wide settings.
    *
    * <p>If automatic data collection is disabled for Crashlytics, crash reports are stored on the
    * device. To check for reports, use the {@link #checkForUnsentReports()} method. Use {@link
@@ -466,7 +466,7 @@ public class FirebaseCrashlytics {
    * @param enabled whether to enable automatic data collection. When set to {@code false}, the new
    *     value does not apply until the next run of the app. To disable data collection by default
    *     for all app runs, add the {@code firebase_crashlytics_collection_enabled} flag to your
-   *     app's AndroidManifest.xml.
+   *     app's {@code AndroidManifest.xml}.
    */
   public void setCrashlyticsCollectionEnabled(boolean enabled) {
     core.setCrashlyticsCollectionEnabled(enabled);
@@ -475,9 +475,9 @@ public class FirebaseCrashlytics {
   /**
    * Enables or disables the automatic data collection configuration for Crashlytics.
    *
-   * <p>If this is set, it overrides any automatic data collection settings configured in the
-   * AndroidManifest.xml as well as any Firebase-wide settings. If set to {@code null}, the override
-   * is cleared.
+   * <p>If this is set, it overrides any automatic data collection settings configured in the {@code
+   * AndroidManifest.xml} as well as any Firebase-wide settings. If set to {@code null}, the
+   * override is cleared.
    *
    * <p>If automatic data collection is disabled for Crashlytics, crash reports are stored on the
    * device. To check for reports, use the {@link #checkForUnsentReports()} method. Use {@link
@@ -488,7 +488,7 @@ public class FirebaseCrashlytics {
    * @param enabled whether to enable or disable automatic data collection. When set to {@code
    *     false}, the new value does not apply until the next run of the app. When set to {@code
    *     null}, the override is cleared and automatic data collection settings are determined by the
-   *     configuration in your AndroidManifest.xml or other Firebase-wide settings.
+   *     configuration in your {@code AndroidManifest.xml} or other Firebase-wide settings.
    */
   public void setCrashlyticsCollectionEnabled(@Nullable Boolean enabled) {
     core.setCrashlyticsCollectionEnabled(enabled);

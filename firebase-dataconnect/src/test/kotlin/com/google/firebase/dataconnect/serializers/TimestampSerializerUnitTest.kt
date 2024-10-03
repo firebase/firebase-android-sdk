@@ -16,12 +16,14 @@
 
 package com.google.firebase.dataconnect.serializers
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
-import com.google.firebase.dataconnect.testutil.assertThrows
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 import org.junit.Test
 
@@ -54,150 +56,143 @@ class TimestampSerializerUnitTest {
 
   @Test
   fun `decoding should succeed when 'time-secfrac' is omitted`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05Z")).isEqualTo(Timestamp(1136214245, 0))
+    decodeTimestamp("2006-01-02T15:04:05Z") shouldBe Timestamp(1136214245, 0)
   }
 
   @Test
   fun `decoding should succeed when 'time-secfrac' has millisecond precision`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05.123Z"))
-      .isEqualTo(Timestamp(1136214245, 123_000_000))
+    decodeTimestamp("2006-01-02T15:04:05.123Z") shouldBe Timestamp(1136214245, 123_000_000)
   }
 
   @Test
   fun `decoding should succeed when 'time-secfrac' has microsecond precision`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05.123456Z"))
-      .isEqualTo(Timestamp(1136214245, 123_456_000))
+    decodeTimestamp("2006-01-02T15:04:05.123456Z") shouldBe Timestamp(1136214245, 123_456_000)
   }
 
   @Test
   fun `decoding should succeed when 'time-secfrac' has nanosecond precision`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05.123456789Z"))
-      .isEqualTo(Timestamp(1136214245, 123_456_789))
+    decodeTimestamp("2006-01-02T15:04:05.123456789Z") shouldBe Timestamp(1136214245, 123_456_789)
   }
 
   @Test
   fun `decoding should succeed when time offset is 0`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05-00:00"))
-      .isEqualTo(decodeTimestamp("2006-01-02T15:04:05Z"))
-
-    assertThat(decodeTimestamp("2006-01-02T15:04:05+00:00"))
-      .isEqualTo(decodeTimestamp("2006-01-02T15:04:05Z"))
+    assertSoftly {
+      decodeTimestamp("2006-01-02T15:04:05-00:00") shouldBe decodeTimestamp("2006-01-02T15:04:05Z")
+      decodeTimestamp("2006-01-02T15:04:05+00:00") shouldBe decodeTimestamp("2006-01-02T15:04:05Z")
+    }
   }
 
   @Test
   fun `decoding should succeed when time offset is positive`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05+11:01"))
-      .isEqualTo(decodeTimestamp("2006-01-02T04:03:05Z"))
+    decodeTimestamp("2006-01-02T15:04:05+11:01") shouldBe decodeTimestamp("2006-01-02T04:03:05Z")
   }
 
   @Test
   fun `decoding should succeed when time offset is negative`() {
-    assertThat(decodeTimestamp("2006-01-02T15:04:05-05:10"))
-      .isEqualTo(decodeTimestamp("2006-01-02T20:14:05Z"))
+    decodeTimestamp("2006-01-02T15:04:05-05:10") shouldBe decodeTimestamp("2006-01-02T20:14:05Z")
   }
 
   @Test
   fun `decoding should succeed when there are both time-secfrac and - time offset`() {
-    assertThat(decodeTimestamp("2023-05-21T11:04:05.462-11:07"))
-      .isEqualTo(decodeTimestamp("2023-05-21T22:11:05.462Z"))
+    assertSoftly {
+      decodeTimestamp("2023-05-21T11:04:05.462-11:07") shouldBe
+        decodeTimestamp("2023-05-21T22:11:05.462Z")
 
-    assertThat(decodeTimestamp("2053-11-02T15:04:05.743393-05:10"))
-      .isEqualTo(decodeTimestamp("2053-11-02T20:14:05.743393Z"))
+      decodeTimestamp("2053-11-02T15:04:05.743393-05:10") shouldBe
+        decodeTimestamp("2053-11-02T20:14:05.743393Z")
 
-    assertThat(decodeTimestamp("1538-03-05T15:04:05.653498752-03:01"))
-      .isEqualTo(decodeTimestamp("1538-03-05T18:05:05.653498752Z"))
+      decodeTimestamp("1538-03-05T15:04:05.653498752-03:01") shouldBe
+        decodeTimestamp("1538-03-05T18:05:05.653498752Z")
+    }
   }
 
   @Test
   fun `decoding should succeed when there are both time-secfrac and + time offset`() {
-    assertThat(decodeTimestamp("2023-05-21T11:04:05.662+11:01"))
-      .isEqualTo(decodeTimestamp("2023-05-21T00:03:05.662Z"))
+    assertSoftly {
+      decodeTimestamp("2023-05-21T11:04:05.662+11:01") shouldBe
+        decodeTimestamp("2023-05-21T00:03:05.662Z")
 
-    assertThat(decodeTimestamp("2144-01-02T15:04:05.753493+01:00"))
-      .isEqualTo(decodeTimestamp("2144-01-02T14:04:05.753493Z"))
+      decodeTimestamp("2144-01-02T15:04:05.753493+01:00") shouldBe
+        decodeTimestamp("2144-01-02T14:04:05.753493Z")
 
-    assertThat(decodeTimestamp("1358-03-05T15:04:05.527094582+11:03"))
-      .isEqualTo(decodeTimestamp("1358-03-05T04:01:05.527094582Z"))
+      decodeTimestamp("1358-03-05T15:04:05.527094582+11:03") shouldBe
+        decodeTimestamp("1358-03-05T04:01:05.527094582Z")
+    }
   }
 
   @Test
   fun `decoding should be case-insensitive`() {
     // According to https://www.rfc-editor.org/rfc/rfc3339#section-5.6 the "t" and "z" are
     // case-insensitive.
-    assertThat(decodeTimestamp("2006-01-02t15:04:05.123456789z"))
-      .isEqualTo(decodeTimestamp("2006-01-02T15:04:05.123456789Z"))
+    decodeTimestamp("2006-01-02t15:04:05.123456789z") shouldBe
+      decodeTimestamp("2006-01-02T15:04:05.123456789Z")
   }
 
   @Test
   fun `decoding should parse the minimum value officially supported by Data Connect`() {
-    assertThat(decodeTimestamp("1583-01-01T00:00:00.000000Z")).isEqualTo(Timestamp(-12212553600, 0))
+    decodeTimestamp("1583-01-01T00:00:00.000000Z") shouldBe Timestamp(-12212553600, 0)
   }
 
   @Test
   fun `decoding should parse the maximum value officially supported by Data Connect`() {
-    assertThat(decodeTimestamp("9999-12-31T23:59:59.999999999Z"))
-      .isEqualTo(Timestamp(253402300799, 999999999))
+    decodeTimestamp("9999-12-31T23:59:59.999999999Z") shouldBe Timestamp(253402300799, 999999999)
   }
 
   @Test
   fun `decoding should fail for an empty string`() {
-    assertThrows(IllegalArgumentException::class) { decodeTimestamp("") }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("") }
   }
 
   @Test
   fun `decoding should fail if 'time-offset' is omitted`() {
-    assertThrows(IllegalArgumentException::class) {
-      decodeTimestamp("2006-01-02T15:04:05.123456789")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05.123456789") }
   }
 
   @Test
   fun `decoding should fail if 'time-offset' when 'time-secfrac' and time offset are both omitted`() {
-    assertThrows(IllegalArgumentException::class) { decodeTimestamp("2006-01-02T15:04:05") }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05") }
   }
 
   @Test
   fun `decoding should fail if the date portion cannot be parsed`() {
-    assertThrows(IllegalArgumentException::class) {
-      decodeTimestamp("200X-01-02T15:04:05.123456789Z")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("200X-01-02T15:04:05.123456789Z") }
   }
 
   @Test
   fun `decoding should fail if some character other than period delimits the 'time-secfrac'`() {
-    assertThrows(IllegalArgumentException::class) {
-      decodeTimestamp("2006-01-02T15:04:05 123456789Z")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05 123456789Z") }
   }
 
   @Test
   fun `decoding should fail if 'time-secfrac' contains an invalid character`() {
-    assertThrows(IllegalArgumentException::class) {
-      decodeTimestamp("2006-01-02T15:04:05.123456X89Z")
-    }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("2006-01-02T15:04:05.123456X89Z") }
   }
 
   @Test
   fun `decoding should fail if time offset has no + or - sign`() {
-    assertThrows(IllegalArgumentException::class) { decodeTimestamp("1985-04-12T23:20:5007:00") }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("1985-04-12T23:20:5007:00") }
   }
 
   @Test
   fun `decoding should fail if time string has mix format`() {
-    assertThrows(IllegalArgumentException::class) {
+    shouldThrow<IllegalArgumentException> {
       decodeTimestamp("2006-01-02T15:04:05-07:00.123456X89Z")
     }
   }
 
   @Test
   fun `decoding should fail if time offset is not in the correct format`() {
-    assertThrows(IllegalArgumentException::class) { decodeTimestamp("1985-04-12T23:20:50+7:00") }
+    shouldThrow<IllegalArgumentException> { decodeTimestamp("1985-04-12T23:20:50+7:00") }
   }
 
   @Test
   fun `decoding should throw an exception if the timestamp is invalid`() {
-    invalidTimestampStrs.forEach {
-      assertThrows(IllegalArgumentException::class) { decodeTimestamp(it) }
+    assertSoftly {
+      for (invalidTimestampStr in invalidTimestampStrs) {
+        withClue(invalidTimestampStr) {
+          shouldThrow<IllegalArgumentException> { decodeTimestamp(invalidTimestampStr) }
+        }
+      }
     }
   }
 
@@ -211,7 +206,7 @@ class TimestampSerializerUnitTest {
     fun verifyEncodeDecodeRoundTrip(timestamp: Timestamp) {
       val encoded = encodeToStruct(TimestampWrapper(timestamp))
       val decoded = decodeFromStruct<TimestampWrapper>(encoded)
-      assertThat(decoded.timestamp).isEqualTo(timestamp)
+      decoded.timestamp shouldBe timestamp
     }
 
     fun decodeTimestamp(text: String): Timestamp {

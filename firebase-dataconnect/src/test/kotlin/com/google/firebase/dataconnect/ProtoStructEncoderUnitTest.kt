@@ -13,179 +13,146 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-@file:OptIn(ExperimentalSerializationApi::class)
-
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.extensions.proto.LiteProtoTruth.assertThat
+import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.shouldBeDefaultInstance
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.ProtoUtil.toListValueProto
 import com.google.protobuf.Struct
-import java.util.concurrent.atomic.AtomicLong
-import kotlinx.serialization.ExperimentalSerializationApi
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.CompositeEncoder
-import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.modules.EmptySerializersModule
-import kotlinx.serialization.serializer
-import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class ProtoStructEncoderUnitTest {
 
   @Test
   fun `encodeToStruct() should throw if a NUMBER_VALUE is produced`() {
-    val exception = assertThrows(IllegalArgumentException::class.java) { encodeToStruct(42) }
-    assertThat(exception).hasMessageThat().contains("NUMBER_VALUE")
+    val intValue: Int = Arb.int().next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(intValue) }
+    exception.message shouldContainWithNonAbuttingText "NUMBER_VALUE"
   }
 
   @Test
   fun `encodeToStruct() should throw if a BOOL_VALUE is produced`() {
-    val exception = assertThrows(IllegalArgumentException::class.java) { encodeToStruct(true) }
-    assertThat(exception).hasMessageThat().contains("BOOL_VALUE")
+    val booleanValue: Boolean = Arb.boolean().next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(booleanValue) }
+    exception.message shouldContainWithNonAbuttingText "BOOL_VALUE"
   }
 
   @Test
   fun `encodeToStruct() should throw if a STRING_VALUE is produced`() {
-    val exception =
-      assertThrows(IllegalArgumentException::class.java) {
-        encodeToStruct("arbitrary string value")
-      }
-    assertThat(exception).hasMessageThat().contains("STRING_VALUE")
+    val stringValue: String = Arb.string().next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(stringValue) }
+    exception.message shouldContainWithNonAbuttingText "STRING_VALUE"
   }
 
   @Test
   fun `encodeToStruct() should throw if a LIST_VALUE is produced`() {
-    val exception =
-      assertThrows(IllegalArgumentException::class.java) {
-        encodeToStruct(listOf("element1", "element2"))
-      }
-    assertThat(exception).hasMessageThat().contains("LIST_VALUE")
+    val listValue: List<String> = Arb.list(Arb.string(5..10), 1..10).next()
+    val exception = shouldThrow<IllegalArgumentException> { encodeToStruct(listValue) }
+    exception.message shouldContainWithNonAbuttingText "LIST_VALUE"
   }
 
   @Test
   fun `encodeToStruct() should return an empty struct if an empty map is given`() {
     val encodedStruct = encodeToStruct(emptyMap<Unit, Unit>())
-    assertThat(encodedStruct).isEqualToDefaultInstance()
+    encodedStruct.shouldBeDefaultInstance()
   }
 
   @Test
   fun `encodeToStruct() should encode Unit as an empty struct`() {
     val encodedStruct = encodeToStruct(Unit)
-    assertThat(encodedStruct).isEqualToDefaultInstance()
+    encodedStruct.shouldBeDefaultInstance()
   }
 
   @Test
-  fun `encodeToStruct() should encode an class with all primitive types`() {
+  fun `encodeToStruct() should encode an class with all primitive types`() = runTest {
     @Serializable
     data class TestData(
       val iv: Int,
       val dv: Double,
-      val bvt: Boolean,
-      val bvf: Boolean,
+      val bv: Boolean,
       val sv: String,
-      val nsvn: String?,
-      val nsvnn: String?
+      val svn: String?,
     )
-    val encodedStruct =
-      encodeToStruct(
-        TestData(
-          iv = 42,
-          dv = 1234.5,
-          bvt = true,
-          bvf = false,
-          sv = "blah blah",
-          nsvn = null,
-          nsvnn = "I'm not null"
-        )
-      )
+    val arb: Arb<Pair<TestData, Struct>> = arbitrary {
+      val iv = Arb.int().bind()
+      val dv = Arb.double().bind()
+      val bv = Arb.boolean().bind()
+      val sv = Arb.string().bind()
+      val svn = Arb.string().orNull(0.33).bind()
 
-    assertThat(encodedStruct)
-      .isEqualTo(
-        buildStructProto {
-          put("iv", 42.0)
-          put("dv", 1234.5)
-          put("bvt", true)
-          put("bvf", false)
-          put("sv", "blah blah")
-          putNull("nsvn")
-          put("nsvnn", "I'm not null")
+      val testData = TestData(iv = iv, dv = dv, bv = bv, sv = sv, svn = svn)
+
+      val struct = buildStructProto {
+        put("iv", iv)
+        put("dv", dv)
+        put("bv", bv)
+        put("sv", sv)
+        if (svn === null) {
+          putNull("svn")
+        } else {
+          put("svn", svn)
         }
-      )
+      }
+
+      Pair(testData, struct)
+    }
+
+    checkAll(arb) { (testData, expectedStruct) ->
+      val encodedStruct = encodeToStruct(testData)
+      encodedStruct shouldBe expectedStruct
+    }
   }
 
   @Test
-  fun `encodeToStruct() should encode lists with all primitive types`() {
+  fun `encodeToStruct() should encode lists with all primitive types`() = runTest {
     @Serializable
     data class TestData(
       val iv: List<Int>,
       val dv: List<Double>,
       val bv: List<Boolean>,
       val sv: List<String>,
-      val nsv: List<String?>
+      val svn: List<String?>
     )
-    val encodedStruct =
-      encodeToStruct(
-        TestData(
-          iv = listOf(42, 43),
-          dv = listOf(1234.5, 5678.9),
-          bv = listOf(true, false, false, true),
-          sv = listOf("abcde", "fghij"),
-          nsv = listOf("klmno", null, "pqrst", null)
-        )
-      )
+    val arb: Arb<Pair<TestData, Struct>> = arbitrary {
+      val iv = Arb.list(Arb.int()).bind()
+      val dv = Arb.list(Arb.double()).bind()
+      val bv = Arb.list(Arb.boolean()).bind()
+      val sv = Arb.list(Arb.string()).bind()
+      val svn = Arb.list(Arb.string().orNull(0.33)).bind()
 
-    assertThat(encodedStruct)
-      .isEqualTo(
-        buildStructProto {
-          putList("iv") {
-            add(42.0)
-            add(43.0)
-          }
-          putList("dv") {
-            add(1234.5)
-            add(5678.9)
-          }
-          putList("bv") {
-            add(true)
-            add(false)
-            add(false)
-            add(true)
-          }
-          putList("sv") {
-            add("abcde")
-            add("fghij")
-          }
-          putList("nsv") {
-            add("klmno")
-            addNull()
-            add("pqrst")
-            addNull()
-          }
-        }
-      )
-  }
+      val testData = TestData(iv = iv, dv = dv, bv = bv, sv = sv, svn = svn)
 
-  @Test
-  fun `encodeToStruct() should support nested composite types`() {
-    @Serializable data class TestData3(val s: String)
-    @Serializable data class TestData2(val data3: TestData3, val data3N: TestData3?)
-    @Serializable data class TestData1(val data2: TestData2)
-    val encodedStruct = encodeToStruct(TestData1(TestData2(TestData3("zzzz"), null)))
+      val struct = buildStructProto {
+        put("iv", iv.map { it.toDouble() }.toListValueProto())
+        put("dv", dv.toListValueProto())
+        put("bv", bv.toListValueProto())
+        put("sv", sv.toListValueProto())
+        put("svn", svn.toListValueProto())
+      }
 
-    assertThat(encodedStruct)
-      .isEqualTo(
-        buildStructProto {
-          putStruct("data2") {
-            putNull("data3N")
-            putStruct("data3") { put("s", "zzzz") }
-          }
-        }
-      )
+      Pair(testData, struct)
+    }
+
+    checkAll(arb) { (testData, expectedStruct) ->
+      val encodedStruct = encodeToStruct(testData)
+      encodedStruct shouldBe expectedStruct
+    }
   }
 
   @Test
@@ -194,7 +161,7 @@ class ProtoStructEncoderUnitTest {
 
     val encodedStruct = encodeToStruct(TestData(OptionalVariable.Undefined))
 
-    assertThat(encodedStruct).isEqualTo(Struct.getDefaultInstance())
+    encodedStruct shouldBe Struct.getDefaultInstance()
   }
 
   @Test
@@ -203,196 +170,49 @@ class ProtoStructEncoderUnitTest {
 
     val encodedStruct = encodeToStruct(TestData(OptionalVariable.Undefined))
 
-    assertThat(encodedStruct).isEqualTo(Struct.getDefaultInstance())
+    encodedStruct shouldBe Struct.getDefaultInstance()
   }
 
   @Test
-  fun `encodeToStruct() should support OptionalVariable Value when T is not nullable`() {
-    @Serializable data class TestData(val s: OptionalVariable<String>)
+  fun `encodeToStruct() should support OptionalVariable Value when T is not nullable`() = runTest {
+    @Serializable
+    data class TestData(val s: OptionalVariable<String>, val i: OptionalVariable<Int>)
+    val arb = arbitrary {
+      val s = OptionalVariable.Value(Arb.string().bind())
+      val i = OptionalVariable.Value(Arb.int().bind())
+      TestData(s, i)
+    }
 
-    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value("Hello")))
-
-    assertThat(encodedStruct).isEqualTo(buildStructProto { put("s", "Hello") })
-  }
-
-  @Test
-  fun `encodeToStruct() should support OptionalVariable Value when T is nullable but not null`() {
-    @Serializable data class TestData(val s: OptionalVariable<String?>)
-
-    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value("World")))
-
-    assertThat(encodedStruct).isEqualTo(buildStructProto { put("s", "World") })
-  }
-
-  @Test
-  fun `encodeToStruct() should support OptionalVariable Value when T is nullable and null`() {
-    @Serializable data class TestData(val s: OptionalVariable<String?>)
-
-    val encodedStruct = encodeToStruct(TestData(OptionalVariable.Value(null)))
-
-    assertThat(encodedStruct).isEqualTo(buildStructProto { putNull("s") })
-  }
-}
-
-/**
- * An encoder that can be useful during testing to simply print the method invocations in order to
- * discover how an encoder should be implemented.
- */
-@Suppress("unused")
-private class LoggingEncoder(
-  private val idBySerialDescriptor: MutableMap<SerialDescriptor, Long> = mutableMapOf()
-) : Encoder, CompositeEncoder {
-  val id = nextEncoderId.incrementAndGet()
-
-  override val serializersModule = EmptySerializersModule()
-
-  private fun log(message: String) {
-    println("zzyzx LoggingEncoder[$id] $message")
-  }
-
-  private fun idFor(descriptor: SerialDescriptor) =
-    idBySerialDescriptor[descriptor]
-      ?: nextSerialDescriptorId.incrementAndGet().also { idBySerialDescriptor[descriptor] = it }
-
-  override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-    log(
-      "beginStructure() descriptorId=${idFor(descriptor)} kind=${descriptor.kind} " +
-        "elementsCount=${descriptor.elementsCount}"
-    )
-    return LoggingEncoder(idBySerialDescriptor)
-  }
-
-  override fun endStructure(descriptor: SerialDescriptor) {
-    log("endStructure() descriptorId=${idFor(descriptor)} kind=${descriptor.kind}")
-  }
-
-  override fun encodeBoolean(value: Boolean) {
-    log("encodeBoolean($value)")
-  }
-
-  override fun encodeByte(value: Byte) {
-    log("encodeByte($value)")
-  }
-
-  override fun encodeChar(value: Char) {
-    log("encodeChar($value)")
-  }
-
-  override fun encodeDouble(value: Double) {
-    log("encodeDouble($value)")
-  }
-
-  override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
-    log("encodeEnum($index)")
-  }
-
-  override fun encodeFloat(value: Float) {
-    log("encodeFloat($value)")
-  }
-
-  override fun encodeInline(descriptor: SerialDescriptor): Encoder {
-    log("encodeInline() kind=${descriptor.kind} serialName=${descriptor.serialName}")
-    return LoggingEncoder(idBySerialDescriptor)
-  }
-
-  override fun encodeInt(value: Int) {
-    log("encodeInt($value)")
-  }
-
-  override fun encodeLong(value: Long) {
-    log("encodeLong($value)")
-  }
-
-  @ExperimentalSerializationApi
-  override fun encodeNull() {
-    log("encodeNull()")
-  }
-
-  override fun encodeShort(value: Short) {
-    log("encodeShort($value)")
-  }
-
-  override fun encodeString(value: String) {
-    log("encodeString($value)")
-  }
-
-  override fun encodeBooleanElement(descriptor: SerialDescriptor, index: Int, value: Boolean) {
-    log("encodeBooleanElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeByteElement(descriptor: SerialDescriptor, index: Int, value: Byte) {
-    log("encodeByteElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeCharElement(descriptor: SerialDescriptor, index: Int, value: Char) {
-    log("encodeCharElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeDoubleElement(descriptor: SerialDescriptor, index: Int, value: Double) {
-    log("encodeDoubleElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeFloatElement(descriptor: SerialDescriptor, index: Int, value: Float) {
-    log("encodeFloatElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder {
-    log("encodeInlineElement() index=$index elementName=${descriptor.getElementName(index)}")
-    return LoggingEncoder(idBySerialDescriptor)
-  }
-
-  override fun encodeIntElement(descriptor: SerialDescriptor, index: Int, value: Int) {
-    log("encodeIntElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeLongElement(descriptor: SerialDescriptor, index: Int, value: Long) {
-    log("encodeLongElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeShortElement(descriptor: SerialDescriptor, index: Int, value: Short) {
-    log("encodeShortElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  override fun encodeStringElement(descriptor: SerialDescriptor, index: Int, value: String) {
-    log("encodeStringElement($value) index=$index elementName=${descriptor.getElementName(index)}")
-  }
-
-  @ExperimentalSerializationApi
-  override fun <T : Any> encodeNullableSerializableElement(
-    descriptor: SerialDescriptor,
-    index: Int,
-    serializer: SerializationStrategy<T>,
-    value: T?
-  ) {
-    log(
-      "encodeNullableSerializableElement($value) index=$index elementName=${descriptor.getElementName(index)}"
-    )
-    if (value != null) {
-      encodeSerializableValue(serializer, value)
+    checkAll(arb) { testData ->
+      val encodedStruct = encodeToStruct(testData)
+      val expected = buildStructProto {
+        put("s", testData.s.valueOrThrow())
+        put("i", testData.i.valueOrThrow())
+      }
+      encodedStruct shouldBe expected
     }
   }
 
-  override fun <T> encodeSerializableElement(
-    descriptor: SerialDescriptor,
-    index: Int,
-    serializer: SerializationStrategy<T>,
-    value: T
-  ) {
-    log(
-      "encodeSerializableElement($value) index=$index elementName=${descriptor.getElementName(index)}"
+  @Test
+  fun `encodeToStruct() should support OptionalVariable Value when T is nullable`() = runTest {
+    @Serializable
+    data class TestData(
+      val s: OptionalVariable<String?>,
+      val i: OptionalVariable<Int?>,
     )
-    encodeSerializableValue(serializer, value)
-  }
-
-  companion object {
-
-    fun <T : Any> encode(serializer: SerializationStrategy<T>, value: T) {
-      LoggingEncoder().encodeSerializableValue(serializer, value)
+    val arb = arbitrary {
+      val s = OptionalVariable.Value(Arb.string().orNull(0.33).bind())
+      val i = OptionalVariable.Value(Arb.int().orNull(0.33).bind())
+      TestData(s, i)
     }
 
-    inline fun <reified T : Any> encode(value: T) = encode(serializer(), value)
-
-    private val nextEncoderId = AtomicLong(0)
-    private val nextSerialDescriptorId = AtomicLong(998800000L)
+    checkAll(arb) { testData ->
+      val encodedStruct = encodeToStruct(testData)
+      val expected = buildStructProto {
+        put("s", testData.s.valueOrThrow())
+        put("i", testData.i.valueOrThrow())
+      }
+      encodedStruct shouldBe expected
+    }
   }
 }
