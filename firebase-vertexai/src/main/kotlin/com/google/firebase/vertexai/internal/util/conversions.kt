@@ -131,9 +131,8 @@ internal fun HarmCategory.toInternal() =
       com.google.firebase.vertexai.common.shared.HarmCategory.SEXUALLY_EXPLICIT
     HarmCategory.DANGEROUS_CONTENT ->
       com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
-    HarmCategory.UNKNOWN ->
-      com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
-    else ->  throw SerializationException("Missing case for a HarmCategory: $ordinal")
+    HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+    else -> throw SerializationException("Missing case for a HarmCategory: $ordinal")
   }
 
 internal fun HarmBlockMethod.toInternal() =

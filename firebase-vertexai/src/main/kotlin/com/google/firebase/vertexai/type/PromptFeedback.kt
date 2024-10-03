@@ -39,6 +39,6 @@ public class BlockReason private constructor(public val name: String, public val
     @JvmField public val SAFETY: BlockReason = BlockReason("SAFETY", 1)
 
     /** Content was blocked for another reason. */
-    @JvmField public val OTHER: BlockReason = BlockReason("OTHER",2)
+    @JvmField public val OTHER: BlockReason = BlockReason("OTHER", 2)
   }
 }

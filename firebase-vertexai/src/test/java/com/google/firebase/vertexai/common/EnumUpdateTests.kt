@@ -24,9 +24,11 @@ import org.junit.Test
  * ```
  */
 internal inline fun <reified T : Any> getEnumValues(): List<T> {
-    return T::class.java.declaredFields
-        .filter { it.type == T::class.java }
-        .mapNotNull { it.get(null) as? T }
+  return T::class
+    .java
+    .declaredFields
+    .filter { it.type == T::class.java }
+    .mapNotNull { it.get(null) as? T }
 }
 
 /**
@@ -34,21 +36,21 @@ internal inline fun <reified T : Any> getEnumValues(): List<T> {
  * updated.
  */
 internal class EnumUpdateTests {
-    @Test
-    fun `HarmCategory#toInternal() covers all values`() {
-        val values = getEnumValues<HarmCategory>()
-        values.forEach { it.toInternal() }
-    }
+  @Test
+  fun `HarmCategory#toInternal() covers all values`() {
+    val values = getEnumValues<HarmCategory>()
+    values.forEach { it.toInternal() }
+  }
 
-    @Test
-    fun `HarmBlockMethod#toInternal() covers all values`() {
-        val values = getEnumValues<HarmBlockMethod>()
-        values.forEach { it.toInternal() }
-    }
+  @Test
+  fun `HarmBlockMethod#toInternal() covers all values`() {
+    val values = getEnumValues<HarmBlockMethod>()
+    values.forEach { it.toInternal() }
+  }
 
-    @Test
-    fun `HarmBlockThreshold#toInternal() covers all values`() {
-        val values = getEnumValues<HarmBlockThreshold>()
-        values.forEach { it.toInternal() }
-    }
+  @Test
+  fun `HarmBlockThreshold#toInternal() covers all values`() {
+    val values = getEnumValues<HarmBlockThreshold>()
+    values.forEach { it.toInternal() }
+  }
 }
