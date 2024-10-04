@@ -1,4 +1,6 @@
 # Unreleased
+
+# 19.2.0
 * [fixed] Improved data consistency for rapid user actions.
 * [fixed] Fixed exception propagation in the case of no default uncaught exception handler.
 * [changed] Internal changes to improve startup time.
