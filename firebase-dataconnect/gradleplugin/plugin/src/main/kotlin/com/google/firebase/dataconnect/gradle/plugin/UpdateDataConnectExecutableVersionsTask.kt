@@ -13,36 +13,40 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 
+@Suppress("unused")
 abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
   @get:InputFile abstract val jsonFile: RegularFileProperty
 
-  @get:Input abstract val version: Property<String>
+  @get:Input abstract val versions: Property<VersionInput>
 
   @get:Internal abstract val workDirectory: DirectoryProperty
 
   @TaskAction
   fun run() {
     val jsonFile: File = jsonFile.get().asFile
-    val version: String = version.get()
+    val versions: List<String> = versions.get().toList()
     val workDirectory: File = workDirectory.get().asFile
 
     logger.info("jsonFile={}", jsonFile.absolutePath)
-    logger.info("version={}", version)
+    logger.info("versions={}", versions)
     logger.info("workDirectory={}", workDirectory)
 
-    val windowsExecutable = download(version, OperatingSystem.Windows, workDirectory)
-    val macosExecutable = download(version, OperatingSystem.MacOS, workDirectory)
-    val linuxExecutable = download(version, OperatingSystem.Linux, workDirectory)
-
     logger.info("Loading JSON file {}", jsonFile.absolutePath)
-    val oldJson = DataConnectExecutableVersionsRegistry.load(jsonFile)
-    val newJson = oldJson.withVersions(version, windowsExecutable, macosExecutable, linuxExecutable)
+    var json = DataConnectExecutableVersionsRegistry.load(jsonFile)
+
+    for (version in versions) {
+      val windowsExecutable = download(version, OperatingSystem.Windows, workDirectory)
+      val macosExecutable = download(version, OperatingSystem.MacOS, workDirectory)
+      val linuxExecutable = download(version, OperatingSystem.Linux, workDirectory)
+      json = json.withVersions(version, windowsExecutable, macosExecutable, linuxExecutable)
+    }
+
     logger.info(
-      "Writing information about version $version to JSON file: {}",
+      "Writing information about versions ${versions.joinToString(", ")} to JSON file: {}",
       jsonFile.absolutePath
     )
-    DataConnectExecutableVersionsRegistry.save(newJson, jsonFile)
+    DataConnectExecutableVersionsRegistry.save(json, jsonFile)
   }
 
   private fun DataConnectExecutableVersionsRegistry.Root.withVersions(
@@ -122,4 +126,15 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     val sizeInBytes: Long,
     val sha512DigestHex: String,
   )
+
+  sealed interface VersionInput {
+    fun toList(): List<String>
+
+    data class SingleVersion(val version: String) : VersionInput {
+      override fun toList() = listOf(version)
+    }
+    data class MultipleVersions(val versions: List<String>) : VersionInput {
+      override fun toList() = versions
+    }
+  }
 }
