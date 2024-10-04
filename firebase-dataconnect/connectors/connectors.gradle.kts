@@ -15,6 +15,7 @@
  */
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
 
 plugins {
   id("com.android.library")
@@ -108,4 +109,13 @@ tasks.withType<KotlinCompile>().all {
       kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
     }
   }
+}
+
+tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
+  outputs.upToDateWhen { false }
+  jsonFile.set(project.layout.projectDirectory.file(
+    "../gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
+        "plugin/DataConnectExecutableVersions.json"))
+  workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
+  version.set(project.providers.gradleProperty("version"))
 }
