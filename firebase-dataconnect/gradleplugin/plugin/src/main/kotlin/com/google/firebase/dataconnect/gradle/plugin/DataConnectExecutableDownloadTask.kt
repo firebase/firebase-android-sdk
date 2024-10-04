@@ -24,6 +24,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import org.gradle.api.DefaultTask
+import org.gradle.api.Task
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -73,7 +74,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     } else if (inputFile !== null) {
       runWithFile(inputFile = inputFile, outputFile = outputFile)
     } else if (version !== null) {
-      runWithVersion(version, operatingSystem, outputFile)
+      downloadDataConnectExecutable(version, operatingSystem, outputFile)
       verifyOutputFile(outputFile, operatingSystem, version)
     } else {
       throw DataConnectGradleException(
@@ -190,63 +191,72 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     }
   }
 
-  private fun runWithVersion(version: String, operatingSystem: OperatingSystem, outputFile: File) {
-    val osName =
-      when (operatingSystem) {
-        OperatingSystem.Windows -> "windows"
-        OperatingSystem.MacOS -> "macos"
-        OperatingSystem.Linux -> "linux"
-      }
-    val downloadFileName = "dataconnect-emulator-$osName-v$version"
-    val url = URL("https://storage.googleapis.com/firemat-preview-drop/emulator/$downloadFileName")
+  companion object {
+    fun Task.downloadDataConnectExecutable(
+      version: String,
+      operatingSystem: OperatingSystem,
+      outputFile: File
+    ) {
+      val osName =
+        when (operatingSystem) {
+          OperatingSystem.Windows -> "windows"
+          OperatingSystem.MacOS -> "macos"
+          OperatingSystem.Linux -> "linux"
+        }
+      val downloadFileName = "dataconnect-emulator-$osName-v$version"
+      val url =
+        URL("https://storage.googleapis.com/firemat-preview-drop/emulator/$downloadFileName")
 
-    logger.info("Downloading {} to {}", url, outputFile)
-    project.mkdir(outputFile.parentFile)
+      logger.info("Downloading {} to {}", url, outputFile)
+      project.mkdir(outputFile.parentFile)
 
-    val connection = url.openConnection() as HttpURLConnection
-    connection.requestMethod = "GET"
+      val connection = url.openConnection() as HttpURLConnection
+      connection.requestMethod = "GET"
 
-    val responseCode = connection.responseCode
-    if (responseCode != HttpURLConnection.HTTP_OK) {
-      throw DataConnectGradleException(
-        "n3mj6ahxwt",
-        "Downloading Data Connect executable from $url failed with HTTP response code" +
-          " $responseCode: ${connection.responseMessage}" +
-          " (expected HTTP response code ${HttpURLConnection.HTTP_OK})"
-      )
-    }
-
-    val startTime = System.nanoTime()
-    val debouncer = Debouncer(5.seconds)
-    outputFile.outputStream().use { oStream ->
-      var downloadByteCount: Long = 0
-      fun logDownloadedBytes() {
-        val elapsedTime = (System.nanoTime() - startTime).toDuration(DurationUnit.NANOSECONDS)
-        logger.info(
-          "Downloaded {} bytes in {}",
-          downloadByteCount.toStringWithThousandsSeparator(),
-          elapsedTime
+      val responseCode = connection.responseCode
+      if (responseCode != HttpURLConnection.HTTP_OK) {
+        throw DataConnectGradleException(
+          "n3mj6ahxwt",
+          "Downloading Data Connect executable from $url failed with HTTP response code" +
+            " $responseCode: ${connection.responseMessage}" +
+            " (expected HTTP response code ${HttpURLConnection.HTTP_OK})"
         )
       }
-      connection.inputStream.use { iStream ->
-        val buffer = ByteArray(8192)
-        while (true) {
-          val readCount = iStream.read(buffer)
-          if (readCount < 0) {
-            break
-          }
-          downloadByteCount += readCount
-          debouncer.maybeRun(::logDownloadedBytes)
-          oStream.write(buffer, 0, readCount)
-        }
-      }
-      logDownloadedBytes()
-    }
 
-    project.exec { execSpec ->
-      execSpec.run {
-        executable = "chmod"
-        args = listOf("a+x", outputFile.absolutePath)
+      val startTime = System.nanoTime()
+      val debouncer = Debouncer(5.seconds)
+      outputFile.outputStream().use { oStream ->
+        var downloadByteCount: Long = 0
+        fun logDownloadedBytes() {
+          val elapsedTime = (System.nanoTime() - startTime).toDuration(DurationUnit.NANOSECONDS)
+          logger.info(
+            "Downloaded {} bytes in {}",
+            downloadByteCount.toStringWithThousandsSeparator(),
+            elapsedTime
+          )
+        }
+        connection.inputStream.use { iStream ->
+          val buffer = ByteArray(8192)
+          while (true) {
+            val readCount = iStream.read(buffer)
+            if (readCount < 0) {
+              break
+            }
+            downloadByteCount += readCount
+            debouncer.maybeRun(::logDownloadedBytes)
+            oStream.write(buffer, 0, readCount)
+          }
+        }
+        logDownloadedBytes()
+      }
+
+      if (operatingSystem != OperatingSystem.Windows) {
+        project.exec { execSpec ->
+          execSpec.run {
+            executable = "chmod"
+            args = listOf("a+x", outputFile.absolutePath)
+          }
+        }
       }
     }
   }
