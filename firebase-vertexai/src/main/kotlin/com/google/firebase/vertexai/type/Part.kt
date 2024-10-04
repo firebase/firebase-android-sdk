@@ -37,12 +37,11 @@ public class ImagePart(public val image: Bitmap) : Part
 /**
  * Represents binary data with an associated MIME type sent to and received from requests.
  *
+ * @param inlineData the binary data as a [ByteArray]
  * @param mimeType an IANA standard MIME type. For supported values, see the
  * [Vertex AI documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/send-multimodal-prompts#media_requirements)
- * .
- * @param inlineData the binary data as a [ByteArray]
  */
-public class InlineDataPart(public val mimeType: String, public val inlineData: ByteArray) : Part
+public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part
 
 /**
  * Represents a function call request from the model
