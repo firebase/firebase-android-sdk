@@ -1,10 +1,11 @@
 # Unreleased
+
+# 21.0.1
 * [fixed] Fixed an issue where `maxUploadRetryTimeMillis` parameter is ignored when uploading using
   `putBytes()`
 
 # 21.0.0
 * [changed] Bump internal dependencies
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
