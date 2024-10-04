@@ -18,6 +18,12 @@ package com.google.firebase.dataconnect.gradle.plugin
 import java.io.InputStream
 import java.io.OutputStream
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
@@ -38,17 +44,42 @@ object DataConnectExecutableVersionsRegistry {
     this::class.java.classLoader.getResourceAsStream(PATH)
       ?: throw DataConnectGradleException("antkaw2gjp", "resource not found: $PATH")
 
-  @kotlinx.serialization.Serializable
+  @Serializable
   data class Root(
     val defaultVersion: String,
     val versions: List<VersionInfo>,
   )
 
-  @kotlinx.serialization.Serializable
+  @Serializable
   data class VersionInfo(
     val version: String,
-    val os: OperatingSystem,
+    @Serializable(with = OperationSystemSerializer::class) val os: OperatingSystem,
     val size: Long,
     val sha512DigestHex: String,
   )
+
+  private object OperationSystemSerializer : KSerializer<OperatingSystem> {
+    override val descriptor = PrimitiveSerialDescriptor("os", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): OperatingSystem =
+      when (val name = decoder.decodeString()) {
+        "windows" -> OperatingSystem.Windows
+        "macos" -> OperatingSystem.MacOS
+        "linux" -> OperatingSystem.Linux
+        else ->
+          throw DataConnectGradleException(
+            "nd5z2jk4hr",
+            "Unknown operating system: $name (must be windows, linux, or macos)"
+          )
+      }
+
+    override fun serialize(encoder: Encoder, value: OperatingSystem) =
+      encoder.encodeString(
+        when (value) {
+          OperatingSystem.Windows -> "windows"
+          OperatingSystem.MacOS -> "macos"
+          OperatingSystem.Linux -> "linux"
+        }
+      )
+  }
 }
