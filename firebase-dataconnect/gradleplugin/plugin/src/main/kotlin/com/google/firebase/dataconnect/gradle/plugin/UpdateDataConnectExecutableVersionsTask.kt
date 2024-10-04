@@ -23,6 +23,8 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
   @get:Input @get:Optional abstract val defaultVersion: Property<String>
 
+  @get:Input @get:Optional abstract val updateMode: Property<UpdateMode>
+
   @get:Internal abstract val workDirectory: DirectoryProperty
 
   @TaskAction
@@ -30,15 +32,25 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     val jsonFile: File = jsonFile.get().asFile
     val versions: List<String> = versions.get().toList()
     val defaultVersion: String? = defaultVersion.orNull
+    val updateMode: UpdateMode? = updateMode.orNull
     val workDirectory: File = workDirectory.get().asFile
 
     logger.info("jsonFile={}", jsonFile.absolutePath)
     logger.info("versions={}", versions)
     logger.info("defaultVersion={}", defaultVersion)
+    logger.info("updateMode={}", updateMode)
     logger.info("workDirectory={}", workDirectory)
 
-    logger.info("Loading JSON file {}", jsonFile.absolutePath)
-    var json = DataConnectExecutableVersionsRegistry.load(jsonFile)
+    var json: DataConnectExecutableVersionsRegistry.Root =
+      if (updateMode == UpdateMode.Overwrite) {
+        DataConnectExecutableVersionsRegistry.Root(
+          defaultVersion = "<unspecified>",
+          versions = emptyList()
+        )
+      } else {
+        logger.info("Loading JSON file {}", jsonFile.absolutePath)
+        DataConnectExecutableVersionsRegistry.load(jsonFile)
+      }
 
     if (defaultVersion !== null) {
       json = json.copy(defaultVersion = defaultVersion)
@@ -52,7 +64,9 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     }
 
     logger.info(
-      "Writing information about versions ${versions.joinToString(", ")} to JSON file: {}",
+      "Writing information about versions {} to file with updateMode={}: {}",
+      versions.joinToString(", "),
+      updateMode,
       jsonFile.absolutePath
     )
     DataConnectExecutableVersionsRegistry.save(json, jsonFile)
@@ -145,5 +159,10 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     data class MultipleVersions(val versions: List<String>) : VersionInput {
       override fun toList() = versions
     }
+  }
+
+  enum class UpdateMode {
+    Overwrite,
+    Update
   }
 }
