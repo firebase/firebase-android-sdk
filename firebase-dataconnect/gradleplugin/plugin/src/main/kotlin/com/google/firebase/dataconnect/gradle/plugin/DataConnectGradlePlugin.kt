@@ -117,7 +117,10 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
                 is DataConnectExecutable.RegularFile -> inputFile.get()
                 is DataConnectExecutable.Version ->
                   buildDirectory
-                    .map { directory -> directory.file("dataconnect-v${it.version}") }
+                    .map { directory ->
+                      val os = dataConnectProviders.operatingSystem.get()
+                      directory.file("dataconnect-v${it.version}${os.executableSuffix}")
+                    }
                     .get()
               }
             }

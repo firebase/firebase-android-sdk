@@ -45,13 +45,21 @@ class DataConnectProviders(
     val valueFromProject: Provider<DataConnectExecutable> =
       project.provider { projectExtension.dataConnectExecutable }
 
+    val defaultVersion: Provider<DataConnectExecutable> =
+      project.provider {
+        val root = DataConnectExecutableVersionsRegistry.load()
+        DataConnectExecutable.Version(root.defaultVersion)
+      }
+
     valueFromLocalSettings
       .orElse(fileValueFromGradleProperty)
       .orElse(versionValueFromGradleProperty)
       .orElse(valueFromVariant)
       .orElse(valueFromProject)
-      .orElse(DataConnectExecutable.Version.default)
+      .orElse(defaultVersion)
   }
+
+  val operatingSystem: Provider<OperatingSystem> = project.provider { OperatingSystem.current() }
 
   val postgresConnectionUrl: Provider<String> = run {
     val gradlePropertyName = "dataconnect.emulator.postgresConnectionUrl"
