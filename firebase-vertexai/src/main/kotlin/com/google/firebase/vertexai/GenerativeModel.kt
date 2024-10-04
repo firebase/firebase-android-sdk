@@ -231,7 +231,7 @@ internal constructor(
       generationConfig?.toInternal(),
       tools?.map { it.toInternal() },
       toolConfig?.toInternal(),
-      systemInstruction?.toInternal()
+      systemInstruction?.copy(role = "system")?.toInternal()
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =

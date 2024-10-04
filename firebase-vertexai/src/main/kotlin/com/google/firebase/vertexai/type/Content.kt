@@ -30,6 +30,10 @@ public class Content
 @JvmOverloads
 constructor(public val role: String? = "user", public val parts: List<Part>) {
 
+  public fun copy(role: String? = this.role, parts: List<Part> = this.parts): Content {
+    return Content(role, parts)
+  }
+
   /** Builder class to facilitate constructing complex [Content] objects. */
   public class Builder {
 
