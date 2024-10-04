@@ -110,6 +110,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
               }
             )
           )
+          operatingSystem.set(dataConnectProviders.operatingSystem)
           outputFile.set(
             dataConnectExecutable.map {
               when (it) {
