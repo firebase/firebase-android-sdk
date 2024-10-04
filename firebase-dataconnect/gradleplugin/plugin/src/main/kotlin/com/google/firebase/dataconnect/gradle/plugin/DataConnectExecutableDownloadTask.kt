@@ -93,15 +93,22 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     val fileInfo = FileInfo.forFile(outputFile)
 
     val allVersions = DataConnectExecutableVersionsRegistry.load().versions
-    val allVersionNames = allVersions.map { it.version }.distinct().sorted().joinToString(", ")
+    val allVersionNames =
+      allVersions
+        .asSequence()
+        .filter { it.os == operatingSystem }
+        .map { it.version }
+        .distinct()
+        .sorted()
+        .joinToString(", ")
     val applicableVersions =
       allVersions.filter { it.version == version && it.os == operatingSystem }
 
     if (applicableVersions.isEmpty()) {
       val message =
         "verification information for ${outputFile.absolutePath}" +
-          " (version $version for OS $operatingSystem) is not known;" +
-          " known versions for OS $operatingSystem are: $allVersionNames" +
+          " (version $version for $operatingSystem) is not known;" +
+          " known versions for $operatingSystem are: $allVersionNames" +
           " (loaded from ${DataConnectExecutableVersionsRegistry.PATH})"
       logger.error("ERROR: $message")
       throw DataConnectGradleException("ym8assbfgw", message)
