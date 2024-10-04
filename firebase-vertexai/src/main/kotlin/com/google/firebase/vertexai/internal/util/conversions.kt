@@ -109,6 +109,18 @@ internal fun SafetySetting.toInternal() =
     method.toInternal()
   )
 
+internal fun makeMissingCaseException(source: String, ordinal: Int): SerializationException {
+  return SerializationException(
+    """
+    |Missing case for a $source: $ordinal
+    |This error indicates that one of the `toInternal` conversions needs updating.
+    |If you're a developer seeing this exception, please file an issue on our GitHub repo:
+    |https://github.com/firebase/firebase-android-sdk
+  """
+      .trimMargin()
+  )
+}
+
 internal fun GenerationConfig.toInternal() =
   com.google.firebase.vertexai.common.client.GenerationConfig(
     temperature = temperature,
@@ -132,6 +144,7 @@ internal fun HarmCategory.toInternal() =
     HarmCategory.DANGEROUS_CONTENT ->
       com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
     HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+    else -> throw makeMissingCaseException("HarmCategory", ordinal)
   }
 
 internal fun HarmBlockMethod.toInternal() =
@@ -139,6 +152,7 @@ internal fun HarmBlockMethod.toInternal() =
     HarmBlockMethod.SEVERITY -> com.google.firebase.vertexai.common.shared.HarmBlockMethod.SEVERITY
     HarmBlockMethod.PROBABILITY ->
       com.google.firebase.vertexai.common.shared.HarmBlockMethod.PROBABILITY
+    else -> throw makeMissingCaseException("HarmBlockMethod", ordinal)
   }
 
 internal fun ToolConfig.toInternal() =
@@ -166,6 +180,7 @@ internal fun HarmBlockThreshold.toInternal() =
       com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
     HarmBlockThreshold.LOW_AND_ABOVE ->
       com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+    else -> throw makeMissingCaseException("HarmBlockThreshold", ordinal)
   }
 
 internal fun Tool.toInternal() =
