@@ -106,16 +106,16 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
 
     if (applicableVersions.isEmpty()) {
       val message =
-        "verification information for ${outputFile.absolutePath}" +
-          " (version $version for $operatingSystem) is not known;" +
+        "verification information for Data Connect toolkit executable" +
+          " version $version for $operatingSystem is not known;" +
           " known versions for $operatingSystem are: $allVersionNames" +
           " (loaded from ${DataConnectExecutableVersionsRegistry.PATH})"
       logger.error("ERROR: $message")
       throw DataConnectGradleException("ym8assbfgw", message)
     } else if (applicableVersions.size > 1) {
       val message =
-        "${applicableVersions.size} verification information records for" +
-          " ${outputFile.absolutePath} (version $version for OS $operatingSystem) were found in" +
+        "INTERNAL ERROR: ${applicableVersions.size} verification information records for" +
+          " Data Connect toolkit executable version $version for $operatingSystem were found in" +
           " ${DataConnectExecutableVersionsRegistry.PATH}, but expected exactly 1"
       logger.error("ERROR: $message")
       throw DataConnectGradleException("zyw5xrky6e", message)
