@@ -1,4 +1,6 @@
 # Unreleased
+
+# 16.0.0-beta01
 * [feature] Initial release of the Data Connect SDK (public preview). Learn how to
   [get started](https://firebase.google.com/docs/data-connect/android-sdk)
   with the SDK in your app.

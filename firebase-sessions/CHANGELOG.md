@@ -1,5 +1,7 @@
 # Unreleased
 
+# 2.0.5
+* [unchanged] Updated to keep SDK versions aligned.
 
 # 2.0.4
 * [fixed] Handled datastore writes when device has full internal memory more gracefully.
