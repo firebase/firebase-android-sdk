@@ -11,6 +11,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 
 @Suppress("unused")
@@ -20,20 +21,28 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
   @get:Input abstract val versions: Property<VersionInput>
 
+  @get:Input @get:Optional abstract val defaultVersion: Property<String>
+
   @get:Internal abstract val workDirectory: DirectoryProperty
 
   @TaskAction
   fun run() {
     val jsonFile: File = jsonFile.get().asFile
     val versions: List<String> = versions.get().toList()
+    val defaultVersion: String? = defaultVersion.orNull
     val workDirectory: File = workDirectory.get().asFile
 
     logger.info("jsonFile={}", jsonFile.absolutePath)
     logger.info("versions={}", versions)
+    logger.info("defaultVersion={}", defaultVersion)
     logger.info("workDirectory={}", workDirectory)
 
     logger.info("Loading JSON file {}", jsonFile.absolutePath)
     var json = DataConnectExecutableVersionsRegistry.load(jsonFile)
+
+    if (defaultVersion !== null) {
+      json = json.copy(defaultVersion = defaultVersion)
+    }
 
     for (version in versions) {
       val windowsExecutable = download(version, OperatingSystem.Windows, workDirectory)
