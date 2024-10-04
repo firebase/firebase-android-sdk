@@ -34,16 +34,23 @@ object DataConnectExecutableVersionsRegistry {
   const val PATH =
     "com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json"
 
+  private val json: Json by lazy {
+    Json {
+      prettyPrint = true
+      prettyPrintIndent = "  "
+    }
+  }
+
   fun load(): Root = openResourceForReading().use { load(it) }
 
   fun load(file: java.io.File): Root = file.inputStream().use { load(it) }
 
-  fun load(stream: InputStream): Root = Json.decodeFromStream<Root>(stream)
+  fun load(stream: InputStream): Root = json.decodeFromStream<Root>(stream)
 
   fun save(root: Root, dest: java.io.File) = dest.outputStream().use { save(root, it) }
 
   fun save(root: Root, dest: OutputStream) {
-    Json.encodeToStream(root, dest)
+    json.encodeToStream(root, dest)
   }
 
   private fun openResourceForReading(): InputStream =

@@ -7,6 +7,7 @@ import kotlin.random.Random
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -19,7 +20,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
   @get:InputFile abstract val jsonFile: RegularFileProperty
 
-  @get:Input abstract val versions: Property<VersionInput>
+  @get:Input abstract val versions: ListProperty<String>
 
   @get:Input @get:Optional abstract val defaultVersion: Property<String>
 
@@ -30,7 +31,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
   @TaskAction
   fun run() {
     val jsonFile: File = jsonFile.get().asFile
-    val versions: List<String> = versions.get().toList()
+    val versions: List<String> = versions.get()
     val defaultVersion: String? = defaultVersion.orNull
     val updateMode: UpdateMode? = updateMode.orNull
     val workDirectory: File = workDirectory.get().asFile
@@ -149,17 +150,6 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     val sizeInBytes: Long,
     val sha512DigestHex: String,
   )
-
-  sealed interface VersionInput {
-    fun toList(): List<String>
-
-    data class SingleVersion(val version: String) : VersionInput {
-      override fun toList() = listOf(version)
-    }
-    data class MultipleVersions(val versions: List<String>) : VersionInput {
-      override fun toList() = versions
-    }
-  }
 
   enum class UpdateMode {
     Overwrite,
