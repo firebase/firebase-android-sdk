@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import dataconnect.UpdateDataConnectExecutableVersionsTask
 
 plugins {
   `java-gradle-plugin`
@@ -45,4 +46,11 @@ spotless {
     target("*.gradle.kts")
     ktfmt("0.41").googleStyle()
   }
+}
+
+tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
+  outputs.upToDateWhen { false }
+  jsonFile.set(project.layout.projectDirectory.file("src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json"))
+  workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
+  version.set(project.providers.gradleProperty("version"))
 }

@@ -19,6 +19,8 @@ plugins {
   `kotlin-dsl`
 }
 
+java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
+
 dependencies {
   compileOnly(libs.android.gradlePlugin.gradle.api)
   implementation(gradleKotlinDsl())
