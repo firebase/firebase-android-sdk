@@ -27,6 +27,8 @@ import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.content
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.json.shouldContainJsonKeyValue
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
