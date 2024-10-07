@@ -17,16 +17,18 @@
 package com.google.firebase.vertexai.type
 
 /** Represents the threshold for a [HarmCategory] to be allowed by [SafetySetting]. */
-public enum class HarmBlockThreshold {
-  /** Content with negligible harm is allowed. */
-  LOW_AND_ABOVE,
+public class HarmBlockThreshold private constructor(public val ordinal: Int) {
+  public companion object {
+    /** Content with negligible harm is allowed. */
+    @JvmField public val LOW_AND_ABOVE: HarmBlockThreshold = HarmBlockThreshold(0)
 
-  /** Content with negligible to low harm is allowed. */
-  MEDIUM_AND_ABOVE,
+    /** Content with negligible to low harm is allowed. */
+    @JvmField public val MEDIUM_AND_ABOVE: HarmBlockThreshold = HarmBlockThreshold(1)
 
-  /** Content with negligible to medium harm is allowed. */
-  ONLY_HIGH,
+    /** Content with negligible to medium harm is allowed. */
+    @JvmField public val ONLY_HIGH: HarmBlockThreshold = HarmBlockThreshold(2)
 
-  /** All content is allowed regardless of harm. */
-  NONE
+    /** All content is allowed regardless of harm. */
+    @JvmField public val NONE: HarmBlockThreshold = HarmBlockThreshold(3)
+  }
 }

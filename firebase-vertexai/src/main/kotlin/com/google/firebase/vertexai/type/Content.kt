@@ -60,7 +60,7 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
      */
     @JvmName("addInlineData")
     public fun inlineData(mimeType: String, bytes: ByteArray): Content.Builder =
-      part(InlineDataPart(mimeType, bytes))
+      part(InlineDataPart(bytes, mimeType))
 
     /** Wraps the provided [image] inside an [ImagePart] and adds it to the [parts] list. */
     @JvmName("addImage") public fun image(image: Bitmap): Content.Builder = part(ImagePart(image))
