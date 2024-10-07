@@ -25,10 +25,10 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.string
+import kotlin.random.Random
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
-import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 abstract class DataConnectIntegrationTestBase {
@@ -100,10 +100,11 @@ val DataConnectIntegrationTestBase.testName
  */
 @Deprecated(
   "use Arb.alphanumericString() from DataConnectIntegrationTestBase instead",
-  replaceWith = ReplaceWith(
-    "Arb.alphanumericString()",
-    "io.kotest.property.Arb",
-    "com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase.alphanumericString",
+  replaceWith =
+    ReplaceWith(
+      "Arb.alphanumericString()",
+      "io.kotest.property.Arb",
+      "com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase.alphanumericString",
     )
 )
 fun DataConnectIntegrationTestBase.randomAlphanumericString(
