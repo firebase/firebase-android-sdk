@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 plugins {
   `java-gradle-plugin`
   alias(firebaseLibs.plugins.kotlin.jvm)
