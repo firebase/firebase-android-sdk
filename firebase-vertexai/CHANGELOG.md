@@ -1,7 +1,7 @@
 # Unreleased
 * [feature] Added support for `title` and `publicationDate` in citations. (#6309)
 * [feature] Added support for `frequencyPenalty`, `presencePenalty`, and `HarmBlockMethod`. (#6309)
-* [changed] **Breaking Change**: Introduced `Citations` class. Now `CitationMetadata` wraps that type.
+* [changed] **Breaking Change**: Introduced `Citations` class. Now `CitationMetadata` wraps that type. (#6276)
 * [changed] **Breaking Change**: Introduced `FunctionCall` and `FunctionResponse` types. Now `FunctionCallPart` and `FunctionResponsePart` wrap those types, respectively. (#6311)
 * [changed] **Breaking Change**: Reworked `Schema` declaration mechanism. (#6258)
 * [changed] **Breaking Change**: Reworked function calling mechanism to use the new `Schema` format. Function calls no longer use native types, nor include references to the actual executable code. (#6258)
