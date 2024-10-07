@@ -10,7 +10,7 @@
 * [changed] **Breaking Change**: Removed `UNSPECIFIED` option for the `HarmBlockThreshold`, `HarmProbability`, `HarmSeverity`, and `BlockReason` enums. (#6294)
 * [changed] **Breaking Change**: Renamed `BlockThreshold` as `HarmBlockThreshold`. (#6262)
 * [changed] **Breaking Change**: Renamed all types and methods starting with `blob` to start with `inlineData`. (#6309)
-* [changed] **Breaking Change**: Changed the order of arguments in `InlineDataPart` to match `ImagePart`.(#6340)
+* [changed] **Breaking Change**: Changed the order of arguments in `InlineDataPart` to match `ImagePart`. (#6340)
 * [changed] **Breaking Change**: Changed `RequestOption` to accept only `long` timeout values. (#6289)
 * [changed] **Breaking Change**: Moved `requestOptions` to the last positional argument in the `generativeModel` argument list. (#6292)
 * [changed] **Breaking Change**: Replaced sealed classes with abstract classes for `StringFormat`. (#6334)
