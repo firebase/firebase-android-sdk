@@ -66,13 +66,17 @@ object DataConnectExecutableVersionsRegistry {
   @Serializable
   data class VersionInfo(
     val version: String,
-    @Serializable(with = OperationSystemSerializer::class) val os: OperatingSystem,
+    @Serializable(with = OperatingSystemSerializer::class) val os: OperatingSystem,
     val size: Long,
     val sha512DigestHex: String,
   )
 
-  private object OperationSystemSerializer : KSerializer<OperatingSystem> {
-    override val descriptor = PrimitiveSerialDescriptor("os", PrimitiveKind.STRING)
+  private object OperatingSystemSerializer : KSerializer<OperatingSystem> {
+    override val descriptor =
+      PrimitiveSerialDescriptor(
+        "com.google.firebase.dataconnect.gradle.plugin.OperatingSystem",
+        PrimitiveKind.STRING,
+      )
 
     override fun deserialize(decoder: Decoder): OperatingSystem =
       when (val name = decoder.decodeString()) {
@@ -82,7 +86,7 @@ object DataConnectExecutableVersionsRegistry {
         else ->
           throw DataConnectGradleException(
             "nd5z2jk4hr",
-            "Unknown operating system: $name (must be windows, linux, or macos)"
+            "Unknown operating system: $name (must be windows, macos, or linux)"
           )
       }
 
