@@ -70,9 +70,12 @@ internal class GenerativeModelTesting {
 
     withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
 
-    val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
+    mockEngine.requestHistory.shouldNotBeEmpty()
 
-    requestBodyAsText.let {
+    val request = mockEngine.requestHistory.first().body
+    request.shouldBeInstanceOf<TextContent>()
+
+    request.text.let {
       it shouldContainJsonKey "system_instruction"
       it.shouldContainJsonKeyValue("$.system_instruction.role", "system")
       it.shouldContainJsonKeyValue("$.system_instruction.parts[0].text", "system instruction")
