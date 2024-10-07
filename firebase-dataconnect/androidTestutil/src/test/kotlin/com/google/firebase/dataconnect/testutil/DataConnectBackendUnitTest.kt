@@ -16,8 +16,12 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectBackend.Companion.fromInstrumentationArgument
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import java.net.URI
 import java.net.URL
 import org.junit.Test
@@ -25,109 +29,110 @@ import org.junit.Test
 class DataConnectBackendUnitTest {
 
   @Test
-  fun `fromInstrumentationArgument(null) should return Production`() {
-    assertThat(fromInstrumentationArgument(null)).isNull()
+  fun `fromInstrumentationArgument(null) should return null`() {
+    fromInstrumentationArgument(null).shouldBeNull()
   }
 
   @Test
   fun `fromInstrumentationArgument('prod') should return Production`() {
-    assertThat(fromInstrumentationArgument("prod")).isSameInstanceAs(DataConnectBackend.Production)
+    fromInstrumentationArgument("prod") shouldBeSameInstanceAs DataConnectBackend.Production
   }
 
   @Test
   fun `fromInstrumentationArgument('staging') should return Staging`() {
-    assertThat(fromInstrumentationArgument("staging")).isSameInstanceAs(DataConnectBackend.Staging)
+    fromInstrumentationArgument("staging") shouldBeSameInstanceAs DataConnectBackend.Staging
   }
 
   @Test
   fun `fromInstrumentationArgument('autopush') should return Autopush`() {
-    assertThat(fromInstrumentationArgument("autopush"))
-      .isSameInstanceAs(DataConnectBackend.Autopush)
+    fromInstrumentationArgument("autopush") shouldBeSameInstanceAs DataConnectBackend.Autopush
   }
 
   @Test
   fun `fromInstrumentationArgument('emulator') should return Emulator()`() {
-    assertThat(fromInstrumentationArgument("emulator")).isEqualTo(DataConnectBackend.Emulator())
+    fromInstrumentationArgument("emulator") shouldBe DataConnectBackend.Emulator()
   }
 
   @Test
   fun `fromInstrumentationArgument(emulator with host) should return Emulator() with the host`() {
-    assertThat(fromInstrumentationArgument("emulator:a.b.c"))
-      .isEqualTo(DataConnectBackend.Emulator(host = "a.b.c"))
+    fromInstrumentationArgument("emulator:a.b.c") shouldBe
+      DataConnectBackend.Emulator(host = "a.b.c")
   }
 
   @Test
   fun `fromInstrumentationArgument(emulator with port) should return Emulator() with the port`() {
-    assertThat(fromInstrumentationArgument("emulator::9987"))
-      .isEqualTo(DataConnectBackend.Emulator(port = 9987))
+    fromInstrumentationArgument("emulator::9987") shouldBe DataConnectBackend.Emulator(port = 9987)
   }
 
   @Test
   fun `fromInstrumentationArgument(emulator with host and port) should return Emulator() with the host and port`() {
-    assertThat(fromInstrumentationArgument("emulator:a.b.c:9987"))
-      .isEqualTo(DataConnectBackend.Emulator(host = "a.b.c", port = 9987))
+    fromInstrumentationArgument("emulator:a.b.c:9987") shouldBe
+      DataConnectBackend.Emulator(host = "a.b.c", port = 9987)
   }
 
   @Test
   fun `fromInstrumentationArgument(http url with host) should return Custom()`() {
-    assertThat(fromInstrumentationArgument("http://a.b.c"))
-      .isEqualTo(DataConnectBackend.Custom("a.b.c", false))
+    fromInstrumentationArgument("http://a.b.c") shouldBe DataConnectBackend.Custom("a.b.c", false)
   }
 
   @Test
   fun `fromInstrumentationArgument(http url with host and port) should return Custom()`() {
-    assertThat(fromInstrumentationArgument("http://a.b.c:9987"))
-      .isEqualTo(DataConnectBackend.Custom("a.b.c:9987", false))
+    fromInstrumentationArgument("http://a.b.c:9987") shouldBe
+      DataConnectBackend.Custom("a.b.c:9987", false)
   }
 
   @Test
   fun `fromInstrumentationArgument(https url with host) should return Custom()`() {
-    assertThat(fromInstrumentationArgument("https://a.b.c"))
-      .isEqualTo(DataConnectBackend.Custom("a.b.c", true))
+    fromInstrumentationArgument("https://a.b.c") shouldBe DataConnectBackend.Custom("a.b.c", true)
   }
 
   @Test
   fun `fromInstrumentationArgument(https url with host and port) should return Custom()`() {
-    assertThat(fromInstrumentationArgument("https://a.b.c:9987"))
-      .isEqualTo(DataConnectBackend.Custom("a.b.c:9987", true))
+    fromInstrumentationArgument("https://a.b.c:9987") shouldBe
+      DataConnectBackend.Custom("a.b.c:9987", true)
   }
 
   @Test
   fun `fromInstrumentationArgument('foo') should throw an exception`() {
     val exception =
-      assertThrows(InvalidInstrumentationArgumentException::class) {
-        fromInstrumentationArgument("foo")
-      }
+      shouldThrow<InvalidInstrumentationArgumentException> { fromInstrumentationArgument("foo") }
+
     val urlParseErrorMessage = runCatching { URL("foo") }.exceptionOrNull()!!.message!!
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("foo")
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("invalid", ignoreCase = true)
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("DATA_CONNECT_BACKEND")
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText(urlParseErrorMessage)
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "foo"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "invalid"
+      exception.message shouldContainWithNonAbuttingText "DATA_CONNECT_BACKEND"
+      exception.message shouldContainWithNonAbuttingText urlParseErrorMessage
+    }
   }
 
   @Test
   fun `fromInstrumentationArgument(invalid URI) should throw an exception`() {
     val exception =
-      assertThrows(InvalidInstrumentationArgumentException::class) {
-        fromInstrumentationArgument("..:")
-      }
+      shouldThrow<InvalidInstrumentationArgumentException> { fromInstrumentationArgument("..:") }
+
     val uriParseErrorMessage = runCatching { URI("..:") }.exceptionOrNull()!!.message!!
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("..:")
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("invalid", ignoreCase = true)
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("DATA_CONNECT_BACKEND")
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText(uriParseErrorMessage)
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "..:"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "invalid"
+      exception.message shouldContainWithNonAbuttingText "DATA_CONNECT_BACKEND"
+      exception.message shouldContainWithNonAbuttingText uriParseErrorMessage
+    }
   }
 
   @Test
   fun `fromInstrumentationArgument(invalid emulator URI) should throw an exception`() {
     val exception =
-      assertThrows(InvalidInstrumentationArgumentException::class) {
+      shouldThrow<InvalidInstrumentationArgumentException> {
         fromInstrumentationArgument("emulator:::::")
       }
+
     val urlParseErrorMessage = runCatching { URL("https://::::") }.exceptionOrNull()!!.message!!
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("emulator:::::")
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("invalid", ignoreCase = true)
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText("DATA_CONNECT_BACKEND")
-    assertThat(exception).hasMessageThat().containsWithNonAdjacentText(urlParseErrorMessage)
+    assertSoftly {
+      exception.message shouldContainWithNonAbuttingText "emulator:::::"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "invalid"
+      exception.message shouldContainWithNonAbuttingText "DATA_CONNECT_BACKEND"
+      exception.message shouldContainWithNonAbuttingText urlParseErrorMessage
+    }
   }
 }

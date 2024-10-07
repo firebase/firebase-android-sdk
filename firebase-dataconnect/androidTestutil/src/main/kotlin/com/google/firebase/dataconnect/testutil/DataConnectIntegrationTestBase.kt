@@ -19,11 +19,16 @@ package com.google.firebase.dataconnect.testutil
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.util.nextAlphanumericString
+import io.kotest.property.Arb
 import io.kotest.property.RandomSource
-import kotlin.random.Random
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.string
 import org.junit.Rule
 import org.junit.rules.TestName
 import org.junit.runner.RunWith
+import kotlin.random.Random
 
 @RunWith(AndroidJUnit4::class)
 abstract class DataConnectIntegrationTestBase {
@@ -39,6 +44,32 @@ abstract class DataConnectIntegrationTestBase {
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
 
   val rs: RandomSource by randomSeedTestRule.rs
+
+  /**
+   * Generates and returns a string containing random alphanumeric characters, including the name of
+   * the currently-running test as returned from [testName].
+   *
+   * @param string The [Arb] to use to generate the random string; if not specified, then an [Arb]
+   * that generates strings of 20 alphanumeric characters is used.
+   * @param prefix A prefix to include in the returned string; if null (the default) then no prefix
+   * will be included.
+   * @return a string containing random characters and incorporating the other information
+   * identified above.
+   */
+  fun Arb.Companion.alphanumericString(
+    string: Arb<String> = Arb.string(20, Codepoint.alphanumeric()),
+    prefix: String? = null,
+  ): Arb<String> = arbitrary {
+    buildString {
+      if (prefix != null) {
+        append(prefix)
+        append("_")
+      }
+      append(testName)
+      append("_")
+      append(string.bind())
+    }
+  }
 
   companion object {
     val testConnectorConfig: ConnectorConfig
@@ -67,6 +98,14 @@ val DataConnectIntegrationTestBase.testName
  * @return a string containing random characters and incorporating the other information identified
  * above.
  */
+@Deprecated(
+  "use Arb.alphanumericString() from DataConnectIntegrationTestBase instead",
+  replaceWith = ReplaceWith(
+    "Arb.alphanumericString()",
+    "io.kotest.property.Arb",
+    "com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase.alphanumericString",
+    )
+)
 fun DataConnectIntegrationTestBase.randomAlphanumericString(
   prefix: String? = null,
   numRandomChars: Int? = null
