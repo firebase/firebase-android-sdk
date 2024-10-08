@@ -17,10 +17,10 @@
 package com.google.firebase.vertexai
 
 import android.graphics.Bitmap
-import com.google.firebase.vertexai.type.BlobPart
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.ImagePart
+import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.InvalidStateException
 import com.google.firebase.vertexai.type.TextPart
 import com.google.firebase.vertexai.type.content
@@ -42,7 +42,10 @@ import kotlinx.coroutines.flow.onEach
  * @param model The model to use for the interaction
  * @property history The previous interactions with the model
  */
-class Chat(private val model: GenerativeModel, val history: MutableList<Content> = ArrayList()) {
+public class Chat(
+  private val model: GenerativeModel,
+  public val history: MutableList<Content> = ArrayList()
+) {
   private var lock = Semaphore(1)
 
   /**
@@ -53,7 +56,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @throws InvalidStateException if the prompt is not coming from the 'user' role
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  suspend fun sendMessage(prompt: Content): GenerateContentResponse {
+  public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
     prompt.assertComesFromUser()
     attemptLock()
     try {
@@ -72,7 +75,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @param prompt The text to be converted into a single piece of [Content] to send to the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  suspend fun sendMessage(prompt: String): GenerateContentResponse {
+  public suspend fun sendMessage(prompt: String): GenerateContentResponse {
     val content = content { text(prompt) }
     return sendMessage(content)
   }
@@ -83,7 +86,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @param prompt The image to be converted into a single piece of [Content] to send to the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  suspend fun sendMessage(prompt: Bitmap): GenerateContentResponse {
+  public suspend fun sendMessage(prompt: Bitmap): GenerateContentResponse {
     val content = content { image(prompt) }
     return sendMessage(content)
   }
@@ -96,19 +99,19 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @throws InvalidStateException if the prompt is not coming from the 'user' role
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  fun sendMessageStream(prompt: Content): Flow<GenerateContentResponse> {
+  public fun sendMessageStream(prompt: Content): Flow<GenerateContentResponse> {
     prompt.assertComesFromUser()
     attemptLock()
 
     val flow = model.generateContentStream(*history.toTypedArray(), prompt)
     val bitmaps = LinkedList<Bitmap>()
-    val blobs = LinkedList<BlobPart>()
+    val inlineDataParts = LinkedList<InlineDataPart>()
     val text = StringBuilder()
 
     /**
-     * TODO: revisit when images and blobs are returned. This will cause issues with how things are
-     * structured in the response. eg; a text/image/text response will be (incorrectly) represented
-     * as image/text
+     * TODO: revisit when images and inline data are returned. This will cause issues with how
+     * things are structured in the response. eg; a text/image/text response will be (incorrectly)
+     * represented as image/text
      */
     return flow
       .onEach {
@@ -116,7 +119,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
           when (part) {
             is TextPart -> text.append(part.text)
             is ImagePart -> bitmaps.add(part.image)
-            is BlobPart -> blobs.add(part)
+            is InlineDataPart -> inlineDataParts.add(part)
           }
         }
       }
@@ -128,8 +131,8 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
               for (bitmap in bitmaps) {
                 image(bitmap)
               }
-              for (blob in blobs) {
-                blob(blob.mimeType, blob.blob)
+              for (inlineDataPart in inlineDataParts) {
+                inlineData(inlineDataPart.mimeType, inlineDataPart.inlineData)
               }
               if (text.isNotBlank()) {
                 text(text.toString())
@@ -149,7 +152,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @return A [Flow] which will emit responses as they are returned from the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  fun sendMessageStream(prompt: String): Flow<GenerateContentResponse> {
+  public fun sendMessageStream(prompt: String): Flow<GenerateContentResponse> {
     val content = content { text(prompt) }
     return sendMessageStream(content)
   }
@@ -161,7 +164,7 @@ class Chat(private val model: GenerativeModel, val history: MutableList<Content>
    * @return A [Flow] which will emit responses as they are returned from the model.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
+  public fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
     val content = content { image(prompt) }
     return sendMessageStream(content)
   }

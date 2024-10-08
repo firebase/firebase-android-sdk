@@ -16,12 +16,16 @@
 
 package com.google.firebase.vertexai.util
 
-import com.google.ai.client.generativeai.common.APIController
-import com.google.ai.client.generativeai.common.RequestOptions
 import com.google.firebase.vertexai.GenerativeModel
+import com.google.firebase.vertexai.common.APIController
+import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
 import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
@@ -93,10 +97,11 @@ internal fun commonTest(
       "super_cool_test_key",
       "gemini-pro",
       requestOptions,
+      MockEngine {
+        respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
+      },
       TEST_CLIENT_ID,
       null,
-      channel,
-      status,
     )
   val model = GenerativeModel("cool-model-name", controller = apiController)
   CommonTestScope(channel, model).block()

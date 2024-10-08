@@ -17,22 +17,21 @@
 package com.google.firebase.vertexai.type
 
 /** Represents the probability that some [HarmCategory] is applicable in a [SafetyRating]. */
-enum class HarmProbability {
-  /** A new and not yet supported value. */
-  UNKNOWN,
+public class HarmProbability private constructor(public val ordinal: Int) {
+  public companion object {
+    /** A new and not yet supported value. */
+    @JvmField public val UNKNOWN: HarmProbability = HarmProbability(0)
 
-  /** Probability for harm is unspecified. */
-  UNSPECIFIED,
+    /** Probability for harm is negligible. */
+    @JvmField public val NEGLIGIBLE: HarmProbability = HarmProbability(1)
 
-  /** Probability for harm is negligible. */
-  NEGLIGIBLE,
+    /** Probability for harm is low. */
+    @JvmField public val LOW: HarmProbability = HarmProbability(2)
 
-  /** Probability for harm is low. */
-  LOW,
+    /** Probability for harm is medium. */
+    @JvmField public val MEDIUM: HarmProbability = HarmProbability(3)
 
-  /** Probability for harm is medium. */
-  MEDIUM,
-
-  /** Probability for harm is high. */
-  HIGH,
+    /** Probability for harm is high. */
+    @JvmField public val HIGH: HarmProbability = HarmProbability(4)
+  }
 }

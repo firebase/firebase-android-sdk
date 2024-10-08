@@ -185,7 +185,7 @@ public class RemoteConfigComponentTest {
     when(mockMetadataClient.getRealtimeBackoffMetadata())
         .thenReturn(new ConfigMetadataClient.RealtimeBackoffMetadata(0, new Date()));
 
-    RemoteConfigComponent frcComponent = getNewFrcComponent();
+    RemoteConfigComponent frcComponent = getNewFrcComponentWithoutLoadingDefault();
     FirebaseRemoteConfig instance = getFrcInstanceFromComponent(frcComponent, DEFAULT_NAMESPACE);
 
     frcComponent.registerRolloutsStateSubscriber(DEFAULT_NAMESPACE, mockRolloutsStateSubscriber);

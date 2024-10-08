@@ -19,31 +19,34 @@ package com.google.firebase.vertexai.internal.util
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
-import com.google.ai.client.generativeai.common.client.Schema
-import com.google.ai.client.generativeai.common.shared.FunctionCall
-import com.google.ai.client.generativeai.common.shared.FunctionCallPart
-import com.google.ai.client.generativeai.common.shared.FunctionResponse
-import com.google.ai.client.generativeai.common.shared.FunctionResponsePart
-import com.google.firebase.vertexai.type.BlobPart
+import com.google.firebase.vertexai.common.client.Schema
+import com.google.firebase.vertexai.common.shared.FileData
+import com.google.firebase.vertexai.common.shared.InlineData
 import com.google.firebase.vertexai.type.BlockReason
-import com.google.firebase.vertexai.type.BlockThreshold
 import com.google.firebase.vertexai.type.Candidate
+import com.google.firebase.vertexai.type.Citation
 import com.google.firebase.vertexai.type.CitationMetadata
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FileDataPart
 import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.FunctionCall
+import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
+import com.google.firebase.vertexai.type.FunctionResponse
+import com.google.firebase.vertexai.type.FunctionResponsePart
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
+import com.google.firebase.vertexai.type.HarmBlockMethod
+import com.google.firebase.vertexai.type.HarmBlockThreshold
 import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.ImagePart
+import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.Part
 import com.google.firebase.vertexai.type.PromptFeedback
-import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.SafetyRating
 import com.google.firebase.vertexai.type.SafetySetting
 import com.google.firebase.vertexai.type.SerializationException
@@ -53,45 +56,38 @@ import com.google.firebase.vertexai.type.ToolConfig
 import com.google.firebase.vertexai.type.UsageMetadata
 import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
+import java.util.Calendar
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
 
 private const val BASE_64_FLAGS = Base64.NO_WRAP
 
-internal fun RequestOptions.toInternal() =
-  com.google.ai.client.generativeai.common.RequestOptions(timeout, apiVersion, endpoint)
-
 internal fun Content.toInternal() =
-  com.google.ai.client.generativeai.common.shared.Content(
+  com.google.firebase.vertexai.common.shared.Content(
     this.role ?: "user",
     this.parts.map { it.toInternal() }
   )
 
-internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.Part {
+internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part {
   return when (this) {
-    is TextPart -> com.google.ai.client.generativeai.common.shared.TextPart(text)
+    is TextPart -> com.google.firebase.vertexai.common.shared.TextPart(text)
     is ImagePart ->
-      com.google.ai.client.generativeai.common.shared.BlobPart(
-        com.google.ai.client.generativeai.common.shared.Blob(
-          "image/jpeg",
-          encodeBitmapToBase64Png(image)
-        )
+      com.google.firebase.vertexai.common.shared.InlineDataPart(
+        InlineData("image/jpeg", encodeBitmapToBase64Png(image))
       )
-    is BlobPart ->
-      com.google.ai.client.generativeai.common.shared.BlobPart(
-        com.google.ai.client.generativeai.common.shared.Blob(
-          mimeType,
-          Base64.encodeToString(blob, BASE_64_FLAGS)
-        )
+    is InlineDataPart ->
+      com.google.firebase.vertexai.common.shared.InlineDataPart(
+        InlineData(mimeType, Base64.encodeToString(inlineData, BASE_64_FLAGS))
       )
-    is com.google.firebase.vertexai.type.FunctionCallPart ->
-      FunctionCallPart(FunctionCall(name, args.orEmpty()))
-    is com.google.firebase.vertexai.type.FunctionResponsePart ->
-      FunctionResponsePart(FunctionResponse(name, response.toInternal()))
+    is FunctionCallPart ->
+      com.google.firebase.vertexai.common.shared.FunctionCallPart(functionCall.toInternal())
+    is FunctionResponsePart ->
+      com.google.firebase.vertexai.common.shared.FunctionResponsePart(functionResponse.toInternal())
     is FileDataPart ->
-      com.google.ai.client.generativeai.common.shared.FileDataPart(
-        com.google.ai.client.generativeai.common.shared.FileData(mimeType = mimeType, fileUri = uri)
+      com.google.firebase.vertexai.common.shared.FileDataPart(
+        FileData(mimeType = mimeType, fileUri = uri)
       )
     else ->
       throw SerializationException(
@@ -100,82 +96,104 @@ internal fun Part.toInternal(): com.google.ai.client.generativeai.common.shared.
   }
 }
 
+internal fun FunctionCall.toInternal() =
+  com.google.firebase.vertexai.common.shared.FunctionCall(name, args)
+
+internal fun FunctionResponse.toInternal() =
+  com.google.firebase.vertexai.common.shared.FunctionResponse(name, response)
+
 internal fun SafetySetting.toInternal() =
-  com.google.ai.client.generativeai.common.shared.SafetySetting(
+  com.google.firebase.vertexai.common.shared.SafetySetting(
     harmCategory.toInternal(),
-    threshold.toInternal()
+    threshold.toInternal(),
+    method.toInternal()
   )
 
+internal fun makeMissingCaseException(source: String, ordinal: Int): SerializationException {
+  return SerializationException(
+    """
+    |Missing case for a $source: $ordinal
+    |This error indicates that one of the `toInternal` conversions needs updating.
+    |If you're a developer seeing this exception, please file an issue on our GitHub repo:
+    |https://github.com/firebase/firebase-android-sdk
+  """
+      .trimMargin()
+  )
+}
+
 internal fun GenerationConfig.toInternal() =
-  com.google.ai.client.generativeai.common.client.GenerationConfig(
+  com.google.firebase.vertexai.common.client.GenerationConfig(
     temperature = temperature,
     topP = topP,
     topK = topK,
     candidateCount = candidateCount,
     maxOutputTokens = maxOutputTokens,
     stopSequences = stopSequences,
+    frequencyPenalty = frequencyPenalty,
+    presencePenalty = presencePenalty,
     responseMimeType = responseMimeType,
     responseSchema = responseSchema?.toInternal()
   )
 
-internal fun com.google.firebase.vertexai.type.HarmCategory.toInternal() =
+internal fun HarmCategory.toInternal() =
   when (this) {
-    HarmCategory.HARASSMENT ->
-      com.google.ai.client.generativeai.common.shared.HarmCategory.HARASSMENT
-    HarmCategory.HATE_SPEECH ->
-      com.google.ai.client.generativeai.common.shared.HarmCategory.HATE_SPEECH
+    HarmCategory.HARASSMENT -> com.google.firebase.vertexai.common.shared.HarmCategory.HARASSMENT
+    HarmCategory.HATE_SPEECH -> com.google.firebase.vertexai.common.shared.HarmCategory.HATE_SPEECH
     HarmCategory.SEXUALLY_EXPLICIT ->
-      com.google.ai.client.generativeai.common.shared.HarmCategory.SEXUALLY_EXPLICIT
+      com.google.firebase.vertexai.common.shared.HarmCategory.SEXUALLY_EXPLICIT
     HarmCategory.DANGEROUS_CONTENT ->
-      com.google.ai.client.generativeai.common.shared.HarmCategory.DANGEROUS_CONTENT
-    HarmCategory.UNKNOWN -> com.google.ai.client.generativeai.common.shared.HarmCategory.UNKNOWN
+      com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
+    HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+    else -> throw makeMissingCaseException("HarmCategory", ordinal)
+  }
+
+internal fun HarmBlockMethod.toInternal() =
+  when (this) {
+    HarmBlockMethod.SEVERITY -> com.google.firebase.vertexai.common.shared.HarmBlockMethod.SEVERITY
+    HarmBlockMethod.PROBABILITY ->
+      com.google.firebase.vertexai.common.shared.HarmBlockMethod.PROBABILITY
+    else -> throw makeMissingCaseException("HarmBlockMethod", ordinal)
   }
 
 internal fun ToolConfig.toInternal() =
-  com.google.ai.client.generativeai.common.client.ToolConfig(
-    com.google.ai.client.generativeai.common.client.FunctionCallingConfig(
+  com.google.firebase.vertexai.common.client.ToolConfig(
+    com.google.firebase.vertexai.common.client.FunctionCallingConfig(
       when (functionCallingConfig.mode) {
         FunctionCallingConfig.Mode.ANY ->
-          com.google.ai.client.generativeai.common.client.FunctionCallingConfig.Mode.ANY
+          com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.ANY
         FunctionCallingConfig.Mode.AUTO ->
-          com.google.ai.client.generativeai.common.client.FunctionCallingConfig.Mode.AUTO
+          com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.AUTO
         FunctionCallingConfig.Mode.NONE ->
-          com.google.ai.client.generativeai.common.client.FunctionCallingConfig.Mode.NONE
-      }
+          com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.NONE
+      },
+      functionCallingConfig.allowedFunctionNames
     )
   )
 
-internal fun BlockThreshold.toInternal() =
+internal fun HarmBlockThreshold.toInternal() =
   when (this) {
-    BlockThreshold.NONE ->
-      com.google.ai.client.generativeai.common.shared.HarmBlockThreshold.BLOCK_NONE
-    BlockThreshold.ONLY_HIGH ->
-      com.google.ai.client.generativeai.common.shared.HarmBlockThreshold.BLOCK_ONLY_HIGH
-    BlockThreshold.MEDIUM_AND_ABOVE ->
-      com.google.ai.client.generativeai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
-    BlockThreshold.LOW_AND_ABOVE ->
-      com.google.ai.client.generativeai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
-    BlockThreshold.UNSPECIFIED ->
-      com.google.ai.client.generativeai.common.shared.HarmBlockThreshold.UNSPECIFIED
+    HarmBlockThreshold.NONE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_NONE
+    HarmBlockThreshold.ONLY_HIGH ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_ONLY_HIGH
+    HarmBlockThreshold.MEDIUM_AND_ABOVE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+    HarmBlockThreshold.LOW_AND_ABOVE ->
+      com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+    else -> throw makeMissingCaseException("HarmBlockThreshold", ordinal)
   }
 
 internal fun Tool.toInternal() =
-  com.google.ai.client.generativeai.common.client.Tool(functionDeclarations.map { it.toInternal() })
-
-internal fun FunctionDeclaration.toInternal() =
-  com.google.ai.client.generativeai.common.client.FunctionDeclaration(
-    name,
-    description,
-    Schema(
-      properties = getParameters().associate { it.name to it.toInternal() },
-      required = getParameters().map { it.name },
-      type = "OBJECT",
-    ),
+  com.google.firebase.vertexai.common.client.Tool(
+    functionDeclarations?.map { it.toInternal() } ?: emptyList()
   )
 
-internal fun <T> com.google.firebase.vertexai.type.Schema<T>.toInternal(): Schema =
+internal fun FunctionDeclaration.toInternal() =
+  com.google.firebase.vertexai.common.client.FunctionDeclaration(name, "", schema.toInternal())
+
+internal fun com.google.firebase.vertexai.type.Schema.toInternal(): Schema =
   Schema(
-    type.name,
+    type,
     description,
     format,
     nullable,
@@ -187,9 +205,9 @@ internal fun <T> com.google.firebase.vertexai.type.Schema<T>.toInternal(): Schem
 
 internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toString())
 
-internal fun com.google.ai.client.generativeai.common.server.Candidate.toPublic(): Candidate {
+internal fun com.google.firebase.vertexai.common.server.Candidate.toPublic(): Candidate {
   val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
-  val citations = citationMetadata?.citationSources?.map { it.toPublic() }.orEmpty()
+  val citations = citationMetadata?.toPublic()
   val finishReason = finishReason.toPublic()
 
   return Candidate(
@@ -200,34 +218,28 @@ internal fun com.google.ai.client.generativeai.common.server.Candidate.toPublic(
   )
 }
 
-internal fun com.google.ai.client.generativeai.common.UsageMetadata.toPublic(): UsageMetadata =
+internal fun com.google.firebase.vertexai.common.UsageMetadata.toPublic(): UsageMetadata =
   UsageMetadata(promptTokenCount ?: 0, candidatesTokenCount ?: 0, totalTokenCount ?: 0)
 
-internal fun com.google.ai.client.generativeai.common.shared.Content.toPublic(): Content =
+internal fun com.google.firebase.vertexai.common.shared.Content.toPublic(): Content =
   Content(role, parts.map { it.toPublic() })
 
-internal fun com.google.ai.client.generativeai.common.shared.Part.toPublic(): Part {
+internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
   return when (this) {
-    is com.google.ai.client.generativeai.common.shared.TextPart -> TextPart(text)
-    is com.google.ai.client.generativeai.common.shared.BlobPart -> {
+    is com.google.firebase.vertexai.common.shared.TextPart -> TextPart(text)
+    is com.google.firebase.vertexai.common.shared.InlineDataPart -> {
       val data = Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {
-        BlobPart(inlineData.mimeType, data)
+        InlineDataPart(data, inlineData.mimeType)
       }
     }
-    is FunctionCallPart ->
-      com.google.firebase.vertexai.type.FunctionCallPart(
-        functionCall.name,
-        functionCall.args.orEmpty(),
-      )
-    is FunctionResponsePart ->
-      com.google.firebase.vertexai.type.FunctionResponsePart(
-        functionResponse.name,
-        functionResponse.response.toPublic(),
-      )
-    is com.google.ai.client.generativeai.common.shared.FileDataPart ->
+    is com.google.firebase.vertexai.common.shared.FunctionCallPart ->
+      FunctionCallPart(functionCall.toPublic())
+    is com.google.firebase.vertexai.common.shared.FunctionResponsePart ->
+      FunctionResponsePart(functionResponse.toPublic())
+    is com.google.firebase.vertexai.common.shared.FileDataPart ->
       FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
       throw SerializationException(
@@ -236,10 +248,43 @@ internal fun com.google.ai.client.generativeai.common.shared.Part.toPublic(): Pa
   }
 }
 
-internal fun com.google.ai.client.generativeai.common.server.CitationSources.toPublic() =
-  CitationMetadata(startIndex = startIndex, endIndex = endIndex, uri = uri, license = license)
+internal fun com.google.firebase.vertexai.common.shared.FunctionCall.toPublic() =
+  FunctionCall(name, args.orEmpty().mapValues { it.value ?: JsonNull })
 
-internal fun com.google.ai.client.generativeai.common.server.SafetyRating.toPublic() =
+internal fun com.google.firebase.vertexai.common.shared.FunctionResponse.toPublic() =
+  FunctionResponse(
+    name,
+    response,
+  )
+
+internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic(): Citation {
+  val publicationDateAsCalendar =
+    publicationDate?.let {
+      val calendar = Calendar.getInstance()
+      // Internal `Date.year` uses 0 to represent not specified. We use 1 as default.
+      val year = if (it.year == null || it.year < 1) 1 else it.year
+      // Internal `Date.month` uses 0 to represent not specified, or is 1-12 as months. The month as
+      // expected by [Calendar] is 0-based, so we subtract 1 or use 0 as default.
+      val month = if (it.month == null || it.month < 1) 0 else it.month - 1
+      // Internal `Date.day` uses 0 to represent not specified. We use 1 as default.
+      val day = if (it.day == null || it.day < 1) 1 else it.day
+      calendar.set(year, month, day)
+      calendar
+    }
+  return Citation(
+    title = title,
+    startIndex = startIndex,
+    endIndex = endIndex,
+    uri = uri,
+    license = license,
+    publicationDate = publicationDateAsCalendar
+  )
+}
+
+internal fun com.google.firebase.vertexai.common.server.CitationMetadata.toPublic() =
+  CitationMetadata(citationSources.map { it.toPublic() })
+
+internal fun com.google.firebase.vertexai.common.server.SafetyRating.toPublic() =
   SafetyRating(
     category = category.toPublic(),
     probability = probability.toPublic(),
@@ -249,78 +294,64 @@ internal fun com.google.ai.client.generativeai.common.server.SafetyRating.toPubl
     severityScore = severityScore
   )
 
-internal fun com.google.ai.client.generativeai.common.server.PromptFeedback.toPublic():
-  PromptFeedback {
+internal fun com.google.firebase.vertexai.common.server.PromptFeedback.toPublic(): PromptFeedback {
   val safetyRatings = safetyRatings?.map { it.toPublic() }.orEmpty()
   return com.google.firebase.vertexai.type.PromptFeedback(
     blockReason?.toPublic(),
     safetyRatings,
+    blockReasonMessage
   )
 }
 
-internal fun com.google.ai.client.generativeai.common.server.FinishReason?.toPublic() =
+internal fun com.google.firebase.vertexai.common.server.FinishReason?.toPublic() =
   when (this) {
     null -> null
-    com.google.ai.client.generativeai.common.server.FinishReason.MAX_TOKENS ->
-      FinishReason.MAX_TOKENS
-    com.google.ai.client.generativeai.common.server.FinishReason.RECITATION ->
-      FinishReason.RECITATION
-    com.google.ai.client.generativeai.common.server.FinishReason.SAFETY -> FinishReason.SAFETY
-    com.google.ai.client.generativeai.common.server.FinishReason.STOP -> FinishReason.STOP
-    com.google.ai.client.generativeai.common.server.FinishReason.OTHER -> FinishReason.OTHER
-    com.google.ai.client.generativeai.common.server.FinishReason.UNSPECIFIED ->
-      FinishReason.UNSPECIFIED
-    com.google.ai.client.generativeai.common.server.FinishReason.UNKNOWN -> FinishReason.UNKNOWN
+    com.google.firebase.vertexai.common.server.FinishReason.MAX_TOKENS -> FinishReason.MAX_TOKENS
+    com.google.firebase.vertexai.common.server.FinishReason.RECITATION -> FinishReason.RECITATION
+    com.google.firebase.vertexai.common.server.FinishReason.SAFETY -> FinishReason.SAFETY
+    com.google.firebase.vertexai.common.server.FinishReason.STOP -> FinishReason.STOP
+    com.google.firebase.vertexai.common.server.FinishReason.OTHER -> FinishReason.OTHER
+    else -> FinishReason.UNKNOWN
   }
 
-internal fun com.google.ai.client.generativeai.common.shared.HarmCategory.toPublic() =
+internal fun com.google.firebase.vertexai.common.shared.HarmCategory.toPublic() =
   when (this) {
-    com.google.ai.client.generativeai.common.shared.HarmCategory.HARASSMENT ->
-      HarmCategory.HARASSMENT
-    com.google.ai.client.generativeai.common.shared.HarmCategory.HATE_SPEECH ->
-      HarmCategory.HATE_SPEECH
-    com.google.ai.client.generativeai.common.shared.HarmCategory.SEXUALLY_EXPLICIT ->
+    com.google.firebase.vertexai.common.shared.HarmCategory.HARASSMENT -> HarmCategory.HARASSMENT
+    com.google.firebase.vertexai.common.shared.HarmCategory.HATE_SPEECH -> HarmCategory.HATE_SPEECH
+    com.google.firebase.vertexai.common.shared.HarmCategory.SEXUALLY_EXPLICIT ->
       HarmCategory.SEXUALLY_EXPLICIT
-    com.google.ai.client.generativeai.common.shared.HarmCategory.DANGEROUS_CONTENT ->
+    com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT ->
       HarmCategory.DANGEROUS_CONTENT
-    com.google.ai.client.generativeai.common.shared.HarmCategory.UNKNOWN -> HarmCategory.UNKNOWN
+    else -> HarmCategory.UNKNOWN
   }
 
-internal fun com.google.ai.client.generativeai.common.server.HarmProbability.toPublic() =
+internal fun com.google.firebase.vertexai.common.server.HarmProbability.toPublic() =
   when (this) {
-    com.google.ai.client.generativeai.common.server.HarmProbability.HIGH -> HarmProbability.HIGH
-    com.google.ai.client.generativeai.common.server.HarmProbability.MEDIUM -> HarmProbability.MEDIUM
-    com.google.ai.client.generativeai.common.server.HarmProbability.LOW -> HarmProbability.LOW
-    com.google.ai.client.generativeai.common.server.HarmProbability.NEGLIGIBLE ->
+    com.google.firebase.vertexai.common.server.HarmProbability.HIGH -> HarmProbability.HIGH
+    com.google.firebase.vertexai.common.server.HarmProbability.MEDIUM -> HarmProbability.MEDIUM
+    com.google.firebase.vertexai.common.server.HarmProbability.LOW -> HarmProbability.LOW
+    com.google.firebase.vertexai.common.server.HarmProbability.NEGLIGIBLE ->
       HarmProbability.NEGLIGIBLE
-    com.google.ai.client.generativeai.common.server.HarmProbability.UNSPECIFIED ->
-      HarmProbability.UNSPECIFIED
-    com.google.ai.client.generativeai.common.server.HarmProbability.UNKNOWN ->
-      HarmProbability.UNKNOWN
+    else -> HarmProbability.UNKNOWN
   }
 
-internal fun com.google.ai.client.generativeai.common.server.HarmSeverity.toPublic() =
+internal fun com.google.firebase.vertexai.common.server.HarmSeverity.toPublic() =
   when (this) {
-    com.google.ai.client.generativeai.common.server.HarmSeverity.HIGH -> HarmSeverity.HIGH
-    com.google.ai.client.generativeai.common.server.HarmSeverity.MEDIUM -> HarmSeverity.MEDIUM
-    com.google.ai.client.generativeai.common.server.HarmSeverity.LOW -> HarmSeverity.LOW
-    com.google.ai.client.generativeai.common.server.HarmSeverity.NEGLIGIBLE ->
-      HarmSeverity.NEGLIGIBLE
-    com.google.ai.client.generativeai.common.server.HarmSeverity.UNSPECIFIED ->
-      HarmSeverity.UNSPECIFIED
-    com.google.ai.client.generativeai.common.server.HarmSeverity.UNKNOWN -> HarmSeverity.UNKNOWN
+    com.google.firebase.vertexai.common.server.HarmSeverity.HIGH -> HarmSeverity.HIGH
+    com.google.firebase.vertexai.common.server.HarmSeverity.MEDIUM -> HarmSeverity.MEDIUM
+    com.google.firebase.vertexai.common.server.HarmSeverity.LOW -> HarmSeverity.LOW
+    com.google.firebase.vertexai.common.server.HarmSeverity.NEGLIGIBLE -> HarmSeverity.NEGLIGIBLE
+    else -> HarmSeverity.UNKNOWN
   }
 
-internal fun com.google.ai.client.generativeai.common.server.BlockReason.toPublic() =
+internal fun com.google.firebase.vertexai.common.server.BlockReason.toPublic() =
   when (this) {
-    com.google.ai.client.generativeai.common.server.BlockReason.UNSPECIFIED ->
-      BlockReason.UNSPECIFIED
-    com.google.ai.client.generativeai.common.server.BlockReason.SAFETY -> BlockReason.SAFETY
-    com.google.ai.client.generativeai.common.server.BlockReason.OTHER -> BlockReason.OTHER
-    com.google.ai.client.generativeai.common.server.BlockReason.UNKNOWN -> BlockReason.UNKNOWN
+    com.google.firebase.vertexai.common.server.BlockReason.SAFETY -> BlockReason.SAFETY
+    com.google.firebase.vertexai.common.server.BlockReason.OTHER -> BlockReason.OTHER
+    else -> BlockReason.UNKNOWN
   }
 
-internal fun com.google.ai.client.generativeai.common.GenerateContentResponse.toPublic():
+internal fun com.google.firebase.vertexai.common.GenerateContentResponse.toPublic():
   GenerateContentResponse {
   return GenerateContentResponse(
     candidates?.map { it.toPublic() }.orEmpty(),
@@ -329,7 +360,7 @@ internal fun com.google.ai.client.generativeai.common.GenerateContentResponse.to
   )
 }
 
-internal fun com.google.ai.client.generativeai.common.CountTokensResponse.toPublic() =
+internal fun com.google.firebase.vertexai.common.CountTokensResponse.toPublic() =
   CountTokensResponse(totalTokens, totalBillableCharacters ?: 0)
 
 internal fun JsonObject.toPublic() = JSONObject(toString())

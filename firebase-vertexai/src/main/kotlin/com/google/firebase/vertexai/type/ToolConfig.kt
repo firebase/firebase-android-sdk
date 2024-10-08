@@ -22,12 +22,4 @@ package com.google.firebase.vertexai.type
  *
  * @param functionCallingConfig The config for function calling
  */
-class ToolConfig(val functionCallingConfig: FunctionCallingConfig) {
-
-  companion object {
-    /** Shorthand to construct a ToolConfig that restricts the model from calling any functions */
-    fun never(): ToolConfig = ToolConfig(FunctionCallingConfig(FunctionCallingConfig.Mode.NONE))
-    /** Shorthand to construct a ToolConfig that restricts the model to always call some function */
-    fun always(): ToolConfig = ToolConfig(FunctionCallingConfig(FunctionCallingConfig.Mode.ANY))
-  }
-}
+public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfig)

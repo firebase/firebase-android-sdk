@@ -17,19 +17,26 @@
 package com.google.firebase.crashlytics.internal.concurrency;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.crashlytics.internal.concurrency.ConcurrencyTesting.getThreadName;
+import static com.google.firebase.crashlytics.internal.concurrency.ConcurrencyTesting.newNamedSingleThreadExecutor;
+import static com.google.firebase.crashlytics.internal.concurrency.ConcurrencyTesting.sleep;
 import static org.junit.Assert.assertThrows;
 
+import com.google.android.gms.tasks.CancellationToken;
+import com.google.android.gms.tasks.CancellationTokenSource;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -55,11 +62,11 @@ public class CrashlyticsWorkerTest {
 
   @Test
   public void executesTasksOnThreadPool() throws Exception {
-    Set<String> threads = new HashSet<>();
+    Set<String> threads = Collections.synchronizedSet(new HashSet<>());
 
     // Find thread names by adding the names we touch to the set.
     for (int i = 0; i < 100; i++) {
-      crashlyticsWorker.submit(() -> threads.add(Thread.currentThread().getName()));
+      crashlyticsWorker.submit(() -> threads.add(getThreadName()));
     }
 
     crashlyticsWorker.await();
@@ -75,7 +82,7 @@ public class CrashlyticsWorkerTest {
 
   @Test
   public void executesTasksInOrder() throws Exception {
-    List<Integer> list = new ArrayList<>();
+    Queue<Integer> list = new ConcurrentLinkedQueue<>();
 
     // Add sequential numbers to the list to validate tasks execute in order.
     for (int i = 0; i < 100; i++) {
@@ -91,7 +98,7 @@ public class CrashlyticsWorkerTest {
 
   @Test
   public void executesTasksSequentially() throws Exception {
-    List<Integer> list = new ArrayList<>();
+    Queue<Integer> list = new ConcurrentLinkedQueue<>();
     AtomicBoolean reentrant = new AtomicBoolean(false);
 
     for (int i = 0; i < 100; i++) {
@@ -386,7 +393,7 @@ public class CrashlyticsWorkerTest {
     Task<Integer> otherTask =
         crashlyticsWorker.submit(
             () -> {
-              sleep(300);
+              sleep(30);
               return localExecutor.getActiveCount();
             });
 
@@ -395,8 +402,6 @@ public class CrashlyticsWorkerTest {
 
     // 1 active thread when doing a local task.
     assertThat(Tasks.await(localWorker.submit(localExecutor::getActiveCount))).isEqualTo(1);
-
-    sleep(1); // The test is a bit flaky without this.
 
     // 0 active local threads when waiting for other task.
     // Waiting for a task from another worker does not block a local thread.
@@ -413,7 +418,7 @@ public class CrashlyticsWorkerTest {
   public void submitTaskWhenThreadPoolFull() {
     // Fill the underlying executor thread pool.
     for (int i = 0; i < 10; i++) {
-      crashlyticsWorker.getExecutor().execute(() -> sleep(40));
+      crashlyticsWorker.execute(() -> sleep(40));
     }
 
     Task<Integer> task = crashlyticsWorker.submitTask(() -> Tasks.forResult(42));
@@ -483,9 +488,90 @@ public class CrashlyticsWorkerTest {
   }
 
   @Test
+  public void submitTaskOnSuccess() throws Exception {
+    TaskCompletionSource<Integer> waitingSource = new TaskCompletionSource<>();
+    Task<Integer> waitingTask = waitingSource.getTask();
+
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> waitingTask,
+            integerResult -> {
+              // This gets called with the result when the waiting task resolves successfully.
+              return Tasks.forResult(integerResult + " Success!");
+            });
+
+    waitingSource.trySetResult(1337);
+
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo("1337 Success!");
+  }
+
+  @Test
+  public void submitTaskThatReturnsWithSuccessContinuation() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forResult(1337), integer -> Tasks.forResult(Integer.toString(integer)));
+
+    String result = Tasks.await(task);
+
+    assertThat(result).isEqualTo("1337");
+  }
+
+  @Test
+  public void submitTaskThatThrowsWithSuccessContinuation() {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forException(new IndexOutOfBoundsException()),
+            object -> Tasks.forResult("Still you don't believe."));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+
+    assertThat(thrown).hasCauseThat().isInstanceOf(IndexOutOfBoundsException.class);
+  }
+
+  @Test
+  public void submitTaskWithSuccessContinuationThatThrows() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forResult(7), integer -> Tasks.forException(new IOException()));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+
+    assertThat(thrown).hasCauseThat().isInstanceOf(IOException.class);
+
+    // Verify the worker still executes tasks after the success continuation threw.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> 42))).isEqualTo(42);
+  }
+
+  @Test
+  public void submitTaskThatCancelsWithSuccessContinuation() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            Tasks::forCanceled, object -> Tasks.forResult("Will set you free"));
+
+    assertThrows(CancellationException.class, () -> Tasks.await(task));
+
+    // Verify the worker still executes tasks after the task cancelled.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> 42))).isEqualTo(42);
+  }
+
+  @Test
+  public void submitTaskWithSuccessContinuationThatCancels() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTaskOnSuccess(
+            () -> Tasks.forResult(7), integer -> Tasks.forCanceled());
+
+    assertThrows(CancellationException.class, () -> Tasks.await(task));
+
+    // Verify the worker still executes tasks after the success continuation was cancelled.
+    assertThat(Tasks.await(crashlyticsWorker.submit(() -> "jk"))).isEqualTo("jk");
+  }
+
+  @Test
   public void submitTaskWithContinuationExecutesInOrder() throws Exception {
     // The integers added to the list represent the order they should be executed in.
-    List<Integer> list = new ArrayList<>();
+    Queue<Integer> list = new ConcurrentLinkedQueue<>();
 
     // Start the chain which adds 1, then kicks off tasks to add 6 & 7 later, but adds 2 before
     // executing the newly added tasks in the continuation.
@@ -493,192 +579,340 @@ public class CrashlyticsWorkerTest {
         () -> {
           list.add(1);
 
-          // Sleep to give time for the tasks 3, 4, 5 to be submitted.
-          sleep(300);
+          // Sleep to give time for the tasks 3, 4, 5, 6 to be submitted.
+          sleep(3);
 
-          // We added the 1 and will add 2 in the continuation. And 3, 4, 5 have been submitted.
-          crashlyticsWorker.submit(() -> list.add(6));
+          // We added the 1 and will add 2 in the continuation. And 3, 4, 5, 6 have been submitted.
           crashlyticsWorker.submit(() -> list.add(7));
+          crashlyticsWorker.submit(() -> list.add(8));
 
           return Tasks.forResult(1);
         },
         task -> {
-          // When the task 1 completes the next number to add is 2. Because all the other tasks are
-          // just submitted, not executed yet.
+          // When the task 1 completes the next number to add is 2. Because all the other tasks
+          // are just submitted, not executed yet.
           list.add(2);
           return Tasks.forResult("a");
         });
 
-    // Submit tasks to add 3, 4, 5 since we just added 1 and know a continuation will add the 2.
+    // Submit task to add 3 since we just added 1 and know a continuation will add the 2.
     crashlyticsWorker.submit(() -> list.add(3));
-    crashlyticsWorker.submit(() -> list.add(4));
-    crashlyticsWorker.submit(() -> list.add(5));
+
+    // Submit a waiting task that blocks adding 4 and 5 so we can kick it off later.
+    TaskCompletionSource<Void> waitingSource = new TaskCompletionSource<>();
+    Task<Void> waitingTask = waitingSource.getTask();
+
+    crashlyticsWorker.submitTask(
+        () ->
+            waitingTask
+                .continueWith(crashlyticsWorker, task -> list.add(4))
+                .continueWith(crashlyticsWorker, task -> list.add(5)));
+
+    // Submit task to add 6 after the waiting continuations to add 4, 5.
+    crashlyticsWorker.submit(() -> list.add(6));
+
+    // Kick off the waiting task to add 4, 5 now that 6 is queued up.
+    waitingSource.trySetResult(null);
 
     crashlyticsWorker.await();
 
     // Verify the list is complete and in order.
     assertThat(list).isInOrder();
-    assertThat(list).hasSize(7);
+    assertThat(list).hasSize(8);
   }
 
   @Test
-  public void raceReturnsFirstResult() throws Exception {
-    // Create 2 tasks on different workers to race.
-    Task<String> task1 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submit(
-                () -> {
-                  sleep(200);
-                  return "first";
-                });
-    Task<String> task2 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submit(
-                () -> {
-                  sleep(400);
-                  return "slow";
-                });
+  public void tasksRunOnCorrectThreads() throws Exception {
+    ExecutorService executor = newNamedSingleThreadExecutor("workerThread");
+    CrashlyticsWorker worker = new CrashlyticsWorker(executor);
 
-    Task<String> task = crashlyticsWorker.race(task1, task2);
+    ExecutorService otherExecutor = newNamedSingleThreadExecutor("otherThread");
+    CrashlyticsWorker otherWorker = new CrashlyticsWorker(otherExecutor);
+
+    // Submit a Runnable.
+    worker.submit(
+        () -> {
+          // The runnable blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+        });
+
+    // Submit a Callable.
+    worker.submit(
+        () -> {
+          // The callable blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return null;
+        });
+
+    // Submit a Callable<Task>.
+    worker.submitTask(
+        () -> {
+          // The callable itself blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return otherWorker.submit(
+              () -> {
+                // The called task blocks an underlying thread in its own executor.
+                assertThat(getThreadName()).isEqualTo("otherThread");
+              });
+        });
+
+    // Submit a Callable<Task> with a Continuation.
+    worker.submitTask(
+        () -> {
+          // The callable itself blocks an underlying thread.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return otherWorker.submitTask(
+              () -> {
+                // The called task blocks an underlying thread in its own executor.
+                assertThat(getThreadName()).isEqualTo("otherThread");
+                return Tasks.forResult(null);
+              });
+        },
+        task -> {
+          // The continuation blocks an underlying thread of the original worker.
+          assertThat(getThreadName()).isEqualTo("workerThread");
+          return Tasks.forResult(null);
+        });
+
+    // Await on the worker to force all the tasks to run their assertions.
+    worker.await();
+  }
+
+  @Test
+  public void executeContinuationOnWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker
+            .submit(() -> "Hello!")
+            .continueWith(crashlyticsWorker, greetingTask -> getThreadName());
+
     String result = Tasks.await(task);
-
-    assertThat(result).isEqualTo("first");
+    assertThat(result).contains("Firebase Background Thread");
   }
 
   @Test
-  public void raceReturnsFirstException() {
-    // Create 2 tasks on different workers to race.
-    Task<String> task1 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submitTask(
-                () -> {
-                  sleep(200);
-                  return Tasks.forException(new ArithmeticException());
-                });
-    Task<String> task2 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submitTask(
-                () -> {
-                  sleep(400);
-                  return Tasks.forException(new IllegalStateException());
-                });
+  public void executeContinuationInsideWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTask(
+            () ->
+                Tasks.forResult("Hello!")
+                    .continueWith(crashlyticsWorker, greetingTask -> getThreadName()));
 
-    Task<String> task = crashlyticsWorker.race(task1, task2);
+    String result = Tasks.await(task);
+    assertThat(result).contains("Firebase Background Thread");
+  }
+
+  @Test
+  public void executeSuccessContinuationOnWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker
+            .submit(() -> "Ahoy-hoy!")
+            .onSuccessTask(crashlyticsWorker, greeting -> Tasks.forResult(getThreadName()));
+
+    String result = Tasks.await(task);
+    assertThat(result).contains("Firebase Background Thread");
+  }
+
+  @Test
+  public void executeSuccessContinuationInsideWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTask(
+            () ->
+                Tasks.forResult("Ahoy-hoy!")
+                    .onSuccessTask(
+                        crashlyticsWorker, greeting -> Tasks.forResult(getThreadName())));
+
+    String result = Tasks.await(task);
+    assertThat(result).contains("Firebase Background Thread");
+  }
+
+  @Test
+  public void executeSuccessContinuationOnExceptionOnWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker
+            .submitTask(() -> Tasks.forException(new IllegalStateException()))
+            .onSuccessTask(crashlyticsWorker, greeting -> Tasks.forResult(getThreadName()));
+
     ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+    assertThat(thrown).hasCauseThat().isInstanceOf(IllegalStateException.class);
 
-    // The first task throws an ArithmeticException.
+    // Verify the chain did not break by adding the on success to a failed task.
+    assertThat(Tasks.await(crashlyticsWorker.submitTask(() -> Tasks.forResult(7)))).isEqualTo(7);
+  }
+
+  @Test
+  public void executeSuccessContinuationOnExceptionInsideWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTask(
+            () ->
+                Tasks.forException(new IllegalStateException())
+                    .onSuccessTask(
+                        crashlyticsWorker, greeting -> Tasks.forResult(getThreadName())));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+    assertThat(thrown).hasCauseThat().isInstanceOf(IllegalStateException.class);
+
+    // Verify the chain did not break by adding the on success to a failed task.
+    assertThat(Tasks.await(crashlyticsWorker.submitTask(() -> Tasks.forResult(7)))).isEqualTo(7);
+  }
+
+  @Test
+  public void executeContinuationThatThrowsOnWorker() {
+    Task<String> task =
+        crashlyticsWorker
+            .submit(() -> "Aloha")
+            .continueWithTask(
+                crashlyticsWorker, greeting -> Tasks.forException(new ArithmeticException()));
+
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
     assertThat(thrown).hasCauseThat().isInstanceOf(ArithmeticException.class);
   }
 
   @Test
-  public void raceFirstCancelsReturnsSecondResult() throws Exception {
-    // Create 2 tasks on different workers to race.
-    Task<String> task1 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submitTask(
-                () -> {
-                  sleep(200);
-                  return Tasks.forCanceled();
-                });
-    Task<String> task2 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submitTask(
-                () -> {
-                  sleep(400);
-                  return Tasks.forResult("I am slow but didn't cancel.");
-                });
+  public void executeContinuationThatThrowsInsideWorker() {
+    Task<String> task =
+        crashlyticsWorker.submitTask(
+            () ->
+                Tasks.forResult("Aloha")
+                    .continueWithTask(
+                        crashlyticsWorker,
+                        greeting -> Tasks.forException(new ArithmeticException())));
 
-    Task<String> task = crashlyticsWorker.race(task1, task2);
-    String result = Tasks.await(task);
-
-    assertThat(result).isEqualTo("I am slow but didn't cancel.");
+    ExecutionException thrown = assertThrows(ExecutionException.class, () -> Tasks.await(task));
+    assertThat(thrown).hasCauseThat().isInstanceOf(ArithmeticException.class);
   }
 
   @Test
-  public void raceBothCancel() {
-    // Create 2 tasks on different workers to race.
-    Task<String> task1 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submitTask(
-                () -> {
-                  sleep(200);
-                  return Tasks.forCanceled();
-                });
-    Task<String> task2 =
-        new CrashlyticsWorker(TestOnlyExecutors.background())
-            .submitTask(
-                () -> {
-                  sleep(400);
-                  return Tasks.forCanceled();
-                });
+  public void executeContinuationThatCancelsOnWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker
+            .submit(() -> "Aloha")
+            .continueWithTask(crashlyticsWorker, greeting -> Tasks.forCanceled());
 
-    Task<String> task = crashlyticsWorker.race(task1, task2);
-
-    // Both cancelled, so cancel the race result.
     assertThrows(CancellationException.class, () -> Tasks.await(task));
+
+    // Verify the chain did not break by the continuation cancelling.
+    assertThat(Tasks.await(crashlyticsWorker.submitTask(() -> Tasks.forResult(7)))).isEqualTo(7);
   }
 
   @Test
-  public void raceTasksOnSameWorker() throws Exception {
-    // Create 2 tasks on this worker to race.
-    Task<String> task1 =
-        crashlyticsWorker.submit(
-            () -> {
-              sleep(200);
-              return "first";
-            });
-    Task<String> task2 =
-        crashlyticsWorker.submit(
-            () -> {
-              sleep(300);
-              return "second";
-            });
+  public void executeContinuationThatCancelsInsideWorker() throws Exception {
+    Task<String> task =
+        crashlyticsWorker.submitTask(
+            () ->
+                Tasks.forResult("Aloha")
+                    .continueWithTask(crashlyticsWorker, greeting -> Tasks.forCanceled()));
 
-    Task<String> task = crashlyticsWorker.race(task1, task2);
+    assertThrows(CancellationException.class, () -> Tasks.await(task));
+
+    // Verify the chain did not break by the continuation cancelling.
+    assertThat(Tasks.await(crashlyticsWorker.submitTask(() -> Tasks.forResult(7)))).isEqualTo(7);
+  }
+
+  @Test
+  public void executeContinuationsOnOrInsideWorkerDoesNotDeadlock() throws Exception {
+    // Create a single thread worker to catch potential deadlocks.
+    CrashlyticsWorker worker = new CrashlyticsWorker(newNamedSingleThreadExecutor("single"));
+
+    // Create a waiting task so we can queue up stuff before executing it.
+    TaskCompletionSource<String> waiting = new TaskCompletionSource<>();
+
+    Task<String> task =
+        worker
+            .submitTask(
+                () -> waiting.getTask().continueWith(worker, greetingTask -> getThreadName()))
+            .continueWith(worker, insideTask -> insideTask.getResult() + "-" + getThreadName());
+
+    // Kick off the waiting task.
+    waiting.trySetResult("Howdy!");
+
     String result = Tasks.await(task);
 
-    // The first task is submitted to this worker first, so will always be first.
-    assertThat(result).isEqualTo("first");
+    // Verify both on and inside continuations ran on the worker's underlying executor.
+    assertThat(result).contains("single-single");
   }
 
   @Test
-  public void raceTaskOneOnSameWorkerAnotherNeverCompletes() throws Exception {
-    // Create a task on this worker, and another that never completes, to race.
-    Task<String> task1 = crashlyticsWorker.submit(() -> "first");
-    Task<String> task2 = new TaskCompletionSource<String>().getTask();
+  public void executeContinuationTasksOnOrInsideWorkerDoesNotDeadlock() throws Exception {
+    // Create a single thread worker to catch potential deadlocks.
+    CrashlyticsWorker worker = new CrashlyticsWorker(newNamedSingleThreadExecutor("single"));
 
-    Task<String> task = crashlyticsWorker.race(task1, task2);
+    // Create a waiting task so we can queue up stuff before executing it.
+    TaskCompletionSource<String> waiting = new TaskCompletionSource<>();
+
+    Task<String> task =
+        worker
+            .submitTask(
+                () ->
+                    waiting
+                        .getTask()
+                        .continueWithTask(worker, greetingTask -> Tasks.forResult(getThreadName())))
+            .continueWithTask(
+                worker,
+                insideTask -> Tasks.forResult(insideTask.getResult() + "-" + getThreadName()));
+
+    // Kick off the waiting task.
+    waiting.trySetResult("Howdy!");
+
     String result = Tasks.await(task);
 
-    assertThat(result).isEqualTo("first");
+    // Verify both on and inside continuations ran on the worker's underlying executor.
+    assertThat(result).contains("single-single");
   }
 
   @Test
-  public void raceTaskOneOnSameWorkerAnotherOtherThatCompletesFirst() throws Exception {
-    // Add a decoy task to the worker to take up some time.
+  public void cancelledTaskInMiddleDoesNotBreakChain() throws Exception {
+    // List to keep track of tasks that successfully executed.
+    Queue<String> list = new ConcurrentLinkedQueue<>();
+
+    // Create a waiting task to block execution on the worker until more tasks are queued up.
+    TaskCompletionSource<String> taskSource = new TaskCompletionSource<>();
+    crashlyticsWorker.submitTask(taskSource::getTask);
+
+    // Setup a waiting cancellation, so the task does not know it's cancelled when submitting more.
+    CancellationTokenSource cancellationSource = new CancellationTokenSource();
+    CancellationToken cancellationToken = cancellationSource.getToken();
+
+    // Submit the first task that will cancel.
+    crashlyticsWorker.submitTask(() -> new TaskCompletionSource<>(cancellationToken).getTask());
+
+    // Submit a Runnable
+    crashlyticsWorker.submit(
+        () -> {
+          list.add("runnable");
+        });
+
+    // Submit another task that will cancel.
+    crashlyticsWorker.submitTask(() -> new TaskCompletionSource<>(cancellationToken).getTask());
+
+    // Submit a Callable
+    crashlyticsWorker.submit(() -> list.add("callable"));
+
+    crashlyticsWorker.submitTask(() -> new TaskCompletionSource<>(cancellationToken).getTask());
+
+    // Submit a Callable<Task>
     crashlyticsWorker.submitTask(
         () -> {
-          sleep(200);
+          list.add("callable task");
           return Tasks.forResult(null);
         });
 
-    // Create a task on this worker, and another, to race.
-    Task<String> task1 = crashlyticsWorker.submit(() -> "same worker");
-    TaskCompletionSource<String> task2 = new TaskCompletionSource<>();
-    task2.trySetResult("other");
+    crashlyticsWorker.submitTask(() -> new TaskCompletionSource<>(cancellationToken).getTask());
 
-    Task<String> task = crashlyticsWorker.race(task1, task2.getTask());
-    String result = Tasks.await(task);
+    // Submit a Callable<Task> with a Continuation.
+    crashlyticsWorker.submitTask(
+        () -> Tasks.forResult(null),
+        task -> {
+          list.add("continuation");
+          return Tasks.forResult(null);
+        });
 
-    // The other tasks completes first because the first task is queued up later on the worker.
-    assertThat(result).isEqualTo("other");
-  }
+    // Trigger the cancellations.
+    cancellationSource.cancel();
+    taskSource.trySetResult("go!");
 
-  private static void sleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
-    }
+    crashlyticsWorker.await();
+
+    // Verify that all types of tasks executed.
+    assertThat(list).containsExactly("runnable", "callable", "callable task", "continuation");
   }
 }

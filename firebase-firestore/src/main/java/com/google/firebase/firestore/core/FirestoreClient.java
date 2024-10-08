@@ -26,7 +26,6 @@ import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.CredentialsProvider;
@@ -84,7 +83,6 @@ public final class FirestoreClient {
   public FirestoreClient(
       final Context context,
       DatabaseInfo databaseInfo,
-      FirebaseFirestoreSettings settings,
       CredentialsProvider<User> authProvider,
       CredentialsProvider<String> appCheckProvider,
       AsyncQueue asyncQueue,
@@ -108,7 +106,7 @@ public final class FirestoreClient {
           try {
             // Block on initial user being available
             User initialUser = Tasks.await(firstUser.getTask());
-            initialize(context, initialUser, settings, componentProvider, metadataProvider);
+            initialize(context, initialUser, componentProvider, metadataProvider);
           } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
           }
@@ -181,11 +179,7 @@ public final class FirestoreClient {
 
   /** Stops listening to a query previously listened to. */
   public void stopListening(QueryListener listener) {
-    // Checks for terminate but does not raise error, allowing it to be a no-op if client is already
-    // terminated.
-    if (this.isTerminated()) {
-      return;
-    }
+    // `enqueueAndForget` will no-op if client is already terminated.
     asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 
@@ -270,7 +264,6 @@ public final class FirestoreClient {
   private void initialize(
       Context context,
       User user,
-      FirebaseFirestoreSettings settings,
       ComponentProvider provider,
       GrpcMetadataProvider metadataProvider) {
     // Note: The initialization work must all be synchronous (we can't dispatch more work) since
@@ -285,7 +278,6 @@ public final class FirestoreClient {
             databaseInfo,
             user,
             MAX_CONCURRENT_LIMBO_RESOLUTIONS,
-            settings,
             authProvider,
             appCheckProvider,
             metadataProvider);
@@ -360,10 +352,7 @@ public final class FirestoreClient {
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
-    // Checks for shutdown but does not raise error, allowing remove after shutdown to be a no-op.
-    if (isTerminated()) {
-      return;
-    }
+    // `enqueueAndForget` will no-op if client is already terminated.
     asyncQueue.enqueueAndForget(() -> eventManager.removeSnapshotsInSyncListener(listener));
   }
 

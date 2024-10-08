@@ -31,7 +31,7 @@ import com.google.firebase.vertexai.type.Tool
 import com.google.firebase.vertexai.type.ToolConfig
 
 /** Entry point for all _Vertex AI for Firebase_ functionality. */
-class FirebaseVertexAI
+public class FirebaseVertexAI
 internal constructor(
   private val firebaseApp: FirebaseApp,
   private val location: String,
@@ -51,14 +51,14 @@ internal constructor(
    * @param systemInstruction contains a [Content] that directs the model to behave a certain way
    */
   @JvmOverloads
-  fun generativeModel(
+  public fun generativeModel(
     modelName: String,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
-    requestOptions: RequestOptions = RequestOptions(),
     tools: List<Tool>? = null,
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
+    requestOptions: RequestOptions = RequestOptions(),
   ): GenerativeModel {
     if (location.trim().isEmpty() || location.contains("/")) {
       throw InvalidLocationException(location)
@@ -77,13 +77,13 @@ internal constructor(
     )
   }
 
-  companion object {
+  public companion object {
     /** The [FirebaseVertexAI] instance for the default [FirebaseApp] */
     @JvmStatic
-    val instance: FirebaseVertexAI
+    public val instance: FirebaseVertexAI
       get() = getInstance(location = "us-central1")
 
-    @JvmStatic fun getInstance(app: FirebaseApp): FirebaseVertexAI = getInstance(app)
+    @JvmStatic public fun getInstance(app: FirebaseApp): FirebaseVertexAI = getInstance(app)
 
     /**
      * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location]
@@ -93,7 +93,7 @@ internal constructor(
      */
     @JvmStatic
     @JvmOverloads
-    fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
+    public fun getInstance(app: FirebaseApp = Firebase.app, location: String): FirebaseVertexAI {
       val multiResourceComponent = app[FirebaseVertexAIMultiResourceComponent::class.java]
       return multiResourceComponent.get(location)
     }
@@ -101,11 +101,11 @@ internal constructor(
 }
 
 /** Returns the [FirebaseVertexAI] instance of the default [FirebaseApp]. */
-val Firebase.vertexAI: FirebaseVertexAI
+public val Firebase.vertexAI: FirebaseVertexAI
   get() = FirebaseVertexAI.instance
 
 /** Returns the [FirebaseVertexAI] instance of a given [FirebaseApp]. */
-fun Firebase.vertexAI(
+public fun Firebase.vertexAI(
   app: FirebaseApp = Firebase.app,
   location: String = "us-central1"
 ): FirebaseVertexAI = FirebaseVertexAI.getInstance(app, location)
