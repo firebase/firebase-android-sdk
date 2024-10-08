@@ -23,9 +23,8 @@ import java.util.regex.Pattern
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.gradle.api.DefaultTask
+import org.gradle.api.Task
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -42,6 +41,8 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
 
   @get:Input @get:Optional abstract val version: Property<String>
 
+  @get:Input @get:Optional abstract val operatingSystem: Property<OperatingSystem>
+
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
@@ -50,11 +51,13 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
   fun run() {
     val inputFile: File? = inputFile.orNull?.asFile
     val version: String? = version.orNull
+    val operatingSystem: OperatingSystem = operatingSystem.get()
     val buildDirectory: File = buildDirectory.get().asFile
     val outputFile: File = outputFile.get().asFile
 
     logger.info("inputFile: {}", inputFile)
     logger.info("version: {}", version)
+    logger.info("operatingSystem: {}", operatingSystem)
     logger.info("buildDirectory: {}", buildDirectory)
     logger.info("outputFile: {}", outputFile)
 
@@ -71,8 +74,8 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     } else if (inputFile !== null) {
       runWithFile(inputFile = inputFile, outputFile = outputFile)
     } else if (version !== null) {
-      runWithVersion(version = version, outputFile = outputFile)
-      verifyOutputFile(outputFile, version)
+      downloadDataConnectExecutable(version, operatingSystem, outputFile)
+      verifyOutputFile(outputFile, operatingSystem, version)
     } else {
       throw DataConnectGradleException(
         "chc94cq7vx",
@@ -82,66 +85,73 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     }
   }
 
-  private fun verifyOutputFile(outputFile: File, version: String) {
+  private fun verifyOutputFile(
+    outputFile: File,
+    operatingSystem: OperatingSystem,
+    version: String
+  ) {
     logger.info("Verifying file size and SHA512 digest of file: {}", outputFile)
     val fileInfo = FileInfo.forFile(outputFile)
 
-    val verificationInfoJsonString =
-      jsonPrettyPrint.encodeToString(
-        DataConnectExecutable.VersionsJson.VerificationInfo(
-          size = fileInfo.sizeInBytes,
-          sha512DigestHex = fileInfo.sha512DigestHex,
-        )
-      )
+    val allVersions = DataConnectExecutableVersionsRegistry.load().versions
+    val allVersionNames =
+      allVersions
+        .asSequence()
+        .filter { it.os == operatingSystem }
+        .map { it.version }
+        .distinct()
+        .sorted()
+        .joinToString(", ")
+    val applicableVersions =
+      allVersions.filter { it.version == version && it.os == operatingSystem }
 
-    val verificationInfoByVersion = DataConnectExecutable.VersionsJson.load().versions
-    val verificationInfo = verificationInfoByVersion[version]
-    if (verificationInfo === null) {
+    if (applicableVersions.isEmpty()) {
       val message =
-        "verification information for ${outputFile.absolutePath}" +
-          " (version $version) is not known; known versions are: " +
-          verificationInfoByVersion.keys.sorted().joinToString(", ")
+        "verification information for Data Connect toolkit executable" +
+          " version $version for $operatingSystem is not known;" +
+          " known versions for $operatingSystem are: $allVersionNames" +
+          " (loaded from ${DataConnectExecutableVersionsRegistry.PATH})"
       logger.error("ERROR: $message")
-      logger.error(
-        "To update ${DataConnectExecutable.VersionsJson.RESOURCE_PATH} with" +
-          " information about this version, add this JSON blob: $verificationInfoJsonString"
-      )
       throw DataConnectGradleException("ym8assbfgw", message)
+    } else if (applicableVersions.size > 1) {
+      val message =
+        "INTERNAL ERROR: ${applicableVersions.size} verification information records for" +
+          " Data Connect toolkit executable version $version for $operatingSystem were found in" +
+          " ${DataConnectExecutableVersionsRegistry.PATH}, but expected exactly 1"
+      logger.error("ERROR: $message")
+      throw DataConnectGradleException("zyw5xrky6e", message)
     }
 
+    val versionInfo = applicableVersions.single()
     val verificationErrors = mutableListOf<String>()
-    if (fileInfo.sizeInBytes != verificationInfo.size) {
+    if (fileInfo.sizeInBytes != versionInfo.size) {
       logger.error(
         "ERROR: File ${outputFile.absolutePath} has an unexpected size (in bytes): actual is " +
           fileInfo.sizeInBytes.toStringWithThousandsSeparator() +
           " but expected " +
-          verificationInfo.size.toStringWithThousandsSeparator()
+          versionInfo.size.toStringWithThousandsSeparator()
       )
       verificationErrors.add("file size mismatch")
     }
-    if (fileInfo.sha512DigestHex != verificationInfo.sha512DigestHex) {
+    if (fileInfo.sha512DigestHex != versionInfo.sha512DigestHex) {
       logger.error(
         "ERROR: File ${outputFile.absolutePath} has an unexpected SHA512 digest:" +
           " actual is ${fileInfo.sha512DigestHex}" +
-          " but expected ${verificationInfo.sha512DigestHex}"
+          " but expected ${versionInfo.sha512DigestHex}"
       )
       verificationErrors.add("SHA512 digest mismatch")
     }
 
-    if (verificationErrors.isEmpty()) {
-      logger.info("Verifying file size and SHA512 digest succeeded")
-      return
+    if (verificationErrors.isNotEmpty()) {
+      val errorMessage =
+        "Verification of ${outputFile.absolutePath}" +
+          " (version=${versionInfo.version} os=${versionInfo.os}) failed:" +
+          " ${verificationErrors.joinToString(", ")}"
+      logger.error(errorMessage)
+      throw DataConnectGradleException("x9dfwhjr9c", errorMessage)
     }
 
-    logger.error(
-      "To update ${DataConnectExecutable.VersionsJson.RESOURCE_PATH} with" +
-        " information about this version, add this JSON blob: $verificationInfoJsonString"
-    )
-
-    throw DataConnectGradleException(
-      "x9dfwhjr9c",
-      "Verification of ${outputFile.absolutePath} failed: ${verificationErrors.joinToString(", ")}"
-    )
+    logger.info("Verifying file size and SHA512 digest succeeded")
   }
 
   data class FileInfo(val sizeInBytes: Long, val sha512DigestHex: String) {
@@ -181,62 +191,73 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     }
   }
 
-  private fun runWithVersion(version: String, outputFile: File) {
-    val fileName = "dataconnect-emulator-linux-v$version"
-    val url = URL("https://storage.googleapis.com/firemat-preview-drop/emulator/$fileName")
+  companion object {
+    fun Task.downloadDataConnectExecutable(
+      version: String,
+      operatingSystem: OperatingSystem,
+      outputFile: File
+    ) {
+      val osName =
+        when (operatingSystem) {
+          OperatingSystem.Windows -> "windows"
+          OperatingSystem.MacOS -> "macos"
+          OperatingSystem.Linux -> "linux"
+        }
+      val downloadFileName = "dataconnect-emulator-$osName-v$version"
+      val url =
+        URL("https://storage.googleapis.com/firemat-preview-drop/emulator/$downloadFileName")
 
-    logger.info("Downloading {} to {}", url, outputFile)
-    project.mkdir(outputFile.parentFile)
+      logger.info("Downloading {} to {}", url, outputFile)
+      project.mkdir(outputFile.parentFile)
 
-    val connection = url.openConnection() as HttpURLConnection
-    connection.requestMethod = "GET"
+      val connection = url.openConnection() as HttpURLConnection
+      connection.requestMethod = "GET"
 
-    val responseCode = connection.responseCode
-    if (responseCode != HttpURLConnection.HTTP_OK) {
-      throw DataConnectGradleException(
-        "n3mj6ahxwt",
-        "Downloading Data Connect executable from $url failed with HTTP response code" +
-          " $responseCode: ${connection.responseMessage}" +
-          " (expected HTTP response code ${HttpURLConnection.HTTP_OK})"
-      )
-    }
-
-    val startTime = System.nanoTime()
-    val debouncer = Debouncer(5.seconds)
-    outputFile.outputStream().use { oStream ->
-      var downloadByteCount: Long = 0
-      fun logDownloadedBytes() {
-        val elapsedTime = (System.nanoTime() - startTime).toDuration(DurationUnit.NANOSECONDS)
-        logger.info(
-          "Downloaded {} bytes in {}",
-          downloadByteCount.toStringWithThousandsSeparator(),
-          elapsedTime
+      val responseCode = connection.responseCode
+      if (responseCode != HttpURLConnection.HTTP_OK) {
+        throw DataConnectGradleException(
+          "n3mj6ahxwt",
+          "Downloading Data Connect executable from $url failed with HTTP response code" +
+            " $responseCode: ${connection.responseMessage}" +
+            " (expected HTTP response code ${HttpURLConnection.HTTP_OK})"
         )
       }
-      connection.inputStream.use { iStream ->
-        val buffer = ByteArray(8192)
-        while (true) {
-          val readCount = iStream.read(buffer)
-          if (readCount < 0) {
-            break
+
+      val startTime = System.nanoTime()
+      val debouncer = Debouncer(5.seconds)
+      outputFile.outputStream().use { oStream ->
+        var downloadByteCount: Long = 0
+        fun logDownloadedBytes() {
+          val elapsedTime = (System.nanoTime() - startTime).toDuration(DurationUnit.NANOSECONDS)
+          logger.info(
+            "Downloaded {} bytes in {}",
+            downloadByteCount.toStringWithThousandsSeparator(),
+            elapsedTime
+          )
+        }
+        connection.inputStream.use { iStream ->
+          val buffer = ByteArray(8192)
+          while (true) {
+            val readCount = iStream.read(buffer)
+            if (readCount < 0) {
+              break
+            }
+            downloadByteCount += readCount
+            debouncer.maybeRun(::logDownloadedBytes)
+            oStream.write(buffer, 0, readCount)
           }
-          downloadByteCount += readCount
-          debouncer.maybeRun(::logDownloadedBytes)
-          oStream.write(buffer, 0, readCount)
+        }
+        logDownloadedBytes()
+      }
+
+      if (operatingSystem != OperatingSystem.Windows) {
+        project.exec { execSpec ->
+          execSpec.run {
+            executable = "chmod"
+            args = listOf("a+x", outputFile.absolutePath)
+          }
         }
       }
-      logDownloadedBytes()
     }
-
-    project.exec { execSpec ->
-      execSpec.run {
-        executable = "chmod"
-        args = listOf("a+x", outputFile.absolutePath)
-      }
-    }
-  }
-
-  private companion object {
-    val jsonPrettyPrint = Json { prettyPrint = true }
   }
 }
