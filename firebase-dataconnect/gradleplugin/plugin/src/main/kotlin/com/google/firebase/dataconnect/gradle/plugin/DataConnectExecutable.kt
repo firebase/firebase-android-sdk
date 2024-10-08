@@ -15,43 +15,11 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
-import java.io.InputStream
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
-
 sealed interface DataConnectExecutable {
 
   data class File(val file: java.io.File) : DataConnectExecutable
 
   data class RegularFile(val file: org.gradle.api.file.RegularFile) : DataConnectExecutable
 
-  data class Version(val version: String) : DataConnectExecutable {
-    companion object {
-      val default: Version
-        get() = Version(VersionsJson.load().default)
-    }
-  }
-
-  @OptIn(ExperimentalSerializationApi::class)
-  object VersionsJson {
-
-    const val RESOURCE_PATH =
-      "com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json"
-
-    fun load(): Root = openFile().use { Json.decodeFromStream<Root>(it) }
-
-    private fun openFile(): InputStream =
-      this::class.java.classLoader.getResourceAsStream(RESOURCE_PATH)
-        ?: throw DataConnectGradleException("antkaw2gjp", "resource not found: $RESOURCE_PATH")
-
-    @kotlinx.serialization.Serializable
-    data class Root(
-      val default: String,
-      val versions: Map<String, VerificationInfo>,
-    )
-
-    @kotlinx.serialization.Serializable
-    data class VerificationInfo(val size: Long, val sha512DigestHex: String)
-  }
+  data class Version(val version: String) : DataConnectExecutable
 }
