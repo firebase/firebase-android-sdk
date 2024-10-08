@@ -50,14 +50,14 @@ import kotlinx.coroutines.tasks.await
 /**
  * A controller for communicating with the API of a given multimodal model (for example, Gemini).
  */
-class GenerativeModel
+public class GenerativeModel
 internal constructor(
-  val modelName: String,
-  val generationConfig: GenerationConfig? = null,
-  val safetySettings: List<SafetySetting>? = null,
-  val tools: List<Tool>? = null,
-  val toolConfig: ToolConfig? = null,
-  val systemInstruction: Content? = null,
+  private val modelName: String,
+  private val generationConfig: GenerationConfig? = null,
+  private val safetySettings: List<SafetySetting>? = null,
+  private val tools: List<Tool>? = null,
+  private val toolConfig: ToolConfig? = null,
+  private val systemInstruction: Content? = null,
   private val controller: APIController
 ) {
 
@@ -83,7 +83,7 @@ internal constructor(
     APIController(
       apiKey,
       modelName,
-      requestOptions.toInternal(),
+      requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT} fire/${BuildConfig.VERSION_NAME}",
       object : HeaderProvider {
         override val timeout: Duration
@@ -128,7 +128,7 @@ internal constructor(
    * @return A [GenerateContentResponse]. Function should be called within a suspend context to
    * properly manage concurrency.
    */
-  suspend fun generateContent(vararg prompt: Content): GenerateContentResponse =
+  public suspend fun generateContent(vararg prompt: Content): GenerateContentResponse =
     try {
       controller.generateContent(constructRequest(*prompt)).toPublic().validate()
     } catch (e: Throwable) {
@@ -141,7 +141,7 @@ internal constructor(
    * @param prompt [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
    */
-  fun generateContentStream(vararg prompt: Content): Flow<GenerateContentResponse> =
+  public fun generateContentStream(vararg prompt: Content): Flow<GenerateContentResponse> =
     controller
       .generateContentStream(constructRequest(*prompt))
       .catch { throw FirebaseVertexAIException.from(it) }
@@ -154,7 +154,7 @@ internal constructor(
    * @return A [GenerateContentResponse] after some delay. Function should be called within a
    * suspend context to properly manage concurrency.
    */
-  suspend fun generateContent(prompt: String): GenerateContentResponse =
+  public suspend fun generateContent(prompt: String): GenerateContentResponse =
     generateContent(content { text(prompt) })
 
   /**
@@ -163,7 +163,7 @@ internal constructor(
    * @param prompt The text to be converted into a single piece of [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
    */
-  fun generateContentStream(prompt: String): Flow<GenerateContentResponse> =
+  public fun generateContentStream(prompt: String): Flow<GenerateContentResponse> =
     generateContentStream(content { text(prompt) })
 
   /**
@@ -173,7 +173,7 @@ internal constructor(
    * @return A [GenerateContentResponse] after some delay. Function should be called within a
    * suspend context to properly manage concurrency.
    */
-  suspend fun generateContent(prompt: Bitmap): GenerateContentResponse =
+  public suspend fun generateContent(prompt: Bitmap): GenerateContentResponse =
     generateContent(content { image(prompt) })
 
   /**
@@ -182,11 +182,12 @@ internal constructor(
    * @param prompt The image to be converted into a single piece of [Content] to send to the model.
    * @return A [Flow] which will emit responses as they are returned from the model.
    */
-  fun generateContentStream(prompt: Bitmap): Flow<GenerateContentResponse> =
+  public fun generateContentStream(prompt: Bitmap): Flow<GenerateContentResponse> =
     generateContentStream(content { image(prompt) })
 
   /** Creates a [Chat] instance which internally tracks the ongoing conversation with the model */
-  fun startChat(history: List<Content> = emptyList()): Chat = Chat(this, history.toMutableList())
+  public fun startChat(history: List<Content> = emptyList()): Chat =
+    Chat(this, history.toMutableList())
 
   /**
    * Counts the amount of tokens in a prompt.
@@ -194,7 +195,7 @@ internal constructor(
    * @param prompt A group of [Content] to count tokens of.
    * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
-  suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
+  public suspend fun countTokens(vararg prompt: Content): CountTokensResponse {
     try {
       return controller.countTokens(constructCountTokensRequest(*prompt)).toPublic()
     } catch (e: Throwable) {
@@ -208,7 +209,7 @@ internal constructor(
    * @param prompt The text to be converted to a single piece of [Content] to count the tokens of.
    * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
-  suspend fun countTokens(prompt: String): CountTokensResponse {
+  public suspend fun countTokens(prompt: String): CountTokensResponse {
     return countTokens(content { text(prompt) })
   }
 
@@ -218,7 +219,7 @@ internal constructor(
    * @param prompt The image to be converted to a single piece of [Content] to count the tokens of.
    * @return A [CountTokensResponse] containing the amount of tokens in the prompt.
    */
-  suspend fun countTokens(prompt: Bitmap): CountTokensResponse {
+  public suspend fun countTokens(prompt: Bitmap): CountTokensResponse {
     return countTokens(content { image(prompt) })
   }
 
@@ -230,7 +231,7 @@ internal constructor(
       generationConfig?.toInternal(),
       tools?.map { it.toInternal() },
       toolConfig?.toInternal(),
-      systemInstruction?.toInternal()
+      systemInstruction?.copy(role = "system")?.toInternal()
     )
 
   private fun constructCountTokensRequest(vararg prompt: Content) =
@@ -247,7 +248,7 @@ internal constructor(
       ?.let { throw ResponseStoppedException(this) }
   }
 
-  companion object {
+  private companion object {
     private val TAG = GenerativeModel::class.java.simpleName
   }
 }

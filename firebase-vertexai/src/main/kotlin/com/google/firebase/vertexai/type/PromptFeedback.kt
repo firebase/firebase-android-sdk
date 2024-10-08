@@ -21,23 +21,24 @@ package com.google.firebase.vertexai.type
  *
  * @param blockReason The reason that content was blocked, if at all.
  * @param safetyRatings A list of relevant [SafetyRating].
+ * @param blockReasonMessage A message describing the reason that content was blocked, if any.
  */
-class PromptFeedback(
-  val blockReason: BlockReason?,
-  val safetyRatings: List<SafetyRating>,
+public class PromptFeedback(
+  public val blockReason: BlockReason?,
+  public val safetyRatings: List<SafetyRating>,
+  public val blockReasonMessage: String?
 )
 
 /** Describes why content was blocked. */
-enum class BlockReason {
-  /** A new and not yet supported value. */
-  UNKNOWN,
+public class BlockReason private constructor(public val name: String, public val ordinal: Int) {
+  public companion object {
+    /** A new and not yet supported value. */
+    @JvmField public val UNKNOWN: BlockReason = BlockReason("UNKNOWN", 0)
 
-  /** Content was blocked for an unspecified reason. */
-  UNSPECIFIED,
+    /** Content was blocked for violating provided [SafetySetting]. */
+    @JvmField public val SAFETY: BlockReason = BlockReason("SAFETY", 1)
 
-  /** Content was blocked for violating provided [SafetySetting]. */
-  SAFETY,
-
-  /** Content was blocked for another reason. */
-  OTHER
+    /** Content was blocked for another reason. */
+    @JvmField public val OTHER: BlockReason = BlockReason("OTHER", 2)
+  }
 }

@@ -23,8 +23,8 @@ package com.google.firebase.vertexai.type
  * @param candidatesTokenCount Number of tokens in the response(s).
  * @param totalTokenCount Total number of tokens.
  */
-class UsageMetadata(
-  val promptTokenCount: Int,
-  val candidatesTokenCount: Int?,
-  val totalTokenCount: Int
+public class UsageMetadata(
+  public val promptTokenCount: Int,
+  public val candidatesTokenCount: Int?,
+  public val totalTokenCount: Int
 )

@@ -26,6 +26,7 @@ import com.google.firebase.vertexai.common.util.commonTest
 import com.google.firebase.vertexai.common.util.createResponses
 import com.google.firebase.vertexai.common.util.doBlocking
 import com.google.firebase.vertexai.common.util.prepareStreamingResponse
+import com.google.firebase.vertexai.type.RequestOptions
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -107,7 +108,7 @@ internal class RequestFormatTests {
       }
     }
 
-    mockEngine.requestHistory.first().url.host shouldBe "generativelanguage.googleapis.com"
+    mockEngine.requestHistory.first().url.host shouldBe "firebasevertexai.googleapis.com"
   }
 
   @Test
@@ -121,7 +122,7 @@ internal class RequestFormatTests {
       APIController(
         "super_cool_test_key",
         "gemini-pro-1.5",
-        RequestOptions(endpoint = "https://my.custom.endpoint"),
+        RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
         mockEngine,
         TEST_CLIENT_ID,
         null,
@@ -185,10 +186,12 @@ internal class RequestFormatTests {
             contents = listOf(Content(parts = listOf(TextPart("Arbitrary")))),
             toolConfig =
               ToolConfig(
-                functionCallingConfig =
-                  FunctionCallingConfig(mode = FunctionCallingConfig.Mode.AUTO)
-              ),
-          )
+                FunctionCallingConfig(
+                  mode = FunctionCallingConfig.Mode.ANY,
+                  allowedFunctionNames = listOf("allowedFunctionName")
+                )
+              )
+          ),
         )
         .collect { channel.close() }
     }
@@ -196,6 +199,8 @@ internal class RequestFormatTests {
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
     requestBodyAsText shouldContainJsonKey "tool_config.function_calling_config.mode"
+    requestBodyAsText shouldContainJsonKey
+      "tool_config.function_calling_config.allowed_function_names"
   }
 
   @Test

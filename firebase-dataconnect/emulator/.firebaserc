@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "prjh5zbv64sv6"
+  },
+  "dataconnectEmulatorConfig": {
+    "postgres": {
+      "localConnectionString": "postgresql://postgres:postgres@localhost:5432?sslmode=disable"
+    }
+  }
+}

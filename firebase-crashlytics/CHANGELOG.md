@@ -1,4 +1,13 @@
 # Unreleased
+
+# 19.2.0
+* [fixed] Improved data consistency for rapid user actions.
+* [fixed] Fixed exception propagation in the case of no default uncaught exception handler.
+* [changed] Internal changes to improve startup time.
+* [changed] Internal changes to the way background tasks are scheduled.
+* [changed] Migrated SDK to use standard Firebase executors.
+
+# 19.1.0
 * [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is
   enabled.
   (GitHub [#5919](https://github.com/firebase/firebase-android-sdk/issues/5919){: .external})
@@ -7,8 +16,14 @@
 * [changed] Internal changes to the way session IDs are generated.
 
 
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
 # 19.0.3
 * [changed] Update the internal file system to handle long file names.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated

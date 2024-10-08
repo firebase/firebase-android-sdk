@@ -17,19 +17,21 @@
 package com.google.firebase.vertexai.type
 
 /** Category for a given harm rating. */
-enum class HarmCategory {
-  /** A new and not yet supported value. */
-  UNKNOWN,
+public class HarmCategory private constructor(public val ordinal: Int) {
+  public companion object {
+    /** A new and not yet supported value. */
+    @JvmField public val UNKNOWN: HarmCategory = HarmCategory(0)
 
-  /** Harassment content. */
-  HARASSMENT,
+    /** Harassment content. */
+    @JvmField public val HARASSMENT: HarmCategory = HarmCategory(1)
 
-  /** Hate speech and content. */
-  HATE_SPEECH,
+    /** Hate speech and content. */
+    @JvmField public val HATE_SPEECH: HarmCategory = HarmCategory(2)
 
-  /** Sexually explicit content. */
-  SEXUALLY_EXPLICIT,
+    /** Sexually explicit content. */
+    @JvmField public val SEXUALLY_EXPLICIT: HarmCategory = HarmCategory(3)
 
-  /** Dangerous content. */
-  DANGEROUS_CONTENT
+    /** Dangerous content. */
+    @JvmField public val DANGEROUS_CONTENT: HarmCategory = HarmCategory(4)
+  }
 }

@@ -41,7 +41,7 @@ internal enum class HarmCategory {
   @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT
 }
 
-typealias Base64 = String
+internal typealias Base64 = String
 
 @ExperimentalSerializationApi
 @Serializable
@@ -51,22 +51,18 @@ internal data class Content(@EncodeDefault val role: String? = "user", val parts
 
 @Serializable internal data class TextPart(val text: String) : Part
 
-@Serializable internal data class BlobPart(@SerialName("inline_data") val inlineData: Blob) : Part
+@Serializable
+internal data class InlineDataPart(@SerialName("inline_data") val inlineData: InlineData) : Part
 
 @Serializable internal data class FunctionCallPart(val functionCall: FunctionCall) : Part
 
 @Serializable
 internal data class FunctionResponsePart(val functionResponse: FunctionResponse) : Part
 
-@Serializable internal data class ExecutableCodePart(val executableCode: ExecutableCode) : Part
-
-@Serializable
-internal data class CodeExecutionResultPart(val codeExecutionResult: CodeExecutionResult) : Part
-
 @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
 
 @Serializable
-internal data class FunctionCall(val name: String, val args: Map<String, String?>? = null)
+internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
 
 @Serializable
 internal data class FileDataPart(@SerialName("file_data") val fileData: FileData) : Part
@@ -78,19 +74,7 @@ internal data class FileData(
 )
 
 @Serializable
-internal data class Blob(@SerialName("mime_type") val mimeType: String, val data: Base64)
-
-@Serializable internal data class ExecutableCode(val language: String, val code: String)
-
-@Serializable internal data class CodeExecutionResult(val outcome: Outcome, val output: String)
-
-@Serializable
-internal enum class Outcome {
-  @SerialName("OUTCOME_UNSPECIFIED") UNSPECIFIED,
-  OUTCOME_OK,
-  OUTCOME_FAILED,
-  OUTCOME_DEADLINE_EXCEEDED,
-}
+internal data class InlineData(@SerialName("mime_type") val mimeType: String, val data: Base64)
 
 @Serializable
 internal data class SafetySetting(
@@ -122,10 +106,8 @@ internal object PartSerializer : JsonContentPolymorphicSerializer<Part>(Part::cl
       "text" in jsonObject -> TextPart.serializer()
       "functionCall" in jsonObject -> FunctionCallPart.serializer()
       "functionResponse" in jsonObject -> FunctionResponsePart.serializer()
-      "inlineData" in jsonObject -> BlobPart.serializer()
+      "inlineData" in jsonObject -> InlineDataPart.serializer()
       "fileData" in jsonObject -> FileDataPart.serializer()
-      "executableCode" in jsonObject -> ExecutableCodePart.serializer()
-      "codeExecutionResult" in jsonObject -> CodeExecutionResultPart.serializer()
       else -> throw SerializationException("Unknown Part type")
     }
   }

@@ -20,13 +20,8 @@ import com.google.firebase.vertexai.common.server.BlockReason
 import com.google.firebase.vertexai.common.server.FinishReason
 import com.google.firebase.vertexai.common.server.HarmProbability
 import com.google.firebase.vertexai.common.server.HarmSeverity
-import com.google.firebase.vertexai.common.shared.CodeExecutionResult
-import com.google.firebase.vertexai.common.shared.CodeExecutionResultPart
-import com.google.firebase.vertexai.common.shared.ExecutableCode
-import com.google.firebase.vertexai.common.shared.ExecutableCodePart
 import com.google.firebase.vertexai.common.shared.FunctionCallPart
 import com.google.firebase.vertexai.common.shared.HarmCategory
-import com.google.firebase.vertexai.common.shared.Outcome
 import com.google.firebase.vertexai.common.shared.TextPart
 import com.google.firebase.vertexai.common.util.goldenUnaryFile
 import com.google.firebase.vertexai.common.util.shouldNotBeNullOrEmpty
@@ -41,6 +36,7 @@ import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Test
 
 @Serializable internal data class MountainColors(val name: String, val colors: List<String>)
@@ -335,7 +331,7 @@ internal class UnarySnapshotTests {
           }
 
         callPart.functionCall.args shouldNotBe null
-        callPart.functionCall.args?.get("current") shouldBe "true"
+        callPart.functionCall.args?.get("current") shouldBe JsonPrimitive(true)
       }
     }
 
@@ -350,25 +346,6 @@ internal class UnarySnapshotTests {
 
         callPart.functionCall.name shouldBe "current_time"
         callPart.functionCall.args shouldBe null
-      }
-    }
-
-  @Test
-  fun `code execution parses correctly`() =
-    goldenUnaryFile("success-code-execution.json") {
-      withTimeout(testTimeout) {
-        val response = apiController.generateContent(textGenerateContentRequest("prompt"))
-        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
-        content.shouldNotBeNull()
-        val executableCodePart = content.parts[0]
-        val codeExecutionResult = content.parts[1]
-
-        executableCodePart.shouldBe(
-          ExecutableCodePart(ExecutableCode("PYTHON", "print(\"Hello World\")"))
-        )
-        codeExecutionResult.shouldBe(
-          CodeExecutionResultPart(CodeExecutionResult(Outcome.OUTCOME_OK, "Hello World"))
-        )
       }
     }
 }

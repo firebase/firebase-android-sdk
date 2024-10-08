@@ -17,22 +17,21 @@
 package com.google.firebase.vertexai.type
 
 /** Represents the severity of a [HarmCategory] being applicable in a [SafetyRating]. */
-enum class HarmSeverity {
-  /** A new and not yet supported value. */
-  UNKNOWN,
+public class HarmSeverity private constructor(public val ordinal: Int) {
+  public companion object {
+    /** A new and not yet supported value. */
+    @JvmField public val UNKNOWN: HarmSeverity = HarmSeverity(0)
 
-  /** Severity for harm is unspecified. */
-  UNSPECIFIED,
+    /** Severity for harm is negligible. */
+    @JvmField public val NEGLIGIBLE: HarmSeverity = HarmSeverity(1)
 
-  /** Severity for harm is negligible. */
-  NEGLIGIBLE,
+    /** Low level of harm severity. */
+    @JvmField public val LOW: HarmSeverity = HarmSeverity(2)
 
-  /** Low level of harm severity. */
-  LOW,
+    /** Medium level of harm severity. */
+    @JvmField public val MEDIUM: HarmSeverity = HarmSeverity(3)
 
-  /** Medium level of harm severity. */
-  MEDIUM,
-
-  /** High level of harm severity. */
-  HIGH,
+    /** High level of harm severity. */
+    @JvmField public val HIGH: HarmSeverity = HarmSeverity(4)
+  }
 }
