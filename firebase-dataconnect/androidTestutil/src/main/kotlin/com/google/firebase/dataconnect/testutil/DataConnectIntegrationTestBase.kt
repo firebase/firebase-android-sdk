@@ -40,6 +40,31 @@ abstract class DataConnectIntegrationTestBase {
 
   val rs: RandomSource by randomSeedTestRule.rs
 
+  /**
+   * Generates and returns a string containing random alphanumeric characters, including the name of
+   * the currently-running test as returned from [testName].
+   *
+   * @param string The [Arb] to use to generate the random string; if not specified, then an [Arb]
+   * that generates strings of 20 alphanumeric characters is used.
+   * @param prefix A prefix to include in the returned string; if null (the default) then no prefix
+   * will be included.
+   * @return a string containing random characters and incorporating the other information
+   * identified above.
+   */
+  fun Arb.Companion.alphanumericString(
+    string: Arb<String> = Arb.string(20, Codepoint.alphanumeric()),
+    prefix: String? = null,
+  ): Arb<String> = arbitrary {
+    buildString {
+      if (prefix != null) {
+        append(prefix)
+      }
+      append(testName)
+      append("_")
+      append(string.bind())
+    }
+  }
+
   companion object {
     val testConnectorConfig: ConnectorConfig
       get() =
