@@ -2,6 +2,7 @@
 # javalite, protoc and protobufjavautil versions should be in sync while updating and
 # it needs to match the protobuf version which grpc has transitive dependency on, which
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
+androidGradlePlugin = "8.2.1"
 android-lint = "31.3.2"
 autovalue = "1.10.1"
 coroutines = "1.7.3"
@@ -16,14 +17,18 @@ protoc = "3.21.11"
 truth = "1.4.2"
 robolectric = "4.12"
 protobufjavautil = "3.21.11"
-kotest = "5.9.1"
+kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
 quickcheck = "0.6"
 serialization = "1.5.1"
+spotless = "7.0.0.BETA1"
 androidx-test-core="1.5.0"
 androidx-test-junit="1.1.5"
 androidx-test-truth = "1.5.0"
 
 [libraries]
+android-gradlePlugin-gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
+android-gradlePlugin-gradle-api = { group = "com.android.tools.build", name = "gradle-api", version.ref = "androidGradlePlugin" }
+android-gradlePlugin-builder-test-api = { group = "com.android.tools.build", name = "builder-test-api", version.ref = "androidGradlePlugin" }
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint" }
 android-lint-api = { module = "com.android.tools.lint:lint-api", version.ref = "android-lint" }
 android-lint-checks = { module = "com.android.tools.lint:lint-checks", version.ref = "android-lint" }
@@ -84,6 +89,7 @@ kotest-assertions = { module = "io.kotest:kotest-assertions-core-jvm", version.r
 kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 kotest-property-arbs = { module = "io.kotest.extensions:kotest-property-arbs", version = "2.1.2" }
 quickcheck = { module = "net.java:quickcheck", version.ref = "quickcheck" }
+spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
 
 [bundles]
@@ -91,4 +97,6 @@ kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-prope
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
 
 [plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

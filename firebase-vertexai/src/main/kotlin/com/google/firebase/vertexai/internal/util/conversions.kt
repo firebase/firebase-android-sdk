@@ -21,10 +21,6 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import com.google.firebase.vertexai.common.client.Schema
 import com.google.firebase.vertexai.common.shared.FileData
-import com.google.firebase.vertexai.common.shared.FunctionCall
-import com.google.firebase.vertexai.common.shared.FunctionCallPart
-import com.google.firebase.vertexai.common.shared.FunctionResponse
-import com.google.firebase.vertexai.common.shared.FunctionResponsePart
 import com.google.firebase.vertexai.common.shared.InlineData
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.Candidate
@@ -34,8 +30,12 @@ import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FileDataPart
 import com.google.firebase.vertexai.type.FinishReason
+import com.google.firebase.vertexai.type.FunctionCall
+import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
+import com.google.firebase.vertexai.type.FunctionResponse
+import com.google.firebase.vertexai.type.FunctionResponsePart
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.HarmBlockMethod
@@ -58,6 +58,7 @@ import com.google.firebase.vertexai.type.content
 import java.io.ByteArrayOutputStream
 import java.util.Calendar
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
 
@@ -80,10 +81,10 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
       com.google.firebase.vertexai.common.shared.InlineDataPart(
         InlineData(mimeType, Base64.encodeToString(inlineData, BASE_64_FLAGS))
       )
-    is com.google.firebase.vertexai.type.FunctionCallPart ->
-      FunctionCallPart(FunctionCall(name, args.orEmpty()))
-    is com.google.firebase.vertexai.type.FunctionResponsePart ->
-      FunctionResponsePart(FunctionResponse(name, response.toInternal()))
+    is FunctionCallPart ->
+      com.google.firebase.vertexai.common.shared.FunctionCallPart(functionCall.toInternal())
+    is FunctionResponsePart ->
+      com.google.firebase.vertexai.common.shared.FunctionResponsePart(functionResponse.toInternal())
     is FileDataPart ->
       com.google.firebase.vertexai.common.shared.FileDataPart(
         FileData(mimeType = mimeType, fileUri = uri)
@@ -95,12 +96,30 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
   }
 }
 
+internal fun FunctionCall.toInternal() =
+  com.google.firebase.vertexai.common.shared.FunctionCall(name, args)
+
+internal fun FunctionResponse.toInternal() =
+  com.google.firebase.vertexai.common.shared.FunctionResponse(name, response)
+
 internal fun SafetySetting.toInternal() =
   com.google.firebase.vertexai.common.shared.SafetySetting(
     harmCategory.toInternal(),
     threshold.toInternal(),
     method.toInternal()
   )
+
+internal fun makeMissingCaseException(source: String, ordinal: Int): SerializationException {
+  return SerializationException(
+    """
+    |Missing case for a $source: $ordinal
+    |This error indicates that one of the `toInternal` conversions needs updating.
+    |If you're a developer seeing this exception, please file an issue on our GitHub repo:
+    |https://github.com/firebase/firebase-android-sdk
+  """
+      .trimMargin()
+  )
+}
 
 internal fun GenerationConfig.toInternal() =
   com.google.firebase.vertexai.common.client.GenerationConfig(
@@ -125,6 +144,7 @@ internal fun HarmCategory.toInternal() =
     HarmCategory.DANGEROUS_CONTENT ->
       com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
     HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
+    else -> throw makeMissingCaseException("HarmCategory", ordinal)
   }
 
 internal fun HarmBlockMethod.toInternal() =
@@ -132,6 +152,7 @@ internal fun HarmBlockMethod.toInternal() =
     HarmBlockMethod.SEVERITY -> com.google.firebase.vertexai.common.shared.HarmBlockMethod.SEVERITY
     HarmBlockMethod.PROBABILITY ->
       com.google.firebase.vertexai.common.shared.HarmBlockMethod.PROBABILITY
+    else -> throw makeMissingCaseException("HarmBlockMethod", ordinal)
   }
 
 internal fun ToolConfig.toInternal() =
@@ -159,6 +180,7 @@ internal fun HarmBlockThreshold.toInternal() =
       com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
     HarmBlockThreshold.LOW_AND_ABOVE ->
       com.google.firebase.vertexai.common.shared.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+    else -> throw makeMissingCaseException("HarmBlockThreshold", ordinal)
   }
 
 internal fun Tool.toInternal() =
@@ -210,19 +232,13 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
       if (inlineData.mimeType.contains("image")) {
         ImagePart(decodeBitmapFromImage(data))
       } else {
-        InlineDataPart(inlineData.mimeType, data)
+        InlineDataPart(data, inlineData.mimeType)
       }
     }
-    is FunctionCallPart ->
-      com.google.firebase.vertexai.type.FunctionCallPart(
-        functionCall.name,
-        functionCall.args.orEmpty(),
-      )
-    is FunctionResponsePart ->
-      com.google.firebase.vertexai.type.FunctionResponsePart(
-        functionResponse.name,
-        functionResponse.response.toPublic(),
-      )
+    is com.google.firebase.vertexai.common.shared.FunctionCallPart ->
+      FunctionCallPart(functionCall.toPublic())
+    is com.google.firebase.vertexai.common.shared.FunctionResponsePart ->
+      FunctionResponsePart(functionResponse.toPublic())
     is com.google.firebase.vertexai.common.shared.FileDataPart ->
       FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
@@ -231,6 +247,15 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
       )
   }
 }
+
+internal fun com.google.firebase.vertexai.common.shared.FunctionCall.toPublic() =
+  FunctionCall(name, args.orEmpty().mapValues { it.value ?: JsonNull })
+
+internal fun com.google.firebase.vertexai.common.shared.FunctionResponse.toPublic() =
+  FunctionResponse(
+    name,
+    response,
+  )
 
 internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic(): Citation {
   val publicationDateAsCalendar =

@@ -29,9 +29,9 @@ class DataConnectLocalSettings(project: Project) {
       ) { settingName, settingValue, project ->
         if (settingName == KEY_DATA_CONNECT_EXECUTABLE_FILE) {
           val regularFile = project.layout.projectDirectory.file(settingValue)
-          DataConnectExecutable.RegularFile(regularFile, verificationInfo = null)
+          DataConnectExecutable.RegularFile(regularFile)
         } else if (settingName == KEY_DATA_CONNECT_EXECUTABLE_VERSION) {
-          DataConnectExecutable.Version.forVersionWithDefaultVerificationInfo(settingValue)
+          DataConnectExecutable.Version(settingValue)
         } else {
           throw IllegalStateException(
             "fileValue==null && versionValue==null (error code rbhmsd524t)"

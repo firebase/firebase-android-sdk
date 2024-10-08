@@ -26,46 +26,55 @@ import android.graphics.Bitmap
  *
  * @see content
  */
-class Content @JvmOverloads constructor(val role: String? = "user", val parts: List<Part>) {
+public class Content
+@JvmOverloads
+constructor(public val role: String? = "user", public val parts: List<Part>) {
+
+  public fun copy(role: String? = this.role, parts: List<Part> = this.parts): Content {
+    return Content(role, parts)
+  }
 
   /** Builder class to facilitate constructing complex [Content] objects. */
-  class Builder {
+  public class Builder {
 
     /** The producer of the content. By default, it's "user". */
-    var role: String? = "user"
+    public var role: String? = "user"
 
     /**
      * Mutable list of [Part] comprising a single [Content].
      *
      * Prefer using the provided helper methods over adding elements to the list directly.
      */
-    var parts: MutableList<Part> = arrayListOf()
+    public var parts: MutableList<Part> = arrayListOf()
 
     /** Adds a new [Part] to [parts]. */
-    @JvmName("addPart") fun <T : Part> part(data: T) = apply { parts.add(data) }
+    @JvmName("addPart")
+    public fun <T : Part> part(data: T): Content.Builder = apply { parts.add(data) }
 
     /** Wraps the provided text inside a [TextPart] and adds it to [parts] list. */
-    @JvmName("addText") fun text(text: String) = part(TextPart(text))
+    @JvmName("addText") public fun text(text: String): Content.Builder = part(TextPart(text))
 
     /**
      * Wraps the provided [bytes] and [mimeType] inside a [InlineDataPart] and adds it to the
      * [parts] list.
      */
     @JvmName("addInlineData")
-    fun inlineData(mimeType: String, bytes: ByteArray) = part(InlineDataPart(mimeType, bytes))
+    public fun inlineData(mimeType: String, bytes: ByteArray): Content.Builder =
+      part(InlineDataPart(bytes, mimeType))
 
     /** Wraps the provided [image] inside an [ImagePart] and adds it to the [parts] list. */
-    @JvmName("addImage") fun image(image: Bitmap) = part(ImagePart(image))
+    @JvmName("addImage") public fun image(image: Bitmap): Content.Builder = part(ImagePart(image))
 
     /**
      * Wraps the provided Google Cloud Storage for Firebase [uri] and [mimeType] inside a
      * [FileDataPart] and adds it to the [parts] list.
      */
     @JvmName("addFileData")
-    fun fileData(uri: String, mimeType: String) = part(FileDataPart(uri, mimeType))
+    public fun fileData(uri: String, mimeType: String): Content.Builder =
+      part(FileDataPart(uri, mimeType))
 
     /** Returns a new [Content] using the defined [role] and [parts]. */
-    fun build(): Content = Content(role, parts)
+    public fun build(): Content = Content(role, parts)
   }
 }
 
@@ -81,7 +90,7 @@ class Content @JvmOverloads constructor(val role: String? = "user", val parts: L
  * )
  * ```
  */
-fun content(role: String? = "user", init: Content.Builder.() -> Unit): Content {
+public fun content(role: String? = "user", init: Content.Builder.() -> Unit): Content {
   val builder = Content.Builder()
   builder.role = role
   builder.init()

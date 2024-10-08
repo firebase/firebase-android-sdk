@@ -23,8 +23,11 @@ package com.google.firebase.vertexai.type
  * @property totalBillableCharacters A count of the characters that are billable in the input, if
  * available.
  */
-class CountTokensResponse(val totalTokens: Int, val totalBillableCharacters: Int? = null) {
-  operator fun component1() = totalTokens
+public class CountTokensResponse(
+  public val totalTokens: Int,
+  public val totalBillableCharacters: Int? = null
+) {
+  public operator fun component1(): Int = totalTokens
 
-  operator fun component2() = totalBillableCharacters
+  public operator fun component2(): Int? = totalBillableCharacters
 }

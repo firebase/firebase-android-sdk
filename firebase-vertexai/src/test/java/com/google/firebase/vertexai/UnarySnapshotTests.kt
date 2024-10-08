@@ -44,6 +44,9 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONArray
 import org.junit.Test
 
@@ -350,7 +353,7 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = (response.candidates.first().content.parts.first() as FunctionCallPart)
 
-        callPart.args["season"] shouldBe null
+        callPart.functionCall.args["season"] shouldBe JsonPrimitive(null)
       }
     }
 
@@ -367,7 +370,28 @@ internal class UnarySnapshotTests {
             it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
           }
 
-        callPart.args["current"] shouldBe "true"
+        callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
+      }
+    }
+
+  @Test
+  fun `function call with complex json literal parses correctly`() =
+    goldenUnaryFile("unary-success-function-call-complex-json-literal.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+        val content = response.candidates.shouldNotBeNullOrEmpty().first().content
+        val callPart =
+          content.let {
+            it.shouldNotBeNull()
+            it.parts.shouldNotBeEmpty()
+            it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
+          }
+
+        callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
+        callPart.functionCall.args["testObject"]!!
+          .jsonObject["testProperty"]!!
+          .jsonPrimitive
+          .content shouldBe "string property"
       }
     }
 
@@ -378,8 +402,8 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
 
-        callPart.name shouldBe "current_time"
-        callPart.args.isEmpty() shouldBe true
+        callPart.functionCall.name shouldBe "current_time"
+        callPart.functionCall.args.isEmpty() shouldBe true
       }
     }
 
@@ -390,9 +414,9 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
 
-        callPart.name shouldBe "sum"
-        callPart.args["x"] shouldBe "4"
-        callPart.args["y"] shouldBe "5"
+        callPart.functionCall.name shouldBe "sum"
+        callPart.functionCall.args["x"] shouldBe JsonPrimitive(4)
+        callPart.functionCall.args["y"] shouldBe JsonPrimitive(5)
       }
     }
 
@@ -405,8 +429,8 @@ internal class UnarySnapshotTests {
 
         callList.size shouldBe 3
         callList.forEach {
-          it.name shouldBe "sum"
-          it.args.size shouldBe 2
+          it.functionCall.name shouldBe "sum"
+          it.functionCall.args.size shouldBe 2
         }
       }
     }
@@ -420,7 +444,7 @@ internal class UnarySnapshotTests {
 
         response.text shouldBe "The sum of [1, 2, 3] is"
         callList.size shouldBe 2
-        callList.forEach { it.args.size shouldBe 2 }
+        callList.forEach { it.functionCall.args.size shouldBe 2 }
       }
     }
 

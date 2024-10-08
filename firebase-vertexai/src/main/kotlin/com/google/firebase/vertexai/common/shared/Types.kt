@@ -41,7 +41,7 @@ internal enum class HarmCategory {
   @SerialName("HARM_CATEGORY_DANGEROUS_CONTENT") DANGEROUS_CONTENT
 }
 
-typealias Base64 = String
+internal typealias Base64 = String
 
 @ExperimentalSerializationApi
 @Serializable
@@ -62,7 +62,7 @@ internal data class FunctionResponsePart(val functionResponse: FunctionResponse)
 @Serializable internal data class FunctionResponse(val name: String, val response: JsonObject)
 
 @Serializable
-internal data class FunctionCall(val name: String, val args: Map<String, String?>? = null)
+internal data class FunctionCall(val name: String, val args: Map<String, JsonElement?>? = null)
 
 @Serializable
 internal data class FileDataPart(@SerialName("file_data") val fileData: FileData) : Part

@@ -15,81 +15,43 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
-import java.io.Serializable
-
-// The following command was used to generate the `serialVersionUID` constants for each class.
-// serialver -classpath \
-//   plugin/build/classes/kotlin/main:$(find $HOME/.gradle/wrapper/dists -name
-// gradle-core-api-8.5.jar -printf '%p:') \
-// com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableInput\${VerificationInfo,File,RegularFile,Version}
+import java.io.InputStream
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
 
 sealed interface DataConnectExecutable {
 
-  data class VerificationInfo(val fileSizeInBytes: Long, val sha512DigestHex: String) :
-    Serializable {
+  data class File(val file: java.io.File) : DataConnectExecutable
 
+  data class RegularFile(val file: org.gradle.api.file.RegularFile) : DataConnectExecutable
+
+  data class Version(val version: String) : DataConnectExecutable {
     companion object {
-      fun forVersion(version: String): VerificationInfo =
-        when (version) {
-          "1.3.4" ->
-            VerificationInfo(
-              fileSizeInBytes = 24_125_592L,
-              sha512DigestHex =
-                "3ec9317db593ebeacfea9756cdd08a02849296fbab67f32f3d811a766be6ce2506f" +
-                  "c7a0cf5f5ea880926f0c4defa5ded965268f5dfe5d07eb80cef926f216c7e"
-            )
-          "1.3.5" ->
-            VerificationInfo(
-              fileSizeInBytes = 24_146_072L,
-              sha512DigestHex =
-                "630391e3c50568cca36e562e51b300e673fa7190c0cae0475a03e4af4003babe711" +
-                  "98c5b0309ecd261b3a3362e8c4d49bdb6cbc6f2b2d3297444112a018a0c10"
-            )
-          "1.3.6" ->
-            VerificationInfo(
-              fileSizeInBytes = 24_785_048L,
-              sha512DigestHex =
-                "77b2fd79a8a70e47defb1592a092c63642fda6c33715f1977d7a44daed3d7e181c3" +
-                  "870aad0fee7b035aabea7778a244135ab3e633247ccd5f937105f6d495a26"
-            )
-          "1.3.7" ->
-            VerificationInfo(
-              fileSizeInBytes = 24_928_408L,
-              sha512DigestHex =
-                "99d9774f3b29a6845f0e096893d1205e69b6f8654797a3fc7d54d22e8f7059d1b65" +
-                  "49ae23b8e8f18c952c1c7d25a07b0b8b29a957abd97e1a79c703448497cef"
-            )
-          "1.3.8" ->
-            VerificationInfo(
-              fileSizeInBytes = 24_940_696L,
-              sha512DigestHex =
-                "aea3583ebe1a36938eec5164de79405951ddf05b70a857ddb4f346f1424666f1d96" +
-                  "989a5f81326c7e2aef4a195d31ff356fdf2331ed98fa1048c4bd469cbfd97"
-            )
-          else ->
-            throw DataConnectGradleException(
-              "3svd27ch8y",
-              "File size and SHA512 digest is not known for version: $version"
-            )
-        }
+      val default: Version
+        get() = Version(VersionsJson.load().default)
     }
   }
 
-  data class File(val file: java.io.File, val verificationInfo: VerificationInfo?) :
-    DataConnectExecutable
+  @OptIn(ExperimentalSerializationApi::class)
+  object VersionsJson {
 
-  data class RegularFile(
-    val file: org.gradle.api.file.RegularFile,
-    val verificationInfo: VerificationInfo?
-  ) : DataConnectExecutable
+    const val RESOURCE_PATH =
+      "com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json"
 
-  data class Version(val version: String, val verificationInfo: VerificationInfo?) :
-    DataConnectExecutable {
-    companion object {
-      fun forVersionWithDefaultVerificationInfo(version: String): Version {
-        val verificationInfo = DataConnectExecutable.VerificationInfo.forVersion(version)
-        return Version(version, verificationInfo)
-      }
-    }
+    fun load(): Root = openFile().use { Json.decodeFromStream<Root>(it) }
+
+    private fun openFile(): InputStream =
+      this::class.java.classLoader.getResourceAsStream(RESOURCE_PATH)
+        ?: throw DataConnectGradleException("antkaw2gjp", "resource not found: $RESOURCE_PATH")
+
+    @kotlinx.serialization.Serializable
+    data class Root(
+      val default: String,
+      val versions: Map<String, VerificationInfo>,
+    )
+
+    @kotlinx.serialization.Serializable
+    data class VerificationInfo(val size: Long, val sha512DigestHex: String)
   }
 }

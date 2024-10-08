@@ -248,10 +248,12 @@ internal object ProtoUtil {
 
   fun Value.toAny(): Any? = valueToAnyMutualRecursion.anyValueFromValue(this)
 
-  fun List<Any?>.toValueProto(): Value {
+  fun <T> List<T>.toValueProto(): Value {
     val key = "y8czq9rh75"
     return mapOf(key to this).toStructProto().getFieldsOrThrow(key)
   }
+
+  fun <T> List<T>.toListValueProto(): ListValue = toValueProto().listValue
 
   fun Map<String, Any?>.toValueProto(): Value =
     Value.newBuilder().setStructValue(toStructProto()).build()

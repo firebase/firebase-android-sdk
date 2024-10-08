@@ -17,7 +17,11 @@
 package com.google.firebase.vertexai.common
 
 import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.options
 import com.google.firebase.vertexai.common.server.FinishReason
+import com.google.firebase.vertexai.common.server.GRpcError
+import com.google.firebase.vertexai.common.server.GRpcErrorDetails
 import com.google.firebase.vertexai.common.util.decodeToFlow
 import com.google.firebase.vertexai.common.util.fullModelName
 import com.google.firebase.vertexai.type.RequestOptions
@@ -239,10 +243,31 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (message.contains("quota")) {
     throw QuotaExceededException(message)
   }
-  if (error.details?.any { "SERVICE_DISABLED" == it.reason } == true) {
-    throw ServiceDisabledException(message)
+  getServiceDisabledErrorDetailsOrNull(error)?.let {
+    val errorMessage =
+      if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
+        """
+        The Vertex AI in Firebase SDK requires the Vertex AI in Firebase API
+        (`firebasevertexai.googleapis.com`) to be enabled in your Firebase project. Enable this API
+        by visiting the Firebase Console at
+        https://console.firebase.google.com/project/${Firebase.options.projectId}/genai
+        and clicking "Get started". If you enabled this API recently, wait a few minutes for the
+        action to propagate to our systems and then retry.
+      """
+          .trimIndent()
+      } else {
+        error.message
+      }
+
+    throw ServiceDisabledException(errorMessage)
   }
   throw ServerException(message)
+}
+
+private fun getServiceDisabledErrorDetailsOrNull(error: GRpcError): GRpcErrorDetails? {
+  return error.details?.firstOrNull {
+    it.reason == "SERVICE_DISABLED" && it.domain == "googleapis.com"
+  }
 }
 
 private fun GenerateContentResponse.validate() = apply {

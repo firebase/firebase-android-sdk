@@ -20,12 +20,15 @@ package com.google.firebase.vertexai.type
  * Specifies how the block method computes the score that will be compared against the
  * [HarmBlockThreshold] in [SafetySetting].
  */
-enum class HarmBlockMethod {
-  /**
-   * The harm block method uses both probability and severity scores. See [HarmSeverity] and
-   * [HarmProbability].
-   */
-  SEVERITY,
-  /** The harm block method uses the probability score. See [HarmProbability]. */
-  PROBABILITY,
+public class HarmBlockMethod private constructor(public val ordinal: Int) {
+  public companion object {
+    /**
+     * The harm block method uses both probability and severity scores. See [HarmSeverity] and
+     * [HarmProbability].
+     */
+    @JvmField public val SEVERITY: HarmBlockMethod = HarmBlockMethod(0)
+
+    /** The harm block method uses the probability score. See [HarmProbability]. */
+    @JvmField public val PROBABILITY: HarmBlockMethod = HarmBlockMethod(1)
+  }
 }

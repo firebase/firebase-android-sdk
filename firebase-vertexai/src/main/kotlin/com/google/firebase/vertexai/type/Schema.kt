@@ -16,27 +16,28 @@
 
 package com.google.firebase.vertexai.type
 
-sealed class StringFormat(val value: String) {
-  class Custom(format: String) : StringFormat(format)
+public abstract class StringFormat private constructor(internal val value: String) {
+  public class Custom(value: String) : StringFormat(value)
 }
 
 /** Represents a schema */
-class Schema
+public class Schema
 internal constructor(
-  val type: String,
-  val description: String? = null,
-  val format: String? = null,
-  val nullable: Boolean? = null,
-  val enum: List<String>? = null,
-  val properties: Map<String, Schema>? = null,
-  val required: List<String>? = null,
-  val items: Schema? = null,
+  public val type: String,
+  public val description: String? = null,
+  public val format: String? = null,
+  public val nullable: Boolean? = null,
+  public val enum: List<String>? = null,
+  public val properties: Map<String, Schema>? = null,
+  public val required: List<String>? = null,
+  public val items: Schema? = null,
 ) {
 
-  companion object {
+  public companion object {
     /** Returns a schema for a boolean */
     @JvmStatic
-    fun boolean(description: String? = null, nullable: Boolean = false) =
+    @JvmOverloads
+    public fun boolean(description: String? = null, nullable: Boolean = false): Schema =
       Schema(
         description = description,
         nullable = nullable,
@@ -51,7 +52,8 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numInt")
-    fun integer(description: String? = null, nullable: Boolean = false) =
+    @JvmOverloads
+    public fun integer(description: String? = null, nullable: Boolean = false): Schema =
       Schema(
         description = description,
         format = "int32",
@@ -67,7 +69,8 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numLong")
-    fun long(description: String? = null, nullable: Boolean = false) =
+    @JvmOverloads
+    public fun long(description: String? = null, nullable: Boolean = false): Schema =
       Schema(
         description = description,
         nullable = nullable,
@@ -82,7 +85,8 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numDouble")
-    fun double(description: String? = null, nullable: Boolean = false) =
+    @JvmOverloads
+    public fun double(description: String? = null, nullable: Boolean = false): Schema =
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "double")
 
     /**
@@ -93,7 +97,8 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numFloat")
-    fun float(description: String? = null, nullable: Boolean = false) =
+    @JvmOverloads
+    public fun float(description: String? = null, nullable: Boolean = false): Schema =
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "float")
 
     /**
@@ -105,11 +110,12 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("str")
-    fun string(
+    @JvmOverloads
+    public fun string(
       description: String? = null,
       nullable: Boolean = false,
       format: StringFormat? = null
-    ) =
+    ): Schema =
       Schema(
         description = description,
         format = format?.value,
@@ -125,7 +131,8 @@ internal constructor(
      * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
-    fun obj(
+    @JvmOverloads
+    public fun obj(
       properties: Map<String, Schema>,
       optionalProperties: List<String> = emptyList(),
       description: String? = null,
@@ -153,7 +160,12 @@ internal constructor(
      * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
-    fun array(items: Schema, description: String? = null, nullable: Boolean = false) =
+    @JvmOverloads
+    public fun array(
+      items: Schema,
+      description: String? = null,
+      nullable: Boolean = false
+    ): Schema =
       Schema(
         description = description,
         nullable = nullable,
@@ -169,7 +181,12 @@ internal constructor(
      * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
-    fun enumeration(values: List<String>, description: String? = null, nullable: Boolean = false) =
+    @JvmOverloads
+    public fun enumeration(
+      values: List<String>,
+      description: String? = null,
+      nullable: Boolean = false
+    ): Schema =
       Schema(
         description = description,
         format = "enum",
