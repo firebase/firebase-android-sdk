@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -65,6 +66,7 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
   @Captor private ArgumentCaptor<Intent> intentCaptor;
 
   @Before
+  @SuppressLint("UnspecifiedRegisterReceiverFlag")
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     context = ApplicationProvider.getApplicationContext();
