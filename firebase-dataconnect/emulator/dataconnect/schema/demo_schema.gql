@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-type Foo @table {
+type Foo @table @index(fields: ["bar"]) {
   id: String!
   bar: String
 }

@@ -132,7 +132,7 @@ public class Chat(
                 image(bitmap)
               }
               for (inlineDataPart in inlineDataParts) {
-                inlineData(inlineDataPart.mimeType, inlineDataPart.inlineData)
+                inlineData(inlineDataPart.inlineData, inlineDataPart.mimeType)
               }
               if (text.isNotBlank()) {
                 text(text.toString())
