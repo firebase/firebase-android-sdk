@@ -353,7 +353,7 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = (response.candidates.first().content.parts.first() as FunctionCallPart)
 
-        callPart.functionCall.args["season"] shouldBe JsonPrimitive(null)
+        callPart.args["season"] shouldBe JsonPrimitive(null)
       }
     }
 
@@ -370,7 +370,7 @@ internal class UnarySnapshotTests {
             it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
           }
 
-        callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
+        callPart.args["current"] shouldBe JsonPrimitive(true)
       }
     }
 
@@ -387,11 +387,9 @@ internal class UnarySnapshotTests {
             it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
           }
 
-        callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
-        callPart.functionCall.args["testObject"]!!
-          .jsonObject["testProperty"]!!
-          .jsonPrimitive
-          .content shouldBe "string property"
+        callPart.args["current"] shouldBe JsonPrimitive(true)
+        callPart.args["testObject"]!!.jsonObject["testProperty"]!!.jsonPrimitive.content shouldBe
+          "string property"
       }
     }
 
@@ -402,8 +400,8 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
 
-        callPart.functionCall.name shouldBe "current_time"
-        callPart.functionCall.args.isEmpty() shouldBe true
+        callPart.name shouldBe "current_time"
+        callPart.args.isEmpty() shouldBe true
       }
     }
 
@@ -414,9 +412,9 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
 
-        callPart.functionCall.name shouldBe "sum"
-        callPart.functionCall.args["x"] shouldBe JsonPrimitive(4)
-        callPart.functionCall.args["y"] shouldBe JsonPrimitive(5)
+        callPart.name shouldBe "sum"
+        callPart.args["x"] shouldBe JsonPrimitive(4)
+        callPart.args["y"] shouldBe JsonPrimitive(5)
       }
     }
 
@@ -429,8 +427,8 @@ internal class UnarySnapshotTests {
 
         callList.size shouldBe 3
         callList.forEach {
-          it.functionCall.name shouldBe "sum"
-          it.functionCall.args.size shouldBe 2
+          it.name shouldBe "sum"
+          it.args.size shouldBe 2
         }
       }
     }
@@ -444,7 +442,7 @@ internal class UnarySnapshotTests {
 
         response.text shouldBe "The sum of [1, 2, 3] is"
         callList.size shouldBe 2
-        callList.forEach { it.functionCall.args.size shouldBe 2 }
+        callList.forEach { it.args.size shouldBe 2 }
       }
     }
 
