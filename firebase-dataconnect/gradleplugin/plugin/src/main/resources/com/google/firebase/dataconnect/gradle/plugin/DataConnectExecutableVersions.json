@@ -1,5 +1,5 @@
 {
-  "defaultVersion": "1.4.3",
+  "defaultVersion": "1.5.0",
   "versions": [
     {
       "version": "1.3.4",
@@ -180,6 +180,42 @@
       "os": "linux",
       "size": 25034904,
       "sha512DigestHex": "c25fd2cb9ef4896cadc05fab79f767f8fc8212e3b967f2ae535855befd63339539a4f6cd648743c024f40139b668cc69fb9c6691490259664af5821d116896cf"
+    },
+    {
+      "version": "1.4.4",
+      "os": "windows",
+      "size": 25567744,
+      "sha512DigestHex": "6c548bf1b8303f0bae1070ac3f149ac6e77433cd7d570ad38e2f3d9a3d68d0f1325b4944f44e7d8089e5c72ef658a8294aed6509dfa9506fe6d2f9ede7ac358a"
+    },
+    {
+      "version": "1.4.4",
+      "os": "macos",
+      "size": 25142016,
+      "sha512DigestHex": "4e19d2a8d09fcc1937fd15411659e03199eb6bab6263d17594cce700b3f3451445fce3c02622fac36207a5d023fe9ed85bc7de1489d47ae6543d8ba38cc6fba6"
+    },
+    {
+      "version": "1.4.4",
+      "os": "linux",
+      "size": 25055384,
+      "sha512DigestHex": "fdc7775fcd626fed385886abde98dc24d0a2ba7f8d991888bbf7609d597adeb492e85d601ca393e22026548a56ccb90f49678adf0d33993b00a6e2fe04fd39f3"
+    },
+    {
+      "version": "1.5.0",
+      "os": "windows",
+      "size": 25643520,
+      "sha512DigestHex": "712cd947e8dd33fc3912bddf3a5ae758d8e035c0de360fdbc05e5394b19c8495653f6fea7b59adcbead13cb92ca2f48abce1bf9ec1991259f0b4ac6e6de63709"
+    },
+    {
+      "version": "1.5.0",
+      "os": "macos",
+      "size": 25215744,
+      "sha512DigestHex": "2e061ef2786589c79e47fa18aeb7bd10d4681be817af86fe9ec9b9bec28ae65b79e34d8ab0af853c769ed56c8286513d65fe6c48ed97f0f6971b5f7520680bc6"
+    },
+    {
+      "version": "1.5.0",
+      "os": "linux",
+      "size": 25129112,
+      "sha512DigestHex": "6ae87788e55d3c79dc8558fe899c06aed21237b2ab332593d05c02d6db98fc94c3e7861dbb58af1fbb69a0dfa639c005539fe3006d4f001af69b8532a7f175b0"
     }
   ]
 }
