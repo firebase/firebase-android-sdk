@@ -17,6 +17,8 @@
 package com.google.firebase.vertexai.type
 
 import android.graphics.Bitmap
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
 
 /** Interface representing data sent to and received from requests. */
@@ -48,7 +50,8 @@ public class InlineDataPart(public val inlineData: ByteArray, public val mimeTyp
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-class FunctionCallPart(val name: String, val args: Map<String, JsonElement>) : Part
+public class FunctionCallPart(public val name: String, public val args: Map<String, JsonElement>) :
+  Part
 
 /**
  * Represents function call output to be returned to the model when it requests a function call.
@@ -56,7 +59,7 @@ class FunctionCallPart(val name: String, val args: Map<String, JsonElement>) : P
  * @param name the name of the called function
  * @param response the response produced by the function as a [JSONObject]
  */
-class FunctionResponsePart(val name: String, val response: JsonObject) : Part
+public class FunctionResponsePart(public val name: String, public val response: JsonObject) : Part
 
 /**
  * Represents file data stored in Cloud Storage for Firebase, referenced by URI.

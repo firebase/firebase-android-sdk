@@ -82,9 +82,9 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
         InlineData(mimeType, Base64.encodeToString(inlineData, BASE_64_FLAGS))
       )
     is com.google.firebase.vertexai.type.FunctionCallPart ->
-      FunctionCallPart(FunctionCall(name, args.orEmpty()))
+      FunctionCallPart(FunctionCall(name, args))
     is com.google.firebase.vertexai.type.FunctionResponsePart ->
-      FunctionResponsePart(FunctionResponse(name, response.toInternal()))
+      FunctionResponsePart(FunctionResponse(name, response))
     is FileDataPart ->
       com.google.firebase.vertexai.common.shared.FileDataPart(
         FileData(mimeType = mimeType, fileUri = uri)
@@ -232,12 +232,12 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
     is FunctionCallPart ->
       com.google.firebase.vertexai.type.FunctionCallPart(
         functionCall.name,
-        functionCall.args.orEmpty(),
+        functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
       )
     is FunctionResponsePart ->
       com.google.firebase.vertexai.type.FunctionResponsePart(
         functionResponse.name,
-        functionResponse.response.toPublic(),
+        functionResponse.response,
       )
     is com.google.firebase.vertexai.common.shared.FileDataPart ->
       FileDataPart(fileData.mimeType, fileData.fileUri)

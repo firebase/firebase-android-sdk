@@ -353,7 +353,7 @@ internal class UnarySnapshotTests {
         val response = model.generateContent("prompt")
         val callPart = (response.candidates.first().content.parts.first() as FunctionCallPart)
 
-        callPart.args["season"] shouldBe null
+        callPart.args["season"] shouldBe JsonPrimitive(null)
       }
     }
 
@@ -370,7 +370,7 @@ internal class UnarySnapshotTests {
             it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
           }
 
-        callPart.args["current"] shouldBe "true"
+        callPart.args["current"] shouldBe JsonPrimitive(true)
       }
     }
 
@@ -387,11 +387,9 @@ internal class UnarySnapshotTests {
             it.parts.first().shouldBeInstanceOf<FunctionCallPart>()
           }
 
-        callPart.functionCall.args["current"] shouldBe JsonPrimitive(true)
-        callPart.functionCall.args["testObject"]!!
-          .jsonObject["testProperty"]!!
-          .jsonPrimitive
-          .content shouldBe "string property"
+        callPart.args["current"] shouldBe JsonPrimitive(true)
+        callPart.args["testObject"]!!.jsonObject["testProperty"]!!.jsonPrimitive.content shouldBe
+          "string property"
       }
     }
 
@@ -415,8 +413,8 @@ internal class UnarySnapshotTests {
         val callPart = response.functionCalls.shouldNotBeEmpty().first()
 
         callPart.name shouldBe "sum"
-        callPart.args["x"] shouldBe "4"
-        callPart.args["y"] shouldBe "5"
+        callPart.args["x"] shouldBe JsonPrimitive(4)
+        callPart.args["y"] shouldBe JsonPrimitive(5)
       }
     }
 
