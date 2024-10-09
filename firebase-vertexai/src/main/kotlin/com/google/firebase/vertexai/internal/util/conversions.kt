@@ -21,6 +21,10 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import com.google.firebase.vertexai.common.client.Schema
 import com.google.firebase.vertexai.common.shared.FileData
+import com.google.firebase.vertexai.common.shared.FunctionCall
+import com.google.firebase.vertexai.common.shared.FunctionCallPart
+import com.google.firebase.vertexai.common.shared.FunctionResponse
+import com.google.firebase.vertexai.common.shared.FunctionResponsePart
 import com.google.firebase.vertexai.common.shared.InlineData
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.Candidate
@@ -30,12 +34,8 @@ import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FileDataPart
 import com.google.firebase.vertexai.type.FinishReason
-import com.google.firebase.vertexai.type.FunctionCall
-import com.google.firebase.vertexai.type.FunctionCallPart
 import com.google.firebase.vertexai.type.FunctionCallingConfig
 import com.google.firebase.vertexai.type.FunctionDeclaration
-import com.google.firebase.vertexai.type.FunctionResponse
-import com.google.firebase.vertexai.type.FunctionResponsePart
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import com.google.firebase.vertexai.type.GenerationConfig
 import com.google.firebase.vertexai.type.HarmBlockMethod
@@ -81,10 +81,10 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
       com.google.firebase.vertexai.common.shared.InlineDataPart(
         InlineData(mimeType, Base64.encodeToString(inlineData, BASE_64_FLAGS))
       )
-    is FunctionCallPart ->
-      com.google.firebase.vertexai.common.shared.FunctionCallPart(functionCall.toInternal())
-    is FunctionResponsePart ->
-      com.google.firebase.vertexai.common.shared.FunctionResponsePart(functionResponse.toInternal())
+    is com.google.firebase.vertexai.type.FunctionCallPart ->
+      FunctionCallPart(FunctionCall(name, args.orEmpty()))
+    is com.google.firebase.vertexai.type.FunctionResponsePart ->
+      FunctionResponsePart(FunctionResponse(name, response.toInternal()))
     is FileDataPart ->
       com.google.firebase.vertexai.common.shared.FileDataPart(
         FileData(mimeType = mimeType, fileUri = uri)
@@ -95,12 +95,6 @@ internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part 
       )
   }
 }
-
-internal fun FunctionCall.toInternal() =
-  com.google.firebase.vertexai.common.shared.FunctionCall(name, args)
-
-internal fun FunctionResponse.toInternal() =
-  com.google.firebase.vertexai.common.shared.FunctionResponse(name, response)
 
 internal fun SafetySetting.toInternal() =
   com.google.firebase.vertexai.common.shared.SafetySetting(
@@ -235,10 +229,16 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
         InlineDataPart(data, inlineData.mimeType)
       }
     }
-    is com.google.firebase.vertexai.common.shared.FunctionCallPart ->
-      FunctionCallPart(functionCall.toPublic())
-    is com.google.firebase.vertexai.common.shared.FunctionResponsePart ->
-      FunctionResponsePart(functionResponse.toPublic())
+    is FunctionCallPart ->
+      com.google.firebase.vertexai.type.FunctionCallPart(
+        functionCall.name,
+        functionCall.args.orEmpty(),
+      )
+    is FunctionResponsePart ->
+      com.google.firebase.vertexai.type.FunctionResponsePart(
+        functionResponse.name,
+        functionResponse.response.toPublic(),
+      )
     is com.google.firebase.vertexai.common.shared.FileDataPart ->
       FileDataPart(fileData.mimeType, fileData.fileUri)
     else ->
@@ -247,15 +247,6 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
       )
   }
 }
-
-internal fun com.google.firebase.vertexai.common.shared.FunctionCall.toPublic() =
-  FunctionCall(name, args.orEmpty().mapValues { it.value ?: JsonNull })
-
-internal fun com.google.firebase.vertexai.common.shared.FunctionResponse.toPublic() =
-  FunctionResponse(
-    name,
-    response,
-  )
 
 internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic(): Citation {
   val publicationDateAsCalendar =

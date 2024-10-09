@@ -17,8 +17,7 @@
 package com.google.firebase.vertexai.type
 
 import android.graphics.Bitmap
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
+import org.json.JSONObject
 
 /** Interface representing data sent to and received from requests. */
 public interface Part
@@ -44,35 +43,20 @@ public class ImagePart(public val image: Bitmap) : Part
 public class InlineDataPart(public val inlineData: ByteArray, public val mimeType: String) : Part
 
 /**
- * Represents a function call request from the model
- *
- * @param functionCall The information provided by the model to call a function.
- */
-public class FunctionCallPart(public val functionCall: FunctionCall) : Part
-
-/**
- * The result of calling a function as requested by the model.
- *
- * @param functionResponse The information to send back to the model as the result of a functions
- * call.
- */
-public class FunctionResponsePart(public val functionResponse: FunctionResponse) : Part
-
-/**
- * The data necessary to invoke function [name] using the arguments [args].
+ * Represents function call name and params received from requests.
  *
  * @param name the name of the function to call
  * @param args the function parameters and values as a [Map]
  */
-public class FunctionCall(public val name: String, public val args: Map<String, JsonElement>)
+class FunctionCallPart(val name: String, val args: Map<String, JsonElement>) : Part
 
 /**
- * The [response] generated after calling function [name].
+ * Represents function call output to be returned to the model when it requests a function call.
  *
  * @param name the name of the called function
- * @param response the response produced by the function as a [JsonObject]
+ * @param response the response produced by the function as a [JSONObject]
  */
-public class FunctionResponse(public val name: String, public val response: JsonObject)
+class FunctionResponsePart(val name: String, val response: JsonObject) : Part
 
 /**
  * Represents file data stored in Cloud Storage for Firebase, referenced by URI.
