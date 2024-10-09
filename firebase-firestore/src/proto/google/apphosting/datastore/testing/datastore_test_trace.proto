@@ -57,31 +57,6 @@ message ValidationRule {
 message FirestoreV1Action {
   // Non-streaming ops in the Firestore service API.
   // See: firestore/v1/firestore.proto
-  message GetDocument {
-    .google.firestore.v1.GetDocumentRequest request = 1;
-    .google.firestore.v1.Document response = 2;
-  }
-
-  message ListDocuments {
-    .google.firestore.v1.ListDocumentsRequest request = 1;
-    .google.firestore.v1.ListDocumentsResponse response = 2;
-  }
-
-  message CreateDocument {
-    .google.firestore.v1.CreateDocumentRequest request = 1;
-    .google.firestore.v1.Document response = 2;
-  }
-
-  message UpdateDocument {
-    .google.firestore.v1.UpdateDocumentRequest request = 1;
-    .google.firestore.v1.Document response = 2;
-  }
-
-  message DeleteDocument {
-    .google.firestore.v1.DeleteDocumentRequest request = 1;
-    .google.protobuf.Empty response = 2;
-  }
-
   message BeginTransaction {
     .google.firestore.v1.BeginTransactionRequest request = 1;
     .google.firestore.v1.BeginTransactionResponse response = 2;
@@ -128,11 +103,6 @@ message FirestoreV1Action {
   }
 
   oneof action {
-    GetDocument get_document = 1;
-    ListDocuments list_documents = 2;
-    CreateDocument create_document = 3;
-    UpdateDocument update_document = 4;
-    DeleteDocument delete_document = 5;
     BeginTransaction begin_transaction = 6;
     Commit commit = 7;
     Rollback rollback = 8;
