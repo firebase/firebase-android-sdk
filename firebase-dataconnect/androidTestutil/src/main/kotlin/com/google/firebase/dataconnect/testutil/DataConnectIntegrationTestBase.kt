@@ -19,7 +19,12 @@ package com.google.firebase.dataconnect.testutil
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.util.nextAlphanumericString
+import io.kotest.property.Arb
 import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.string
 import kotlin.random.Random
 import org.junit.Rule
 import org.junit.rules.TestName
