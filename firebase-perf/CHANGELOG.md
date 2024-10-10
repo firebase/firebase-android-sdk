@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Fix IllegalStateException when starting a trace before Firebase initializes.
 
 # 21.0.1
 * [fixed] Fixed an `ExceptionInInitializerError` where the `url.openStream()` causes a crash if
