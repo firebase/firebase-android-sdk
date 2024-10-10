@@ -43,7 +43,7 @@ internal data class Tool(
 
 @Serializable
 internal data class ToolConfig(
-  @SerialName("function_calling_config") val functionCallingConfig: FunctionCallingConfig
+  @SerialName("function_calling_config") val functionCallingConfig: FunctionCallingConfig?
 )
 
 @Serializable
