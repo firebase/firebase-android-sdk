@@ -36,7 +36,7 @@ firebaseLibrary {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     generateProtoTasks {
         all().each { task ->
@@ -104,7 +104,7 @@ dependencies {
     implementation "androidx.annotation:annotation:1.1.0"
     implementation "androidx.lifecycle:lifecycle-process:2.3.1"
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
-    implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
+    implementation libs.protobuf.java.lite
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
@@ -130,7 +130,7 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    testCompileOnly "com.google.protobuf:protobuf-java:3.21.9"
+    testCompileOnly libs.protobuf.java
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
