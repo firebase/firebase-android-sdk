@@ -17,13 +17,7 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Contains configuration for function calling from the model. This can be used to force function
- * calling predictions or disable them.
- *
- * @param mode The function calling mode of the model
- * @param allowedFunctionNames Function names to call. Only set when the [Mode.ANY]. Function names
- * should match [FunctionDeclaration.name]. With [Mode.ANY], model will predict a function call from
- * the set of function names provided.
+ * The configuration that specifies the function calling behavior.
  */
 public class FunctionCallingConfig
 internal constructor(
@@ -52,7 +46,7 @@ internal constructor(
   public companion object {
     /**
      * The default behavior for function calling. The model calls functions to answer queries at its
-     * discretion
+     * discretion.
      */
     @JvmStatic public fun auto(): FunctionCallingConfig = FunctionCallingConfig(Mode.AUTO)
 
