@@ -16,7 +16,11 @@
 
 package com.google.firebase.vertexai.type
 
-/** The configuration that specifies the function calling behavior. */
+/**
+ * The configuration that specifies the function calling behavior.
+ *
+ * See the static methods in the `companion object` for the list of available behaviors.
+ */
 public class FunctionCallingConfig
 internal constructor(
   internal val mode: Mode,

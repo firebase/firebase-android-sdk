@@ -51,10 +51,11 @@ public class Chat(
   private var lock = Semaphore(1)
 
   /**
-   * Sends a message using the provided [prompt]; automatically providing the existing [history] as context.
+   * Sends a message using the provided [prompt]; automatically providing the existing [history] as
+   * context.
    *
-   * If successful, the message and response will be added to the [history]. If unsuccessful, [history]
-   * will remain unchanged.
+   * If successful, the message and response will be added to the [history]. If unsuccessful,
+   * [history] will remain unchanged.
    *
    * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
@@ -75,10 +76,11 @@ public class Chat(
   }
 
   /**
-   * Sends a message using the provided [text prompt][prompt]; automatically providing the existing [history] as context.
+   * Sends a message using the provided [text prompt][prompt]; automatically providing the existing
+   * [history] as context.
    *
-   * If successful, the message and response will be added to the [history]. If unsuccessful, [history]
-   * will remain unchanged.
+   * If successful, the message and response will be added to the [history]. If unsuccessful,
+   * [history] will remain unchanged.
    *
    * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
