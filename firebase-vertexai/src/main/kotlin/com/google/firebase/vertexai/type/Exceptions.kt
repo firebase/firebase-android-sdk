@@ -22,7 +22,7 @@ import com.google.firebase.vertexai.internal.util.toPublic
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseVertexAI] SDK. */
-public sealed class FirebaseVertexAIException(message: String, cause: Throwable? = null) :
+public abstract class FirebaseVertexAIException internal constructor(message: String, cause: Throwable? = null) :
   RuntimeException(message, cause) {
 
   internal companion object {
@@ -68,29 +68,29 @@ public sealed class FirebaseVertexAIException(message: String, cause: Throwable?
 }
 
 /** Something went wrong while trying to deserialize a response from the server. */
-public class SerializationException(message: String, cause: Throwable? = null) :
+public class SerializationException
+internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /** The server responded with a non 200 response code. */
-public class ServerException(message: String, cause: Throwable? = null) :
+public class ServerException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
-/** The server responded that the API Key is not valid. */
-public class InvalidAPIKeyException(message: String, cause: Throwable? = null) :
+/** The provided API Key is not valid. */
+public class InvalidAPIKeyException
+internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /**
- * A request was blocked for some reason.
+ * A request was blocked.
  *
  * See the [response's][response] `promptFeedback.blockReason` for more information.
  *
- * @property response the full server response for the request.
+ * @property response The full server response.
  */
 // TODO(rlazo): Add secondary constructor to pass through the message?
-public class PromptBlockedException(
-  public val response: GenerateContentResponse,
-  cause: Throwable? = null
-) :
+public class PromptBlockedException
+internal constructor(public val response: GenerateContentResponse, cause: Throwable? = null) :
   FirebaseVertexAIException(
     "Prompt was blocked: ${response.promptFeedback?.blockReason?.name}",
     cause,
@@ -104,7 +104,7 @@ public class PromptBlockedException(
  * (countries and territories) where the API is available.
  */
 // TODO(rlazo): Add secondary constructor to pass through the message?
-public class UnsupportedUserLocationException(cause: Throwable? = null) :
+public class UnsupportedUserLocationException internal constructor(cause: Throwable? = null) :
   FirebaseVertexAIException("User location is not supported for the API use.", cause)
 
 /**
@@ -112,18 +112,16 @@ public class UnsupportedUserLocationException(cause: Throwable? = null) :
  *
  * Usually indicative of consumer error.
  */
-public class InvalidStateException(message: String, cause: Throwable? = null) :
+public class InvalidStateException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /**
  * A request was stopped during generation for some reason.
  *
- * @property response the full server response for the request
+ * @property response The full server response.
  */
-public class ResponseStoppedException(
-  public val response: GenerateContentResponse,
-  cause: Throwable? = null
-) :
+public class ResponseStoppedException
+internal constructor(public val response: GenerateContentResponse, cause: Throwable? = null) :
   FirebaseVertexAIException(
     "Content generation stopped. Reason: ${response.candidates.first().finishReason?.name}",
     cause,
@@ -134,7 +132,8 @@ public class ResponseStoppedException(
  *
  * Usually occurs due to a user specified [timeout][RequestOptions.timeout].
  */
-public class RequestTimeoutException(message: String, cause: Throwable? = null) :
+public class RequestTimeoutException
+internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /**
@@ -143,7 +142,8 @@ public class RequestTimeoutException(message: String, cause: Throwable? = null) 
  * For a list of valid locations, see
  * [Vertex AI locations.](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions)
  */
-public class InvalidLocationException(location: String, cause: Throwable? = null) :
+public class InvalidLocationException
+internal constructor(location: String, cause: Throwable? = null) :
   FirebaseVertexAIException("Invalid location \"${location}\"", cause)
 
 /**
@@ -151,9 +151,10 @@ public class InvalidLocationException(location: String, cause: Throwable? = null
  * in the
  * [Firebase documentation.](https://firebase.google.com/docs/vertex-ai/faq-and-troubleshooting#required-apis)
  */
-public class ServiceDisabledException(message: String, cause: Throwable? = null) :
+public class ServiceDisabledException
+internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
 
 /** Catch all case for exceptions not explicitly expected. */
-public class UnknownException(message: String, cause: Throwable? = null) :
+public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseVertexAIException(message, cause)
