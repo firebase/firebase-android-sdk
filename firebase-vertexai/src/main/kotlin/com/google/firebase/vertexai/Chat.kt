@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.onEach
  * **Note:** This object is not thread-safe, and calling [sendMessage] multiple times without
  * waiting for a response will throw an [InvalidStateException].
  *
- * @param model The model to use for the interaction
+ * @param model The model to use for the interaction.
  * @property history The previous content from the chat that has been successfully sent and received
  * from the model. This will be provided to the model for each message sent as context for the
  * discussion.
@@ -61,8 +61,8 @@ public class Chat(
    *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
-   * @throws InvalidStateException if the [Chat] instance has an active request
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
     prompt.assertComesFromUser()
@@ -88,8 +88,8 @@ public class Chat(
    *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
-   * @throws InvalidStateException if the [Chat] instance has an active request
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public suspend fun sendMessage(prompt: String): GenerateContentResponse {
     val content = content { text(prompt) }
@@ -107,8 +107,8 @@ public class Chat(
    *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
-   * @throws InvalidStateException if the [Chat] instance has an active request
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public suspend fun sendMessage(prompt: Bitmap): GenerateContentResponse {
     val content = content { image(prompt) }
@@ -126,8 +126,8 @@ public class Chat(
    *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
-   * @throws InvalidStateException if the [Chat] instance has an active request
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public fun sendMessageStream(prompt: Content): Flow<GenerateContentResponse> {
     prompt.assertComesFromUser()
@@ -186,8 +186,8 @@ public class Chat(
    *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
-   * @throws InvalidStateException if the [Chat] instance has an active request
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public fun sendMessageStream(prompt: String): Flow<GenerateContentResponse> {
     val content = content { text(prompt) }
@@ -205,8 +205,8 @@ public class Chat(
    *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [prompt] is not coming from the 'user' role
-   * @throws InvalidStateException if the [Chat] instance has an active request
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
     val content = content { image(prompt) }

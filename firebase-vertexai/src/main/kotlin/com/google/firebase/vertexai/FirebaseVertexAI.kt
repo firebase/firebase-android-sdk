@@ -42,14 +42,14 @@ internal constructor(
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example "gemini-1.5-pro"
-   * @param generationConfig The configuration parameters to use for content generation
-   * @param safetySettings The safety bounds the model will abide to when content generation
-   * @param tools A list of [Tool]s the model may use to generate content
-   * @param toolConfig The [ToolConfig] that defines how the model handles the tools provided
+   * @param modelName The name of the model to use, for example "gemini-1.5-pro".
+   * @param generationConfig The configuration parameters to use for content generation.
+   * @param safetySettings The safety bounds the model will abide to when content generation.
+   * @param tools A list of [Tool]s the model may use to generate content.
+   * @param toolConfig The [ToolConfig] that defines how the model handles the tools provided.
    * @param systemInstruction [Content] instructions that direct the model to behave a certain way
    * currently only text content is supported.
-   * @param requestOptions Configuration options for sending requests to the backend
+   * @param requestOptions Configuration options for sending requests to the backend.
    * @return The initialized [GenerativeModel] instance.
    */
   @JvmOverloads
@@ -91,7 +91,7 @@ internal constructor(
      * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location].
      *
      * @param location location identifier, defaults to `us-central1`; see available
-     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations).
      */
     @JvmStatic
     @JvmOverloads
