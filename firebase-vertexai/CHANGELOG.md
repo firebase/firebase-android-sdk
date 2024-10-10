@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] **Breaking Change**: Migrated `FirebaseVertexAIException` from a sealed class to an abstract class, and marked constructor as internal. (#6368)
 * [feature] Added support for `title` and `publicationDate` in citations. (#6309)
 * [feature] Added support for `frequencyPenalty`, `presencePenalty`, and `HarmBlockMethod`. (#6309)
 * [changed] **Breaking Change**: Introduced `Citations` class. Now `CitationMetadata` wraps that type. (#6276)
