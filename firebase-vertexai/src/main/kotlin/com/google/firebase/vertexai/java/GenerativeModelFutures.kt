@@ -64,7 +64,10 @@ public abstract class GenerativeModelFutures internal constructor() {
    */
   public abstract fun countTokens(vararg prompt: Content): ListenableFuture<CountTokensResponse>
 
-  /** Creates a [ChatFuture] instance which internally tracks the ongoing conversation with the model. */
+  /**
+   * Creates a [ChatFuture] instance which internally tracks the ongoing conversation with the
+   * model.
+   */
   public abstract fun startChat(): ChatFutures
 
   /**

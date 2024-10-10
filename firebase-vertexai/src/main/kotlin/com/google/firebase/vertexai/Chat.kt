@@ -124,7 +124,6 @@ public class Chat(
    * If successful, the message and response will be added to the history. If unsuccessful, history
    * will remain unchanged.
    *
-   *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role
