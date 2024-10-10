@@ -24,7 +24,8 @@ import android.graphics.Bitmap
  * `Content` is composed of a one or more heterogeneous parts that can be represent data in
  * different formats, like text or images.
  *
- * @param role The producer of the content. By default, it's "user".
+ * @param role The producer of the content. Must be either 'user' or 'model'. By default, it's
+ * "user".
  * @param parts An ordered list of [Part] that constitute this content.
  */
 public class Content
@@ -39,7 +40,7 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   /** Builder class to facilitate constructing complex [Content] objects. */
   public class Builder {
 
-    /** The producer of the content. By default, it's "user". */
+    /** The producer of the content. Must be either 'user' or 'model'. By default, it's "user". */
     public var role: String? = "user"
 
     /**
