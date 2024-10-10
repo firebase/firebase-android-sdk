@@ -91,7 +91,8 @@ internal constructor(
      * Returns the [FirebaseVertexAI] instance for the provided [FirebaseApp] and [location].
      *
      * @param location location identifier, defaults to `us-central1`; see available
-     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations).
+     * [Vertex AI regions](https://firebase.google.com/docs/vertex-ai/locations?platform=android#available-locations)
+     * .
      */
     @JvmStatic
     @JvmOverloads

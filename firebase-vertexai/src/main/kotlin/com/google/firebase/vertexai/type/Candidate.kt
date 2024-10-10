@@ -67,13 +67,15 @@ public class CitationMetadata internal constructor(public val citations: List<Ci
 /**
  * Represents a citation of content from an external source within the model's output.
  *
- * When the language model generates text that includes content from another source,
- * it should provide a citation to properly attribute the original source. This class
- * encapsulates the metadata associated with that citation.
+ * When the language model generates text that includes content from another source, it should
+ * provide a citation to properly attribute the original source. This class encapsulates the
+ * metadata associated with that citation.
  *
  * @property title The title of the cited source, if available.
- * @property startIndex The (inclusive) starting index within the model output where the cited content begins.
- * @property endIndex The (exclusive) ending index within the model output where the cited content ends.
+ * @property startIndex The (inclusive) starting index within the model output where the cited
+ * content begins.
+ * @property endIndex The (exclusive) ending index within the model output where the cited content
+ * ends.
  * @property uri The URI of the cited source, if available.
  * @property license The license under which the cited content is distributed under, if available.
  * @property publicationDate The date of publication of the cited source, if available.
@@ -108,7 +110,9 @@ public class FinishReason private constructor(public val name: String, public va
     /** [SafetySetting] prevented the model from outputting content. */
     @JvmField public val SAFETY: FinishReason = FinishReason("SAFETY", 3)
 
-    /** The token generation was stopped because the response was flagged for unauthorized citations. */
+    /**
+     * The token generation was stopped because the response was flagged for unauthorized citations.
+     */
     @JvmField public val RECITATION: FinishReason = FinishReason("RECITATION", 4)
 
     /** Model stopped for another reason. */
