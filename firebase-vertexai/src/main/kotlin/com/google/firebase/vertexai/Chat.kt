@@ -41,8 +41,8 @@ import kotlinx.coroutines.flow.onEach
  *
  * @param model The model to use for the interaction.
  * @property history The previous content from the chat that has been successfully sent and received
- * from the model. This will be provided to the model for each message sent as context for the
- * discussion.
+ * from the model. This will be provided to the model for each message sent (as context for the
+ * discussion).
  */
 public class Chat(
   private val model: GenerativeModel,
@@ -51,15 +51,14 @@ public class Chat(
   private var lock = Semaphore(1)
 
   /**
-   * Sends a message using the existing history of this chat as context and the provided [Content]
-   * prompt.
+   * Sends a message using the provided [prompt]; automatically providing the existing [history] as context.
    *
-   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * If successful, the message and response will be added to the [history]. If unsuccessful, [history]
    * will remain unchanged.
    *
    * This function should be called within a suspend context to properly manage concurrency.
    *
-   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * @param prompt The input(s) that, together with the [history], will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
@@ -78,15 +77,14 @@ public class Chat(
   }
 
   /**
-   * Sends a message using the existing history of this chat as context and the provided text
-   * prompt.
+   * Sends a message using the provided [text prompt][prompt]; automatically providing the existing [history] as context.
    *
-   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * If successful, the message and response will be added to the [history]. If unsuccessful, [history]
    * will remain unchanged.
    *
    * This function should be called within a suspend context to properly manage concurrency.
    *
-   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * @param prompt The input(s) that, together with the [history], will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
