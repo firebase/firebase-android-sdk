@@ -60,3 +60,7 @@ fun DataConnectArb.connectorConfig(
     )
   }
 }
+
+fun DataConnectArb.accessToken(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "accessToken_${string.bind()}" }

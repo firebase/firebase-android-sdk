@@ -44,9 +44,6 @@ fun Arb.Companion.keyedString(id: String, key: String, length: Int = 8): Arb<Str
     "${id}_${key}_${rs.random.nextAlphanumericString(length = length)}"
   }
 
-fun Arb.Companion.accessToken(key: String): Arb<String> =
-  keyedString("accessToken", key, length = 20)
-
 fun Arb.Companion.requestId(key: String): Arb<String> = keyedString("requestId", key)
 
 fun Arb.Companion.operationName(key: String): Arb<String> = keyedString("operation", key)

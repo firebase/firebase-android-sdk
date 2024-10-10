@@ -20,8 +20,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
-import com.google.firebase.dataconnect.testutil.accessToken
 import com.google.firebase.dataconnect.testutil.callerSdkType
+import com.google.firebase.dataconnect.testutil.property.arbitrary.accessToken
 import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorLocation
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
@@ -177,15 +177,14 @@ class DataConnectGrpcMetadataUnitTest {
 
   @Test
   fun `should include x-firebase-auth-token when the auth token is not null`() = runTest {
-    val key = "d85j28zpw9"
     val dataConnectAuth: DataConnectAuth = mockk()
-    val accessToken = Arb.accessToken(key).next()
+    val accessToken = Arb.dataConnect.accessToken().next()
     coEvery { dataConnectAuth.getToken(any()) } returns accessToken
     val dataConnectGrpcMetadata =
       Arb.dataConnect
         .dataConnectGrpcMetadata(dataConnectAuth = Arb.constant(dataConnectAuth))
         .next()
-    val requestId = Arb.requestId(key).next()
+    val requestId = Arb.requestId("d85j28zpw9").next()
     val callerSdkType = Arb.callerSdkType().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
@@ -216,8 +215,7 @@ class DataConnectGrpcMetadataUnitTest {
 
   @Test
   fun `should include x-firebase-appcheck when the AppCheck token is not null`() = runTest {
-    val key = "cz6htzv6qk"
-    val accessToken = Arb.accessToken(key).next()
+    val accessToken = Arb.dataConnect.accessToken().next()
     val dataConnectAppCheck: DataConnectAppCheck = mockk {
       coEvery { getToken(any()) } returns accessToken
     }
@@ -225,7 +223,7 @@ class DataConnectGrpcMetadataUnitTest {
       Arb.dataConnect
         .dataConnectGrpcMetadata(dataConnectAppCheck = Arb.constant(dataConnectAppCheck))
         .next()
-    val requestId = Arb.requestId(key).next()
+    val requestId = Arb.requestId("cz6htzv6qk").next()
     val callerSdkType = Arb.callerSdkType().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
