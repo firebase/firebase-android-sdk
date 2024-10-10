@@ -33,7 +33,7 @@ import kotlinx.coroutines.flow.onEach
 /**
  * Representation of a multi-turn interaction with a model.
  *
- * Captures, and stores the history of communication in memory, and provides it as context with each
+ * Captures and stores the history of communication in memory, and provides it as context with each
  * new message.
  *
  * **Note:** This object is not thread-safe, and calling [sendMessage] multiple times without
@@ -56,9 +56,7 @@ public class Chat(
    * If successful, the message and response will be added to the [history]. If unsuccessful, [history]
    * will remain unchanged.
    *
-   * This function should be called within a suspend context to properly manage concurrency.
-   *
-   * @param prompt The input(s) that, together with the [history], will be given to the model as the
+   * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
@@ -82,9 +80,7 @@ public class Chat(
    * If successful, the message and response will be added to the [history]. If unsuccessful, [history]
    * will remain unchanged.
    *
-   * This function should be called within a suspend context to properly manage concurrency.
-   *
-   * @param prompt The input(s) that, together with the [history], will be given to the model as the
+   * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
@@ -101,9 +97,7 @@ public class Chat(
    * If successful, the message and response will be added to the history. If unsuccessful, history
    * will remain unchanged.
    *
-   * This function should be called within a suspend context to properly manage concurrency.
-   *
-   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
@@ -122,7 +116,7 @@ public class Chat(
    * If successful, the message and response will be added to the history. If unsuccessful, history
    * will remain unchanged.
    *
-   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
@@ -201,7 +195,7 @@ public class Chat(
    * If successful, the message and response will be added to the history. If unsuccessful, history
    * will remain unchanged.
    *
-   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
    * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.

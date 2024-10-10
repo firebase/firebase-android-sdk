@@ -47,8 +47,8 @@ internal constructor(
    * @param safetySettings The safety bounds the model will abide to during content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
    * @param toolConfig The [ToolConfig] that defines how the model handles the tools provided.
-   * @param systemInstruction [Content] instructions that direct the model to behave a certain way
-   * currently only text content is supported.
+   * @param systemInstruction [Content] instructions that direct the model to behave a certain way.
+   * Currently only text content is supported.
    * @param requestOptions Configuration options for sending requests to the backend.
    * @return The initialized [GenerativeModel] instance.
    */
