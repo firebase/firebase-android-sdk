@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Remove possible thread safety issues for ObjectValue. [#5699](//github.com/firebase/firebase-android-sdk/pull/5699)
 
 # 25.1.0
 * [feature] Add support for the VectorValue type. [#6154](//github.com/firebase/firebase-android-sdk/pull/6154)
