@@ -151,7 +151,6 @@ internal fun HarmBlockMethod.toInternal() =
 
 internal fun ToolConfig.toInternal() =
   com.google.firebase.vertexai.common.client.ToolConfig(
-  com.google.firebase.vertexai.common.client.ToolConfig(
     functionCallingConfig?.let {
       com.google.firebase.vertexai.common.client.FunctionCallingConfig(
         when (it.mode) {
