@@ -151,10 +151,10 @@ internal fun HarmBlockMethod.toInternal() =
 
 internal fun ToolConfig.toInternal() =
   com.google.firebase.vertexai.common.client.ToolConfig(
-    if (functionCallingConfig == null) null
-    else
+  com.google.firebase.vertexai.common.client.ToolConfig(
+    functionCallingConfig?.let {
       com.google.firebase.vertexai.common.client.FunctionCallingConfig(
-        when (functionCallingConfig.mode) {
+        when (it.mode) {
           FunctionCallingConfig.Mode.ANY ->
             com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.ANY
           FunctionCallingConfig.Mode.AUTO ->
@@ -162,8 +162,9 @@ internal fun ToolConfig.toInternal() =
           FunctionCallingConfig.Mode.NONE ->
             com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.NONE
         },
-        functionCallingConfig.allowedFunctionNames
+        it.allowedFunctionNames
       )
+    }
   )
 
 internal fun HarmBlockThreshold.toInternal() =
