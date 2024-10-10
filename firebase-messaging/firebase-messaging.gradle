@@ -25,7 +25,7 @@ protobuf {
         protobuild project(path: ':encoders:protoc-gen-firebase-encoders', configuration: 'shadow')
 }
     protoc {
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     plugins {
         firebaseEncoders {
