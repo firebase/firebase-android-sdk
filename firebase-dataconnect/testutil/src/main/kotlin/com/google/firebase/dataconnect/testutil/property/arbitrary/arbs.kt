@@ -1,0 +1,62 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.firebase.dataconnect.testutil.property.arbitrary
+
+import com.google.firebase.dataconnect.ConnectorConfig
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.string
+
+object DataConnectArb
+
+val Arb.Companion.dataConnect: DataConnectArb
+  get() = DataConnectArb
+
+@Suppress("UnusedReceiverParameter")
+fun DataConnectArb.connectorName(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "connector_${string.bind()}" }
+
+@Suppress("UnusedReceiverParameter")
+fun DataConnectArb.connectorLocation(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "location_${string.bind()}" }
+
+@Suppress("UnusedReceiverParameter")
+fun DataConnectArb.connectorServiceId(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "serviceId_${string.bind()}" }
+
+fun DataConnectArb.connectorConfig(
+  prefix: String? = null,
+  connector: Arb<String> = connectorName(),
+  location: Arb<String> = connectorLocation(),
+  serviceId: Arb<String> = connectorServiceId(),
+): Arb<ConnectorConfig> {
+  val wrappedConnector = prefix?.let { connector.withPrefix(it) } ?: connector
+  val wrappedLocation = prefix?.let { location.withPrefix(it) } ?: location
+  val wrappedServiceId = prefix?.let { serviceId.withPrefix(it) } ?: serviceId
+  return arbitrary {
+    ConnectorConfig(
+      connector = wrappedConnector.bind(),
+      location = wrappedLocation.bind(),
+      serviceId = wrappedServiceId.bind(),
+    )
+  }
+}

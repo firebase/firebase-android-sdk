@@ -20,9 +20,10 @@ import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.callerSdkType
-import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.dataConnectSettings
 import com.google.firebase.dataconnect.testutil.operationName
+import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -63,7 +64,7 @@ class FirebaseDataConnectImplUnitTest {
       context = app.applicationContext,
       app = app,
       projectId = app.options.projectId!!,
-      config = Arb.connectorConfig(key).next(rs),
+      config = Arb.dataConnect.connectorConfig().next(rs),
       blockingExecutor = mockk(relaxed = true),
       nonBlockingExecutor = mockk(relaxed = true),
       deferredAuthProvider = mockk(relaxed = true),

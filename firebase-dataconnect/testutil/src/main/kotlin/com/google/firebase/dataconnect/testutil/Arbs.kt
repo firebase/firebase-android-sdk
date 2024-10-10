@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.util.nextAlphanumericString
@@ -44,25 +43,6 @@ fun Arb.Companion.keyedString(id: String, key: String, length: Int = 8): Arb<Str
   arbitrary { rs ->
     "${id}_${key}_${rs.random.nextAlphanumericString(length = length)}"
   }
-
-fun Arb.Companion.connectorConfig(
-  key: String,
-  connector: Arb<String> = connectorName(key),
-  location: Arb<String> = connectorLocation(key),
-  serviceId: Arb<String> = connectorServiceId(key)
-): Arb<ConnectorConfig> = arbitrary { rs ->
-  ConnectorConfig(
-    connector = connector.next(rs),
-    location = location.next(rs),
-    serviceId = serviceId.next(rs),
-  )
-}
-
-fun Arb.Companion.connectorName(key: String): Arb<String> = keyedString("connector", key)
-
-fun Arb.Companion.connectorLocation(key: String): Arb<String> = keyedString("location", key)
-
-fun Arb.Companion.connectorServiceId(key: String): Arb<String> = keyedString("serviceId", key)
 
 fun Arb.Companion.accessToken(key: String): Arb<String> =
   keyedString("accessToken", key, length = 20)
