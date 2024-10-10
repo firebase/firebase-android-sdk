@@ -61,7 +61,7 @@ public class JobInfoSchedulerTest {
   public void schedule_secondAttemptThenForce() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
     scheduler.schedule(TRANSPORT_CONTEXT, 2);
-    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    int jobId = WorkScheduler.getJobId(context, TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -86,7 +86,7 @@ public class JobInfoSchedulerTest {
   public void schedule_longWaitTimeFirstAttempt() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 1000000);
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
-    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    int jobId = WorkScheduler.getJobId(context, TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -101,7 +101,7 @@ public class JobInfoSchedulerTest {
   @Test
   public void schedule_noTimeRecordedForBackend() {
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
-    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    int jobId = WorkScheduler.getJobId(context, TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -117,7 +117,7 @@ public class JobInfoSchedulerTest {
   public void schedule_smallWaitTImeFirstAttempt() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
-    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    int jobId = WorkScheduler.getJobId(context, TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -133,7 +133,7 @@ public class JobInfoSchedulerTest {
   public void schedule_longWaitTimeTenthAttempt() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 1000000);
     scheduler.schedule(TRANSPORT_CONTEXT, 10);
-    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    int jobId = WorkScheduler.getJobId(context, TRANSPORT_CONTEXT);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(1);
     JobInfo jobInfo = jobScheduler.getAllPendingJobs().get(0);
@@ -148,7 +148,7 @@ public class JobInfoSchedulerTest {
   @Test
   public void schedule_twoJobs() {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
-    int jobId = scheduler.getJobId(TRANSPORT_CONTEXT);
+    int jobId = WorkScheduler.getJobId(context, TRANSPORT_CONTEXT);
     // Schedule first job
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
@@ -221,8 +221,8 @@ public class JobInfoSchedulerTest {
     store.recordNextCallTime(TRANSPORT_CONTEXT, 5);
     scheduler.schedule(TRANSPORT_CONTEXT, 1);
     scheduler.schedule(UNMETERED_TRANSPORT_CONTEXT, 1);
-    int jobId1 = scheduler.getJobId(TRANSPORT_CONTEXT);
-    int jobId2 = scheduler.getJobId(UNMETERED_TRANSPORT_CONTEXT);
+    int jobId1 = WorkScheduler.getJobId(context, TRANSPORT_CONTEXT);
+    int jobId2 = WorkScheduler.getJobId(context, UNMETERED_TRANSPORT_CONTEXT);
 
     assertThat(jobScheduler.getAllPendingJobs()).isNotEmpty();
     assertThat(jobScheduler.getAllPendingJobs().size()).isEqualTo(2);
