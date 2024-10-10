@@ -25,7 +25,7 @@ import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 
 /**
- * Helper wrapper for interacting with a [Chat] instance from Java.
+ * Wrapper class providing Java compatible methods for [Chat].
  *
  * @see [Chat]
  */
@@ -53,7 +53,6 @@ public abstract class ChatFutures internal constructor() {
    *
    * If successful, the message and response will be added to the history. If unsuccessful, history
    * will remain unchanged.
-   *
    *
    * @param prompt The input(s) that, together with the history, will be given to the model as the
    * prompt.
