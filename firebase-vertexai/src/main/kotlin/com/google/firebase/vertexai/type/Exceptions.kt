@@ -22,8 +22,8 @@ import com.google.firebase.vertexai.internal.util.toPublic
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseVertexAI] SDK. */
-public abstract class FirebaseVertexAIException internal constructor(message: String, cause: Throwable? = null) :
-  RuntimeException(message, cause) {
+public abstract class FirebaseVertexAIException
+internal constructor(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {
 
   internal companion object {
 
