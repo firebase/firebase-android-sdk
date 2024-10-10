@@ -26,7 +26,7 @@ import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.internal.StringResourceValueReader;
 
-/** Configurable Firebase options. */
+/** Configurable Firebase option. */
 public final class FirebaseOptions {
 
   // TODO: deprecate and remove it once we can fetch these from Remote Config.
