@@ -35,15 +35,10 @@ import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.filterIsInstance
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
-
-fun <A> Arb<A>.filterNotNull(): Arb<A & Any> = filter { it !== null }.map { it!! }
-
-fun <A> Arb<A>.filterNotEqual(other: A) = filter { it != other }
 
 fun Arb.Companion.keyedString(id: String, key: String, length: Int = 8): Arb<String> =
   arbitrary { rs ->

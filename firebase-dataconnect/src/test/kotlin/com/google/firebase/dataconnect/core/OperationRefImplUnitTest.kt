@@ -19,8 +19,8 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.copy
-import com.google.firebase.dataconnect.testutil.filterNotEqual
 import com.google.firebase.dataconnect.testutil.operationRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.retry

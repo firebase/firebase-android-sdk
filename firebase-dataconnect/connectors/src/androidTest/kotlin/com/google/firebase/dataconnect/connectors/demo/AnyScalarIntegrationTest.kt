@@ -29,7 +29,7 @@ import com.google.firebase.dataconnect.testutil.anyScalar
 import com.google.firebase.dataconnect.testutil.expectedAnyScalarRoundTripValue
 import com.google.firebase.dataconnect.testutil.filterNotAnyScalarMatching
 import com.google.firebase.dataconnect.testutil.filterNotIncludesAllMatchingAnyScalars
-import com.google.firebase.dataconnect.testutil.filterNotNull
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotNull
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
