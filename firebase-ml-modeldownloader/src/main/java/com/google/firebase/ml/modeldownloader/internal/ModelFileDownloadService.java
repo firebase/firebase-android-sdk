@@ -209,7 +209,7 @@ public class ModelFileDownloadService {
     this.receiverMaps.remove(downloadId);
   }
 
-  @SuppressLint("WrongConstant")
+  @SuppressLint({"WrongConstant", "UnspecifiedRegisterReceiverFlag"})
   private Task<Void> registerReceiverForDownloadId(long downloadId, String modelName) {
     BroadcastReceiver broadcastReceiver = getReceiverInstance(downloadId, modelName);
     // It is okay to always register here. Since the broadcast receiver is the same via the lookup

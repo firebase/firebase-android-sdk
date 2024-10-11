@@ -1,5 +1,7 @@
 # Unreleased
-
+* [changed] Update Firestore proto definitions. [#6369](//github.com/firebase/firebase-android-sdk/pull/6369)
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
 
 # 25.1.0
 * [feature] Add support for the VectorValue type. [#6154](//github.com/firebase/firebase-android-sdk/pull/6154)

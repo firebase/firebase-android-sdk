@@ -36,6 +36,7 @@ internal constructor(
   public companion object {
     /** Returns a schema for a boolean */
     @JvmStatic
+    @JvmOverloads
     public fun boolean(description: String? = null, nullable: Boolean = false): Schema =
       Schema(
         description = description,
@@ -51,6 +52,7 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numInt")
+    @JvmOverloads
     public fun integer(description: String? = null, nullable: Boolean = false): Schema =
       Schema(
         description = description,
@@ -67,6 +69,7 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numLong")
+    @JvmOverloads
     public fun long(description: String? = null, nullable: Boolean = false): Schema =
       Schema(
         description = description,
@@ -82,6 +85,7 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numDouble")
+    @JvmOverloads
     public fun double(description: String? = null, nullable: Boolean = false): Schema =
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "double")
 
@@ -93,6 +97,7 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("numFloat")
+    @JvmOverloads
     public fun float(description: String? = null, nullable: Boolean = false): Schema =
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "float")
 
@@ -105,6 +110,7 @@ internal constructor(
      */
     @JvmStatic
     @JvmName("str")
+    @JvmOverloads
     public fun string(
       description: String? = null,
       nullable: Boolean = false,
@@ -125,6 +131,7 @@ internal constructor(
      * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
+    @JvmOverloads
     public fun obj(
       properties: Map<String, Schema>,
       optionalProperties: List<String> = emptyList(),
@@ -153,6 +160,7 @@ internal constructor(
      * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
+    @JvmOverloads
     public fun array(
       items: Schema,
       description: String? = null,
@@ -173,6 +181,7 @@ internal constructor(
      * @param nullable: Whether null is a valid value for this schema
      */
     @JvmStatic
+    @JvmOverloads
     public fun enumeration(
       values: List<String>,
       description: String? = null,

@@ -21,15 +21,18 @@ import android.graphics.Bitmap
 /**
  * Represents content sent to and received from the model.
  *
- * @param role the producer of the content. By default, it's "user".
- * @param parts ordered list of [Part] that constitute a single message.
+ * `Content` is composed of a one or more heterogeneous parts that can be represent data in
+ * different formats, like text or images.
  *
- * @see content
+ * @param role The producer of the content. Must be either 'user' or 'model'. By default, it's
+ * "user".
+ * @param parts An ordered list of [Part] that constitute this content.
  */
 public class Content
 @JvmOverloads
 constructor(public val role: String? = "user", public val parts: List<Part>) {
 
+  /** Returns a copy of this object, with the provided parameters overwriting the originals. */
   public fun copy(role: String? = this.role, parts: List<Part> = this.parts): Content {
     return Content(role, parts)
   }
@@ -37,13 +40,13 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   /** Builder class to facilitate constructing complex [Content] objects. */
   public class Builder {
 
-    /** The producer of the content. By default, it's "user". */
+    /** The producer of the content. Must be either 'user' or 'model'. By default, it's "user". */
     public var role: String? = "user"
 
     /**
-     * Mutable list of [Part] comprising a single [Content].
+     * The mutable list of [Part]s comprising the [Content].
      *
-     * Prefer using the provided helper methods over adding elements to the list directly.
+     * Prefer using the provided helper methods over modifying this list directly.
      */
     public var parts: MutableList<Part> = arrayListOf()
 
@@ -51,24 +54,21 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
     @JvmName("addPart")
     public fun <T : Part> part(data: T): Content.Builder = apply { parts.add(data) }
 
-    /** Wraps the provided text inside a [TextPart] and adds it to [parts] list. */
+    /** Adds a new [TextPart] with the provided [text] to [parts]. */
     @JvmName("addText") public fun text(text: String): Content.Builder = part(TextPart(text))
 
     /**
-     * Wraps the provided [bytes] and [mimeType] inside a [InlineDataPart] and adds it to the
-     * [parts] list.
+     * Adds a new [InlineDataPart] with the provided [bytes], which should be interpreted by the
+     * model based on the [mimeType], to [parts].
      */
     @JvmName("addInlineData")
-    public fun inlineData(mimeType: String, bytes: ByteArray): Content.Builder =
+    public fun inlineData(bytes: ByteArray, mimeType: String): Content.Builder =
       part(InlineDataPart(bytes, mimeType))
 
-    /** Wraps the provided [image] inside an [ImagePart] and adds it to the [parts] list. */
+    /** Adds a new [ImagePart] with the provided [image] to [parts]. */
     @JvmName("addImage") public fun image(image: Bitmap): Content.Builder = part(ImagePart(image))
 
-    /**
-     * Wraps the provided Google Cloud Storage for Firebase [uri] and [mimeType] inside a
-     * [FileDataPart] and adds it to the [parts] list.
-     */
+    /** Adds a new [FileDataPart] with the provided [uri] and [mimeType] to [parts]. */
     @JvmName("addFileData")
     public fun fileData(uri: String, mimeType: String): Content.Builder =
       part(FileDataPart(uri, mimeType))
@@ -79,7 +79,7 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
 }
 
 /**
- * Function to construct content sent to and received in a DSL-like manner.
+ * Function to build a new [Content] instances in a DSL-like manner.
  *
  * Contains a collection of text, image, and binary parts.
  *

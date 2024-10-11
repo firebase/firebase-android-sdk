@@ -71,5 +71,5 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
 
-    testCompileOnly "com.google.protobuf:protobuf-java:$protocVersion"
+    testCompileOnly libs.protobuf.java
 }

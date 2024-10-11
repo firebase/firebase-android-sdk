@@ -34,7 +34,7 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     generateProtoTasks {
         all().each { task ->
@@ -121,7 +121,7 @@ dependencies {
     testImplementation 'androidx.test:runner:1.5.1'
     testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
-    testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
+    testImplementation libs.protobuf.java.util
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'junit:junit:4.13-beta-2'

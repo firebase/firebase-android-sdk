@@ -104,7 +104,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation("com.google.firebase:firebase-encoders-json:18.0.1")
-    androidTestImplementation("com.google.protobuf:protobuf-java:3.21.11")
+    androidTestImplementation(libs.protobuf.java)
     androidTestImplementation(libs.truth)
     androidTestImplementation("com.linkedin.dexmaker:dexmaker:2.28.3")
     androidTestImplementation(libs.mockito.dexmaker)
