@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup("common")
+    libraryGroup = "common"
     testLab.enabled = true
     publishSources = true
     releaseNotes {

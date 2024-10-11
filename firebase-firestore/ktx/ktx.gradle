@@ -20,7 +20,7 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-    libraryGroup "firestore"
+    libraryGroup = "firestore"
     publishSources = true
     publishJavadoc = false
     releaseNotes { 

@@ -21,7 +21,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup("functions")
+    libraryGroup = "functions"
     testLab.enabled = true
     publishSources = true
     releaseNotes {
