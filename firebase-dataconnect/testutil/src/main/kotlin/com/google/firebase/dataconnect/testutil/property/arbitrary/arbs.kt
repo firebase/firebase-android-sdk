@@ -17,10 +17,12 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.ConnectorConfig
+import com.google.firebase.dataconnect.DataConnectSettings
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.string
 
 object DataConnectArb
@@ -64,3 +66,26 @@ fun DataConnectArb.connectorConfig(
 fun DataConnectArb.accessToken(
   string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
 ): Arb<String> = arbitrary { "accessToken_${string.bind()}" }
+
+fun DataConnectArb.requestId(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "requestId_${string.bind()}" }
+
+fun DataConnectArb.operationName(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "operationName_${string.bind()}" }
+
+fun DataConnectArb.projectId(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "projectId_${string.bind()}" }
+
+fun DataConnectArb.host(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "host_${string.bind()}" }
+
+fun DataConnectArb.dataConnectSettings(
+  host: Arb<String> = host(),
+  sslEnabled: Arb<Boolean> = Arb.boolean(),
+): Arb<DataConnectSettings> = arbitrary {
+  DataConnectSettings(host = host.bind(), sslEnabled = sslEnabled.bind())
+}

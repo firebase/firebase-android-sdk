@@ -16,9 +16,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
-import com.google.firebase.util.nextAlphanumericString
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -35,30 +33,8 @@ import io.kotest.property.arbitrary.filterIsInstance
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.merge
-import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
-
-fun Arb.Companion.keyedString(id: String, key: String, length: Int = 8): Arb<String> =
-  arbitrary { rs ->
-    "${id}_${key}_${rs.random.nextAlphanumericString(length = length)}"
-  }
-
-fun Arb.Companion.requestId(key: String): Arb<String> = keyedString("requestId", key)
-
-fun Arb.Companion.operationName(key: String): Arb<String> = keyedString("operation", key)
-
-fun Arb.Companion.projectId(key: String): Arb<String> = keyedString("project", key)
-
-fun Arb.Companion.host(key: String): Arb<String> = keyedString("host", key)
-
-fun Arb.Companion.dataConnectSettings(
-  key: String,
-  host: Arb<String> = host(key),
-  sslEnabled: Arb<Boolean> = Arb.boolean(),
-): Arb<DataConnectSettings> = arbitrary { rs ->
-  DataConnectSettings(host = host.next(rs), sslEnabled = sslEnabled.next(rs))
-}
 
 fun Arb.Companion.anyNumberScalar(): Arb<Double> = anyScalar().filterIsInstance<Double>()
 

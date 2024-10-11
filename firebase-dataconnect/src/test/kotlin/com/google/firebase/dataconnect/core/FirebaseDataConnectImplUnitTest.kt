@@ -20,10 +20,10 @@ import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
 import com.google.firebase.dataconnect.testutil.callerSdkType
-import com.google.firebase.dataconnect.testutil.dataConnectSettings
-import com.google.firebase.dataconnect.testutil.operationName
 import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectSettings
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationName
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -56,7 +56,6 @@ class FirebaseDataConnectImplUnitTest {
     )
 
   private val rs = RandomSource.default()
-  private val key = "z89k9qab37"
   private val dataConnect: FirebaseDataConnectImpl by lazy {
     val app = firebaseAppFactory.newInstance()
 
@@ -70,7 +69,7 @@ class FirebaseDataConnectImplUnitTest {
       deferredAuthProvider = mockk(relaxed = true),
       deferredAppCheckProvider = mockk(relaxed = true),
       creator = mockk(relaxed = true),
-      settings = Arb.dataConnectSettings(key).next(rs),
+      settings = Arb.dataConnect.dataConnectSettings().next(rs),
     )
   }
 
@@ -81,7 +80,7 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `query() with no options set should use null for each option`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
@@ -107,7 +106,7 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `query() with all options specified should use the given options`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
@@ -140,7 +139,7 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `mutation() with no options set should use null for each option`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
@@ -166,7 +165,7 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `mutation() with all options specified should use the given options`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
