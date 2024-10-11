@@ -31,11 +31,23 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+/**
+ * Plugin for Java Firebase Libraries.
+ *
+ * ```kts
+ * plugins {
+ *   id("firebase-java-library")
+ * }
+ * ```
+ *
+ * @see [FirebaseAndroidLibraryPlugin]
+ * @see [BaseFirebaseLibraryPlugin]
+ * @see [FirebaseLibraryExtension]
+ */
 class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
     project.apply<JavaLibraryPlugin>()
-    project.apply<DackkaPlugin>()
 
     setupFirebaseLibraryExtension(project)
     registerMakeReleaseNotesTask(project)
@@ -50,6 +62,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     val firebaseLibrary =
       project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, JAVA)
 
+    setupDefaults(project, firebaseLibrary)
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
@@ -62,7 +75,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       groupId.value(firebaseLibrary.groupId.get())
       artifactId.value(firebaseLibrary.artifactId.get())
       version.value(firebaseLibrary.version)
-      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
     project.mkdir("semver")
     project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {

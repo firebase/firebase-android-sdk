@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.internal.crash.afterEvaluate
 import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
@@ -36,8 +37,20 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-// TODO() maybe rename to FirebaseAndroidLibraryPlugin; makes more sense alongside java one
-class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
+/**
+ * Plugin for Android Firebase Libraries.
+ *
+ * ```kts
+ * plugins {
+ *   id("firebase-library")
+ * }
+ * ```
+ *
+ * @see [FirebaseJavaLibraryPlugin]
+ * @see [BaseFirebaseLibraryPlugin]
+ * @see [FirebaseLibraryExtension]
+ */
+class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
     project.apply<LibraryPlugin>()
@@ -62,30 +75,35 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     val firebaseLibrary =
       project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, ANDROID)
     val android = project.extensions.getByType<LibraryExtension>()
-    android.compileOptions {
-      sourceCompatibility = JavaVersion.VERSION_1_8
-      targetCompatibility = JavaVersion.VERSION_1_8
+
+    with(android) {
+      compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+      }
+
+      buildFeatures.buildConfig = true
+
+      /**
+       * If a library's signing config only affects the instrumentation test APK, we need it signed
+       * with default debug credentials for Test Lab to accept it.
+       */
+      buildTypes { named("release") { signingConfig = getByName("debug").signingConfig } }
+
+      defaultConfig { buildConfigField("String", "VERSION_NAME", "\"${project.version}\"") }
+
+      // TODO(b/372022757): Remove when we update robolectric
+      testOptions.unitTests.all {
+        it.systemProperty("robolectric.dependency.repo.id", "central")
+        it.systemProperty("robolectric.dependency.repo.url", "https://repo1.maven.org/maven2")
+        it.systemProperty("javax.net.ssl.trustStoreType", "JKS")
+      }
+
+      testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     }
 
-    android.buildFeatures.buildConfig = true
-
-    // In the case of and android library signing config only affects instrumentation test APK.
-    // We need it signed with default debug credentials in order for FTL to accept the APK.
-    android.buildTypes { getByName("release").signingConfig = getByName("debug").signingConfig }
-
-    android.defaultConfig {
-      buildConfigField("String", "VERSION_NAME", "\"" + project.version + "\"")
-    }
-
-    // see https://github.com/robolectric/robolectric/issues/5456
-    android.testOptions.unitTests.all {
-      it.systemProperty("robolectric.dependency.repo.id", "central")
-      it.systemProperty("robolectric.dependency.repo.url", "https://repo1.maven.org/maven2")
-      it.systemProperty("javax.net.ssl.trustStoreType", "JKS")
-    }
-
+    setupDefaults(project, firebaseLibrary)
     setupApiInformationAnalysis(project, android)
-    android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
     setupVersionCheckTasks(project, firebaseLibrary)
@@ -94,10 +112,10 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
-      version.value(firebaseLibrary.version)
-      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+      groupId.set(firebaseLibrary.groupId)
+      artifactId.set(firebaseLibrary.artifactId)
+      version.set(firebaseLibrary.version)
+      latestReleasedVersion.set(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
     project.mkdir("semver")
     project.mkdir("semver/previous-version")
@@ -105,8 +123,8 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       dependsOn("bundleReleaseAar")
       project.file("semver/previous.aar").delete()
 
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
+      groupId.value(firebaseLibrary.groupId)
+      artifactId.value(firebaseLibrary.artifactId)
       aarAndroidFile.value(true)
       filePath.value(project.file("semver/previous.aar").absolutePath)
     }
@@ -181,7 +199,13 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     firebaseLibrary: FirebaseLibraryExtension,
     android: LibraryExtension,
   ) {
-    android.publishing.singleVariant("release") { withSourcesJar() }
+    android.publishing.singleVariant("release") {
+      project.afterEvaluate {
+        if (firebaseLibrary.publishSources.get()) {
+          withSourcesJar()
+        }
+      }
+    }
     project.tasks.withType<GenerateModuleMetadata> { isEnabled = false }
 
     configurePublishing(project, firebaseLibrary)
