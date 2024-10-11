@@ -19,12 +19,11 @@ package com.google.firebase.dataconnect.connectors.demo
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.MAX_DATE
 import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
 import com.google.firebase.dataconnect.testutil.MAX_TIMESTAMP
-import com.google.firebase.dataconnect.testutil.MIN_DATE
 import com.google.firebase.dataconnect.testutil.MIN_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
+import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
@@ -147,7 +146,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               Long.MAX_VALUE,
               Long.MIN_VALUE
             ),
-          dates = listOf(MIN_DATE, MAX_DATE),
+          dates = EdgeCases.dates.all.map { it.date },
           timestamps = listOf(MIN_TIMESTAMP, MAX_TIMESTAMP),
         )
         .data
@@ -175,7 +174,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 Long.MAX_VALUE,
                 Long.MIN_VALUE
               ),
-            dates = listOf(MIN_DATE, MAX_DATE),
+            dates = EdgeCases.dates.all.map { it.date },
             timestamps =
               listOf(
                 MIN_TIMESTAMP.withMicrosecondPrecision(),
@@ -465,7 +464,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
               Long.MAX_VALUE,
               Long.MIN_VALUE
             )
-          dates = listOf(MIN_DATE, MAX_DATE)
+          dates = EdgeCases.dates.all.map { it.date }
           timestamps = listOf(MIN_TIMESTAMP, MAX_TIMESTAMP)
         }
         .data
@@ -493,7 +492,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
                 Long.MAX_VALUE,
                 Long.MIN_VALUE
               ),
-            dates = listOf(MIN_DATE, MAX_DATE),
+            dates = EdgeCases.dates.all.map { it.date },
             timestamps =
               listOf(
                 MIN_TIMESTAMP.withMicrosecondPrecision(),

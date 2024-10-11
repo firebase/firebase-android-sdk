@@ -44,15 +44,6 @@ fun dateFromYearMonthDayUTC(year: Int, month: Int, day: Int): Date {
     .time
 }
 
-val MIN_DATE: Date
-  get() = dateFromYearMonthDayUTC(1583, 1, 1)
-
-val MAX_DATE: Date
-  get() = dateFromYearMonthDayUTC(9999, 12, 31)
-
-val ZERO_DATE: Date
-  get() = GregorianCalendar(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 }.time
-
 /**
  * Generates and returns a random [Date] object with hour, minute, and second set to zero.
  *

@@ -28,8 +28,6 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.string
 
-object AnyScalarArb
-
 object DataConnectArb {
   val anyScalar: AnyScalarArb = AnyScalarArb
 }

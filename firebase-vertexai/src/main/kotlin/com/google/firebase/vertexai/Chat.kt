@@ -33,14 +33,16 @@ import kotlinx.coroutines.flow.onEach
 /**
  * Representation of a multi-turn interaction with a model.
  *
- * Handles the capturing and storage of the communication with the model, providing methods for
- * further interaction.
+ * Captures and stores the history of communication in memory, and provides it as context with each
+ * new message.
  *
  * **Note:** This object is not thread-safe, and calling [sendMessage] multiple times without
  * waiting for a response will throw an [InvalidStateException].
  *
- * @param model The model to use for the interaction
- * @property history The previous interactions with the model
+ * @param model The model to use for the interaction.
+ * @property history The previous content from the chat that has been successfully sent and received
+ * from the model. This will be provided to the model for each message sent (as context for the
+ * discussion).
  */
 public class Chat(
   private val model: GenerativeModel,
@@ -49,11 +51,15 @@ public class Chat(
   private var lock = Semaphore(1)
 
   /**
-   * Generates a response from the backend with the provided [Content], and any previous ones
-   * sent/returned from this chat.
+   * Sends a message using the provided [prompt]; automatically providing the existing [history] as
+   * context.
    *
-   * @param prompt A [Content] to send to the model.
-   * @throws InvalidStateException if the prompt is not coming from the 'user' role
+   * If successful, the message and response will be added to the [history]. If unsuccessful,
+   * [history] will remain unchanged.
+   *
+   * @param prompt The input that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
@@ -70,9 +76,15 @@ public class Chat(
   }
 
   /**
-   * Generates a response from the backend with the provided text prompt.
+   * Sends a message using the provided [text prompt][prompt]; automatically providing the existing
+   * [history] as context.
    *
-   * @param prompt The text to be converted into a single piece of [Content] to send to the model.
+   * If successful, the message and response will be added to the [history]. If unsuccessful,
+   * [history] will remain unchanged.
+   *
+   * @param prompt The input that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public suspend fun sendMessage(prompt: String): GenerateContentResponse {
@@ -81,9 +93,15 @@ public class Chat(
   }
 
   /**
-   * Generates a response from the backend with the provided image prompt.
+   * Sends a message using the existing history of this chat as context and the provided image
+   * prompt.
    *
-   * @param prompt The image to be converted into a single piece of [Content] to send to the model.
+   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * will remain unchanged.
+   *
+   * @param prompt The input that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public suspend fun sendMessage(prompt: Bitmap): GenerateContentResponse {
@@ -92,11 +110,17 @@ public class Chat(
   }
 
   /**
-   * Generates a streaming response from the backend with the provided [Content].
+   * Sends a message using the existing history of this chat as context and the provided [Content]
+   * prompt.
    *
-   * @param prompt A [Content] to send to the model.
-   * @return A [Flow] which will emit responses as they are returned from the model.
-   * @throws InvalidStateException if the prompt is not coming from the 'user' role
+   * The response from the model is returned as a stream.
+   *
+   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * will remain unchanged.
+   *
+   * @param prompt The input that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public fun sendMessageStream(prompt: Content): Flow<GenerateContentResponse> {
@@ -146,10 +170,17 @@ public class Chat(
   }
 
   /**
-   * Generates a streaming response from the backend with the provided text prompt.
+   * Sends a message using the existing history of this chat as context and the provided text
+   * prompt.
    *
-   * @param prompt a text to be converted into a single piece of [Content] to send to the model
-   * @return A [Flow] which will emit responses as they are returned from the model.
+   * The response from the model is returned as a stream.
+   *
+   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * will remain unchanged.
+   *
+   * @param prompt The input(s) that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public fun sendMessageStream(prompt: String): Flow<GenerateContentResponse> {
@@ -158,10 +189,17 @@ public class Chat(
   }
 
   /**
-   * Generates a streaming response from the backend with the provided image prompt.
+   * Sends a message using the existing history of this chat as context and the provided image
+   * prompt.
    *
-   * @param prompt A [Content] to send to the model.
-   * @return A [Flow] which will emit responses as they are returned from the model.
+   * The response from the model is returned as a stream.
+   *
+   * If successful, the message and response will be added to the history. If unsuccessful, history
+   * will remain unchanged.
+   *
+   * @param prompt The input that, together with the history, will be given to the model as the
+   * prompt.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
   public fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
