@@ -16,13 +16,13 @@
 
 package com.google.firebase.dataconnect
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.newInstance
-import com.google.firebase.dataconnect.testutil.operationName
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationName
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
@@ -53,9 +53,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val key = "e6w33rw36t"
@@ -130,7 +128,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef =
       dataConnect.query(operationName, Unit, serializer<TestData>(), serializer<Unit>())
 
@@ -158,7 +156,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
       dataConnect.mutation(operationName, Unit, serializer<TestData>(), serializer<Unit>())
 
@@ -179,7 +177,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef = dataConnect.query(operationName, Unit, serializer<Unit>(), serializer<Unit>())
 
     val thrownException = shouldThrow<StatusException> { queryRef.execute() }
@@ -195,7 +193,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
       dataConnect.mutation(operationName, Unit, serializer<Unit>(), serializer<Unit>())
 

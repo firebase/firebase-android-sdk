@@ -17,8 +17,9 @@
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.tag
 import com.google.firebase.dataconnect.testutil.sortedParallelTo
-import com.google.firebase.dataconnect.testutil.tag
 import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -36,7 +37,7 @@ class OrderDirectionIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun orderDirectionQueryVariableOmittedShouldUseUnspecifiedOrder() = runTest {
-    val tag = Arb.tag().next(rs)
+    val tag = Arb.dataConnect.tag().next(rs)
     val values = List(5) { uniqueInts.next(rs) }
     val insertedIds = insertRow(tag, values)
 
@@ -48,7 +49,7 @@ class OrderDirectionIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun orderDirectionQueryVariableAscendingOrder() = runTest {
-    val tag = Arb.tag().next(rs)
+    val tag = Arb.dataConnect.tag().next(rs)
     val values = List(5) { uniqueInts.next(rs) }
     val insertedIds = insertRow(tag, values)
 
@@ -62,7 +63,7 @@ class OrderDirectionIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun orderDirectionQueryVariableDescendingOrder() = runTest {
-    val tag = Arb.tag().next(rs)
+    val tag = Arb.dataConnect.tag().next(rs)
     val values = List(5) { uniqueInts.next(rs) }
     val insertedIds = insertRow(tag, values)
 

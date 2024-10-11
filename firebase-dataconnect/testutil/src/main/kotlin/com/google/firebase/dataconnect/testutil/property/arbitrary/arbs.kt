@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
+@file:Suppress("UnusedReceiverParameter")
+
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -30,17 +33,14 @@ object DataConnectArb
 val Arb.Companion.dataConnect: DataConnectArb
   get() = DataConnectArb
 
-@Suppress("UnusedReceiverParameter")
 fun DataConnectArb.connectorName(
   string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
 ): Arb<String> = arbitrary { "connector_${string.bind()}" }
 
-@Suppress("UnusedReceiverParameter")
 fun DataConnectArb.connectorLocation(
   string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
 ): Arb<String> = arbitrary { "location_${string.bind()}" }
 
-@Suppress("UnusedReceiverParameter")
 fun DataConnectArb.connectorServiceId(
   string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
 ): Arb<String> = arbitrary { "serviceId_${string.bind()}" }
@@ -84,8 +84,21 @@ fun DataConnectArb.host(
 ): Arb<String> = arbitrary { "host_${string.bind()}" }
 
 fun DataConnectArb.dataConnectSettings(
+  prefix: String? = null,
   host: Arb<String> = host(),
   sslEnabled: Arb<Boolean> = Arb.boolean(),
-): Arb<DataConnectSettings> = arbitrary {
-  DataConnectSettings(host = host.bind(), sslEnabled = sslEnabled.bind())
+): Arb<DataConnectSettings> {
+  val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
+  return arbitrary {
+    DataConnectSettings(host = wrappedHost.bind(), sslEnabled = sslEnabled.bind())
+  }
 }
+
+fun Arb.Companion.callerSdkType(boolean: Arb<Boolean> = Arb.boolean()): Arb<CallerSdkType> =
+  arbitrary {
+    if (boolean.bind()) CallerSdkType.Base else CallerSdkType.Generated
+  }
+
+fun DataConnectArb.tag(
+  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+): Arb<String> = arbitrary { "tag_${string.bind()}" }

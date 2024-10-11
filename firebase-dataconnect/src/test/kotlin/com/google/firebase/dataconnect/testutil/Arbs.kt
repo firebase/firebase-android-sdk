@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.DataConnectError
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint

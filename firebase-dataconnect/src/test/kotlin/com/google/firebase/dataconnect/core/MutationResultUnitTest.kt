@@ -17,8 +17,8 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import io.mockk.mockk

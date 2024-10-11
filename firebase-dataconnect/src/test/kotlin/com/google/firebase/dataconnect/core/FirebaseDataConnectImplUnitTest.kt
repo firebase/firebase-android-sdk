@@ -19,7 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
-import com.google.firebase.dataconnect.testutil.callerSdkType
+import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
 import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectSettings

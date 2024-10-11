@@ -24,9 +24,9 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.Globals.copy
 import com.google.firebase.dataconnect.core.Globals.withDataDeserializer
 import com.google.firebase.dataconnect.core.Globals.withVariablesSerializer
-import com.google.firebase.dataconnect.testutil.callerSdkType
 import com.google.firebase.dataconnect.testutil.dataConnectError
 import com.google.firebase.dataconnect.testutil.mutationRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
 import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
