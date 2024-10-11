@@ -33,9 +33,10 @@ data class Project(
   val libraryGroup: String? = null,
   val customizePom: String? = null,
   val publishJavadoc: Boolean = false,
-  val libraryType: LibraryType = LibraryType.ANDROID
+  val libraryType: LibraryType = LibraryType.ANDROID,
 ) {
   val path = ":$name"
+
   fun generateBuildFile(): String {
     return """
             plugins {
@@ -66,7 +67,7 @@ data class License(val name: String, val url: String)
 
 enum class Type {
   JAR,
-  AAR
+  AAR,
 }
 
 data class Artifact(
@@ -74,7 +75,7 @@ data class Artifact(
   val artifactId: String,
   val version: String,
   val type: Type = Type.JAR,
-  val scope: String = "runtime"
+  val scope: String = "runtime",
 ) {
   val simpleDepString = "$groupId:$artifactId:$version"
 
@@ -86,9 +87,9 @@ data class Pom(
   val license: License =
     License(
       name = "The Apache Software License, Version 2.0",
-      url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+      url = "http://www.apache.org/licenses/LICENSE-2.0.txt",
     ),
-  val dependencies: List<Artifact> = listOf()
+  val dependencies: List<Artifact> = listOf(),
 ) {
   companion object {
     fun parse(file: File): Pom {
@@ -223,7 +224,6 @@ fun Project.toArtifact() = Artifact(group, name, version, libraryType.toArtifact
  * ```
  *
  * @param projectLevel whether the dependency should be a project level dependency or external
- *
  * @see toArtifact
  */
 fun Project.toDependency(projectLevel: Boolean = false) =

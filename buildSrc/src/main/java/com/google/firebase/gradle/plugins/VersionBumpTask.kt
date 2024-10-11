@@ -33,14 +33,13 @@ import org.gradle.kotlin.dsl.provideDelegate
  * modules to be one patch higher than their currently released counterparts, and update their
  * latest released version.
  *
- * @see PostReleasePlugin
- *
  * @property versionFile A [File] that contains the `version` property. Defaults to the
- * `gradle.properties` file at the project's root.
+ *   `gradle.properties` file at the project's root.
  * @property releasedVersion A [ModuleVersion] of what to bump from. Defaults to the project
- * version.
+ *   version.
  * @property newVersion A [ModuleVersion] of what to set the version to. Defaults to one patch
- * higher than [releasedVersion]
+ *   higher than [releasedVersion]
+ * @see PostReleasePlugin
  */
 abstract class VersionBumpTask : DefaultTask() {
   @get:[Optional InputFile]

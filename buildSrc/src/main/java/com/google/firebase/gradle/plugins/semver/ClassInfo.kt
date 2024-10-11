@@ -55,7 +55,7 @@ class ClassInfo(node: ClassNode, classNodes: Map<String, ClassNode>) {
 
   fun getAllNonStaticMethods(
     node: ClassNode?,
-    classNodes: Map<String, ClassNode>
+    classNodes: Map<String, ClassNode>,
   ): Map<String, MethodNode> {
     if (node == null) {
       return emptyMap()

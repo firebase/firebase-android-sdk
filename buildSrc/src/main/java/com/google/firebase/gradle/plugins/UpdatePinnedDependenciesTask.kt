@@ -48,9 +48,9 @@ import org.gradle.api.tasks.TaskAction
  * *Assuming that `17.0.1` is the latest version of `firebase-appcheck-interop`*
  *
  * @property buildFile A [File] that should be used as the source to update from. Typically the
- * `build.gradle` or `build.gradle.kts` file for a given project.
+ *   `build.gradle` or `build.gradle.kts` file for a given project.
  * @property outputFile A [File] that should be used to write the new text to. Typically the same as
- * the input file ([buildFile]).
+ *   the input file ([buildFile]).
  * @see PostReleasePlugin
  */
 abstract class UpdatePinnedDependenciesTask : DefaultTask() {
@@ -78,7 +78,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   private fun validateDependenciesHaveChanged(
     dependenciesToChange: List<FirebaseLibraryExtension>,
     oldContent: List<String>,
-    updatedContent: List<String>
+    updatedContent: List<String>,
   ) {
     if (oldContent == updatedContent)
       throw RuntimeException(
@@ -122,7 +122,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
   private fun replaceProjectLevelDependencies(
     buildFileContent: List<String>,
-    libraries: List<FirebaseLibraryExtension>
+    libraries: List<FirebaseLibraryExtension>,
   ) =
     buildFileContent.replaceMatches(DEPENDENCY_REGEX) {
       val projectName = it.firstCapturedValue

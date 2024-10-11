@@ -13,7 +13,7 @@
 // limitations under the License.
 
 plugins {
-    id("com.ncorti.ktfmt.gradle") version "0.11.0"
+    id("com.ncorti.ktfmt.gradle") version "0.20.1"
     alias(libs.plugins.kotlinx.serialization)
     `kotlin-dsl`
 }

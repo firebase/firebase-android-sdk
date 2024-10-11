@@ -42,7 +42,7 @@ abstract class NdkBinaryFixTask : DefaultTask() {
     Files.copy(
       inputFile.get().asFile.toPath(),
       outputFile.toPath(),
-      StandardCopyOption.REPLACE_EXISTING
+      StandardCopyOption.REPLACE_EXISTING,
     )
   }
 }

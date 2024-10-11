@@ -30,6 +30,7 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
@@ -137,7 +138,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
         Paths.get(
           project.rootProject.buildDir.path,
           "apiinfo",
-          project.path.substring(1).replace(":", "_")
+          project.path.substring(1).replace(":", "_"),
         )
       )
     val outputApiFile = File(outputFile.absolutePath + "_api.txt")
@@ -284,7 +285,7 @@ fun FirebaseLibraryExtension.resolveAndroidDependencies() =
  * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.runtimeClasspath].
  *
  * @throws RuntimeException if a project level dependency is found that doesn't have
- * [FirebaseLibraryExtension]
+ *   [FirebaseLibraryExtension]
  */
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =

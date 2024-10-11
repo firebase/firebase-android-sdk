@@ -97,7 +97,6 @@ constructor(val project: Project, val type: LibraryType) {
    *   previewMode = "alpha"
    * }
    * ```
-   *
    * ```properties
    * # gradle.properties
    * version=16.0.0-alpha
@@ -218,7 +217,6 @@ constructor(val project: Project, val type: LibraryType) {
    * Configurable action to apply when generating a pom file for a release.
    *
    * @see [customizePom]
-   *
    * @hide
    */
   internal var customizePomAction: Action<MavenPom> = Action {}
