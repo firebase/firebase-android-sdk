@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.testutil
+@file:Suppress("UnusedReceiverParameter")
+
+package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 object EdgeCases {
+  object anyScalar
+}
 
-  val numbers: List<Double> =
+val EdgeCases.anyScalar.numbers: List<Double>
+  get() =
     listOf(
       -1.0,
       -Double.MIN_VALUE,
@@ -31,13 +36,17 @@ object EdgeCases {
       Double.POSITIVE_INFINITY
     )
 
-  val strings: List<String> = listOf("")
+val EdgeCases.anyScalar.strings: List<String>
+  get() = listOf("")
 
-  val booleans: List<Boolean> = listOf(true, false)
+val EdgeCases.anyScalar.booleans: List<Boolean>
+  get() = listOf(true, false)
 
-  val primitives: List<Any> = numbers + strings + booleans
+val EdgeCases.anyScalar.primitives: List<Any>
+  get() = numbers + strings + booleans
 
-  val lists: List<List<Any?>> = buildList {
+val EdgeCases.anyScalar.lists: List<List<Any?>>
+  get() = buildList {
     add(emptyList())
     add(listOf(null))
     add(listOf(emptyList<Nothing>()))
@@ -57,7 +66,8 @@ object EdgeCases {
     }
   }
 
-  val maps: List<Map<String, Any?>> = buildList {
+val EdgeCases.anyScalar.maps: List<Map<String, Any?>>
+  get() = buildList {
     add(emptyMap())
     add(mapOf("" to null))
     add(mapOf("fzjfmcrqwe" to emptyMap<Nothing, Nothing>()))
@@ -81,5 +91,5 @@ object EdgeCases {
     }
   }
 
-  val anyScalars: List<Any?> = primitives + lists + maps + listOf(null)
-}
+val EdgeCases.anyScalar.all: List<Any?>
+  get() = primitives + lists + maps + listOf(null)

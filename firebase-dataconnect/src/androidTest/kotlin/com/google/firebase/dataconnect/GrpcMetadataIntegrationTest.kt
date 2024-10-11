@@ -284,7 +284,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     expectedValue: String? = null
   ) {
     val metadata = withClue("waiting for metadata to be reported") { job.await() }
-    metadata.asClue {
+    withClue("key=$key, metadata=$metadata") {
       val actualValue = metadata.get(key)
       if (expectedValue === null) {
         actualValue.shouldNotBeNull()

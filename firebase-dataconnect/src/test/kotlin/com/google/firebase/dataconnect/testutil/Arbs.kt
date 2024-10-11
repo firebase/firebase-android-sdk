@@ -22,6 +22,8 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.map
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
@@ -75,7 +77,7 @@ internal fun Arb.Companion.dataConnectErrorPathSegment(): Arb<DataConnectError.P
   }
 
 internal fun Arb.Companion.operationResult() = arbitrary {
-  val data = Arb.anyMapScalar().orNull(nullProbability = 0.1).bind()?.toStructProto()
+  val data = Arb.dataConnect.anyScalar.map().orNull(nullProbability = 0.1).bind()?.toStructProto()
   val numErrors = Arb.int(0..3).bind()
   val errors = List(numErrors) { Arb.dataConnectError().bind() }
   DataConnectGrpcClient.OperationResult(data, errors)
