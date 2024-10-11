@@ -24,7 +24,7 @@ import com.google.firebase.dataconnect.testutil.anyMapScalar
 import com.google.firebase.dataconnect.testutil.anyNumberScalar
 import com.google.firebase.dataconnect.testutil.anyScalar
 import com.google.firebase.dataconnect.testutil.anyStringScalar
-import com.google.firebase.dataconnect.testutil.filterNotNull
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotNull
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToValue
 import io.kotest.assertions.assertSoftly
 import io.kotest.common.ExperimentalKotest

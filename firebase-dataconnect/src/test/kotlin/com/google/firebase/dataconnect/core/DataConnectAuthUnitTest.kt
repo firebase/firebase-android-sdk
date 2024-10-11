@@ -29,9 +29,10 @@ import com.google.firebase.dataconnect.testutil.DelayedDeferred
 import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
-import com.google.firebase.dataconnect.testutil.accessToken
 import com.google.firebase.dataconnect.testutil.newBackgroundScopeThatAdvancesLikeForeground
 import com.google.firebase.dataconnect.testutil.newMockLogger
+import com.google.firebase.dataconnect.testutil.property.arbitrary.accessToken
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.requestId
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
@@ -85,7 +86,7 @@ class DataConnectAuthUnitTest {
 
   private val key = "qqddxntcwk"
   private val rs = RandomSource.default()
-  private val accessTokenGenerator = Arb.accessToken(key)
+  private val accessTokenGenerator = Arb.dataConnect.accessToken()
   private val accessToken: String = accessTokenGenerator.next(rs)
   private val requestId = Arb.requestId(key).next(rs)
   private val mockInternalAuthProvider: InternalAuthProvider =

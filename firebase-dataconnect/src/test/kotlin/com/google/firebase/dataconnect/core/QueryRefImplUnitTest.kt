@@ -19,7 +19,7 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.core.Globals.copy
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.callerSdkType
-import com.google.firebase.dataconnect.testutil.filterNotEqual
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
 import com.google.firebase.dataconnect.testutil.queryRefImpl
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SuspendingLazy

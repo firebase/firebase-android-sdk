@@ -22,13 +22,14 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.callerSdkType
-import com.google.firebase.dataconnect.testutil.connectorConfig
 import com.google.firebase.dataconnect.testutil.dataConnectError
 import com.google.firebase.dataconnect.testutil.iterator
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.operationName
 import com.google.firebase.dataconnect.testutil.operationResult
 import com.google.firebase.dataconnect.testutil.projectId
+import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.requestId
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
@@ -89,7 +90,7 @@ class DataConnectGrpcClientUnitTest {
   private val key = "3sw2m4vkbg"
   private val rs = RandomSource.default()
   private val projectId = Arb.projectId(key).next(rs)
-  private val connectorConfig = Arb.connectorConfig(key).next(rs)
+  private val connectorConfig = Arb.dataConnect.connectorConfig().next(rs)
   private val requestId = Arb.requestId(key).next(rs)
   private val operationName = Arb.operationName(key).next(rs)
   private val variables = buildStructProto { put("dhxpwjtb6s", key) }

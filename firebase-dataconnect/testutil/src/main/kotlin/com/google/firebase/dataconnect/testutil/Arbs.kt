@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.util.nextAlphanumericString
@@ -35,42 +34,15 @@ import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.filterIsInstance
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
 
-fun <A> Arb<A>.filterNotNull(): Arb<A & Any> = filter { it !== null }.map { it!! }
-
-fun <A> Arb<A>.filterNotEqual(other: A) = filter { it != other }
-
 fun Arb.Companion.keyedString(id: String, key: String, length: Int = 8): Arb<String> =
   arbitrary { rs ->
     "${id}_${key}_${rs.random.nextAlphanumericString(length = length)}"
   }
-
-fun Arb.Companion.connectorConfig(
-  key: String,
-  connector: Arb<String> = connectorName(key),
-  location: Arb<String> = connectorLocation(key),
-  serviceId: Arb<String> = connectorServiceId(key)
-): Arb<ConnectorConfig> = arbitrary { rs ->
-  ConnectorConfig(
-    connector = connector.next(rs),
-    location = location.next(rs),
-    serviceId = serviceId.next(rs),
-  )
-}
-
-fun Arb.Companion.connectorName(key: String): Arb<String> = keyedString("connector", key)
-
-fun Arb.Companion.connectorLocation(key: String): Arb<String> = keyedString("location", key)
-
-fun Arb.Companion.connectorServiceId(key: String): Arb<String> = keyedString("serviceId", key)
-
-fun Arb.Companion.accessToken(key: String): Arb<String> =
-  keyedString("accessToken", key, length = 20)
 
 fun Arb.Companion.requestId(key: String): Arb<String> = keyedString("requestId", key)
 
