@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.common.truth.StringSubject
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.OperationRef
@@ -87,43 +86,6 @@ infix fun String?.shouldContainWithNonAbuttingText(s: String): String? {
 infix fun String?.shouldContainWithNonAbuttingTextIgnoringCase(s: String): String? {
   this should containWithNonAbuttingText(s, ignoreCase = false)
   return this
-}
-
-/**
- * Asserts that a string contains another string, verifying that the character immediately preceding
- * the text, if any, is a non-word character, and that the character immediately following the text,
- * if any, is also a non-word character. This effectively verifies that the given string is included
- * in the string being checked without being "mashed" into adjacent text.
- */
-@Deprecated(
-  message = "use shouldContainWithNonAbuttingText instead",
-  replaceWith =
-    ReplaceWith(
-      expression = "shouldContainWithNonAbuttingText(...)",
-      "com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText"
-    )
-)
-fun StringSubject.containsWithNonAdjacentText(text: String, ignoreCase: Boolean = false) =
-  containsMatchWithNonAdjacentText(Pattern.quote(text), ignoreCase = ignoreCase)
-
-/**
- * Asserts that a string contains a pattern, verifying that the character immediately preceding the
- * text, if any, is a non-word character, and that the character immediately following the text, if
- * any, is also a non-word character. This effectively verifies that the given pattern is included
- * in the string being checked without being "mashed" into adjacent text.
- */
-@Deprecated(
-  message = "use shouldContainWithNonAbuttingText instead",
-  replaceWith =
-    ReplaceWith(
-      expression = "shouldContainWithNonAbuttingText(...)",
-      "com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText"
-    )
-)
-fun StringSubject.containsMatchWithNonAdjacentText(pattern: String, ignoreCase: Boolean = false) {
-  val fullPattern = "(^|\\W)${pattern}($|\\W)"
-  val expr = Pattern.compile(fullPattern, if (ignoreCase) Pattern.CASE_INSENSITIVE else 0)
-  containsMatch(expr)
 }
 
 /**

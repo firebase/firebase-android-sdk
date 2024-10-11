@@ -20,87 +20,103 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
-import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.cyrillic
+import io.kotest.property.arbitrary.egyptianHieroglyphs
+import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.string
 
 object DataConnectArb {
   val anyScalar: AnyScalarArb = AnyScalarArb
+
+  val codepoints: Arb<Codepoint> =
+    Codepoint.ascii()
+      .merge(Codepoint.egyptianHieroglyphs())
+      .merge(Codepoint.arabic())
+      .merge(Codepoint.cyrillic())
+      // Do not produce character code 0 because it's not supported by Postgresql:
+      // https://www.postgresql.org/docs/current/datatype-character.html
+      .filterNot { it.value == 0 }
+
+  fun string(length: IntRange = 0..100, codepoints: Arb<Codepoint>? = null): Arb<String> =
+    Arb.string(length, codepoints ?: DataConnectArb.codepoints)
+
+  fun connectorName(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+  ): Arb<String> = arbitrary { "connector_${string.bind()}" }
+
+  fun connectorLocation(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+  ): Arb<String> = arbitrary { "location_${string.bind()}" }
+
+  fun connectorServiceId(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+  ): Arb<String> = arbitrary { "serviceId_${string.bind()}" }
+
+  fun connectorConfig(
+    prefix: String? = null,
+    connector: Arb<String> = connectorName(),
+    location: Arb<String> = connectorLocation(),
+    serviceId: Arb<String> = connectorServiceId(),
+  ): Arb<ConnectorConfig> {
+    val wrappedConnector = prefix?.let { connector.withPrefix(it) } ?: connector
+    val wrappedLocation = prefix?.let { location.withPrefix(it) } ?: location
+    val wrappedServiceId = prefix?.let { serviceId.withPrefix(it) } ?: serviceId
+    return arbitrary {
+      ConnectorConfig(
+        connector = wrappedConnector.bind(),
+        location = wrappedLocation.bind(),
+        serviceId = wrappedServiceId.bind(),
+      )
+    }
+  }
+
+  fun accessToken(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+  ): Arb<String> = arbitrary { "accessToken_${string.bind()}" }
+
+  fun requestId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    arbitrary {
+      "requestId_${string.bind()}"
+    }
+
+  fun operationName(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+  ): Arb<String> = arbitrary { "operationName_${string.bind()}" }
+
+  fun projectId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    arbitrary {
+      "projectId_${string.bind()}"
+    }
+
+  fun host(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    arbitrary {
+      "host_${string.bind()}"
+    }
+
+  fun dataConnectSettings(
+    prefix: String? = null,
+    host: Arb<String> = host(),
+    sslEnabled: Arb<Boolean> = Arb.boolean(),
+  ): Arb<DataConnectSettings> {
+    val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
+    return arbitrary {
+      DataConnectSettings(host = wrappedHost.bind(), sslEnabled = sslEnabled.bind())
+    }
+  }
+
+  fun tag(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    arbitrary {
+      "tag_${string.bind()}"
+    }
 }
 
 val Arb.Companion.dataConnect: DataConnectArb
   get() = DataConnectArb
-
-fun DataConnectArb.connectorName(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "connector_${string.bind()}" }
-
-fun DataConnectArb.connectorLocation(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "location_${string.bind()}" }
-
-fun DataConnectArb.connectorServiceId(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "serviceId_${string.bind()}" }
-
-fun DataConnectArb.connectorConfig(
-  prefix: String? = null,
-  connector: Arb<String> = connectorName(),
-  location: Arb<String> = connectorLocation(),
-  serviceId: Arb<String> = connectorServiceId(),
-): Arb<ConnectorConfig> {
-  val wrappedConnector = prefix?.let { connector.withPrefix(it) } ?: connector
-  val wrappedLocation = prefix?.let { location.withPrefix(it) } ?: location
-  val wrappedServiceId = prefix?.let { serviceId.withPrefix(it) } ?: serviceId
-  return arbitrary {
-    ConnectorConfig(
-      connector = wrappedConnector.bind(),
-      location = wrappedLocation.bind(),
-      serviceId = wrappedServiceId.bind(),
-    )
-  }
-}
-
-fun DataConnectArb.accessToken(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "accessToken_${string.bind()}" }
-
-fun DataConnectArb.requestId(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "requestId_${string.bind()}" }
-
-fun DataConnectArb.operationName(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "operationName_${string.bind()}" }
-
-fun DataConnectArb.projectId(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "projectId_${string.bind()}" }
-
-fun DataConnectArb.host(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "host_${string.bind()}" }
-
-fun DataConnectArb.dataConnectSettings(
-  prefix: String? = null,
-  host: Arb<String> = host(),
-  sslEnabled: Arb<Boolean> = Arb.boolean(),
-): Arb<DataConnectSettings> {
-  val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
-  return arbitrary {
-    DataConnectSettings(host = wrappedHost.bind(), sslEnabled = sslEnabled.bind())
-  }
-}
-
-fun Arb.Companion.callerSdkType(boolean: Arb<Boolean> = Arb.boolean()): Arb<CallerSdkType> =
-  arbitrary {
-    if (boolean.bind()) CallerSdkType.Base else CallerSdkType.Generated
-  }
-
-fun DataConnectArb.tag(
-  string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-): Arb<String> = arbitrary { "tag_${string.bind()}" }

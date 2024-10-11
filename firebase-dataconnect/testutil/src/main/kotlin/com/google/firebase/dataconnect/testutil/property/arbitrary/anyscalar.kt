@@ -20,19 +20,12 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.testutil.expectedAnyScalarRoundTripValue
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
-import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choose
-import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.filter
-import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
 
@@ -40,16 +33,7 @@ object AnyScalarArb {
 
   fun number(): Arb<Double> = Arb.double()
 
-  private val codepoints: Arb<Codepoint> =
-    Codepoint.ascii()
-      .merge(Codepoint.egyptianHieroglyphs())
-      .merge(Codepoint.arabic())
-      .merge(Codepoint.cyrillic())
-      // Do not produce character code 0 because it's not supported by Postgresql:
-      // https://www.postgresql.org/docs/current/datatype-character.html
-      .filterNot { it.value == 0 }
-
-  fun string(): Arb<String> = Arb.string(minSize = 1, maxSize = 40, codepoints = codepoints)
+  fun string(): Arb<String> = DataConnectArb.string(1..40)
 
   fun list(): Arb<List<Any?>> = arbitrary {
     val size = Arb.int(1..3).bind()
