@@ -33,7 +33,7 @@ fun computeLibraryGroups(project: Project): Map<String, List<FirebaseLibraryExte
     )
   }
   val libraryGroups =
-    project.subprojects.mapNotNull { it.firebaseLibraryOrNull }.groupBy { it.libraryGroupName }
+    project.subprojects.mapNotNull { it.firebaseLibraryOrNull }.groupBy { it.libraryGroup.get() }
 
   return libraryGroups
 }
@@ -68,7 +68,7 @@ fun expandWithLibraryGroup(
   libraryGroups: Map<String, List<FirebaseLibraryExtension>>
 ) =
   libraries
-    .flatMap { libraryGroups.getOrDefault(it.libraryGroupName, emptyList()) }
+    .flatMap { libraryGroups.getOrDefault(it.libraryGroup.get(), emptyList()) }
     .distinctBy { it.artifactId.get() }
 
 val FirebaseLibraryExtension.moduleVersion: ModuleVersion?

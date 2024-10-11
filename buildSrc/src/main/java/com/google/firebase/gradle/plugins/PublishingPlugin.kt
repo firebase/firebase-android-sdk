@@ -38,7 +38,7 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 
 /**
- * Plugin for providing tasks to release [FirebaseLibrary][FirebaseLibraryPlugin] projects.
+ * Plugin for providing tasks to release [FirebaseLibrary][FirebaseAndroidLibraryPlugin] projects.
  *
  * Projects to release are computed via [computeReleasingLibraries]. A multitude of tasks are then
  * registered at the root project.
@@ -244,7 +244,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     val libraryGroupsToRelease =
       inputProjects
         .flatMap { it.resolveProjectLevelDependencies() + it }
-        .map { it.libraryGroupName }
+        .map { it.libraryGroup.get() }
     val projectsToRelease =
       libraryGroups
         .filterKeys { it in libraryGroupsToRelease }
@@ -350,9 +350,9 @@ abstract class PublishingPlugin : Plugin<Project> {
           )
         }
         for (releasingLibrary in releasinglibraries) {
-          if (!releasingLibrary.version.contains(releasingLibrary.previewMode)) {
+          if (!releasingLibrary.version.contains(releasingLibrary.previewMode.get())) {
             throw GradleException(
-              "You are releasing a ${releasingLibrary.previewMode} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version}!"
+              "You are releasing a ${releasingLibrary.previewMode.get()} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version}!"
             )
           }
         }

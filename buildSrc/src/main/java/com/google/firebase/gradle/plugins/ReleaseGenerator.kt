@@ -18,7 +18,6 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.eclipse.jgit.api.Git
@@ -197,7 +196,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       .filter {
         checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "${getRelativeDir(it)}/")
       }
-      .flatMap { libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroupName, emptyList()) }
+      .flatMap { libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroup.get(), emptyList()) }
       .map { it.path }
       .toSet()
 
@@ -217,7 +216,10 @@ abstract class ReleaseGenerator : DefaultTask() {
         )
       }
       .flatMap {
-        libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroupName, listOf(it.firebaseLibrary))
+        libraryGroups.getOrDefault(
+          it.firebaseLibrary.libraryGroup.get(),
+          listOf(it.firebaseLibrary)
+        )
       }
       .map { it.project }
       .toSet()
