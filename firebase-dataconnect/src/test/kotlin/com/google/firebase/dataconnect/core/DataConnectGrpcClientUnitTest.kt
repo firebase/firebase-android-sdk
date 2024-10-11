@@ -22,12 +22,12 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.dataConnectError
-import com.google.firebase.dataconnect.testutil.iterator
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.operationResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
 import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationName
 import com.google.firebase.dataconnect.testutil.property.arbitrary.projectId
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto

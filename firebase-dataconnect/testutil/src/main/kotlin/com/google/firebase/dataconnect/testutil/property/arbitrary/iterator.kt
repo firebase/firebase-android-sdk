@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.testutil
+package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
