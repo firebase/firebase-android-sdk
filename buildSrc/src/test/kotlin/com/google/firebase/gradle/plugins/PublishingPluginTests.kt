@@ -248,4 +248,5 @@ class PublishingPluginTests {
         "firebasePublish"
       )
       .withPluginClasspath()
+  // .forwardOutput()
 }
