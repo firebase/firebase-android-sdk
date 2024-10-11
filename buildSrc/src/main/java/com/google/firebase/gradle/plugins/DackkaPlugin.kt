@@ -123,13 +123,11 @@ abstract class DackkaPlugin : Plugin<Project> {
     // TODO(b/270576405): remove afterEvalutate after fixed
     project.afterEvaluate {
       if (weShouldPublish(this)) {
-        val generateDocumentation =
-          registerGenerateDackkaDocumentationTask(project)
+        val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
 
         val outputDir = generateDocumentation.flatMap { it.outputDirectory }
 
-        val firesiteTransform =
-          registerFiresiteTransformTask(project, outputDir)
+        val firesiteTransform = registerFiresiteTransformTask(project, outputDir)
 
         val transformedDir = firesiteTransform.flatMap { it.outputDirectory }
 
