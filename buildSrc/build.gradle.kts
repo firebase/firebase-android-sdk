@@ -84,7 +84,7 @@ gradlePlugin {
         }
         register("firebaseLibraryPlugin") {
             id = "firebase-library"
-            implementationClass = "com.google.firebase.gradle.plugins.FirebaseLibraryPlugin"
+            implementationClass = "com.google.firebase.gradle.plugins.FirebaseAndroidLibraryPlugin"
         }
         register("firebaseJavaLibraryPlugin") {
             id = "firebase-java-library"
