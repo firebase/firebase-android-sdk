@@ -355,11 +355,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     final boolean isExperimentTTIDEnabled = configResolver.getIsExperimentTTIDEnabled();
     if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
-      if(rootView != null) {
+      if (rootView != null) {
         rootView.getViewTreeObserver().addOnDrawListener(onDrawCounterListener);
         FirstDrawDoneListener.registerForNextDraw(rootView, this::recordOnDrawFrontOfQueue);
         PreDrawListener.registerForNextDraw(
-                rootView, this::recordPreDraw, this::recordPreDrawFrontOfQueue);
+            rootView, this::recordPreDraw, this::recordPreDrawFrontOfQueue);
       }
     }
 
