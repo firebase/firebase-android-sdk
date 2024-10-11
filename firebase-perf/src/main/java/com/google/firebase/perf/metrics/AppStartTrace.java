@@ -446,7 +446,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       return;
     }
     View rootView = activity.findViewById(android.R.id.content);
-    if (rootView == null) {
+    if (rootView != null) {
       rootView.getViewTreeObserver().removeOnDrawListener(onDrawCounterListener);
     }
   }
