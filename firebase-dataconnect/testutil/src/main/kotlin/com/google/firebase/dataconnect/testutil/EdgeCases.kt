@@ -16,6 +16,10 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import java.util.Date
+import java.util.GregorianCalendar
+import java.util.TimeZone
+
 object EdgeCases {
 
   val numbers: List<Double> =
@@ -82,4 +86,50 @@ object EdgeCases {
   }
 
   val anyScalars: List<Any?> = primitives + lists + maps + listOf(null)
+
+  object Dates {
+    const val MIN_YEAR = 1583
+    const val MAX_YEAR = 9999
+
+    val MIN: Date
+      get() = dateFromYearMonthDayUTC(MIN_YEAR, 1, 1)
+    val MIN_DATE_AND_STRING: DateAndString
+      get() = DateAndString(MIN, "$MIN_YEAR-01-01")
+
+    val MAX: Date
+      get() = dateFromYearMonthDayUTC(MAX_YEAR, 12, 31)
+    val MAX_DATE_AND_STRING: DateAndString
+      get() = DateAndString(MAX, "$MAX_YEAR-12-31")
+
+    val ZERO: Date
+      get() = GregorianCalendar(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 }.time
+    val ZERO_DATE_AND_STRING: DateAndString
+      get() = DateAndString(ZERO, "1970-01-01")
+  }
+
+  val dates: List<Date> = listOf(Dates.MIN, Dates.MAX, Dates.ZERO)
+
+  val dateAndStrings: List<DateAndString> =
+    listOf(
+      Dates.MIN_DATE_AND_STRING,
+      Dates.MAX_DATE_AND_STRING,
+      Dates.ZERO_DATE_AND_STRING,
+    )
+
+  val dateAndStringOffDayBoundary: List<DateAndString> =
+    listOf(
+      DateAndString(
+        Date(Dates.MIN_DATE_AND_STRING.date.time + 1),
+        Dates.MIN_DATE_AND_STRING.string
+      ),
+      DateAndString(
+        Date(Dates.MAX_DATE_AND_STRING.date.time + 1),
+        Dates.MAX_DATE_AND_STRING.string
+      ),
+      DateAndString(
+        Date(Dates.ZERO_DATE_AND_STRING.date.time + 1),
+        Dates.ZERO_DATE_AND_STRING.string
+      ),
+      DateAndString(Date(Dates.ZERO_DATE_AND_STRING.date.time - 1), "1969-12-31"),
+    )
 }
