@@ -704,18 +704,6 @@ public class SyncTree {
 
               List<QuerySpec> removed = removedAndEvents.getFirst();
               cancelEvents = removedAndEvents.getSecond();
-              // We may have just removed one of many listeners and can short-circuit this whole
-              // process. We may also not have removed a default listener, in which case all of the
-              // descendant listeners should already be properly set up.
-              //
-              // Since indexed queries can shadow if they don't have other query constraints, check
-              // for loadsAllData(), instead of isDefault().
-              boolean removingDefault = false;
-              for (QuerySpec queryRemoved : removed) {
-                persistenceManager.setQueryInactive(query);
-                removingDefault = removingDefault || queryRemoved.loadsAllData();
-              }
-
               /**
                * This is to handle removeRegistration by {@link Repo#getValue(Query)}. Specifically
                * to avoid the scenario where: A listener is attached at a child path, and {@link
@@ -731,58 +719,74 @@ public class SyncTree {
                * that location, listen would be called twice on the same query. skipDedup allows us
                * to skip this deduping process altogether.
                */
-              if (skipDedup) {
-                return null;
-              }
-              ImmutableTree<SyncPoint> currentTree = syncPointTree;
-              boolean covered =
-                  currentTree.getValue() != null && currentTree.getValue().hasCompleteView();
-              for (ChildKey component : path) {
-                currentTree = currentTree.getChild(component);
-                covered =
-                    covered
-                        || (currentTree.getValue() != null
-                            && currentTree.getValue().hasCompleteView());
-                if (covered || currentTree.isEmpty()) {
-                  break;
+              if (!skipDedup) {
+
+                // We may have just removed one of many listeners and can short-circuit this whole
+                // process. We may also not have removed a default listener, in which case all of
+                // the
+                // descendant listeners should already be properly set up.
+                //
+                // Since indexed queries can shadow if they don't have other query constraints,
+                // check
+                // for loadsAllData(), instead of isDefault().
+                boolean removingDefault = false;
+                for (QuerySpec queryRemoved : removed) {
+                  persistenceManager.setQueryInactive(query);
+                  removingDefault = removingDefault || queryRemoved.loadsAllData();
                 }
-              }
 
-              if (removingDefault && !covered) {
-                ImmutableTree<SyncPoint> subtree = syncPointTree.subtree(path);
-                // There are potentially child listeners. Determine what if any listens we need to
-                // send before executing the removal.
-                if (!subtree.isEmpty()) {
-                  // We need to fold over our subtree and collect the listeners to send
-                  List<View> newViews = collectDistinctViewsForSubTree(subtree);
-
-                  // Ok, we've collected all the listens we need. Set them up.
-                  for (View view : newViews) {
-                    ListenContainer container = new ListenContainer(view);
-                    QuerySpec newQuery = view.getQuery();
-                    listenProvider.startListening(
-                        queryForListening(newQuery), container.tag, container, container);
+                ImmutableTree<SyncPoint> currentTree = syncPointTree;
+                boolean covered =
+                    currentTree.getValue() != null && currentTree.getValue().hasCompleteView();
+                for (ChildKey component : path) {
+                  currentTree = currentTree.getChild(component);
+                  covered =
+                      covered
+                          || (currentTree.getValue() != null
+                              && currentTree.getValue().hasCompleteView());
+                  if (covered || currentTree.isEmpty()) {
+                    break;
                   }
-                } else {
-                  // There's nothing below us, so nothing we need to start listening on
                 }
-              }
-              // If we removed anything and we're not covered by a higher up listen, we need to stop
-              // listening on this query. The above block has us covered in terms of making sure
-              // we're set up on listens lower in the tree.
-              // Also, note that if we have a cancelError, it's already been removed at the provider
-              // level.
-              if (!covered && !removed.isEmpty() && cancelError == null) {
-                // If we removed a default, then we weren't listening on any of the other queries
-                // here. Just cancel the one default. Otherwise, we need to iterate through and
-                // cancel each individual query
-                if (removingDefault) {
-                  listenProvider.stopListening(queryForListening(query), null);
-                } else {
-                  for (QuerySpec queryToRemove : removed) {
-                    Tag tag = tagForQuery(queryToRemove);
-                    hardAssert(tag != null);
-                    listenProvider.stopListening(queryForListening(queryToRemove), tag);
+
+                if (removingDefault && !covered) {
+                  ImmutableTree<SyncPoint> subtree = syncPointTree.subtree(path);
+                  // There are potentially child listeners. Determine what if any listens we need to
+                  // send before executing the removal.
+                  if (!subtree.isEmpty()) {
+                    // We need to fold over our subtree and collect the listeners to send
+                    List<View> newViews = collectDistinctViewsForSubTree(subtree);
+
+                    // Ok, we've collected all the listens we need. Set them up.
+                    for (View view : newViews) {
+                      ListenContainer container = new ListenContainer(view);
+                      QuerySpec newQuery = view.getQuery();
+                      listenProvider.startListening(
+                          queryForListening(newQuery), container.tag, container, container);
+                    }
+                  } else {
+                    // There's nothing below us, so nothing we need to start listening on
+                  }
+                }
+                // If we removed anything and we're not covered by a higher up listen, we need to
+                // stop
+                // listening on this query. The above block has us covered in terms of making sure
+                // we're set up on listens lower in the tree.
+                // Also, note that if we have a cancelError, it's already been removed at the
+                // provider
+                // level.
+                if (!covered && !removed.isEmpty() && cancelError == null) {
+                  // If we removed a default, then we weren't listening on any of the other queries
+                  // here. Just cancel the one default. Otherwise, we need to iterate through and
+                  // cancel each individual query
+                  if (removingDefault) {
+                    listenProvider.stopListening(queryForListening(query), null);
+                  } else {
+                    for (QuerySpec queryToRemove : removed) {
+                      Tag tag = tagForQuery(queryToRemove);
+                      hardAssert(tag != null);
+                      listenProvider.stopListening(queryForListening(queryToRemove), tag);
+                    }
                   }
                 }
               }
