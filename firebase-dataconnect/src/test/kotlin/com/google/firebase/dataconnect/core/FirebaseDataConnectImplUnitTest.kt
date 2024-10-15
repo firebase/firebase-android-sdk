@@ -19,17 +19,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
-import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
-import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectSettings
-import com.google.firebase.dataconnect.testutil.property.arbitrary.operationName
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
@@ -110,7 +107,7 @@ class FirebaseDataConnectImplUnitTest {
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
     val dataSerializersModule: SerializersModule = mockk()
     val variablesSerializersModule: SerializersModule = mockk()
 
@@ -169,7 +166,7 @@ class FirebaseDataConnectImplUnitTest {
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
     val dataSerializersModule: SerializersModule = mockk()
     val variablesSerializersModule: SerializersModule = mockk()
 

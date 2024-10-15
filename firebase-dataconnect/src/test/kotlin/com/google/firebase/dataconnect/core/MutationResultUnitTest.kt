@@ -16,74 +16,36 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
-import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.next
-import io.mockk.mockk
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.modules.SerializersModule
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 @Suppress("ReplaceCallWithBinaryOperator")
 class MutationResultImplUnitTest {
 
-  private val mockFirebaseDataConnectInternal: FirebaseDataConnectInternal = mockk()
-  private val mockDataDeserializer: DeserializationStrategy<TestData?> = mockk()
-  private val mockVariablesSerializer: SerializationStrategy<TestVariables> = mockk()
-  private val mockSerializersModule: SerializersModule = mockk()
-
-  private val sampleMutation =
-    MutationRefImpl(
-      dataConnect = mockFirebaseDataConnectInternal,
-      operationName = "sampleMutationOperationName",
-      variables = TestVariables("sampleMutationTestData"),
-      dataDeserializer = mockDataDeserializer,
-      variablesSerializer = mockVariablesSerializer,
-      callerSdkType = Arb.callerSdkType().next(),
-      dataSerializersModule = mockSerializersModule,
-      variablesSerializersModule = mockSerializersModule,
-    )
-
-  private val sampleMutation1 =
-    MutationRefImpl(
-      dataConnect = mockFirebaseDataConnectInternal,
-      operationName = "sampleMutationOperationName1",
-      variables = TestVariables("sampleMutationTestData1"),
-      dataDeserializer = mockDataDeserializer,
-      variablesSerializer = mockVariablesSerializer,
-      callerSdkType = Arb.callerSdkType().next(),
-      dataSerializersModule = mockSerializersModule,
-      variablesSerializersModule = mockSerializersModule,
-    )
-
-  private val sampleMutation2 =
-    MutationRefImpl(
-      dataConnect = mockFirebaseDataConnectInternal,
-      operationName = "sampleMutationOperationName2",
-      variables = TestVariables("sampleMutationTestData2"),
-      dataDeserializer = mockDataDeserializer,
-      variablesSerializer = mockVariablesSerializer,
-      callerSdkType = Arb.callerSdkType().next(),
-      dataSerializersModule = mockSerializersModule,
-      variablesSerializersModule = mockSerializersModule,
-    )
-
   @Test
-  fun `'data' should be the same object given to the constructor`() {
-    val data = TestData()
-    val mutationResult = sampleMutation.MutationResultImpl(data)
-
-    assertThat(mutationResult.data).isSameInstanceAs(data)
+  fun `'data' should be the same object given to the constructor`() = runTest {
+    checkAll(Arb.dataConnect.mutationRefImpl()) { mutation ->
+      val data = TestData()
+      val mutationResult = mutation.MutationResultImpl(data)
+      mutationResult.data shouldBeSameInstanceAs data
+    }
   }
 
   @Test
-  fun `'ref' should be the MutationRefImpl object that was used to create it`() {
-    val mutationResult = sampleMutation.MutationResultImpl(TestData())
-
-    assertThat(mutationResult.ref).isSameInstanceAs(sampleMutation)
+  fun `'ref' should be the MutationRefImpl object that was used to create it`() = runTest {
+    checkAll(Arb.dataConnect.mutationRefImpl()) { mutation ->
+      val mutationResult = mutation.MutationResultImpl(TestData())
+      mutationResult.ref shouldBeSameInstanceAs mutation
+    }
   }
 
   @Test
@@ -216,4 +178,14 @@ class MutationResultImplUnitTest {
   data class TestVariables(val value: String = "TestVariablesDefaultValue")
 
   data class TestData(val value: String = "TestDataDefaultValue")
+
+  private companion object {
+    fun DataConnectArb.testVariables(string: Arb<String> = string()): Arb<TestVariables> =
+      arbitrary {
+        TestVariables(string.bind())
+      }
+
+    fun DataConnectArb.mutationRefImpl(): Arb<MutationRefImpl<TestData, TestVariables>> =
+      Arb.dataConnect.mutationRefImpl(Arb.dataConnect.testVariables())
+  }
 }

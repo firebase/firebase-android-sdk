@@ -20,9 +20,15 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.DataConnectError
 import com.google.firebase.dataconnect.DataConnectError.PathSegment
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
+import com.google.firebase.dataconnect.core.MutationRefImpl
+import com.google.firebase.dataconnect.core.QueryRefImpl
+import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
+import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -30,9 +36,10 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
-import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
 import kotlin.reflect.KClass
@@ -93,4 +100,62 @@ internal fun DataConnectArb.dataConnectError(
   locations: Arb<List<DataConnectError.SourceLocation>> = Arb.list(sourceLocation(), 0..5)
 ): Arb<DataConnectError> = arbitrary {
   DataConnectError(message = message.bind(), path = path.bind(), locations = locations.bind())
+}
+
+internal fun DataConnectArb.operationResult() = arbitrary {
+  val data = Arb.dataConnect.anyScalar.map().orNull(nullProbability = 0.1).bind()?.toStructProto()
+  val numErrors = Arb.int(0..3).bind()
+  val errors = List(numErrors) { Arb.dataConnect.dataConnectError().bind() }
+  DataConnectGrpcClient.OperationResult(data, errors)
+}
+
+internal fun <Data, Variables> DataConnectArb.queryRefImpl(
+  variablesArb: Arb<Variables>
+): Arb<QueryRefImpl<Data, Variables>> = arbitrary {
+  val stringArb = Arb.string(6, codepoints = Codepoint.alphanumeric())
+  val callerSdkType = Arb.enum<CallerSdkType>()
+  QueryRefImpl(
+    dataConnect = mockk(stringArb.bind()),
+    operationName = stringArb.bind(),
+    variables = variablesArb.bind(),
+    dataDeserializer = mockk(stringArb.bind()),
+    variablesSerializer = mockk(stringArb.bind()),
+    callerSdkType = callerSdkType.bind(),
+    variablesSerializersModule = mockk(stringArb.bind()),
+    dataSerializersModule = mockk(stringArb.bind()),
+  )
+}
+
+internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
+  variablesArb: Arb<Variables>
+): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
+  val stringArb = Arb.string(6, codepoints = Codepoint.alphanumeric())
+  val callerSdkType = Arb.enum<CallerSdkType>()
+  MutationRefImpl(
+    dataConnect = mockk(stringArb.bind()),
+    operationName = stringArb.bind(),
+    variables = variablesArb.bind(),
+    dataDeserializer = mockk(stringArb.bind()),
+    variablesSerializer = mockk(stringArb.bind()),
+    callerSdkType = callerSdkType.bind(),
+    variablesSerializersModule = mockk(stringArb.bind()),
+    dataSerializersModule = mockk(stringArb.bind()),
+  )
+}
+
+internal fun <Data, Variables> DataConnectArb.operationRefImpl(
+  variablesArb: Arb<Variables>
+): Arb<StubOperationRefImpl<Data, Variables>> = arbitrary {
+  val stringArb = Arb.string(6, codepoints = Codepoint.alphanumeric())
+  val callerSdkType = Arb.enum<CallerSdkType>()
+  StubOperationRefImpl(
+    dataConnect = mockk(stringArb.bind()),
+    operationName = stringArb.bind(),
+    variables = variablesArb.bind(),
+    dataDeserializer = mockk(stringArb.bind()),
+    variablesSerializer = mockk(stringArb.bind()),
+    callerSdkType = callerSdkType.bind(),
+    variablesSerializersModule = mockk(stringArb.bind()),
+    dataSerializersModule = mockk(stringArb.bind()),
+  )
 }

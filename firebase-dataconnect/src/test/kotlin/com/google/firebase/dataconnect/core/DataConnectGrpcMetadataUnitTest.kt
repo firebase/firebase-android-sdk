@@ -20,12 +20,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
-import com.google.firebase.dataconnect.testutil.property.arbitrary.accessToken
-import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
-import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorLocation
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
-import com.google.firebase.dataconnect.testutil.property.arbitrary.requestId
 import io.grpc.Metadata
 import io.kotest.assertions.asClue
 import io.kotest.matchers.collections.shouldContain
@@ -34,6 +30,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -108,7 +105,7 @@ class DataConnectGrpcMetadataUnitTest {
         )
         .next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
@@ -124,7 +121,7 @@ class DataConnectGrpcMetadataUnitTest {
     val dataConnectGrpcMetadata =
       Arb.dataConnect.dataConnectGrpcMetadata(appId = Arb.constant("tvsxjeb745.appId")).next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
@@ -140,7 +137,7 @@ class DataConnectGrpcMetadataUnitTest {
     val dataConnectGrpcMetadata =
       Arb.dataConnect.dataConnectGrpcMetadata(appId = Arb.constant("")).next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
@@ -152,7 +149,7 @@ class DataConnectGrpcMetadataUnitTest {
     val dataConnectGrpcMetadata =
       Arb.dataConnect.dataConnectGrpcMetadata(appId = Arb.constant(" \r\n\t ")).next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
@@ -168,7 +165,7 @@ class DataConnectGrpcMetadataUnitTest {
         .dataConnectGrpcMetadata(dataConnectAuth = Arb.constant(dataConnectAuth))
         .next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
@@ -185,7 +182,7 @@ class DataConnectGrpcMetadataUnitTest {
         .dataConnectGrpcMetadata(dataConnectAuth = Arb.constant(dataConnectAuth))
         .next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
@@ -206,7 +203,7 @@ class DataConnectGrpcMetadataUnitTest {
         .dataConnectGrpcMetadata(dataConnectAppCheck = Arb.constant(dataConnectAppCheck))
         .next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 
@@ -224,7 +221,7 @@ class DataConnectGrpcMetadataUnitTest {
         .dataConnectGrpcMetadata(dataConnectAppCheck = Arb.constant(dataConnectAppCheck))
         .next()
     val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
 
     val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
 

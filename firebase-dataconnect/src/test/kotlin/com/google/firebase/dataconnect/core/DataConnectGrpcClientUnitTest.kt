@@ -18,20 +18,16 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.DataConnectError
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.dataConnectError
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.operationResult
-import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
-import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
-import com.google.firebase.dataconnect.testutil.property.arbitrary.operationName
-import com.google.firebase.dataconnect.testutil.property.arbitrary.projectId
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.requestId
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
@@ -59,6 +55,7 @@ import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.egyptianHieroglyphs
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
@@ -95,7 +92,7 @@ class DataConnectGrpcClientUnitTest {
   private val requestId = Arb.dataConnect.requestId().next(rs)
   private val operationName = Arb.dataConnect.operationName().next(rs)
   private val variables = Arb.proto.struct().next(rs)
-  private val callerSdkType = Arb.callerSdkType().next(rs)
+  private val callerSdkType = Arb.enum<FirebaseDataConnect.CallerSdkType>().next(rs)
 
   private val mockDataConnectAuth: DataConnectAuth =
     mockk(relaxed = true, name = "mockDataConnectAuth-zfbhma6tyh")

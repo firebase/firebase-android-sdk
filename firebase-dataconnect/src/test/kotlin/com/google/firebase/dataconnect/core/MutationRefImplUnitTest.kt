@@ -26,7 +26,6 @@ import com.google.firebase.dataconnect.core.Globals.withDataDeserializer
 import com.google.firebase.dataconnect.core.Globals.withVariablesSerializer
 import com.google.firebase.dataconnect.testutil.dataConnectError
 import com.google.firebase.dataconnect.testutil.mutationRefImpl
-import com.google.firebase.dataconnect.testutil.property.arbitrary.callerSdkType
 import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
@@ -48,6 +47,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
@@ -271,7 +271,7 @@ class MutationRefImplUnitTest {
   @Test
   fun `hashCode() should incorporate callerSdkType`() = runTest {
     verifyHashCodeEventuallyDiffers {
-      it.copy(callerSdkType = Arb.callerSdkType().filterNotEqual(it.callerSdkType).next())
+      it.copy(callerSdkType = Arb.enum<CallerSdkType>().filterNotEqual(it.callerSdkType).next())
     }
   }
 
@@ -378,7 +378,8 @@ class MutationRefImplUnitTest {
   @Test
   fun `equals() should return false when only callerSdkType differs`() = runTest {
     val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(mutationRefImpl1.callerSdkType).next()
+    val callerSdkType2 =
+      Arb.enum<CallerSdkType>().filterNotEqual(mutationRefImpl1.callerSdkType).next()
     val mutationRefImpl2 = mutationRefImpl1.copy(callerSdkType = callerSdkType2)
     mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
   }
@@ -407,7 +408,8 @@ class MutationRefImplUnitTest {
   @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
     val mutationRefImpl: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(mutationRefImpl.callerSdkType).next()
+    val callerSdkType2 =
+      Arb.enum<CallerSdkType>().filterNotEqual(mutationRefImpl.callerSdkType).next()
     val mutationRefImpls =
       listOf(
         mutationRefImpl,
