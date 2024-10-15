@@ -46,7 +46,7 @@ data class Project(
             version = '$version'
             ${if (latestReleasedVersion != null) "ext.latestReleasedVersion = $latestReleasedVersion" else ""}
             firebaseLibrary {
-                ${if (libraryGroup != null) "libraryGroup '$libraryGroup'" else ""}
+                ${if (libraryGroup != null) "libraryGroup = '$libraryGroup'" else ""}
                 ${if (customizePom != null) "customizePom {$customizePom}" else ""}
                 ${"publishJavadoc = $publishJavadoc"}
             }

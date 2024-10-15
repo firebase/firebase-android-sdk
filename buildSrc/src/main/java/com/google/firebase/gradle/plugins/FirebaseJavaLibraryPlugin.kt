@@ -52,6 +52,8 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupFirebaseLibraryExtension(project)
     registerMakeReleaseNotesTask(project)
 
+    project.apply<DackkaPlugin>()
+
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
       kotlinOptions.freeCompilerArgs = ImmutableList.of("-module-name", kotlinModuleName(project))
