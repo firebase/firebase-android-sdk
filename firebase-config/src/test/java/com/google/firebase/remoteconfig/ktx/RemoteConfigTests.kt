@@ -32,7 +32,7 @@ import com.google.firebase.remoteconfig.createRemoteConfig
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler
 import org.junit.After
@@ -142,7 +142,7 @@ class ConfigTests : BaseTestCase() {
         defaultConfigsCache = mock(ConfigCacheClient::class.java),
         fetchHandler = mock(ConfigFetchHandler::class.java),
         getHandler = mockGetHandler,
-        frcMetadata = mock(ConfigMetadataClient::class.java),
+        frcMetadata = mock(ConfigSharedPrefsClient::class.java),
         realtimeHandler = mock(ConfigRealtimeHandler::class.java),
         rolloutsStateSubscriptionsHandler = mock(RolloutsStateSubscriptionsHandler::class.java)
       )
