@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 @file:JvmName("InternalArbs")
+@file:Suppress("UnusedReceiverParameter")
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.DataConnectError
+import com.google.firebase.dataconnect.DataConnectError.PathSegment
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
@@ -24,10 +27,15 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
+import kotlin.reflect.KClass
 
 internal fun DataConnectArb.dataConnectGrpcMetadata(
   dataConnectAuth: Arb<DataConnectAuth> = Arb.constant(mockk(relaxed = true)),
@@ -50,4 +58,39 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
     appId = appId.bind(),
     parentLogger = mockk(relaxed = true),
   )
+}
+
+internal fun DataConnectArb.pathSegmentType(
+  boolean: Arb<Boolean> = Arb.boolean()
+): Arb<KClass<out PathSegment>> = arbitrary {
+  when (boolean.bind()) {
+    true -> PathSegment.Field::class
+    false -> PathSegment.ListIndex::class
+  }
+}
+
+internal fun DataConnectArb.fieldPathSegment(
+  string: Arb<String> = string()
+): Arb<PathSegment.Field> = arbitrary { PathSegment.Field(string.bind()) }
+
+internal fun DataConnectArb.listIndexPathSegment(
+  int: Arb<Int> = Arb.int()
+): Arb<PathSegment.ListIndex> = arbitrary { PathSegment.ListIndex(int.bind()) }
+
+internal fun DataConnectArb.pathSegment(): Arb<PathSegment> =
+  Arb.choice(fieldPathSegment(), listIndexPathSegment())
+
+internal fun DataConnectArb.sourceLocation(
+  line: Arb<Int> = Arb.int(),
+  column: Arb<Int> = Arb.int()
+): Arb<DataConnectError.SourceLocation> = arbitrary {
+  DataConnectError.SourceLocation(line = line.bind(), column = column.bind())
+}
+
+internal fun DataConnectArb.dataConnectError(
+  message: Arb<String> = string(),
+  path: Arb<List<PathSegment>> = Arb.list(pathSegment(), 0..5),
+  locations: Arb<List<DataConnectError.SourceLocation>> = Arb.list(sourceLocation(), 0..5)
+): Arb<DataConnectError> = arbitrary {
+  DataConnectError(message = message.bind(), path = path.bind(), locations = locations.bind())
 }
