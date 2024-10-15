@@ -22,7 +22,11 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.inject.Provider
 
-/** Multi-resource container for Firebase Vertex AI */
+/**
+ * Multi-resource container for Firebase Vertex AI.
+ *
+ * @hide
+ */
 internal class FirebaseVertexAIMultiResourceComponent(
   private val app: FirebaseApp,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
