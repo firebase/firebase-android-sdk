@@ -36,7 +36,7 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
@@ -166,7 +166,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
     ConfigCacheClient fetchedCacheClient = getCacheClient(namespace, FETCH_FILE_NAME);
     ConfigCacheClient activatedCacheClient = getCacheClient(namespace, ACTIVATE_FILE_NAME);
     ConfigCacheClient defaultsCacheClient = getCacheClient(namespace, DEFAULTS_FILE_NAME);
-    ConfigMetadataClient metadataClient = getMetadataClient(context, appId, namespace);
+    ConfigSharedPrefsClient metadataClient = getMetadataClient(context, appId, namespace);
 
     ConfigGetParameterHandler getHandler = getGetHandler(activatedCacheClient, defaultsCacheClient);
     Personalization personalization =
@@ -206,7 +206,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
       ConfigCacheClient defaultsClient,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient metadataClient,
+      ConfigSharedPrefsClient metadataClient,
       RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler) {
     if (!frcNamespaceInstances.containsKey(namespace)) {
       FirebaseRemoteConfig in =
@@ -254,7 +254,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
 
   @VisibleForTesting
   ConfigFetchHttpClient getFrcBackendApiClient(
-      String apiKey, String namespace, ConfigMetadataClient metadataClient) {
+      String apiKey, String namespace, ConfigSharedPrefsClient metadataClient) {
     String appId = firebaseApp.getOptions().getApplicationId();
     return new ConfigFetchHttpClient(
         context,
@@ -262,12 +262,13 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
         apiKey,
         namespace,
         /* connectTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
-        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds());
+        /* readTimeoutInSeconds= */ metadataClient.getFetchTimeoutInSeconds(),
+        /* customSignals= */ metadataClient.getCustomSignals());
   }
 
   @VisibleForTesting
   synchronized ConfigFetchHandler getFetchHandler(
-      String namespace, ConfigCacheClient fetchedCacheClient, ConfigMetadataClient metadataClient) {
+      String namespace, ConfigCacheClient fetchedCacheClient, ConfigSharedPrefsClient metadataClient) {
     return new ConfigFetchHandler(
         firebaseInstallations,
         isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
@@ -287,7 +288,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
       ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
-      ConfigMetadataClient metadataClient) {
+      ConfigSharedPrefsClient metadataClient) {
     return new ConfigRealtimeHandler(
         firebaseApp,
         firebaseInstallations,
@@ -305,13 +306,13 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   }
 
   @VisibleForTesting
-  static ConfigMetadataClient getMetadataClient(Context context, String appId, String namespace) {
+  static ConfigSharedPrefsClient getMetadataClient(Context context, String appId, String namespace) {
     String fileName =
         String.format(
             "%s_%s_%s_%s",
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, PREFERENCES_FILE_NAME);
     SharedPreferences preferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
-    return new ConfigMetadataClient(preferences);
+    return new ConfigSharedPrefsClient(preferences);
   }
 
   @Nullable
