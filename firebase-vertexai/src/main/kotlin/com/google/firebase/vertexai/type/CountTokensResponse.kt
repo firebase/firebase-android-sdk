@@ -17,11 +17,17 @@
 package com.google.firebase.vertexai.type
 
 /**
- * Represents a response measuring model input.
+ * The model's response to a count tokens request.
  *
- * @property totalTokens A count of the tokens in the input
- * @property totalBillableCharacters A count of the characters that are billable in the input, if
- * available.
+ * **Important:** The counters in this class do not include billable image, video or other non-text
+ * input. See [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for
+ * details.
+ *
+ * @property totalTokens The total number of tokens in the input given to the model as a prompt.
+ * @property totalBillableCharacters The total number of billable characters in the text input given
+ * to the model as a prompt. **Important:** this property does not include billable image, video or
+ * other non-text input. See
+ * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details.
  */
 public class CountTokensResponse(
   public val totalTokens: Int,
