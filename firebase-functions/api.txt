@@ -81,11 +81,7 @@ package com.google.firebase.functions {
     method public boolean getLimitedUseAppCheckTokens();
     method public long getTimeout();
     method public void setTimeout(long timeout, @NonNull java.util.concurrent.TimeUnit units);
-    field @NonNull public static final com.google.firebase.functions.HttpsCallOptions.Companion Companion;
     field public final boolean limitedUseAppCheckTokens;
-  }
-
-  public static final class HttpsCallOptions.Companion {
   }
 
   public final class HttpsCallableOptions {
