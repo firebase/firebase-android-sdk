@@ -16,19 +16,25 @@
 
 package com.google.firebase.dataconnect
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.randomId
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withVariables
-import kotlinx.coroutines.test.*
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.maps.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val allTypesSchema by lazy { AllTypesSchema(dataConnectFactory) }
@@ -56,12 +62,13 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = query.execute()
 
-    assertWithMessage("errors").that(result.data.errors).isEmpty()
-    assertWithMessage("data").that(result.data.data).isNotNull()
-    assertWithMessage("data.keys").that(result.data.data?.keys).containsExactly("primitive")
-    assertWithMessage("data.keys[primitive]")
-      .that(result.data.data?.get("primitive") as Map<*, *>)
-      .containsExactlyEntriesIn(
+    withClue("errors") { result.data.errors.shouldBeEmpty() }
+    withClue("data") { result.data.data.shouldNotBeNull() }
+    withClue("data.keys") { result.data.data!!.keys.shouldContainExactly("primitive") }
+    withClue("data.keys[primitive]") {
+      @Suppress("UNCHECKED_CAST")
+      val primitive = (result.data.data!!.get("primitive") as Map<Any, Any?>)
+      primitive shouldContainExactly
         mapOf(
           "id" to id,
           "idFieldNullable" to "eebf7592cf744871873000a03a9af43e",
@@ -74,7 +81,7 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
           "stringField" to "TestStringValue",
           "stringFieldNullable" to "TestStringNullableValue",
         )
-      )
+    }
   }
 
   @Test
@@ -100,12 +107,13 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = query.execute()
 
-    assertWithMessage("errors").that(result.data.errors).isEmpty()
-    assertWithMessage("data").that(result.data.data).isNotNull()
-    assertWithMessage("data.keys").that(result.data.data?.keys).containsExactly("primitive")
-    assertWithMessage("data.keys[primitive]")
-      .that(result.data.data?.get("primitive") as Map<*, *>)
-      .containsExactlyEntriesIn(
+    withClue("errors") { result.data.errors.shouldBeEmpty() }
+    withClue("data") { result.data.data.shouldNotBeNull() }
+    withClue("data.keys") { result.data.data!!.keys.shouldContainExactly("primitive") }
+    withClue("data.keys[primitive]") {
+      @Suppress("UNCHECKED_CAST")
+      val primitive = (result.data.data!!.get("primitive") as Map<Any, Any?>)
+      primitive shouldContainExactly
         mapOf(
           "id" to id,
           "idFieldNullable" to null,
@@ -118,7 +126,7 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
           "stringField" to "TestStringValue",
           "stringFieldNullable" to null,
         )
-      )
+    }
   }
 
   @Test
@@ -152,12 +160,13 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = query.execute()
 
-    assertWithMessage("errors").that(result.data.errors).isEmpty()
-    assertWithMessage("data").that(result.data.data).isNotNull()
-    assertWithMessage("data.keys").that(result.data.data?.keys).containsExactly("primitiveList")
-    assertWithMessage("data.keys[primitiveList]")
-      .that(result.data.data?.get("primitiveList") as Map<*, *>)
-      .containsExactlyEntriesIn(
+    withClue("errors") { result.data.errors.shouldBeEmpty() }
+    withClue("data") { result.data.data.shouldNotBeNull() }
+    withClue("data.keys") { result.data.data!!.keys.shouldContainExactly("primitiveList") }
+    withClue("data.keys[primitive]") {
+      @Suppress("UNCHECKED_CAST")
+      val primitive = (result.data.data!!.get("primitiveList") as Map<Any, Any?>)
+      primitive shouldContainExactly
         mapOf(
           "id" to id,
           "idListNullable" to
@@ -177,7 +186,7 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
           "stringListNullable" to listOf("qqq", "rrr"),
           "stringListOfNullable" to listOf("sss", "ttt"),
         )
-      )
+    }
   }
 
   @Test
@@ -210,12 +219,13 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = query.execute()
 
-    assertWithMessage("errors").that(result.data.errors).isEmpty()
-    assertWithMessage("data").that(result.data.data).isNotNull()
-    assertWithMessage("data.keys").that(result.data.data?.keys).containsExactly("primitiveList")
-    assertWithMessage("data.keys[primitiveList]")
-      .that(result.data.data?.get("primitiveList") as Map<*, *>)
-      .containsExactlyEntriesIn(
+    withClue("errors") { result.data.errors.shouldBeEmpty() }
+    withClue("data") { result.data.data.shouldNotBeNull() }
+    withClue("data.keys") { result.data.data!!.keys.shouldContainExactly("primitiveList") }
+    withClue("data.keys[primitiveList]") {
+      @Suppress("UNCHECKED_CAST")
+      val primitive = (result.data.data!!.get("primitiveList") as Map<Any, Any?>)
+      primitive shouldContainExactly
         mapOf(
           "id" to id,
           "idListNullable" to null,
@@ -234,7 +244,7 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
           "stringListNullable" to null,
           "stringListOfNullable" to listOf("sss", "ttt"),
         )
-      )
+    }
   }
 
   @Test
@@ -279,29 +289,19 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = query.execute()
 
-    assertWithMessage("errors").that(result.data.errors).isEmpty()
-    assertWithMessage("data").that(result.data.data).isNotNull()
-    assertWithMessage("data.keys").that(result.data.data?.keys).containsExactly("farm")
-    val farm =
-      result.data.data!!.get("farm").let {
-        val farm = it as? Map<*, *>
-        assertWithMessage("farm: $it").that(farm).isNotNull()
-        farm!!
-      }
-    assertWithMessage("farm.keys")
-      .that(farm.keys)
-      .containsExactly("id", "name", "farmer", "animals")
-    assertWithMessage("farm[id]").that(farm["id"]).isEqualTo(farmId)
-    assertWithMessage("farm[name]").that(farm["name"]).isEqualTo("TestFarm")
-    val animals =
-      farm["animals"].let {
-        val animals = it as? List<*>
-        assertWithMessage("animals: $it").that(animals).isNotNull()
-        animals!!
-      }
-    assertWithMessage("farm[animals]")
-      .that(animals)
-      .containsExactly(
+    withClue("errors") { result.data.errors.shouldBeEmpty() }
+    withClue("data") { result.data.data.shouldNotBeNull() }
+    withClue("data.keys") { result.data.data!!.keys.shouldContainExactly("farm") }
+    val farm = withClue("data.keys[farm]") { result.data.data!!.get("farm") as Map<*, *> }
+
+    withClue("farm.keys") {
+      farm.keys.shouldContainExactlyInAnyOrder("id", "name", "farmer", "animals")
+    }
+    withClue("farm[id]") { farm["id"] shouldBe farmId }
+    withClue("farm[name]") { farm["name"] shouldBe "TestFarm" }
+    val animals = withClue("farm[animals]") { farm["animals"] as List<*> }
+    withClue("animals") {
+      animals.shouldContainExactlyInAnyOrder(
         mapOf(
           "id" to animal1Id,
           "name" to "Animal1Name",
@@ -315,25 +315,17 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
           "age" to null
         ),
       )
-    val farmer =
-      farm["farmer"].let {
-        val farmer = it as? Map<*, *>
-        assertWithMessage("farmer: $it").that(farmer).isNotNull()
-        farmer!!
-      }
-    assertWithMessage("farmer.keys").that(farmer.keys).containsExactly("id", "name", "parent")
-    assertWithMessage("farmer[id]").that(farmer["id"]).isEqualTo(farmer4Id)
-    assertWithMessage("farmer[name]").that(farmer["name"]).isEqualTo("Farmer4Name")
-    val parent =
-      farmer["parent"].let {
-        val parent = it as? Map<*, *>
-        assertWithMessage("parent: $it").that(parent).isNotNull()
-        parent!!
-      }
-    assertWithMessage("parent.keys").that(parent.keys).containsExactly("id", "name", "parentId")
-    assertWithMessage("parent[id]").that(parent["id"]).isEqualTo(farmer3Id)
-    assertWithMessage("parent[name]").that(parent["name"]).isEqualTo("Farmer3Name")
-    assertWithMessage("parent[parentId]").that(parent["parentId"]).isEqualTo(farmer2Id)
+    }
+
+    val farmer = withClue("farm[farmer]") { farm["farmer"] as Map<*, *> }
+    withClue("farmer.keys") { farmer.keys.shouldContainExactlyInAnyOrder("id", "name", "parent") }
+    withClue("farmer[id]") { farmer["id"] shouldBe farmer4Id }
+    withClue("farmer[name]") { farmer["name"] shouldBe "Farmer4Name" }
+    val parent = withClue("farmer[parent]") { farmer["parent"] as Map<*, *> }
+    withClue("parent.keys") { parent.keys.shouldContainExactlyInAnyOrder("id", "name", "parentId") }
+    withClue("parent[id]") { parent["id"] shouldBe farmer3Id }
+    withClue("parent[name]") { parent["name"] shouldBe "Farmer3Name" }
+    withClue("parent[parentId]") { parent["parentId"] shouldBe farmer2Id }
   }
 
   @Test
@@ -346,33 +338,25 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = query.execute()
 
-    assertWithMessage("errors").that(result.data.errors).isEmpty()
-    assertWithMessage("data").that(result.data.data).isNotNull()
-    assertWithMessage("data.keys").that(result.data.data?.keys).containsExactly("farm")
-    val farm =
-      result.data.data!!.get("farm").let {
-        val farm = it as? Map<*, *>
-        assertWithMessage("farm: $it").that(farm).isNotNull()
-        farm!!
-      }
-    assertWithMessage("farm.keys")
-      .that(farm.keys)
-      .containsExactly("id", "name", "farmer", "animals")
-    val farmer =
-      farm["farmer"].let {
-        val farmer = it as? Map<*, *>
-        assertWithMessage("farmer: $it").that(farmer).isNotNull()
-        farmer!!
-      }
-    assertWithMessage("farmer.keys").that(farmer.keys).containsExactly("id", "name", "parent")
-    assertWithMessage("farmer[id]").that(farmer["id"]).isEqualTo(farmerId)
-    assertWithMessage("farmer[name]").that(farmer["name"]).isEqualTo("FarmerName")
-    assertWithMessage("farmer[parent]").that(farmer["parent"]).isNull()
+    withClue("errors") { result.data.errors.shouldBeEmpty() }
+    withClue("data") { result.data.data.shouldNotBeNull() }
+    withClue("data.keys") { result.data.data!!.keys.shouldContainExactly("farm") }
+    val farm = withClue("data[farm]") { result.data.data!!["farm"] as Map<*, *> }
+    withClue("farm.keys") {
+      farm.keys.shouldContainExactlyInAnyOrder("id", "name", "farmer", "animals")
+    }
+
+    val farmer = withClue("farm[farmer]") { farm["farmer"] as Map<*, *> }
+    withClue("farmer.keys") { farmer.keys.shouldContainExactlyInAnyOrder("id", "name", "parent") }
+    withClue("farmer[id]") { farmer["id"] shouldBe farmerId }
+    withClue("farmer[name]") { farmer["name"] shouldBe "FarmerName" }
+    withClue("farmer[parent]") { farmer["parent"].shouldBeNull() }
   }
 
   @Test
   fun queryErrorsReturnedByServerArePutInTheErrorsListInsteadOfThrowingAnException() = runTest {
     @Serializable data class BogusVariables(val foo: String)
+
     val query =
       allTypesSchema
         .getPrimitive("foo")
@@ -381,13 +365,16 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = query.execute()
 
-    assertWithMessage("result.data.data").that(result.data.data).isNull()
-    assertWithMessage("result.data.errors").that(result.data.errors).isNotEmpty()
+    assertSoftly {
+      result.data.data.shouldBeNull()
+      result.data.errors.shouldNotBeEmpty()
+    }
   }
 
   @Test
   fun mutationErrorsReturnedByServerArePutInTheErrorsListInsteadOfThrowingAnException() = runTest {
     @Serializable data class BogusVariables(val foo: String)
+
     val mutation =
       allTypesSchema
         .createAnimal("", "", "", "", 42)
@@ -396,7 +383,9 @@ class DataConnectUntypedDataIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = mutation.execute()
 
-    assertWithMessage("result.data.data").that(result.data.data).isNull()
-    assertWithMessage("result.data.errors").that(result.data.errors).isNotEmpty()
+    assertSoftly {
+      result.data.data.shouldBeNull()
+      result.data.errors.shouldNotBeEmpty()
+    }
   }
 }

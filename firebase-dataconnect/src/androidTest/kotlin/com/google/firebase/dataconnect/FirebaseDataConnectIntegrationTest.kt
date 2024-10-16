@@ -21,9 +21,7 @@ import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.newInstance
-import com.google.firebase.dataconnect.testutil.property.arbitrary.connectorConfig
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectSettings
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow

@@ -22,7 +22,6 @@ import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.newInstance
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.operationName
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
