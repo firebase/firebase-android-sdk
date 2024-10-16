@@ -19,7 +19,7 @@ import java.net.URL
 import java.util.concurrent.TimeUnit
 
 /** A reference to a particular Callable HTTPS trigger in Cloud Functions. */
-class HttpsCallableReference {
+public class HttpsCallableReference {
   // The functions client to use for making calls.
   private val functionsClient: FirebaseFunctions
 
@@ -32,7 +32,7 @@ class HttpsCallableReference {
   private val url: URL?
 
   // Options for how to do the HTTPS call.
-  @VisibleForTesting val options: HttpsCallOptions
+  @VisibleForTesting public val options: HttpsCallOptions
 
   /** Creates a new reference with the given options. */
   internal constructor(
@@ -95,7 +95,7 @@ class HttpsCallableReference {
    *
    * @see FirebaseFunctionsException
    */
-  fun call(data: Any?): Task<HttpsCallableResult> {
+  public fun call(data: Any?): Task<HttpsCallableResult> {
     return if (name != null) {
       functionsClient.call(name, data, options)
     } else {
@@ -117,7 +117,7 @@ class HttpsCallableReference {
    *
    * @return A Task that will be completed when the HTTPS request has completed.
    */
-  fun call(): Task<HttpsCallableResult> {
+  public fun call(): Task<HttpsCallableResult> {
     return if (name != null) {
       functionsClient.call(name, null, options)
     } else {
@@ -131,11 +131,11 @@ class HttpsCallableReference {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  fun setTimeout(timeout: Long, units: TimeUnit) {
+  public fun setTimeout(timeout: Long, units: TimeUnit) {
     options.setTimeout(timeout, units)
   }
 
-  val timeout: Long
+  public val timeout: Long
     /**
      * Returns the timeout for calls from this instance of Functions.
      *
@@ -149,7 +149,7 @@ class HttpsCallableReference {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  fun withTimeout(timeout: Long, units: TimeUnit): HttpsCallableReference {
+  public fun withTimeout(timeout: Long, units: TimeUnit): HttpsCallableReference {
     val other = HttpsCallableReference(functionsClient, name, options)
     other.setTimeout(timeout, units)
     return other
