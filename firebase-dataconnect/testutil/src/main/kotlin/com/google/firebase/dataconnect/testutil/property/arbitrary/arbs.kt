@@ -31,7 +31,10 @@ import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.merge
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
+import io.mockk.mockk
+import kotlinx.serialization.modules.SerializersModule
 
 object DataConnectArb {
   val anyScalar: AnyScalarArb = AnyScalarArb
@@ -116,6 +119,9 @@ object DataConnectArb {
     arbitrary {
       "tag_${string.bind()}"
     }
+
+  fun serializersModule(): Arb<SerializersModule?> =
+    arbitrary<SerializersModule> { mockk() }.orNull(nullProbability = 0.2)
 }
 
 val Arb.Companion.dataConnect: DataConnectArb

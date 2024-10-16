@@ -24,9 +24,13 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.Globals.copy
 import com.google.firebase.dataconnect.core.Globals.withDataDeserializer
 import com.google.firebase.dataconnect.core.Globals.withVariablesSerializer
-import com.google.firebase.dataconnect.testutil.dataConnectError
-import com.google.firebase.dataconnect.testutil.mutationRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
 import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
+import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
+import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
@@ -39,18 +43,18 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeSameInstanceAs
-import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
-import io.kotest.property.arbitrary.string
+import io.kotest.property.assume
+import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
@@ -61,7 +65,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import org.junit.Test
 
@@ -74,10 +81,10 @@ class MutationRefImplUnitTest {
 
   @Test
   fun `execute() returns the result on success`() = runTest {
-    val data = Arb.testData().next()
+    val data = Arb.dataConnect.testData().next()
     val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
     val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
-    val mutationRefImpl = Arb.mutationRefImpl().next().copy(dataConnect = dataConnect)
+    val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
     val mutationResult = mutationRefImpl.execute()
 
@@ -89,7 +96,7 @@ class MutationRefImplUnitTest {
 
   @Test
   fun `execute() calls executeMutation with the correct arguments`() = runTest {
-    val data = Arb.testData().next()
+    val data = Arb.dataConnect.testData().next()
     val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
     val requestIdSlot: CapturingSlot<String> = slot()
     val operationNameSlot: CapturingSlot<String> = slot()
@@ -103,7 +110,7 @@ class MutationRefImplUnitTest {
         variablesSlot,
         callerSdkTypeSlot,
       )
-    val mutationRefImpl = Arb.mutationRefImpl().next().copy(dataConnect = dataConnect)
+    val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
     mutationRefImpl.execute()
     val requestId1 = requestIdSlot.captured
@@ -137,16 +144,16 @@ class MutationRefImplUnitTest {
   @Test
   fun `execute() handles DataConnectUntypedVariables and DataConnectUntypedData`() = runTest {
     val variables = DataConnectUntypedVariables("foo" to 42.0)
-    val errors = listOf(Arb.dataConnectError().next())
+    val errors = listOf(Arb.dataConnect.dataConnectError().next())
     val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors)
     val variablesSlot: CapturingSlot<Struct> = slot()
     val operationResult = OperationResult(buildStructProto { put("bar", 24.0) }, errors)
     val dataConnect =
       dataConnectWithMutationResult(Result.success(operationResult), variablesSlot = variablesSlot)
     val mutationRefImpl =
-      Arb.mutationRefImpl()
+      Arb.dataConnect
+        .mutationRefImpl(dataConnect)
         .next()
-        .copy(dataConnect = dataConnect)
         .withVariablesSerializer(variables, DataConnectUntypedVariables)
         .withDataDeserializer(DataConnectUntypedData)
 
@@ -163,14 +170,14 @@ class MutationRefImplUnitTest {
   fun `execute() throws when the data is null`() = runTest {
     val operationResult = OperationResult(data = null, errors = emptyList())
     val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
-    val mutationRefImpl = Arb.mutationRefImpl().next().copy(dataConnect = dataConnect)
+    val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
     shouldThrow<DataConnectException> { mutationRefImpl.execute() }
   }
 
   @Test
   fun `constructor accepts non-null values`() {
-    val values = Arb.mutationRefImpl().next()
+    val values = Arb.dataConnect.mutationRefImpl().next()
     val mutationRefImpl =
       MutationRefImpl(
         dataConnect = values.dataConnect,
@@ -199,7 +206,7 @@ class MutationRefImplUnitTest {
 
   @Test
   fun `constructor accepts null values for nullable parameters`() {
-    val values = Arb.mutationRefImpl().next()
+    val values = Arb.dataConnect.mutationRefImpl().next()
     val mutationRefImpl =
       MutationRefImpl(
         dataConnect = values.dataConnect,
@@ -227,44 +234,50 @@ class MutationRefImplUnitTest {
   }
 
   @Test
-  fun `hashCode() should return the same value when invoked repeatedly`() {
-    val mutationRefImpl: MutationRefImpl<*, *> = Arb.mutationRefImpl().next()
-    val hashCode = mutationRefImpl.hashCode()
-    repeat(10) { mutationRefImpl.hashCode() shouldBe hashCode }
+  fun `hashCode() should return the same value when invoked repeatedly`() = runTest {
+    checkAll(Arb.dataConnect.mutationRefImpl()) { mutationRefImpl ->
+      val hashCode1 = mutationRefImpl.hashCode()
+      repeat(10) { mutationRefImpl.hashCode() shouldBe hashCode1 }
+    }
   }
 
   @Test
-  fun `hashCode() should return the same value when invoked on distinct, but equal, objects`() {
-    val mutationRefImpl1: MutationRefImpl<*, *> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2: MutationRefImpl<*, *> = mutationRefImpl1.copy()
-    mutationRefImpl1 shouldNotBeSameInstanceAs mutationRefImpl2 // verify test precondition
-    repeat(10) { mutationRefImpl1.hashCode() shouldBe mutationRefImpl2.hashCode() }
-  }
+  fun `hashCode() should return the same value when invoked on distinct, but equal, objects`() =
+    runTest {
+      checkAll(Arb.dataConnect.mutationRefImpl()) { mutationRefImpl1 ->
+        val mutationRefImpl2 = mutationRefImpl1.copy()
+        mutationRefImpl1.hashCode() shouldBe mutationRefImpl2.hashCode()
+      }
+    }
 
   @Test
   fun `hashCode() should incorporate dataConnect`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(dataConnect = mockk(name = stringArb.next())) }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(dataConnect = mockk(name = Arb.dataConnect.string().next()))
+    }
   }
 
   @Test
   fun `hashCode() should incorporate operationName`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(operationName = stringArb.next()) }
+    verifyHashCodeEventuallyDiffers { it.copy(operationName = Arb.dataConnect.string().next()) }
   }
 
   @Test
   fun `hashCode() should incorporate variables`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(variables = TestVariables(stringArb.next())) }
+    verifyHashCodeEventuallyDiffers { it.copy(variables = Arb.dataConnect.testVariables().next()) }
   }
 
   @Test
   fun `hashCode() should incorporate dataDeserializer`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(dataDeserializer = mockk(name = stringArb.next())) }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(dataDeserializer = mockk(name = Arb.dataConnect.string().next()))
+    }
   }
 
   @Test
   fun `hashCode() should incorporate variablesSerializer`() = runTest {
     verifyHashCodeEventuallyDiffers {
-      it.copy(variablesSerializer = mockk(name = stringArb.next()))
+      it.copy(variablesSerializer = mockk(name = Arb.dataConnect.string().next()))
     }
   }
 
@@ -278,12 +291,13 @@ class MutationRefImplUnitTest {
   @Test
   fun `hashCode() should incorporate variablesSerializersModule`() = runTest {
     verifyHashCodeEventuallyDiffers {
-      it.copy(variablesSerializersModule = mockk(name = stringArb.next()))
+      it.copy(variablesSerializersModule = mockk(name = Arb.dataConnect.string().next()))
     }
     verifyHashCodeEventuallyDiffers {
       it.copy(
         variablesSerializersModule =
-          if (it.variablesSerializersModule === null) mockk(name = stringArb.next()) else null
+          if (it.variablesSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
+          else null
       )
     }
   }
@@ -291,212 +305,194 @@ class MutationRefImplUnitTest {
   @Test
   fun `hashCode() should incorporate dataSerializersModule`() = runTest {
     verifyHashCodeEventuallyDiffers {
-      it.copy(dataSerializersModule = mockk(name = stringArb.next()))
+      it.copy(dataSerializersModule = mockk(name = Arb.dataConnect.string().next()))
     }
     verifyHashCodeEventuallyDiffers {
       it.copy(
         dataSerializersModule =
-          if (it.dataSerializersModule === null) mockk(name = stringArb.next()) else null
+          if (it.dataSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
+          else null
       )
     }
   }
 
   private suspend fun verifyHashCodeEventuallyDiffers(
     otherFactory:
-      (other: MutationRefImpl<TestData, TestVariables>) -> MutationRefImpl<TestData, TestVariables>
+      (other: MutationRefImpl<TestData?, TestVariables>) -> MutationRefImpl<
+          TestData?, TestVariables
+        >
   ) {
-    val obj1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
+    val obj1: MutationRefImpl<TestData?, TestVariables> = Arb.dataConnect.mutationRefImpl().next()
     retry(maxRetry = 50, timeout = Duration.INFINITE) {
-      val obj2: MutationRefImpl<TestData, TestVariables> = otherFactory(obj1)
+      val obj2: MutationRefImpl<TestData?, TestVariables> = otherFactory(obj1)
       obj1.hashCode() shouldNotBe obj2.hashCode()
     }
   }
 
   @Test
   fun `equals(this) should return true`() = runTest {
-    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    mutationRefImpl.equals(mutationRefImpl) shouldBe true
+    checkAll(Arb.dataConnect.mutationRefImpl()) { mutationRefImpl ->
+      mutationRefImpl.equals(mutationRefImpl) shouldBe true
+    }
   }
 
   @Test
   fun `equals(equal, but distinct, instance) should return true`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2: MutationRefImpl<TestData, TestVariables> = mutationRefImpl1.copy()
-    mutationRefImpl1 shouldNotBeSameInstanceAs mutationRefImpl2 // verify test precondition
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe true
+    checkAll(Arb.dataConnect.mutationRefImpl()) { mutationRefImpl1 ->
+      val mutationRefImpl2 = mutationRefImpl1.copy()
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe true
+    }
   }
 
   @Test
   fun `equals(null) should return false`() = runTest {
-    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    mutationRefImpl.equals(null) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl()) { mutationRefImpl ->
+      mutationRefImpl.equals(null) shouldBe false
+    }
   }
 
   @Test
   fun `equals(an object of a different type) should return false`() = runTest {
-    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    mutationRefImpl.equals("not a MutationRefImpl") shouldBe false
+    val others = Arb.choice(Arb.dataConnect.string(), Arb.int(), Arb.dataConnect.dataConnectError())
+    checkAll(Arb.dataConnect.mutationRefImpl(), others) { mutationRefImpl, other ->
+      mutationRefImpl.equals(other) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only dataConnect differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 = mutationRefImpl1.copy(dataConnect = mockk(stringArb.next()))
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.mock<FirebaseDataConnectInternal>()) {
+      mutationRefImpl1,
+      dataConnect ->
+      dataConnect shouldNotBe mutationRefImpl1.dataConnect // precondition check
+      val mutationRefImpl2 = mutationRefImpl1.copy(dataConnect = dataConnect)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only operationName differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 =
-      mutationRefImpl1.copy(operationName = mutationRefImpl1.operationName + "2")
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.dataConnect.string()) {
+      mutationRefImpl1,
+      operationName ->
+      assume(operationName != mutationRefImpl1.operationName)
+      val mutationRefImpl2 = mutationRefImpl1.copy(operationName = operationName)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only variables differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 =
-      mutationRefImpl1.copy(variables = TestVariables(mutationRefImpl1.variables.bar + "2"))
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.dataConnect.testVariables()) {
+      mutationRefImpl1,
+      variables ->
+      assume(variables != mutationRefImpl1.variables)
+      val mutationRefImpl2 = mutationRefImpl1.copy(variables = variables)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only dataDeserializer differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 = mutationRefImpl1.copy(dataDeserializer = mockk(stringArb.next()))
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.mock<DeserializationStrategy<TestData>>()) {
+      mutationRefImpl1,
+      dataDeserializer ->
+      dataDeserializer shouldNotBe mutationRefImpl1.dataDeserializer // precondition check
+      val mutationRefImpl2 = mutationRefImpl1.copy(dataDeserializer = dataDeserializer)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only variablesSerializer differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 = mutationRefImpl1.copy(variablesSerializer = mockk(stringArb.next()))
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.mock<SerializationStrategy<TestVariables>>()) {
+      mutationRefImpl1,
+      variablesSerializer ->
+      variablesSerializer shouldNotBe mutationRefImpl1.variablesSerializer // precondition check
+      val mutationRefImpl2 = mutationRefImpl1.copy(variablesSerializer = variablesSerializer)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only callerSdkType differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val callerSdkType2 =
-      Arb.enum<CallerSdkType>().filterNotEqual(mutationRefImpl1.callerSdkType).next()
-    val mutationRefImpl2 = mutationRefImpl1.copy(callerSdkType = callerSdkType2)
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.enum<CallerSdkType>()) {
+      mutationRefImpl1,
+      callerSdkType ->
+      assume(callerSdkType != mutationRefImpl1.callerSdkType)
+      val mutationRefImpl2 = mutationRefImpl1.copy(callerSdkType = callerSdkType)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 =
-      mutationRefImpl1.copy(variablesSerializersModule = mockk(stringArb.next()))
-    val mutationRefImplNull = mutationRefImpl1.copy(variablesSerializersModule = null)
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
-    mutationRefImplNull.equals(mutationRefImpl1) shouldBe false
-    mutationRefImpl1.equals(mutationRefImplNull) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.mock<SerializersModule>()) {
+      mutationRefImpl1,
+      variablesSerializersModule ->
+      variablesSerializersModule shouldNotBe
+        mutationRefImpl1.variablesSerializersModule // precondition check
+      val mutationRefImpl2 =
+        mutationRefImpl1.copy(variablesSerializersModule = variablesSerializersModule)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only dataSerializersModule differs`() = runTest {
-    val mutationRefImpl1: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val mutationRefImpl2 = mutationRefImpl1.copy(dataSerializersModule = mockk(stringArb.next()))
-    val mutationRefImplNull = mutationRefImpl1.copy(dataSerializersModule = null)
-    mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
-    mutationRefImplNull.equals(mutationRefImpl1) shouldBe false
-    mutationRefImpl1.equals(mutationRefImplNull) shouldBe false
+    checkAll(Arb.dataConnect.mutationRefImpl(), Arb.mock<SerializersModule>()) {
+      mutationRefImpl1,
+      dataSerializersModule ->
+      dataSerializersModule shouldNotBe mutationRefImpl1.dataSerializersModule // precondition check
+      val mutationRefImpl2 = mutationRefImpl1.copy(dataSerializersModule = dataSerializersModule)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
-    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> = Arb.mutationRefImpl().next()
-    val callerSdkType2 =
-      Arb.enum<CallerSdkType>().filterNotEqual(mutationRefImpl.callerSdkType).next()
-    val mutationRefImpls =
-      listOf(
-        mutationRefImpl,
-        mutationRefImpl.copy(callerSdkType = callerSdkType2),
-        mutationRefImpl.copy(dataSerializersModule = null),
-        mutationRefImpl.copy(variablesSerializersModule = null),
-      )
-    val toStringResult = mutationRefImpl.toString()
-
-    assertSoftly {
-      mutationRefImpls.forEach {
-        it.asClue {
-          toStringResult.shouldContain("dataConnect=${mutationRefImpl.dataConnect}")
-          toStringResult.shouldContain("operationName=${mutationRefImpl.operationName}")
-          toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
-          toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
-          toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
-          toStringResult.shouldContain("callerSdkType=${mutationRefImpl.callerSdkType}")
-          toStringResult.shouldContain(
-            "dataSerializersModule=${mutationRefImpl.dataSerializersModule}"
-          )
-          toStringResult.shouldContain(
-            "variablesSerializersModule=${mutationRefImpl.variablesSerializersModule}"
-          )
-        }
+    checkAll(Arb.dataConnect.mutationRefImpl()) { mutationRefImpl ->
+      val toStringResult = mutationRefImpl.toString()
+      assertSoftly {
+        toStringResult shouldContainWithNonAbuttingText "dataConnect=${mutationRefImpl.dataConnect}"
+        toStringResult shouldContainWithNonAbuttingText
+          "operationName=${mutationRefImpl.operationName}"
+        toStringResult shouldContainWithNonAbuttingText "variables=${mutationRefImpl.variables}"
+        toStringResult shouldContainWithNonAbuttingText
+          "dataDeserializer=${mutationRefImpl.dataDeserializer}"
+        toStringResult shouldContainWithNonAbuttingText
+          "variablesSerializer=${mutationRefImpl.variablesSerializer}"
+        toStringResult shouldContainWithNonAbuttingText
+          "callerSdkType=${mutationRefImpl.callerSdkType}"
+        toStringResult shouldContainWithNonAbuttingText
+          "dataSerializersModule=${mutationRefImpl.dataSerializersModule}"
+        toStringResult shouldContainWithNonAbuttingText
+          "variablesSerializersModule=${mutationRefImpl.variablesSerializersModule}"
       }
-    }
-  }
-
-  @Test
-  fun `toString() should include null when dataSerializersModule is null`() = runTest {
-    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> =
-      Arb.mutationRefImpl().next().copy(dataSerializersModule = null)
-    val toStringResult = mutationRefImpl.toString()
-
-    assertSoftly {
-      toStringResult.shouldContain("dataConnect=${mutationRefImpl.dataConnect}")
-      toStringResult.shouldContain("operationName=${mutationRefImpl.operationName}")
-      toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
-      toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
-      toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
-      toStringResult.shouldContain("callerSdkType=${mutationRefImpl.callerSdkType}")
-      toStringResult.shouldContain("dataSerializersModule=null")
-      toStringResult.shouldContain(
-        "variablesSerializersModule=${mutationRefImpl.variablesSerializersModule}"
-      )
-    }
-  }
-
-  @Test
-  fun `toString() should include null when variablesSerializersModule is null`() = runTest {
-    val mutationRefImpl: MutationRefImpl<TestData, TestVariables> =
-      Arb.mutationRefImpl().next().copy(variablesSerializersModule = null)
-    val toStringResult = mutationRefImpl.toString()
-
-    assertSoftly {
-      toStringResult.shouldContain("dataConnect=${mutationRefImpl.dataConnect}")
-      toStringResult.shouldContain("operationName=${mutationRefImpl.operationName}")
-      toStringResult.shouldContain("variables=${mutationRefImpl.variables}")
-      toStringResult.shouldContain("dataDeserializer=${mutationRefImpl.dataDeserializer}")
-      toStringResult.shouldContain("variablesSerializer=${mutationRefImpl.variablesSerializer}")
-      toStringResult.shouldContain("callerSdkType=${mutationRefImpl.callerSdkType}")
-      toStringResult.shouldContain("dataSerializersModule=${mutationRefImpl.dataSerializersModule}")
-      toStringResult.shouldContain("variablesSerializersModule=null")
     }
   }
 
   private companion object {
-    val stringArb = Arb.string(6, codepoints = Codepoint.alphanumeric())
-
-    fun Arb.Companion.testVariables(): Arb<TestVariables> = arbitrary {
-      val stringArb = Arb.string(6, Codepoint.alphanumeric())
-      TestVariables(stringArb.bind())
-    }
-
-    fun Arb.Companion.testData(): Arb<TestData> = arbitrary {
-      val stringArb = Arb.string(6, Codepoint.alphanumeric())
-      TestData(stringArb.bind())
-    }
-
-    fun Arb.Companion.mutationRefImpl(): Arb<MutationRefImpl<TestData, TestVariables>> =
-      mutationRefImpl<TestData, TestVariables>(Arb.testVariables()).map {
-        it.copy(
-          variablesSerializer = serializer<TestVariables>(),
-          dataDeserializer = serializer<TestData>()
-        )
+    fun DataConnectArb.testVariables(string: Arb<String> = string()): Arb<TestVariables> =
+      arbitrary {
+        TestVariables(string.bind())
       }
+
+    fun DataConnectArb.testData(string: Arb<String> = string()): Arb<TestData> = arbitrary {
+      TestData(string.bind())
+    }
+
+    fun DataConnectArb.mutationRefImpl(): Arb<MutationRefImpl<TestData?, TestVariables>> =
+      mutationRefImpl(
+        Arb.dataConnect.testVariables(),
+        dataDeserializer = Arb.constant(serializer()),
+        variablesSerializer = Arb.constant(serializer()),
+      )
+
+    fun DataConnectArb.mutationRefImpl(
+      dataConnect: FirebaseDataConnectInternal
+    ): Arb<MutationRefImpl<TestData?, TestVariables>> =
+      mutationRefImpl().map { it.copy(dataConnect = dataConnect) }
 
     fun TestScope.dataConnectWithMutationResult(
       result: Result<OperationResult>,
