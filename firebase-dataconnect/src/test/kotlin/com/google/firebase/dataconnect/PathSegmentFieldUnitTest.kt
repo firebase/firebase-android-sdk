@@ -83,10 +83,9 @@ class PathSegmentFieldUnitTest {
 
   @Test
   fun `equals() should return false for a different field`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.fieldPathSegment(), Arb.dataConnect.string()) {
-      segment1,
-      field2 ->
-      assume(segment1.field != field2)
+    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.dataConnect.string()) { field1, field2 ->
+      assume(field1 != field2)
+      val segment1 = PathSegment.Field(field1)
       val segment2 = PathSegment.Field(field2)
       segment1.equals(segment2) shouldBe false
     }
@@ -94,8 +93,9 @@ class PathSegmentFieldUnitTest {
 
   @Test
   fun `hashCode() should return the same value as the field's hashCode() method`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.fieldPathSegment()) { segment ->
-      segment.hashCode() shouldBe segment.field.hashCode()
+    checkAll(propTestConfig, Arb.dataConnect.string()) { field ->
+      val segment = PathSegment.Field(field)
+      segment.hashCode() shouldBe field.hashCode()
     }
   }
 
