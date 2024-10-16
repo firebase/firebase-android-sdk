@@ -21,6 +21,7 @@ package com.google.firebase.dataconnect
 import com.google.firebase.dataconnect.DataConnectError.PathSegment
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
+import com.google.firebase.dataconnect.testutil.property.arbitrary.fieldPathSegment
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listIndexPathSegment
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pathSegment
 import com.google.firebase.dataconnect.testutil.property.arbitrary.sourceLocation
@@ -69,7 +70,7 @@ class DataConnectErrorUnitTest {
 
   @Test
   fun `toString() should incorporate the fields from the path separated by dots`() = runTest {
-    val paths = Arb.list(Arb.dataConnect.pathSegment(), 0..5)
+    val paths = Arb.list(Arb.dataConnect.fieldPathSegment(), 0..5)
     checkAll(Arb.dataConnect.dataConnectError(path = paths)) { dataConnectError ->
       val expectedSubstring = dataConnectError.path.joinToString(".")
       dataConnectError.toString() shouldContainWithNonAbuttingText expectedSubstring
@@ -153,7 +154,7 @@ class DataConnectErrorUnitTest {
   @Test
   fun `equals() should return false when only message differs`() = runTest {
     checkAll(Arb.dataConnect.dataConnectError(), Arb.string()) { dataConnectError1, newMessage ->
-      assume { dataConnectError1.message != newMessage }
+      assume(dataConnectError1.message != newMessage)
       val dataConnectError2 =
         DataConnectError(
           message = newMessage,
@@ -188,7 +189,7 @@ class DataConnectErrorUnitTest {
   fun `equals() should return false when path differs`() = runTest {
     val paths = Arb.list(Arb.dataConnect.pathSegment(), 0..5)
     checkAll(Arb.dataConnect.dataConnectError(), paths) { dataConnectError1, otherPath ->
-      assume { dataConnectError1.path != otherPath }
+      assume(dataConnectError1.path != otherPath)
       val dataConnectError2 =
         DataConnectError(
           message = dataConnectError1.message,
@@ -203,7 +204,7 @@ class DataConnectErrorUnitTest {
   fun `equals() should return false when locations differ`() = runTest {
     val location = Arb.list(Arb.dataConnect.sourceLocation(), 0..5)
     checkAll(Arb.dataConnect.dataConnectError(), location) { dataConnectError1, otherLocations ->
-      assume { dataConnectError1.locations != otherLocations }
+      assume(dataConnectError1.locations != otherLocations)
       val dataConnectError2 =
         DataConnectError(
           message = dataConnectError1.message,
@@ -240,7 +241,7 @@ class DataConnectErrorUnitTest {
   @Test
   fun `hashCode() should return a different value if message is different`() = runTest {
     checkAll(Arb.dataConnect.dataConnectError(), Arb.string()) { dataConnectError1, newMessage ->
-      assume { dataConnectError1.message.hashCode() != newMessage.hashCode() }
+      assume(dataConnectError1.message.hashCode() != newMessage.hashCode())
       val dataConnectError2 =
         DataConnectError(
           message = newMessage,
@@ -255,7 +256,7 @@ class DataConnectErrorUnitTest {
   fun `hashCode() should return a different value if path is different`() = runTest {
     val paths = Arb.list(Arb.dataConnect.pathSegment(), 0..5)
     checkAll(Arb.dataConnect.dataConnectError(), paths) { dataConnectError1, newPath ->
-      assume { dataConnectError1.path.hashCode() != newPath.hashCode() }
+      assume(dataConnectError1.path.hashCode() != newPath.hashCode())
       val dataConnectError2 =
         DataConnectError(
           message = dataConnectError1.message,
@@ -270,7 +271,7 @@ class DataConnectErrorUnitTest {
   fun `hashCode() should return a different value if locations is different`() = runTest {
     val locations = Arb.list(Arb.dataConnect.sourceLocation(), 0..5)
     checkAll(Arb.dataConnect.dataConnectError(), locations) { dataConnectError1, newLocations ->
-      assume { dataConnectError1.locations.hashCode() != newLocations.hashCode() }
+      assume(dataConnectError1.locations.hashCode() != newLocations.hashCode())
       val dataConnectError2 =
         DataConnectError(
           message = dataConnectError1.message,

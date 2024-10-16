@@ -73,9 +73,9 @@ class ConnectorConfigUnitTest {
         assertSoftly {
           toStringResult shouldStartWith "ConnectorConfig("
           toStringResult shouldEndWith ")"
-          toStringResult shouldContainWithNonAbuttingText "serviceId=MyServiceId"
-          toStringResult shouldContainWithNonAbuttingText "location=MyLocation"
-          toStringResult shouldContainWithNonAbuttingText "connector=MyConnector"
+          toStringResult shouldContainWithNonAbuttingText "connector=${config.connector}"
+          toStringResult shouldContainWithNonAbuttingText "location=${config.location}"
+          toStringResult shouldContainWithNonAbuttingText "serviceId=${config.serviceId}"
         }
       }
     }
@@ -184,10 +184,10 @@ class ConnectorConfigUnitTest {
       checkAll(Arb.dataConnect.connectorConfig()) { config ->
         val configCopy = config.copy()
         assertSoftly {
-          config shouldNotBeSameInstanceAs configCopy
-          config.connector shouldBeSameInstanceAs configCopy.connector
-          config.location shouldBeSameInstanceAs configCopy.location
-          config.serviceId shouldBeSameInstanceAs configCopy.serviceId
+          configCopy shouldNotBeSameInstanceAs config
+          configCopy.connector shouldBeSameInstanceAs config.connector
+          configCopy.location shouldBeSameInstanceAs config.location
+          configCopy.serviceId shouldBeSameInstanceAs config.serviceId
         }
       }
     }
@@ -199,9 +199,9 @@ class ConnectorConfigUnitTest {
       newConnector ->
       val configCopy = config.copy(connector = newConnector)
       assertSoftly {
-        config.connector shouldBeSameInstanceAs newConnector
-        config.location shouldBeSameInstanceAs configCopy.location
-        config.serviceId shouldBeSameInstanceAs configCopy.serviceId
+        configCopy.connector shouldBeSameInstanceAs newConnector
+        configCopy.location shouldBeSameInstanceAs config.location
+        configCopy.serviceId shouldBeSameInstanceAs config.serviceId
       }
     }
   }
@@ -213,9 +213,9 @@ class ConnectorConfigUnitTest {
       newLocation ->
       val configCopy = config.copy(location = newLocation)
       assertSoftly {
-        config.connector shouldBeSameInstanceAs configCopy.connector
-        config.location shouldBeSameInstanceAs newLocation
-        config.serviceId shouldBeSameInstanceAs configCopy.serviceId
+        configCopy.connector shouldBeSameInstanceAs config.connector
+        configCopy.location shouldBeSameInstanceAs newLocation
+        configCopy.serviceId shouldBeSameInstanceAs config.serviceId
       }
     }
   }
@@ -227,9 +227,9 @@ class ConnectorConfigUnitTest {
       newServiceId ->
       val configCopy = config.copy(serviceId = newServiceId)
       assertSoftly {
-        config.connector shouldBeSameInstanceAs configCopy.connector
-        config.location shouldBeSameInstanceAs configCopy.location
-        config.serviceId shouldBeSameInstanceAs newServiceId
+        configCopy.connector shouldBeSameInstanceAs config.connector
+        configCopy.location shouldBeSameInstanceAs config.location
+        configCopy.serviceId shouldBeSameInstanceAs newServiceId
       }
     }
   }
@@ -245,9 +245,9 @@ class ConnectorConfigUnitTest {
       val configCopy =
         config.copy(connector = newConnector, location = newLocation, serviceId = newServiceId)
       assertSoftly {
-        config.connector shouldBeSameInstanceAs newConnector
-        config.location shouldBeSameInstanceAs newLocation
-        config.serviceId shouldBeSameInstanceAs newServiceId
+        configCopy.connector shouldBeSameInstanceAs newConnector
+        configCopy.location shouldBeSameInstanceAs newLocation
+        configCopy.serviceId shouldBeSameInstanceAs newServiceId
       }
     }
   }

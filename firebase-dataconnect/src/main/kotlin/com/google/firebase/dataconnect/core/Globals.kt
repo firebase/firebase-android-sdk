@@ -108,7 +108,7 @@ internal object Globals {
       variablesSerializersModule = variablesSerializersModule,
       dataSerializersModule = dataSerializersModule,
     )
-  
+
   fun <Data, Variables> QueryRefImpl<Data, Variables>.copy(
     dataConnect: FirebaseDataConnectInternal = this.dataConnect,
     operationName: String = this.operationName,
@@ -129,7 +129,6 @@ internal object Globals {
       variablesSerializersModule = variablesSerializersModule,
       dataSerializersModule = dataSerializersModule,
     )
-
 
   fun <Data, NewVariables> QueryRefImpl<Data, *>.withVariablesSerializer(
     variables: NewVariables,

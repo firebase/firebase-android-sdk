@@ -22,11 +22,11 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
 import com.google.firebase.dataconnect.testutil.newMockLogger
-import com.google.firebase.dataconnect.testutil.property.arbitrary.operationResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
 import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
@@ -591,7 +591,11 @@ class DataConnectGrpcClientOperationResultUnitTest {
 
   @Test
   fun `deserialize() should throw if one or more errors and data is null`() = runTest {
-    val arb = Arb.dataConnect.operationResult().filter { it.errors.isNotEmpty() }.map { it.copy(data = null) }
+    val arb =
+      Arb.dataConnect
+        .operationResult()
+        .filter { it.errors.isNotEmpty() }
+        .map { it.copy(data = null) }
     checkAll(iterations = 5, arb) { operationResult ->
       val exception =
         shouldThrow<DataConnectException> {
@@ -603,7 +607,8 @@ class DataConnectGrpcClientOperationResultUnitTest {
 
   @Test
   fun `deserialize() should throw if one or more errors and data is _not_ null`() = runTest {
-    val arb = Arb.dataConnect.operationResult().filter { it.data !== null && it.errors.isNotEmpty() }
+    val arb =
+      Arb.dataConnect.operationResult().filter { it.data !== null && it.errors.isNotEmpty() }
     checkAll(iterations = 5, arb) { operationResult ->
       val exception =
         shouldThrow<DataConnectException> {

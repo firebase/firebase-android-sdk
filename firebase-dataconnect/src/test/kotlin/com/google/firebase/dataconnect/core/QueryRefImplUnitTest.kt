@@ -317,8 +317,8 @@ class QueryRefImplUnitTest {
     verifyHashCodeEventuallyDiffers {
       it.copy(
         variablesSerializersModule =
-        if (it.variablesSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
-        else null
+          if (it.variablesSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
+          else null
       )
     }
   }
@@ -331,17 +331,15 @@ class QueryRefImplUnitTest {
     verifyHashCodeEventuallyDiffers {
       it.copy(
         dataSerializersModule =
-        if (it.dataSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
-        else null
+          if (it.dataSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
+          else null
       )
     }
   }
 
   private suspend fun verifyHashCodeEventuallyDiffers(
     otherFactory:
-      (other: QueryRefImpl<TestData?, TestVariables>) -> QueryRefImpl<
-        TestData?, TestVariables
-        >
+      (other: QueryRefImpl<TestData?, TestVariables>) -> QueryRefImpl<TestData?, TestVariables>
   ) {
     val obj1: QueryRefImpl<TestData?, TestVariables> = Arb.dataConnect.queryRefImpl().next()
     retry(maxRetry = 50, timeout = Duration.INFINITE) {
@@ -383,8 +381,8 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only dataConnect differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<FirebaseDataConnectInternal>()) {
-        queryRefImpl1,
-        dataConnect ->
+      queryRefImpl1,
+      dataConnect ->
       dataConnect shouldNotBe queryRefImpl1.dataConnect // precondition check
       val queryRefImpl2 = queryRefImpl1.copy(dataConnect = dataConnect)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -394,8 +392,8 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only operationName differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.string()) {
-        queryRefImpl1,
-        operationName ->
+      queryRefImpl1,
+      operationName ->
       assume(operationName != queryRefImpl1.operationName)
       val queryRefImpl2 = queryRefImpl1.copy(operationName = operationName)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -405,8 +403,8 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only variables differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testVariables()) {
-        queryRefImpl1,
-        variables ->
+      queryRefImpl1,
+      variables ->
       assume(variables != queryRefImpl1.variables)
       val queryRefImpl2 = queryRefImpl1.copy(variables = variables)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -416,8 +414,8 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only dataDeserializer differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<DeserializationStrategy<TestData>>()) {
-        queryRefImpl1,
-        dataDeserializer ->
+      queryRefImpl1,
+      dataDeserializer ->
       dataDeserializer shouldNotBe queryRefImpl1.dataDeserializer // precondition check
       val queryRefImpl2 = queryRefImpl1.copy(dataDeserializer = dataDeserializer)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -427,8 +425,8 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only variablesSerializer differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<SerializationStrategy<TestVariables>>()) {
-        queryRefImpl1,
-        variablesSerializer ->
+      queryRefImpl1,
+      variablesSerializer ->
       variablesSerializer shouldNotBe queryRefImpl1.variablesSerializer // precondition check
       val queryRefImpl2 = queryRefImpl1.copy(variablesSerializer = variablesSerializer)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -438,8 +436,8 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only callerSdkType differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.enum<CallerSdkType>()) {
-        queryRefImpl1,
-        callerSdkType ->
+      queryRefImpl1,
+      callerSdkType ->
       assume(callerSdkType != queryRefImpl1.callerSdkType)
       val queryRefImpl2 = queryRefImpl1.copy(callerSdkType = callerSdkType)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -449,10 +447,10 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<SerializersModule>()) {
-        queryRefImpl1,
-        variablesSerializersModule ->
+      queryRefImpl1,
+      variablesSerializersModule ->
       variablesSerializersModule shouldNotBe
-          queryRefImpl1.variablesSerializersModule // precondition check
+        queryRefImpl1.variablesSerializersModule // precondition check
       val queryRefImpl2 =
         queryRefImpl1.copy(variablesSerializersModule = variablesSerializersModule)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -462,8 +460,8 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals() should return false when only dataSerializersModule differs`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<SerializersModule>()) {
-        queryRefImpl1,
-        dataSerializersModule ->
+      queryRefImpl1,
+      dataSerializersModule ->
       dataSerializersModule shouldNotBe queryRefImpl1.dataSerializersModule // precondition check
       val queryRefImpl2 = queryRefImpl1.copy(dataSerializersModule = dataSerializersModule)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -477,18 +475,18 @@ class QueryRefImplUnitTest {
       assertSoftly {
         toStringResult shouldContainWithNonAbuttingText "dataConnect=${queryRefImpl.dataConnect}"
         toStringResult shouldContainWithNonAbuttingText
-            "operationName=${queryRefImpl.operationName}"
+          "operationName=${queryRefImpl.operationName}"
         toStringResult shouldContainWithNonAbuttingText "variables=${queryRefImpl.variables}"
         toStringResult shouldContainWithNonAbuttingText
-            "dataDeserializer=${queryRefImpl.dataDeserializer}"
+          "dataDeserializer=${queryRefImpl.dataDeserializer}"
         toStringResult shouldContainWithNonAbuttingText
-            "variablesSerializer=${queryRefImpl.variablesSerializer}"
+          "variablesSerializer=${queryRefImpl.variablesSerializer}"
         toStringResult shouldContainWithNonAbuttingText
-            "callerSdkType=${queryRefImpl.callerSdkType}"
+          "callerSdkType=${queryRefImpl.callerSdkType}"
         toStringResult shouldContainWithNonAbuttingText
-            "dataSerializersModule=${queryRefImpl.dataSerializersModule}"
+          "dataSerializersModule=${queryRefImpl.dataSerializersModule}"
         toStringResult shouldContainWithNonAbuttingText
-            "variablesSerializersModule=${queryRefImpl.variablesSerializersModule}"
+          "variablesSerializersModule=${queryRefImpl.variablesSerializersModule}"
       }
     }
   }
@@ -525,18 +523,18 @@ class QueryRefImplUnitTest {
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
         every { blockingDispatcher } returns UnconfinedTestDispatcher(testScheduler)
         every { lazyGrpcClient } returns
-            SuspendingLazy {
-              mockk<DataConnectGrpcClient> {
-                coEvery {
-                  executeQuery(
-                    capture(requestIdSlot),
-                    capture(operationNameSlot),
-                    capture(variablesSlot),
-                    capture(callerSdkTypeSlot),
-                  )
-                } returns result.getOrThrow()
-              }
+          SuspendingLazy {
+            mockk<DataConnectGrpcClient> {
+              coEvery {
+                executeQuery(
+                  capture(requestIdSlot),
+                  capture(operationNameSlot),
+                  capture(variablesSlot),
+                  capture(callerSdkTypeSlot),
+                )
+              } returns result.getOrThrow()
             }
+          }
       }
   }
 }

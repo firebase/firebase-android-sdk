@@ -37,9 +37,9 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
 import io.mockk.mockk
+import kotlin.time.Duration
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import kotlin.time.Duration
 
 @Suppress("ReplaceCallWithBinaryOperator")
 class OperationRefImplUnitTest {
@@ -127,7 +127,9 @@ class OperationRefImplUnitTest {
 
   @Test
   fun `hashCode() should incorporate dataConnect`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(dataConnect = mockk(name = Arb.dataConnect.string().next())) }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(dataConnect = mockk(name = Arb.dataConnect.string().next()))
+    }
   }
 
   @Test
@@ -137,12 +139,16 @@ class OperationRefImplUnitTest {
 
   @Test
   fun `hashCode() should incorporate variables`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(variables = TestVariables(Arb.dataConnect.string().next())) }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(variables = TestVariables(Arb.dataConnect.string().next()))
+    }
   }
 
   @Test
   fun `hashCode() should incorporate dataDeserializer`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(dataDeserializer = mockk(name = Arb.dataConnect.string().next())) }
+    verifyHashCodeEventuallyDiffers {
+      it.copy(dataDeserializer = mockk(name = Arb.dataConnect.string().next()))
+    }
   }
 
   @Test
@@ -167,7 +173,8 @@ class OperationRefImplUnitTest {
     verifyHashCodeEventuallyDiffers {
       it.copy(
         variablesSerializersModule =
-          if (it.variablesSerializersModule === null) mockk(name = Arb.dataConnect.string().next()) else null
+          if (it.variablesSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
+          else null
       )
     }
   }
@@ -180,7 +187,8 @@ class OperationRefImplUnitTest {
     verifyHashCodeEventuallyDiffers {
       it.copy(
         dataSerializersModule =
-          if (it.dataSerializersModule === null) mockk(name = Arb.dataConnect.string().next()) else null
+          if (it.dataSerializersModule === null) mockk(name = Arb.dataConnect.string().next())
+          else null
       )
     }
   }
@@ -191,7 +199,8 @@ class OperationRefImplUnitTest {
           TestData, TestVariables
         >
   ) {
-    val obj1: StubOperationRefImpl<TestData, TestVariables> = Arb.dataConnect.operationRefImpl().next()
+    val obj1: StubOperationRefImpl<TestData, TestVariables> =
+      Arb.dataConnect.operationRefImpl().next()
     retry(maxRetry = 50, timeout = Duration.INFINITE) {
       val obj2 = otherFactory(obj1)
       obj1.hashCode() shouldNotBe obj2.hashCode()
@@ -227,7 +236,8 @@ class OperationRefImplUnitTest {
   @Test
   fun `equals() should return false when only dataConnect differs`() = runTest {
     val operationRefImpl1 = Arb.dataConnect.operationRefImpl().next()
-    val operationRefImpl2 = operationRefImpl1.copy(dataConnect = mockk(Arb.dataConnect.string().next()))
+    val operationRefImpl2 =
+      operationRefImpl1.copy(dataConnect = mockk(Arb.dataConnect.string().next()))
     operationRefImpl1.equals(operationRefImpl2) shouldBe false
   }
 
@@ -250,21 +260,24 @@ class OperationRefImplUnitTest {
   @Test
   fun `equals() should return false when only dataDeserializer differs`() = runTest {
     val operationRefImpl1 = Arb.dataConnect.operationRefImpl().next()
-    val operationRefImpl2 = operationRefImpl1.copy(dataDeserializer = mockk(Arb.dataConnect.string().next()))
+    val operationRefImpl2 =
+      operationRefImpl1.copy(dataDeserializer = mockk(Arb.dataConnect.string().next()))
     operationRefImpl1.equals(operationRefImpl2) shouldBe false
   }
 
   @Test
   fun `equals() should return false when only variablesSerializer differs`() = runTest {
     val operationRefImpl1 = Arb.dataConnect.operationRefImpl().next()
-    val operationRefImpl2 = operationRefImpl1.copy(variablesSerializer = mockk(Arb.dataConnect.string().next()))
+    val operationRefImpl2 =
+      operationRefImpl1.copy(variablesSerializer = mockk(Arb.dataConnect.string().next()))
     operationRefImpl1.equals(operationRefImpl2) shouldBe false
   }
 
   @Test
   fun `equals() should return false when only callerSdkType differs`() = runTest {
     val operationRefImpl1 = Arb.dataConnect.operationRefImpl().next()
-    val callerSdkType2 = Arb.enum<CallerSdkType>().filterNotEqual(operationRefImpl1.callerSdkType).next()
+    val callerSdkType2 =
+      Arb.enum<CallerSdkType>().filterNotEqual(operationRefImpl1.callerSdkType).next()
     val operationRefImpl2 = operationRefImpl1.copy(callerSdkType = callerSdkType2)
     operationRefImpl1.equals(operationRefImpl2) shouldBe false
   }
@@ -283,7 +296,8 @@ class OperationRefImplUnitTest {
   @Test
   fun `equals() should return false when only dataSerializersModule differs`() = runTest {
     val operationRefImpl1 = Arb.dataConnect.operationRefImpl().next()
-    val operationRefImpl2 = operationRefImpl1.copy(dataSerializersModule = mockk(Arb.dataConnect.string().next()))
+    val operationRefImpl2 =
+      operationRefImpl1.copy(dataSerializersModule = mockk(Arb.dataConnect.string().next()))
     val operationRefImplNull = operationRefImpl1.copy(dataSerializersModule = null)
     operationRefImpl1.equals(operationRefImpl2) shouldBe false
     operationRefImplNull.equals(operationRefImpl1) shouldBe false
@@ -293,7 +307,8 @@ class OperationRefImplUnitTest {
   @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
     val operationRefImpl = Arb.dataConnect.operationRefImpl().next()
-    val callerSdkType2 = Arb.enum<CallerSdkType>().filterNotEqual(operationRefImpl.callerSdkType).next()
+    val callerSdkType2 =
+      Arb.enum<CallerSdkType>().filterNotEqual(operationRefImpl.callerSdkType).next()
     val operationRefImpls =
       listOf(
         operationRefImpl,
@@ -327,7 +342,8 @@ class OperationRefImplUnitTest {
 
   @Test
   fun `toString() should include null when dataSerializersModule is null`() = runTest {
-    val operationRefImpl = Arb.dataConnect.operationRefImpl().next().copy(dataSerializersModule = null)
+    val operationRefImpl =
+      Arb.dataConnect.operationRefImpl().next().copy(dataSerializersModule = null)
     val toStringResult = operationRefImpl.toString()
 
     assertSoftly {
@@ -346,7 +362,8 @@ class OperationRefImplUnitTest {
 
   @Test
   fun `toString() should include null when variablesSerializersModule is null`() = runTest {
-    val operationRefImpl = Arb.dataConnect.operationRefImpl().next().copy(variablesSerializersModule = null)
+    val operationRefImpl =
+      Arb.dataConnect.operationRefImpl().next().copy(variablesSerializersModule = null)
     val toStringResult = operationRefImpl.toString()
 
     assertSoftly {
@@ -364,9 +381,10 @@ class OperationRefImplUnitTest {
   }
 
   private companion object {
-    fun DataConnectArb.testVariables(string: Arb<String> = string()): Arb<TestVariables> = arbitrary {
-      TestVariables(string.bind())
-    }
+    fun DataConnectArb.testVariables(string: Arb<String> = string()): Arb<TestVariables> =
+      arbitrary {
+        TestVariables(string.bind())
+      }
 
     fun DataConnectArb.operationRefImpl(): Arb<StubOperationRefImpl<TestData, TestVariables>> =
       operationRefImpl(testVariables())
