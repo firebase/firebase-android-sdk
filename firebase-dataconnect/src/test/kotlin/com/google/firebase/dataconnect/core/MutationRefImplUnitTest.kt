@@ -420,7 +420,8 @@ class MutationRefImplUnitTest {
       mutationRefImpl1,
       callerSdkType ->
       val mutationRefImpl2 = mutationRefImpl1.copy(callerSdkType = callerSdkType)
-      mutationRefImpl1.equals(mutationRefImpl2) shouldBe (callerSdkType == mutationRefImpl1.callerSdkType)
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe
+        (callerSdkType == mutationRefImpl1.callerSdkType)
     }
   }
 

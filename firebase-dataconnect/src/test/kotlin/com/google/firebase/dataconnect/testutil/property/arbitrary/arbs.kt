@@ -29,7 +29,6 @@ import com.google.firebase.dataconnect.core.FirebaseDataConnectImpl
 import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
-import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.protobuf.Struct
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
@@ -110,9 +109,7 @@ internal fun DataConnectArb.dataConnectError(
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().orNull(nullProbability = 0.2),
   errors: Arb<List<DataConnectError>> = Arb.list(dataConnectError(), 0..3),
-) = arbitrary {
-  DataConnectGrpcClient.OperationResult(data.bind(), errors.bind())
-}
+) = arbitrary { DataConnectGrpcClient.OperationResult(data.bind(), errors.bind()) }
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,
@@ -172,10 +169,10 @@ internal fun <Data, Variables> DataConnectArb.operationRefImpl(
     dataConnect = dataConnect.bind(),
     operationName = operationName.bind(),
     variables = variables.bind(),
-    dataDeserializer=dataDeserializer.bind(),
-    variablesSerializer=variablesSerializer.bind(),
-    callerSdkType=callerSdkType.bind(),
-    variablesSerializersModule=variablesSerializersModule.bind(),
-    dataSerializersModule=dataSerializersModule.bind(),
+    dataDeserializer = dataDeserializer.bind(),
+    variablesSerializer = variablesSerializer.bind(),
+    callerSdkType = callerSdkType.bind(),
+    variablesSerializersModule = variablesSerializersModule.bind(),
+    dataSerializersModule = dataSerializersModule.bind(),
   )
 }

@@ -96,7 +96,6 @@ class QueryRefImplUnitTest {
     }
   }
 
-  
   @Test
   fun `execute() calls executeQuery with the correct arguments`() = runTest {
     val data = Arb.dataConnect.testData().next()
