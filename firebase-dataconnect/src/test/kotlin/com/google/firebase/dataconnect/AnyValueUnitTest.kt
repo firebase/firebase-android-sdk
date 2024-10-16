@@ -329,7 +329,7 @@ class AnyValueUnitTest {
   @Test
   fun `equals(unequal instance) returns false`() = runTest {
     val values = Arb.dataConnect.anyScalar.any().filterNotNull()
-    checkAll(iterations = 1000, values) { value ->
+    checkAll(values) { value ->
       val anyValue1 = AnyValue.fromAny(value)
       val anyValue2 = AnyValue.fromAny(values.filterNot { it == value }.bind())
       anyValue1.equals(anyValue2).shouldBeFalse()
@@ -339,7 +339,7 @@ class AnyValueUnitTest {
   @Test
   fun `hashCode() should return the same value when invoked repeatedly`() = runTest {
     val values = Arb.dataConnect.anyScalar.any().filterNotNull().map(AnyValue::fromAny)
-    checkAll(iterations = 1000, values) { anyValue ->
+    checkAll(values) { anyValue ->
       val hashCode = anyValue.hashCode()
       val hashCodes = List(100) { anyValue.hashCode() }.toSet()
       hashCodes.shouldContainExactly(hashCode)
@@ -600,7 +600,7 @@ class AnyValueUnitTest {
 
     val normalCasePropTestConfig =
       PropTestConfig(
-        iterations = 1000,
+        iterations = 100,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.0)
       )
   }

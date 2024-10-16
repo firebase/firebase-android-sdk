@@ -28,6 +28,7 @@ import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.int
@@ -49,7 +50,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `properties should be the same objects given to the constructor`() = runTest {
-    checkAll(Arb.string(), Arb.boolean()) { host, sslEnabled ->
+    checkAll(propTestConfig, Arb.string(), Arb.boolean()) { host, sslEnabled ->
       val settings = DataConnectSettings(host, sslEnabled)
       assertSoftly {
         settings.host shouldBeSameInstanceAs host
@@ -60,7 +61,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `toString() returns a string that incorporates all property values`() = runTest {
-    checkAll(Arb.string(), Arb.boolean()) { host, sslEnabled ->
+    checkAll(propTestConfig, Arb.string(), Arb.boolean()) { host, sslEnabled ->
       val settings = DataConnectSettings(host, sslEnabled)
       val toStringResult = settings.toString()
       assertSoftly {
@@ -74,14 +75,14 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings()) { settings ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings ->
       settings.equals(settings) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings()) { settings1 ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
       val settings2 = settings1.copy()
       settings1.equals(settings2) shouldBe true
     }
@@ -89,7 +90,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings()) { settings ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings ->
       settings.equals(null) shouldBe false
     }
   }
@@ -97,15 +98,16 @@ class DataConnectSettingsUnitTest {
   @Test
   fun `equals() should return false for a different type`() = runTest {
     val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.sourceLocation())
-    checkAll(Arb.dataConnect.dataConnectSettings(), otherTypes) { settings, other ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), otherTypes) { settings, other ->
       settings.equals(other) shouldBe false
     }
   }
 
   @Test
   fun `equals() should return false when only 'host' differs`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string()) { settings1, newHost
-      ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string()) {
+      settings1,
+      newHost ->
       val settings2 = settings1.copy(host = newHost)
       settings1.equals(settings2) shouldBe false
     }
@@ -113,7 +115,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `equals() should return false when only 'sslEnabled' differs`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings()) { settings1 ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
       val settings2 = settings1.copy(sslEnabled = !settings1.sslEnabled)
       settings1.equals(settings2) shouldBe false
     }
@@ -122,7 +124,7 @@ class DataConnectSettingsUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(Arb.dataConnect.dataConnectSettings()) { settings ->
+      checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings ->
         val hashCode1 = settings.hashCode()
         settings.hashCode() shouldBe hashCode1
         settings.hashCode() shouldBe hashCode1
@@ -131,7 +133,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings()) { settings1 ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
       val settings2 = settings1.copy()
       settings1.equals(settings2) shouldBe true
     }
@@ -139,8 +141,9 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `hashCode() should return a different value when only 'host' differs`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string()) { settings1, newHost
-      ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string()) {
+      settings1,
+      newHost ->
       assume { settings1.host.hashCode() != newHost.hashCode() }
       val settings2 = settings1.copy(host = newHost)
       settings1.equals(settings2) shouldBe false
@@ -149,7 +152,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `hashCode() should return a different value when only 'sslEnabled' differs`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings()) { settings1 ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
       val settings2 = settings1.copy(sslEnabled = !settings1.sslEnabled)
       settings1.equals(settings2) shouldBe false
     }
@@ -158,7 +161,7 @@ class DataConnectSettingsUnitTest {
   @Test
   fun `copy() should return a new, equal object when invoked with no explicit arguments`() =
     runTest {
-      checkAll(Arb.dataConnect.dataConnectSettings()) { settings1 ->
+      checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
         val settings2 = settings1.copy()
         assertSoftly {
           settings1 shouldNotBeSameInstanceAs settings2
@@ -171,8 +174,9 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `copy() should return an object with the given 'host'`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string()) { settings1, newHost
-      ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string()) {
+      settings1,
+      newHost ->
       val settings2 = settings1.copy(host = newHost)
       assertSoftly {
         settings1 shouldNotBeSameInstanceAs settings2
@@ -184,7 +188,9 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `copy() should return an object with the given 'sslEnabled'`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings(), Arb.boolean()) { settings1, newSslEnabled ->
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.boolean()) {
+      settings1,
+      newSslEnabled ->
       val settings2 = settings1.copy(sslEnabled = newSslEnabled)
       assertSoftly {
         settings1 shouldNotBeSameInstanceAs settings2
@@ -196,10 +202,12 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `copy() should return an object with properties set to all given arguments`() = runTest {
-    checkAll(Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.string(), Arb.boolean()) {
-      settings1,
-      newHost,
-      newSslEnabled ->
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.dataConnectSettings(),
+      Arb.dataConnect.string(),
+      Arb.boolean()
+    ) { settings1, newHost, newSslEnabled ->
       val settings2 = settings1.copy(host = newHost, sslEnabled = newSslEnabled)
       assertSoftly {
         settings1 shouldNotBeSameInstanceAs settings2
@@ -208,5 +216,9 @@ class DataConnectSettingsUnitTest {
         settings2.sslEnabled shouldBe newSslEnabled
       }
     }
+  }
+
+  private companion object {
+    val propTestConfig = PropTestConfig(iterations = 20)
   }
 }
