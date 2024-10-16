@@ -139,8 +139,6 @@ dependencies {
   testImplementation(libs.kotlinx.serialization.json)
   testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
-  testImplementation(libs.truth)
-  testImplementation(libs.truth.liteproto.extension)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))

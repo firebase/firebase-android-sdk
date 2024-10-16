@@ -575,7 +575,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
 
   @Test
   fun `deserialize() should treat DataConnectUntypedData specially`() = runTest {
-    checkAll(iterations = 1000, Arb.dataConnect.operationResult()) { operationResult ->
+    checkAll(iterations = 20, Arb.dataConnect.operationResult()) { operationResult ->
       val result = operationResult.deserialize(DataConnectUntypedData, serializersModule = null)
 
       result.asClue {

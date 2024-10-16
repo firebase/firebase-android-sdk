@@ -16,8 +16,8 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
+import io.kotest.matchers.shouldBe
 import org.junit.Test
 
 class UtilUnitTest {
@@ -48,77 +48,77 @@ class UtilUnitTest {
         -33
       )
     // This string is `ALPHANUMERIC_ALPHABET` in `Util.kt`
-    assertThat(byteArray.toAlphaNumericString()).isEqualTo("23456789abcdefghjkmnopqrstuvwxyz")
+    byteArray.toAlphaNumericString() shouldBe "23456789abcdefghjkmnopqrstuvwxyz"
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 1 bit`() {
-    byteArrayOf(75, 50).let { assertThat(it.toAlphaNumericString()).isEqualTo("bet2") }
-    byteArrayOf(75, 51).let { assertThat(it.toAlphaNumericString()).isEqualTo("bet3") }
+    byteArrayOf(75, 50).let { it.toAlphaNumericString() shouldBe "bet2" }
+    byteArrayOf(75, 51).let { it.toAlphaNumericString() shouldBe "bet3" }
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 2 bits`() {
     byteArrayOf(117, -40, -116, -66, -105, -61, 18, -117, -52).let {
-      assertThat(it.toAlphaNumericString()).isEqualTo("greathorsebarn2")
+      it.toAlphaNumericString() shouldBe "greathorsebarn2"
     }
     byteArrayOf(117, -40, -116, -66, -105, -61, 18, -117, -49).let {
-      assertThat(it.toAlphaNumericString()).isEqualTo("greathorsebarn5")
+      it.toAlphaNumericString() shouldBe "greathorsebarn5"
     }
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 3 bits`() {
-    byteArrayOf(64).let { assertThat(it.toAlphaNumericString()).isEqualTo("a2") }
-    byteArrayOf(71).let { assertThat(it.toAlphaNumericString()).isEqualTo("a9") }
+    byteArrayOf(64).let { it.toAlphaNumericString() shouldBe "a2" }
+    byteArrayOf(71).let { it.toAlphaNumericString() shouldBe "a9" }
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() where the final 5-bit chunk is 4 bits`() {
-    byteArrayOf(-58, 117, 48).let { assertThat(it.toAlphaNumericString()).isEqualTo("stun2") }
-    byteArrayOf(-58, 117, 63).let { assertThat(it.toAlphaNumericString()).isEqualTo("stunh") }
+    byteArrayOf(-58, 117, 48).let { it.toAlphaNumericString() shouldBe "stun2" }
+    byteArrayOf(-58, 117, 63).let { it.toAlphaNumericString() shouldBe "stunh" }
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() on empty byte array`() {
     val emptyByteArray = byteArrayOf()
-    assertThat(emptyByteArray.toAlphaNumericString()).isEqualTo("")
+    emptyByteArray.toAlphaNumericString() shouldBe ""
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() on byte array with 1 element of value 0`() {
     val byteArray = byteArrayOf(0)
-    assertThat(byteArray.toAlphaNumericString()).isEqualTo("22")
+    byteArray.toAlphaNumericString() shouldBe "22"
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() on byte array with 1 element of value 1`() {
     val byteArray = byteArrayOf(1)
-    assertThat(byteArray.toAlphaNumericString()).isEqualTo("23")
+    byteArray.toAlphaNumericString() shouldBe "23"
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() on byte array with 1 element of value 0xff`() {
     val byteArray = byteArrayOf(0xff.toByte())
-    assertThat(byteArray.toAlphaNumericString()).isEqualTo("z9")
+    byteArray.toAlphaNumericString() shouldBe "z9"
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() on byte array with 1 element of value -1`() {
     val byteArray = byteArrayOf(-1)
-    assertThat(byteArray.toAlphaNumericString()).isEqualTo("z9")
+    byteArray.toAlphaNumericString() shouldBe "z9"
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() on byte array with 1 element of value MIN_VALUE`() {
     val byteArray = byteArrayOf(Byte.MIN_VALUE)
-    assertThat(byteArray.toAlphaNumericString()).isEqualTo("j2")
+    byteArray.toAlphaNumericString() shouldBe "j2"
   }
 
   @Test
   fun `ByteArray toAlphaNumericString() on byte array with 1 element of value MAX_VALUE`() {
     val byteArray = byteArrayOf(Byte.MAX_VALUE)
-    assertThat(byteArray.toAlphaNumericString()).isEqualTo("h9")
+    byteArray.toAlphaNumericString() shouldBe "h9"
   }
 
   @Test
@@ -130,19 +130,17 @@ class UtilUnitTest {
           }
         }
         .toByteArray()
-    assertThat(byteArray.toAlphaNumericString())
-      .isEqualTo(
-        "222j62s62o52g42b3a7js5ag3wa346jn4jcke7ss56f3q92x5shm2ab46em4cbk972omocte7or4ye3k8atnafbq" +
-          "8ww5mgkv9jynwhu2a7368k47at5ojmccbf86unmhc3ap6ouocpd7gq4tdbfpsrcydxj84sn5ekmqetvaf7p8qv" +
-          "5fftrr2wdmgfu9cxnrh3wroyvwhpz9z263jc3sb3e8jy6an4odkm8sx5wjm8bb976pmudtk8eunggbv9ozo4ju" +
-          "7ax6oqnchc7bpcputdfgpysd5epnqmuvffxsr8xdrh7xruzw3jg4sh4edkq9t56wpmyetr9ezo8kudbxbpgquz" +
-          "efnqqvvngxxrz2w9kg9t97wvnykuhcxhqgvvrhy5sz7wzoyrvhhy9tzdxztzhyzw2242j52j4je3sa3672q52f" +
-          "3s9k26am4ec3c7jr52eko8sw5oh3ya336akmabb86wo4mckd7jqmwdtj86t58f3p8svnjgbu9ey5uhkza32o6j" +
-          "u6ap56gm4bbb7osncgbxa74omnckcpepusd7f7qr4xdthq2sd4efm8ctn9f3oqouvefpr8yw5kgbtraxdqgxw9" +
-          "mynvhkyrwzw2j83a9367ju5sk4eckg8av5ohm4at76womqdbh86tncftt9eynyjc5ap5ommufbxap8pcrd7fpu" +
-          "rv3efmqguddfprr4wvpgxwrqzdzj83sd3wbkg8sz6enmqdtn8wxnyju9bf9p8puvdxkqguvhgfvrqzw5jy7sz6" +
-          "wrnghu9bxdpytvhgxzsh5wrnynuzfxzsz9xhrz9xzvz3"
-      )
+    byteArray.toAlphaNumericString() shouldBe
+      "222j62s62o52g42b3a7js5ag3wa346jn4jcke7ss56f3q92x5shm2ab46em4cbk972omocte7or4ye3k8atnafbq" +
+        "8ww5mgkv9jynwhu2a7368k47at5ojmccbf86unmhc3ap6ouocpd7gq4tdbfpsrcydxj84sn5ekmqetvaf7p8qv" +
+        "5fftrr2wdmgfu9cxnrh3wroyvwhpz9z263jc3sb3e8jy6an4odkm8sx5wjm8bb976pmudtk8eunggbv9ozo4ju" +
+        "7ax6oqnchc7bpcputdfgpysd5epnqmuvffxsr8xdrh7xruzw3jg4sh4edkq9t56wpmyetr9ezo8kudbxbpgquz" +
+        "efnqqvvngxxrz2w9kg9t97wvnykuhcxhqgvvrhy5sz7wzoyrvhhy9tzdxztzhyzw2242j52j4je3sa3672q52f" +
+        "3s9k26am4ec3c7jr52eko8sw5oh3ya336akmabb86wo4mckd7jqmwdtj86t58f3p8svnjgbu9ey5uhkza32o6j" +
+        "u6ap56gm4bbb7osncgbxa74omnckcpepusd7f7qr4xdthq2sd4efm8ctn9f3oqouvefpr8yw5kgbtraxdqgxw9" +
+        "mynvhkyrwzw2j83a9367ju5sk4eckg8av5ohm4at76womqdbh86tncftt9eynyjc5ap5ommufbxap8pcrd7fpu" +
+        "rv3efmqguddfprr4wvpgxwrqzdzj83sd3wbkg8sz6enmqdtn8wxnyju9bf9p8puvdxkqguvhgfvrqzw5jy7sz6" +
+        "wrnghu9bxdpytvhgxzsh5wrnynuzfxzsz9xhrz9xzvz3"
   }
 }
 

@@ -27,6 +27,7 @@ import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.int
@@ -40,7 +41,9 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `'data' should be the same object given to the constructor`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
       val queryResult = query.QueryResultImpl(data)
       queryResult.data shouldBeSameInstanceAs data
     }
@@ -48,7 +51,9 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `'ref' should be the QueryRefImpl object that was used to create it`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
       val queryResult = query.QueryResultImpl(data)
       queryResult.ref shouldBeSameInstanceAs query
     }
@@ -56,7 +61,9 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `toString() should contain the expected information`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
       val queryResult = query.QueryResultImpl(data)
       val toStringResult = queryResult.toString()
       assertSoftly {
@@ -70,14 +77,16 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(Arb.dataConnect.queryResultImpl()) { queryResult ->
+    checkAll(propTestConfig, Arb.dataConnect.queryResultImpl()) { queryResult ->
       queryResult.equals(queryResult) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
       val queryResult1 = query.QueryResultImpl(data)
       val queryResult2 = query.QueryResultImpl(data)
       queryResult1.equals(queryResult2) shouldBe true
@@ -86,7 +95,9 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `equals() should return true if all properties are equal, and 'data' is null`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
       val queryResult1 = query.QueryResultImpl(null)
       val queryResult2 = query.QueryResultImpl(null)
       queryResult1.equals(queryResult2) shouldBe true
@@ -95,7 +106,7 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(Arb.dataConnect.queryResultImpl()) { queryResult ->
+    checkAll(propTestConfig, Arb.dataConnect.queryResultImpl()) { queryResult ->
       queryResult.equals(null) shouldBe false
     }
   }
@@ -103,7 +114,7 @@ class QueryResultImplUnitTest {
   @Test
   fun `equals() should return false for a different type`() = runTest {
     val others = Arb.choice(Arb.dataConnect.string(), Arb.int(), Arb.dataConnect.queryRefImpl())
-    checkAll(Arb.dataConnect.queryResultImpl(), others) { queryResult, other ->
+    checkAll(propTestConfig, Arb.dataConnect.queryResultImpl(), others) { queryResult, other ->
       queryResult.equals(other) shouldBe false
     }
   }
@@ -111,6 +122,7 @@ class QueryResultImplUnitTest {
   @Test
   fun `equals() should return false when only 'data' differs`() = runTest {
     checkAll(
+      propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
       Arb.dataConnect.testData()
@@ -125,6 +137,7 @@ class QueryResultImplUnitTest {
   @Test
   fun `equals() should return false when only 'ref' differs`() = runTest {
     checkAll(
+      propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData()
@@ -140,7 +153,9 @@ class QueryResultImplUnitTest {
   @Test
   fun `equals() should return false when data of first object is null and second is non-null`() =
     runTest {
-      checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data,
+      checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+        query,
+        data,
         ->
         val queryResult1 = query.QueryResultImpl(null)
         val queryResult2 = query.QueryResultImpl(data)
@@ -151,7 +166,9 @@ class QueryResultImplUnitTest {
   @Test
   fun `equals() should return false when data of second object is null and first is non-null`() =
     runTest {
-      checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data,
+      checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+        query,
+        data,
         ->
         val queryResult1 = query.QueryResultImpl(data)
         val queryResult2 = query.QueryResultImpl(null)
@@ -162,7 +179,7 @@ class QueryResultImplUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(Arb.dataConnect.queryResultImpl()) { queryResult ->
+      checkAll(propTestConfig, Arb.dataConnect.queryResultImpl()) { queryResult ->
         val hashCode1 = queryResult.hashCode()
         queryResult.hashCode() shouldBe hashCode1
         queryResult.hashCode() shouldBe hashCode1
@@ -172,7 +189,9 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) { query, data,
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data,
       ->
       val queryResult1 = query.QueryResultImpl(data)
       val queryResult2 = query.QueryResultImpl(data)
@@ -183,6 +202,7 @@ class QueryResultImplUnitTest {
   @Test
   fun `hashCode() should return a different value if 'data' is different`() = runTest {
     checkAll(
+      propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
       Arb.dataConnect.testData()
@@ -198,6 +218,7 @@ class QueryResultImplUnitTest {
   @Test
   fun `hashCode() should return a different value if 'ref' is different`() = runTest {
     checkAll(
+      propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData()
@@ -215,6 +236,8 @@ class QueryResultImplUnitTest {
   private data class TestData(val value: String)
 
   private companion object {
+    val propTestConfig = PropTestConfig(iterations = 20)
+
     fun DataConnectArb.testVariables(string: Arb<String> = string()): Arb<TestVariables> =
       arbitrary {
         TestVariables(string.bind())

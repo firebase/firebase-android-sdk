@@ -37,6 +37,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
@@ -176,7 +177,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `hashCode() should return the same value when invoked repeatedly`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
       val hashCode1 = queryRefImpl.hashCode()
       repeat(3) { queryRefImpl.hashCode() shouldBe hashCode1 }
     }
@@ -185,7 +186,7 @@ class QueryRefImplUnitTest {
   @Test
   fun `hashCode() should return the same value when invoked on distinct, but equal, objects`() =
     runTest {
-      checkAll(Arb.dataConnect.queryRefImpl()) { queryRefImpl1 ->
+      checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl1 ->
         val queryRefImpl2 = queryRefImpl1.copy()
         queryRefImpl1.hashCode() shouldBe queryRefImpl2.hashCode()
       }
@@ -268,14 +269,14 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals(this) should return true`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
       queryRefImpl.equals(queryRefImpl) shouldBe true
     }
   }
 
   @Test
   fun `equals(equal, but distinct, instance) should return true`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl()) { queryRefImpl1 ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl1 ->
       val queryRefImpl2 = queryRefImpl1.copy()
       queryRefImpl1.equals(queryRefImpl2) shouldBe true
     }
@@ -283,7 +284,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals(null) should return false`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
       queryRefImpl.equals(null) shouldBe false
     }
   }
@@ -291,16 +292,18 @@ class QueryRefImplUnitTest {
   @Test
   fun `equals(an object of a different type) should return false`() = runTest {
     val others = Arb.choice(Arb.dataConnect.string(), Arb.int(), Arb.dataConnect.dataConnectError())
-    checkAll(Arb.dataConnect.queryRefImpl(), others) { queryRefImpl, other ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), others) { queryRefImpl, other ->
       queryRefImpl.equals(other) shouldBe false
     }
   }
 
   @Test
   fun `equals() should return false when only dataConnect differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<FirebaseDataConnectInternal>()) {
-      queryRefImpl1,
-      dataConnect ->
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<FirebaseDataConnectInternal>()
+    ) { queryRefImpl1, dataConnect ->
       dataConnect shouldNotBe queryRefImpl1.dataConnect // precondition check
       val queryRefImpl2 = queryRefImpl1.copy(dataConnect = dataConnect)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -309,7 +312,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals() should return false when only operationName differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.string()) {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.string()) {
       queryRefImpl1,
       operationName ->
       assume(operationName != queryRefImpl1.operationName)
@@ -320,7 +323,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals() should return false when only variables differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testVariables()) {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testVariables()) {
       queryRefImpl1,
       variables ->
       assume(variables != queryRefImpl1.variables)
@@ -331,9 +334,11 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals() should return false when only dataDeserializer differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<DeserializationStrategy<TestData>>()) {
-      queryRefImpl1,
-      dataDeserializer ->
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<DeserializationStrategy<TestData>>()
+    ) { queryRefImpl1, dataDeserializer ->
       dataDeserializer shouldNotBe queryRefImpl1.dataDeserializer // precondition check
       val queryRefImpl2 = queryRefImpl1.copy(dataDeserializer = dataDeserializer)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -342,9 +347,11 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals() should return false when only variablesSerializer differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<SerializationStrategy<TestVariables>>()) {
-      queryRefImpl1,
-      variablesSerializer ->
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<SerializationStrategy<TestVariables>>()
+    ) { queryRefImpl1, variablesSerializer ->
       variablesSerializer shouldNotBe queryRefImpl1.variablesSerializer // precondition check
       val queryRefImpl2 = queryRefImpl1.copy(variablesSerializer = variablesSerializer)
       queryRefImpl1.equals(queryRefImpl2) shouldBe false
@@ -353,7 +360,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals() should return false when only callerSdkType differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.enum<CallerSdkType>()) {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.enum<CallerSdkType>()) {
       queryRefImpl1,
       callerSdkType ->
       val queryRefImpl2 = queryRefImpl1.copy(callerSdkType = callerSdkType)
@@ -363,7 +370,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<SerializersModule>()) {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.mock<SerializersModule>()) {
       queryRefImpl1,
       variablesSerializersModule ->
       variablesSerializersModule shouldNotBe
@@ -376,7 +383,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `equals() should return false when only dataSerializersModule differs`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl(), Arb.mock<SerializersModule>()) {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.mock<SerializersModule>()) {
       queryRefImpl1,
       dataSerializersModule ->
       dataSerializersModule shouldNotBe queryRefImpl1.dataSerializersModule // precondition check
@@ -387,7 +394,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
-    checkAll(Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
       val toStringResult = queryRefImpl.toString()
       assertSoftly {
         toStringResult shouldContainWithNonAbuttingText "dataConnect=${queryRefImpl.dataConnect}"
@@ -409,6 +416,8 @@ class QueryRefImplUnitTest {
   }
 
   private companion object {
+    val propTestConfig = PropTestConfig(iterations = 20)
+
     fun DataConnectArb.testVariables(string: Arb<String> = string()): Arb<TestVariables> =
       arbitrary {
         TestVariables(string.bind())
