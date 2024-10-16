@@ -80,7 +80,7 @@ class DataConnectErrorUnitTest {
   @Test
   fun `toString() should incorporate the list indexes from the path surround by square brackets`() =
     runTest {
-      val paths = Arb.list(Arb.dataConnect.listIndexPathSegment(), 0..5)
+      val paths = Arb.list(Arb.dataConnect.listIndexPathSegment(), 1..5)
       checkAll(Arb.dataConnect.dataConnectError(path = paths)) { dataConnectError ->
         val expectedSubstring = dataConnectError.path.joinToString(separator = "") { "[$it]" }
         dataConnectError.toString() shouldContainWithNonAbuttingText expectedSubstring

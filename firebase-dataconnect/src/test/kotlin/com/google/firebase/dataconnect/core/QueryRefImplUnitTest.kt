@@ -96,6 +96,7 @@ class QueryRefImplUnitTest {
     }
   }
 
+  
   @Test
   fun `execute() calls executeQuery with the correct arguments`() = runTest {
     val data = Arb.dataConnect.testData().next()
@@ -438,9 +439,8 @@ class QueryRefImplUnitTest {
     checkAll(Arb.dataConnect.queryRefImpl(), Arb.enum<CallerSdkType>()) {
       queryRefImpl1,
       callerSdkType ->
-      assume(callerSdkType != queryRefImpl1.callerSdkType)
       val queryRefImpl2 = queryRefImpl1.copy(callerSdkType = callerSdkType)
-      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+      queryRefImpl1.equals(queryRefImpl2) shouldBe (callerSdkType == queryRefImpl1.callerSdkType)
     }
   }
 

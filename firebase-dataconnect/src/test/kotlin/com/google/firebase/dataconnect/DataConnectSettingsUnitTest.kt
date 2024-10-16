@@ -188,7 +188,7 @@ class DataConnectSettingsUnitTest {
       val settings2 = settings1.copy(sslEnabled = newSslEnabled)
       assertSoftly {
         settings1 shouldNotBeSameInstanceAs settings2
-        settings1.equals(settings2) shouldBe false
+        settings1.equals(settings2) shouldBe (settings1.sslEnabled == newSslEnabled)
         settings2.sslEnabled shouldBe newSslEnabled
       }
     }

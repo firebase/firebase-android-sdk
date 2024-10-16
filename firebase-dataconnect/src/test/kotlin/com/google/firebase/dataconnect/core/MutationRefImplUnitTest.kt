@@ -419,9 +419,8 @@ class MutationRefImplUnitTest {
     checkAll(Arb.dataConnect.mutationRefImpl(), Arb.enum<CallerSdkType>()) {
       mutationRefImpl1,
       callerSdkType ->
-      assume(callerSdkType != mutationRefImpl1.callerSdkType)
       val mutationRefImpl2 = mutationRefImpl1.copy(callerSdkType = callerSdkType)
-      mutationRefImpl1.equals(mutationRefImpl2) shouldBe false
+      mutationRefImpl1.equals(mutationRefImpl2) shouldBe (callerSdkType == mutationRefImpl1.callerSdkType)
     }
   }
 

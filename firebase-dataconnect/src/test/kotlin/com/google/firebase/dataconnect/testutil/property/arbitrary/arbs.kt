@@ -30,6 +30,7 @@ import com.google.firebase.dataconnect.core.MutationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
+import com.google.protobuf.Struct
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -106,11 +107,11 @@ internal fun DataConnectArb.dataConnectError(
   DataConnectError(message = message.bind(), path = path.bind(), locations = locations.bind())
 }
 
-internal fun DataConnectArb.operationResult() = arbitrary {
-  val data = Arb.dataConnect.anyScalar.map().orNull(nullProbability = 0.1).bind()?.toStructProto()
-  val numErrors = Arb.int(0..3).bind()
-  val errors = List(numErrors) { Arb.dataConnect.dataConnectError().bind() }
-  DataConnectGrpcClient.OperationResult(data, errors)
+internal fun DataConnectArb.operationResult(
+  data: Arb<Struct?> = Arb.proto.struct().orNull(nullProbability = 0.2),
+  errors: Arb<List<DataConnectError>> = Arb.list(dataConnectError(), 0..3),
+) = arbitrary {
+  DataConnectGrpcClient.OperationResult(data.bind(), errors.bind())
 }
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
@@ -158,18 +159,23 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
 }
 
 internal fun <Data, Variables> DataConnectArb.operationRefImpl(
-  variables: Arb<Variables>
+  variables: Arb<Variables>,
+  dataConnect: Arb<FirebaseDataConnectImpl> = arbitrary { mockk() },
+  operationName: Arb<String> = string(),
+  dataDeserializer: Arb<DeserializationStrategy<Data>> = arbitrary { mockk() },
+  variablesSerializer: Arb<SerializationStrategy<Variables>> = arbitrary { mockk() },
+  callerSdkType: Arb<CallerSdkType> = Arb.enum<CallerSdkType>(),
+  variablesSerializersModule: Arb<SerializersModule?> = serializersModule(),
+  dataSerializersModule: Arb<SerializersModule?> = serializersModule(),
 ): Arb<StubOperationRefImpl<Data, Variables>> = arbitrary {
-  val stringArb = Arb.string(6, codepoints = Codepoint.alphanumeric())
-  val callerSdkType = Arb.enum<CallerSdkType>()
   StubOperationRefImpl(
-    dataConnect = mockk(stringArb.bind()),
-    operationName = stringArb.bind(),
+    dataConnect = dataConnect.bind(),
+    operationName = operationName.bind(),
     variables = variables.bind(),
-    dataDeserializer = mockk(stringArb.bind()),
-    variablesSerializer = mockk(stringArb.bind()),
-    callerSdkType = callerSdkType.bind(),
-    variablesSerializersModule = serializersModule().bind(),
-    dataSerializersModule = serializersModule().bind(),
+    dataDeserializer=dataDeserializer.bind(),
+    variablesSerializer=variablesSerializer.bind(),
+    callerSdkType=callerSdkType.bind(),
+    variablesSerializersModule=variablesSerializersModule.bind(),
+    dataSerializersModule=dataSerializersModule.bind(),
   )
 }

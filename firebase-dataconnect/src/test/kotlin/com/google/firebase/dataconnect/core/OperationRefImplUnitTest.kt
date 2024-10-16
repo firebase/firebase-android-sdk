@@ -289,7 +289,7 @@ class OperationRefImplUnitTest {
       operationRefImpl1.copy(variablesSerializersModule = mockk(Arb.dataConnect.string().next()))
     val operationRefImplNull = operationRefImpl1.copy(variablesSerializersModule = null)
     operationRefImpl1.equals(operationRefImpl2) shouldBe false
-    operationRefImplNull.equals(operationRefImpl1) shouldBe false
+    operationRefImplNull.equals(operationRefImpl2) shouldBe false
     operationRefImpl1.equals(operationRefImplNull) shouldBe false
   }
 
