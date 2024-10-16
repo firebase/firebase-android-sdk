@@ -290,7 +290,7 @@ class OperationRefImplUnitTest {
     val operationRefImplNull = operationRefImpl1.copy(variablesSerializersModule = null)
     operationRefImpl1.equals(operationRefImpl2) shouldBe false
     operationRefImplNull.equals(operationRefImpl2) shouldBe false
-    operationRefImpl1.equals(operationRefImplNull) shouldBe false
+    operationRefImpl2.equals(operationRefImplNull) shouldBe false
   }
 
   @Test
