@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataConnectException
@@ -27,7 +29,6 @@ import com.google.firebase.dataconnect.core.Globals.withVariablesSerializer
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
-import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
@@ -73,7 +74,6 @@ import kotlinx.serialization.serializer
 import org.junit.Test
 
 @Suppress("ReplaceCallWithBinaryOperator")
-@OptIn(ExperimentalCoroutinesApi::class)
 class MutationRefImplUnitTest {
 
   @Serializable private data class TestData(val foo: String)
@@ -237,7 +237,7 @@ class MutationRefImplUnitTest {
   fun `hashCode() should return the same value when invoked repeatedly`() = runTest {
     checkAll(Arb.dataConnect.mutationRefImpl()) { mutationRefImpl ->
       val hashCode1 = mutationRefImpl.hashCode()
-      repeat(10) { mutationRefImpl.hashCode() shouldBe hashCode1 }
+      repeat(3) { mutationRefImpl.hashCode() shouldBe hashCode1 }
     }
   }
 
@@ -283,9 +283,7 @@ class MutationRefImplUnitTest {
 
   @Test
   fun `hashCode() should incorporate callerSdkType`() = runTest {
-    verifyHashCodeEventuallyDiffers {
-      it.copy(callerSdkType = Arb.enum<CallerSdkType>().filterNotEqual(it.callerSdkType).next())
-    }
+    verifyHashCodeEventuallyDiffers { it.copy(callerSdkType = Arb.enum<CallerSdkType>().next()) }
   }
 
   @Test

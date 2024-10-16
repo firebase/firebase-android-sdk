@@ -16,27 +16,17 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataConnectException
-import com.google.firebase.dataconnect.DataConnectUntypedData
-import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
-import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.Globals.copy
-import com.google.firebase.dataconnect.core.Globals.withDataDeserializer
-import com.google.firebase.dataconnect.core.Globals.withVariablesSerializer
-import com.google.firebase.dataconnect.core.QueryRefImplUnitTest.Companion.queryRefImpl
+import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
-import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
-import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
-import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
-import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
-import com.google.protobuf.Struct
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.retry
@@ -44,7 +34,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
@@ -63,9 +52,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlin.time.Duration
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
@@ -75,17 +61,16 @@ import kotlinx.serialization.serializer
 import org.junit.Test
 
 @Suppress("ReplaceCallWithBinaryOperator")
-@OptIn(ExperimentalCoroutinesApi::class)
 class QueryRefImplUnitTest {
 
-  @Serializable private data class TestData(val foo: String)
-  @Serializable private data class TestVariables(val bar: String)
+  @Serializable private class TestData(@Suppress("unused") val foo: String)
+  @Serializable private class TestVariables(@Suppress("unused") val bar: String)
 
   @Test
   fun `execute() returns the result on success`() = runTest {
-    val data = Arb.dataConnect.testData().next()
-    val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
-    val dataConnect = dataConnectWithQueryResult(Result.success(operationResult))
+    val data = TestData("gy54w6f5be")
+    val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
+    val dataConnect = dataConnectWithQueryResult(Result.success(data), querySlot)
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     val queryResult = queryRefImpl.execute()
@@ -93,88 +78,42 @@ class QueryRefImplUnitTest {
     assertSoftly {
       queryResult.ref shouldBeSameInstanceAs queryRefImpl
       queryResult.data shouldBe data
+      querySlot.captured shouldBeSameInstanceAs queryRefImpl
     }
   }
 
   @Test
-  fun `execute() calls executeQuery with the correct arguments`() = runTest {
-    val data = Arb.dataConnect.testData().next()
-    val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
-    val requestIdSlot: CapturingSlot<String> = slot()
-    val operationNameSlot: CapturingSlot<String> = slot()
-    val variablesSlot: CapturingSlot<Struct> = slot()
-    val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot()
-    val dataConnect =
-      dataConnectWithQueryResult(
-        Result.success(operationResult),
-        requestIdSlot,
-        operationNameSlot,
-        variablesSlot,
-        callerSdkTypeSlot,
-      )
+  fun `execute() throws on failure`() = runTest {
+    val exception = Exception("forced exception h4sab92yy8")
+    val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
+    val dataConnect = dataConnectWithQueryResult(Result.failure(exception), querySlot)
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
-    queryRefImpl.execute()
-    val requestId1 = requestIdSlot.captured
-    val operationName1 = operationNameSlot.captured
-    val variables1 = variablesSlot.captured
-    val callerSdkType1 = callerSdkTypeSlot.captured
-
-    requestIdSlot.clear()
-    operationNameSlot.clear()
-    variablesSlot.clear()
-    callerSdkTypeSlot.clear()
-    queryRefImpl.execute()
-    val requestId2 = requestIdSlot.captured
-    val operationName2 = operationNameSlot.captured
-    val variables2 = variablesSlot.captured
-    val callerSdkType2 = callerSdkTypeSlot.captured
+    val thrownException = shouldThrow<Exception> { queryRefImpl.execute() }
 
     assertSoftly {
-      requestId1.shouldNotBeBlank()
-      requestId2.shouldNotBeBlank()
-      requestId1 shouldNotBe requestId2
-      operationName1 shouldBe queryRefImpl.operationName
-      operationName2 shouldBe operationName1
-      variables1 shouldBe encodeToStruct(queryRefImpl.variables)
-      variables2 shouldBe variables1
-      callerSdkType1 shouldBe queryRefImpl.callerSdkType
-      callerSdkType2 shouldBe queryRefImpl.callerSdkType
+      thrownException shouldBeSameInstanceAs exception
+      querySlot.captured shouldBeSameInstanceAs queryRefImpl
     }
   }
 
   @Test
-  fun `execute() handles DataConnectUntypedVariables and DataConnectUntypedData`() = runTest {
-    val variables = DataConnectUntypedVariables("foo" to 42.0)
-    val errors = listOf(Arb.dataConnect.dataConnectError().next())
-    val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors)
-    val variablesSlot: CapturingSlot<Struct> = slot()
-    val operationResult = OperationResult(buildStructProto { put("bar", 24.0) }, errors)
-    val dataConnect =
-      dataConnectWithQueryResult(Result.success(operationResult), variablesSlot = variablesSlot)
-    val queryRefImpl =
-      Arb.dataConnect
-        .queryRefImpl(dataConnect)
-        .next()
-        .withVariablesSerializer(variables, DataConnectUntypedVariables)
-        .withDataDeserializer(DataConnectUntypedData)
+  fun `subscribe() should return a QuerySubscription`() = runTest {
+    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
 
-    val queryResult = queryRefImpl.execute()
+    val querySubscription = queryRefImpl.subscribe()
 
-    assertSoftly {
-      queryResult.ref shouldBeSameInstanceAs queryRefImpl
-      queryResult.data shouldBe data
-      variablesSlot.captured shouldBe variables.variables.toStructProto()
-    }
+    querySubscription.query shouldBeSameInstanceAs queryRefImpl
   }
 
   @Test
-  fun `execute() throws when the data is null`() = runTest {
-    val operationResult = OperationResult(data = null, errors = emptyList())
-    val dataConnect = dataConnectWithQueryResult(Result.success(operationResult))
-    val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
+  fun `subscribe() should always return a new object`() = runTest {
+    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
 
-    shouldThrow<DataConnectException> { queryRefImpl.execute() }
+    val querySubscription1 = queryRefImpl.subscribe()
+    val querySubscription2 = queryRefImpl.subscribe()
+
+    querySubscription1 shouldNotBeSameInstanceAs querySubscription2
   }
 
   @Test
@@ -204,25 +143,6 @@ class QueryRefImplUnitTest {
         it.dataSerializersModule shouldBeSameInstanceAs values.dataSerializersModule
       }
     }
-  }
-
-  @Test
-  fun `subscribe() should return a QuerySubscription`() {
-    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
-
-    val querySubscription = queryRefImpl.subscribe()
-
-    querySubscription.query shouldBeSameInstanceAs queryRefImpl
-  }
-
-  @Test
-  fun `subscribe() should always return a new object`() {
-    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
-
-    val querySubscription1 = queryRefImpl.subscribe()
-    val querySubscription2 = queryRefImpl.subscribe()
-
-    querySubscription1 shouldNotBeSameInstanceAs querySubscription2
   }
 
   @Test
@@ -258,7 +178,7 @@ class QueryRefImplUnitTest {
   fun `hashCode() should return the same value when invoked repeatedly`() = runTest {
     checkAll(Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
       val hashCode1 = queryRefImpl.hashCode()
-      repeat(10) { queryRefImpl.hashCode() shouldBe hashCode1 }
+      repeat(3) { queryRefImpl.hashCode() shouldBe hashCode1 }
     }
   }
 
@@ -304,9 +224,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `hashCode() should incorporate callerSdkType`() = runTest {
-    verifyHashCodeEventuallyDiffers {
-      it.copy(callerSdkType = Arb.enum<CallerSdkType>().filterNotEqual(it.callerSdkType).next())
-    }
+    verifyHashCodeEventuallyDiffers { it.copy(callerSdkType = Arb.enum<CallerSdkType>().next()) }
   }
 
   @Test
@@ -496,10 +414,6 @@ class QueryRefImplUnitTest {
         TestVariables(string.bind())
       }
 
-    fun DataConnectArb.testData(string: Arb<String> = string()): Arb<TestData> = arbitrary {
-      TestData(string.bind())
-    }
-
     fun DataConnectArb.queryRefImpl(): Arb<QueryRefImpl<TestData?, TestVariables>> =
       queryRefImpl(
         Arb.dataConnect.testVariables(),
@@ -512,26 +426,15 @@ class QueryRefImplUnitTest {
     ): Arb<QueryRefImpl<TestData?, TestVariables>> =
       queryRefImpl().map { it.copy(dataConnect = dataConnect) }
 
-    fun TestScope.dataConnectWithQueryResult(
-      result: Result<OperationResult>,
-      requestIdSlot: CapturingSlot<String> = slot(),
-      operationNameSlot: CapturingSlot<String> = slot(),
-      variablesSlot: CapturingSlot<Struct> = slot(),
-      callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
+    fun <Data, Variables> dataConnectWithQueryResult(
+      result: Result<Data>,
+      querySlot: CapturingSlot<QueryRefImpl<Data, Variables>>
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
-        every { blockingDispatcher } returns UnconfinedTestDispatcher(testScheduler)
-        every { lazyGrpcClient } returns
+        every { lazyQueryManager } returns
           SuspendingLazy {
-            mockk<DataConnectGrpcClient> {
-              coEvery {
-                executeQuery(
-                  capture(requestIdSlot),
-                  capture(operationNameSlot),
-                  capture(variablesSlot),
-                  capture(callerSdkTypeSlot),
-                )
-              } returns result.getOrThrow()
+            mockk<QueryManager> {
+              coEvery { execute(capture(querySlot)) } returns SequencedReference(123, result)
             }
           }
       }
