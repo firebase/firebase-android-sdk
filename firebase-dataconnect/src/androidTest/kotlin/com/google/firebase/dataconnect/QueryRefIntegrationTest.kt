@@ -28,6 +28,13 @@ import com.google.firebase.dataconnect.testutil.schemas.randomFarmId
 import com.google.firebase.dataconnect.testutil.schemas.randomFarmerId
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonName
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.test.*
@@ -49,8 +56,10 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = personSchema.getPerson(id = person2Id).execute()
 
-    assertThat(result.data.person?.name).isEqualTo("TestName2")
-    assertThat(result.data.person?.age).isEqualTo(43)
+    assertSoftly {
+      result.data.person?.name shouldBe "TestName2"
+      result.data.person?.age shouldBe 43
+    }
   }
 
   @Test
@@ -61,8 +70,10 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = personSchema.getPerson(id = personId).execute()
 
-    assertThat(result.data.person?.name).isEqualTo("NewTestName")
-    assertThat(result.data.person?.age).isEqualTo(99)
+    assertSoftly {
+      result.data.person?.name shouldBe "NewTestName"
+      result.data.person?.age shouldBe 99
+    }
   }
 
   @Test
@@ -72,7 +83,7 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = personSchema.getPerson(id = personId).execute()
 
-    assertThat(result.data.person).isNull()
+    result.data.person.shouldBeNull()
   }
 
   @Test
@@ -87,8 +98,7 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = personSchema.getPeopleByName(personName).execute()
 
-    assertThat(result.data.people)
-      .containsExactly(
+    result.data.people.shouldContainExactlyInAnyOrder(
         PersonSchema.GetPeopleByNameQuery.Data.Person(id = person1Id, age = 42),
         PersonSchema.GetPeopleByNameQuery.Data.Person(id = person2Id, age = 43),
         PersonSchema.GetPeopleByNameQuery.Data.Person(id = person3Id, age = 44),
@@ -117,17 +127,19 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = allTypesSchema.getPrimitive(id = id).execute()
 
-    val primitive = result.data.primitive ?: error("result.data.primitive is null")
-    assertThat(primitive.id).isEqualTo(id)
-    assertThat(primitive.idFieldNullable).isEqualTo("e03b3062bf604428956a17c0bc444691")
-    assertThat(primitive.intField).isEqualTo(42)
-    assertThat(primitive.intFieldNullable).isEqualTo(43)
-    assertThat(primitive.floatField).isEqualTo(123.45)
-    assertThat(primitive.floatFieldNullable).isEqualTo(678.91)
-    assertThat(primitive.booleanField).isEqualTo(true)
-    assertThat(primitive.booleanFieldNullable).isEqualTo(false)
-    assertThat(primitive.stringField).isEqualTo("TestString")
-    assertThat(primitive.stringFieldNullable).isEqualTo("TestNullableString")
+    val primitive = withClue("result.data.primitive") { result.data.primitive.shouldNotBeNull() }
+    assertSoftly {
+      withClue("id") { primitive.id shouldBe id }
+      withClue("idFieldNullable") { primitive.idFieldNullable shouldBe "e03b3062bf604428956a17c0bc444691" }
+      withClue("intField") { primitive.intField shouldBe 42 }
+      withClue("intFieldNullable") { primitive.intFieldNullable shouldBe 43 }
+      withClue("floatField") { primitive.floatField shouldBe 123.45 }
+      withClue("floatFieldNullable") { primitive.floatFieldNullable shouldBe 678.91 }
+      withClue("booleanField") { primitive.booleanField shouldBe true }
+      withClue("booleanFieldNullable") { primitive.booleanFieldNullable shouldBe false }
+      withClue("stringField") { primitive.stringField shouldBe "TestString" }
+      withClue("stringFieldNullable") { primitive.stringFieldNullable shouldBe "TestNullableString" }
+    }
   }
 
   @Test
@@ -152,12 +164,14 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = allTypesSchema.getPrimitive(id = id).execute()
 
-    val primitive = result.data.primitive ?: error("result.data.primitive is null")
-    assertThat(primitive.idFieldNullable).isNull()
-    assertThat(primitive.intFieldNullable).isNull()
-    assertThat(primitive.floatFieldNullable).isNull()
-    assertThat(primitive.booleanFieldNullable).isNull()
-    assertThat(primitive.stringFieldNullable).isNull()
+    val primitive = withClue("result.data.primitive") { result.data.primitive.shouldNotBeNull() }
+    assertSoftly {
+      withClue("idFieldNullable") { primitive.idFieldNullable.shouldNotBeNull() }
+      withClue("intFieldNullable") { primitive.intFieldNullable.shouldNotBeNull() }
+      withClue("floatFieldNullable") { primitive.floatFieldNullable.shouldNotBeNull() }
+      withClue("booleanFieldNullable") { primitive.booleanFieldNullable.shouldNotBeNull() }
+      withClue("stringFieldNullable") { primitive.stringFieldNullable.shouldNotBeNull() }
+    }
   }
 
   @Test
@@ -192,26 +206,24 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = allTypesSchema.getPrimitiveList(id = id).execute()
 
-    val primitive = result.data.primitiveList ?: error("result.data.primitiveList is null")
-    assertThat(primitive.id).isEqualTo(id)
-    assertThat(primitive.idListNullable)
-      .containsExactly("1c2a5a6df81c4252ac86383bb93d3dfb", "b53f44ae5be94354b58d10db98690954")
-      .inOrder()
-    assertThat(primitive.idListOfNullable)
-      .containsExactly("e87004fcb45d4b838ccb3ffca5c98e8d", "ad08635e7b4945119b6edaa3b390235e")
-      .inOrder()
-    assertThat(primitive.intList).containsExactly(42, 43, 44).inOrder()
-    assertThat(primitive.intListNullable).containsExactly(45, 46).inOrder()
-    assertThat(primitive.intListOfNullable).containsExactly(47, 48).inOrder()
-    assertThat(primitive.floatList).containsExactly(12.3, 45.6, 78.9).inOrder()
-    assertThat(primitive.floatListNullable).containsExactly(98.7, 65.4).inOrder()
-    assertThat(primitive.floatListOfNullable).containsExactly(100.1, 100.2).inOrder()
-    assertThat(primitive.booleanList).containsExactly(true, false, true, false).inOrder()
-    assertThat(primitive.booleanListNullable).containsExactly(false, true, false, true).inOrder()
-    assertThat(primitive.booleanListOfNullable).containsExactly(false, false, true, true).inOrder()
-    assertThat(primitive.stringList).containsExactly("xxx", "yyy", "zzz").inOrder()
-    assertThat(primitive.stringListNullable).containsExactly("qqq", "rrr").inOrder()
-    assertThat(primitive.stringListOfNullable).containsExactly("sss", "ttt").inOrder()
+    val primitive = withClue("result.data.primitiveList") { result.data.primitiveList.shouldNotBeNull() }
+    assertSoftly {
+      withClue("id") { primitive.id shouldBe id }
+      withClue("idListNullable") { primitive.idListNullable.shouldContainExactly("1c2a5a6df81c4252ac86383bb93d3dfb", "b53f44ae5be94354b58d10db98690954") }
+      withClue("idListOfNullable") { primitive.idListOfNullable.shouldContainExactly("e87004fcb45d4b838ccb3ffca5c98e8d", "ad08635e7b4945119b6edaa3b390235e") }
+      withClue("intList") { primitive.intList.shouldContainExactly(42, 43, 44) }
+      withClue("intListNullable") { primitive.intListNullable.shouldContainExactly(45, 46) }
+      withClue("intListOfNullable") { primitive.intListOfNullable.shouldContainExactly(47, 48) }
+      withClue("floatList") { primitive.floatList.shouldContainExactly(12.3, 45.6, 78.9) }
+      withClue("floatListNullable") { primitive.floatListNullable.shouldContainExactly(98.7, 65.4) }
+      withClue("floatListOfNullable") { primitive.floatListOfNullable.shouldContainExactly(100.1, 100.2) }
+      withClue("booleanList") { primitive.booleanList.shouldContainExactly(true, false, true, false) }
+      withClue("booleanListNullable") { primitive.booleanListNullable.shouldContainExactly(false, true, false, true) }
+      withClue("booleanListOfNullable") { primitive.booleanListOfNullable.shouldContainExactly(false, false, true, true) }
+      withClue("stringList") { primitive.stringList.shouldContainExactly("xxx", "yyy", "zzz") }
+      withClue("stringListNullable") { primitive.stringListNullable.shouldContainExactly("qqq", "rrr") }
+      withClue("stringListOfNullable") { primitive.stringListOfNullable.shouldContainExactly("sss", "ttt") }
+    }
   }
 
   @Test

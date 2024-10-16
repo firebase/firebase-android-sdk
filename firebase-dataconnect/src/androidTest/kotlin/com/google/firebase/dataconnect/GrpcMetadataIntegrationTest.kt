@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect
 
 import android.os.Build
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
@@ -43,8 +42,6 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
-import java.util.Date
-import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -57,9 +54,9 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
+import java.util.Date
+import kotlin.time.Duration.Companion.hours
 
-@RunWith(AndroidJUnit4::class)
 class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()

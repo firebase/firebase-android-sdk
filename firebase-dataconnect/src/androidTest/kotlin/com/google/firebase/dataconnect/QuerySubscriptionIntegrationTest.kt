@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+@file:OptIn(FlowPreview::class)
 
 package com.google.firebase.dataconnect
 
@@ -29,10 +29,24 @@ import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQu
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.skipItemsWhere
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.timeout
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
@@ -41,6 +55,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
 import org.junit.Test
+import kotlin.time.Duration.Companion.seconds
 
 class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 

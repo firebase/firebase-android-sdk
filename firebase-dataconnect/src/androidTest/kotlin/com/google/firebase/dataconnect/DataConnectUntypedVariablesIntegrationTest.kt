@@ -16,13 +16,16 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWithHardcodedNameQuery.hardcodedPeople
 import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.withVariables
-import kotlinx.coroutines.test.*
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBase() {
@@ -36,8 +39,10 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
     val result = query.execute()
 
-    assertThat(result.ref).isSameInstanceAs(query)
-    assertThat(result.data.people).containsExactlyElementsIn(hardcodedPeople)
+    assertSoftly {
+      result.ref shouldBeSameInstanceAs query
+      result.data.people.shouldContainExactlyInAnyOrder(hardcodedPeople)
+    }
   }
 
   @Test
@@ -53,13 +58,13 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
     val result = query.execute()
 
-    assertThat(result.ref).isSameInstanceAs(query)
-    assertThat(result.data)
-      .isEqualTo(
+    assertSoftly {
+      result.ref shouldBeSameInstanceAs query
+      result.data shouldBe
         PersonSchema.GetPersonQuery.Data(
           person = PersonSchema.GetPersonQuery.Data.Person(name = "Person2Name", age = 43)
         )
-      )
+    }
   }
 
   @Test
@@ -70,11 +75,9 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
     val personId = mutationResult.data.person_insert.id
     val result = personSchema.getPerson(id = personId).execute()
-    assertThat(result.data)
-      .isEqualTo(
-        PersonSchema.GetPersonQuery.Data(
-          PersonSchema.GetPersonQuery.Data.Person(name = "DefaultName", age = 42)
-        )
+    result.data shouldBe
+      PersonSchema.GetPersonQuery.Data(
+        PersonSchema.GetPersonQuery.Data.Person(name = "DefaultName", age = 42)
       )
   }
 
@@ -98,11 +101,9 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
     mutation.execute()
 
     val result = personSchema.getPerson(id = personId).execute()
-    assertThat(result.data)
-      .isEqualTo(
-        PersonSchema.GetPersonQuery.Data(
-          PersonSchema.GetPersonQuery.Data.Person(name = "TestPersonName", age = 42)
-        )
+    result.data shouldBe
+      PersonSchema.GetPersonQuery.Data(
+        PersonSchema.GetPersonQuery.Data.Person(name = "TestPersonName", age = 42)
       )
   }
 }
