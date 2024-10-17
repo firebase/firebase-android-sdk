@@ -16,12 +16,18 @@
 
 package com.google.firebase.dataconnect.testutil.schemas
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWithHardcodedNameQuery.hardcodedPeople
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
@@ -35,21 +41,22 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = schema.getPerson(id = personId).execute()
 
-    assertThat(result.data.person).isNotNull()
-    val person = result.data.person!!
-    assertThat(person.name).isEqualTo("TestName")
-    assertThat(person.age).isEqualTo(42)
+    val person = withClue("result.data.person") { result.data.person.shouldNotBeNull() }
+    assertSoftly {
+      person.name shouldBe "TestName"
+      person.age shouldBe 42
+    }
   }
 
   @Test
   fun deletePersonShouldDeleteTheSpecifiedPerson() = runTest {
     val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "TestName", age = 42).execute()
-    assertThat(schema.getPerson(id = personId).execute().data.person).isNotNull()
+    schema.getPerson(id = personId).execute().data.person.shouldNotBeNull()
 
     schema.deletePerson(id = personId).execute()
 
-    assertThat(schema.getPerson(id = personId).execute().data.person).isNull()
+    schema.getPerson(id = personId).execute().data.person.shouldBeNull()
   }
 
   @Test
@@ -60,8 +67,11 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
     schema.updatePerson(id = personId, name = "TestName99", age = 999).execute()
 
     val result = schema.getPerson(id = personId).execute()
-    assertThat(result.data.person?.name).isEqualTo("TestName99")
-    assertThat(result.data.person?.age).isEqualTo(999)
+    val person = withClue("result.data.person") { result.data.person.shouldNotBeNull() }
+    assertSoftly {
+      person.name shouldBe "TestName99"
+      person.age shouldBe 999
+    }
   }
 
   @Test
@@ -77,20 +87,23 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
     val result2 = schema.getPerson(id = person2Id).execute()
     val result3 = schema.getPerson(id = person3Id).execute()
 
-    assertThat(result1.data.person).isNotNull()
-    val person1 = result1.data.person!!
-    assertThat(person1.name).isEqualTo("Name111")
-    assertThat(person1.age).isEqualTo(111)
+    val person1 = withClue("result1.data.person") { result1.data.person.shouldNotBeNull() }
+    assertSoftly {
+      withClue("person1.name") { person1.name shouldBe "Name111" }
+      withClue("person1.age") { person1.age shouldBe 111 }
+    }
 
-    assertThat(result2.data.person).isNotNull()
-    val person2 = result2.data.person!!
-    assertThat(person2.name).isEqualTo("Name222")
-    assertThat(person2.age).isEqualTo(222)
+    val person2 = withClue("result2.data.person") { result2.data.person.shouldNotBeNull() }
+    assertSoftly {
+      withClue("person2.name") { person2.name shouldBe "Name222" }
+      withClue("person2.age") { person2.age shouldBe 222 }
+    }
 
-    assertThat(result3.data.person).isNotNull()
-    val person3 = result3.data.person!!
-    assertThat(person3.name).isEqualTo("Name333")
-    assertThat(person3.age).isNull()
+    val person3 = withClue("result3.data.person") { result3.data.person.shouldNotBeNull() }
+    assertSoftly {
+      withClue("person3.name") { person3.name shouldBe "Name333" }
+      withClue("person3.age") { person3.age shouldBe 333 }
+    }
   }
 
   @Test
@@ -99,12 +112,12 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = schema.getPerson(id = "IdOfPersonThatDoesNotExit").execute()
 
-    assertThat(result.data.person).isNull()
+    result.data.person.shouldBeNull()
   }
 
   @Test
   fun getNoPeopleShouldReturnEmptyList() = runTest {
-    assertThat(schema.getNoPeople.execute().data.people).isEmpty()
+    schema.getNoPeople.execute().data.people.shouldBeEmpty()
   }
 
   @Test
@@ -113,7 +126,7 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = schema.getPeopleWithHardcodedName.execute()
 
-    assertThat(result.data.people).containsExactlyElementsIn(hardcodedPeople)
+    result.data.people.shouldContainExactly(hardcodedPeople)
   }
 
   @Test
@@ -126,10 +139,9 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = schema.getPeopleByName(personName).execute()
 
-    assertThat(result.data.people)
-      .containsExactly(
-        PersonSchema.GetPeopleByNameQuery.Data.Person(id = person1Id, age = 1),
-        PersonSchema.GetPeopleByNameQuery.Data.Person(id = person2Id, age = 2),
-      )
+    result.data.people.shouldContainExactly(
+      PersonSchema.GetPeopleByNameQuery.Data.Person(id = person1Id, age = 1),
+      PersonSchema.GetPeopleByNameQuery.Data.Person(id = person2Id, age = 2),
+    )
   }
 }
