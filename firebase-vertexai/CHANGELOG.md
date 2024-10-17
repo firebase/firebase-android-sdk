@@ -1,4 +1,18 @@
 # Unreleased
+* [feature] {{firebase_vertexai}} is now Generally Available (GA) and can be
+  used in production apps.
+
+  Use the {{firebase_vertexai_sdk}} to call the {{gemini_api_vertexai_long}}
+  directly from your app. This client SDK is built specifically for use with
+  Android apps, offering security options against unauthorized clients
+  as well as integrations with other Firebase services.
+
+    * If you're new to this library, visit the
+      [getting started guide](/docs/vertex-ai/get-started?platform=android).
+
+    * If you were using the preview version of the library, visit the
+      [migration guide](/docs/vertex-ai/migrate-to-ga?platform=android) to learn
+      about some important updates.
 * [changed] **Breaking Change**: Changed `functionCallingConfig` parameter type to be nullable in `ToolConfig`. (#6373)
 * [changed] **Breaking Change**: Removed `functionResponse` accessor method from `GenerateContentResponse`. (#6373)
 * [changed] **Breaking Change**: Migrated `FirebaseVertexAIException` from a sealed class to an abstract class, and marked constructors as internal. (#6368)
