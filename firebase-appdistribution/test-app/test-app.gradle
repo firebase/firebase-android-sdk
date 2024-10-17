@@ -95,7 +95,7 @@ dependencies {
     // Shake detection
     implementation 'com.squareup:seismic:1.0.3'
     // Other dependencies
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation libs.kotlin.stdlib
 
     // Beta flavor uses the full implementation
     betaImplementation project(':firebase-appdistribution')

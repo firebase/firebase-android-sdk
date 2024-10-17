@@ -48,8 +48,8 @@ dependencies {
     implementation 'com.google.firebase:firebase-common-ktx:21.0.0'
 
     testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 }

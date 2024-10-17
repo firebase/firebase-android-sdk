@@ -105,7 +105,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-process:2.3.1"
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation libs.protobuf.java.lite
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation libs.kotlin.stdlib
     implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
@@ -131,9 +131,9 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
     testCompileOnly libs.protobuf.java
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
+    testImplementation libs.robolectric
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:5.2.0'

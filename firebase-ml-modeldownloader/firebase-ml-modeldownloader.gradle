@@ -105,7 +105,7 @@ dependencies {
     implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
     implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
     implementation 'javax.inject:javax.inject:1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation libs.kotlin.stdlib
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
 
@@ -117,22 +117,22 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'androidx.test:runner:1.5.1'
-    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
+    testImplementation libs.androidx.test.junit
     testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
     testImplementation libs.protobuf.java.util
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
     testImplementation 'org.mockito:mockito-core:5.2.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.truth
     androidTestImplementation 'junit:junit:4.13.1'
 }

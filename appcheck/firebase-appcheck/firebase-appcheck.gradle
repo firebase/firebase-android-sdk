@@ -60,20 +60,20 @@ dependencies {
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:18.1.0'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation libs.kotlin.stdlib
 
     testImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:5.2.0'
     testImplementation 'org.mockito:mockito-inline:5.2.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     androidTestImplementation project(':appcheck:firebase-appcheck')
     androidTestImplementation(project(":integ-testing")){
@@ -81,10 +81,10 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
-    androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
+    androidTestImplementation libs.androidx.test.core
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.truth
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-inline:2.25.0'

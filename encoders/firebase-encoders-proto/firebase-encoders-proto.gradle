@@ -48,7 +48,7 @@ dependencies {
 
     testImplementation 'com.google.guava:guava:31.0-jre'
     testImplementation libs.protobuf.java.util
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'junit:junit:4.13.1'
 }

@@ -36,7 +36,7 @@ protobuf {
     }
     plugins {
         grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+            artifact = libs.grpc.protoc.gen.java.get().toString()
         }
     }
     generateProtoTasks {
@@ -133,13 +133,13 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation 'com.google.auto.value:auto-value-annotations:1.8.1'
-    implementation "io.grpc:grpc-okhttp:$grpcVersion"
-    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
-    implementation "io.grpc:grpc-stub:$grpcVersion"
+    implementation libs.grpc.okhttp
+    implementation libs.grpc.protobuf.lite
+    implementation libs.grpc.stub
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'javax.inject:javax.inject:1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation libs.kotlin.stdlib
 
     compileOnly 'javax.annotation:jsr250-api:1.0'
 
@@ -153,16 +153,16 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'androidx.test:runner:1.3.0'
-    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
+    testImplementation libs.androidx.test.junit
     testImplementation 'com.google.guava:guava:30.1-android'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "io.grpc:grpc-testing:$grpcVersion"
+    testImplementation libs.truth
+    testImplementation libs.grpc.testing
     testImplementation 'junit:junit:4.12'
     testImplementation 'junit:junit:4.13.1'
     testImplementation 'org.mockito:mockito-core:5.2.0'
-    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
+    testImplementation (libs.robolectric) {
          exclude group: 'com.google.protobuf', module: 'protobuf-java'
      }
 
@@ -172,11 +172,11 @@ dependencies {
     }
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.truth
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.28.1'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.28.1'
-    androidTestImplementation "io.grpc:grpc-testing:$grpcVersion"
+    androidTestImplementation libs.grpc.testing
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.awaitility:awaitility:3.1.0'
 }
