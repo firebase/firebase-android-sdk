@@ -18,6 +18,7 @@
 * [changed] **Breaking Change**: Replaced sealed classes with abstract classes for `StringFormat`. (#6334)
 * [changed] **Breaking Change**: Refactored enum classes to be normal classes. (#6340)
 * [changed] **Breaking Change**: Marked `GenerativeModel` properties as private. (#6309)
+* [changed] **Breaking Change**: Changed `method` parameter type to be nullable in `SafetySettings`. (#6379)
 
 
 # 16.0.0-beta05
