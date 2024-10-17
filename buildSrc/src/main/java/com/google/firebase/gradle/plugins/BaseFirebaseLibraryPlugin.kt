@@ -49,12 +49,7 @@ import org.w3c.dom.Element
  * @see [FirebaseLibraryExtension]
  */
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
-
-  /**
-   * Using [projects][project]
-   *
-   * @param project does stuff
-   */
+  
   protected fun setupDefaults(project: Project, library: FirebaseLibraryExtension) {
     library.previewMode.set("")
     with(library) {
