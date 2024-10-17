@@ -48,9 +48,9 @@ import org.gradle.api.tasks.TaskAction
  * *Assuming that `17.0.1` is the latest version of `firebase-appcheck-interop`*
  *
  * @property buildFile A [File] that should be used as the source to update from. Typically the
- * `build.gradle` or `build.gradle.kts` file for a given project.
+ *   `build.gradle` or `build.gradle.kts` file for a given project.
  * @property outputFile A [File] that should be used to write the new text to. Typically the same as
- * the input file ([buildFile]).
+ *   the input file ([buildFile]).
  * @see PostReleasePlugin
  */
 abstract class UpdatePinnedDependenciesTask : DefaultTask() {

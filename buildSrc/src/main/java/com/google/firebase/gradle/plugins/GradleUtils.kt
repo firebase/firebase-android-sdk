@@ -69,9 +69,9 @@ fun File.childFile(childPath: String) = File("$path/$childPath")
  * newline character.
  *
  * @param terminateWithNewline Whether to terminate the file with a newline character. Defaults to
- * `true`.
+ *   `true`.
  * @param block A function that takes a string as input and returns a new string. This function is
- * used to transform the lines of the file before they are rewritten.
+ *   used to transform the lines of the file before they are rewritten.
  *
  * ```
  * val file = File("my-file.txt")

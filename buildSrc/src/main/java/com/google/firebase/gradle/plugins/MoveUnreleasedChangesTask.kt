@@ -34,9 +34,9 @@ import org.gradle.kotlin.dsl.provideDelegate
  * for auditing purposes.
  *
  * @property changelogFile A [File] to use as the [Changelog]. Defaults to the `CHANGELOG.md` file
- * at the project's root.
+ *   at the project's root.
  * @property releaseVersion A [ModuleVersion] of what to set the version to. Defaults to the
- * project's current version.
+ *   project's current version.
  * @see PostReleasePlugin
  */
 abstract class MoveUnreleasedChangesTask : DefaultTask() {

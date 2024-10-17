@@ -32,7 +32,7 @@ import org.junit.rules.TemporaryFolder
  * - Link your test projects with the controller via [withProjects]
  * - Use the [GradleRunner] to run your build at the [rootDirectory]
  * - Use any of the provided extension methods to inspect the build files and make assertions in
- * your test
+ *   your test
  *
  * Some example of the provided extension methods are:
  * - [Project.buildFile]
@@ -120,7 +120,7 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    * they are invoked during the build process.
    *
    * @param projects a variable amount of [Project] to create subdirectories for and include in the
-   * build process.
+   *   build process.
    * @see include
    */
   fun withProjects(vararg projects: Project) {

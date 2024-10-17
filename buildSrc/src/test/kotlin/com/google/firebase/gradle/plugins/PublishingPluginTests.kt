@@ -41,7 +41,8 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          customizePom = """
+          customizePom =
+            """
   licenses {
     license {
       name = 'Hello'
@@ -79,7 +80,8 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          customizePom = """
+          customizePom =
+            """
   licenses {
     license {
       name = 'Hello'
