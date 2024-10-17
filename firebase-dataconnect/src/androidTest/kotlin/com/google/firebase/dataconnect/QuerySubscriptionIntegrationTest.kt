@@ -21,7 +21,6 @@ package com.google.firebase.dataconnect
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
-import com.google.firebase.dataconnect.QuerySubscriptionIntegrationTest.Companion.awaitPersonWithName
 import com.google.firebase.dataconnect.core.QuerySubscriptionInternal
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
