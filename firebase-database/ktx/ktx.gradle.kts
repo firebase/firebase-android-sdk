@@ -21,7 +21,7 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-  libraryGroup("database")
+  libraryGroup = "database"
   publishJavadoc = false
   releaseNotes { 
     enabled.set(false)

@@ -32,7 +32,7 @@ import org.junit.rules.TemporaryFolder
  * - Link your test projects with the controller via [withProjects]
  * - Use the [GradleRunner] to run your build at the [rootDirectory]
  * - Use any of the provided extension methods to inspect the build files and make assertions in
- * your test
+ *   your test
  *
  * Some example of the provided extension methods are:
  * - [Project.buildFile]
@@ -41,12 +41,11 @@ import org.junit.rules.TemporaryFolder
  * To see a more involved example of this workflow, you can take a look at test classes that
  * implement this class, eg; [UpdatePinnedDependenciesTests] and [PublishingPluginTests].
  *
+ * @property rootDirectory the root [TemporaryFolder] that all files will be created under.
  * @see project
  * @see createReleaseWithConfig
  * @see createReleaseWithProjects
  * @see withProjects
- *
- * @property rootDirectory the root [TemporaryFolder] that all files will be created under.
  */
 class FirebaseTestController(val rootDirectory: TemporaryFolder) {
 
@@ -121,8 +120,7 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    * they are invoked during the build process.
    *
    * @param projects a variable amount of [Project] to create subdirectories for and include in the
-   * build process.
-   *
+   *   build process.
    * @see include
    */
   fun withProjects(vararg projects: Project) {
@@ -138,7 +136,6 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    * Creates a `release.json` file at the [rootDirectory].
    *
    * @param release the [ReleaseConfig] to convert into a `json` file.
-   *
    * @see createReleaseWithProjects
    */
   fun createReleaseWithConfig(release: ReleaseConfig) {
@@ -152,7 +149,6 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    * different name, then pass your own [ReleaseConfig] instead via [createReleaseWithConfig].
    *
    * @param projects a variable amount of [Project] to include in the release file.
-   *
    * @see createReleaseWithConfig
    */
   fun createReleaseWithProjects(vararg projects: Project) {

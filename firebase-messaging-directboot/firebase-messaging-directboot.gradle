@@ -19,7 +19,7 @@ plugins {
 firebaseLibrary {
     testLab.enabled = false
     publishJavadoc = false
-    libraryGroup "messaging"
+    libraryGroup = "messaging"
     releaseNotes {
         name.set("Cloud Messaging Direct Boot")
         versionName.set("messaging-directboot")

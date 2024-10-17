@@ -38,7 +38,7 @@ import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 
 /**
- * Plugin for providing tasks to release [FirebaseLibrary][FirebaseLibraryPlugin] projects.
+ * Plugin for providing tasks to release [FirebaseLibrary][FirebaseAndroidLibraryPlugin] projects.
  *
  * Projects to release are computed via [computeReleasingLibraries]. A multitude of tasks are then
  * registered at the root project.
@@ -48,18 +48,18 @@ import org.gradle.kotlin.dsl.register
  * - [VALIDATE_POM_TASK][registerValidatePomForReleaseTask]
  * - [VALIDATE_PROJECTS_TO_PUBLISH_TASK][registerValidateProjectsToPublishTask]
  * - [BUILD_MAVEN_ZIP_TASK] -> Creates a zip file of the contents of
- * [PUBLISH_RELEASING_LIBS_TO_BUILD_TASK] [registerPublishReleasingLibrariesToBuildDirTask]
+ *   [PUBLISH_RELEASING_LIBS_TO_BUILD_TASK] [registerPublishReleasingLibrariesToBuildDirTask]
  * - [BUILD_KOTLINDOC_ZIP_TASK] -> Creates a zip file of the contents of
- * [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] [registerGenerateKotlindocForReleaseTask]
+ *   [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] [registerGenerateKotlindocForReleaseTask]
  * - [BUILD_RELEASE_NOTES_ZIP_TASK] -> Creates a zip file of the contents of
- * [PREPARE_RELEASE_NOTES_FOR_DROP][registerPrepareReleaseNotesForDropTask]
+ *   [PREPARE_RELEASE_NOTES_FOR_DROP][registerPrepareReleaseNotesForDropTask]
  * - [FIREBASE_PUBLISH_TASK] -> Runs all the tasks above
  *
  * The following are additional tasks provided- that are either for convenience sake, or are used
  * outside of the standard [FIREBASE_PUBLISH_TASK] workflow (possibly at a later time in the release
  * cycle):
  * - [BUILD_BOM_ZIP_TASK] -> Creates a zip file of the contents of [GENERATE_BOM_TASK]
- * [registerGenerateBomTask]
+ *   [registerGenerateBomTask]
  * - [RELEASE_GENEATOR_TASK][registerGenerateReleaseConfigFilesTask]
  * - [RELEASE_REPORT_GENERATOR_TASK][registerGenerateReleaseReportFilesTask]
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
@@ -175,7 +175,7 @@ abstract class PublishingPlugin : Plugin<Project> {
   }
 
   /**
-   * Figures out the [ReleaseMetadata] for with this release.
+   * Figures out the [ReleaseMetadata] for this release.
    *
    * Metadata can be provided either via the project properties or a [ReleaseConfig] file.
    *
@@ -244,7 +244,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     val libraryGroupsToRelease =
       inputProjects
         .flatMap { it.resolveProjectLevelDependencies() + it }
-        .map { it.libraryGroupName }
+        .map { it.libraryGroup.get() }
     val projectsToRelease =
       libraryGroups
         .filterKeys { it in libraryGroupsToRelease }
@@ -298,7 +298,7 @@ abstract class PublishingPlugin : Plugin<Project> {
    *
    * A collection of [PomValidator] for each releasing project.
    *
-   * Ensures that pom dependencies are not accidently downgraded.
+   * Ensures that pom dependencies are not accidentally downgraded.
    */
   private fun registerValidatePomForReleaseTask(
     project: Project,
@@ -350,9 +350,9 @@ abstract class PublishingPlugin : Plugin<Project> {
           )
         }
         for (releasingLibrary in releasinglibraries) {
-          if (!releasingLibrary.version.contains(releasingLibrary.previewMode)) {
+          if (!releasingLibrary.version.contains(releasingLibrary.previewMode.get())) {
             throw GradleException(
-              "You are releasing a ${releasingLibrary.previewMode} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version}!"
+              "You are releasing a ${releasingLibrary.previewMode.get()} SDK (${releasingLibrary.artifactId.get()}) as ${releasingLibrary.version}!"
             )
           }
         }
@@ -608,7 +608,7 @@ abstract class PublishingPlugin : Plugin<Project> {
  *
  * @property releasingLibraries A list of libraries that should be released
  * @property name The name of the release (such as `m123`)
- * @see computeReleaseMetadata
+ * @see PublishingPlugin.computeReleaseMetadata
  */
 data class ReleaseMetadata(
   val releasingLibraries: List<FirebaseLibraryExtension>,

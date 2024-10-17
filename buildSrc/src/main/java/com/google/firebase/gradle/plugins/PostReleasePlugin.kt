@@ -58,9 +58,8 @@ class PostReleasePlugin : Plugin<Project> {
    * has released). If this property is present, it should be updated to the related version that
    * went out during the release.
    *
-   * @see VersionBumpTask
-   *
    * @param project the [Project] to register this task to
+   * @see VersionBumpTask
    */
   fun registerVersionBumpTask(project: Project) =
     project.tasks.register<VersionBumpTask>("versionBump")
@@ -73,9 +72,8 @@ class PostReleasePlugin : Plugin<Project> {
    * moved into a seperate section that specifies the version it went out with, and the `Unreleased`
    * section should be wiped clear for new changes to come; for the next release.
    *
-   * @see MoveUnreleasedChangesTask
-   *
    * @param project the [Project] to register this task to
+   * @see MoveUnreleasedChangesTask
    */
   fun registerMoveUnreleasedChangesTask(project: Project) =
     project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges") {
@@ -90,9 +88,8 @@ class PostReleasePlugin : Plugin<Project> {
    * need to convert these project level dependencies back to pinned dependencies- with the latest
    * released version attached.
    *
-   * @see UpdatePinnedDependenciesTask
-   *
    * @param project the [Project] to register this task to
+   * @see UpdatePinnedDependenciesTask
    */
   fun registerUpdatePinnedDependenciesTask(project: Project) =
     project.tasks.register<UpdatePinnedDependenciesTask>("updatePinnedDependencies") {

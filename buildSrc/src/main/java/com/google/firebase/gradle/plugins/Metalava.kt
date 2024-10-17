@@ -50,7 +50,7 @@ val Project.docStubs: File?
 fun Project.runMetalavaWithArgs(
   arguments: List<String>,
   ignoreFailure: Boolean = false,
-  stdOut: OutputStream? = null
+  stdOut: OutputStream? = null,
 ) {
   val allArgs =
     listOf(
@@ -58,7 +58,7 @@ fun Project.runMetalavaWithArgs(
       "--hide",
       "HiddenSuperclass", // We allow having a hidden parent class
       "--hide",
-      "HiddenAbstractMethod"
+      "HiddenAbstractMethod",
     ) + arguments
 
   project.javaexec {
@@ -95,7 +95,7 @@ abstract class GenerateStubsTask : DefaultTask() {
         classPath.joinToString(":"),
         "--include-annotations",
         "--doc-stubs",
-        outputDir.absolutePath
+        outputDir.absolutePath,
       )
     )
   }
@@ -129,12 +129,12 @@ abstract class GenerateApiTxtTask : DefaultTask() {
         classPath.joinToString(":"),
         "--api",
         apiTxtFile.get().absolutePath,
-        "--format=v2"
+        "--format=v2",
       ) +
         if (updateBaseline.get()) listOf("--update-baseline")
         else if (baselineFile.get().exists()) listOf("--baseline", baselineFile.get().absolutePath)
         else listOf(),
-      ignoreFailure = true
+      ignoreFailure = true,
     )
   }
 }
@@ -171,9 +171,9 @@ abstract class ApiInformationTask : DefaultTask() {
         classPath.joinToString(":"),
         "--api",
         outputApiFile.get().absolutePath,
-        "--format=v2"
+        "--format=v2",
       ),
-      ignoreFailure = true
+      ignoreFailure = true,
     )
 
     project.runMetalavaWithArgs(
@@ -189,13 +189,13 @@ abstract class ApiInformationTask : DefaultTask() {
         "--error",
         "AddedField",
         "--format=v2",
-        "--no-color"
+        "--no-color",
       ) +
         if (updateBaseline.get()) listOf("--update-baseline")
         else if (baselineFile.get().exists()) listOf("--baseline", baselineFile.get().absolutePath)
         else listOf(),
       ignoreFailure = true,
-      stdOut = FileOutputStream(outputFile.get())
+      stdOut = FileOutputStream(outputFile.get()),
     )
   }
 }

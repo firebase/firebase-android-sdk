@@ -50,7 +50,7 @@ protobuf {
 }
 
 firebaseLibrary {
-    libraryGroup("transport")
+    libraryGroup = "transport"
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)

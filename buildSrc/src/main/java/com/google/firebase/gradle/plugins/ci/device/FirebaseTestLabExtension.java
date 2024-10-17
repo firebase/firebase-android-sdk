@@ -21,10 +21,11 @@ import javax.inject.Inject;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.SetProperty;
 
+// TODO(b/372917264): Migrate to Kotlin/Conventions
 public class FirebaseTestLabExtension {
-  private final SetProperty<String> devices;
-  private String timeout;
-  private boolean enabled;
+  public final SetProperty<String> devices;
+  public String timeout;
+  public boolean enabled;
 
   @Inject
   public FirebaseTestLabExtension(ObjectFactory objectFactory) {

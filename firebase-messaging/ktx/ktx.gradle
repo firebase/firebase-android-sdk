@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "messaging"
+    libraryGroup = "messaging"
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)

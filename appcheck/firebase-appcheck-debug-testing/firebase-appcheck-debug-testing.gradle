@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
+    libraryGroup = "appcheck"
     testLab.enabled = true
     publishSources = true
     releaseNotes {

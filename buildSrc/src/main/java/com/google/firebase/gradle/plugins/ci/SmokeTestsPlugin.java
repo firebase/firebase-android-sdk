@@ -34,6 +34,7 @@ import org.gradle.api.artifacts.ProjectDependency;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+// TODO(b/372719175): Migrate to Kotlin
 /** Builds Firebase libraries for consumption by the smoke tests. */
 public class SmokeTestsPlugin implements Plugin<Project> {
   @Override
@@ -58,8 +59,8 @@ public class SmokeTestsPlugin implements Plugin<Project> {
                       return;
                     }
 
-                    String groupId = firebaseLibrary.groupId.get();
-                    String artifactId = firebaseLibrary.artifactId.get();
+                    String groupId = firebaseLibrary.getGroupId().get();
+                    String artifactId = firebaseLibrary.getArtifactId().get();
                     String artifact =
                         String.format("%s:%s:%s", groupId, artifactId, sub.getVersion());
                     allArtifacts.add(artifact);

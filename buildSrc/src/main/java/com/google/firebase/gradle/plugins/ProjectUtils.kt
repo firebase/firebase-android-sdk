@@ -110,7 +110,7 @@ val Project.isKTXLibary: Boolean
  *
  * @param property the name of the property to look for
  */
-inline fun <reified T> Project.provideProperty(property: String) = provider {
+inline fun <reified T> Project.provideProperty(property: String): Provider<T> = provider {
   val maybeProperty = findProperty(property)
 
   // using when instead of an if statement so we can expand as needed

@@ -116,7 +116,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "kotlin.OptIn",
         "kotlin.ParameterName",
         "kotlin.js.JsName",
-        "java.lang.Override"
+        "java.lang.Override",
       )
     val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
 
@@ -137,7 +137,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
               "externalDocumentationLinks" to
                 createExternalLinks(packageListFiles).map {
                   mapOf("url" to it.externalLink, "packageListUrl" to it.packageList.toURI())
-                }
+                },
             )
           ),
         "offlineMode" to "true",
@@ -159,12 +159,12 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
                       "includedHeadTagsPathKotlin" to
                         "docs/reference/kotlin/_reference-head-tags.html",
                       "annotationsNotToDisplay" to annotationsNotToDisplay,
-                      "annotationsNotToDisplayKotlin" to annotationsNotToDisplayKotlin
+                      "annotationsNotToDisplayKotlin" to annotationsNotToDisplayKotlin,
                     )
                   )
-                  .toString()
+                  .toString(),
             )
-          )
+          ),
       )
 
     return JSONObject(jsonMap)
@@ -180,7 +180,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "google" to "https://developers.google.com/android/reference/",
         "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
-        "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/"
+        "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/",
       )
 
     return packageLists

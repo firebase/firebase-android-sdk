@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "dynamic-links"
+    libraryGroup = "dynamic-links"
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)
