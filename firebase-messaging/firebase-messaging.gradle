@@ -144,7 +144,7 @@ dependencies {
         testImplementation libs.truth
         testImplementation 'junit:junit:4.12'
         testImplementation 'junit:junit:4.13-beta-2'
-        testImplementation 'org.mockito:mockito-core:5.2.0'
+        testImplementation libs.mockito.core
         testImplementation libs.robolectric
 
         testCompileOnly 'com.google.auto.value:auto-value-annotations:1.6.3'
@@ -157,6 +157,6 @@ dependencies {
         androidTestImplementation libs.androidx.test.junit
         androidTestImplementation libs.truth
         androidTestImplementation 'junit:junit:4.12'
-        androidTestImplementation 'org.mockito:mockito-core:5.2.0'
+        androidTestImplementation libs.mockito.core
         androidTestImplementation 'org.mockito:mockito-inline:5.2.0'
 }

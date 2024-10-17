@@ -67,8 +67,7 @@ dependencies {
     testImplementation project(':firebase-appdistribution-api')
     testImplementation libs.androidx.test.core
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.junit
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'org.mockito:mockito-inline:3.4.0'
     testImplementation libs.robolectric

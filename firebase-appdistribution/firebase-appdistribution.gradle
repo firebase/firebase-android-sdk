@@ -78,7 +78,7 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation libs.javax.inject
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
+    implementation libs.kotlin.stdlib.jdk8
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
 
@@ -97,7 +97,7 @@ dependencies {
     }
     testImplementation libs.androidx.test.core
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.junit
     testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation libs.robolectric
 

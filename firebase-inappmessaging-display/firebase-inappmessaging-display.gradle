@@ -101,7 +101,7 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.11.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
-    implementation 'javax.inject:javax.inject:1'
+    implementation libs.javax.inject
     implementation libs.kotlin.stdlib
 
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'

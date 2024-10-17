@@ -54,7 +54,7 @@ dependencies {
     testImplementation 'androidx.test:runner:1.5.1'
     testImplementation libs.androidx.test.junit
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.junit
     testImplementation 'org.mockito:mockito-core:3.6.0'
     testImplementation libs.robolectric
 }

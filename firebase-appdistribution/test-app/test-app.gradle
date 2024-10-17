@@ -100,5 +100,5 @@ dependencies {
     // Beta flavor uses the full implementation
     betaImplementation project(':firebase-appdistribution')
 
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.junit
 }
