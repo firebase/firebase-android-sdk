@@ -49,7 +49,6 @@ import org.w3c.dom.Element
  * @see [FirebaseLibraryExtension]
  */
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
-  
   protected fun setupDefaults(project: Project, library: FirebaseLibraryExtension) {
     library.previewMode.set("")
     with(library) {
@@ -81,7 +80,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       }
 
       val parent = project.parent
-
+      // TODO(): remove when we get rid of ktx modules
       if (project.name == "ktx" && parent !== null) {
         artifactId.convention(parent.provider { "${parent.name}-ktx" })
         groupId.convention(parent.provider { "${parent.group}" })
@@ -199,7 +198,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
             artifactId = firebaseLibrary.artifactId.get()
             groupId = firebaseLibrary.groupId.get()
 
-            firebaseLibrary.customizePomAction.execute(pom)
+            pom(firebaseLibrary.customizePomAction)
             firebaseLibrary.applyPomTransformations(pom)
             from(components.findByName(firebaseLibrary.type.componentName))
           }
@@ -216,7 +215,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
    * @param pom the [MavenPom] to prepare
    * @see [addTypeWithAARSupport]
    */
-  // TODO(b/270576405): Combine with applyPomCustomization when migrating FirebaseLibraryExtension
   private fun FirebaseLibraryExtension.applyPomTransformations(pom: MavenPom) {
     pom.withXml {
       val dependencies = asElement().findElementsByTag("dependency")
