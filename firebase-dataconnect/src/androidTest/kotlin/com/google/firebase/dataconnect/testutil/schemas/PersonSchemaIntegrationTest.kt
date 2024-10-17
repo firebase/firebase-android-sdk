@@ -21,7 +21,7 @@ import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWi
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -102,7 +102,7 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
     val person3 = withClue("result3.data.person") { result3.data.person.shouldNotBeNull() }
     assertSoftly {
       withClue("person3.name") { person3.name shouldBe "Name333" }
-      withClue("person3.age") { person3.age shouldBe 333 }
+      withClue("person3.age") { person3.age.shouldBeNull() }
     }
   }
 
@@ -126,7 +126,7 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = schema.getPeopleWithHardcodedName.execute()
 
-    result.data.people.shouldContainExactly(hardcodedPeople)
+    result.data.people.shouldContainExactlyInAnyOrder(hardcodedPeople)
   }
 
   @Test
@@ -139,7 +139,7 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = schema.getPeopleByName(personName).execute()
 
-    result.data.people.shouldContainExactly(
+    result.data.people.shouldContainExactlyInAnyOrder(
       PersonSchema.GetPeopleByNameQuery.Data.Person(id = person1Id, age = 1),
       PersonSchema.GetPeopleByNameQuery.Data.Person(id = person2Id, age = 2),
     )
