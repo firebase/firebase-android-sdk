@@ -10,7 +10,7 @@
     * If you're new to this library, visit the
       [getting started guide](/docs/vertex-ai/get-started?platform=android).
 
-    * If you used the preview version of the library, visit the
+    * If you were using the preview version of the library, visit the
       [migration guide](/docs/vertex-ai/migrate-to-ga?platform=android) to learn
       about some important updates.
 * [changed] **Breaking Change**: Changed `functionCallingConfig` parameter type to be nullable in `ToolConfig`. (#6373)
