@@ -23,7 +23,7 @@ import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.core.QuerySubscriptionInternal
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
+import com.google.firebase.dataconnect.testutil.SuspendingFlag
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
@@ -41,11 +41,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
@@ -134,11 +132,11 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
       // Start collecting on `querySubscription1` and wait for it to get its first event.
-      val subscription1ResultReceived = MutableStateFlow(false)
+      val subscription1ResultReceived = SuspendingFlag()
       backgroundScope.launch {
-        querySubscription1.flow.collect { subscription1ResultReceived.value = true }
+        querySubscription1.flow.collect { subscription1ResultReceived.set() }
       }
-      subscription1ResultReceived.awaitTrue()
+      subscription1ResultReceived.await()
 
       // With `querySubscription1` still alive, start collecting on `querySubscription2`. Expect it
       // to initially get the cached result from `querySubscription1`, followed by an updated
@@ -162,17 +160,17 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       val fastFlow = querySubscription.flow.distinctUntilChanged().testIn(backgroundScope)
       withClue("fastFlowResult1") { fastFlow.awaitPersonWithName("Name0") }
 
-      val slowFlowStarted = MutableStateFlow(false)
-      val slowFlowEnabled = MutableStateFlow(false)
+      val slowFlowStarted = SuspendingFlag()
+      val slowFlowEnabled = SuspendingFlag()
       val slowFlow =
         querySubscription.flow
           .distinctUntilChanged()
           .onEach {
-            slowFlowStarted.value = true
-            slowFlowEnabled.awaitTrue()
+            slowFlowStarted.set()
+            slowFlowEnabled.await()
           }
           .testIn(backgroundScope)
-      slowFlowStarted.awaitTrue()
+      slowFlowStarted.await()
 
       repeat(3) {
         schema.updatePerson(id = personId, name = "NewName$it").execute()
@@ -183,7 +181,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       withClue("fastFlowResult3") { fastFlow.awaitPersonWithName("NewName1") }
       withClue("fastFlowResult4") { fastFlow.awaitPersonWithName("NewName2") }
 
-      slowFlowEnabled.value = true
+      slowFlowEnabled.set()
       withClue("slowFlowResult1") { slowFlow.awaitPersonWithName("Name0") }
       withClue("slowFlowResult2") { slowFlow.awaitPersonWithName("NewName0") }
       withClue("slowFlowResult3") { slowFlow.awaitPersonWithName("NewName1") }
@@ -199,23 +197,27 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
     val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
     turbineScope {
-      val latch = SuspendingCountDownLatch(3)
+      val flow1aStarted = SuspendingFlag()
       val flow1a =
         querySubscription1.flow
-          .onEach { latch.countDown() }
+          .onEach { flow1aStarted.set() }
           .distinctUntilChanged()
           .testIn(backgroundScope)
+      val flow1bStarted = SuspendingFlag()
       val flow1b =
         querySubscription1.flow
-          .onEach { latch.countDown() }
+          .onEach { flow1bStarted.set() }
           .distinctUntilChanged()
           .testIn(backgroundScope)
+      val flow2Started = SuspendingFlag()
       val flow2 =
         querySubscription2.flow
-          .onEach { latch.countDown() }
+          .onEach { flow2Started.set() }
           .distinctUntilChanged()
           .testIn(backgroundScope)
-      latch.await()
+      flow1aStarted.await()
+      flow1bStarted.await()
+      flow2Started.await()
 
       schema.updatePerson(id = personId, name = "NewName").execute()
       (querySubscription1 as QuerySubscriptionInternal<*, *>).reload()
@@ -237,23 +239,27 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
     val querySubscription2 = schema.getPerson(id = personId).subscribe()
 
     turbineScope {
-      val latch = SuspendingCountDownLatch(3)
+      val flow1aStarted = SuspendingFlag()
       val flow1a =
         querySubscription1.flow
-          .onEach { latch.countDown() }
+          .onEach { flow1aStarted.set() }
           .distinctUntilChanged()
           .testIn(backgroundScope)
+      val flow1bStarted = SuspendingFlag()
       val flow1b =
         querySubscription1.flow
-          .onEach { latch.countDown() }
+          .onEach { flow1bStarted.set() }
           .distinctUntilChanged()
           .testIn(backgroundScope)
+      val flow2Started = SuspendingFlag()
       val flow2 =
         querySubscription2.flow
-          .onEach { latch.countDown() }
+          .onEach { flow2Started.set() }
           .distinctUntilChanged()
           .testIn(backgroundScope)
-      latch.await()
+      flow1aStarted.await()
+      flow1bStarted.await()
+      flow2Started.await()
 
       schema.updatePerson(id = personId, name = "NewName").execute()
       schema.getPerson(id = personId).execute()
@@ -565,9 +571,9 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
    * the cache for the query with the given variables never gets garbage collected.
    */
   private suspend fun TestScope.keepCacheAlive(query: QueryRef<*, *>) {
-    val cachePrimed = MutableStateFlow(false)
-    backgroundScope.launch { query.subscribe().flow.onEach { cachePrimed.value = true }.collect() }
-    cachePrimed.awaitTrue()
+    val cachePrimed = SuspendingFlag()
+    backgroundScope.launch { query.subscribe().flow.onEach { cachePrimed.set() }.collect() }
+    cachePrimed.await()
   }
 
   private companion object {
@@ -632,10 +638,6 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
       val data = withClue("result.getOrThrow()") { result.getOrThrow().data }
       val person = withClue("data.person") { data.person.shouldNotBeNull() }
       withClue("person.name") { person.name shouldBe name }
-    }
-
-    suspend fun MutableStateFlow<Boolean>.awaitTrue() {
-      filter { it }.first()
     }
   }
 }
