@@ -114,7 +114,7 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.12.0'
 
     // Integration Test Deps
-    androidTestImplementation 'junit:junit:4.13.2'
+    androidTestImplementation libs.junit
     androidTestImplementation 'androidx.test:rules:1.4.0'
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'

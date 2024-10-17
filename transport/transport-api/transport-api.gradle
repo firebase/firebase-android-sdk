@@ -46,6 +46,6 @@ dependencies {
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
 
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.13-beta-3'
 }

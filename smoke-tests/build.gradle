@@ -64,7 +64,7 @@ android {
 apply from: "configure.gradle"
 
 dependencies {
-  implementation "androidx.test:core:1.5.0"
+  implementation libs.androidx.test.core
   // Common utilities (application side)
   implementation "androidx.test:rules:1.4.0"
   implementation "androidx.test:runner:1.4.0"
@@ -90,11 +90,11 @@ dependencies {
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
   implementation "com.google.truth:truth:1.0.1"
-  implementation "junit:junit:4.13.2"
+  implementation libs.junit
 
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"
-  androidTestImplementation "junit:junit:4.13.2"
+  androidTestImplementation libs.junit
 }
 
 clean.doLast {
