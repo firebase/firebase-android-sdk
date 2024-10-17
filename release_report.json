@@ -1,0 +1,687 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            },
+            {
+                "commitId": "552132b4540fc7ddb590b43f1505ea83e40cff82",
+                "prId": "6306",
+                "author": "Denver Coneybeare",
+                "message": "ConfigCacheClientTest.java: fix flaky test due to race condition (#6306)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/552132b4540fc7ddb590b43f1505ea83e40cff82",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6306"
+            }
+        ],
+        "firebase-config/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            },
+            {
+                "commitId": "8def61ffd2fad75d5a775b0a3fe2188f7b0d311d",
+                "prId": "6337",
+                "author": "Matthew Robertson",
+                "message": "Add code and link tags to Crashlytics Javadoc (#6337)\n\nUpdate the Crashlytics Javadoc to add appropriate `link` and `code`\r\ntags.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8def61ffd2fad75d5a775b0a3fe2188f7b0d311d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6337"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prId": "6383",
+                "author": "Daymon",
+                "message": "Add missing changelogs (#6383)\n\nPer [b/373458620](https://b.corp.google.com/issues/373458620),\r\n\r\nThis PR adds changelogs that were missing from #6343; due to library\r\ngroups.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6383"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prId": "6383",
+                "author": "Daymon",
+                "message": "Add missing changelogs (#6383)\n\nPer [b/373458620](https://b.corp.google.com/issues/373458620),\r\n\r\nThis PR adds changelogs that were missing from #6343; due to library\r\ngroups.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6383"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "0b1582a9836b495950e4b9d384f22f1f572990ba",
+                "prId": "6374",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DateScalarIntegrationTest.kt modernized (#6374)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0b1582a9836b495950e4b9d384f22f1f572990ba",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6374"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            },
+            {
+                "commitId": "b49d448d6ac4d891a9577cc66deb5f86c20aed2f",
+                "prId": "6358",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: add firebase-dataconnect:connectors:updateJson task (#6358)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b49d448d6ac4d891a9577cc66deb5f86c20aed2f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6358"
+            },
+            {
+                "commitId": "18fd9f70b01f29f6679fb9e332fbcbb1e409c1f4",
+                "prId": "6354",
+                "author": "Denver Coneybeare",
+                "message": "OperationExecuteIntegrationTest.kt modernized (#6354)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/18fd9f70b01f29f6679fb9e332fbcbb1e409c1f4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6354"
+            },
+            {
+                "commitId": "4ee86a36358c809d058564f0c9b268193dea30b1",
+                "prId": "6357",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectExecutableVersions.json updated with versions 1.4.4 and 1.5.0 (#6357)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4ee86a36358c809d058564f0c9b268193dea30b1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6357"
+            },
+            {
+                "commitId": "b1b107f2531771e8da69425f3e3d834c15288d80",
+                "prId": "6350",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix build on macos and windows (#6350)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b1b107f2531771e8da69425f3e3d834c15288d80",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6350"
+            },
+            {
+                "commitId": "3f3b6885fc2ad5e022694609fbe3f866304aae4f",
+                "prId": "6353",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectBackendUnitTest.kt modernized (#6353)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3f3b6885fc2ad5e022694609fbe3f866304aae4f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6353"
+            },
+            {
+                "commitId": "48aab50c2e434a58d737895d217b3288800117a1",
+                "prId": "6339",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: modernize SerializationTestData.kt to use Arb instead of bespoke random data generation (#6339)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/48aab50c2e434a58d737895d217b3288800117a1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6339"
+            },
+            {
+                "commitId": "2d3e4141de4426f05a0c63635aae3810dda6f882",
+                "prId": "6335",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: modernize tests in ProtoStructDecoderUnitTest.kt, ProtoStructEncoderUnitTest.kt, and TimestampSerializerUnitTest.kt (#6335)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d3e4141de4426f05a0c63635aae3810dda6f882",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6335"
+            },
+            {
+                "commitId": "bb5a4d4d313ee37b3bb5ef800cec96f99c74ed28",
+                "prId": "6333",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: improve gradle plugin errors when the version of the cli is not found (#6333)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bb5a4d4d313ee37b3bb5ef800cec96f99c74ed28",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6333"
+            },
+            {
+                "commitId": "58c348187d7788491c191e95a4fd84eb8fb4aa13",
+                "prId": "6329",
+                "author": "Denver Coneybeare",
+                "message": "FirebaseDataConnectIntegrationTest.kt: refactor to use more modern kotlin testing facilities (#6329)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/58c348187d7788491c191e95a4fd84eb8fb4aa13",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6329"
+            },
+            {
+                "commitId": "75361e736034f943dd4a5873ebeb87335d67c6de",
+                "prId": "6331",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: gradle plugin modified to load executable versions from a json file (#6331)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/75361e736034f943dd4a5873ebeb87335d67c6de",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6331"
+            },
+            {
+                "commitId": "b789d9b11f7c537a0ab8fe5cd4ae36754155cda6",
+                "prId": "6328",
+                "author": "Denver Coneybeare",
+                "message": "Use gradle/libs.versions.toml to specify the Spotless version (#6328)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b789d9b11f7c537a0ab8fe5cd4ae36754155cda6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6328"
+            },
+            {
+                "commitId": "034566edad9c3f25d4aeb5eb14a892aea3a5cf7c",
+                "prId": "6308",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: Add OrderDirection codegen integration test (#6308)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/034566edad9c3f25d4aeb5eb14a892aea3a5cf7c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6308"
+            },
+            {
+                "commitId": "55585640d5c4860e7a9b9a8251edb653b21cfcbc",
+                "prId": "6325",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: Add toolkit versions to gradle plugin: 1.4.1, 1.4.2, and 1.4.3 (#6325)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/55585640d5c4860e7a9b9a8251edb653b21cfcbc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6325"
+            },
+            {
+                "commitId": "46f2fd05759256b6bcc7d4bfbca04af062a748b0",
+                "prId": "6327",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix gradle plugin to gracefully handle schemaExtensionsOutputEnabled not being explicitly specified (#6327)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46f2fd05759256b6bcc7d4bfbca04af062a748b0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6327"
+            },
+            {
+                "commitId": "8e7f6a5f96038a74ad0e4c5fbaec5dc001099f79",
+                "prId": "6321",
+                "author": "Denver Coneybeare",
+                "message": "Use gradle/libs.versions.toml to specify the Android Gradle Plugin version (#6321)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8e7f6a5f96038a74ad0e4c5fbaec5dc001099f79",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6321"
+            },
+            {
+                "commitId": "ffcc8bab61525f368fa22b341bd2e3c512a8b513",
+                "prId": "6320",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: gradleplugin now gets kotlin version from the main libs.versions.toml (#6320)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ffcc8bab61525f368fa22b341bd2e3c512a8b513",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6320"
+            },
+            {
+                "commitId": "ff3efc75206af98801121eb1efee90865afd002b",
+                "prId": "6312",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: upgrade toolkit version to 1.4.0 (was 1.3.8) (#6312)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ff3efc75206af98801121eb1efee90865afd002b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6312"
+            },
+            {
+                "commitId": "cb132ab4263cd01aa6f506af5cc75394b3d0d9b5",
+                "prId": "6307",
+                "author": "Denver Coneybeare",
+                "message": "Add OrderDirection support (#6307)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cb132ab4263cd01aa6f506af5cc75394b3d0d9b5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6307"
+            },
+            {
+                "commitId": "a95da3f98b29c07a3ac0ba6bb9e862cc07c978ed",
+                "prId": "6290",
+                "author": "Denver Coneybeare",
+                "message": "firebase-dataconnect merge into main branch (#6290)\n\nIncludes contributions by @cherylEnkidu\r\n\r\n---------\r\n\r\nCo-authored-by: cherylEnkidu <96084918+cherylEnkidu@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a95da3f98b29c07a3ac0ba6bb9e862cc07c978ed",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6290"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "60a5e4c20860b2a08d9c4b482250fc6956e29483",
+                "prId": "6369",
+                "author": "Tom Andersen",
+                "message": "Synchronize protos (#6369)\n\nThis is a result of comparison with official Firestore protos.\r\n\r\nNote, some gRPC endpoint and message additions were omitted since we\r\nhave no plans of supporting them in SDK.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/60a5e4c20860b2a08d9c4b482250fc6956e29483",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6369"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ],
+        "firebase-firestore/ktx": [
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            },
+            {
+                "commitId": "d6ee0d2aaafbe97c8242fd6cce4576999fb327ae",
+                "prId": "6150",
+                "author": "David Motsonashvili",
+                "message": "update targetSDK to 34 (#6150)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6ee0d2aaafbe97c8242fd6cce4576999fb327ae",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6150"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            },
+            {
+                "commitId": "d6ee0d2aaafbe97c8242fd6cce4576999fb327ae",
+                "prId": "6150",
+                "author": "David Motsonashvili",
+                "message": "update targetSDK to 34 (#6150)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6ee0d2aaafbe97c8242fd6cce4576999fb327ae",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6150"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prId": "6383",
+                "author": "Daymon",
+                "message": "Add missing changelogs (#6383)\n\nPer [b/373458620](https://b.corp.google.com/issues/373458620),\r\n\r\nThis PR adds changelogs that were missing from #6343; due to library\r\ngroups.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6383"
+            }
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            },
+            {
+                "commitId": "d6ee0d2aaafbe97c8242fd6cce4576999fb327ae",
+                "prId": "6150",
+                "author": "David Motsonashvili",
+                "message": "update targetSDK to 34 (#6150)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6ee0d2aaafbe97c8242fd6cce4576999fb327ae",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6150"
+            }
+        ],
+        "firebase-ml-modeldownloader/ktx": [
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "8869a14aeddfa2da17855938039cac4255fe4d8a",
+                "prId": "6371",
+                "author": "Matthew Robertson",
+                "message": "Fix IllegalStateException when starting a trace before Firebase init (#6371)\n\nFix IllegalStateException when starting a trace before Firebase\r\ninitializes.\r\n\r\nThis can happen if you manually initialize Firebase. See #4693",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8869a14aeddfa2da17855938039cac4255fe4d8a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6371"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ],
+        "firebase-perf/ktx": [
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "dd239598c673feace38c5e858f60675ac142365e",
+                "prId": "6379",
+                "author": "David Motsonashvili",
+                "message": "make SafetySettings#method nullable (#6379)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dd239598c673feace38c5e858f60675ac142365e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6379"
+            },
+            {
+                "commitId": "980b1801c4606b634e06b46da490ddf290635b11",
+                "prId": "6370",
+                "author": "Rodrigo Lazo",
+                "message": "General improvement to VertexAI kdocs (#6370)\n\nSeveral improvements to the kdocs of the public API of Vertex AI in\r\nFirebase.\r\n\r\n---------\r\n\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/980b1801c4606b634e06b46da490ddf290635b11",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6370"
+            },
+            {
+                "commitId": "2d6c8991bfa01f6b04347fa4c70381ad579d74e5",
+                "prId": "6373",
+                "author": "Rodrigo Lazo",
+                "message": "Remove `functionResponse` accessor, and mark `functionCallingConfig` nullable (#6373)\n\nThere's no need for the response accessor, as under normal circunstances\r\nthere's no need to have easy access to the [FunctionResponsePart] the\r\napp adds to a prompt.\r\n\r\nAdditionally, to make evolving the API easier and backward compatible,\r\nmade `functionCallingConfig` parameter nullable in `ToolConfig`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d6c8991bfa01f6b04347fa4c70381ad579d74e5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6373"
+            },
+            {
+                "commitId": "7cf67aa697e51ecda3f33043cfc5e7ac5c291b6c",
+                "prId": "6368",
+                "author": "Rodrigo Lazo",
+                "message": "Make FirebaseVertexAIException abstract, and constructors internal (#6368)\n\nFor better API evolution while maintaining backward compatibility, moved\r\n`FirebaseVertexAIException` from sealed to abstract class.\r\n\r\nAlso, since the dev shoul not be creating instances of the class, or its\r\nsubclasses, marking those constructors as internal.\r\n\r\n---------\r\n\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7cf67aa697e51ecda3f33043cfc5e7ac5c291b6c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6368"
+            },
+            {
+                "commitId": "11a813fecd0caa2be907a4c5da630a060beda66a",
+                "prId": "6361",
+                "author": "Rodrigo Lazo",
+                "message": "Update inlineData Java specific API to match Kotlin (#6361)\n\nThe order of the arguments was changed from (mimeType, bytes) to (bytes,\r\nmimeType).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/11a813fecd0caa2be907a4c5da630a060beda66a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6361"
+            },
+            {
+                "commitId": "3271557e35fe56dc5557cf60833b4d8a8e207278",
+                "prId": "6360",
+                "author": "Rodrigo Lazo",
+                "message": "Revert \"Introduce FunctionCall and FunctionResponse types (#6311)\"  (#6360)\n\nThis better aligns FunctionCallParts with the other Parts.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3271557e35fe56dc5557cf60833b4d8a8e207278",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6360"
+            },
+            {
+                "commitId": "412cef4c3b6c3fe3ad0af13297a4b3d1b409617a",
+                "prId": "6355",
+                "author": "Rodrigo Lazo",
+                "message": "Add @JvmOverloads to schema declarations (#6355)\n\nAdding the overloads is necessary to ensure the devEx in Java is better,\r\nand no unnecessary parameters are passed to the Schema factory methods.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/412cef4c3b6c3fe3ad0af13297a4b3d1b409617a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6355"
+            },
+            {
+                "commitId": "996acd89994a846a6149e8fe9e289268ef42c6bd",
+                "prId": "6352",
+                "author": "Rodrigo Lazo",
+                "message": "Update vertexai changelog file (#6352)\n\nIt includes the full list of changes since the last release.\r\n\r\n---------\r\n\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/996acd89994a846a6149e8fe9e289268ef42c6bd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6352"
+            },
+            {
+                "commitId": "b1da895dc1473c7bf307fe5fefc29aa8422f4796",
+                "prId": "6351",
+                "author": "Rodrigo Lazo",
+                "message": "Ensure system instruction content has system role (#6351)\n\nAlthough the model has been ignoring the role in the content declared as\r\npart of \"system_instruction\", the correct value should be \"system\"\r\n\r\n---------\r\n\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b1da895dc1473c7bf307fe5fefc29aa8422f4796",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6351"
+            },
+            {
+                "commitId": "448adae0e30653fdf62182d9130d9afe54371c8e",
+                "prId": "6346",
+                "author": "Rodrigo Lazo",
+                "message": "Change InlineDataPart to match ImagePart (#6346)\n\nThe order of the parameters should be consistent between them, and it\r\nshould be (url/byte, mime-type).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/448adae0e30653fdf62182d9130d9afe54371c8e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6346"
+            },
+            {
+                "commitId": "e417d5db795c7c9d721aafb4b3f44ce39ac78358",
+                "prId": "6340",
+                "author": "Daymon",
+                "message": "Migrate away from enums (#6340)\n\nPer [b/370771226](https://b.corp.google.com/issues/370771226),\r\n\r\nThis refactors all our enums in vertex to be classes instead. While this\r\nmeans no more exhaustive `when`, this allows us to add new values in the\r\nfuture without breaking the API.\r\n\r\nSince we (android) can only perform breaking changes [effectively] every\r\nsix months, this will allow us to align with the [evolving] backend\r\nsignificantly faster.\r\n\r\nThis also adds a test to ensure the conversion layer is updated whenever\r\nany of these values are updated- since we no longer have the exhaustive\r\n`when` to catch such cases.\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e417d5db795c7c9d721aafb4b3f44ce39ac78358",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6340"
+            },
+            {
+                "commitId": "7083c1d40cafe8f1b1e4478ebe29a05896702515",
+                "prId": "6260",
+                "author": "Rodrigo Lazo",
+                "message": "Add vertexAI to the Bill of Materials (#6260)\n\nb/348631692\r\n\r\n---------\r\n\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7083c1d40cafe8f1b1e4478ebe29a05896702515",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6260"
+            },
+            {
+                "commitId": "87b6d120ce2a539bef876da81d4fdce5ac99e836",
+                "prId": "6334",
+                "author": "Rodrigo Lazo",
+                "message": "Use abstract class instead of sealed classes for StringFormat (#6334)\n\n`sealed` classes have nice properties but they don't play well with API\r\nbackward compatibility. Adding a new class to a `sealed` class set is a\r\nbreaking change since they require exhaustive switching.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/87b6d120ce2a539bef876da81d4fdce5ac99e836",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6334"
+            },
+            {
+                "commitId": "a6944a20940a8233a37165caedaf8d2f532a4217",
+                "prId": "6332",
+                "author": "David Motsonashvili",
+                "message": "Fix: Vertex Fails to parse some function parameters (#6332)\n\nString parameters previously failed to parse raw due to ambiguity of the\r\nJsonFormat. The key is to not parse them as JsonElements and then\r\nconvert them to strings.\r\n\r\nThat fix is here along with regression tests.\r\n\r\n---------\r\n\r\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a6944a20940a8233a37165caedaf8d2f532a4217",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6332"
+            },
+            {
+                "commitId": "a4b3a02940901a76c13ff059dc05487383a433af",
+                "prId": "6326",
+                "author": "Rodrigo Lazo",
+                "message": "Update service disabled wording (#6326)\n\nNew wording more clearely describes the steps to take to solve the\r\nissue.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a4b3a02940901a76c13ff059dc05487383a433af",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6326"
+            },
+            {
+                "commitId": "4a9d2d9d4c93e43c8aa494d0c610a33f2777e9bb",
+                "prId": "6324",
+                "author": "Rodrigo Lazo",
+                "message": "Update vertex version (#6324)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4a9d2d9d4c93e43c8aa494d0c610a33f2777e9bb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6324"
+            },
+            {
+                "commitId": "877614a2f6ef2cf051aadab158569f34e9fd3925",
+                "prId": "6262",
+                "author": "Rodrigo Lazo",
+                "message": "Rename BlockThreshold to HarmBlockThreshold (#6262)\n\nThis better matches the backend API.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/877614a2f6ef2cf051aadab158569f34e9fd3925",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6262"
+            },
+            {
+                "commitId": "e98a4b630e8d477935b530d8ed3d9e43dbb05635",
+                "prId": "6313",
+                "author": "Rodrigo Lazo",
+                "message": "Use kotlin's explicit API in vertexAI (#6313)\n\nThis option forces you to define the visibility of your code in Kotlin,\r\nignoring the default visibility of `public`\r\n\r\nFor more context, see\r\n\r\n\r\nhttps://kotlinlang.org/docs/whatsnew14.html#explicit-api-mode-for-library-authors\r\n\r\nhttps://umang91.medium.com/explicit-api-mode-kotlin-a527843d94f3",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e98a4b630e8d477935b530d8ed3d9e43dbb05635",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6313"
+            },
+            {
+                "commitId": "7bab83801a21cb5255c7bd52f8c9824fd5fe49cd",
+                "prId": "6311",
+                "author": "Rodrigo Lazo",
+                "message": "Introduce `FunctionCall` and `FunctionResponse` types (#6311)\n\nTheir *part counter parts will now wrap them, instead of exposing the\r\nunderlying structure directly.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bab83801a21cb5255c7bd52f8c9824fd5fe49cd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6311"
+            },
+            {
+                "commitId": "1f6afc700687d31a985622c74441251538a49254",
+                "prId": "6300",
+                "author": "Rodrigo Lazo",
+                "message": "Update endpoint (#6300)\n\nUpdate the endpoint used by vertexAI\r\n\r\nb/365756293",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1f6afc700687d31a985622c74441251538a49254",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6300"
+            },
+            {
+                "commitId": "885b66ffb01b0ebe7d456e68abbd7e6db4f14adc",
+                "prId": "6279",
+                "author": "emilypgoogle",
+                "message": "Add consumer proguard rules (#6279)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/885b66ffb01b0ebe7d456e68abbd7e6db4f14adc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6279"
+            },
+            {
+                "commitId": "92a824b97a5c7ebc0bacdffbdddc3d0eee416f3c",
+                "prId": "6309",
+                "author": "Rodrigo Lazo",
+                "message": "Improvements to vertexAI types (#6309)\n\nA collection of improvements to the VertexAI SDK:\r\n\r\n- Make properties of `GenerativeModel` private\r\n- Rename all `blob.*` to `inlineData.*`\r\n- Improvements to `FunctionCallingConfig`\r\n- Add support for `frequencyPenalty` and `presencePenalty`\r\n- Add support for `HarmBlockMethod`\r\n- Add support for `title` and `publicationDate` in `Citation\r\n- Make error handling more robust when details are missing\r\n\r\n---------\r\n\r\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/92a824b97a5c7ebc0bacdffbdddc3d0eee416f3c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6309"
+            }
+        ],
+        "transport/transport-api": [
+            {
+                "commitId": "c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prId": "6383",
+                "author": "Daymon",
+                "message": "Add missing changelogs (#6383)\n\nPer [b/373458620](https://b.corp.google.com/issues/373458620),\r\n\r\nThis PR adds changelogs that were missing from #6343; due to library\r\ngroups.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c50a9b5a455313b753867af4567ace4311c4b49b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6383"
+            }
+        ],
+        "transport/transport-backend-cct": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ],
+        "transport/transport-runtime": [
+            {
+                "commitId": "2f157570a01463d871191975d67afb784efde7fc",
+                "prId": "6385",
+                "author": "Daymon",
+                "message": "Fix release notes + dataconnect config (#6385)\n\nPer [b/373637986](https://b.corp.google.com/issues/373637986),\r\n\r\nThis fixes the release notes configuration for the `data-connect` SDK,\r\nas they seemed to be incorrect.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/373639079](https://b.corp.google.com/issues/373639079) -> Refactor\r\ngithub vuln links to `nist.gov`\r\n- [b/374115995](https://b.corp.google.com/issues/374115995) -> Fix\r\nVertexAI Javadocs",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2f157570a01463d871191975d67afb784efde7fc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6385"
+            },
+            {
+                "commitId": "065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prId": "6343",
+                "author": "Daymon",
+                "message": "Bump protobuf to 3.25.5 (#6343)\n\nPer [b/371058443](https://b.corp.google.com/issues/371058443),\r\n\r\nThis bumps our protobuf deps to `3.25.5` to address [CVE\r\n2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).\r\n\r\nAll relevant libraries should have a changelog attached, unless I missed\r\nany.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/371223043](https://b.corp.google.com/issues/371223043) -> Migrate\r\nprotobuf deps to version catalog\r\n\r\nFixes #6336\r\n\r\n---------\r\n\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/065c732669e350bd5b8f4df9d53dc5212a28e4aa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6343"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":protolite-well-known-types"
+    ]
+}
