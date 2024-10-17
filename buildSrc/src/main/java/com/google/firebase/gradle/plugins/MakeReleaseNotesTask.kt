@@ -38,7 +38,7 @@ import org.gradle.work.DisableCachingByDefault
  * @property releaseNotesFile The output file to write the release notes to
  * @property skipMissingEntries Continue the build if the release notes are missing entries
  * @throws StopActionException If metadata does not exist for the given project, or there are no
- *   changes to release
+ * changes to release
  * @see make
  */
 @DisableCachingByDefault
@@ -178,7 +178,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      * - Look for numbers that will be surrounded by either brackets or parentheses
      * - These numbers might be preceded by `GitHub `
      * - These numbers might also be followed by parentheses with `//` followed by some text (a
-     *   link)
+     * link)
      * - At the end there might be `{: .external}`
      *
      * For example:

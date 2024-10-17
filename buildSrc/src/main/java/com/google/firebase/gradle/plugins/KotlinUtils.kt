@@ -55,7 +55,7 @@ public fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())
  * ```
  *
  * @throws NoSuchElementException if the [Element] does not have descendant [Element]s with tags
- *   that match the components of an Artifact string; groupId, artifactId, version.
+ * that match the components of an Artifact string; groupId, artifactId, version.
  */
 fun Element.toArtifactString() =
   "${textByTag("groupId")}:${textByTag("artifactId")}:${textByTag("version")}"
@@ -77,7 +77,7 @@ fun Element.toArtifactString() =
  * ```
  *
  * @throws NoSuchElementException if the [Element] does not have descendant [Element]s with tags
- *   that match the components of an Artifact string; groupId, artifactId, version.
+ * that match the components of an Artifact string; groupId, artifactId, version.
  */
 fun Element.toMavenName() = "${textByTag("groupId")}:${textByTag("artifactId")}"
 
@@ -145,7 +145,7 @@ fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
  *
  * @param input the string to search through
  * @param startIndex an index to start search with, by default zero. Must be not less than zero and
- *   not greater than `input.length()`
+ * not greater than `input.length()`
  * @throws RuntimeException if a match is not found
  */
 fun Regex.findOrThrow(input: CharSequence, startIndex: Int = 0) =
@@ -201,7 +201,7 @@ fun <T> List<T>.separateAt(index: Int) = slice(0 until index) to slice(index..la
  *
  * @param regex the [Regex] to use to match against values in this list
  * @param transform a callback to call with [MathResults][MatchResult] when matches are found. If
- *   the [transform] returns null, then the value remains unchanged.
+ * the [transform] returns null, then the value remains unchanged.
  */
 fun List<String>.replaceMatches(regex: Regex, transform: (MatchResult) -> String?) = map {
   val newValue = regex.find(it)?.let(transform)

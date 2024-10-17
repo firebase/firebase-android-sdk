@@ -42,7 +42,7 @@ import org.gradle.api.tasks.TaskAction
  *
  * @property changesByLibraryName contains libs which have opted into the release, and their changes
  * @property changedLibrariesWithNoChangelog contains libs not opted into the release, despite
- *   having changes
+ * having changes
  */
 @Serializable
 data class ReleaseReport(
@@ -183,7 +183,8 @@ abstract class ReleaseGenerator : DefaultTask() {
       .setListMode(ListBranchCommand.ListMode.REMOTE)
       .call()
       .firstOrNull { it.name == "refs/remotes/origin/releases/$branchName" }
-      ?.objectId ?: throw RuntimeException("Could not find branch named $branchName")
+      ?.objectId
+      ?: throw RuntimeException("Could not find branch named $branchName")
 
   private fun getChangedLibraries(
     repo: Git,

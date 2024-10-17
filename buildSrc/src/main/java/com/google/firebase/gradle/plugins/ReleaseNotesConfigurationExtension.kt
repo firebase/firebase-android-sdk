@@ -30,10 +30,10 @@ import org.gradle.api.provider.Property
  * @property name The variable name mapping for this library, defined on G3.
  * @property versionName The version name mapping for this library, defined on G3.
  * @property hasKTX The library has a sub module with the suffix '-ktx' that releases alongside this
- *   library, and should have the transitive text added to the release notes. Defaults to true. Will
- *   likely be removed when we officially drop KTX libraries.
+ * library, and should have the transitive text added to the release notes. Defaults to true. Will
+ * likely be removed when we officially drop KTX libraries.
  * @property artifactName The name of the generation artifact. _Only_ required if your project's
- *   name is different than your generated artifact name. Defaults to the project name.
+ * name is different than your generated artifact name. Defaults to the project name.
  * @see MakeReleaseNotesTask
  */
 abstract class ReleaseNotesConfigurationExtension {
