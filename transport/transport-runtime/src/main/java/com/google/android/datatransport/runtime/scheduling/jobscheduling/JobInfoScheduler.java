@@ -14,7 +14,8 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
-import static android.util.Base64.*;
+import static android.util.Base64.DEFAULT;
+import static android.util.Base64.encodeToString;
 
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
@@ -23,14 +24,10 @@ import android.content.Context;
 import android.os.Build;
 import android.os.PersistableBundle;
 import androidx.annotation.RequiresApi;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
-import java.util.zip.Adler32;
 
 /**
  * Schedules the service {@link JobInfoSchedulerService} based on the backendname. Used for Apis 21
@@ -56,21 +53,6 @@ public class JobInfoScheduler implements WorkScheduler {
     this.context = applicationContext;
     this.eventStore = eventStore;
     this.config = config;
-  }
-
-  @VisibleForTesting
-  int getJobId(TransportContext transportContext) {
-    Adler32 checksum = new Adler32();
-    checksum.update(context.getPackageName().getBytes(Charset.forName("UTF-8")));
-    checksum.update(transportContext.getBackendName().getBytes(Charset.forName("UTF-8")));
-    checksum.update(
-        ByteBuffer.allocate(4)
-            .putInt(PriorityMapping.toInt(transportContext.getPriority()))
-            .array());
-    if (transportContext.getExtras() != null) {
-      checksum.update(transportContext.getExtras());
-    }
-    return (int) checksum.getValue();
   }
 
   private boolean isJobServiceOn(JobScheduler scheduler, int jobId, int attemptNumber) {
@@ -106,7 +88,7 @@ public class JobInfoScheduler implements WorkScheduler {
     ComponentName serviceComponent = new ComponentName(context, JobInfoSchedulerService.class);
     JobScheduler jobScheduler =
         (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
-    int jobId = getJobId(transportContext);
+    int jobId = WorkScheduler.getJobId(context, transportContext);
     // Check if there exists a job scheduled for this backend name.
     if (!force && isJobServiceOn(jobScheduler, jobId, attemptNumber)) {
       Logging.d(

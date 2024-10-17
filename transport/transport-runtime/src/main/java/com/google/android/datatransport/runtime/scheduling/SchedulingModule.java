@@ -19,6 +19,7 @@ import android.os.Build;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.SchedulerConfig;
+import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkManagerScheduler;
 import com.google.android.datatransport.runtime.scheduling.jobscheduling.WorkScheduler;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
 import com.google.android.datatransport.runtime.time.Clock;
@@ -32,7 +33,9 @@ public abstract class SchedulingModule {
   @Provides
   static WorkScheduler workScheduler(
       Context context, EventStore eventStore, SchedulerConfig config, @Monotonic Clock clock) {
-    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+    if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      return new WorkManagerScheduler(context, eventStore, config);
+    } else if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
       return new JobInfoScheduler(context, eventStore, config);
     } else {
       return new AlarmManagerScheduler(context, eventStore, clock, config);

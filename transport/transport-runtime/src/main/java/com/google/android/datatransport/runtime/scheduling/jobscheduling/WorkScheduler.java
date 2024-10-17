@@ -14,11 +14,32 @@
 
 package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 
+import android.content.Context;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.runtime.TransportContext;
+import com.google.android.datatransport.runtime.util.PriorityMapping;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.zip.Adler32;
 
 /** Schedules the services to be able to eventually log events to their respective backends. */
 public interface WorkScheduler {
   void schedule(TransportContext transportContext, int attemptNumber);
 
   void schedule(TransportContext transportContext, int attemptNumber, boolean force);
+
+  @VisibleForTesting
+  static int getJobId(Context context, TransportContext transportContext) {
+    Adler32 checksum = new Adler32();
+    checksum.update(context.getPackageName().getBytes(Charset.forName("UTF-8")));
+    checksum.update(transportContext.getBackendName().getBytes(Charset.forName("UTF-8")));
+    checksum.update(
+        ByteBuffer.allocate(4)
+            .putInt(PriorityMapping.toInt(transportContext.getPriority()))
+            .array());
+    if (transportContext.getExtras() != null) {
+      checksum.update(transportContext.getExtras());
+    }
+    return (int) checksum.getValue();
+  }
 }
