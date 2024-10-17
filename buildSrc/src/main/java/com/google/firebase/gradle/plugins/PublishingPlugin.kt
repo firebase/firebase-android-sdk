@@ -175,7 +175,7 @@ abstract class PublishingPlugin : Plugin<Project> {
   }
 
   /**
-   * Figures out the [ReleaseMetadata] for with this release.
+   * Figures out the [ReleaseMetadata] for this release.
    *
    * Metadata can be provided either via the project properties or a [ReleaseConfig] file.
    *
@@ -298,7 +298,7 @@ abstract class PublishingPlugin : Plugin<Project> {
    *
    * A collection of [PomValidator] for each releasing project.
    *
-   * Ensures that pom dependencies are not accidently downgraded.
+   * Ensures that pom dependencies are not accidentally downgraded.
    */
   private fun registerValidatePomForReleaseTask(
     project: Project,
@@ -608,7 +608,7 @@ abstract class PublishingPlugin : Plugin<Project> {
  *
  * @property releasingLibraries A list of libraries that should be released
  * @property name The name of the release (such as `m123`)
- * @see computeReleaseMetadata
+ * @see PublishingPlugin.computeReleaseMetadata
  */
 data class ReleaseMetadata(
   val releasingLibraries: List<FirebaseLibraryExtension>,
