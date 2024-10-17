@@ -19,6 +19,8 @@ package com.google.firebase.dataconnect.testutil.schemas
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWithHardcodedNameQuery.hardcodedPeople
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import kotlinx.coroutines.test.*
 import org.junit.Test
 
@@ -28,7 +30,7 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun createPersonShouldCreateTheSpecifiedPerson() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "TestName", age = 42).execute()
 
     val result = schema.getPerson(id = personId).execute()
@@ -41,7 +43,7 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun deletePersonShouldDeleteTheSpecifiedPerson() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "TestName", age = 42).execute()
     assertThat(schema.getPerson(id = personId).execute().data.person).isNotNull()
 
@@ -52,7 +54,7 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun updatePersonShouldUpdateTheSpecifiedPerson() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "TestName0", age = 42).execute()
 
     schema.updatePerson(id = personId, name = "TestName99", age = 999).execute()
@@ -64,9 +66,9 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun getPersonShouldReturnThePersonWithTheSpecifiedId() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
     schema.createPerson(id = person1Id, name = "Name111", age = 111).execute()
     schema.createPerson(id = person2Id, name = "Name222", age = 222).execute()
     schema.createPerson(id = person3Id, name = "Name333", age = null).execute()
@@ -116,9 +118,9 @@ class PersonSchemaIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun getPeopleByNameShouldReturnThePeopleWithTheGivenName() = runTest {
-    val personName = randomPersonName()
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
+    val personName = Arb.alphanumericString(prefix = "personName").next()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
     schema.createPerson(id = person1Id, name = personName, age = 1).execute()
     schema.createPerson(id = person2Id, name = personName, age = 2).execute()
 

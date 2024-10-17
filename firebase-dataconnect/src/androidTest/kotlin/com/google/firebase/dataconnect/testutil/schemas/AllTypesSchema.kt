@@ -18,10 +18,8 @@ package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.copy
-import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase.Companion.testConnectorConfig
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
-import com.google.firebase.dataconnect.testutil.randomAlphanumericString
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
@@ -230,9 +228,3 @@ class AllTypesSchema(val dataConnect: FirebaseDataConnect) {
     const val CONNECTOR = "alltypes"
   }
 }
-
-fun DataConnectIntegrationTestBase.randomFarmerId() = randomAlphanumericString(prefix = "FarmerId")
-
-fun DataConnectIntegrationTestBase.randomFarmId() = randomAlphanumericString(prefix = "FarmId")
-
-fun DataConnectIntegrationTestBase.randomAnimalId() = randomAlphanumericString(prefix = "AnimalId")

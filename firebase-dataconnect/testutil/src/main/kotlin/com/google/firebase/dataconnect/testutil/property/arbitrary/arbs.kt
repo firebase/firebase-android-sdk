@@ -30,6 +30,7 @@ import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
@@ -50,6 +51,10 @@ object DataConnectArb {
 
   fun string(length: IntRange = 0..100, codepoints: Arb<Codepoint>? = null): Arb<String> =
     Arb.string(length, codepoints ?: DataConnectArb.codepoints)
+
+  fun id(length: Int = 20): Arb<String> = Arb.string(size = length, Codepoint.alphanumeric())
+
+  fun uuid(): Arb<String> = Arb.string(size = 32, Codepoint.hex())
 
   fun connectorName(
     string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())

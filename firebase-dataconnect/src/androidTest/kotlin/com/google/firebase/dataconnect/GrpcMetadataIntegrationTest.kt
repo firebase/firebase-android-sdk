@@ -42,6 +42,8 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import java.util.Date
+import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -54,8 +56,6 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
-import java.util.Date
-import kotlin.time.Duration.Companion.hours
 
 class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 

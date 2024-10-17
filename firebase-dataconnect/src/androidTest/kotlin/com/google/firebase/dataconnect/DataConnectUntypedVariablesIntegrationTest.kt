@@ -19,12 +19,13 @@ package com.google.firebase.dataconnect
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPeopleWithHardcodedNameQuery.hardcodedPeople
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.withVariables
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -47,9 +48,9 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
   @Test
   fun nonEmptyMapWorksWithQuery() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
     personSchema.createPerson(id = person1Id, name = "Person1Name", age = 42).execute()
     personSchema.createPerson(id = person2Id, name = "Person2Name", age = 43).execute()
     personSchema.createPerson(id = person3Id, name = "Person3Name", age = null).execute()
@@ -83,7 +84,7 @@ class DataConnectUntypedVariablesIntegrationTest : DataConnectIntegrationTestBas
 
   @Test
   fun nonEmptyMapWorksWithMutation() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
 
     val mutation =
       personSchema

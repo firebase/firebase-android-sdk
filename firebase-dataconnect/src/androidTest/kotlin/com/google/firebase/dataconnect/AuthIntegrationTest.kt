@@ -24,7 +24,6 @@ import com.google.firebase.dataconnect.testutil.newInstance
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
 import google.firebase.dataconnect.proto.executeMutationResponse
@@ -70,9 +69,9 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun authenticatedRequestsAreSuccessful() = runTest {
     signIn()
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
 
     personSchema.createPersonAuth(id = person1Id, name = "TestName1", age = 42).execute()
     personSchema.createPersonAuth(id = person2Id, name = "TestName2", age = 43).execute()

@@ -26,9 +26,11 @@ import com.google.firebase.dataconnect.core.QuerySubscriptionInternal
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonQuery
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.testutil.skipItemsWhere
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.TimeoutCancellationException
@@ -55,7 +57,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
 import org.junit.Test
-import kotlin.time.Duration.Companion.seconds
 
 class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
@@ -71,7 +72,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun lastResult_should_be_equal_to_the_last_collected_result() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
     val querySubscription =
       schema.getPerson(id = personId).subscribe()
@@ -100,7 +101,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun reload_should_notify_collecting_flows() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
     val queryRef = schema.getPerson(id = personId)
     val querySubscription = schema.getPerson(id = personId).subscribe()
@@ -121,7 +122,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun flow_collect_should_get_immediately_invoked_with_last_result() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "TestName").execute()
     val querySubscription = schema.getPerson(id = personId).subscribe()
 
@@ -139,7 +140,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun flow_collect_should_get_immediately_invoked_with_last_result_from_other_subscribers() =
     runTest {
-      val personId = randomPersonId()
+      val personId = Arb.alphanumericString(prefix = "personId").next()
       schema.createPerson(id = personId, name = "TestName").execute()
       val querySubscription1 = schema.getPerson(id = personId).subscribe()
       val querySubscription2 = schema.getPerson(id = personId).subscribe()
@@ -167,7 +168,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun slow_flows_do_not_block_fast_flows() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name0").execute()
     val queryRef = schema.getPerson(id = personId)
     val querySubscription = queryRef.subscribe()
@@ -244,7 +245,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun reload_delivers_result_to_all_registered_flows_on_all_QuerySubscriptions() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
     val querySubscription1 = schema.getPerson(id = personId).subscribe()
     val querySubscription2 = schema.getPerson(id = personId).subscribe()
@@ -274,7 +275,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryref_execute_delivers_result_to_QuerySubscriptions() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
     val querySubscription1 = schema.getPerson(id = personId).subscribe()
     val querySubscription2 = schema.getPerson(id = personId).subscribe()
@@ -305,7 +306,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun reload_concurrent_invocations_get_conflated() =
     runTest(timeout = 60.seconds) {
-      val personId = randomPersonId()
+      val personId = Arb.alphanumericString(prefix = "personId").next()
       schema.createPerson(id = personId, name = "OriginalName").execute()
       val query = schema.getPerson(id = personId)
       val querySubscription = query.subscribe()
@@ -343,9 +344,9 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun update_changes_variables_and_triggers_reload() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
     schema.createPerson(id = person1Id, name = "Name1").execute()
     schema.createPerson(id = person2Id, name = "Name2").execute()
     schema.createPerson(id = person3Id, name = "Name3").execute()
@@ -377,7 +378,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun reload_updates_last_result_even_if_no_active_collectors() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
     val query = schema.getPerson(id = personId)
     val querySubscription =
@@ -401,8 +402,8 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun update_updates_last_result_even_if_no_active_collectors() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
     schema.createPerson(id = person1Id, name = "Name1").execute()
     schema.createPerson(id = person2Id, name = "Name2").execute()
     val querySubscription =
@@ -427,7 +428,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun collect_gets_an_update_on_error() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name1").execute()
     val query = schema.getPerson(personId)
     val noName2Query = query.withDataDeserializer(serializer<GetPersonDataNoName2>())
@@ -450,7 +451,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun collect_gets_notified_of_per_data_deserializer_successes() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "Name0").execute()
 
     val noName1Query =
@@ -493,7 +494,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun collect_gets_notified_of_previous_cached_success_even_if_most_recent_fails() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
 
     val noName1Query =
@@ -527,7 +528,7 @@ class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun collect_gets_cached_result_even_if_new_data_deserializer() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     schema.createPerson(id = personId, name = "OriginalName").execute()
     keepCacheAlive(schema.getPerson(personId).withDataDeserializer(DataConnectUntypedData))
 
