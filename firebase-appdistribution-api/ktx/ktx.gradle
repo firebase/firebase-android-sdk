@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appdistribution"
+    libraryGroup = "appdistribution"
     testLab.enabled = true
     publishJavadoc = false
     releaseNotes { 

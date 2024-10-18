@@ -41,13 +41,14 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          customizePom = """
+          customizePom =
+            """
   licenses {
     license {
       name = 'Hello'
     }
   }
-  """
+  """,
         )
 
       withProjects(project1, project2)
@@ -58,7 +59,7 @@ class PublishingPluginTests {
         it.license shouldBe
           License(
             "The Apache Software License, Version 2.0",
-            "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            "http://www.apache.org/licenses/LICENSE-2.0.txt",
           )
       }
       project2.pom.let {
@@ -79,13 +80,14 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          customizePom = """
+          customizePom =
+            """
   licenses {
     license {
       name = 'Hello'
     }
   }
-  """
+  """,
         )
 
       withProjects(project1, project2)
@@ -96,7 +98,7 @@ class PublishingPluginTests {
         it.license shouldBe
           License(
             "The Apache Software License, Version 2.0",
-            "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            "http://www.apache.org/licenses/LICENSE-2.0.txt",
           )
       }
       project2.pom.let {
@@ -163,7 +165,7 @@ class PublishingPluginTests {
           name = "childProject2",
           projectDependencies = setOf(project1),
           libraryGroup = "test123",
-          expectedVersion = "1.0.0"
+          expectedVersion = "1.0.0",
         )
 
       withProjects(project1, project2)
@@ -190,7 +192,7 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          externalDependencies = setOf(dagger, daggerAndroid)
+          externalDependencies = setOf(dagger, daggerAndroid),
         )
 
       withProjects(project1, project2)
@@ -213,13 +215,13 @@ class PublishingPluginTests {
         Project(
           name = "childProject1",
           version = "1.0",
-          externalDependencies = setOf(externalAARLibrary)
+          externalDependencies = setOf(externalAARLibrary),
         )
       val project2 =
         Project(
           name = "childProject2",
           version = "1.0",
-          externalDependencies = setOf(externalAARLibrary.copy(version = "2.22"))
+          externalDependencies = setOf(externalAARLibrary.copy(version = "2.22")),
         )
 
       withProjects(project1, project2)
@@ -239,13 +241,20 @@ class PublishingPluginTests {
       it.task(":checkHeadDependencies")?.outcome shouldBe FAILED
     }
 
+  /**
+   * Creates a [GradleRunner] to run the specified [projects].
+   *
+   * If your tests are failing, you can call [GradleRunner.forwardOutput] to enable stdout/stderr
+   * redirection for further debugging. Since this can be excessively verbose and slow down tests,
+   * this behavior is not enabled by default.
+   */
   private fun makeGradleRunner(vararg projects: Project) =
     GradleRunner.create()
       .withProjectDir(testProjectDir.root)
       .withArguments(
         "-PprojectsToPublish=${projects.joinToString(",") { it.name }}",
         "-PreleaseName=m123",
-        "firebasePublish"
+        "firebasePublish",
       )
       .withPluginClasspath()
 }

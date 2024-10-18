@@ -61,6 +61,7 @@ class AccessDescriptor(private val access: Int) {
     }
     return outputStringList.joinToString(" ")
   }
+
   /** Returns true if the given access modifier matches the given opcode. */
   fun accessIs(opcode: Int): Boolean = (access and opcode) != 0
 }

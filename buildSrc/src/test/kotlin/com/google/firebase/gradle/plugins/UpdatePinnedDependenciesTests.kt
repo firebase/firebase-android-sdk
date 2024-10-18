@@ -53,14 +53,14 @@ class UpdatePinnedDependenciesTests : FunSpec() {
           name = "firebase-firestore",
           libraryGroup = "test",
           group = "com.google.firebase",
-          version = "1.0.0"
+          version = "1.0.0",
         )
       val testProject =
         Project(
           name = "testProject",
           libraryGroup = "test",
           version = "1.0.0",
-          projectDependencies = setOf(fakeFirestore)
+          projectDependencies = setOf(fakeFirestore),
         )
 
       withProjects(fakeFirestore, testProject)
@@ -79,14 +79,14 @@ class UpdatePinnedDependenciesTests : FunSpec() {
           name = "firebase-firestore",
           libraryGroup = "test",
           group = "com.google.firebase",
-          version = "1.0.0"
+          version = "1.0.0",
         )
       val testProject =
         Project(
           name = "testProject",
           libraryGroup = "test",
           version = "1.0.0",
-          externalDependencies = setOf(fakeFirestore.toArtifact())
+          externalDependencies = setOf(fakeFirestore.toArtifact()),
         )
 
       withProjects(fakeFirestore, testProject)

@@ -89,7 +89,7 @@ class VendorPlugin : Plugin<Project> {
           ScopedArtifact.CLASSES,
           VendorTask::inputJars,
           VendorTask::inputDirs,
-          VendorTask::outputJar
+          VendorTask::outputJar,
         )
     }
   }
@@ -175,7 +175,7 @@ abstract class VendorTask @Inject constructor(private val execOperations: ExecOp
             "process",
             rulesFile.absolutePath,
             inputJar.absolutePath,
-            outputJar.asFile.get().absolutePath
+            outputJar.asFile.get().absolutePath,
           )
         systemProperties = mapOf("verbose" to "true", "misplacedClassStrategy" to "FATAL")
       }

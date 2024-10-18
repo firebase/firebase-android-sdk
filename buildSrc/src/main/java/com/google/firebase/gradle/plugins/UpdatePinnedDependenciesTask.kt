@@ -48,9 +48,9 @@ import org.gradle.api.tasks.TaskAction
  * *Assuming that `17.0.1` is the latest version of `firebase-appcheck-interop`*
  *
  * @property buildFile A [File] that should be used as the source to update from. Typically the
- * `build.gradle` or `build.gradle.kts` file for a given project.
+ *   `build.gradle` or `build.gradle.kts` file for a given project.
  * @property outputFile A [File] that should be used to write the new text to. Typically the same as
- * the input file ([buildFile]).
+ *   the input file ([buildFile]).
  * @see PostReleasePlugin
  */
 abstract class UpdatePinnedDependenciesTask : DefaultTask() {
@@ -78,12 +78,12 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   private fun validateDependenciesHaveChanged(
     dependenciesToChange: List<FirebaseLibraryExtension>,
     oldContent: List<String>,
-    updatedContent: List<String>
+    updatedContent: List<String>,
   ) {
     if (oldContent == updatedContent)
       throw RuntimeException(
         "Expected the following project level dependencies, but found none: " +
-          "${dependenciesToChange.joinToString("\n") { it.mavenName }}"
+          dependenciesToChange.joinToString("\n") { it.mavenName.get() }
       )
 
     val diff = oldContent.diff(updatedContent)
@@ -101,7 +101,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
     if (librariesNotChanged.isNotEmpty())
       throw RuntimeException(
-        "The following libraries were not found, but should have been:\n ${librariesNotChanged.joinToString("\n") { it.mavenName }}"
+        "The following libraries were not found, but should have been:\n ${librariesNotChanged.joinToString("\n") { it.mavenName.get() }}"
       )
 
     if (librariesCorrectlyChanged.size > dependenciesToChange.size)
@@ -114,7 +114,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     libraryGroups: Map<String, List<FirebaseLibraryExtension>>
   ) =
     with(project.firebaseLibrary) {
-      projectLevelDependencies - libraryGroups.getOrDefault(libraryGroupName, emptyList())
+      projectLevelDependencies - libraryGroups.getOrDefault(libraryGroup.get(), emptyList())
     }
 
   private val FirebaseLibraryExtension.projectLevelDependencies: List<FirebaseLibraryExtension>
@@ -122,14 +122,14 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
   private fun replaceProjectLevelDependencies(
     buildFileContent: List<String>,
-    libraries: List<FirebaseLibraryExtension>
+    libraries: List<FirebaseLibraryExtension>,
   ) =
     buildFileContent.replaceMatches(DEPENDENCY_REGEX) {
       val projectName = it.firstCapturedValue
       val projectToChange = libraries.find { it.path == projectName }
-      val latestVersion = projectToChange?.latestVersion
+      val latestVersion = projectToChange?.latestGMavenVersion
 
-      latestVersion?.let { "\"${projectToChange.mavenName}:$latestVersion\"" }
+      latestVersion?.let { "\"${projectToChange.mavenName.get()}:$latestVersion\"" }
     }
 
   companion object {

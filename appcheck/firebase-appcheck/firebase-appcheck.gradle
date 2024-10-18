@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
+    libraryGroup = "appcheck"
     publishSources = true
     releaseNotes {
         name.set("{{app_check}}")

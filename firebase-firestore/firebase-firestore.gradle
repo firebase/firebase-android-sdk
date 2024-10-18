@@ -20,7 +20,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "firestore"
+    libraryGroup = "firestore"
     publishSources = true
     testLab {
         enabled = true

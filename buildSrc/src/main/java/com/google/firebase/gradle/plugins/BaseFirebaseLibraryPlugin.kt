@@ -23,12 +23,14 @@ import java.nio.file.Paths
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.findByType
@@ -37,7 +39,61 @@ import org.gradle.kotlin.dsl.provideDelegate
 import org.gradle.kotlin.dsl.register
 import org.w3c.dom.Element
 
+/**
+ * Plugin for Firebase Libraries.
+ *
+ * Implements shared functionality between Java and Android libraries.
+ *
+ * @see [FirebaseAndroidLibraryPlugin]
+ * @see [FirebaseJavaLibraryPlugin]
+ * @see [FirebaseLibraryExtension]
+ */
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
+  protected fun setupDefaults(project: Project, library: FirebaseLibraryExtension) {
+    with(library) {
+      previewMode.convention("")
+      publishJavadoc.convention(true)
+      publishSources.convention(true)
+      artifactId.convention(project.name)
+      groupId.convention(project.provider { project.group.toString() })
+      libraryGroup.convention(artifactId)
+
+      customizePom {
+        licenses {
+          license {
+            name = "The Apache Software License, Version 2.0"
+            url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+          }
+        }
+        scm {
+          connection = "scm:git:https://github.com/firebase/firebase-android-sdk.git"
+          url = "https://github.com/firebase/firebase-android-sdk"
+        }
+      }
+
+      releaseNotes {
+        enabled.convention(true)
+        hasKTX.convention(true)
+        artifactId.convention(project.name)
+        artifactName.convention(project.name)
+      }
+
+      val parent = project.parent
+      // TODO(): remove when we get rid of ktx modules
+      if (project.name == "ktx" && parent !== null) {
+        artifactId.convention(parent.provider { "${parent.name}-ktx" })
+        groupId.convention(parent.provider { "${parent.group}" })
+      }
+
+      androidLintCheckProjects.convention(
+        project
+          .provideProperty<String>("firebase.checks.lintProjects")
+          .map { it.split(",") }
+          .orElse(emptyList())
+      )
+    }
+  }
+
   protected fun registerMakeReleaseNotesTask(project: Project) =
     project.tasks.register<MakeReleaseNotesTask>("makeReleaseNotes") {
       val changelog = project.file("CHANGELOG.md")
@@ -59,8 +115,8 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     project.afterEvaluate {
       configurations.all {
         if ("lintChecks" == name) {
-          for (checkProject in library.staticAnalysis.androidLintCheckProjects) {
-            project.dependencies.add("lintChecks", project.project(checkProject!!))
+          for (checkProject in library.androidLintCheckProjects.get()) {
+            project.dependencies.add("lintChecks", project.project(checkProject))
           }
         }
       }
@@ -75,7 +131,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
         Paths.get(
           project.rootProject.buildDir.path,
           "apiinfo",
-          project.path.substring(1).replace(":", "_")
+          project.path.substring(1).replace(":", "_"),
         )
       )
     val outputApiFile = File(outputFile.absolutePath + "_api.txt")
@@ -122,23 +178,26 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
    * configures maven pom generation.
    *
    * @see [applyPomTransformations]
-   * @see [FirebaseLibraryExtension.applyPomCustomization]
+   * @see [FirebaseLibraryExtension.customizePomAction]
    */
   protected fun configurePublishing(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     with(project) {
       apply<MavenPublishPlugin>()
+
+      // TODO(b/371625225): sources jar is missing from java libs
       extensions.configure<PublishingExtension> {
         repositories.maven {
           url = rootProject.fileFromBuildDir("m2repository").toURI()
           name = "BuildDir"
         }
         publications.create<MavenPublication>("mavenAar") {
+          // TODO(https://github.com/gradle/gradle/issues/18619): Remove afterEvaluate when
+          // properties are supported
           afterEvaluate {
-            artifactId =
-              firebaseLibrary.artifactId.get() // these dont get populated until afterEvaluate :(
+            artifactId = firebaseLibrary.artifactId.get()
             groupId = firebaseLibrary.groupId.get()
 
-            firebaseLibrary.applyPomCustomization(pom)
+            pom(firebaseLibrary.customizePomAction)
             firebaseLibrary.applyPomTransformations(pom)
             from(components.findByName(firebaseLibrary.type.componentName))
           }
@@ -155,7 +214,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
    * @param pom the [MavenPom] to prepare
    * @see [addTypeWithAARSupport]
    */
-  // TODO(b/270576405): Combine with applyPomCustomization when migrating FirebaseLibraryExtension
   private fun FirebaseLibraryExtension.applyPomTransformations(pom: MavenPom) {
     pom.withXml {
       val dependencies = asElement().findElementsByTag("dependency")
@@ -198,7 +256,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 /**
  * A list of _all_ dependencies that publish `aar` artifacts.
  *
- * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.getRuntimeClasspath], and
+ * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.runtimeClasspath], and
  * includes project level dependencies as well as external dependencies.
  *
  * The dependencies are mapped to their [mavenName][toMavenName].
@@ -209,15 +267,17 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveAndroidDependencies() =
   resolveExternalAndroidLibraries() +
-    resolveProjectLevelDependencies().filter { it.type == LibraryType.ANDROID }.map { it.mavenName }
+    resolveProjectLevelDependencies()
+      .filter { it.type == LibraryType.ANDROID }
+      .map { it.mavenName.get() }
 
 /**
  * A list of project level dependencies.
  *
- * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.getRuntimeClasspath].
+ * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.runtimeClasspath].
  *
  * @throws RuntimeException if a project level dependency is found that doesn't have
- * [FirebaseLibraryExtension]
+ *   [FirebaseLibraryExtension]
  */
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
@@ -264,16 +324,23 @@ fun FirebaseLibraryExtension.resolveExternalAndroidLibraries() =
  * ```
  * "com.google.firebase:firebase-common:16.0.5"
  * ```
+ *
+ * @see [mavenName]
  */
 val FirebaseLibraryExtension.artifactName: String
-  get() = "$mavenName:$version"
+  get() = "${mavenName.get()}:$version"
 
 /**
  * Fetches the latest version for this SDK from GMaven.
  *
  * Uses [GmavenHelper] to make the request.
+ *
+ * To get the latest released version per the local `gradle.properties`, use [latestReleasedVersion]
+ * .
+ *
+ * @see [ModuleVersion]
  */
-val FirebaseLibraryExtension.latestVersion: ModuleVersion
+val FirebaseLibraryExtension.latestGMavenVersion: ModuleVersion
   get() {
     val latestVersion = GmavenHelper(groupId.get(), artifactId.get()).getLatestReleasedVersion()
 
@@ -282,6 +349,22 @@ val FirebaseLibraryExtension.latestVersion: ModuleVersion
         "Invalid format for ModuleVersion for module '$artifactName':\n $latestVersion"
       )
   }
+
+/**
+ * The latest version released, per the `gradle.properties` file.
+ *
+ * Checks for the property `latestReleasedVersion`, which should be in the `gradle.properties` files
+ * of released SDKs (alongside the current `version`).
+ *
+ * To fetch the latest released version per GMaven, use [latestGMavenVersion].
+ *
+ * ```properties
+ * version=19.2.1
+ * latestReleasedVersion=19.2.0
+ * ```
+ */
+val FirebaseLibraryExtension.latestReleasedVersion: Provider<String>
+  get() = project.provideProperty<String>("latestReleasedVersion")
 
 /**
  * Fetches the namespace for this SDK from the [LibraryExtension].
@@ -298,3 +381,16 @@ val FirebaseLibraryExtension.namespace: String
   get() =
     project.extensions.getByType<LibraryExtension>().namespace
       ?: throw RuntimeException("Project doesn't have a defined namespace: ${project.path}")
+
+/**
+ * The name of this library on maven, without the version.
+ *
+ * For example, the following could be a maven name:
+ * ```
+ * "com.google.firebase:firebase-common"
+ * ```
+ *
+ * @see [artifactName]
+ */
+val FirebaseLibraryExtension.mavenName: Provider<String>
+  get() = groupId.zip(artifactId) { groupId, artifactId -> "$groupId:$artifactId" }

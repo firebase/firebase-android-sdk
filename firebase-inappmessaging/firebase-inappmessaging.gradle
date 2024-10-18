@@ -20,7 +20,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "inappmessaging"
+    libraryGroup = "inappmessaging"
     testLab.enabled = true
     releaseNotes {
         name.set("{{inappmessaging}}")

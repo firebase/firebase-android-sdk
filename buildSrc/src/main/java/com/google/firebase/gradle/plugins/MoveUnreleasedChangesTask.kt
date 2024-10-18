@@ -33,12 +33,11 @@ import org.gradle.kotlin.dsl.provideDelegate
  * a release, such that the changes that went out in said release are moved into their own section
  * for auditing purposes.
  *
- * @see PostReleasePlugin
- *
  * @property changelogFile A [File] to use as the [Changelog]. Defaults to the `CHANGELOG.md` file
- * at the project's root.
+ *   at the project's root.
  * @property releaseVersion A [ModuleVersion] of what to set the version to. Defaults to the
- * project's current version.
+ *   project's current version.
+ * @see PostReleasePlugin
  */
 abstract class MoveUnreleasedChangesTask : DefaultTask() {
   @get:[Optional InputFile]
@@ -71,8 +70,8 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
    *
    * That is, it attaches the release version and creates the KTX content.
    *
-   * @see createEntryForKTX
    * @throws StopActionException if [unreleased] does not have any content
+   * @see createEntryForKTX
    */
   private fun createEntryForRelease(unreleased: ReleaseEntry): ReleaseEntry {
     if (!unreleased.hasContent())
@@ -99,7 +98,7 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
       nonEmptyKTXContent
         ?: ReleaseContent(
           KTXTransitiveReleaseText(releaseNotesConfig.artifactName.get()),
-          emptyList()
+          emptyList(),
         )
 
     return ktxContent.takeIf { releaseNotesConfig.hasKTX.get() }

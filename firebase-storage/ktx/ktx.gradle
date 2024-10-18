@@ -20,7 +20,7 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-    libraryGroup "storage"
+    libraryGroup = "storage"
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)
