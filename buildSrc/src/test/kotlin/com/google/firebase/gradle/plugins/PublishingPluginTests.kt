@@ -241,6 +241,13 @@ class PublishingPluginTests {
       it.task(":checkHeadDependencies")?.outcome shouldBe FAILED
     }
 
+  /**
+   * Creates a [GradleRunner] to run the specified [projects].
+   *
+   * If your tests are failing, you can call [GradleRunner.forwardOutput] to enable stdout/stderr
+   * redirection for further debugging. Since this can be excessively verbose and slow down tests,
+   * this behavior is not enabled by default.
+   */
   private fun makeGradleRunner(vararg projects: Project) =
     GradleRunner.create()
       .withProjectDir(testProjectDir.root)
@@ -250,5 +257,4 @@ class PublishingPluginTests {
         "firebasePublish",
       )
       .withPluginClasspath()
-  // .forwardOutput()
 }
