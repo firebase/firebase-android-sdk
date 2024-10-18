@@ -50,7 +50,6 @@ import org.w3c.dom.Element
  */
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
   protected fun setupDefaults(project: Project, library: FirebaseLibraryExtension) {
-    library.previewMode.set("")
     with(library) {
       previewMode.convention("")
       publishJavadoc.convention(true)
