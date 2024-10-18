@@ -61,14 +61,14 @@ dependencies {
 
     implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
-    androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
+    androidTestImplementation libs.androidx.test.core
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'com.google.firebase:firebase-appcheck-interop:17.1.0'
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.truth
     androidTestImplementation 'junit:junit:4.12'
 }
