@@ -16,20 +16,26 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-import com.google.firebase.dataconnect.testutil.MAX_DATE
-import com.google.firebase.dataconnect.testutil.MIN_DATE
+import com.google.firebase.dataconnect.testutil.EdgeCases
 import com.google.firebase.dataconnect.testutil.ZERO_DATE
-import com.google.firebase.dataconnect.testutil.assertThrows
+import com.google.firebase.dataconnect.testutil.dateAndString
+import com.google.firebase.dataconnect.testutil.dateAndStringOffDayBoundary
 import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
 import com.google.firebase.dataconnect.testutil.executeWithEmptyVariables
-import com.google.firebase.dataconnect.testutil.randomDate
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withVariablesSerializer
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.next
+import io.kotest.property.checkAll
 import java.util.Date
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
@@ -39,26 +45,25 @@ import org.junit.Test
 class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
-  fun insertTypicalValueForNonNullField() = runTest {
-    val date = dateFromYearMonthDayUTC(1944, 1, 1)
-    val key = connector.insertNonNullDate.execute(date).data.key
-    assertNonNullDateByKeyEquals(key, "1944-01-01")
+  fun nonNullDate_insert_NormalCases() = runTest {
+    checkAll(20, Arb.dateAndString()) {
+      val key = connector.insertNonNullDate.execute(it.date).data.key
+      assertNonNullDateByKeyEquals(key, it.string)
+    }
   }
 
   @Test
-  fun insertMaxValueForNonNullDateField() = runTest {
-    val key = connector.insertNonNullDate.execute(MIN_DATE).data.key
-    assertNonNullDateByKeyEquals(key, "1583-01-01")
+  fun nonNullDate_insert_EdgeCases() = runTest {
+    assertSoftly {
+      EdgeCases.dateAndStrings.forEach {
+        val key = connector.insertNonNullDate.execute(it.date).data.key
+        assertNonNullDateByKeyEquals(key, it.string)
+      }
+    }
   }
 
   @Test
-  fun insertMinValueForNonNullDateField() = runTest {
-    val key = connector.insertNonNullDate.execute(MAX_DATE).data.key
-    assertNonNullDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun insertValueWithTimeForNonNullDateField() = runTest {
+  fun nonNullDate_insert_ShouldIgnoreTimeZone() = runTest {
     // Use a date that, when converted to UTC, in on a different date to verify that the server does
     // the expected thing; that is, that it _drops_ the time zone information (rather than
     // converting the date to UTC then taking the YYYY-MM-DD of that). The server would use the date
@@ -69,16 +74,15 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  fun insertDateNotOnExactDateBoundaryForNonNullDateField() = runTest {
-    val dateOnDateBoundary = dateFromYearMonthDayUTC(2000, 9, 14)
-    val dateOffDateBoundary = Date(dateOnDateBoundary.time + 7200)
-
-    val key = connector.insertNonNullDate.execute(dateOffDateBoundary).data.key
-    assertNonNullDateByKeyEquals(key, dateOnDateBoundary)
+  fun nonNullDate_insert_ShouldIgnoreTime() = runTest {
+    checkAll(20, Arb.dateAndStringOffDayBoundary()) {
+      val key = connector.insertNonNullDate.execute(it.date).data.key
+      assertNonNullDateByKeyEquals(key, it.string)
+    }
   }
 
   @Test
-  fun insertNoVariablesForNonNullDateFieldsWithSchemaDefaults() = runTest {
+  fun nonNullDatesWithDefaults_insert_ShouldUseDefaultValuesIfNoVariablesSpecified() = runTest {
     val key = connector.insertNonNullDatesWithDefaults.execute {}.data.key
     val queryResult = connector.getNonNullDatesWithDefaultsByKey.execute(key)
 
@@ -86,117 +90,113 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     // value is used for both fields to which it is set.
     val expectedRequestTime = queryResult.data.nonNullDatesWithDefaults!!.requestTime1
 
-    assertThat(
-      queryResult.equals(
-        GetNonNullDatesWithDefaultsByKeyQuery.Data(
-          GetNonNullDatesWithDefaultsByKeyQuery.Data.NonNullDatesWithDefaults(
-            valueWithVariableDefault = dateFromYearMonthDayUTC(6904, 11, 30),
-            valueWithSchemaDefault = dateFromYearMonthDayUTC(2112, 1, 31),
-            epoch = ZERO_DATE,
-            requestTime1 = expectedRequestTime,
-            requestTime2 = expectedRequestTime,
-          )
+    queryResult.data shouldBe
+      GetNonNullDatesWithDefaultsByKeyQuery.Data(
+        GetNonNullDatesWithDefaultsByKeyQuery.Data.NonNullDatesWithDefaults(
+          valueWithVariableDefault = dateFromYearMonthDayUTC(6904, 11, 30),
+          valueWithSchemaDefault = dateFromYearMonthDayUTC(2112, 1, 31),
+          epoch = ZERO_DATE,
+          requestTime1 = expectedRequestTime,
+          requestTime2 = expectedRequestTime,
         )
       )
-    )
   }
 
   @Test
-  fun insertNullForNonNullDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
+  fun nonNullDate_insert_ShouldFailIfDateVariableIsNull() = runTest {
+    shouldThrow<DataConnectException> {
       connector.insertNonNullDate.executeWithStringVariables(null).data.key
     }
   }
 
   @Test
-  fun insertIntForNonNullDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
-      connector.insertNonNullDate.executeWithIntVariables(999_888).data.key
+  fun nonNullDate_insert_ShouldFailIfDateVariableIsAnInt() = runTest {
+    shouldThrow<DataConnectException> {
+      connector.insertNonNullDate.executeWithIntVariables(Arb.int().next(rs)).data.key
     }
   }
 
   @Test
-  fun insertWithMissingValueNonNullDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
+  fun nonNullDate_insert_ShouldFailIfDateVariableIsOmitted() = runTest {
+    shouldThrow<DataConnectException> {
       connector.insertNonNullDate.executeWithEmptyVariables().data.key
     }
   }
 
   @Test
-  fun insertInvalidDatesValuesForNonNullDateFieldShouldFail() = runTest {
+  fun nonNullDate_insert_ShouldFailIfDateVariableIsMalformed() = runTest {
     for (invalidDate in invalidDates) {
-      assertThrows(DataConnectException::class) {
+      shouldThrow<DataConnectException> {
         connector.insertNonNullDate.executeWithStringVariables(invalidDate).data.key
       }
     }
   }
 
   @Test
-  fun updateNonNullDateFieldToAnotherValidValue() = runTest {
-    val date1 = randomDate()
-    val date2 = dateFromYearMonthDayUTC(5654, 12, 1)
-    val key = connector.insertNonNullDate.execute(date1).data.key
-    connector.updateNonNullDate.execute(key) { value = date2 }
-    assertNonNullDateByKeyEquals(key, "5654-12-01")
+  fun nonNullDate_update_NormalCases() = runTest {
+    checkAll(20, Arb.dateAndString(), Arb.dateAndString()) { date1, date2 ->
+      val key = connector.insertNonNullDate.execute(date1.date).data.key
+      connector.updateNonNullDate.execute(key) { value = date2.date }
+      assertNonNullDateByKeyEquals(key, date2.string)
+    }
   }
 
   @Test
-  fun updateNonNullDateFieldToMinValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNonNullDate.execute(date).data.key
-    connector.updateNonNullDate.execute(key) { value = MIN_DATE }
-    assertNonNullDateByKeyEquals(key, "1583-01-01")
+  fun nonNullDate_update_EdgeCases() = runTest {
+    val edgeCases = EdgeCases.dateAndStrings
+    val dates1 = edgeCases + List(edgeCases.size) { Arb.dateAndString().next(rs) } + edgeCases
+    val dates2 = List(edgeCases.size) { Arb.dateAndString().next(rs) } + edgeCases + edgeCases
+
+    assertSoftly {
+      for ((date1, date2) in dates1.zip(dates2)) {
+        withClue("date1=${date1.string} date2=${date2.string}") {
+          val key = connector.insertNonNullDate.execute(date1.date).data.key
+          connector.updateNonNullDate.execute(key) { value = date2.date }
+          assertNonNullDateByKeyEquals(key, date2.string)
+        }
+      }
+    }
   }
 
   @Test
-  fun updateNonNullDateFieldToMaxValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNonNullDate.execute(date).data.key
-    connector.updateNonNullDate.execute(key) { value = MAX_DATE }
-    assertNonNullDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun updateNonNullDateFieldToAnUndefinedValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNonNullDate.execute(date).data.key
+  fun nonNullDate_update_DateVariableOmitted() = runTest {
+    val date = Arb.dateAndString().next(rs)
+    val key = connector.insertNonNullDate.execute(date.date).data.key
     connector.updateNonNullDate.execute(key) {}
-    assertNonNullDateByKeyEquals(key, date)
+    assertNonNullDateByKeyEquals(key, date.date)
   }
 
   @Test
-  fun insertTypicalValueForNullableField() = runTest {
-    val date = dateFromYearMonthDayUTC(7611, 12, 1)
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    assertNullableDateByKeyEquals(key, "7611-12-01")
+  fun nullableDate_insert_NormalCases() = runTest {
+    checkAll(20, Arb.dateAndString()) {
+      val key = connector.insertNullableDate.execute { value = it.date }.data.key
+      assertNullableDateByKeyEquals(key, it.string)
+    }
   }
 
   @Test
-  fun insertMaxValueForNullableDateField() = runTest {
-    val key = connector.insertNullableDate.execute { value = MIN_DATE }.data.key
-    assertNullableDateByKeyEquals(key, "1583-01-01")
+  fun nullableDate_insert_EdgeCases() = runTest {
+    val edgeCases = EdgeCases.dateAndStrings + listOf(null)
+    assertSoftly {
+      edgeCases.forEach {
+        val key = connector.insertNullableDate.execute { value = it?.date }.data.key
+        if (it === null) {
+          assertNullableDateByKeyHasNullInnerValue(key)
+        } else {
+          assertNullableDateByKeyEquals(key, it.string)
+        }
+      }
+    }
   }
 
   @Test
-  fun insertMinValueForNullableDateField() = runTest {
-    val key = connector.insertNullableDate.execute { value = MAX_DATE }.data.key
-    assertNullableDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun insertNullForNullableDateField() = runTest {
-    val key = connector.insertNullableDate.execute { value = null }.data.key
-    assertNullableDateByKeyEquals(key, null)
-  }
-
-  @Test
-  fun insertUndefinedForNullableDateField() = runTest {
+  fun nullableDate_insert_ShouldUseNullIfDateVariableIsOmitted() = runTest {
     val key = connector.insertNullableDate.execute {}.data.key
-    assertNullableDateByKeyEquals(key, null)
+    assertNullableDateByKeyHasNullInnerValue(key)
   }
 
   @Test
-  fun insertValueWithTimeForNullableDateField() = runTest {
+  fun nullableDate_insert_ShouldIgnoreTimeZone() = runTest {
     // Use a date that, when converted to UTC, in on a different date to verify that the server does
     // the expected thing; that is, that it _drops_ the time zone information (rather than
     // converting the date to UTC then taking the YYYY-MM-DD of that). The server would use the date
@@ -207,32 +207,31 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  fun insertDateNotOnExactDateBoundaryForNullableDateField() = runTest {
-    val dateOnDateBoundary = dateFromYearMonthDayUTC(1812, 12, 22)
-    val dateOffDateBoundary = Date(dateOnDateBoundary.time + 7200)
-
-    val key = connector.insertNullableDate.execute { value = dateOffDateBoundary }.data.key
-    assertNullableDateByKeyEquals(key, dateOnDateBoundary)
-  }
-
-  @Test
-  fun insertIntForNullableDateFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
-      connector.insertNullableDate.executeWithIntVariables(999_888).data.key
+  fun nullableDate_insert_ShouldIgnoreTime() = runTest {
+    checkAll(20, Arb.dateAndStringOffDayBoundary()) {
+      val key = connector.insertNullableDate.execute { value = it.date }.data.key
+      assertNullableDateByKeyEquals(key, it.string)
     }
   }
 
   @Test
-  fun insertInvalidDatesValuesForNullableDateFieldShouldFail() = runTest {
+  fun nullableDate_insert_ShouldFailIfDateVariableIsAnInt() = runTest {
+    shouldThrow<DataConnectException> {
+      connector.insertNullableDate.executeWithIntVariables(Arb.int().next(rs)).data.key
+    }
+  }
+
+  @Test
+  fun nullableDate_insert_ShouldFailIfDateVariableIsMalformed() = runTest {
     for (invalidDate in invalidDates) {
-      assertThrows(DataConnectException::class) {
-        connector.insertNullableDate.executeWithStringVariables(invalidDate).data.key
+      shouldThrow<DataConnectException> {
+        connector.insertNonNullDate.executeWithStringVariables(invalidDate).data.key
       }
     }
   }
 
   @Test
-  fun insertNoVariablesForNullableDateFieldsWithSchemaDefaults() = runTest {
+  fun nullableDatesWithDefaults_insert_ShouldUseDefaultValuesIfNoVariablesSpecified() = runTest {
     val key = connector.insertNullableDatesWithDefaults.execute {}.data.key
     val queryResult = connector.getNullableDatesWithDefaultsByKey.execute(key)
 
@@ -240,65 +239,63 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     // value is used for both fields to which it is set.
     val expectedRequestTime = queryResult.data.nullableDatesWithDefaults!!.requestTime1
 
-    assertThat(
-      queryResult.equals(
-        GetNullableDatesWithDefaultsByKeyQuery.Data(
-          GetNullableDatesWithDefaultsByKeyQuery.Data.NullableDatesWithDefaults(
-            valueWithVariableDefault = dateFromYearMonthDayUTC(8113, 2, 9),
-            valueWithSchemaDefault = dateFromYearMonthDayUTC(1921, 12, 2),
-            epoch = ZERO_DATE,
-            requestTime1 = expectedRequestTime,
-            requestTime2 = expectedRequestTime,
-          )
+    queryResult.data shouldBe
+      GetNullableDatesWithDefaultsByKeyQuery.Data(
+        GetNullableDatesWithDefaultsByKeyQuery.Data.NullableDatesWithDefaults(
+          valueWithVariableDefault = dateFromYearMonthDayUTC(8113, 2, 9),
+          valueWithSchemaDefault = dateFromYearMonthDayUTC(1921, 12, 2),
+          epoch = ZERO_DATE,
+          requestTime1 = expectedRequestTime,
+          requestTime2 = expectedRequestTime,
         )
       )
-    )
   }
 
   @Test
-  fun updateNullableDateFieldToAnotherValidValue() = runTest {
-    val date1 = randomDate()
-    val date2 = dateFromYearMonthDayUTC(5654, 12, 1)
-    val key = connector.insertNullableDate.execute { value = date1 }.data.key
-    connector.updateNullableDate.execute(key) { value = date2 }
-    assertNullableDateByKeyEquals(key, "5654-12-01")
+  fun nullableDate_update_NormalCases() = runTest {
+    checkAll(20, Arb.dateAndString(), Arb.dateAndString()) { date1, date2 ->
+      val key = connector.insertNullableDate.execute { value = date1.date }.data.key
+      connector.updateNullableDate.execute(key) { value = date2.date }
+      assertNullableDateByKeyEquals(key, date2.string)
+    }
   }
 
   @Test
-  fun updateNullableDateFieldToMinValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    connector.updateNullableDate.execute(key) { value = MIN_DATE }
-    assertNullableDateByKeyEquals(key, "1583-01-01")
+  fun nullableDate_update_EdgeCases() = runTest {
+    val edgeCases = EdgeCases.dateAndStrings
+    val dates1 = edgeCases + List(edgeCases.size) { Arb.dateAndString().next(rs) } + edgeCases
+    val dates2 = List(edgeCases.size) { Arb.dateAndString().next(rs) } + edgeCases + edgeCases
+
+    assertSoftly {
+      for ((date1, date2) in dates1.zip(dates2)) {
+        withClue("date1=${date1.string} date2=${date2.string}") {
+          val key = connector.insertNullableDate.execute { value = date1.date }.data.key
+          connector.updateNullableDate.execute(key) { value = date2.date }
+          assertNullableDateByKeyEquals(key, date2.string)
+        }
+      }
+    }
   }
 
   @Test
-  fun updateNullableDateFieldToMaxValue() = runTest {
-    val date = randomDate()
-    val key = connector.insertNullableDate.execute { value = date }.data.key
-    connector.updateNullableDate.execute(key) { value = MAX_DATE }
-    assertNullableDateByKeyEquals(key, "9999-12-31")
-  }
-
-  @Test
-  fun updateNullableDateFieldToNull() = runTest {
-    val date = randomDate()
+  fun nullableDate_update_UpdateNonNullValueToNull() = runTest {
+    val date = Arb.dateAndString().next(rs).date
     val key = connector.insertNullableDate.execute { value = date }.data.key
     connector.updateNullableDate.execute(key) { value = null }
-    assertNullableDateByKeyEquals(key, null)
+    assertNullableDateByKeyHasNullInnerValue(key)
   }
 
   @Test
-  fun updateNullableDateFieldToNonNull() = runTest {
-    val date = randomDate()
+  fun nullableDate_update_UpdateNullValueToNonNull() = runTest {
+    val date = Arb.dateAndString().next(rs).date
     val key = connector.insertNullableDate.execute { value = null }.data.key
     connector.updateNullableDate.execute(key) { value = date }
     assertNullableDateByKeyEquals(key, date)
   }
 
   @Test
-  fun updateNullableDateFieldToAnUndefinedValue() = runTest {
-    val date = randomDate()
+  fun nullableDate_update_DateVariableOmitted() = runTest {
+    val date = Arb.dateAndString().next(rs).date
     val key = connector.insertNullableDate.execute { value = date }.data.key
     connector.updateNullableDate.execute(key) {}
     assertNullableDateByKeyEquals(key, date)
@@ -309,13 +306,22 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
       connector.getNonNullDateByKey
         .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
         .execute(key)
-    assertThat(queryResult.data).isEqualTo(GetDateByKeyQueryStringData(expected))
+    queryResult.data shouldBe GetDateByKeyQueryStringData(expected)
   }
 
   private suspend fun assertNonNullDateByKeyEquals(key: NonNullDateKey, expected: Date) {
     val queryResult = connector.getNonNullDateByKey.execute(key)
-    assertThat(queryResult.data)
-      .isEqualTo(GetNonNullDateByKeyQuery.Data(GetNonNullDateByKeyQuery.Data.Value(expected)))
+    queryResult.data shouldBe
+      GetNonNullDateByKeyQuery.Data(GetNonNullDateByKeyQuery.Data.Value(expected))
+  }
+
+  private suspend fun assertNullableDateByKeyHasNullInnerValue(key: NullableDateKey) {
+    val queryResult =
+      connector.getNullableDateByKey
+        .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
+        .execute(key)
+    queryResult.data shouldBe
+      GetDateByKeyQueryStringData(GetDateByKeyQueryStringData.DateStringValue(null))
   }
 
   private suspend fun assertNullableDateByKeyEquals(key: NullableDateKey, expected: String) {
@@ -323,13 +329,13 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
       connector.getNullableDateByKey
         .withDataDeserializer(serializer<GetDateByKeyQueryStringData>())
         .execute(key)
-    assertThat(queryResult.data).isEqualTo(GetDateByKeyQueryStringData(expected))
+    queryResult.data shouldBe GetDateByKeyQueryStringData(expected)
   }
 
-  private suspend fun assertNullableDateByKeyEquals(key: NullableDateKey, expected: Date?) {
+  private suspend fun assertNullableDateByKeyEquals(key: NullableDateKey, expected: Date) {
     val queryResult = connector.getNullableDateByKey.execute(key)
-    assertThat(queryResult.data)
-      .isEqualTo(GetNullableDateByKeyQuery.Data(GetNullableDateByKeyQuery.Data.Value(expected)))
+    queryResult.data shouldBe
+      GetNullableDateByKeyQuery.Data(GetNullableDateByKeyQuery.Data.Value(expected))
   }
 
   /**
@@ -340,7 +346,8 @@ class DateScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Serializable
   private data class GetDateByKeyQueryStringData(val value: DateStringValue?) {
     constructor(value: String) : this(DateStringValue(value))
-    @Serializable data class DateStringValue(val value: String)
+
+    @Serializable data class DateStringValue(val value: String?)
   }
 
   /**
