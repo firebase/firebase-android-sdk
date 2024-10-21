@@ -24,28 +24,29 @@ import com.google.firebase.components.ComponentRegistrar
 import java.net.URL
 
 /** Returns the [FirebaseFunctions] instance of the default [FirebaseApp]. */
-val Firebase.functions: FirebaseFunctions
+public val Firebase.functions: FirebaseFunctions
   get() = FirebaseFunctions.getInstance()
 
 /** Returns the [FirebaseFunctions] instance of a given [regionOrCustomDomain]. */
-fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
+public fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
   FirebaseFunctions.getInstance(regionOrCustomDomain)
 
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp]. */
-fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.getInstance(app)
+public fun Firebase.functions(app: FirebaseApp): FirebaseFunctions =
+  FirebaseFunctions.getInstance(app)
 
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [regionOrCustomDomain]. */
-fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions =
+public fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions =
   FirebaseFunctions.getInstance(app, regionOrCustomDomain)
 
 /** @suppress */
 @Keep
-class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
+public class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()
 }
 
 /** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
-fun FirebaseFunctions.getHttpsCallable(
+public fun FirebaseFunctions.getHttpsCallable(
   name: String,
   init: HttpsCallableOptions.Builder.() -> Unit
 ): HttpsCallableReference {
@@ -55,7 +56,7 @@ fun FirebaseFunctions.getHttpsCallable(
 }
 
 /** Returns a reference to the Callable HTTPS trigger with the given URL and call options. */
-fun FirebaseFunctions.getHttpsCallableFromUrl(
+public fun FirebaseFunctions.getHttpsCallableFromUrl(
   url: URL,
   init: HttpsCallableOptions.Builder.() -> Unit
 ): HttpsCallableReference {

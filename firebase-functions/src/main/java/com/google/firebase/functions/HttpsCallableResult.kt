@@ -14,7 +14,7 @@
 package com.google.firebase.functions
 
 /** The result of calling a HttpsCallableReference function. */
-class HttpsCallableResult
+public class HttpsCallableResult
 internal constructor( // The actual result data, as generic types decoded from JSON.
 private val data: Any?) {
   /**
@@ -24,7 +24,7 @@ private val data: Any?) {
    * this object would be a List<Object>. If your trigger returned a JavaScript object with keys and
    * values, this object would be a Map<String, Object>.
    */
-  fun getData(): Any? {
+  public fun getData(): Any? {
     return data
   }
 }
