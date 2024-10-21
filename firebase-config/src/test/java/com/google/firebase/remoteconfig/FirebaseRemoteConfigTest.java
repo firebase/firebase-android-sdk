@@ -95,6 +95,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -348,7 +349,8 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             listeners,
             mockRetryListener,
-            scheduledExecutorService);
+            scheduledExecutorService,
+            new AtomicBoolean(false));
     realtimeMetadataClient =
         new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
