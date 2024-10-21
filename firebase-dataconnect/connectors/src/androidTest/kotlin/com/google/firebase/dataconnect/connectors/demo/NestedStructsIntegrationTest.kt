@@ -16,10 +16,12 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.connectors.demo.testutil.*
-import com.google.firebase.dataconnect.testutil.*
-import kotlinx.coroutines.test.*
+import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class NestedStructsIntegrationTest : DemoConnectorIntegrationTestBase() {
@@ -35,102 +37,106 @@ class NestedStructsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getNested1byKey.execute(nested1b.key)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetNested1byKeyQuery.Data(
-          GetNested1byKeyQuery.Data.Nested1(
-            id = nested1b.key.id,
-            nested1 =
-              GetNested1byKeyQuery.Data.Nested1.Nested1(
-                id = nested1a.key.id,
-                nested1 = null,
-                nested2 =
-                  GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2(
-                    id = nested2s[0].key.id,
-                    value = nested2s[0].value,
-                    nested3 =
-                      GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2.Nested3(
-                        id = nested3s[0].key.id,
-                        value = nested3s[0].value,
+    queryResult.data shouldBe
+      GetNested1byKeyQuery.Data(
+        GetNested1byKeyQuery.Data.Nested1(
+          id = nested1b.key.id,
+          nested1 =
+            GetNested1byKeyQuery.Data.Nested1.Nested1(
+              id = nested1a.key.id,
+              nested1 = null,
+              nested2 =
+                GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2(
+                  id = nested2s[0].key.id,
+                  value = nested2s[0].value,
+                  nested3 =
+                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2.Nested3(
+                      id = nested3s[0].key.id,
+                      value = nested3s[0].value,
+                    ),
+                  nested3NullableNull = null,
+                  nested3NullableNonNull =
+                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2.Nested3nullableNonNull(
+                      id = nested3s[1].key.id,
+                      value = nested3s[1].value,
+                    ),
+                ),
+              nested2NullableNull = null,
+              nested2NullableNonNull =
+                GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull(
+                  id = nested2s[1].key.id,
+                  value = nested2s[1].value,
+                  nested3 =
+                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull.Nested3(
+                      id = nested3s[2].key.id,
+                      value = nested3s[2].value,
+                    ),
+                  nested3NullableNull = null,
+                  nested3NullableNonNull =
+                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull
+                      .Nested3nullableNonNull(
+                        id = nested3s[3].key.id,
+                        value = nested3s[3].value,
                       ),
-                    nested3NullableNull = null,
-                    nested3NullableNonNull =
-                      GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2.Nested3nullableNonNull(
-                        id = nested3s[1].key.id,
-                        value = nested3s[1].value,
-                      ),
-                  ),
-                nested2NullableNull = null,
-                nested2NullableNonNull =
-                  GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull(
-                    id = nested2s[1].key.id,
-                    value = nested2s[1].value,
-                    nested3 =
-                      GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull.Nested3(
-                        id = nested3s[2].key.id,
-                        value = nested3s[2].value,
-                      ),
-                    nested3NullableNull = null,
-                    nested3NullableNonNull =
-                      GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull
-                        .Nested3nullableNonNull(
-                          id = nested3s[3].key.id,
-                          value = nested3s[3].value,
-                        ),
-                  ),
-              ),
-            nested2 =
-              GetNested1byKeyQuery.Data.Nested1.Nested2(
-                id = nested2s[2].key.id,
-                value = nested2s[2].value,
-                nested3 =
-                  GetNested1byKeyQuery.Data.Nested1.Nested2.Nested3(
-                    id = nested3s[4].key.id,
-                    value = nested3s[4].value,
-                  ),
-                nested3NullableNull = null,
-                nested3NullableNonNull =
-                  GetNested1byKeyQuery.Data.Nested1.Nested2.Nested3nullableNonNull(
-                    id = nested3s[5].key.id,
-                    value = nested3s[5].value,
-                  ),
-              ),
-            nested2NullableNull = null,
-            nested2NullableNonNull =
-              GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull(
-                id = nested2s[3].key.id,
-                value = nested2s[3].value,
-                nested3 =
-                  GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull.Nested3(
-                    id = nested3s[6].key.id,
-                    value = nested3s[6].value,
-                  ),
-                nested3NullableNull = null,
-                nested3NullableNonNull =
-                  GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull.Nested3nullableNonNull(
-                    id = nested3s[7].key.id,
-                    value = nested3s[7].value,
-                  ),
-              ),
-          )
+                ),
+            ),
+          nested2 =
+            GetNested1byKeyQuery.Data.Nested1.Nested2(
+              id = nested2s[2].key.id,
+              value = nested2s[2].value,
+              nested3 =
+                GetNested1byKeyQuery.Data.Nested1.Nested2.Nested3(
+                  id = nested3s[4].key.id,
+                  value = nested3s[4].value,
+                ),
+              nested3NullableNull = null,
+              nested3NullableNonNull =
+                GetNested1byKeyQuery.Data.Nested1.Nested2.Nested3nullableNonNull(
+                  id = nested3s[5].key.id,
+                  value = nested3s[5].value,
+                ),
+            ),
+          nested2NullableNull = null,
+          nested2NullableNonNull =
+            GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull(
+              id = nested2s[3].key.id,
+              value = nested2s[3].value,
+              nested3 =
+                GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull.Nested3(
+                  id = nested3s[6].key.id,
+                  value = nested3s[6].value,
+                ),
+              nested3NullableNull = null,
+              nested3NullableNonNull =
+                GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull.Nested3nullableNonNull(
+                  id = nested3s[7].key.id,
+                  value = nested3s[7].value,
+                ),
+            ),
         )
       )
   }
 
-  data class Nested3Info(val key: Nested3Key, val value: String)
+  private data class Nested3Info(val key: Nested3Key, val value: String)
 
-  private suspend fun createNested3s(count: Int) =
-    List(count) {
-      val value = "nested3_${it}_" + randomAlphanumericString()
+  private suspend fun createNested3s(count: Int): List<Nested3Info> {
+    val valueArb = Arb.dataConnect.string()
+    return List(count) {
+      val value = "nested3_${it}_" + valueArb.next(rs)
       val key = connector.insertNested3.execute(value).data.key
       Nested3Info(key, value)
     }
+  }
 
-  data class Nested2Info(val key: Nested2Key, val value: String)
+  private data class Nested2Info(val key: Nested2Key, val value: String)
 
-  private suspend fun createNested2s(count: Int, nested3s: Iterator<Nested3Key>) =
-    List(count) {
-      val value = "nested2_${it}_" + randomAlphanumericString()
+  private suspend fun createNested2s(
+    count: Int,
+    nested3s: Iterator<Nested3Key>
+  ): List<Nested2Info> {
+    val valueArb = Arb.dataConnect.string()
+    return List(count) {
+      val value = "nested2_${it}_" + valueArb.next(rs)
       val key =
         connector.insertNested2
           .execute(nested3 = nested3s.next(), value = value) {
@@ -141,14 +147,15 @@ class NestedStructsIntegrationTest : DemoConnectorIntegrationTestBase() {
           .key
       Nested2Info(key, value)
     }
+  }
 
-  data class Nested1Info(val key: Nested1Key, val value: String)
+  private data class Nested1Info(val key: Nested1Key, val value: String)
 
   private suspend fun createNested1(
     nested1: Nested1Key?,
     nested2s: Iterator<Nested2Key>
   ): Nested1Info {
-    val value = "nested1_1_" + randomAlphanumericString()
+    val value = "nested1_" + Arb.dataConnect.string().next(rs)
     val key =
       connector.insertNested1
         .execute(nested2 = nested2s.next(), value = value) {
