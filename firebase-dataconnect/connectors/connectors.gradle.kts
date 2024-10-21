@@ -73,6 +73,7 @@ dependencies {
   testImplementation(project(":firebase-dataconnect:testutil"))
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.kotest.assertions)
+  testImplementation(libs.kotest.property)
   testImplementation(libs.kotlin.coroutines.test)
   testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
