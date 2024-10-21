@@ -19,6 +19,9 @@ package com.google.firebase.dataconnect.connectors.demo
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.*
 import com.google.firebase.dataconnect.testutil.*
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldNotBeNull
 import kotlinx.coroutines.test.*
 import org.junit.Ignore
 import org.junit.Test
@@ -35,14 +38,31 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
         connector.insertManyToOneParent.execute { child = childKey }.data.key
       }
 
-    val queryResult = connector.getManyToOneChildByKey.execute(children[0])
+    run {
+      val queryResult = connector.getManyToOneChildByKey.execute(children[0])
+      val manyToOneChild =
+        withClue("manyToOneChild1") { queryResult.data.manyToOneChild.shouldNotBeNull() }
+      withClue("parents1") {
+        manyToOneChild.parents.shouldContainExactlyInAnyOrder(
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[0].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[2].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[4].id),
+        )
+      }
+    }
 
-    assertThat(queryResult.data.manyToOneChild?.parents)
-      .containsExactly(
-        GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[0].id),
-        GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[2].id),
-        GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[4].id),
-      )
+    run {
+      val queryResult = connector.getManyToOneChildByKey.execute(children[1])
+      val manyToOneChild =
+        withClue("manyToOneChild2") { queryResult.data.manyToOneChild.shouldNotBeNull() }
+      withClue("parents2") {
+        manyToOneChild.parents.shouldContainExactlyInAnyOrder(
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[1].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[3].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[5].id),
+        )
+      }
+    }
   }
 
   @Test
@@ -59,13 +79,15 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getManyToManyChildAByKey.execute(childAKey)
 
-    assertThat(queryResult.data.manyToManyChildA?.manyToManyChildBS_via_ManyToManyParent)
-      .containsExactlyElementsIn(
+    val manyToManyChildA =
+      withClue("manyToManyChildA") { queryResult.data.manyToManyChildA.shouldNotBeNull() }
+    withClue("manyToManyChildBS_via_ManyToManyParent") {
+      manyToManyChildA.manyToManyChildBS_via_ManyToManyParent shouldContainExactlyInAnyOrder
         childBKeys.map {
           GetManyToManyChildAByKeyQuery.Data.ManyToManyChildA
             .ManyToManyChildBsViaManyToManyParentItem(it.id)
         }
-      )
+    }
   }
 
   @Test
