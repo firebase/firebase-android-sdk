@@ -28,6 +28,7 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.cyrillic
+import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.hex
@@ -51,6 +52,8 @@ object DataConnectArb {
 
   fun string(length: IntRange = 0..100, codepoints: Arb<Codepoint>? = null): Arb<String> =
     Arb.string(length, codepoints ?: DataConnectArb.codepoints)
+
+  fun float(): Arb<Double> = Arb.double().filterNot { it.isNaN() || it.isInfinite() }
 
   fun id(length: Int = 20): Arb<String> = Arb.string(size = length, Codepoint.alphanumeric())
 
