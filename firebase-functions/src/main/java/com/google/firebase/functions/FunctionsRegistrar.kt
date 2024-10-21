@@ -36,7 +36,7 @@ import java.util.concurrent.Executor
  * @hide
  */
 @Keep
-class FunctionsRegistrar : ComponentRegistrar {
+public class FunctionsRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> {
     val liteExecutor = Qualified.qualified(Lightweight::class.java, Executor::class.java)
     val uiExecutor = Qualified.qualified(UiThread::class.java, Executor::class.java)
@@ -67,7 +67,7 @@ class FunctionsRegistrar : ComponentRegistrar {
     )
   }
 
-  companion object {
+  private companion object {
     private const val LIBRARY_NAME = "fire-fn"
   }
 }

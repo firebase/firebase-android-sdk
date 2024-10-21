@@ -22,6 +22,7 @@ import com.google.firebase.vertexai.GenerativeModel
 import com.google.firebase.vertexai.java.ChatFutures.Companion.from
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.CountTokensResponse
+import com.google.firebase.vertexai.type.FirebaseVertexAIException
 import com.google.firebase.vertexai.type.GenerateContentResponse
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
@@ -65,13 +66,13 @@ public abstract class GenerativeModelFutures internal constructor() {
   public abstract fun countTokens(vararg prompt: Content): ListenableFuture<CountTokensResponse>
 
   /**
-   * Creates a [ChatFuture] instance which internally tracks the ongoing conversation with the
+   * Creates a [ChatFutures] instance which internally tracks the ongoing conversation with the
    * model.
    */
   public abstract fun startChat(): ChatFutures
 
   /**
-   * Creates a [ChatFuture] instance, initialized using the optionally provided [history].
+   * Creates a [ChatFutures] instance, initialized using the optionally provided [history].
    *
    * @param history A list of previous interactions with the model to use as a starting point
    */

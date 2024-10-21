@@ -17,22 +17,22 @@ import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 
 /** An internal class for keeping track of options applied to an HttpsCallableReference. */
-class HttpsCallOptions {
+public class HttpsCallOptions {
   // The timeout to use for calls from references created by this Functions.
   private var timeout = DEFAULT_TIMEOUT
   private var timeoutUnits = DEFAULT_TIMEOUT_UNITS
-  @JvmField val limitedUseAppCheckTokens: Boolean
+  @JvmField public val limitedUseAppCheckTokens: Boolean
 
   /** Creates an (internal) HttpsCallOptions from the (external) [HttpsCallableOptions]. */
-  constructor(publicCallableOptions: HttpsCallableOptions) {
+  public constructor(publicCallableOptions: HttpsCallableOptions) {
     limitedUseAppCheckTokens = publicCallableOptions.limitedUseAppCheckTokens
   }
 
-  constructor() {
+  public constructor() {
     limitedUseAppCheckTokens = false
   }
 
-  fun getLimitedUseAppCheckTokens(): Boolean {
+  public fun getLimitedUseAppCheckTokens(): Boolean {
     return limitedUseAppCheckTokens
   }
 
@@ -42,7 +42,7 @@ class HttpsCallOptions {
    * @param timeout The length of the timeout, in the given units.
    * @param units The units for the specified timeout.
    */
-  fun setTimeout(timeout: Long, units: TimeUnit) {
+  public fun setTimeout(timeout: Long, units: TimeUnit) {
     this.timeout = timeout
     timeoutUnits = units
   }
@@ -52,12 +52,12 @@ class HttpsCallOptions {
    *
    * @return The timeout, in milliseconds.
    */
-  fun getTimeout(): Long {
+  public fun getTimeout(): Long {
     return timeoutUnits.toMillis(timeout)
   }
 
   /** Creates a new OkHttpClient with these options applied to it. */
-  fun apply(client: OkHttpClient): OkHttpClient {
+  public fun apply(client: OkHttpClient): OkHttpClient {
     return client
       .newBuilder()
       .callTimeout(timeout, timeoutUnits)
@@ -65,7 +65,7 @@ class HttpsCallOptions {
       .build()
   }
 
-  companion object {
+  private companion object {
     // The default timeout to use for all calls.
     private const val DEFAULT_TIMEOUT: Long = 70
     private val DEFAULT_TIMEOUT_UNITS = TimeUnit.SECONDS

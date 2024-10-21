@@ -31,8 +31,8 @@ firebaseLibrary {
   publishJavadoc = false
   previewMode = "beta"
   releaseNotes {
-    name.set("{{firebase_data_connect}}")
-    versionName.set("dataconnect")
+    name.set("{{data_connect_short}}")
+    versionName.set("data-connect")
     hasKTX.set(false)
   }
 

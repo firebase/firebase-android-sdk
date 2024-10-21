@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.vertexai.Chat
 import com.google.firebase.vertexai.type.Content
 import com.google.firebase.vertexai.type.GenerateContentResponse
+import com.google.firebase.vertexai.type.InvalidStateException
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
 

@@ -21,13 +21,13 @@ import org.json.JSONObject
 // TODO: This is a copy of FirebaseFirestoreException.
 // We should investigate whether we can at least share the Code enum.
 /** The class for all Exceptions thrown by FirebaseFunctions. */
-class FirebaseFunctionsException : FirebaseException {
+public class FirebaseFunctionsException : FirebaseException {
   /**
    * The set of error status codes that can be returned from a Callable HTTPS tigger. These are the
    * canonical error codes for Google APIs, as documented here:
    * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto#L26
    */
-  enum class Code(private val value: Int) {
+  public enum class Code(private val value: Int) {
     /**
      * The operation completed successfully. FirebaseFunctionsException will never have a status of
      * OK.
@@ -105,7 +105,7 @@ class FirebaseFunctionsException : FirebaseException {
     /** The request does not have valid authentication credentials for the operation. */
     UNAUTHENTICATED(16);
 
-    companion object {
+    public companion object {
       // Create the canonical list of Status instances indexed by their code values.
       private val STATUS_LIST = buildStatusList()
       private fun buildStatusList(): SparseArray<Code> {
@@ -121,7 +121,7 @@ class FirebaseFunctionsException : FirebaseException {
       }
 
       @JvmStatic
-      fun fromValue(value: Int): Code {
+      public fun fromValue(value: Int): Code {
         return STATUS_LIST[value, UNKNOWN]
       }
 
@@ -134,7 +134,7 @@ class FirebaseFunctionsException : FirebaseException {
        * @return The corresponding Code, or Code.UNKNOWN if none.
        */
       @JvmStatic
-      fun fromHttpStatus(status: Int): Code {
+      public fun fromHttpStatus(status: Int): Code {
         when (status) {
           200 -> return OK
           400 -> return INVALID_ARGUMENT
@@ -159,14 +159,14 @@ class FirebaseFunctionsException : FirebaseException {
    *
    * @return the code for the FirebaseFunctionsException
    */
-  val code: Code
+  public val code: Code
 
   /**
    * Gets the details object, if one was included in the error response.
    *
    * @return the object included in the "details" field of the response.
    */
-  val details: Any?
+  public val details: Any?
 
   internal constructor(message: String, code: Code, details: Any?) : super(message) {
     this.code = code
@@ -183,7 +183,7 @@ class FirebaseFunctionsException : FirebaseException {
     this.details = details
   }
 
-  companion object {
+  public companion object {
     /**
      * Takes an HTTP response and returns the corresponding Exception if any.
      *
@@ -193,7 +193,7 @@ class FirebaseFunctionsException : FirebaseException {
      * @return The corresponding Exception, or null if none.
      */
     @JvmStatic
-    fun fromResponse(
+    public fun fromResponse(
       code: Code,
       body: String?,
       serializer: Serializer

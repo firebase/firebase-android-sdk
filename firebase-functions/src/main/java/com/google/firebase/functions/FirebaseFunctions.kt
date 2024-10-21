@@ -47,7 +47,7 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /** FirebaseFunctions lets you call Cloud Functions for Firebase. */
-class FirebaseFunctions
+public class FirebaseFunctions
 @AssistedInject
 internal constructor(
   context: Context,
@@ -105,22 +105,25 @@ internal constructor(
   }
 
   /** Returns a reference to the callable HTTPS trigger with the given name. */
-  fun getHttpsCallable(name: String): HttpsCallableReference {
+  public fun getHttpsCallable(name: String): HttpsCallableReference {
     return HttpsCallableReference(this, name, HttpsCallOptions())
   }
 
   /** Returns a reference to the callable HTTPS trigger with the provided URL. */
-  fun getHttpsCallableFromUrl(url: URL): HttpsCallableReference {
+  public fun getHttpsCallableFromUrl(url: URL): HttpsCallableReference {
     return HttpsCallableReference(this, url, HttpsCallOptions())
   }
 
   /** Returns a reference to the callable HTTPS trigger with the given name and call options. */
-  fun getHttpsCallable(name: String, options: HttpsCallableOptions): HttpsCallableReference {
+  public fun getHttpsCallable(name: String, options: HttpsCallableOptions): HttpsCallableReference {
     return HttpsCallableReference(this, name, HttpsCallOptions(options))
   }
 
   /** Returns a reference to the callable HTTPS trigger with the provided URL and call options. */
-  fun getHttpsCallableFromUrl(url: URL, options: HttpsCallableOptions): HttpsCallableReference {
+  public fun getHttpsCallableFromUrl(
+    url: URL,
+    options: HttpsCallableOptions
+  ): HttpsCallableReference {
     return HttpsCallableReference(this, url, HttpsCallOptions(options))
   }
 
@@ -149,7 +152,7 @@ internal constructor(
   }
 
   @Deprecated("Use {@link #useEmulator(String, int)} to connect to the emulator. ")
-  fun useFunctionsEmulator(origin: String) {
+  public fun useFunctionsEmulator(origin: String) {
     Preconditions.checkNotNull(origin, "origin cannot be null")
     urlFormat = "$origin/%2\$s/%1\$s/%3\$s"
   }
@@ -162,7 +165,7 @@ internal constructor(
    * @param host the emulator host (for example, 10.0.2.2)
    * @param port the emulator port (for example, 5001)
    */
-  fun useEmulator(host: String, port: Int) {
+  public fun useEmulator(host: String, port: Int) {
     emulatorSettings = EmulatedServiceSettings(host, port)
   }
 
@@ -318,7 +321,7 @@ internal constructor(
     return tcs.task
   }
 
-  companion object {
+  public companion object {
     /** A task that will be resolved once ProviderInstaller has installed what it needs to. */
     private val providerInstalled = TaskCompletionSource<Void>()
 
@@ -370,7 +373,7 @@ internal constructor(
      * `"us-central1"` or `"https://mydomain.com"`.
      */
     @JvmStatic
-    fun getInstance(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions {
+    public fun getInstance(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions {
       Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.")
       Preconditions.checkNotNull(regionOrCustomDomain)
       val component = app.get(FunctionsMultiResourceComponent::class.java)
@@ -384,7 +387,7 @@ internal constructor(
      * @param app The app for the Firebase project.
      */
     @JvmStatic
-    fun getInstance(app: FirebaseApp): FirebaseFunctions {
+    public fun getInstance(app: FirebaseApp): FirebaseFunctions {
       return getInstance(app, "us-central1")
     }
 
@@ -395,13 +398,13 @@ internal constructor(
      * `"us-central1"` or `"https://mydomain.com"`.
      */
     @JvmStatic
-    fun getInstance(regionOrCustomDomain: String): FirebaseFunctions {
+    public fun getInstance(regionOrCustomDomain: String): FirebaseFunctions {
       return getInstance(FirebaseApp.getInstance(), regionOrCustomDomain)
     }
 
     /** Creates a Cloud Functions client with the default app. */
     @JvmStatic
-    fun getInstance(): FirebaseFunctions {
+    public fun getInstance(): FirebaseFunctions {
       return getInstance(FirebaseApp.getInstance(), "us-central1")
     }
   }

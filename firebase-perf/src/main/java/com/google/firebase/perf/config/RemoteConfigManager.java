@@ -88,7 +88,13 @@ public class RemoteConfigManager {
   @VisibleForTesting
   @SuppressWarnings("FirebaseUseExplicitDependencies")
   static long getInitialStartupMillis() {
-    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    StartupTime startupTime = null;
+    try {
+      startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    } catch (IllegalStateException ex) {
+      // This can happen if you start a trace before Firebase is init
+      logger.debug("Unable to get StartupTime instance.");
+    }
     if (startupTime != null) {
       return startupTime.getEpochMillis();
     } else {

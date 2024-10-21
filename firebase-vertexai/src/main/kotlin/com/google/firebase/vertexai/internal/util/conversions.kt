@@ -100,7 +100,7 @@ internal fun SafetySetting.toInternal() =
   com.google.firebase.vertexai.common.shared.SafetySetting(
     harmCategory.toInternal(),
     threshold.toInternal(),
-    method.toInternal()
+    method?.toInternal()
   )
 
 internal fun makeMissingCaseException(source: String, ordinal: Int): SerializationException {

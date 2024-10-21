@@ -37,7 +37,7 @@ import java.net.URL
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-val Firebase.functions: FirebaseFunctions
+public val Firebase.functions: FirebaseFunctions
   get() = FirebaseFunctions.getInstance()
 
 /**
@@ -51,7 +51,7 @@ val Firebase.functions: FirebaseFunctions
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
+public fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
   FirebaseFunctions.getInstance(regionOrCustomDomain)
 
 /**
@@ -65,7 +65,8 @@ fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.getInstance(app)
+public fun Firebase.functions(app: FirebaseApp): FirebaseFunctions =
+  FirebaseFunctions.getInstance(app)
 
 /**
  * Accessing this object for Kotlin apps has changed; see the
@@ -78,7 +79,7 @@ fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions =
+public fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions =
   FirebaseFunctions.getInstance(app, regionOrCustomDomain)
 
 /**
@@ -94,7 +95,7 @@ fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): Firebase
   ReplaceWith("")
 )
 @Keep
-class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
+public class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()
 }
 
@@ -110,7 +111,7 @@ class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
   ReplaceWith("")
 )
-fun FirebaseFunctions.getHttpsCallable(
+public fun FirebaseFunctions.getHttpsCallable(
   name: String,
   init: HttpsCallableOptions.Builder.() -> Unit
 ): HttpsCallableReference {
@@ -131,7 +132,7 @@ fun FirebaseFunctions.getHttpsCallable(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
   ReplaceWith("")
 )
-fun FirebaseFunctions.getHttpsCallableFromUrl(
+public fun FirebaseFunctions.getHttpsCallableFromUrl(
   url: URL,
   init: HttpsCallableOptions.Builder.() -> Unit
 ): HttpsCallableReference {
