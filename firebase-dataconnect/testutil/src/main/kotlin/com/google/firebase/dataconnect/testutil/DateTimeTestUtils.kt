@@ -22,7 +22,6 @@ import java.util.Date
 import java.util.GregorianCalendar
 import java.util.TimeZone
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 /**
  * Creates and returns a new [Date] object that represents the given year, month, and day in UTC.
@@ -43,18 +42,6 @@ fun dateFromYearMonthDayUTC(year: Int, month: Int, day: Int): Date {
     }
     .time
 }
-
-/**
- * Generates and returns a random [Date] object with hour, minute, and second set to zero.
- *
- * @see https://en.wikipedia.org/wiki/ISO_8601#Years for rationale of lower bound of 1583.
- */
-fun randomDate(): Date =
-  dateFromYearMonthDayUTC(
-    year = Random.nextInt(1583..9999),
-    month = Random.nextInt(1..12),
-    day = Random.nextInt(1..28)
-  )
 
 /** Generates and returns a random [Timestamp] object. */
 fun randomTimestamp(): Timestamp {
