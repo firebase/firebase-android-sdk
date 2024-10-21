@@ -176,6 +176,8 @@ class QueueFileLogStore implements FileLogStore {
       }
     } catch (IOException e) {
       Logger.getLogger().e("There was a problem writing to the Crashlytics log.", e);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().e("OOM when writing to the Crashlytics log.", e);
     }
   }
 }
