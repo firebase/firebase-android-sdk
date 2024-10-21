@@ -31,8 +31,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.random.Random
-import kotlin.reflect.KClass
-import kotlin.reflect.safeCast
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -127,27 +125,6 @@ fun fail(message: String): Nothing {
   Assert.fail(message)
   throw IllegalStateException("Should never get here")
 }
-
-/** Calls the given block and asserts that it throws the given exception. */
-@Deprecated(
-  message = "use io.kotest.assertions.throwables.shouldThrow instead",
-  replaceWith =
-    ReplaceWith(expression = "shouldThrow<E> {...}", "io.kotest.assertions.throwables.shouldThrow")
-)
-inline fun <T, R, E : Any> T.assertThrows(expectedException: KClass<E>, block: T.() -> R): E =
-  runCatching { block() }
-    .fold(
-      onSuccess = {
-        fail(
-          "Expected block to throw ${expectedException.qualifiedName}, " +
-            "but it did not throw and returned: $it"
-        )
-      },
-      onFailure = {
-        expectedException.safeCast(it)
-          ?: fail("Expected block to throw ${expectedException.qualifiedName}, but it threw: $it")
-      }
-    )
 
 /**
  * The largest positive integer value that can be represented by a 64-bit double.

@@ -25,13 +25,13 @@ import com.google.firebase.dataconnect.generated.GeneratedQuery
 import com.google.firebase.dataconnect.testutil.MAX_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.MIN_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.ZERO_TIMESTAMP
-import com.google.firebase.dataconnect.testutil.assertThrows
 import com.google.firebase.dataconnect.testutil.executeWithEmptyVariables
 import com.google.firebase.dataconnect.testutil.randomTimestamp
 import com.google.firebase.dataconnect.testutil.timestampFromUTCDateAndTime
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import com.google.firebase.dataconnect.testutil.withVariablesSerializer
+import io.kotest.assertions.throwables.shouldThrow
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.seconds
@@ -224,21 +224,21 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun insertNullForNonNullTimestampFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
+    shouldThrow<DataConnectException> {
       connector.insertNonNullTimestamp.executeWithStringVariables(null).data.key
     }
   }
 
   @Test
   fun insertIntForNonNullTimestampFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
+    shouldThrow<DataConnectException> {
       connector.insertNonNullTimestamp.executeWithIntVariables(777_666).data.key
     }
   }
 
   @Test
   fun insertWithMissingValueNonNullTimestampFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
+    shouldThrow<DataConnectException> {
       connector.insertNonNullTimestamp.executeWithEmptyVariables().data.key
     }
   }
@@ -247,7 +247,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFail() =
     runTest(timeout = 60.seconds) {
       for (invalidTimestamp in invalidTimestamps) {
-        assertThrows(DataConnectException::class) {
+        shouldThrow<DataConnectException> {
           connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
         }
       }
@@ -260,7 +260,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   )
   fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFailBugs() = runTest {
     for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
-      assertThrows(DataConnectException::class) {
+      shouldThrow<DataConnectException> {
         connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
       }
     }
@@ -423,7 +423,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun insertIntForNullableTimestampFieldShouldFail() = runTest {
-    assertThrows(DataConnectException::class) {
+    shouldThrow<DataConnectException> {
       connector.insertNullableTimestamp.executeWithIntVariables(555_444).data.key
     }
   }
@@ -432,7 +432,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFail() =
     runTest(timeout = 60.seconds) {
       for (invalidTimestamp in invalidTimestamps) {
-        assertThrows(DataConnectException::class) {
+        shouldThrow<DataConnectException> {
           connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
         }
       }
@@ -445,7 +445,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   )
   fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFailBugs() = runTest {
     for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
-      assertThrows(DataConnectException::class) {
+      shouldThrow<DataConnectException> {
         connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
       }
     }
