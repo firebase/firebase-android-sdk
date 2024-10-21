@@ -17,8 +17,8 @@
 package com.google.firebase.dataconnect.connectors
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,25 +38,16 @@ class PostsConnectorUnitTest {
 
   @Test
   fun `getPost property should always return the same instance`() {
-    val operation1 = posts.getPost
-    val operation2 = posts.getPost
-
-    assertThat(operation1).isSameInstanceAs(operation2)
+    posts.getPost shouldBeSameInstanceAs posts.getPost
   }
 
   @Test
   fun `createPost property should always return the same instance`() {
-    val operation1 = posts.createPost
-    val operation2 = posts.createPost
-
-    assertThat(operation1).isSameInstanceAs(operation2)
+    posts.createPost shouldBeSameInstanceAs posts.createPost
   }
 
   @Test
   fun `createComment property should always return the same instance`() {
-    val operation1 = posts.createComment
-    val operation2 = posts.createComment
-
-    assertThat(operation1).isSameInstanceAs(operation2)
+    posts.createComment shouldBeSameInstanceAs posts.createComment
   }
 }
