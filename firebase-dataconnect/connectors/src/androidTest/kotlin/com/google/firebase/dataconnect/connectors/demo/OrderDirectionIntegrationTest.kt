@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.tag
 import com.google.firebase.dataconnect.testutil.sortedParallelTo
 import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactly
