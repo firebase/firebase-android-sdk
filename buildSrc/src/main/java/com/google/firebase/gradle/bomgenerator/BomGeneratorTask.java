@@ -92,8 +92,7 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "com.google.firebase:firebase-perf-ktx",
           "com.google.firebase:firebase-storage",
           "com.google.firebase:firebase-storage-ktx",
-          "com.google.firebase:firebase-vertexai",
-          "com.google.firebase:firebase-vertexai-ktx");
+          "com.google.firebase:firebase-vertexai");
   private static final List<String> IGNORED_ARTIFACTS =
       ImmutableList.of(
           "crash-plugin",
