@@ -211,100 +211,89 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun updateNonNullableNonEmptyListsToEmpty() = runTest {
-    val key =
-      connector.insertNonNullableLists
-        .execute(
-          strings = listOf("a", "b"),
-          ints = listOf(1, 2, 3),
-          floats = listOf(1.1, 2.2, 3.3),
-          booleans = listOf(true, false, true, false),
-          uuids =
-            listOf(
-              UUID.fromString("e7c0b51d-55ec-4c7f-b831-038e6377c4bc"),
-              UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
-            ),
-          int64s = listOf(1, 2, 3),
-          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
-          timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
-        )
-        .data
-        .key
-
-    connector.updateNonNullableListsByKey.execute(key) {
-      strings = emptyList()
-      ints = emptyList()
-      floats = emptyList()
-      booleans = emptyList()
-      uuids = emptyList()
-      int64s = emptyList()
-      dates = emptyList()
-      timestamps = emptyList()
-    }
-
-    val queryResult = connector.getNonNullableListsByKey.execute(key)
-
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetNonNullableListsByKeyQuery.Data(
-          GetNonNullableListsByKeyQuery.Data.NonNullableLists(
-            strings = emptyList(),
-            ints = emptyList(),
-            floats = emptyList(),
-            booleans = emptyList(),
-            uuids = emptyList(),
-            int64s = emptyList(),
-            dates = emptyList(),
-            timestamps = emptyList(),
+    checkAll(propTestConfig, Arb.dataConnect.nonEmptyLists()) { sendLists ->
+      val key =
+        connector.insertNonNullableLists
+          .execute(
+            strings = sendLists.strings,
+            ints = sendLists.ints,
+            floats = sendLists.floats,
+            booleans = sendLists.booleans,
+            uuids = sendLists.uuids,
+            int64s = sendLists.int64s,
+            dates = sendLists.dates,
+            timestamps = sendLists.timestamps,
           )
+          .data
+          .key
+
+      connector.updateNonNullableListsByKey.execute(key) {
+        strings = emptyList()
+        ints = emptyList()
+        floats = emptyList()
+        booleans = emptyList()
+        uuids = emptyList()
+        int64s = emptyList()
+        dates = emptyList()
+        timestamps = emptyList()
+      }
+
+      val queryResult = connector.getNonNullableListsByKey.execute(key)
+
+      queryResult.data
+      GetNonNullableListsByKeyQuery.Data(
+        GetNonNullableListsByKeyQuery.Data.NonNullableLists(
+          strings = emptyList(),
+          ints = emptyList(),
+          floats = emptyList(),
+          booleans = emptyList(),
+          uuids = emptyList(),
+          int64s = emptyList(),
+          dates = emptyList(),
+          timestamps = emptyList(),
         )
       )
+    }
   }
 
   @Test
   fun updateNonNullableWithUndefinedLists() = runTest {
-    val key =
-      connector.insertNonNullableLists
-        .execute(
-          strings = listOf("a", "b"),
-          ints = listOf(1, 2, 3),
-          floats = listOf(1.1, 2.2, 3.3),
-          booleans = listOf(true, false, true, false),
-          uuids =
-            listOf(
-              UUID.fromString("e60688ca-baae-4f79-8ef1-908220148399"),
-              UUID.fromString("e2170f8a-9a53-478c-ae2f-9fb5b09da5c7")
-            ),
-          int64s = listOf(1, 2, 3),
-          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
-          timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
-        )
-        .data
-        .key
+    checkAll(propTestConfig, Arb.dataConnect.nonEmptyLists()) { sendLists ->
+      println("zzyzx $sendLists")
+      val key =
+        connector.insertNonNullableLists
+          .execute(
+            strings = sendLists.strings,
+            ints = sendLists.ints,
+            floats = sendLists.floats,
+            booleans = sendLists.booleans,
+            uuids = sendLists.uuids,
+            int64s = sendLists.int64s,
+            dates = sendLists.dates,
+            timestamps = sendLists.timestamps,
+          )
+          .data
+          .key
 
-    connector.updateNonNullableListsByKey.execute(key) {}
+      connector.updateNonNullableListsByKey.execute(key) {}
 
-    val queryResult = connector.getNonNullableListsByKey.execute(key)
+      val queryResult = connector.getNonNullableListsByKey.execute(key)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
+      val receiveLists = sendLists.withRoundTripValues()
+      queryResult.data shouldBe
         GetNonNullableListsByKeyQuery.Data(
           GetNonNullableListsByKeyQuery.Data.NonNullableLists(
-            strings = listOf("a", "b"),
-            ints = listOf(1, 2, 3),
-            floats = listOf(1.1, 2.2, 3.3),
-            booleans = listOf(true, false, true, false),
-            uuids =
-              listOf(
-                UUID.fromString("e60688ca-baae-4f79-8ef1-908220148399"),
-                UUID.fromString("e2170f8a-9a53-478c-ae2f-9fb5b09da5c7")
-              ),
-            int64s = listOf(1, 2, 3),
-            dates =
-              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
-            timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
+            strings = receiveLists.strings,
+            ints = receiveLists.ints,
+            floats = receiveLists.floats,
+            booleans = receiveLists.booleans,
+            uuids = receiveLists.uuids,
+            int64s = receiveLists.int64s,
+            dates = receiveLists.dates,
+            timestamps = receiveLists.timestamps,
           )
         )
-      )
+    }
   }
 
   @Test
@@ -713,7 +702,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
   private companion object {
     @OptIn(ExperimentalKotest::class)
     val propTestConfig =
-      PropTestConfig(iterations = 5, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.5))
+      PropTestConfig(iterations = 10, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.5))
 
     @Suppress("UnusedReceiverParameter")
     fun DataConnectArb.nonEmptyLists(
