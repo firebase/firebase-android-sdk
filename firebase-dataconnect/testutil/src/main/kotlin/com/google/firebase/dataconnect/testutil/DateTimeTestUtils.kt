@@ -85,7 +85,7 @@ fun timestampFromUTCDateAndTime(
   require(year in 0..9999) { "year must be between 0 and 9999, inclusive" }
   require(month in 1..12) { "month must be between 1 and 12, inclusive" }
   require(day in 1..31) { "day must be between 1 and 31, inclusive" }
-  require(hour in 0..24) { "hour must be between 0 and 23, inclusive" }
+  require(hour in 0..24) { "hour must be between 0 and 24, inclusive" }
   require(minute in 0..59) { "minute must be between 0 and 59, inclusive" }
   require(second in 0..60) { "second must be between 0 and 60, inclusive" }
   require(nanoseconds in 0..999_999_999) {

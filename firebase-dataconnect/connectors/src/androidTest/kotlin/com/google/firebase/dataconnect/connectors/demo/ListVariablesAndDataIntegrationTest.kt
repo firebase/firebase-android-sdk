@@ -24,7 +24,23 @@ import com.google.firebase.dataconnect.testutil.MAX_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.MIN_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
 import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.date
+import com.google.firebase.dataconnect.testutil.property.arbitrary.timestamp
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
+import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.uuid
+import io.kotest.property.checkAll
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
@@ -51,66 +67,75 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getNonNullableListsByKey.execute(key)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetNonNullableListsByKeyQuery.Data(
-          GetNonNullableListsByKeyQuery.Data.NonNullableLists(
-            strings = emptyList(),
-            ints = emptyList(),
-            floats = emptyList(),
-            booleans = emptyList(),
-            uuids = emptyList(),
-            int64s = emptyList(),
-            dates = emptyList(),
-            timestamps = emptyList(),
-          )
+    queryResult.data shouldBe
+      GetNonNullableListsByKeyQuery.Data(
+        GetNonNullableListsByKeyQuery.Data.NonNullableLists(
+          strings = emptyList(),
+          ints = emptyList(),
+          floats = emptyList(),
+          booleans = emptyList(),
+          uuids = emptyList(),
+          int64s = emptyList(),
+          dates = emptyList(),
+          timestamps = emptyList(),
         )
       )
   }
 
   @Test
   fun insertNonNullableNonEmptyLists() = runTest {
-    val key =
-      connector.insertNonNullableLists
-        .execute(
-          strings = listOf("a", "b"),
-          ints = listOf(1, 2, 3),
-          floats = listOf(1.1, 2.2, 3.3),
-          booleans = listOf(true, false, true, false),
-          uuids =
-            listOf(
-              UUID.fromString("e7c0b51d-55ec-4c7f-b831-038e6377c4bc"),
-              UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
-            ),
-          int64s = listOf(1, 2, 3),
-          dates = listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
-          timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
-        )
-        .data
-        .key
+    val stringsArb = Arb.list(Arb.dataConnect.string())
+    val intsArb = Arb.list(Arb.int())
+    val floatsArb = Arb.list(Arb.double())
+    val booleansArb = Arb.list(Arb.boolean())
+    val uuidsArb = Arb.list(Arb.uuid())
+    val int64sArb = Arb.list(Arb.long())
+    val datesArb = Arb.list(Arb.dataConnect.date().map { it.date })
+    val timestampsArb = Arb.list(Arb.dataConnect.timestamp().map { it.timestamp })
+    checkAll(
+      propTestConfig,
+      stringsArb,
+      intsArb,
+      floatsArb,
+      booleansArb,
+      uuidsArb,
+      int64sArb,
+      datesArb,
+      timestampsArb
+    ) { strings, ints, floats, booleans, uuids, int64s, dates, timestamps ->
+      val key =
+        connector.insertNonNullableLists
+          .execute(
+            strings = strings,
+            ints = ints,
+            floats = floats,
+            booleans = booleans,
+            uuids = uuids,
+            int64s = int64s,
+            dates = dates,
+            timestamps = timestamps,
+          )
+          .data
+          .key
 
-    val queryResult = connector.getNonNullableListsByKey.execute(key)
+      val queryResult = connector.getNonNullableListsByKey.execute(key)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetNonNullableListsByKeyQuery.Data(
-          GetNonNullableListsByKeyQuery.Data.NonNullableLists(
-            strings = listOf("a", "b"),
-            ints = listOf(1, 2, 3),
-            floats = listOf(1.1, 2.2, 3.3),
-            booleans = listOf(true, false, true, false),
-            uuids =
-              listOf(
-                UUID.fromString("e7c0b51d-55ec-4c7f-b831-038e6377c4bc"),
-                UUID.fromString("6365f797-3d23-482c-9159-bc28b68b8b6e")
-              ),
-            int64s = listOf(1, 2, 3),
-            dates =
-              listOf(dateFromYearMonthDayUTC(2024, 5, 7), dateFromYearMonthDayUTC(1978, 3, 30)),
-            timestamps = listOf(Timestamp(123456789, 990000000), Timestamp(987654321, 110000000)),
+      assertThat(queryResult.data)
+        .isEqualTo(
+          GetNonNullableListsByKeyQuery.Data(
+            GetNonNullableListsByKeyQuery.Data.NonNullableLists(
+              strings = strings,
+              ints = ints,
+              floats = floats.map { if (it != -0.0) it else 0.0 },
+              booleans = booleans,
+              uuids = uuids,
+              int64s = int64s,
+              dates = dates,
+              timestamps = timestamps.map { it.withMicrosecondPrecision() },
+            )
           )
         )
-      )
+    }
   }
 
   @Ignore(
@@ -706,5 +731,11 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
           )
         )
       )
+  }
+
+  private companion object {
+    @OptIn(ExperimentalKotest::class)
+    val propTestConfig =
+      PropTestConfig(iterations = 5, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.5))
   }
 }
