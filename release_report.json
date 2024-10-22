@@ -1,0 +1,41 @@
+{
+    "changesByLibraryName": {
+        "firebase-vertexai": [
+            {
+                "commitId": "bcb4607a22bae0e56be5c4066b38bc59f06ec0ca",
+                "prId": "6400",
+                "author": "Rodrigo Lazo",
+                "message": "Fix vertexAI authorization header (#6400)\n\nThe header for authenticated request from vertex was using an invalid\r\nauthorization value\r\n\r\n---------\r\n\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcb4607a22bae0e56be5c4066b38bc59f06ec0ca",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6400"
+            },
+            {
+                "commitId": "3afa1c4fb2051fa65742f05c387d662eeae84201",
+                "prId": "6399",
+                "author": "Rodrigo Lazo",
+                "message": "Add spotless support for *.gradle.kts files (#6399)\n\nThe more we cover by the formatter the better.\n\nThat being said, support for groovy is broken. I hit\nhttps://github.com/diffplug/spotless/issues/1922 when trying to use\ngroovyGradle formatting.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3afa1c4fb2051fa65742f05c387d662eeae84201",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6399"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-components",
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-config-interop",
+        ":firebase-database",
+        ":firebase-database:ktx",
+        ":firebase-database-collection",
+        ":firebase-dataconnect",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-components:firebase-dynamic-module-support"
+    ]
+}
