@@ -15,27 +15,27 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 // limitations under the License.
 
 plugins {
-    id("firebase-library")
-    id("kotlin-android")
-    id("firebase-vendor")
-    id("copy-google-services")
-    kotlin("kapt")
+  id("firebase-library")
+  id("kotlin-android")
+  id("firebase-vendor")
+  id("copy-google-services")
+  kotlin("kapt")
 }
 
 firebaseLibrary {
-    libraryGroup("functions")
-    testLab.enabled = true
-    publishSources = true
-    releaseNotes {
-        name.set("{{functions_client}}")
-        versionName.set("functions-client")
-    }
+  libraryGroup("functions")
+  testLab.enabled = true
+  publishSources = true
+  releaseNotes {
+    name.set("{{functions_client}}")
+    versionName.set("functions-client")
+  }
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.functions"
   compileSdk = compileSdkVersion
@@ -46,9 +46,7 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("proguard.txt")
   }
-  sourceSets {
-    getByName("androidTest").java.srcDirs("src/testUtil")
-  }
+  sourceSets { getByName("androidTest").java.srcDirs("src/testUtil") }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -72,69 +70,67 @@ tasks.withType<KotlinCompile>().all {
 }
 
 dependencies {
-    javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
-    javadocClasspath(libs.autovalue.annotations)
-    javadocClasspath(libs.findbugs.jsr305)
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation("com.google.firebase:firebase-common:20.3.1")
-    implementation("com.google.firebase:firebase-components:17.1.0")
-    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.playservices.base)
-    implementation(libs.playservices.basement)
-    implementation(libs.playservices.tasks)
-    implementation("com.google.firebase:firebase-iid:21.1.0") {
-        exclude(group = "com.google.firebase", module = "firebase-common")
-        exclude(group = "com.google.firebase", module = "firebase-components")
-    }
-    implementation("com.google.firebase:firebase-auth-interop:18.0.0") {
-        exclude(group = "com.google.firebase", module = "firebase-common")
-    }
-    implementation("com.google.firebase:firebase-iid-interop:17.1.0")
-    implementation(libs.okhttp)
+  javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
+  javadocClasspath(libs.autovalue.annotations)
+  javadocClasspath(libs.findbugs.jsr305)
+  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  implementation("com.google.firebase:firebase-common:20.3.1")
+  implementation("com.google.firebase:firebase-components:17.1.0")
+  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  implementation(libs.kotlin.stdlib)
+  implementation(libs.playservices.base)
+  implementation(libs.playservices.basement)
+  implementation(libs.playservices.tasks)
+  implementation("com.google.firebase:firebase-iid:21.1.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  implementation("com.google.firebase:firebase-auth-interop:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  implementation("com.google.firebase:firebase-iid-interop:17.1.0")
+  implementation(libs.okhttp)
 
-    api("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    api("com.google.firebase:firebase-common:21.0.0")
-    api("com.google.firebase:firebase-common-ktx:21.0.0")
-    api("com.google.firebase:firebase-components:18.0.0")
-    api("com.google.firebase:firebase-annotations:16.2.0")
-    api("com.google.firebase:firebase-auth-interop:18.0.0") {
-       exclude(group = "com.google.firebase", module = "firebase-common")
-   }
-    api("com.google.firebase:firebase-iid:21.1.0") {
-       exclude(group = "com.google.firebase", module = "firebase-common")
-       exclude(group = "com.google.firebase", module = "firebase-components")
-   }
-    api("com.google.firebase:firebase-iid-interop:17.1.0")
-    implementation(libs.androidx.annotation)
-    implementation(libs.javax.inject)
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.okhttp)
-    implementation(libs.playservices.base)
-    implementation(libs.playservices.basement)
-    api(libs.playservices.tasks)
+  api("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common-ktx:21.0.0")
+  api("com.google.firebase:firebase-components:18.0.0")
+  api("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-auth-interop:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  api("com.google.firebase:firebase-iid:21.1.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  api("com.google.firebase:firebase-iid-interop:17.1.0")
+  implementation(libs.androidx.annotation)
+  implementation(libs.javax.inject)
+  implementation(libs.kotlin.stdlib)
+  implementation(libs.okhttp)
+  implementation(libs.playservices.base)
+  implementation(libs.playservices.basement)
+  api(libs.playservices.tasks)
 
-    annotationProcessor(libs.autovalue)
-    annotationProcessor(libs.dagger.compiler)
+  annotationProcessor(libs.autovalue)
+  annotationProcessor(libs.dagger.compiler)
 
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.test.rules)
-    testImplementation(libs.junit)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.robolectric) {}
-    testImplementation(libs.truth)
-    vendor(libs.dagger.dagger) {
-     exclude(group = "javax.inject", module = "javax.inject")
-   }
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.androidx.test.rules)
+  testImplementation(libs.junit)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.robolectric) {}
+  testImplementation(libs.truth)
+  vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
 
-    androidTestImplementation(project(":integ-testing"))
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.mockito.core)
-    androidTestImplementation(libs.mockito.dexmaker)
-    kapt("com.google.dagger:dagger-android-processor:2.43.2")
-    kapt("com.google.dagger:dagger-compiler:2.43.2")
+  androidTestImplementation(project(":integ-testing"))
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.mockito.core)
+  androidTestImplementation(libs.mockito.dexmaker)
+  kapt("com.google.dagger:dagger-android-processor:2.43.2")
+  kapt("com.google.dagger:dagger-compiler:2.43.2")
 }

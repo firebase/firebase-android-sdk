@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   id("com.android.library")
@@ -25,9 +25,9 @@ plugins {
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.dataconnect.connectors"
   compileSdk = compileSdkVersion
@@ -59,9 +59,7 @@ android {
 
   dataconnect {
     configDir = file("../emulator/dataconnect")
-    codegen {
-      connectors = listOf("demo", "keywords")
-    }
+    codegen { connectors = listOf("demo", "keywords") }
   }
 }
 
@@ -92,9 +90,7 @@ dependencies {
 }
 
 tasks.withType<KotlinCompile>().all {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
-  }
+  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -123,28 +119,37 @@ tasks.withType<KotlinCompile>().all {
 // The `--info` argument can be omitted; it merely controls the level of log output.
 tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   outputs.upToDateWhen { false }
-  jsonFile.set(project.layout.projectDirectory.file(
-    "../gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
-        "plugin/DataConnectExecutableVersions.json"))
+  jsonFile.set(
+    project.layout.projectDirectory.file(
+      "../gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
+        "plugin/DataConnectExecutableVersions.json"
+    )
+  )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 
   val singleVersion: String? = project.providers.gradleProperty("version").orNull
-  val multipleVersions: List<String>? = project.providers.gradleProperty("versions").orNull?.split(',')
-  versions.set(buildList {
-    singleVersion?.let{add(it)}
-    multipleVersions?.let{addAll(it)}
-    if (isEmpty()) {
-      throw Exception("bm6d5ezxzd 'version' or 'versions' property must be specified")
+  val multipleVersions: List<String>? =
+    project.providers.gradleProperty("versions").orNull?.split(',')
+  versions.set(
+    buildList {
+      singleVersion?.let { add(it) }
+      multipleVersions?.let { addAll(it) }
+      if (isEmpty()) {
+        throw Exception("bm6d5ezxzd 'version' or 'versions' property must be specified")
+      }
     }
-  })
+  )
 
-  updateMode.set(project.providers.gradleProperty("updateMode").map {
-    when (it) {
-      "overwrite" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Overwrite
-      "update" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Update
-      else -> throw Exception("ahe4zadcjs 'updateMode' must be 'overwrite' or 'update', but got: $it")
+  updateMode.set(
+    project.providers.gradleProperty("updateMode").map {
+      when (it) {
+        "overwrite" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Overwrite
+        "update" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Update
+        else ->
+          throw Exception("ahe4zadcjs 'updateMode' must be 'overwrite' or 'update', but got: $it")
+      }
     }
-  })
+  )
 
   defaultVersion.set(project.providers.gradleProperty("defaultVersion"))
 }
