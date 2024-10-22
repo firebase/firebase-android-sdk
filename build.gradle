@@ -81,6 +81,10 @@ configure(subprojects) {
             target 'src/**/*.kt'
             ktfmt('0.41').googleStyle()
         }
+        kotlinGradle {
+            target('*.gradle.kts') // default target for kotlinGradle
+            ktfmt('0.41').googleStyle()
+        }
     }
 }
 

@@ -110,7 +110,7 @@ internal constructor(
             try {
               val token = internalAuthProvider.getAccessToken(false).await()
 
-              headers["Authorization"] = token.token!!
+              headers["Authorization"] = "Firebase ${token.token!!}"
             } catch (e: Exception) {
               Log.w(TAG, "Error getting Auth token ", e)
             }
