@@ -44,7 +44,8 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testGetBatteryLevel() {
     Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(makeIntent(0, 50, 200));
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
+        .thenReturn(makeIntent(0, 50, 200));
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -81,7 +82,8 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testEmptyIntent() {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(new Intent());
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
+        .thenReturn(new Intent());
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -92,7 +94,8 @@ public class BatteryStateTest extends CrashlyticsTestCase {
 
   private void doVelocityTest(int velocity, Intent intent) {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(intent);
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
+        .thenReturn(intent);
     BatteryState state = BatteryState.get(mockContext);
     assertEquals(velocity, state.getBatteryVelocity());
   }

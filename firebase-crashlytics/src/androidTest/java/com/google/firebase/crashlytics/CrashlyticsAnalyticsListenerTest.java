@@ -32,7 +32,6 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventReceiver;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
