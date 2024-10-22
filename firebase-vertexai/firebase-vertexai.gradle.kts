@@ -18,7 +18,6 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -51,10 +50,7 @@ android {
   buildTypes {
     release {
       isMinifyEnabled = false
-      proguardFiles(
-        getDefaultProguardFile("proguard-android-optimize.txt"),
-        "proguard-rules.pro"
-      )
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
   compileOptions {
@@ -81,7 +77,6 @@ tasks.withType<KotlinCompile>().all {
     }
   }
 }
-
 
 dependencies {
   val ktorVersion = "2.3.2"
