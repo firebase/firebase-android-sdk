@@ -29,13 +29,16 @@ import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.next
 import org.junit.Test
 
 class OperationBasicsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun ref_Variables_ShouldReturnAMutationRefWithTheCorrectProperties() {
-    val variables = GetFooByIdQuery.Variables("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
     val ref = connector.getFooById.ref(variables)
 
     assertSoftly {
@@ -53,7 +56,7 @@ class OperationBasicsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun ref_Variables_ShouldReturnsADistinctButEqualObjectOnEachInvocation() {
-    val variables = GetFooByIdQuery.Variables("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
     val ref1 = connector.getFooById.ref(variables)
     val ref2 = connector.getFooById.ref(variables)
     val ref3 = connector.getFooById.ref(variables)
@@ -70,7 +73,7 @@ class OperationBasicsIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun ref_Variables_AlwaysUsesTheExactSameSerializerAndDeserializerInstances() {
     // Note: This test is very important because the [QueryManager] uses object identity of the
     // variables serializer when fanning out results.
-    val variables = GetFooByIdQuery.Variables("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
     val connector1 = demoConnectorFactory.newInstance()
     val connector2 = demoConnectorFactory.newInstance()
     connector1 shouldNotBeSameInstanceAs connector2
@@ -90,8 +93,8 @@ class OperationBasicsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun ref_String_ShouldReturnAMutationRefThatIsEqualToRefVariables() {
-    val variables = GetFooByIdQuery.Variables("42")
-    val refFromString = connector.getFooById.ref("42")
+    val variables = Arb.getFooByIdVariables().next(rs)
+    val refFromString = connector.getFooById.ref(variables.id)
 
     val refFromVariables = connector.getFooById.ref(variables)
     refFromString shouldBe refFromVariables
@@ -153,5 +156,10 @@ class OperationBasicsIntegrationTest : DemoConnectorIntegrationTestBase() {
     }
   }
 
-  class GetFooByIdQueryAlternateImpl(delegate: GetFooByIdQuery) : GetFooByIdQuery by delegate
+  private fun Arb.Companion.getFooByIdVariables(
+    string: Arb<String> = alphanumericString(prefix = "getFooByIdVariables_")
+  ): Arb<GetFooByIdQuery.Variables> = arbitrary { GetFooByIdQuery.Variables(string.bind()) }
+
+  private class GetFooByIdQueryAlternateImpl(delegate: GetFooByIdQuery) :
+    GetFooByIdQuery by delegate
 }
