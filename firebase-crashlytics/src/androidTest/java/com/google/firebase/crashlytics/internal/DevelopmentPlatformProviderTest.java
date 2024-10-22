@@ -14,6 +14,10 @@
 
 package com.google.firebase.crashlytics.internal;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -23,6 +27,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.os.Bundle;
+import org.junit.Test;
 
 public class DevelopmentPlatformProviderTest extends CrashlyticsTestCase {
   private static final String PACKAGE_NAME = "package.name";
@@ -30,6 +35,7 @@ public class DevelopmentPlatformProviderTest extends CrashlyticsTestCase {
   private static final String UNITY_VERSION = "2.0.0";
   private static final String FLUTTER_PLATFORM = "Flutter";
 
+  @Test
   public void testDevelopmentPlatformInfo_withUnity_returnsPlatformAndVersion() throws Exception {
     Context context = createMockContext(/* withUnityResource= */ true);
 
@@ -41,6 +47,7 @@ public class DevelopmentPlatformProviderTest extends CrashlyticsTestCase {
     assertEquals(UNITY_VERSION, provider.getDevelopmentPlatformVersion());
   }
 
+  @Test
   public void testDevelopmentPlatformInfo_withFlutter_returnsPlatformAndNoVersion() {
     Context context = getContext(); // has asset DevelopmentPlatformProvider.FLUTTER_ASSET_FILE
 
@@ -51,6 +58,7 @@ public class DevelopmentPlatformProviderTest extends CrashlyticsTestCase {
     assertFalse(DevelopmentPlatformProvider.isUnity(context));
   }
 
+  @Test
   public void testDevelopmentPlatformInfo_unknownPlatform_returnsNull() throws Exception {
     Context context = createMockContext(/* withUnityResource= */ false);
 

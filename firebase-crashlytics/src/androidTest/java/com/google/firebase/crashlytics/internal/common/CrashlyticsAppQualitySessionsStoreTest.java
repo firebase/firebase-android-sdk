@@ -22,6 +22,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTestCase {
   private static final String CLOSED_SESSION = null;
@@ -34,8 +36,8 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
   private CrashlyticsAppQualitySessionsStore aqsStore;
   private FileStore fileStore;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() throws Exception {
     // The files created by each test case will get cleaned up in super.tearDown().
     fileStore = spy(new FileStore(getContext()));
     aqsStore = new CrashlyticsAppQualitySessionsStore(fileStore);
@@ -50,6 +52,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
             });
   }
 
+  @Test
   public void testRotateAqsId_neverRotatedSessionId_doesNotPersist() {
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
@@ -57,6 +60,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isNull();
   }
 
+  @Test
   public void testRotateSessionId_neverRotatedAqsId_doesNotPersist() {
     aqsStore.rotateSessionId(SESSION_ID);
 
@@ -64,6 +68,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isNull();
   }
 
+  @Test
   public void testRotateBothIds_persists() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -71,6 +76,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testRotateBothIds_storesIds() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -81,6 +87,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(aqsStore.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testRotateBothIds_thenRotateAqsId_persists() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -90,6 +97,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testRotateBothIds_thenRotateSessionId_persistsInNewSession() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -100,6 +108,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsSessionIdFile(fileStore, NEW_SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testRotateBothIds_thenSessionId_thenAqsId_persistsInNewSessionOnly() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -116,6 +125,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testRotateBothIds_thenAqsId_thenSessionId_persistsInBothSessions() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -129,6 +139,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testRotateBothIds_thenReadInvalidSessionId_returnsNull() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -136,6 +147,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsSessionIdFile(fileStore, "sessionDoesNotExist")).isNull();
   }
 
+  @Test
   public void testRotateAqsIdWhileSessionClosed_persistsAqsIdInNewSessionOnly() {
     // Setup first session.
     aqsStore.rotateSessionId(SESSION_ID);
@@ -158,6 +170,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testUpdateAqsIdWhileSessionFailedToClosed_persistsNewAqsIdInBothSessions() {
     // Setup first session.
     aqsStore.rotateSessionId(SESSION_ID);
@@ -179,6 +192,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testGetAppQualitySessionId_manyAqsIdRotations_returnsLatestAqsIdPerSession() {
     // Open the first Crashlytics session.
     aqsStore.rotateSessionId(SESSION_ID);
@@ -204,6 +218,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testGetAppQualitySessionId_manySessionIdRotations_returnsProperAqsIdForEachSession() {
     // Rotate the aqs id with no Crashlytics session.
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -229,6 +244,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testGetAppQualitySessionId_afterRelaunch_returnsPersistedAqsId() {
     // Setup first session.
     aqsStore.rotateSessionId(SESSION_ID);
@@ -245,6 +261,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testGetAppQualitySessionId_afterRelaunch_afterRotate_returnsPersistedAqsId() {
     // Setup first session.
     aqsStore.rotateSessionId(SESSION_ID);

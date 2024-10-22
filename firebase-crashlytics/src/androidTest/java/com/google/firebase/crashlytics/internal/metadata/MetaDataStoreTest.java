@@ -15,6 +15,10 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -28,6 +32,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 @SuppressWarnings("ResultOfMethodCallIgnored") // Convenient use of files.
@@ -62,16 +68,15 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   private CrashlyticsWorkers crashlyticsWorkers;
   private MetaDataStore storeUnderTest;
 
-  @Override
+  @Before
   public void setUp() throws Exception {
-    super.setUp();
     fileStore = new FileStore(getContext());
     storeUnderTest = new MetaDataStore(fileStore);
     crashlyticsWorkers =
         new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
   }
 
-  @Override
+  @After
   public void tearDown() throws Exception {
     fileStore.deleteAllCrashlyticsFiles();
   }
@@ -342,6 +347,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
   // Keys
 
+  @Test
   public void testWriteKeys() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -356,6 +362,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(keys, readKeys);
   }
 
+  @Test
   public void testWriteKeys_noValues() {
     final Map<String, String> keys = Collections.emptyMap();
     storeUnderTest.writeKeyData(SESSION_ID_1, keys);
@@ -363,6 +370,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(keys, readKeys);
   }
 
+  @Test
   public void testWriteKeys_nullValues() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -377,6 +385,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(keys, readKeys);
   }
 
+  @Test
   public void testWriteKeys_emptyStrings() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -391,6 +400,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(keys, readKeys);
   }
 
+  @Test
   public void testWriteKeys_unicode() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -405,6 +415,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(keys, readKeys);
   }
 
+  @Test
   public void testWriteKeys_escaped() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -419,6 +430,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(keys, readKeys);
   }
 
+  @Test
   public void testWriteKeys_readDifferentSession() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -434,6 +446,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   // Ensures the Internal Keys and User Custom Keys are stored separately
+  @Test
   public void testWriteKeys_readSeparateFromUser() {
     final Map<String, String> keys =
         new HashMap<String, String>() {
@@ -460,6 +473,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertEqualMaps(internalKeys, readInternalKeys);
   }
 
+  @Test
   public void testReadKeys_corruptData() throws IOException {
     File file = storeUnderTest.getKeysFileForSession(SESSION_ID_1);
     try (PrintWriter printWriter = new PrintWriter(file)) {
@@ -470,6 +484,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertFalse(file.exists());
   }
 
+  @Test
   public void testReadKeys_emptyStoredData() throws IOException {
     File file = storeUnderTest.getKeysFileForSession(SESSION_ID_1);
     file.createNewFile();
@@ -478,6 +493,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertFalse(file.exists());
   }
 
+  @Test
   public void testReadKeys_noStoredData() {
     final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
     assertEquals(0, readKeys.size());

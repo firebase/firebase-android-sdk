@@ -14,6 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -35,6 +38,8 @@ import com.google.firebase.crashlytics.internal.common.InstallIdProvider.Install
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
 
@@ -85,10 +90,8 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     };
   }
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     mockCurrentTimeProvider = mock(CurrentTimeProvider.class);
     mockCachedSettingsIo = mock(CachedSettingsIo.class);
     mockSettingsJsonParser = mock(SettingsJsonParser.class);
@@ -100,6 +103,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     return Tasks.await(task, 10, TimeUnit.SECONDS);
   }
 
+  @Test
   public void testCachedSettingsLoad() throws Exception {
     JSONObject cachedJson = new JSONObject();
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(cachedJson);
@@ -131,6 +135,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     verify(mockCurrentTimeProvider, times(2)).getCurrentTimeMillis();
   }
 
+  @Test
   public void testCachedSettingsLoad_newInstanceIdentifier() throws Exception {
     Settings fetchedSettings = new TestSettings();
 
@@ -167,6 +172,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     verify(mockCurrentTimeProvider).getCurrentTimeMillis();
   }
 
+  @Test
   public void testExpiredCachedSettingsLoad() throws Exception {
 
     Settings cachedSettings = new TestSettings();
@@ -216,6 +222,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     verify(mockCurrentTimeProvider, times(3)).getCurrentTimeMillis();
   }
 
+  @Test
   public void testIgnoreExpiredCachedSettingsLoad() throws Exception {
     JSONObject cachedJson = new JSONObject();
     when(mockCachedSettingsIo.readCachedSettings()).thenReturn(cachedJson);
@@ -244,6 +251,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     verify(mockCurrentTimeProvider, times(2)).getCurrentTimeMillis();
   }
 
+  @Test
   public void testSkipCachedSettingsLoad() throws Exception {
 
     Settings fetchedSettings = new TestSettings();
@@ -299,6 +307,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
    *
    * @throws Exception
    */
+  @Test
   public void testLastDitchSettingsLoad() throws Exception {
     when(mockSettingsSpiCall.invoke(any(SettingsRequest.class), eq(true))).thenReturn(null);
 
@@ -342,6 +351,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
     verify(mockCurrentTimeProvider, times(2)).getCurrentTimeMillis();
   }
 
+  @Test
   public void testNoAvailableSettingsLoad() throws Exception {
     when(mockSettingsSpiCall.invoke(any(SettingsRequest.class), eq(true))).thenReturn(null);
 

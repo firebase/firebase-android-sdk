@@ -15,6 +15,8 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import static com.google.firebase.crashlytics.internal.metadata.LogFileManager.MAX_LOG_SIZE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
