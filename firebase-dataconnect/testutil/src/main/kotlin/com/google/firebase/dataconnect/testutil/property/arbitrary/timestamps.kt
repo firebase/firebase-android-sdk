@@ -26,7 +26,6 @@ import io.kotest.property.arbitrary.of
 data class TimestampTestData(
   val timestamp: Timestamp,
   val string: String,
-  val roundTripString: String,
   val roundTripRegex: Regex,
 )
 
@@ -158,19 +157,6 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
           nanosecondNumDigits = if (nanosecondNumDigits == -1) null else nanosecondNumDigits,
           z = z,
         ),
-      roundTripString =
-        timestampStringFromComponents(
-          year = year,
-          month = month,
-          day = day,
-          t = 'T',
-          hour = hour,
-          minute = minute,
-          second = second,
-          nanosecond = nanosecond,
-          nanosecondNumDigits = 6,
-          z = 'Z',
-        ),
       roundTripRegex =
         roundTripRegexFromTimestampComponents(
           year = year,
@@ -194,8 +180,16 @@ object TimestampEdgeCases {
       TimestampTestData(
         Timestamp(-12_212_553_600, 0),
         "1583-01-01T00:00:00.000000000Z",
-        "1583-01-01T00:00:00.000000Z",
-        Regex("1583-01-01[tT]00:00:00(\\.0+)?[zZ]"),
+        roundTripRegexFromTimestampComponents(
+          year = 1583,
+          month = 1,
+          day = 1,
+          hour = 0,
+          minute = 0,
+          second = 0,
+          nanosecond = 0,
+          nanosecondNumSignificantDigits = 6,
+        ),
       )
 
   val max: TimestampTestData
@@ -203,17 +197,33 @@ object TimestampEdgeCases {
       TimestampTestData(
         Timestamp(253_402_300_799, 999_999_999),
         "9999-12-31T23:59:59.999999999Z",
-        "9999-12-31T23:59:59.999999Z",
-        Regex("0*9999-12-31[tT]23:59:59\\.999999[zZ]"),
+        roundTripRegexFromTimestampComponents(
+          year = 9999,
+          month = 12,
+          day = 31,
+          hour = 23,
+          minute = 59,
+          second = 59,
+          nanosecond = 999_999_999,
+          nanosecondNumSignificantDigits = 6,
+        ),
       )
 
   val zero: TimestampTestData
     get() =
       TimestampTestData(
         Timestamp(0, 0),
-        "1971-01-01T00:00:00.000000000Z",
-        "1971-01-01T00:00:00.000000Z",
-        Regex("0*1970-01-01[tT]00:00:00(\\.0+)?[zZ]"),
+        "1970-01-01T00:00:00.000000000Z",
+        roundTripRegexFromTimestampComponents(
+          year = 1970,
+          month = 1,
+          day = 1,
+          hour = 0,
+          minute = 0,
+          second = 0,
+          nanosecond = 0,
+          nanosecondNumSignificantDigits = 6,
+        ),
       )
 
   val singleDigits: TimestampTestData
@@ -229,7 +239,6 @@ object TimestampEdgeCases {
           nanoseconds = 700_000_000,
         ),
         "indeterminate 7mmpdgy9g3",
-        "indeterminate geax7yefpm",
         roundTripRegexFromTimestampComponents(
           year = 1,
           month = 2,
@@ -255,7 +264,6 @@ object TimestampEdgeCases {
           nanoseconds = 123_456_789,
         ),
         "indeterminate ym567evx8g",
-        "indeterminate fpzv25cvnb",
         roundTripRegexFromTimestampComponents(
           year = 1234,
           month = 12,
