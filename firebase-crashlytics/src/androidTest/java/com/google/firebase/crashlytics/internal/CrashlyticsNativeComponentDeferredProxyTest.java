@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 
 import androidx.annotation.NonNull;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.inject.Deferred;
 import org.junit.After;
