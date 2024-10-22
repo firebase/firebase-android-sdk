@@ -23,9 +23,7 @@ group = "com.google.firebase"
 firebaseLibrary {
   libraryGroup = "database"
   publishJavadoc = false
-  releaseNotes { 
-    enabled.set(false)
-}
+  releaseNotes { enabled.set(false) }
   publishSources = true
 }
 
@@ -52,14 +50,14 @@ android {
 }
 
 dependencies {
-    api("com.google.firebase:firebase-common:21.0.0")
-    api("com.google.firebase:firebase-common-ktx:21.0.0")
-    api(project(":firebase-database"))
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common-ktx:21.0.0")
+  api(project(":firebase-database"))
 
-    implementation("com.google.firebase:firebase-components:18.0.0")
+  implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.junit)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 }

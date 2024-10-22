@@ -28,9 +28,9 @@ plugins {
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.testing.config"
   compileSdk = compileSdkVersion
@@ -47,9 +47,7 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions {
-    jvmTarget = "1.8"
-  }
+  kotlinOptions { jvmTarget = "1.8" }
 }
 
 dependencies {
@@ -62,7 +60,8 @@ dependencies {
   implementation(project(":firebase-config:ktx"))
 
   // This is required since a `project` dependency on frc does not expose the APIs of its
-  // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
+  // "implementation" dependencies. The alternative would be to make common an "api" dep of
+  // remote-config.
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
   implementation("com.google.firebase:firebase-common:21.0.0")
