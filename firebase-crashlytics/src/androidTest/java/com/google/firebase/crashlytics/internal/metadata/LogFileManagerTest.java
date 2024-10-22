@@ -29,6 +29,7 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Locale;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,10 +51,11 @@ public class LogFileManagerTest extends CrashlyticsTestCase {
 
   private LogFileManager logFileManager;
   private File testLogFile;
+  private AutoCloseable mocks;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     final File tempDir = temporaryFolder.newFolder();
     mockFileStore = mock(FileStore.class);
@@ -61,6 +63,11 @@ public class LogFileManagerTest extends CrashlyticsTestCase {
     when(mockFileStore.getSessionFile(any(), any())).thenReturn(testLogFile);
 
     logFileManager = new LogFileManager(mockFileStore);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test
