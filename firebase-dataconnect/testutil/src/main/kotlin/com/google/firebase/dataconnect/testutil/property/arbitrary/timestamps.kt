@@ -37,8 +37,8 @@ private fun timestampStringFromComponents(
   hour: Int,
   minute: Int,
   second: Int,
-  nanosecond: Int,
-  nanosecondNumDigits: Int?,
+  nanoseconds: Int,
+  nanosecondsNumDigits: Int?,
   z: Char,
 ): String {
   val yearStr = "$year"
@@ -48,16 +48,16 @@ private fun timestampStringFromComponents(
   val minuteStr = "$minute".padStart(2, '0')
   val secondStr = "$second".padStart(2, '0')
 
-  val nanosecondStrOrNull =
-    if (nanosecondNumDigits === null) {
-      check(nanosecond == 0) {
-        "nanosecond must be zero when nanosecondNumDigits === null, but was: $nanosecond"
+  val nanosecondsStrOrNull =
+    if (nanosecondsNumDigits === null) {
+      check(nanoseconds == 0) {
+        "nanoseconds must be zero when nanosecondsNumDigits === null, but was: $nanoseconds"
       }
       null
     } else {
-      "$nanosecond".padStart(9, '0').substring(0 until nanosecondNumDigits)
+      "$nanoseconds".padStart(9, '0').substring(0 until nanosecondsNumDigits)
     }
-  val nanosecondStr = if (nanosecondStrOrNull === null) "" else ".$nanosecondStrOrNull"
+  val nanosecondStr = if (nanosecondsStrOrNull === null) "" else ".$nanosecondsStrOrNull"
 
   return "$yearStr-$monthStr-$dayStr$t$hourStr:$minuteStr:$secondStr$nanosecondStr$z"
 }
@@ -69,8 +69,8 @@ private fun roundTripRegexFromTimestampComponents(
   hour: Int,
   minute: Int,
   second: Int,
-  nanosecond: Int,
-  nanosecondNumSignificantDigits: Int,
+  nanoseconds: Int,
+  nanosecondsNumSignificantDigits: Int,
 ) =
   Regex(
     buildString {
@@ -87,14 +87,14 @@ private fun roundTripRegexFromTimestampComponents(
       append(':')
       append("$second".padStart(2, '0'))
 
-      if (nanosecond == 0) {
+      if (nanoseconds == 0) {
         append("(\\.0+)?")
       } else {
         append("\\.")
         append(
-          "$nanosecond"
+          "$nanoseconds"
             .padStart(9, '0')
-            .substring(0 until nanosecondNumSignificantDigits)
+            .substring(0 until nanosecondsNumSignificantDigits)
             .trimEnd('0')
         )
         append("0*")
@@ -118,8 +118,8 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
   val hourArb: Arb<Int> = hour()
   val minuteArb: Arb<Int> = minute()
   val secondArb: Arb<Int> = second()
-  val nanosecondNumDigitsArb = Arb.of(-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
-  val nanosecondArb = nanosecond()
+  val nanosecondsNumDigitsArb = Arb.of(-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+  val nanosecondsArb = nanosecond()
   val tArb: Arb<Char> = Arb.of('t', 'T')
   val zArb: Arb<Char> = Arb.of('z', 'Z')
 
@@ -134,16 +134,16 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
     val t = tArb.bind()
     val z = zArb.bind()
 
-    val nanosecondNumDigits = nanosecondNumDigitsArb.bind()
-    val nanosecond =
-      if (nanosecondNumDigits == -1) {
+    val nanosecondsNumDigits = nanosecondsNumDigitsArb.bind()
+    val nanoseconds =
+      if (nanosecondsNumDigits == -1) {
         0
       } else {
-        nanosecondArb.bind().withNumDigits(nanosecondNumDigits)
+        nanosecondsArb.bind().withNumDigits(nanosecondsNumDigits)
       }
 
     TimestampTestData(
-      timestamp = timestampFromUTCDateAndTime(year, month, day, hour, minute, second, nanosecond),
+      timestamp = timestampFromUTCDateAndTime(year, month, day, hour, minute, second, nanoseconds),
       string =
         timestampStringFromComponents(
           year = year,
@@ -153,8 +153,8 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
           hour = hour,
           minute = minute,
           second = second,
-          nanosecond = nanosecond,
-          nanosecondNumDigits = if (nanosecondNumDigits == -1) null else nanosecondNumDigits,
+          nanoseconds = nanoseconds,
+          nanosecondsNumDigits = if (nanosecondsNumDigits == -1) null else nanosecondsNumDigits,
           z = z,
         ),
       roundTripRegex =
@@ -165,8 +165,8 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
           hour = hour,
           minute = minute,
           second = second,
-          nanosecond = nanosecond,
-          nanosecondNumSignificantDigits = 6,
+          nanoseconds = nanoseconds,
+          nanosecondsNumSignificantDigits = 6,
         )
     )
   }
@@ -187,8 +187,8 @@ object TimestampEdgeCases {
           hour = 0,
           minute = 0,
           second = 0,
-          nanosecond = 0,
-          nanosecondNumSignificantDigits = 6,
+          nanoseconds = 0,
+          nanosecondsNumSignificantDigits = 6,
         ),
       )
 
@@ -204,8 +204,8 @@ object TimestampEdgeCases {
           hour = 23,
           minute = 59,
           second = 59,
-          nanosecond = 999_999_999,
-          nanosecondNumSignificantDigits = 6,
+          nanoseconds = 999_999_999,
+          nanosecondsNumSignificantDigits = 6,
         ),
       )
 
@@ -221,8 +221,8 @@ object TimestampEdgeCases {
           hour = 0,
           minute = 0,
           second = 0,
-          nanosecond = 0,
-          nanosecondNumSignificantDigits = 6,
+          nanoseconds = 0,
+          nanosecondsNumSignificantDigits = 6,
         ),
       )
 
@@ -246,8 +246,8 @@ object TimestampEdgeCases {
           hour = 4,
           minute = 5,
           second = 6,
-          nanosecond = 700_000_000,
-          nanosecondNumSignificantDigits = 6,
+          nanoseconds = 700_000_000,
+          nanosecondsNumSignificantDigits = 6,
         ),
       )
 
@@ -271,12 +271,280 @@ object TimestampEdgeCases {
           hour = 21,
           minute = 35,
           second = 59,
-          nanosecond = 123_456_789,
-          nanosecondNumSignificantDigits = 6,
+          nanoseconds = 123_456_789,
+          nanosecondsNumSignificantDigits = 6,
         ),
       )
 
-  val all: List<TimestampTestData> = listOf(min, max, zero, singleDigits, allDigits)
+  val nanosecondsAbsent: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 0,
+        ),
+        "7608-11-21T02:45:08Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 0,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds1Digit: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 1,
+        ),
+        "7608-11-21T02:45:08.000000001Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 1,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds2Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 12,
+        ),
+        "7608-11-21T02:45:08.000000012Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 12,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds3Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 123,
+        ),
+        "7608-11-21T02:45:08.000000123Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 123,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds4Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 1234,
+        ),
+        "7608-11-21T02:45:08.000001234Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 1234,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds5Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 12345,
+        ),
+        "7608-11-21T02:45:08.000012345Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 12345,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds6Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 123456,
+        ),
+        "7608-11-21T02:45:08.000123456Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 123456,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds7Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 1234567,
+        ),
+        "7608-11-21T02:45:08.001234567Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 1234567,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds8Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 12345678,
+        ),
+        "7608-11-21T02:45:08.012345678Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 12345678,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val nanoseconds9Digits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 123456789,
+        ),
+        "7608-11-21T02:45:08.123456789Z",
+        roundTripRegexFromTimestampComponents(
+          year = 7608,
+          month = 11,
+          day = 21,
+          hour = 2,
+          minute = 45,
+          second = 8,
+          nanoseconds = 123456789,
+          nanosecondsNumSignificantDigits = 6,
+        ),
+      )
+
+  val all: List<TimestampTestData>
+    get() =
+      listOf(
+        min,
+        max,
+        zero,
+        singleDigits,
+        allDigits,
+        nanosecondsAbsent,
+        nanoseconds1Digit,
+        nanoseconds2Digits,
+        nanoseconds3Digits,
+        nanoseconds4Digits,
+        nanoseconds5Digits,
+        nanoseconds6Digits,
+        nanoseconds7Digits,
+        nanoseconds8Digits,
+        nanoseconds9Digits,
+      )
 }
 
 private fun hour(): Arb<Int> = Arb.int(0..23)
