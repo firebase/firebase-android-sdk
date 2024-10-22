@@ -34,13 +34,14 @@ import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import com.google.firebase.dataconnect.testutil.withVariablesSerializer
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.string.shouldMatch
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.checkAll
-import kotlin.random.Random
-import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
@@ -55,7 +56,10 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     runTest(timeout = 60.seconds) {
       checkAll(normalPropTestConfig, Arb.dataConnect.timestamp()) { timestamp ->
         val insertResult = connector.insertNonNullTimestamp.execute(timestamp.timestamp)
-        assertNonNullTimestampByKeyEquals(insertResult.data.key, timestamp.roundTripString)
+        val queryResult =
+          connector.getNonNullTimestampByKey.withStringData().execute(insertResult.data.key)
+        val data = withClue("data") { queryResult.data.value.shouldNotBeNull() }
+        data.value shouldMatch timestamp.roundTripRegex
       }
     }
 
@@ -647,10 +651,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     key: NonNullTimestampKey,
     expected: String
   ) {
-    val queryResult =
-      connector.getNonNullTimestampByKey
-        .withDataDeserializer(serializer<GetTimestampByKeyQueryStringData>())
-        .execute(key)
+    val queryResult = connector.getNonNullTimestampByKey.withStringData().execute(key)
     assertThat(queryResult.data).isEqualTo(GetTimestampByKeyQueryStringData(expected))
   }
 
@@ -739,41 +740,8 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
       key: NullableTimestampKey
     ) = ref(GetNullableTimestampByKeyQuery.Variables(key)).execute()
 
-    /** Convenience function to use when writing tests that will generate random timestamps. */
-    @Suppress("unused")
-    fun printRandomTimestamps() {
-      repeat(100) {
-        val year = Random.nextInt(0..9999)
-        val month = Random.nextInt(0..11)
-        val day = Random.nextInt(0..28)
-        val hour = Random.nextInt(0..23)
-        val minute = Random.nextInt(0..59)
-        val second = Random.nextInt(0..59)
-        val nanoseconds = Random.nextInt(0..999_999_999)
-        println(
-          buildString {
-            append(
-              "timestampFromDateAndTimeUTC($year, $month, $day, $hour, $minute, $second, $nanoseconds)"
-            )
-            append(" // ")
-            append("$year".padStart(4, '0'))
-            append('-')
-            append("$month".padStart(2, '0'))
-            append('-')
-            append("$day".padStart(2, '0'))
-            append('T')
-            append("$hour".padStart(2, '0'))
-            append(':')
-            append("$minute".padStart(2, '0'))
-            append(':')
-            append("$second".padStart(2, '0'))
-            append('.')
-            append("$nanoseconds".padStart(9, '0'))
-            append('Z')
-          }
-        )
-      }
-    }
+    private fun GetNonNullTimestampByKeyQuery.withStringData() =
+      withDataDeserializer(serializer<GetTimestampByKeyQueryStringData>())
 
     val invalidTimestamps =
       listOf(

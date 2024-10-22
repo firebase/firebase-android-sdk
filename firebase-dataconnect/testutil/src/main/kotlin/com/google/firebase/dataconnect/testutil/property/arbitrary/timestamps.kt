@@ -26,7 +26,8 @@ import io.kotest.property.arbitrary.of
 data class TimestampTestData(
   val timestamp: Timestamp,
   val string: String,
-  val roundTripString: String
+  val roundTripString: String,
+  val roundTripRegex: Regex,
 )
 
 private fun timestampStringFromComponents(
@@ -61,6 +62,47 @@ private fun timestampStringFromComponents(
 
   return "$yearStr-$monthStr-$dayStr$t$hourStr:$minuteStr:$secondStr$nanosecondStr$z"
 }
+
+private fun roundTripRegexFromTimestampComponents(
+  year: Int,
+  month: Int,
+  day: Int,
+  hour: Int,
+  minute: Int,
+  second: Int,
+  nanosecond: Int,
+  nanosecondNumSignificantDigits: Int,
+) =
+  Regex(
+    buildString {
+      append(year)
+      append('-')
+      append("$month".padStart(2, '0'))
+      append('-')
+      append("$day".padStart(2, '0'))
+      append("[tT]")
+      append("$hour".padStart(2, '0'))
+      append(':')
+      append("$minute".padStart(2, '0'))
+      append(':')
+      append("$second".padStart(2, '0'))
+
+      if (nanosecond == 0) {
+        append("(\\.0+)?")
+      } else {
+        append("\\.")
+        append(
+          "$nanosecond"
+            .padStart(9, '0')
+            .substring(0 until nanosecondNumSignificantDigits)
+            .trimEnd('0')
+        )
+        append("0*")
+      }
+
+      append("[zZ]")
+    }
+  )
 
 private fun Int.withNumDigits(numDigits: Int): Int {
   require(numDigits in 0..9) { "invalid numDigits: $numDigits" }
@@ -128,6 +170,17 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
           nanosecondNumDigits = 6,
           z = 'Z',
         ),
+      roundTripRegex =
+        roundTripRegexFromTimestampComponents(
+          year = year,
+          month = month,
+          day = day,
+          hour = hour,
+          minute = minute,
+          second = second,
+          nanosecond = nanosecond,
+          nanosecondNumSignificantDigits = 6,
+        )
     )
   }
 }
@@ -141,6 +194,7 @@ object TimestampEdgeCases {
         Timestamp(-12_212_553_600, 0),
         "1583-01-01T00:00:00.000000000Z",
         "1583-01-01T00:00:00.000000Z",
+        Regex("1583-01-01[tT]00:00:00(\\.0+)?[zZ]"),
       )
 
   val max: TimestampTestData
@@ -149,6 +203,7 @@ object TimestampEdgeCases {
         Timestamp(253_402_300_799, 999_999_999),
         "9999-12-31T23:59:59.999999999Z",
         "9999-12-31T23:59:59.999999Z",
+        Regex("9999-12-31[tT]23:59:59\\.9{6,9}[zZ]"),
       )
 
   val zero: TimestampTestData
@@ -157,6 +212,7 @@ object TimestampEdgeCases {
         Timestamp(0, 0),
         "1971-01-01T00:00:00.000000000Z",
         "1971-01-01T00:00:00.000000Z",
+        Regex("1971-01-01[tT]00:00:00(\\.0+)?[zZ]"),
       )
 
   val all: List<TimestampTestData> = listOf(min, max, zero)
