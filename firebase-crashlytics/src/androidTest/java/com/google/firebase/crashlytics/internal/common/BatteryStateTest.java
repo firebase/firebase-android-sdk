@@ -23,12 +23,14 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.BatteryManager;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import org.junit.Test;
 
+@SuppressLint("UnspecifiedRegisterReceiverFlag")
 public class BatteryStateTest extends CrashlyticsTestCase {
   // Tolerance for float comparisons.
   static final float EPSILON = 0.0001f;
@@ -44,8 +46,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testGetBatteryLevel() {
     Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
-        .thenReturn(makeIntent(0, 50, 200));
+    when(mockContext.registerReceiver(isNull(), any())).thenReturn(makeIntent(0, 50, 200));
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -57,7 +58,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testNullIntent() {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(null);
+    when(mockContext.registerReceiver(isNull(), any())).thenReturn(null);
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -69,7 +70,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testTooManyReceivers() {
     Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
+    when(mockContext.registerReceiver(isNull(), any()))
         .thenThrow(new IllegalStateException("Too many receivers"));
 
     BatteryState state = BatteryState.get(mockContext);
@@ -82,8 +83,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testEmptyIntent() {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
-        .thenReturn(new Intent());
+    when(mockContext.registerReceiver(isNull(), any())).thenReturn(new Intent());
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -94,8 +94,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
 
   private void doVelocityTest(int velocity, Intent intent) {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
-        .thenReturn(intent);
+    when(mockContext.registerReceiver(isNull(), any())).thenReturn(intent);
     BatteryState state = BatteryState.get(mockContext);
     assertEquals(velocity, state.getBatteryVelocity());
   }
