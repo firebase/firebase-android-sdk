@@ -26,12 +26,19 @@ import com.google.firebase.dataconnect.testutil.MAX_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.MIN_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.ZERO_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.executeWithEmptyVariables
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.timestamp
 import com.google.firebase.dataconnect.testutil.randomTimestamp
 import com.google.firebase.dataconnect.testutil.timestampFromUTCDateAndTime
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import com.google.firebase.dataconnect.testutil.withVariablesSerializer
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.common.ExperimentalKotest
+import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.checkAll
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.seconds
@@ -44,204 +51,232 @@ import org.junit.Test
 class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
-  fun insertTypicalValueForNonNullTimestampField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(2361, 1, 16, 2, 36, 25, 253177157)
-    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2361-01-16T02:36:25.253177Z")
-  }
+  fun insertNonNullTimestamp_NormalCases() =
+    runTest(timeout = 60.seconds) {
+      checkAll(normalPropTestConfig, Arb.dataConnect.timestamp()) { timestamp ->
+        val insertResult = connector.insertNonNullTimestamp.execute(timestamp.timestamp)
+        assertNonNullTimestampByKeyEquals(insertResult.data.key, timestamp.roundTripString)
+      }
+    }
 
   @Test
-  fun insertMaxValueForNonNullTimestampField() = runTest {
-    val key = connector.insertNonNullTimestamp.execute(MIN_TIMESTAMP).data.key
-    assertNonNullTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
-  }
+  fun insertMaxValueForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNonNullTimestamp.execute(MIN_TIMESTAMP).data.key
+      assertNonNullTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
+    }
 
   @Test
-  fun insertMinValueForNonNullTimestampField() = runTest {
-    val key = connector.insertNonNullTimestamp.execute(MAX_TIMESTAMP).data.key
-    assertNonNullTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
-  }
+  fun insertMinValueForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNonNullTimestamp.execute(MAX_TIMESTAMP).data.key
+      assertNonNullTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
+    }
 
   @Test
-  fun insertTimestampWithSingleDigitsForNonNullTimestampField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(7513, 1, 2, 3, 4, 5, 6000)
-    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "7513-01-02T03:04:05.000006Z")
-  }
+  fun insertTimestampWithSingleDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = timestampFromUTCDateAndTime(7513, 1, 2, 3, 4, 5, 6000)
+      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "7513-01-02T03:04:05.000006Z")
+    }
 
   @Test
-  fun insertTimestampWithAllDigitsForNonNullTimestampField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(8623, 10, 11, 12, 13, 14, 123456789)
-    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "8623-10-11T12:13:14.123456Z")
-  }
+  fun insertTimestampWithAllDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = timestampFromUTCDateAndTime(8623, 10, 11, 12, 13, 14, 123456789)
+      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "8623-10-11T12:13:14.123456Z")
+    }
 
   @Test
-  fun insertTimestampWithNoNanosecondsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
-  }
+  fun insertTimestampWithNoNanosecondsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+    }
 
   @Test
-  fun insertTimestampWithZeroNanosecondsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.000000000Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
-  }
+  fun insertTimestampWithZeroNanosecondsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.000000000Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+    }
 
   @Test
-  fun insertTimestampWith1NanosecondsDigitForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.1Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.100000Z")
-  }
+  fun insertTimestampWith1NanosecondsDigitForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.1Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.100000Z")
+    }
 
   @Test
-  fun insertTimestampWith2NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.12Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.120000Z")
-  }
+  fun insertTimestampWith2NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.12Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.120000Z")
+    }
 
   @Test
-  fun insertTimestampWith3NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123000Z")
-  }
+  fun insertTimestampWith3NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123000Z")
+    }
 
   @Test
-  fun insertTimestampWith4NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.1234Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123400Z")
-  }
+  fun insertTimestampWith4NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.1234Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123400Z")
+    }
 
   @Test
-  fun insertTimestampWith5NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.12345Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123450Z")
-  }
+  fun insertTimestampWith5NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.12345Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123450Z")
+    }
 
   @Test
-  fun insertTimestampWith6NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWith6NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWith7NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.1234567Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWith7NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.1234567Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWith8NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.12345678Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWith8NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.12345678Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWith9NanosecondsDigitsForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789Z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWith9NanosecondsDigitsForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789Z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWithPlus0TimeZoneOffsetForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789+00:00"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWithPlus0TimeZoneOffsetForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789+00:00"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWithPositiveNonZeroTimeZoneOffsetForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789+01:23"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T11:22:56.123456Z")
-  }
+  fun insertTimestampWithPositiveNonZeroTimeZoneOffsetForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789+01:23"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T11:22:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWithNegativeNonZeroTimeZoneOffsetForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789-01:23"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T14:08:56.123456Z")
-  }
+  fun insertTimestampWithNegativeNonZeroTimeZoneOffsetForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789-01:23"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T14:08:56.123456Z")
+    }
 
   @Test
   @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts leap seconds")
-  fun insertTimestampWithLeapSecondStringForNonNullTimestampField() = runTest {
-    val timestamp = "1990-12-31T23:59:60Z" // From RFC3339 section 5.8
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "1990-12-31T23:59:60.000000Z")
-  }
+  fun insertTimestampWithLeapSecondStringForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "1990-12-31T23:59:60Z" // From RFC3339 section 5.8
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "1990-12-31T23:59:60.000000Z")
+    }
 
   @Test
-  fun insertTimestampWithLeapSecondDateForNonNullTimestampField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(1990, 12, 31, 23, 59, 60, 0)
-    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, timestamp)
-  }
+  fun insertTimestampWithLeapSecondDateForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = timestampFromUTCDateAndTime(1990, 12, 31, 23, 59, 60, 0)
+      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, timestamp)
+    }
 
   @Test
   @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts lowercase T and Z")
-  fun insertTimestampWithLowercaseTandZForNonNullTimestampField() = runTest {
-    val timestamp = "2024-05-18t12:45:56.123456789z"
-    val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWithLowercaseTandZForNonNullTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18t12:45:56.123456789z"
+      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertNoVariablesForNonNullTimestampFieldsWithDefaults() = runTest {
-    val key = connector.insertNonNullTimestampsWithDefaults.execute {}.data.key
-    val queryResult = connector.getNonNullTimestampsWithDefaultsByKey.execute(key)
+  fun insertNoVariablesForNonNullTimestampFieldsWithDefaults() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNonNullTimestampsWithDefaults.execute {}.data.key
+      val queryResult = connector.getNonNullTimestampsWithDefaultsByKey.execute(key)
 
-    // Since we can't know the exact value of `request.time` just make sure that the exact same
-    // value is used for both fields to which it is set.
-    val expectedRequestTime = queryResult.data.nonNullTimestampsWithDefaults!!.requestTime1
+      // Since we can't know the exact value of `request.time` just make sure that the exact same
+      // value is used for both fields to which it is set.
+      val expectedRequestTime = queryResult.data.nonNullTimestampsWithDefaults!!.requestTime1
 
-    assertThat(
-      queryResult.equals(
-        GetNonNullTimestampsWithDefaultsByKeyQuery.Data(
-          GetNonNullTimestampsWithDefaultsByKeyQuery.Data.NonNullTimestampsWithDefaults(
-            valueWithVariableDefault =
-              timestampFromUTCDateAndTime(3575, 4, 12, 10, 11, 12, 541991000),
-            valueWithSchemaDefault = timestampFromUTCDateAndTime(6224, 1, 31, 14, 2, 45, 714214000),
-            epoch = ZERO_TIMESTAMP,
-            requestTime1 = expectedRequestTime,
-            requestTime2 = expectedRequestTime,
+      assertThat(
+        queryResult.equals(
+          GetNonNullTimestampsWithDefaultsByKeyQuery.Data(
+            GetNonNullTimestampsWithDefaultsByKeyQuery.Data.NonNullTimestampsWithDefaults(
+              valueWithVariableDefault =
+                timestampFromUTCDateAndTime(3575, 4, 12, 10, 11, 12, 541991000),
+              valueWithSchemaDefault =
+                timestampFromUTCDateAndTime(6224, 1, 31, 14, 2, 45, 714214000),
+              epoch = ZERO_TIMESTAMP,
+              requestTime1 = expectedRequestTime,
+              requestTime2 = expectedRequestTime,
+            )
           )
         )
       )
-    )
-  }
+    }
 
   @Test
-  fun insertNullForNonNullTimestampFieldShouldFail() = runTest {
-    shouldThrow<DataConnectException> {
-      connector.insertNonNullTimestamp.executeWithStringVariables(null).data.key
+  fun insertNullForNonNullTimestampFieldShouldFail() =
+    runTest(timeout = 60.seconds) {
+      shouldThrow<DataConnectException> {
+        connector.insertNonNullTimestamp.executeWithStringVariables(null).data.key
+      }
     }
-  }
 
   @Test
-  fun insertIntForNonNullTimestampFieldShouldFail() = runTest {
-    shouldThrow<DataConnectException> {
-      connector.insertNonNullTimestamp.executeWithIntVariables(777_666).data.key
+  fun insertIntForNonNullTimestampFieldShouldFail() =
+    runTest(timeout = 60.seconds) {
+      shouldThrow<DataConnectException> {
+        connector.insertNonNullTimestamp.executeWithIntVariables(777_666).data.key
+      }
     }
-  }
 
   @Test
-  fun insertWithMissingValueNonNullTimestampFieldShouldFail() = runTest {
-    shouldThrow<DataConnectException> {
-      connector.insertNonNullTimestamp.executeWithEmptyVariables().data.key
+  fun insertWithMissingValueNonNullTimestampFieldShouldFail() =
+    runTest(timeout = 60.seconds) {
+      shouldThrow<DataConnectException> {
+        connector.insertNonNullTimestamp.executeWithEmptyVariables().data.key
+      }
     }
-  }
 
   @Test
   fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFail() =
@@ -258,175 +293,199 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     "TODO(b/341984878): Add these test cases back to `invalidTimestamps` once the " +
       "emulator is fixed to correctly reject them"
   )
-  fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFailBugs() = runTest {
-    for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
-      shouldThrow<DataConnectException> {
-        connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
+  fun insertInvalidTimestampsValuesForNonNullTimestampFieldShouldFailBugs() =
+    runTest(timeout = 60.seconds) {
+      for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
+        shouldThrow<DataConnectException> {
+          connector.insertNonNullTimestamp.executeWithStringVariables(invalidTimestamp)
+        }
       }
     }
-  }
 
   @Test
-  fun updateNonNullTimestampFieldToAnotherValidValue() = runTest {
-    val timestamp1 = randomTimestamp()
-    val timestamp2 = timestampFromUTCDateAndTime(1795, 1, 12, 19, 3, 56, 40585847)
-    val key = connector.insertNonNullTimestamp.execute(timestamp1).data.key
-    connector.updateNonNullTimestamp.execute(key) { value = timestamp2 }
-    assertNonNullTimestampByKeyEquals(key, "1795-01-12T19:03:56.040585Z")
-  }
-
-  @Test
-  fun updateNonNullTimestampFieldToMinValue() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-    connector.updateNonNullTimestamp.execute(key) { value = MIN_TIMESTAMP }
-    assertNonNullTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
-  }
-
-  @Test
-  fun updateNonNullTimestampFieldToMaxValue() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-    connector.updateNonNullTimestamp.execute(key) { value = MAX_TIMESTAMP }
-    assertNonNullTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
-  }
-
-  @Test
-  fun updateNonNullTimestampFieldToAnUndefinedValue() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-    connector.updateNonNullTimestamp.execute(key) {}
-    assertNonNullTimestampByKeyEquals(key, timestamp.withMicrosecondPrecision())
-  }
-
-  @Test
-  fun insertTypicalValueForNullableField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(1891, 5, 13, 5, 20, 38, 646067609)
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    assertNullableTimestampByKeyEquals(key, "1891-05-13T05:20:38.646067Z")
-  }
-
-  @Test
-  fun insertMaxValueForNullableTimestampField() = runTest {
-    val key = connector.insertNullableTimestamp.execute { value = MIN_TIMESTAMP }.data.key
-    assertNullableTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
-  }
-
-  @Test
-  fun insertMinValueForNullableTimestampField() = runTest {
-    val key = connector.insertNullableTimestamp.execute { value = MAX_TIMESTAMP }.data.key
-    assertNullableTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
-  }
-
-  @Test
-  fun insertNullForNullableTimestampField() = runTest {
-    val key = connector.insertNullableTimestamp.execute { value = null }.data.key
-    assertNullableTimestampByKeyEquals(key, null)
-  }
-
-  @Test
-  fun insertUndefinedForNullableTimestampField() = runTest {
-    val key = connector.insertNullableTimestamp.execute {}.data.key
-    assertNullableTimestampByKeyEquals(key, null)
-  }
-
-  @Test
-  fun insertTimestampWithSingleDigitsForNullableTimestampField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(6651, 1, 2, 3, 4, 5, 6000)
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    assertNullableTimestampByKeyEquals(key, "6651-01-02T03:04:05.000006Z")
-  }
-
-  @Test
-  fun insertTimestampWithAllDigitsForNullableTimestampField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(7992, 10, 11, 12, 13, 14, 123456789)
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    assertNullableTimestampByKeyEquals(key, "7992-10-11T12:13:14.123456Z")
-  }
-
-  @Test
-  fun insertTimestampWithNoNanosecondsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
-  }
-
-  @Test
-  fun insertTimestampWithZeroNanosecondsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.000000000Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
-  }
-
-  @Test
-  fun insertTimestampWith1NanosecondsDigitForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.1Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.100000Z")
-  }
-
-  @Test
-  fun insertTimestampWith2NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.12Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.120000Z")
-  }
-
-  @Test
-  fun insertTimestampWith3NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123000Z")
-  }
-
-  @Test
-  fun insertTimestampWith4NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.1234Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123400Z")
-  }
-
-  @Test
-  fun insertTimestampWith5NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.12345Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123450Z")
-  }
-
-  @Test
-  fun insertTimestampWith6NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
-
-  @Test
-  fun insertTimestampWith7NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.1234567Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
-
-  @Test
-  fun insertTimestampWith8NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.12345678Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
-
-  @Test
-  fun insertTimestampWith9NanosecondsDigitsForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789Z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
-
-  @Test
-  fun insertIntForNullableTimestampFieldShouldFail() = runTest {
-    shouldThrow<DataConnectException> {
-      connector.insertNullableTimestamp.executeWithIntVariables(555_444).data.key
+  fun updateNonNullTimestampFieldToAnotherValidValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp1 = randomTimestamp()
+      val timestamp2 = timestampFromUTCDateAndTime(1795, 1, 12, 19, 3, 56, 40585847)
+      val key = connector.insertNonNullTimestamp.execute(timestamp1).data.key
+      connector.updateNonNullTimestamp.execute(key) { value = timestamp2 }
+      assertNonNullTimestampByKeyEquals(key, "1795-01-12T19:03:56.040585Z")
     }
-  }
+
+  @Test
+  fun updateNonNullTimestampFieldToMinValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
+      connector.updateNonNullTimestamp.execute(key) { value = MIN_TIMESTAMP }
+      assertNonNullTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
+    }
+
+  @Test
+  fun updateNonNullTimestampFieldToMaxValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
+      connector.updateNonNullTimestamp.execute(key) { value = MAX_TIMESTAMP }
+      assertNonNullTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
+    }
+
+  @Test
+  fun updateNonNullTimestampFieldToAnUndefinedValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
+      connector.updateNonNullTimestamp.execute(key) {}
+      assertNonNullTimestampByKeyEquals(key, timestamp.withMicrosecondPrecision())
+    }
+
+  @Test
+  fun insertTypicalValueForNullableField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = timestampFromUTCDateAndTime(1891, 5, 13, 5, 20, 38, 646067609)
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      assertNullableTimestampByKeyEquals(key, "1891-05-13T05:20:38.646067Z")
+    }
+
+  @Test
+  fun insertMaxValueForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNullableTimestamp.execute { value = MIN_TIMESTAMP }.data.key
+      assertNullableTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
+    }
+
+  @Test
+  fun insertMinValueForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNullableTimestamp.execute { value = MAX_TIMESTAMP }.data.key
+      assertNullableTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
+    }
+
+  @Test
+  fun insertNullForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNullableTimestamp.execute { value = null }.data.key
+      assertNullableTimestampByKeyEquals(key, null)
+    }
+
+  @Test
+  fun insertUndefinedForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNullableTimestamp.execute {}.data.key
+      assertNullableTimestampByKeyEquals(key, null)
+    }
+
+  @Test
+  fun insertTimestampWithSingleDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = timestampFromUTCDateAndTime(6651, 1, 2, 3, 4, 5, 6000)
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      assertNullableTimestampByKeyEquals(key, "6651-01-02T03:04:05.000006Z")
+    }
+
+  @Test
+  fun insertTimestampWithAllDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = timestampFromUTCDateAndTime(7992, 10, 11, 12, 13, 14, 123456789)
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      assertNullableTimestampByKeyEquals(key, "7992-10-11T12:13:14.123456Z")
+    }
+
+  @Test
+  fun insertTimestampWithNoNanosecondsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+    }
+
+  @Test
+  fun insertTimestampWithZeroNanosecondsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.000000000Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.000000Z")
+    }
+
+  @Test
+  fun insertTimestampWith1NanosecondsDigitForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.1Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.100000Z")
+    }
+
+  @Test
+  fun insertTimestampWith2NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.12Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.120000Z")
+    }
+
+  @Test
+  fun insertTimestampWith3NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123000Z")
+    }
+
+  @Test
+  fun insertTimestampWith4NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.1234Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123400Z")
+    }
+
+  @Test
+  fun insertTimestampWith5NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.12345Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123450Z")
+    }
+
+  @Test
+  fun insertTimestampWith6NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
+
+  @Test
+  fun insertTimestampWith7NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.1234567Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
+
+  @Test
+  fun insertTimestampWith8NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.12345678Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
+
+  @Test
+  fun insertTimestampWith9NanosecondsDigitsForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789Z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
+
+  @Test
+  fun insertIntForNullableTimestampFieldShouldFail() =
+    runTest(timeout = 60.seconds) {
+      shouldThrow<DataConnectException> {
+        connector.insertNullableTimestamp.executeWithIntVariables(555_444).data.key
+      }
+    }
 
   @Test
   fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFail() =
@@ -443,131 +502,146 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
     "TODO(b/341984878): Add these test cases back to `invalidTimestamps` once the " +
       "emulator is fixed to correctly reject them"
   )
-  fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFailBugs() = runTest {
-    for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
-      shouldThrow<DataConnectException> {
-        connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
+  fun insertInvalidTimestampsValuesForNullableTimestampFieldShouldFailBugs() =
+    runTest(timeout = 60.seconds) {
+      for (invalidTimestamp in invalidTimestampsThatAreErroneouslyAcceptedByTheServer) {
+        shouldThrow<DataConnectException> {
+          connector.insertNullableTimestamp.executeWithStringVariables(invalidTimestamp)
+        }
       }
     }
-  }
 
   @Test
   @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts leap seconds")
-  fun insertTimestampWithLeapSecondStringForNullableTimestampField() = runTest {
-    val timestamp = "1990-12-31T23:59:60Z" // From RFC3339 section 5.8
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "1990-12-31T23:59:60.000000Z")
-  }
+  fun insertTimestampWithLeapSecondStringForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "1990-12-31T23:59:60Z" // From RFC3339 section 5.8
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "1990-12-31T23:59:60.000000Z")
+    }
 
   @Test
-  fun insertTimestampWithLeapSecondDateForNullableTimestampField() = runTest {
-    val timestamp = timestampFromUTCDateAndTime(1990, 12, 31, 23, 59, 60, 0)
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    assertNullableTimestampByKeyEquals(key, timestamp)
-  }
+  fun insertTimestampWithLeapSecondDateForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = timestampFromUTCDateAndTime(1990, 12, 31, 23, 59, 60, 0)
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      assertNullableTimestampByKeyEquals(key, timestamp)
+    }
 
   @Test
-  fun insertTimestampWithPlus0TimeZoneOffsetForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789+00:00"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWithPlus0TimeZoneOffsetForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789+00:00"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWithPositiveNonZeroTimeZoneOffsetForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789+01:23"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T11:22:56.123456Z")
-  }
+  fun insertTimestampWithPositiveNonZeroTimeZoneOffsetForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789+01:23"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T11:22:56.123456Z")
+    }
 
   @Test
-  fun insertTimestampWithNegativeNonZeroTimeZoneOffsetForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18T12:45:56.123456789-01:23"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T14:08:56.123456Z")
-  }
+  fun insertTimestampWithNegativeNonZeroTimeZoneOffsetForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18T12:45:56.123456789-01:23"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T14:08:56.123456Z")
+    }
 
   @Test
   @Ignore("TODO(b/341984878): Re-enable this test once the backend accepts lowercase T and Z")
-  fun insertTimestampWithLowercaseTandZForNullableTimestampField() = runTest {
-    val timestamp = "2024-05-18t12:45:56.123456789z"
-    val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-    assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-  }
+  fun insertTimestampWithLowercaseTandZForNullableTimestampField() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = "2024-05-18t12:45:56.123456789z"
+      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
+      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
+    }
 
   @Test
-  fun insertNoVariablesForNullableTimestampFieldsWithSchemaDefaults() = runTest {
-    val key = connector.insertNullableTimestampsWithDefaults.execute {}.data.key
-    val queryResult = connector.getNullableTimestampsWithDefaultsByKey.execute(key)
+  fun insertNoVariablesForNullableTimestampFieldsWithSchemaDefaults() =
+    runTest(timeout = 60.seconds) {
+      val key = connector.insertNullableTimestampsWithDefaults.execute {}.data.key
+      val queryResult = connector.getNullableTimestampsWithDefaultsByKey.execute(key)
 
-    // Since we can't know the exact value of `request.time` just make sure that the exact same
-    // value is used for both fields to which it is set.
-    val expectedRequestTime = queryResult.data.nullableTimestampsWithDefaults!!.requestTime1
+      // Since we can't know the exact value of `request.time` just make sure that the exact same
+      // value is used for both fields to which it is set.
+      val expectedRequestTime = queryResult.data.nullableTimestampsWithDefaults!!.requestTime1
 
-    assertThat(
-      queryResult.equals(
-        GetNullableTimestampsWithDefaultsByKeyQuery.Data(
-          GetNullableTimestampsWithDefaultsByKeyQuery.Data.NullableTimestampsWithDefaults(
-            valueWithVariableDefault =
-              timestampFromUTCDateAndTime(2554, 12, 20, 13, 3, 45, 110429000),
-            valueWithSchemaDefault = timestampFromUTCDateAndTime(1621, 12, 3, 1, 22, 3, 513914000),
-            epoch = ZERO_TIMESTAMP,
-            requestTime1 = expectedRequestTime,
-            requestTime2 = expectedRequestTime,
+      assertThat(
+        queryResult.equals(
+          GetNullableTimestampsWithDefaultsByKeyQuery.Data(
+            GetNullableTimestampsWithDefaultsByKeyQuery.Data.NullableTimestampsWithDefaults(
+              valueWithVariableDefault =
+                timestampFromUTCDateAndTime(2554, 12, 20, 13, 3, 45, 110429000),
+              valueWithSchemaDefault =
+                timestampFromUTCDateAndTime(1621, 12, 3, 1, 22, 3, 513914000),
+              epoch = ZERO_TIMESTAMP,
+              requestTime1 = expectedRequestTime,
+              requestTime2 = expectedRequestTime,
+            )
           )
         )
       )
-    )
-  }
+    }
 
   @Test
-  fun updateNullableTimestampFieldToAnotherValidValue() = runTest {
-    val timestamp1 = randomTimestamp()
-    val timestamp2 = timestampFromUTCDateAndTime(7947, 7, 22, 13, 19, 55, 669650046)
-    val key = connector.insertNullableTimestamp.execute { value = timestamp1 }.data.key
-    connector.updateNullableTimestamp.execute(key) { value = timestamp2 }
-    assertNullableTimestampByKeyEquals(key, "7947-07-22T13:19:55.669650Z")
-  }
+  fun updateNullableTimestampFieldToAnotherValidValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp1 = randomTimestamp()
+      val timestamp2 = timestampFromUTCDateAndTime(7947, 7, 22, 13, 19, 55, 669650046)
+      val key = connector.insertNullableTimestamp.execute { value = timestamp1 }.data.key
+      connector.updateNullableTimestamp.execute(key) { value = timestamp2 }
+      assertNullableTimestampByKeyEquals(key, "7947-07-22T13:19:55.669650Z")
+    }
 
   @Test
-  fun updateNullableTimestampFieldToMinValue() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    connector.updateNullableTimestamp.execute(key) { value = MIN_TIMESTAMP }
-    assertNullableTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
-  }
+  fun updateNullableTimestampFieldToMinValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      connector.updateNullableTimestamp.execute(key) { value = MIN_TIMESTAMP }
+      assertNullableTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
+    }
 
   @Test
-  fun updateNullableTimestampFieldToMaxValue() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    connector.updateNullableTimestamp.execute(key) { value = MAX_TIMESTAMP }
-    assertNullableTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
-  }
+  fun updateNullableTimestampFieldToMaxValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      connector.updateNullableTimestamp.execute(key) { value = MAX_TIMESTAMP }
+      assertNullableTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
+    }
 
   @Test
-  fun updateNullableTimestampFieldToNull() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    connector.updateNullableTimestamp.execute(key) { value = null }
-    assertNullableTimestampByKeyEquals(key, null)
-  }
+  fun updateNullableTimestampFieldToNull() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      connector.updateNullableTimestamp.execute(key) { value = null }
+      assertNullableTimestampByKeyEquals(key, null)
+    }
 
   @Test
-  fun updateNullableTimestampFieldToNonNull() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNullableTimestamp.execute { value = null }.data.key
-    connector.updateNullableTimestamp.execute(key) { value = timestamp }
-    assertNullableTimestampByKeyEquals(key, timestamp.withMicrosecondPrecision())
-  }
+  fun updateNullableTimestampFieldToNonNull() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNullableTimestamp.execute { value = null }.data.key
+      connector.updateNullableTimestamp.execute(key) { value = timestamp }
+      assertNullableTimestampByKeyEquals(key, timestamp.withMicrosecondPrecision())
+    }
 
   @Test
-  fun updateNullableTimestampFieldToAnUndefinedValue() = runTest {
-    val timestamp = randomTimestamp()
-    val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
-    connector.updateNullableTimestamp.execute(key) {}
-    assertNullableTimestampByKeyEquals(key, timestamp.withMicrosecondPrecision())
-  }
+  fun updateNullableTimestampFieldToAnUndefinedValue() =
+    runTest(timeout = 60.seconds) {
+      val timestamp = randomTimestamp()
+      val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
+      connector.updateNullableTimestamp.execute(key) {}
+      assertNullableTimestampByKeyEquals(key, timestamp.withMicrosecondPrecision())
+    }
 
   private suspend fun assertNonNullTimestampByKeyEquals(
     key: NonNullTimestampKey,
@@ -639,6 +713,13 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Serializable private data class InsertTimestampIntVariables(val value: Int)
 
   private companion object {
+
+    @OptIn(ExperimentalKotest::class)
+    val normalPropTestConfig =
+      PropTestConfig(
+        iterations = 10,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.0),
+      )
 
     suspend fun <Data> GeneratedMutation<*, Data, *>.executeWithStringVariables(value: String?) =
       withVariablesSerializer(serializer<InsertTimestampStringVariables>())
