@@ -20,65 +20,58 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.common.DelicateKotest
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.negativeDouble
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.negativeLong
-import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.positiveDouble
 import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.positiveLong
 import io.kotest.property.arbitrary.uuid
+import io.kotest.property.checkAll
 import java.util.UUID
 import kotlin.math.nextDown
 import kotlin.math.nextUp
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
 
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
-  private val distinctPositiveInts = Arb.positiveInt(max = Int.MAX_VALUE - 1).distinct()
-  private val distinctNegativeInts = Arb.negativeInt(min = Int.MIN_VALUE + 1).distinct()
-  private val distinctPositiveLongs = Arb.positiveLong(max = Long.MAX_VALUE - 1).distinct()
-  private val distinctNegativeLongs = Arb.negativeLong(min = Long.MIN_VALUE + 1).distinct()
-
-  private val distinctPositiveDoubles =
-    Arb.positiveDouble(max = Double.MAX_VALUE.nextDown(), includeNonFiniteEdgeCases = false)
-      .distinct()
-
-  private val distinctNegativeDoubles =
-    Arb.negativeDouble(min = (-Double.MAX_VALUE).nextUp(), includeNonFiniteEdgeCases = false)
-      .distinct()
-
   @Test
-  fun insertStringVariants() = runTest {
-    val someString1 = Arb.alphanumericString(prefix = "someString1_").next(rs)
-    val someString2 = Arb.alphanumericString(prefix = "someString2_").next(rs)
+  fun insertStringVariants() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.strings()) { strings ->
+        val insertResult =
+          connector.insertStringVariants.execute(
+            nonNullWithNonEmptyValue = strings.string1,
+            nonNullWithEmptyValue = "",
+          ) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = strings.string2
+            nullableWithEmptyValue = ""
+          }
 
-    val insertResult =
-      connector.insertStringVariants.execute(
-        nonNullWithNonEmptyValue = someString1,
-        nonNullWithEmptyValue = "",
-      ) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = someString2
-        nullableWithEmptyValue = ""
+        val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.stringVariants shouldBe
+          GetStringVariantsByKeyQuery.Data.StringVariants(
+            nonNullWithNonEmptyValue = strings.string1,
+            nonNullWithEmptyValue = "",
+            nullableWithNullValue = null,
+            nullableWithNonNullValue = strings.string2,
+            nullableWithEmptyValue = "",
+          )
       }
-
-    val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.stringVariants shouldBe
-      GetStringVariantsByKeyQuery.Data.StringVariants(
-        nonNullWithNonEmptyValue = someString1,
-        nonNullWithEmptyValue = "",
-        nullableWithNullValue = null,
-        nullableWithNonNullValue = someString2,
-        nullableWithEmptyValue = "",
-      )
-  }
+    }
 
   @Test
   fun insertStringVariantsWithDefaultValues() = runTest {
@@ -87,144 +80,145 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
     queryResult.data.stringVariants shouldBe
       GetStringVariantsByKeyQuery.Data.StringVariants(
-        nonNullWithNonEmptyValue = "pfnk98yqqs",
+        nonNullWithNonEmptyValue = HardcodedValues.NON_NULL_WITH_NON_EMPTY_STRING,
         nonNullWithEmptyValue = "",
         nullableWithNullValue = null,
-        nullableWithNonNullValue = "af8k72s98t",
+        nullableWithNonNullValue = HardcodedValues.NULLABLE_WITH_NON_EMPTY_STRING,
         nullableWithEmptyValue = "",
       )
   }
 
   @Test
-  fun updateStringVariantsToNonNullValues() = runTest {
-    val strings = List(6) { Arb.alphanumericString(prefix = "string${it}_").next(rs) }
+  fun updateStringVariantsToNonNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.strings()) { strings ->
+        val insertResult =
+          connector.insertStringVariants.execute(
+            nonNullWithNonEmptyValue = strings.string1,
+            nonNullWithEmptyValue = "",
+          ) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = strings.string2
+            nullableWithEmptyValue = ""
+          }
 
-    val insertResult =
-      connector.insertStringVariants.execute(
-        nonNullWithNonEmptyValue = strings[0],
-        nonNullWithEmptyValue = "",
-      ) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = strings[1]
-        nullableWithEmptyValue = ""
+        connector.updateStringVariantsByKey.execute(insertResult.data.key) {
+          nonNullWithNonEmptyValue = ""
+          nonNullWithEmptyValue = strings.string3
+          nullableWithNullValue = strings.string4
+          nullableWithNonNullValue = strings.string5
+          nullableWithEmptyValue = strings.string6
+        }
+
+        val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.stringVariants shouldBe
+          GetStringVariantsByKeyQuery.Data.StringVariants(
+            nonNullWithNonEmptyValue = "",
+            nonNullWithEmptyValue = strings.string3,
+            nullableWithNullValue = strings.string4,
+            nullableWithNonNullValue = strings.string5,
+            nullableWithEmptyValue = strings.string6,
+          )
       }
-
-    connector.updateStringVariantsByKey.execute(insertResult.data.key) {
-      nonNullWithNonEmptyValue = ""
-      nonNullWithEmptyValue = strings[2]
-      nullableWithNullValue = strings[3]
-      nullableWithNonNullValue = strings[4]
-      nullableWithEmptyValue = strings[5]
     }
 
-    val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.stringVariants shouldBe
-      GetStringVariantsByKeyQuery.Data.StringVariants(
-        nonNullWithNonEmptyValue = "",
-        nonNullWithEmptyValue = strings[2],
-        nullableWithNullValue = strings[3],
-        nullableWithNonNullValue = strings[4],
-        nullableWithEmptyValue = strings[5],
-      )
-  }
-
   @Test
-  fun updateStringVariantsToNullValues() = runTest {
-    val someString1 = Arb.alphanumericString(prefix = "someString1_").next(rs)
-    val someString2 = Arb.alphanumericString(prefix = "someString2_").next(rs)
+  fun updateStringVariantsToNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.strings()) { strings ->
+        val insertResult =
+          connector.insertStringVariants.execute(
+            nonNullWithNonEmptyValue = strings.string1,
+            nonNullWithEmptyValue = "",
+          ) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = strings.string2
+            nullableWithEmptyValue = ""
+          }
 
-    val insertResult =
-      connector.insertStringVariants.execute(
-        nonNullWithNonEmptyValue = someString1,
-        nonNullWithEmptyValue = "",
-      ) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = someString2
-        nullableWithEmptyValue = ""
+        connector.updateStringVariantsByKey.execute(insertResult.data.key) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = null
+          nullableWithEmptyValue = null
+        }
+
+        val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.stringVariants shouldBe
+          GetStringVariantsByKeyQuery.Data.StringVariants(
+            nonNullWithNonEmptyValue = strings.string1,
+            nonNullWithEmptyValue = "",
+            nullableWithNullValue = null,
+            nullableWithNonNullValue = null,
+            nullableWithEmptyValue = null,
+          )
       }
-
-    connector.updateStringVariantsByKey.execute(insertResult.data.key) {
-      nullableWithNullValue = null
-      nullableWithNonNullValue = null
-      nullableWithEmptyValue = null
     }
 
-    val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.stringVariants shouldBe
-      GetStringVariantsByKeyQuery.Data.StringVariants(
-        nonNullWithNonEmptyValue = someString1,
-        nonNullWithEmptyValue = "",
-        nullableWithNullValue = null,
-        nullableWithNonNullValue = null,
-        nullableWithEmptyValue = null,
-      )
-  }
+  @Test
+  fun updateStringVariantsToUndefinedValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.strings()) { strings ->
+        val insertResult =
+          connector.insertStringVariants.execute(
+            nonNullWithNonEmptyValue = strings.string1,
+            nonNullWithEmptyValue = "",
+          ) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = strings.string2
+            nullableWithEmptyValue = ""
+          }
+
+        connector.updateStringVariantsByKey.execute(insertResult.data.key) {}
+
+        val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.stringVariants shouldBe
+          GetStringVariantsByKeyQuery.Data.StringVariants(
+            nonNullWithNonEmptyValue = strings.string1,
+            nonNullWithEmptyValue = "",
+            nullableWithNullValue = null,
+            nullableWithNonNullValue = strings.string2,
+            nullableWithEmptyValue = "",
+          )
+      }
+    }
 
   @Test
-  fun updateStringVariantsToUndefinedValues() = runTest {
-    val someString1 = Arb.alphanumericString(prefix = "someString1_").next(rs)
-    val someString2 = Arb.alphanumericString(prefix = "someString2_").next(rs)
+  fun insertIntVariants() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.ints()) { ints ->
+        val insertResult =
+          connector.insertIntVariants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = ints.positiveValue1,
+            nonNullWithNegativeValue = ints.negativeValue1,
+            nonNullWithMaxValue = Int.MAX_VALUE,
+            nonNullWithMinValue = Int.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = ints.positiveValue2
+            nullableWithNegativeValue = ints.negativeValue2
+            nullableWithMaxValue = Int.MAX_VALUE
+            nullableWithMinValue = Int.MIN_VALUE
+          }
 
-    val insertResult =
-      connector.insertStringVariants.execute(
-        nonNullWithNonEmptyValue = someString1,
-        nonNullWithEmptyValue = "",
-      ) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = someString2
-        nullableWithEmptyValue = ""
+        val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.intVariants shouldBe
+          GetIntVariantsByKeyQuery.Data.IntVariants(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = ints.positiveValue1,
+            nonNullWithNegativeValue = ints.negativeValue1,
+            nonNullWithMaxValue = Int.MAX_VALUE,
+            nonNullWithMinValue = Int.MIN_VALUE,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = 0,
+            nullableWithPositiveValue = ints.positiveValue2,
+            nullableWithNegativeValue = ints.negativeValue2,
+            nullableWithMaxValue = Int.MAX_VALUE,
+            nullableWithMinValue = Int.MIN_VALUE,
+          )
       }
-
-    connector.updateStringVariantsByKey.execute(insertResult.data.key) {}
-
-    val queryResult = connector.getStringVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.stringVariants shouldBe
-      GetStringVariantsByKeyQuery.Data.StringVariants(
-        nonNullWithNonEmptyValue = someString1,
-        nonNullWithEmptyValue = "",
-        nullableWithNullValue = null,
-        nullableWithNonNullValue = someString2,
-        nullableWithEmptyValue = "",
-      )
-  }
-
-  @Test
-  fun insertIntVariants() = runTest {
-    val positiveInts = List(2) { distinctPositiveInts.next(rs) }
-    val negativeInts = List(2) { distinctNegativeInts.next(rs) }
-
-    val insertResult =
-      connector.insertIntVariants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveInts[0],
-        nonNullWithNegativeValue = negativeInts[0],
-        nonNullWithMaxValue = Int.MAX_VALUE,
-        nonNullWithMinValue = Int.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = positiveInts[1]
-        nullableWithNegativeValue = negativeInts[1]
-        nullableWithMaxValue = Int.MAX_VALUE
-        nullableWithMinValue = Int.MIN_VALUE
-      }
-
-    val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.intVariants shouldBe
-      GetIntVariantsByKeyQuery.Data.IntVariants(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveInts[0],
-        nonNullWithNegativeValue = negativeInts[0],
-        nonNullWithMaxValue = Int.MAX_VALUE,
-        nonNullWithMinValue = Int.MIN_VALUE,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0,
-        nullableWithPositiveValue = positiveInts[1],
-        nullableWithNegativeValue = negativeInts[1],
-        nullableWithMaxValue = Int.MAX_VALUE,
-        nullableWithMinValue = Int.MIN_VALUE,
-      )
-  }
+    }
 
   @Test
   fun insertIntVariantsWithDefaultValues() = runTest {
@@ -234,825 +228,997 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     queryResult.data.intVariants shouldBe
       GetIntVariantsByKeyQuery.Data.IntVariants(
         nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = 819425,
-        nonNullWithNegativeValue = -435970,
+        nonNullWithPositiveValue = HardcodedValues.NON_NULL_POSITIVE_INT,
+        nonNullWithNegativeValue = HardcodedValues.NON_NULL_NEGATIVE_INT,
         nonNullWithMaxValue = Int.MAX_VALUE,
         nonNullWithMinValue = Int.MIN_VALUE,
         nullableWithNullValue = null,
         nullableWithZeroValue = 0,
-        nullableWithPositiveValue = 635166,
-        nullableWithNegativeValue = -171993,
+        nullableWithPositiveValue = HardcodedValues.NULLABLE_POSITIVE_INT,
+        nullableWithNegativeValue = HardcodedValues.NULLABLE_NEGATIVE_INT,
         nullableWithMaxValue = Int.MAX_VALUE,
         nullableWithMinValue = Int.MIN_VALUE,
       )
   }
 
   @Test
-  fun updateIntVariantsToNonNullValues() = runTest {
-    val positiveInts = List(4) { distinctPositiveInts.next(rs) }
-    val negativeInts = List(2) { distinctNegativeInts.next(rs) }
+  fun updateIntVariantsToNonNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.ints()) { ints ->
+        val insertResult =
+          connector.insertIntVariants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = ints.positiveValue1,
+            nonNullWithNegativeValue = ints.negativeValue1,
+            nonNullWithMaxValue = Int.MAX_VALUE,
+            nonNullWithMinValue = Int.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = ints.positiveValue2
+            nullableWithNegativeValue = ints.negativeValue2
+            nullableWithMaxValue = Int.MAX_VALUE
+            nullableWithMinValue = Int.MIN_VALUE
+          }
 
-    val insertResult =
-      connector.insertIntVariants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveInts[0],
-        nonNullWithNegativeValue = negativeInts[0],
-        nonNullWithMaxValue = Int.MAX_VALUE,
-        nonNullWithMinValue = Int.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = positiveInts[1]
-        nullableWithNegativeValue = negativeInts[1]
-        nullableWithMaxValue = Int.MAX_VALUE
-        nullableWithMinValue = Int.MIN_VALUE
+        connector.updateIntVariantsByKey.execute(insertResult.data.key) {
+          nonNullWithZeroValue = ints.positiveValue3
+          nonNullWithPositiveValue = Int.MAX_VALUE
+          nonNullWithNegativeValue = Int.MIN_VALUE
+          nonNullWithMaxValue = 1
+          nonNullWithMinValue = -1
+          nullableWithNullValue = ints.negativeValue3
+          nullableWithZeroValue = 0
+          nullableWithPositiveValue = Int.MAX_VALUE
+          nullableWithNegativeValue = Int.MIN_VALUE
+          nullableWithMaxValue = 1
+          nullableWithMinValue = -1
+        }
+
+        val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.intVariants shouldBe
+          GetIntVariantsByKeyQuery.Data.IntVariants(
+            nonNullWithZeroValue = ints.positiveValue3,
+            nonNullWithPositiveValue = Int.MAX_VALUE,
+            nonNullWithNegativeValue = Int.MIN_VALUE,
+            nonNullWithMaxValue = 1,
+            nonNullWithMinValue = -1,
+            nullableWithNullValue = ints.negativeValue3,
+            nullableWithZeroValue = 0,
+            nullableWithPositiveValue = Int.MAX_VALUE,
+            nullableWithNegativeValue = Int.MIN_VALUE,
+            nullableWithMaxValue = 1,
+            nullableWithMinValue = -1,
+          )
       }
-
-    connector.updateIntVariantsByKey.execute(insertResult.data.key) {
-      nonNullWithZeroValue = positiveInts[2]
-      nonNullWithPositiveValue = Int.MAX_VALUE
-      nonNullWithNegativeValue = Int.MIN_VALUE
-      nonNullWithMaxValue = 1
-      nonNullWithMinValue = -1
-      nullableWithNullValue = positiveInts[3]
-      nullableWithZeroValue = 0
-      nullableWithPositiveValue = Int.MAX_VALUE
-      nullableWithNegativeValue = Int.MIN_VALUE
-      nullableWithMaxValue = 1
-      nullableWithMinValue = -1
     }
 
-    val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.intVariants shouldBe
-      GetIntVariantsByKeyQuery.Data.IntVariants(
-        nonNullWithZeroValue = positiveInts[2],
-        nonNullWithPositiveValue = Int.MAX_VALUE,
-        nonNullWithNegativeValue = Int.MIN_VALUE,
-        nonNullWithMaxValue = 1,
-        nonNullWithMinValue = -1,
-        nullableWithNullValue = positiveInts[3],
-        nullableWithZeroValue = 0,
-        nullableWithPositiveValue = Int.MAX_VALUE,
-        nullableWithNegativeValue = Int.MIN_VALUE,
-        nullableWithMaxValue = 1,
-        nullableWithMinValue = -1,
-      )
-  }
-
   @Test
-  fun updateIntVariantsToNullValues() = runTest {
-    val nonNullPositiveInt = distinctPositiveInts.next(rs)
-    val nonNullNegativeInt = distinctNegativeInts.next(rs)
+  fun updateIntVariantsToNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.ints()) { ints ->
+        val insertResult =
+          connector.insertIntVariants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = ints.positiveValue1,
+            nonNullWithNegativeValue = ints.negativeValue1,
+            nonNullWithMaxValue = Int.MAX_VALUE,
+            nonNullWithMinValue = Int.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = ints.positiveValue2
+            nullableWithNegativeValue = ints.negativeValue2
+            nullableWithMaxValue = Int.MAX_VALUE
+            nullableWithMinValue = Int.MIN_VALUE
+          }
 
-    val insertResult =
-      connector.insertIntVariants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = nonNullPositiveInt,
-        nonNullWithNegativeValue = nonNullNegativeInt,
-        nonNullWithMaxValue = Int.MAX_VALUE,
-        nonNullWithMinValue = Int.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = distinctPositiveInts.next(rs)
-        nullableWithNegativeValue = distinctNegativeInts.next(rs)
-        nullableWithMaxValue = Int.MAX_VALUE
-        nullableWithMinValue = Int.MIN_VALUE
+        connector.updateIntVariantsByKey.execute(insertResult.data.key) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = null
+          nullableWithPositiveValue = null
+          nullableWithNegativeValue = null
+          nullableWithMaxValue = null
+          nullableWithMinValue = null
+        }
+
+        val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.intVariants shouldBe
+          GetIntVariantsByKeyQuery.Data.IntVariants(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = ints.positiveValue1,
+            nonNullWithNegativeValue = ints.negativeValue1,
+            nonNullWithMaxValue = Int.MAX_VALUE,
+            nonNullWithMinValue = Int.MIN_VALUE,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = null,
+            nullableWithPositiveValue = null,
+            nullableWithNegativeValue = null,
+            nullableWithMaxValue = null,
+            nullableWithMinValue = null,
+          )
       }
-
-    connector.updateIntVariantsByKey.execute(insertResult.data.key) {
-      nullableWithNullValue = null
-      nullableWithZeroValue = null
-      nullableWithPositiveValue = null
-      nullableWithNegativeValue = null
-      nullableWithMaxValue = null
-      nullableWithMinValue = null
     }
 
-    val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.intVariants shouldBe
-      GetIntVariantsByKeyQuery.Data.IntVariants(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = nonNullPositiveInt,
-        nonNullWithNegativeValue = nonNullNegativeInt,
-        nonNullWithMaxValue = Int.MAX_VALUE,
-        nonNullWithMinValue = Int.MIN_VALUE,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = null,
-        nullableWithPositiveValue = null,
-        nullableWithNegativeValue = null,
-        nullableWithMaxValue = null,
-        nullableWithMinValue = null,
-      )
-  }
-
   @Test
-  fun updateIntVariantsToUndefinedValues() = runTest {
-    val positiveInts = List(2) { distinctPositiveInts.next(rs) }
-    val negativeInts = List(2) { distinctNegativeInts.next(rs) }
+  fun updateIntVariantsToUndefinedValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.ints()) { ints ->
+        val insertResult =
+          connector.insertIntVariants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = ints.positiveValue1,
+            nonNullWithNegativeValue = ints.negativeValue1,
+            nonNullWithMaxValue = Int.MAX_VALUE,
+            nonNullWithMinValue = Int.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = ints.positiveValue2
+            nullableWithNegativeValue = ints.negativeValue2
+            nullableWithMaxValue = Int.MAX_VALUE
+            nullableWithMinValue = Int.MIN_VALUE
+          }
 
-    val insertResult =
-      connector.insertIntVariants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveInts[0],
-        nonNullWithNegativeValue = negativeInts[0],
-        nonNullWithMaxValue = Int.MAX_VALUE,
-        nonNullWithMinValue = Int.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = positiveInts[1]
-        nullableWithNegativeValue = negativeInts[1]
-        nullableWithMaxValue = Int.MAX_VALUE
-        nullableWithMinValue = Int.MIN_VALUE
+        connector.updateIntVariantsByKey.execute(insertResult.data.key) {}
+
+        val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.intVariants shouldBe
+          GetIntVariantsByKeyQuery.Data.IntVariants(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = ints.positiveValue1,
+            nonNullWithNegativeValue = ints.negativeValue1,
+            nonNullWithMaxValue = Int.MAX_VALUE,
+            nonNullWithMinValue = Int.MIN_VALUE,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = 0,
+            nullableWithPositiveValue = ints.positiveValue2,
+            nullableWithNegativeValue = ints.negativeValue2,
+            nullableWithMaxValue = Int.MAX_VALUE,
+            nullableWithMinValue = Int.MIN_VALUE,
+          )
       }
-
-    connector.updateIntVariantsByKey.execute(insertResult.data.key) {}
-
-    val queryResult = connector.getIntVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.intVariants shouldBe
-      GetIntVariantsByKeyQuery.Data.IntVariants(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveInts[0],
-        nonNullWithNegativeValue = negativeInts[0],
-        nonNullWithMaxValue = Int.MAX_VALUE,
-        nonNullWithMinValue = Int.MIN_VALUE,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0,
-        nullableWithPositiveValue = positiveInts[1],
-        nullableWithNegativeValue = negativeInts[1],
-        nullableWithMaxValue = Int.MAX_VALUE,
-        nullableWithMinValue = Int.MIN_VALUE,
-      )
-  }
-
-  @Test
-  fun insertFloatVariants() = runTest {
-    val positiveDoubles = List(2) { distinctPositiveDoubles.next(rs) }
-    val negativeDoubles = List(2) { distinctNegativeDoubles.next(rs) }
-
-    val insertResult =
-      connector.insertFloatVariants.execute(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = -0.0,
-        nonNullWithPositiveValue = positiveDoubles[0],
-        nonNullWithNegativeValue = negativeDoubles[0],
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0.0
-        nullableWithNegativeZeroValue = 0.0
-        nullableWithPositiveValue = positiveDoubles[1]
-        nullableWithNegativeValue = negativeDoubles[1]
-        nullableWithMaxValue = Double.MAX_VALUE
-        nullableWithMinValue = Double.MIN_VALUE
-        nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
-      }
-
-    val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.floatVariants shouldBe
-      GetFloatVariantsByKeyQuery.Data.FloatVariants(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = 0.0,
-        nonNullWithPositiveValue = positiveDoubles[0],
-        nonNullWithNegativeValue = negativeDoubles[0],
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0.0,
-        nullableWithNegativeZeroValue = 0.0,
-        nullableWithPositiveValue = positiveDoubles[1],
-        nullableWithNegativeValue = negativeDoubles[1],
-        nullableWithMaxValue = Double.MAX_VALUE,
-        nullableWithMinValue = Double.MIN_VALUE,
-        nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-      )
-  }
-
-  @Test
-  fun insertFloatVariantsWithDefaultValues() = runTest {
-    val insertResult = connector.insertFloatVariantsWithHardcodedDefaults.execute {}
-
-    val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.floatVariants shouldBe
-      GetFloatVariantsByKeyQuery.Data.FloatVariants(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = 0.0,
-        nonNullWithPositiveValue = 750.452,
-        nonNullWithNegativeValue = -598.351,
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0.0,
-        nullableWithNegativeZeroValue = 0.0,
-        nullableWithPositiveValue = 597.650,
-        nullableWithNegativeValue = -181.366,
-        nullableWithMaxValue = Double.MAX_VALUE,
-        nullableWithMinValue = Double.MIN_VALUE,
-        nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-      )
-  }
-
-  @Test
-  fun updateFloatVariantsToNonNullValues() = runTest {
-    val positiveDoubles = List(3) { distinctPositiveDoubles.next(rs) }
-    val negativeDoubles = List(2) { distinctNegativeDoubles.next(rs) }
-
-    val insertResult =
-      connector.insertFloatVariants.execute(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = -0.0,
-        nonNullWithPositiveValue = distinctPositiveDoubles.next(rs),
-        nonNullWithNegativeValue = distinctNegativeDoubles.next(rs),
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0.0
-        nullableWithNegativeZeroValue = 0.0
-        nullableWithPositiveValue = distinctPositiveDoubles.next(rs)
-        nullableWithNegativeValue = distinctNegativeDoubles.next(rs)
-        nullableWithMaxValue = Double.MAX_VALUE
-        nullableWithMinValue = Double.MIN_VALUE
-        nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
-      }
-
-    connector.updateFloatVariantsByKey.execute(insertResult.data.key) {
-      nonNullWithZeroValue = Double.MAX_VALUE
-      nonNullWithNegativeZeroValue = Double.MIN_VALUE
-      nonNullWithPositiveValue = MAX_SAFE_INTEGER
-      nonNullWithNegativeValue = -0.0
-      nonNullWithMaxValue = negativeDoubles[0]
-      nonNullWithMinValue = positiveDoubles[0]
-      nonNullWithMaxSafeIntegerValue = 0.0
-      nullableWithNullValue = positiveDoubles[1]
-      nullableWithZeroValue = Double.MIN_VALUE
-      nullableWithNegativeZeroValue = MAX_SAFE_INTEGER
-      nullableWithPositiveValue = -0.0
-      nullableWithNegativeValue = MAX_SAFE_INTEGER
-      nullableWithMaxValue = negativeDoubles[1]
-      nullableWithMinValue = positiveDoubles[2]
-      nullableWithMaxSafeIntegerValue = 0.0
     }
 
-    val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.floatVariants shouldBe
-      GetFloatVariantsByKeyQuery.Data.FloatVariants(
-        nonNullWithZeroValue = Double.MAX_VALUE,
-        nonNullWithNegativeZeroValue = Double.MIN_VALUE,
-        nonNullWithPositiveValue = MAX_SAFE_INTEGER,
-        nonNullWithNegativeValue = 0.0,
-        nonNullWithMaxValue = negativeDoubles[0],
-        nonNullWithMinValue = positiveDoubles[0],
-        nonNullWithMaxSafeIntegerValue = 0.0,
-        nullableWithNullValue = positiveDoubles[1],
-        nullableWithZeroValue = Double.MIN_VALUE,
-        nullableWithNegativeZeroValue = MAX_SAFE_INTEGER,
-        nullableWithPositiveValue = 0.0,
-        nullableWithNegativeValue = MAX_SAFE_INTEGER,
-        nullableWithMaxValue = negativeDoubles[1],
-        nullableWithMinValue = positiveDoubles[2],
-        nullableWithMaxSafeIntegerValue = 0.0,
-      )
-  }
-
   @Test
-  fun updateFloatVariantsToNullValues() = runTest {
-    val positiveDouble = distinctPositiveDoubles.next(rs)
-    val negativeDouble = distinctNegativeDoubles.next(rs)
+  fun insertFloatVariants() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.doubles()) { doubles ->
+        val insertResult =
+          connector.insertFloatVariants.execute(
+            nonNullWithZeroValue = 0.0,
+            nonNullWithNegativeZeroValue = -0.0,
+            nonNullWithPositiveValue = doubles.positiveValue1,
+            nonNullWithNegativeValue = doubles.negativeValue1,
+            nonNullWithMaxValue = Double.MAX_VALUE,
+            nonNullWithMinValue = Double.MIN_VALUE,
+            nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0.0
+            nullableWithNegativeZeroValue = 0.0
+            nullableWithPositiveValue = doubles.positiveValue2
+            nullableWithNegativeValue = doubles.negativeValue2
+            nullableWithMaxValue = Double.MAX_VALUE
+            nullableWithMinValue = Double.MIN_VALUE
+            nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+          }
 
-    val insertResult =
-      connector.insertFloatVariants.execute(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = -0.0,
-        nonNullWithPositiveValue = positiveDouble,
-        nonNullWithNegativeValue = negativeDouble,
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0.0
-        nullableWithNegativeZeroValue = 0.0
-        nullableWithPositiveValue = distinctPositiveDoubles.next(rs)
-        nullableWithNegativeValue = distinctPositiveDoubles.next(rs)
-        nullableWithMaxValue = Double.MAX_VALUE
-        nullableWithMinValue = Double.MIN_VALUE
-        nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+        val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.floatVariants shouldBe
+          GetFloatVariantsByKeyQuery.Data.FloatVariants(
+            nonNullWithZeroValue = 0.0,
+            nonNullWithNegativeZeroValue = 0.0,
+            nonNullWithPositiveValue = doubles.positiveValue1,
+            nonNullWithNegativeValue = doubles.negativeValue1,
+            nonNullWithMaxValue = Double.MAX_VALUE,
+            nonNullWithMinValue = Double.MIN_VALUE,
+            nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = 0.0,
+            nullableWithNegativeZeroValue = 0.0,
+            nullableWithPositiveValue = doubles.positiveValue2,
+            nullableWithNegativeValue = doubles.negativeValue2,
+            nullableWithMaxValue = Double.MAX_VALUE,
+            nullableWithMinValue = Double.MIN_VALUE,
+            nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          )
       }
-
-    connector.updateFloatVariantsByKey.execute(insertResult.data.key) {
-      nullableWithNullValue = null
-      nullableWithZeroValue = null
-      nullableWithNegativeZeroValue = null
-      nullableWithPositiveValue = null
-      nullableWithNegativeValue = null
-      nullableWithMaxValue = null
-      nullableWithMinValue = null
-      nullableWithMaxSafeIntegerValue = null
     }
 
-    val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.floatVariants shouldBe
-      GetFloatVariantsByKeyQuery.Data.FloatVariants(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = 0.0,
-        nonNullWithPositiveValue = positiveDouble,
-        nonNullWithNegativeValue = negativeDouble,
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = null,
-        nullableWithNegativeZeroValue = null,
-        nullableWithPositiveValue = null,
-        nullableWithNegativeValue = null,
-        nullableWithMaxValue = null,
-        nullableWithMinValue = null,
-        nullableWithMaxSafeIntegerValue = null,
-      )
-  }
-
   @Test
-  fun updateFloatVariantsToUndefinedValues() = runTest {
-    val positiveDoubles = List(2) { distinctPositiveDoubles.next(rs) }
-    val negativeDoubles = List(2) { distinctNegativeDoubles.next(rs) }
+  fun insertFloatVariantsWithDefaultValues() =
+    runTest(timeout = 60.seconds) {
+      val insertResult = connector.insertFloatVariantsWithHardcodedDefaults.execute {}
 
-    val insertResult =
-      connector.insertFloatVariants.execute(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = -0.0,
-        nonNullWithPositiveValue = positiveDoubles[0],
-        nonNullWithNegativeValue = negativeDoubles[0],
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0.0
-        nullableWithNegativeZeroValue = 0.0
-        nullableWithPositiveValue = positiveDoubles[1]
-        nullableWithNegativeValue = negativeDoubles[1]
-        nullableWithMaxValue = Double.MAX_VALUE
-        nullableWithMinValue = Double.MIN_VALUE
-        nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
-      }
-
-    connector.updateFloatVariantsByKey.execute(insertResult.data.key) {}
-
-    val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.floatVariants shouldBe
-      GetFloatVariantsByKeyQuery.Data.FloatVariants(
-        nonNullWithZeroValue = 0.0,
-        nonNullWithNegativeZeroValue = 0.0,
-        nonNullWithPositiveValue = positiveDoubles[0],
-        nonNullWithNegativeValue = negativeDoubles[0],
-        nonNullWithMaxValue = Double.MAX_VALUE,
-        nonNullWithMinValue = Double.MIN_VALUE,
-        nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0.0,
-        nullableWithNegativeZeroValue = 0.0,
-        nullableWithPositiveValue = positiveDoubles[1],
-        nullableWithNegativeValue = negativeDoubles[1],
-        nullableWithMaxValue = Double.MAX_VALUE,
-        nullableWithMinValue = Double.MIN_VALUE,
-        nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
-      )
-  }
-
-  @Test
-  fun insertBooleanVariants() = runTest {
-    val insertResult =
-      connector.insertBooleanVariants.execute(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-      ) {
-        nullableWithNullValue = null
-        nullableWithTrueValue = true
-        nullableWithFalseValue = false
-      }
-
-    val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.booleanVariants shouldBe
-      GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-        nullableWithNullValue = null,
-        nullableWithTrueValue = true,
-        nullableWithFalseValue = false,
-      )
-  }
-
-  @Test
-  fun insertBooleanVariantsWithDefaultValues() = runTest {
-    val insertResult = connector.insertBooleanVariantsWithHardcodedDefaults.execute {}
-
-    val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.booleanVariants shouldBe
-      GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-        nullableWithNullValue = null,
-        nullableWithTrueValue = true,
-        nullableWithFalseValue = false,
-      )
-  }
-
-  @Test
-  fun updateBooleanVariantsToNonNullValues() = runTest {
-    val insertResult =
-      connector.insertBooleanVariants.execute(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-      ) {
-        nullableWithNullValue = null
-        nullableWithTrueValue = true
-        nullableWithFalseValue = false
-      }
-
-    connector.updateBooleanVariantsByKey.execute(insertResult.data.key) {
-      nonNullWithTrueValue = false
-      nonNullWithFalseValue = true
-      nullableWithNullValue = true
-      nullableWithTrueValue = false
-      nullableWithFalseValue = true
+      val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
+      queryResult.data.floatVariants shouldBe
+        GetFloatVariantsByKeyQuery.Data.FloatVariants(
+          nonNullWithZeroValue = 0.0,
+          nonNullWithNegativeZeroValue = 0.0,
+          nonNullWithPositiveValue = HardcodedValues.NON_NULL_POSITIVE_DOUBLE,
+          nonNullWithNegativeValue = HardcodedValues.NON_NULL_NEGATIVE_DOUBLE,
+          nonNullWithMaxValue = Double.MAX_VALUE,
+          nonNullWithMinValue = Double.MIN_VALUE,
+          nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0.0,
+          nullableWithNegativeZeroValue = 0.0,
+          nullableWithPositiveValue = HardcodedValues.NULLABLE_POSITIVE_DOUBLE,
+          nullableWithNegativeValue = HardcodedValues.NULLABLE_NEGATIVE_DOUBLE,
+          nullableWithMaxValue = Double.MAX_VALUE,
+          nullableWithMinValue = Double.MIN_VALUE,
+          nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+        )
     }
 
-    val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.booleanVariants shouldBe
-      GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
-        nonNullWithTrueValue = false,
-        nonNullWithFalseValue = true,
-        nullableWithNullValue = true,
-        nullableWithTrueValue = false,
-        nullableWithFalseValue = true,
-      )
-  }
-
   @Test
-  fun updateBooleanVariantsToNullValues() = runTest {
-    val insertResult =
-      connector.insertBooleanVariants.execute(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-      ) {
-        nullableWithNullValue = null
-        nullableWithTrueValue = true
-        nullableWithFalseValue = false
-      }
+  fun updateFloatVariantsToNonNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.doubles()) { doubles ->
+        val insertResult =
+          connector.insertFloatVariants.execute(
+            nonNullWithZeroValue = 0.0,
+            nonNullWithNegativeZeroValue = -0.0,
+            nonNullWithPositiveValue = doubles.positiveValue1,
+            nonNullWithNegativeValue = doubles.negativeValue1,
+            nonNullWithMaxValue = Double.MAX_VALUE,
+            nonNullWithMinValue = Double.MIN_VALUE,
+            nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0.0
+            nullableWithNegativeZeroValue = 0.0
+            nullableWithPositiveValue = doubles.positiveValue2
+            nullableWithNegativeValue = doubles.negativeValue2
+            nullableWithMaxValue = Double.MAX_VALUE
+            nullableWithMinValue = Double.MIN_VALUE
+            nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+          }
 
-    connector.updateBooleanVariantsByKey.execute(insertResult.data.key) {
-      nullableWithNullValue = null
-      nullableWithTrueValue = null
-      nullableWithFalseValue = null
+        connector.updateFloatVariantsByKey.execute(insertResult.data.key) {
+          nonNullWithZeroValue = Double.MAX_VALUE
+          nonNullWithNegativeZeroValue = Double.MIN_VALUE
+          nonNullWithPositiveValue = MAX_SAFE_INTEGER
+          nonNullWithNegativeValue = -0.0
+          nonNullWithMaxValue = doubles.negativeValue3
+          nonNullWithMinValue = doubles.positiveValue3
+          nonNullWithMaxSafeIntegerValue = 0.0
+          nullableWithNullValue = doubles.positiveValue4
+          nullableWithZeroValue = Double.MIN_VALUE
+          nullableWithNegativeZeroValue = MAX_SAFE_INTEGER
+          nullableWithPositiveValue = -0.0
+          nullableWithNegativeValue = MAX_SAFE_INTEGER
+          nullableWithMaxValue = doubles.negativeValue4
+          nullableWithMinValue = doubles.positiveValue5
+          nullableWithMaxSafeIntegerValue = 0.0
+        }
+
+        val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.floatVariants shouldBe
+          GetFloatVariantsByKeyQuery.Data.FloatVariants(
+            nonNullWithZeroValue = Double.MAX_VALUE,
+            nonNullWithNegativeZeroValue = Double.MIN_VALUE,
+            nonNullWithPositiveValue = MAX_SAFE_INTEGER,
+            nonNullWithNegativeValue = 0.0,
+            nonNullWithMaxValue = doubles.negativeValue3,
+            nonNullWithMinValue = doubles.positiveValue3,
+            nonNullWithMaxSafeIntegerValue = 0.0,
+            nullableWithNullValue = doubles.positiveValue4,
+            nullableWithZeroValue = Double.MIN_VALUE,
+            nullableWithNegativeZeroValue = MAX_SAFE_INTEGER,
+            nullableWithPositiveValue = 0.0,
+            nullableWithNegativeValue = MAX_SAFE_INTEGER,
+            nullableWithMaxValue = doubles.negativeValue4,
+            nullableWithMinValue = doubles.positiveValue5,
+            nullableWithMaxSafeIntegerValue = 0.0,
+          )
+      }
     }
 
-    val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.booleanVariants shouldBe
-      GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-        nullableWithNullValue = null,
-        nullableWithTrueValue = null,
-        nullableWithFalseValue = null,
-      )
-  }
-
   @Test
-  fun updateBooleanVariantsToUndefinedValues() = runTest {
-    val insertResult =
-      connector.insertBooleanVariants.execute(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-      ) {
-        nullableWithNullValue = null
-        nullableWithTrueValue = true
-        nullableWithFalseValue = false
+  fun updateFloatVariantsToNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.doubles()) { doubles ->
+        val insertResult =
+          connector.insertFloatVariants.execute(
+            nonNullWithZeroValue = 0.0,
+            nonNullWithNegativeZeroValue = -0.0,
+            nonNullWithPositiveValue = doubles.positiveValue1,
+            nonNullWithNegativeValue = doubles.negativeValue1,
+            nonNullWithMaxValue = Double.MAX_VALUE,
+            nonNullWithMinValue = Double.MIN_VALUE,
+            nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0.0
+            nullableWithNegativeZeroValue = 0.0
+            nullableWithPositiveValue = doubles.positiveValue2
+            nullableWithNegativeValue = doubles.negativeValue2
+            nullableWithMaxValue = Double.MAX_VALUE
+            nullableWithMinValue = Double.MIN_VALUE
+            nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+          }
+
+        connector.updateFloatVariantsByKey.execute(insertResult.data.key) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = null
+          nullableWithNegativeZeroValue = null
+          nullableWithPositiveValue = null
+          nullableWithNegativeValue = null
+          nullableWithMaxValue = null
+          nullableWithMinValue = null
+          nullableWithMaxSafeIntegerValue = null
+        }
+
+        val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.floatVariants shouldBe
+          GetFloatVariantsByKeyQuery.Data.FloatVariants(
+            nonNullWithZeroValue = 0.0,
+            nonNullWithNegativeZeroValue = 0.0,
+            nonNullWithPositiveValue = doubles.positiveValue1,
+            nonNullWithNegativeValue = doubles.negativeValue1,
+            nonNullWithMaxValue = Double.MAX_VALUE,
+            nonNullWithMinValue = Double.MIN_VALUE,
+            nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = null,
+            nullableWithNegativeZeroValue = null,
+            nullableWithPositiveValue = null,
+            nullableWithNegativeValue = null,
+            nullableWithMaxValue = null,
+            nullableWithMinValue = null,
+            nullableWithMaxSafeIntegerValue = null,
+          )
       }
-
-    connector.updateBooleanVariantsByKey.execute(insertResult.data.key) {}
-
-    val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.booleanVariants shouldBe
-      GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
-        nonNullWithTrueValue = true,
-        nonNullWithFalseValue = false,
-        nullableWithNullValue = null,
-        nullableWithTrueValue = true,
-        nullableWithFalseValue = false,
-      )
-  }
-
-  @Test
-  fun insertInt64Variants() = runTest {
-    val positiveLongs = List(2) { distinctPositiveLongs.next(rs) }
-    val negativeLongs = List(2) { distinctNegativeLongs.next(rs) }
-
-    val insertResult =
-      connector.insertInt64variants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveLongs[0],
-        nonNullWithNegativeValue = negativeLongs[0],
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = positiveLongs[1]
-        nullableWithNegativeValue = negativeLongs[1]
-        nullableWithMaxValue = Long.MAX_VALUE
-        nullableWithMinValue = Long.MIN_VALUE
-      }
-
-    val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
-    queryResult.data.int64Variants shouldBe
-      GetInt64variantsByKeyQuery.Data.Int64variants(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveLongs[0],
-        nonNullWithNegativeValue = negativeLongs[0],
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0,
-        nullableWithPositiveValue = positiveLongs[1],
-        nullableWithNegativeValue = negativeLongs[1],
-        nullableWithMaxValue = Long.MAX_VALUE,
-        nullableWithMinValue = Long.MIN_VALUE,
-      )
-  }
-
-  @Test
-  fun insertInt64VariantsWithDefaultValues() = runTest {
-    val insertResult = connector.insertInt64variantsWithHardcodedDefaults.execute {}
-
-    val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
-    queryResult.data.int64Variants shouldBe
-      GetInt64variantsByKeyQuery.Data.Int64variants(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = 8140262498000722655,
-        nonNullWithNegativeValue = -6722404680598014256,
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0,
-        nullableWithPositiveValue = 2623421399624774761,
-        nullableWithNegativeValue = -1400927531111898547,
-        nullableWithMaxValue = Long.MAX_VALUE,
-        nullableWithMinValue = Long.MIN_VALUE,
-      )
-  }
-
-  @Test
-  fun updateInt64VariantsToNonNullValues() = runTest {
-    val positiveLongs = List(3) { distinctPositiveLongs.next(rs) }
-    val negativeLongs = List(2) { distinctNegativeLongs.next(rs) }
-
-    val insertResult =
-      connector.insertInt64variants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = distinctPositiveLongs.next(rs),
-        nonNullWithNegativeValue = distinctNegativeLongs.next(rs),
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = distinctPositiveLongs.next(rs)
-        nullableWithNegativeValue = distinctNegativeLongs.next(rs)
-        nullableWithMaxValue = Long.MAX_VALUE
-        nullableWithMinValue = Long.MIN_VALUE
-      }
-
-    connector.updateInt64variantsByKey.execute(insertResult.data.key) {
-      nonNullWithZeroValue = Long.MAX_VALUE
-      nonNullWithPositiveValue = Long.MIN_VALUE
-      nonNullWithNegativeValue = 0
-      nonNullWithMaxValue = positiveLongs[0]
-      nonNullWithMinValue = negativeLongs[0]
-      nullableWithNullValue = Long.MIN_VALUE
-      nullableWithZeroValue = Long.MAX_VALUE
-      nullableWithPositiveValue = negativeLongs[1]
-      nullableWithNegativeValue = positiveLongs[1]
-      nullableWithMaxValue = 0
-      nullableWithMinValue = positiveLongs[2]
     }
 
-    val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
-    queryResult.data.int64Variants shouldBe
-      GetInt64variantsByKeyQuery.Data.Int64variants(
-        nonNullWithZeroValue = Long.MAX_VALUE,
-        nonNullWithPositiveValue = Long.MIN_VALUE,
-        nonNullWithNegativeValue = 0,
-        nonNullWithMaxValue = positiveLongs[0],
-        nonNullWithMinValue = negativeLongs[0],
-        nullableWithNullValue = Long.MIN_VALUE,
-        nullableWithZeroValue = Long.MAX_VALUE,
-        nullableWithPositiveValue = negativeLongs[1],
-        nullableWithNegativeValue = positiveLongs[1],
-        nullableWithMaxValue = 0,
-        nullableWithMinValue = positiveLongs[2],
-      )
-  }
-
   @Test
-  fun updateInt64VariantsToNullValues() = runTest {
-    val positiveLong = distinctPositiveLongs.next(rs)
-    val negativeLong = distinctNegativeLongs.next(rs)
+  fun updateFloatVariantsToUndefinedValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.doubles()) { doubles ->
+        val insertResult =
+          connector.insertFloatVariants.execute(
+            nonNullWithZeroValue = 0.0,
+            nonNullWithNegativeZeroValue = -0.0,
+            nonNullWithPositiveValue = doubles.positiveValue1,
+            nonNullWithNegativeValue = doubles.negativeValue1,
+            nonNullWithMaxValue = Double.MAX_VALUE,
+            nonNullWithMinValue = Double.MIN_VALUE,
+            nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0.0
+            nullableWithNegativeZeroValue = 0.0
+            nullableWithPositiveValue = doubles.positiveValue2
+            nullableWithNegativeValue = doubles.negativeValue2
+            nullableWithMaxValue = Double.MAX_VALUE
+            nullableWithMinValue = Double.MIN_VALUE
+            nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
+          }
 
-    val insertResult =
-      connector.insertInt64variants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveLong,
-        nonNullWithNegativeValue = negativeLong,
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = distinctPositiveLongs.next(rs)
-        nullableWithNegativeValue = distinctNegativeLongs.next(rs)
-        nullableWithMaxValue = Long.MAX_VALUE
-        nullableWithMinValue = Long.MIN_VALUE
+        connector.updateFloatVariantsByKey.execute(insertResult.data.key) {}
+
+        val queryResult = connector.getFloatVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.floatVariants shouldBe
+          GetFloatVariantsByKeyQuery.Data.FloatVariants(
+            nonNullWithZeroValue = 0.0,
+            nonNullWithNegativeZeroValue = 0.0,
+            nonNullWithPositiveValue = doubles.positiveValue1,
+            nonNullWithNegativeValue = doubles.negativeValue1,
+            nonNullWithMaxValue = Double.MAX_VALUE,
+            nonNullWithMinValue = Double.MIN_VALUE,
+            nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = 0.0,
+            nullableWithNegativeZeroValue = 0.0,
+            nullableWithPositiveValue = doubles.positiveValue2,
+            nullableWithNegativeValue = doubles.negativeValue2,
+            nullableWithMaxValue = Double.MAX_VALUE,
+            nullableWithMinValue = Double.MIN_VALUE,
+            nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
+          )
       }
-
-    connector.updateInt64variantsByKey.execute(insertResult.data.key) {
-      nullableWithNullValue = null
-      nullableWithZeroValue = null
-      nullableWithPositiveValue = null
-      nullableWithNegativeValue = null
-      nullableWithMaxValue = null
-      nullableWithMinValue = null
     }
 
-    val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
-    queryResult.data.int64Variants shouldBe
-      GetInt64variantsByKeyQuery.Data.Int64variants(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveLong,
-        nonNullWithNegativeValue = negativeLong,
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = null,
-        nullableWithPositiveValue = null,
-        nullableWithNegativeValue = null,
-        nullableWithMaxValue = null,
-        nullableWithMinValue = null,
-      )
-  }
+  @Test
+  fun insertBooleanVariants() =
+    runTest(timeout = 60.seconds) {
+      val insertResult =
+        connector.insertBooleanVariants.execute(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+        ) {
+          nullableWithNullValue = null
+          nullableWithTrueValue = true
+          nullableWithFalseValue = false
+        }
+
+      val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
+      queryResult.data.booleanVariants shouldBe
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = true,
+          nullableWithFalseValue = false,
+        )
+    }
 
   @Test
-  fun updateInt64VariantsToUndefinedValues() = runTest {
-    val positiveLongs = List(2) { distinctPositiveLongs.next(rs) }
-    val negativeLongs = List(2) { distinctNegativeLongs.next(rs) }
+  fun insertBooleanVariantsWithDefaultValues() =
+    runTest(timeout = 60.seconds) {
+      val insertResult = connector.insertBooleanVariantsWithHardcodedDefaults.execute {}
 
-    val insertResult =
-      connector.insertInt64variants.execute(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveLongs[0],
-        nonNullWithNegativeValue = negativeLongs[0],
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-      ) {
-        nullableWithNullValue = null
-        nullableWithZeroValue = 0
-        nullableWithPositiveValue = positiveLongs[1]
-        nullableWithNegativeValue = negativeLongs[1]
-        nullableWithMaxValue = Long.MAX_VALUE
-        nullableWithMinValue = Long.MIN_VALUE
-      }
-
-    connector.updateInt64variantsByKey.execute(insertResult.data.key) {}
-
-    val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
-    queryResult.data.int64Variants shouldBe
-      GetInt64variantsByKeyQuery.Data.Int64variants(
-        nonNullWithZeroValue = 0,
-        nonNullWithPositiveValue = positiveLongs[0],
-        nonNullWithNegativeValue = negativeLongs[0],
-        nonNullWithMaxValue = Long.MAX_VALUE,
-        nonNullWithMinValue = Long.MIN_VALUE,
-        nullableWithNullValue = null,
-        nullableWithZeroValue = 0,
-        nullableWithPositiveValue = positiveLongs[1],
-        nullableWithNegativeValue = negativeLongs[1],
-        nullableWithMaxValue = Long.MAX_VALUE,
-        nullableWithMinValue = Long.MIN_VALUE,
-      )
-  }
+      val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
+      queryResult.data.booleanVariants shouldBe
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = true,
+          nullableWithFalseValue = false,
+        )
+    }
 
   @Test
-  fun insertUUIDVariants() = runTest {
-    val uuids = List(2) { Arb.uuid().next(rs) }
+  fun updateBooleanVariantsToNonNullValues() =
+    runTest(timeout = 60.seconds) {
+      val insertResult =
+        connector.insertBooleanVariants.execute(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+        ) {
+          nullableWithNullValue = null
+          nullableWithTrueValue = true
+          nullableWithFalseValue = false
+        }
 
-    val insertResult =
-      connector.insertUuidVariants.execute(
-        nonNullValue = uuids[0],
-      ) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = uuids[1]
+      connector.updateBooleanVariantsByKey.execute(insertResult.data.key) {
+        nonNullWithTrueValue = false
+        nonNullWithFalseValue = true
+        nullableWithNullValue = true
+        nullableWithTrueValue = false
+        nullableWithFalseValue = true
       }
 
-    val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.uUIDVariants shouldBe
-      GetUuidVariantsByKeyQuery.Data.UUidVariants(
-        nonNullValue = uuids[0],
-        nullableWithNullValue = null,
-        nullableWithNonNullValue = uuids[1],
-      )
-  }
+      val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
+      queryResult.data.booleanVariants shouldBe
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = false,
+          nonNullWithFalseValue = true,
+          nullableWithNullValue = true,
+          nullableWithTrueValue = false,
+          nullableWithFalseValue = true,
+        )
+    }
+
+  @Test
+  fun updateBooleanVariantsToNullValues() =
+    runTest(timeout = 60.seconds) {
+      val insertResult =
+        connector.insertBooleanVariants.execute(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+        ) {
+          nullableWithNullValue = null
+          nullableWithTrueValue = true
+          nullableWithFalseValue = false
+        }
+
+      connector.updateBooleanVariantsByKey.execute(insertResult.data.key) {
+        nullableWithNullValue = null
+        nullableWithTrueValue = null
+        nullableWithFalseValue = null
+      }
+
+      val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
+      queryResult.data.booleanVariants shouldBe
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = null,
+          nullableWithFalseValue = null,
+        )
+    }
+
+  @Test
+  fun updateBooleanVariantsToUndefinedValues() =
+    runTest(timeout = 60.seconds) {
+      val insertResult =
+        connector.insertBooleanVariants.execute(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+        ) {
+          nullableWithNullValue = null
+          nullableWithTrueValue = true
+          nullableWithFalseValue = false
+        }
+
+      connector.updateBooleanVariantsByKey.execute(insertResult.data.key) {}
+
+      val queryResult = connector.getBooleanVariantsByKey.execute(insertResult.data.key)
+      queryResult.data.booleanVariants shouldBe
+        GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
+          nonNullWithTrueValue = true,
+          nonNullWithFalseValue = false,
+          nullableWithNullValue = null,
+          nullableWithTrueValue = true,
+          nullableWithFalseValue = false,
+        )
+    }
+
+  @Test
+  fun insertInt64Variants() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
+        val insertResult =
+          connector.insertInt64variants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = longs.positiveValue1,
+            nonNullWithNegativeValue = longs.negativeValue1,
+            nonNullWithMaxValue = Long.MAX_VALUE,
+            nonNullWithMinValue = Long.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = longs.positiveValue2
+            nullableWithNegativeValue = longs.negativeValue2
+            nullableWithMaxValue = Long.MAX_VALUE
+            nullableWithMinValue = Long.MIN_VALUE
+          }
+
+        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        queryResult.data.int64Variants shouldBe
+          GetInt64variantsByKeyQuery.Data.Int64variants(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = longs.positiveValue1,
+            nonNullWithNegativeValue = longs.negativeValue1,
+            nonNullWithMaxValue = Long.MAX_VALUE,
+            nonNullWithMinValue = Long.MIN_VALUE,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = 0,
+            nullableWithPositiveValue = longs.positiveValue2,
+            nullableWithNegativeValue = longs.negativeValue2,
+            nullableWithMaxValue = Long.MAX_VALUE,
+            nullableWithMinValue = Long.MIN_VALUE,
+          )
+      }
+    }
+
+  @Test
+  fun insertInt64VariantsWithDefaultValues() =
+    runTest(timeout = 60.seconds) {
+      val insertResult = connector.insertInt64variantsWithHardcodedDefaults.execute {}
+
+      val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+      queryResult.data.int64Variants shouldBe
+        GetInt64variantsByKeyQuery.Data.Int64variants(
+          nonNullWithZeroValue = 0,
+          nonNullWithPositiveValue = HardcodedValues.NON_NULL_POSITIVE_LONG,
+          nonNullWithNegativeValue = HardcodedValues.NON_NULL_NEGATIVE_LONG,
+          nonNullWithMaxValue = Long.MAX_VALUE,
+          nonNullWithMinValue = Long.MIN_VALUE,
+          nullableWithNullValue = null,
+          nullableWithZeroValue = 0,
+          nullableWithPositiveValue = HardcodedValues.NULLABLE_POSITIVE_LONG,
+          nullableWithNegativeValue = HardcodedValues.NULLABLE_NEGATIVE_LONG,
+          nullableWithMaxValue = Long.MAX_VALUE,
+          nullableWithMinValue = Long.MIN_VALUE,
+        )
+    }
+
+  @Test
+  fun updateInt64VariantsToNonNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
+        val insertResult =
+          connector.insertInt64variants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = longs.positiveValue1,
+            nonNullWithNegativeValue = longs.negativeValue1,
+            nonNullWithMaxValue = Long.MAX_VALUE,
+            nonNullWithMinValue = Long.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = longs.positiveValue2
+            nullableWithNegativeValue = longs.negativeValue2
+            nullableWithMaxValue = Long.MAX_VALUE
+            nullableWithMinValue = Long.MIN_VALUE
+          }
+
+        connector.updateInt64variantsByKey.execute(insertResult.data.key) {
+          nonNullWithZeroValue = Long.MAX_VALUE
+          nonNullWithPositiveValue = Long.MIN_VALUE
+          nonNullWithNegativeValue = 0
+          nonNullWithMaxValue = longs.positiveValue3
+          nonNullWithMinValue = longs.negativeValue3
+          nullableWithNullValue = Long.MIN_VALUE
+          nullableWithZeroValue = Long.MAX_VALUE
+          nullableWithPositiveValue = longs.negativeValue4
+          nullableWithNegativeValue = longs.positiveValue4
+          nullableWithMaxValue = 0
+          nullableWithMinValue = longs.positiveValue5
+        }
+
+        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        queryResult.data.int64Variants shouldBe
+          GetInt64variantsByKeyQuery.Data.Int64variants(
+            nonNullWithZeroValue = Long.MAX_VALUE,
+            nonNullWithPositiveValue = Long.MIN_VALUE,
+            nonNullWithNegativeValue = 0,
+            nonNullWithMaxValue = longs.positiveValue3,
+            nonNullWithMinValue = longs.negativeValue3,
+            nullableWithNullValue = Long.MIN_VALUE,
+            nullableWithZeroValue = Long.MAX_VALUE,
+            nullableWithPositiveValue = longs.negativeValue4,
+            nullableWithNegativeValue = longs.positiveValue4,
+            nullableWithMaxValue = 0,
+            nullableWithMinValue = longs.positiveValue5,
+          )
+      }
+    }
+
+  @Test
+  fun updateInt64VariantsToNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
+        val insertResult =
+          connector.insertInt64variants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = longs.positiveValue1,
+            nonNullWithNegativeValue = longs.negativeValue1,
+            nonNullWithMaxValue = Long.MAX_VALUE,
+            nonNullWithMinValue = Long.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = longs.positiveValue2
+            nullableWithNegativeValue = longs.negativeValue2
+            nullableWithMaxValue = Long.MAX_VALUE
+            nullableWithMinValue = Long.MIN_VALUE
+          }
+
+        connector.updateInt64variantsByKey.execute(insertResult.data.key) {
+          nullableWithNullValue = null
+          nullableWithZeroValue = null
+          nullableWithPositiveValue = null
+          nullableWithNegativeValue = null
+          nullableWithMaxValue = null
+          nullableWithMinValue = null
+        }
+
+        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        queryResult.data.int64Variants shouldBe
+          GetInt64variantsByKeyQuery.Data.Int64variants(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = longs.positiveValue1,
+            nonNullWithNegativeValue = longs.negativeValue1,
+            nonNullWithMaxValue = Long.MAX_VALUE,
+            nonNullWithMinValue = Long.MIN_VALUE,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = null,
+            nullableWithPositiveValue = null,
+            nullableWithNegativeValue = null,
+            nullableWithMaxValue = null,
+            nullableWithMinValue = null,
+          )
+      }
+    }
+
+  @Test
+  fun updateInt64VariantsToUndefinedValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
+        val insertResult =
+          connector.insertInt64variants.execute(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = longs.positiveValue1,
+            nonNullWithNegativeValue = longs.negativeValue1,
+            nonNullWithMaxValue = Long.MAX_VALUE,
+            nonNullWithMinValue = Long.MIN_VALUE,
+          ) {
+            nullableWithNullValue = null
+            nullableWithZeroValue = 0
+            nullableWithPositiveValue = longs.positiveValue2
+            nullableWithNegativeValue = longs.negativeValue2
+            nullableWithMaxValue = Long.MAX_VALUE
+            nullableWithMinValue = Long.MIN_VALUE
+          }
+
+        connector.updateInt64variantsByKey.execute(insertResult.data.key) {}
+
+        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        queryResult.data.int64Variants shouldBe
+          GetInt64variantsByKeyQuery.Data.Int64variants(
+            nonNullWithZeroValue = 0,
+            nonNullWithPositiveValue = longs.positiveValue1,
+            nonNullWithNegativeValue = longs.negativeValue1,
+            nonNullWithMaxValue = Long.MAX_VALUE,
+            nonNullWithMinValue = Long.MIN_VALUE,
+            nullableWithNullValue = null,
+            nullableWithZeroValue = 0,
+            nullableWithPositiveValue = longs.positiveValue2,
+            nullableWithNegativeValue = longs.negativeValue2,
+            nullableWithMaxValue = Long.MAX_VALUE,
+            nullableWithMinValue = Long.MIN_VALUE,
+          )
+      }
+    }
+
+  @Test
+  fun insertUUIDVariants() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.uuids()) { uuids ->
+        val insertResult =
+          connector.insertUuidVariants.execute(
+            nonNullValue = uuids.uuid1,
+          ) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = uuids.uuid2
+          }
+
+        val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.uUIDVariants shouldBe
+          GetUuidVariantsByKeyQuery.Data.UUidVariants(
+            nonNullValue = uuids.uuid1,
+            nullableWithNullValue = null,
+            nullableWithNonNullValue = uuids.uuid2,
+          )
+      }
+    }
 
   @Test
   @Ignore("TODO(b/341070491) Re-enable this test once default values for UUID variables is fixed")
-  fun insertUUIDVariantsWithDefaultValues() = runTest {
-    // TODO(b/341070491) Update the definition of the "InsertUUIDVariantsWithHardcodedDefaults"
-    //  mutation in GraphQL and change .execute() to .execute{}.
-    val insertResult = connector.insertUuidVariantsWithHardcodedDefaults.execute()
+  fun insertUUIDVariantsWithDefaultValues() =
+    runTest(timeout = 60.seconds) {
+      // TODO(b/341070491) Update the definition of the "InsertUUIDVariantsWithHardcodedDefaults"
+      //  mutation in GraphQL and change .execute() to .execute{}.
+      val insertResult = connector.insertUuidVariantsWithHardcodedDefaults.execute()
 
-    val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.uUIDVariants shouldBe
-      GetUuidVariantsByKeyQuery.Data.UUidVariants(
-        nonNullValue = UUID.fromString("66576fdc-1a35-4b59-8c8b-d3beb65956ca"),
-        nullableWithNullValue = null,
-        nullableWithNonNullValue = UUID.fromString("59ab3886-8b84-4233-a5e6-da58c0e8b97d"),
-      )
-  }
-
-  @Test
-  fun updateUUIDVariantsToNonNullValues() = runTest {
-    val uuids = List(3) { Arb.uuid().next(rs) }
-
-    val insertResult =
-      connector.insertUuidVariants.execute(nonNullValue = Arb.uuid().next(rs)) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = Arb.uuid().next(rs)
-      }
-
-    connector.updateUuidVariantsByKey.execute(insertResult.data.key) {
-      nonNullValue = uuids[0]
-      nullableWithNullValue = uuids[1]
-      nullableWithNonNullValue = uuids[2]
+      val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
+      queryResult.data.uUIDVariants shouldBe
+        GetUuidVariantsByKeyQuery.Data.UUidVariants(
+          nonNullValue = UUID.fromString("66576fdc-1a35-4b59-8c8b-d3beb65956ca"),
+          nullableWithNullValue = null,
+          nullableWithNonNullValue = UUID.fromString("59ab3886-8b84-4233-a5e6-da58c0e8b97d"),
+        )
     }
 
-    val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.uUIDVariants shouldBe
-      GetUuidVariantsByKeyQuery.Data.UUidVariants(
-        nonNullValue = uuids[0],
-        nullableWithNullValue = uuids[1],
-        nullableWithNonNullValue = uuids[2],
-      )
-  }
-
   @Test
-  fun updateUUIDVariantsToNullValues() = runTest {
-    val uuid = Arb.uuid().next(rs)
+  fun updateUUIDVariantsToNonNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.uuids()) { uuids ->
+        val insertResult =
+          connector.insertUuidVariants.execute(nonNullValue = uuids.uuid1) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = uuids.uuid2
+          }
 
-    val insertResult =
-      connector.insertUuidVariants.execute(nonNullValue = uuid) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = Arb.uuid().next(rs)
+        connector.updateUuidVariantsByKey.execute(insertResult.data.key) {
+          nonNullValue = uuids.uuid3
+          nullableWithNullValue = uuids.uuid4
+          nullableWithNonNullValue = uuids.uuid5
+        }
+
+        val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.uUIDVariants shouldBe
+          GetUuidVariantsByKeyQuery.Data.UUidVariants(
+            nonNullValue = uuids.uuid3,
+            nullableWithNullValue = uuids.uuid4,
+            nullableWithNonNullValue = uuids.uuid5,
+          )
       }
-
-    connector.updateUuidVariantsByKey.execute(insertResult.data.key) {
-      nullableWithNullValue = null
-      nullableWithNonNullValue = null
     }
 
-    val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.uUIDVariants shouldBe
-      GetUuidVariantsByKeyQuery.Data.UUidVariants(
-        nonNullValue = uuid,
-        nullableWithNullValue = null,
-        nullableWithNonNullValue = null,
-      )
-  }
+  @Test
+  fun updateUUIDVariantsToNullValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.uuids()) { uuids ->
+        val insertResult =
+          connector.insertUuidVariants.execute(nonNullValue = uuids.uuid1) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = uuids.uuid2
+          }
+
+        connector.updateUuidVariantsByKey.execute(insertResult.data.key) {
+          nullableWithNullValue = null
+          nullableWithNonNullValue = null
+        }
+
+        val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.uUIDVariants shouldBe
+          GetUuidVariantsByKeyQuery.Data.UUidVariants(
+            nonNullValue = uuids.uuid1,
+            nullableWithNullValue = null,
+            nullableWithNonNullValue = null,
+          )
+      }
+    }
 
   @Test
-  fun updateUUIDVariantsToUndefinedValues() = runTest {
-    val uuids = List(2) { Arb.uuid().next(rs) }
+  fun updateUUIDVariantsToUndefinedValues() =
+    runTest(timeout = 60.seconds) {
+      checkAll(propTestConfig, Arb.thisTest.uuids()) { uuids ->
+        val insertResult =
+          connector.insertUuidVariants.execute(
+            nonNullValue = uuids.uuid1,
+          ) {
+            nullableWithNullValue = null
+            nullableWithNonNullValue = uuids.uuid2
+          }
 
-    val insertResult =
-      connector.insertUuidVariants.execute(
-        nonNullValue = uuids[0],
-      ) {
-        nullableWithNullValue = null
-        nullableWithNonNullValue = uuids[1]
+        connector.updateUuidVariantsByKey.execute(insertResult.data.key) {}
+
+        val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
+        queryResult.data.uUIDVariants shouldBe
+          GetUuidVariantsByKeyQuery.Data.UUidVariants(
+            nonNullValue = uuids.uuid1,
+            nullableWithNullValue = null,
+            nullableWithNonNullValue = uuids.uuid2,
+          )
       }
+    }
 
-    connector.updateUuidVariantsByKey.execute(insertResult.data.key) {}
+  /** Values that are hardcoded into the GraphQL schema and/or operations. */
+  @Suppress("SpellCheckingInspection")
+  private object HardcodedValues {
+    const val NON_NULL_WITH_NON_EMPTY_STRING = "pfnk98yqqs"
+    const val NULLABLE_WITH_NON_EMPTY_STRING = "af8k72s98t"
+    const val NON_NULL_POSITIVE_INT = 819425
+    const val NON_NULL_NEGATIVE_INT = -435970
+    const val NULLABLE_POSITIVE_INT = 635166
+    const val NULLABLE_NEGATIVE_INT = -171993
+    const val NON_NULL_POSITIVE_LONG = 8140262498000722655
+    const val NON_NULL_NEGATIVE_LONG = -6722404680598014256
+    const val NULLABLE_POSITIVE_LONG = 2623421399624774761
+    const val NULLABLE_NEGATIVE_LONG = -1400927531111898547
+    const val NON_NULL_POSITIVE_DOUBLE = 750.452
+    const val NON_NULL_NEGATIVE_DOUBLE = -598.351
+    const val NULLABLE_POSITIVE_DOUBLE = 597.650
+    const val NULLABLE_NEGATIVE_DOUBLE = -181.366
+  }
 
-    val queryResult = connector.getUuidVariantsByKey.execute(insertResult.data.key)
-    queryResult.data.uUIDVariants shouldBe
-      GetUuidVariantsByKeyQuery.Data.UUidVariants(
-        nonNullValue = uuids[0],
-        nullableWithNullValue = null,
-        nullableWithNonNullValue = uuids[1],
+  private data class ArbitraryStrings(
+    val string1: String,
+    val string2: String,
+    val string3: String,
+    val string4: String,
+    val string5: String,
+    val string6: String,
+  )
+
+  private data class ArbitraryInts(
+    val positiveValue1: Int,
+    val positiveValue2: Int,
+    val positiveValue3: Int,
+    val negativeValue1: Int,
+    val negativeValue2: Int,
+    val negativeValue3: Int,
+  )
+
+  private data class ArbitraryLongs(
+    val positiveValue1: Long,
+    val positiveValue2: Long,
+    val positiveValue3: Long,
+    val positiveValue4: Long,
+    val positiveValue5: Long,
+    val negativeValue1: Long,
+    val negativeValue2: Long,
+    val negativeValue3: Long,
+    val negativeValue4: Long,
+  )
+
+  private data class ArbitraryDoubles(
+    val positiveValue1: Double,
+    val positiveValue2: Double,
+    val positiveValue3: Double,
+    val positiveValue4: Double,
+    val positiveValue5: Double,
+    val negativeValue1: Double,
+    val negativeValue2: Double,
+    val negativeValue3: Double,
+    val negativeValue4: Double,
+  )
+
+  private data class ArbitraryUUIDs(
+    val uuid1: UUID,
+    val uuid2: UUID,
+    val uuid3: UUID,
+    val uuid4: UUID,
+    val uuid5: UUID,
+  )
+
+  private object MyArbitrary {
+    fun strings(
+      string: Arb<String> = Arb.dataConnect.string().distinct(),
+    ): Arb<ArbitraryStrings> = arbitrary {
+      ArbitraryStrings(
+        string1 = string.bind(),
+        string2 = string.bind(),
+        string3 = string.bind(),
+        string4 = string.bind(),
+        string5 = string.bind(),
+        string6 = string.bind(),
+      )
+    }
+
+    fun ints(
+      positiveInts: Arb<Int> = Arb.positiveInt(max = Int.MAX_VALUE - 1).distinct(),
+      negativeInts: Arb<Int> = Arb.negativeInt(min = Int.MIN_VALUE + 1).distinct(),
+    ): Arb<ArbitraryInts> = arbitrary {
+      ArbitraryInts(
+        positiveValue1 = positiveInts.bind(),
+        positiveValue2 = positiveInts.bind(),
+        positiveValue3 = positiveInts.bind(),
+        negativeValue1 = negativeInts.bind(),
+        negativeValue2 = negativeInts.bind(),
+        negativeValue3 = negativeInts.bind(),
+      )
+    }
+
+    fun longs(
+      positiveLongs: Arb<Long> = Arb.positiveLong(max = Long.MAX_VALUE - 1).distinct(),
+      negativeLongs: Arb<Long> = Arb.negativeLong(min = Long.MIN_VALUE + 1).distinct(),
+    ): Arb<ArbitraryLongs> = arbitrary {
+      ArbitraryLongs(
+        positiveValue1 = positiveLongs.bind(),
+        positiveValue2 = positiveLongs.bind(),
+        positiveValue3 = positiveLongs.bind(),
+        positiveValue4 = positiveLongs.bind(),
+        positiveValue5 = positiveLongs.bind(),
+        negativeValue1 = negativeLongs.bind(),
+        negativeValue2 = negativeLongs.bind(),
+        negativeValue3 = negativeLongs.bind(),
+        negativeValue4 = negativeLongs.bind(),
+      )
+    }
+
+    fun doubles(
+      positiveDoubles: Arb<Double> =
+        Arb.positiveDouble(max = Double.MAX_VALUE.nextDown(), includeNonFiniteEdgeCases = false)
+          .distinct(),
+      negativeDoubles: Arb<Double> =
+        Arb.negativeDouble(min = (-Double.MAX_VALUE).nextUp(), includeNonFiniteEdgeCases = false)
+          .distinct(),
+    ): Arb<ArbitraryDoubles> = arbitrary {
+      ArbitraryDoubles(
+        positiveValue1 = positiveDoubles.bind(),
+        positiveValue2 = positiveDoubles.bind(),
+        positiveValue3 = positiveDoubles.bind(),
+        positiveValue4 = positiveDoubles.bind(),
+        positiveValue5 = positiveDoubles.bind(),
+        negativeValue1 = negativeDoubles.bind(),
+        negativeValue2 = negativeDoubles.bind(),
+        negativeValue3 = negativeDoubles.bind(),
+        negativeValue4 = negativeDoubles.bind(),
+      )
+    }
+
+    fun uuids(
+      uuids: Arb<UUID> = Arb.uuid().distinct(),
+    ): Arb<ArbitraryUUIDs> = arbitrary {
+      ArbitraryUUIDs(
+        uuid1 = uuids.bind(),
+        uuid2 = uuids.bind(),
+        uuid3 = uuids.bind(),
+        uuid4 = uuids.bind(),
+        uuid5 = uuids.bind(),
+      )
+    }
+  }
+
+  private val Arb.Companion.thisTest
+    get() = MyArbitrary
+
+  private companion object {
+    @OptIn(ExperimentalKotest::class)
+    val propTestConfig =
+      PropTestConfig(
+        iterations = 10,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
       )
   }
 }

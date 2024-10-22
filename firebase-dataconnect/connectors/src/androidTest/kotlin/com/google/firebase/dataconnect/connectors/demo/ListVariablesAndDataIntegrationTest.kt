@@ -533,7 +533,10 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
   private companion object {
     @OptIn(ExperimentalKotest::class)
     val propTestConfig =
-      PropTestConfig(iterations = 10, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.5))
+      PropTestConfig(
+        iterations = 10,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
+      )
 
     @Suppress("UnusedReceiverParameter")
     fun DataConnectArb.nonEmptyLists(
