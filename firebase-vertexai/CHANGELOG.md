@@ -1,4 +1,7 @@
 # Unreleased
+* [fixed] Fixed issue where authorization headers weren't correctly formatted and were ignored by the backend. (#6400)
+
+# 16.0.0
 * [feature] {{firebase_vertexai}} is now Generally Available (GA) and can be
   used in production apps.
 
@@ -33,7 +36,6 @@
 * [changed] **Breaking Change**: Refactored enum classes to be normal classes. (#6340)
 * [changed] **Breaking Change**: Marked `GenerativeModel` properties as private. (#6309)
 * [changed] **Breaking Change**: Changed `method` parameter type to be nullable in `SafetySettings`. (#6379)
-
 
 # 16.0.0-beta05
 * [changed] Merged core networking code into VertexAI from a separate library
