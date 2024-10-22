@@ -44,7 +44,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testGetBatteryLevel() {
     Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any())).thenReturn(makeIntent(0, 50, 200));
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(makeIntent(0, 50, 200));
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -56,7 +56,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testNullIntent() {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any())).thenReturn(null);
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(null);
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -68,7 +68,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testTooManyReceivers() {
     Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any()))
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED))
         .thenThrow(new IllegalStateException("Too many receivers"));
 
     BatteryState state = BatteryState.get(mockContext);
@@ -81,7 +81,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
   @Test
   public void testEmptyIntent() {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any())).thenReturn(new Intent());
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(new Intent());
 
     BatteryState state = BatteryState.get(mockContext);
 
@@ -92,7 +92,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
 
   private void doVelocityTest(int velocity, Intent intent) {
     final Context mockContext = mock(Context.class);
-    when(mockContext.registerReceiver(isNull(), any())).thenReturn(intent);
+    when(mockContext.registerReceiver(isNull(), any(), Context.RECEIVER_EXPORTED)).thenReturn(intent);
     BatteryState state = BatteryState.get(mockContext);
     assertEquals(velocity, state.getBatteryVelocity());
   }
