@@ -26,6 +26,8 @@ import com.google.firebase.dataconnect.testutil.MAX_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.MIN_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.ZERO_TIMESTAMP
 import com.google.firebase.dataconnect.testutil.executeWithEmptyVariables
+import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
+import com.google.firebase.dataconnect.testutil.property.arbitrary.TimestampTestData
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.timestamp
 import com.google.firebase.dataconnect.testutil.randomTimestamp
@@ -33,6 +35,7 @@ import com.google.firebase.dataconnect.testutil.timestampFromUTCDateAndTime
 import com.google.firebase.dataconnect.testutil.withDataDeserializer
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import com.google.firebase.dataconnect.testutil.withVariablesSerializer
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -54,44 +57,28 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun insertNonNullTimestamp_NormalCases() =
     runTest(timeout = 60.seconds) {
-      checkAll(normalPropTestConfig, Arb.dataConnect.timestamp()) { timestamp ->
-        val insertResult = connector.insertNonNullTimestamp.execute(timestamp.timestamp)
-        val queryResult =
-          connector.getNonNullTimestampByKey.withStringData().execute(insertResult.data.key)
-        val data = withClue("data") { queryResult.data.value.shouldNotBeNull() }
-        data.value shouldMatch timestamp.roundTripRegex
+      checkAll(normalPropTestConfig, Arb.dataConnect.timestamp()) {
+        assertInsertTimestampRoundTripsAsString(it)
       }
     }
 
   @Test
-  fun insertMaxValueForNonNullTimestampField() =
+  fun insertNonNullTimestamp_EdgeCases() =
     runTest(timeout = 60.seconds) {
-      val key = connector.insertNonNullTimestamp.execute(MIN_TIMESTAMP).data.key
-      assertNonNullTimestampByKeyEquals(key, "1583-01-01T00:00:00.000000Z")
+      assertSoftly {
+        EdgeCases.timestamps.all.forEach { assertInsertTimestampRoundTripsAsString(it) }
+      }
     }
 
-  @Test
-  fun insertMinValueForNonNullTimestampField() =
-    runTest(timeout = 60.seconds) {
-      val key = connector.insertNonNullTimestamp.execute(MAX_TIMESTAMP).data.key
-      assertNonNullTimestampByKeyEquals(key, "9999-12-31T23:59:59.999999Z")
+  private suspend fun assertInsertTimestampRoundTripsAsString(testData: TimestampTestData) {
+    withClue("$testData") {
+      val insertResult = connector.insertNonNullTimestamp.execute(testData.timestamp)
+      val queryResult =
+        connector.getNonNullTimestampByKey.withStringData().execute(insertResult.data.key)
+      val data = withClue("data") { queryResult.data.value.shouldNotBeNull() }
+      data.value shouldMatch testData.roundTripRegex
     }
-
-  @Test
-  fun insertTimestampWithSingleDigitsForNonNullTimestampField() =
-    runTest(timeout = 60.seconds) {
-      val timestamp = timestampFromUTCDateAndTime(7513, 1, 2, 3, 4, 5, 6000)
-      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-      assertNonNullTimestampByKeyEquals(key, "7513-01-02T03:04:05.000006Z")
-    }
-
-  @Test
-  fun insertTimestampWithAllDigitsForNonNullTimestampField() =
-    runTest(timeout = 60.seconds) {
-      val timestamp = timestampFromUTCDateAndTime(8623, 10, 11, 12, 13, 14, 123456789)
-      val key = connector.insertNonNullTimestamp.execute(timestamp).data.key
-      assertNonNullTimestampByKeyEquals(key, "8623-10-11T12:13:14.123456Z")
-    }
+  }
 
   @Test
   fun insertTimestampWithNoNanosecondsForNonNullTimestampField() =

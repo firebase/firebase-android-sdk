@@ -75,6 +75,7 @@ private fun roundTripRegexFromTimestampComponents(
 ) =
   Regex(
     buildString {
+      append("0*")
       append(year)
       append('-')
       append("$month".padStart(2, '0'))
@@ -203,7 +204,7 @@ object TimestampEdgeCases {
         Timestamp(253_402_300_799, 999_999_999),
         "9999-12-31T23:59:59.999999999Z",
         "9999-12-31T23:59:59.999999Z",
-        Regex("9999-12-31[tT]23:59:59\\.9{6,9}[zZ]"),
+        Regex("0*9999-12-31[tT]23:59:59\\.999999[zZ]"),
       )
 
   val zero: TimestampTestData
@@ -212,10 +213,62 @@ object TimestampEdgeCases {
         Timestamp(0, 0),
         "1971-01-01T00:00:00.000000000Z",
         "1971-01-01T00:00:00.000000Z",
-        Regex("1971-01-01[tT]00:00:00(\\.0+)?[zZ]"),
+        Regex("0*1970-01-01[tT]00:00:00(\\.0+)?[zZ]"),
       )
 
-  val all: List<TimestampTestData> = listOf(min, max, zero)
+  val singleDigits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 1,
+          month = 2,
+          day = 3,
+          hour = 4,
+          minute = 5,
+          second = 6,
+          nanoseconds = 700_000_000,
+        ),
+        "indeterminate 7mmpdgy9g3",
+        "indeterminate geax7yefpm",
+        roundTripRegexFromTimestampComponents(
+          year = 1,
+          month = 2,
+          day = 3,
+          hour = 4,
+          minute = 5,
+          second = 6,
+          nanosecond = 700_000_000,
+          nanosecondNumSignificantDigits = 6,
+        ),
+      )
+
+  val allDigits: TimestampTestData
+    get() =
+      TimestampTestData(
+        timestampFromUTCDateAndTime(
+          year = 1234,
+          month = 12,
+          day = 15,
+          hour = 21,
+          minute = 35,
+          second = 59,
+          nanoseconds = 123_456_789,
+        ),
+        "indeterminate ym567evx8g",
+        "indeterminate fpzv25cvnb",
+        roundTripRegexFromTimestampComponents(
+          year = 1234,
+          month = 12,
+          day = 15,
+          hour = 21,
+          minute = 35,
+          second = 59,
+          nanosecond = 123_456_789,
+          nanosecondNumSignificantDigits = 6,
+        ),
+      )
+
+  val all: List<TimestampTestData> = listOf(min, max, zero, singleDigits, allDigits)
 }
 
 private fun hour(): Arb<Int> = Arb.int(0..23)
