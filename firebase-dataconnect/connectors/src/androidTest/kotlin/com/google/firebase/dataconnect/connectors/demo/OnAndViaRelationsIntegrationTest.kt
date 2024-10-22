@@ -16,13 +16,12 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.connectors.demo.testutil.*
-import com.google.firebase.dataconnect.testutil.*
+import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
-import kotlinx.coroutines.test.*
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
 
@@ -98,13 +97,11 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getManyToOneSelfCustomNameByKey.execute(key3)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetManyToOneSelfCustomNameByKeyQuery.Data(
-          GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName(
-            key3.id,
-            GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName.Ref(key2.id, key1.id)
-          )
+    queryResult.data shouldBe
+      GetManyToOneSelfCustomNameByKeyQuery.Data(
+        GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName(
+          key3.id,
+          GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName.Ref(key2.id, key1.id)
         )
       )
   }
@@ -117,14 +114,12 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getManyToOneSelfMatchingNameByKey.execute(key3)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetManyToOneSelfMatchingNameByKeyQuery.Data(
-          GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName(
-            key3.id,
-            GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName
-              .ManyToOneSelfMatchingName(key2.id, key1.id)
-          )
+    queryResult.data shouldBe
+      GetManyToOneSelfMatchingNameByKeyQuery.Data(
+        GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName(
+          key3.id,
+          GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName
+            .ManyToOneSelfMatchingName(key2.id, key1.id)
         )
       )
   }
@@ -146,19 +141,19 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
       keys1: List<ManyToManySelfChildKey>,
       keys2: List<ManyToManySelfChildKey>
     ) {
-      assertThat(
-          manyToManySelfChild?.manyToManySelfChildren_via_ManyToManySelfParent_on_child1?.map {
-            it.id
-          }
-        )
-        .containsExactlyElementsIn(keys1.map { it.id })
-      assertThat(
-          manyToManySelfChild?.manyToManySelfChildren_via_ManyToManySelfParent_on_child2?.map {
-            it.id
-          }
-        )
-        .containsExactlyElementsIn(keys2.map { it.id })
+      val child = withClue("child") { manyToManySelfChild.shouldNotBeNull() }
+      withClue("child1") {
+        val children =
+          child.manyToManySelfChildren_via_ManyToManySelfParent_on_child1.shouldNotBeNull()
+        children.map { it.id } shouldContainExactlyInAnyOrder keys1.map { it.id }
+      }
+      withClue("child2") {
+        val children =
+          child.manyToManySelfChildren_via_ManyToManySelfParent_on_child2.shouldNotBeNull()
+        children.map { it.id } shouldContainExactlyInAnyOrder keys2.map { it.id }
+      }
     }
+
     queryResults[0]
       .data
       .assertEquals(
