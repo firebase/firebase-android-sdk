@@ -481,7 +481,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     fun withRoundTripValues(): Lists =
       copy(
-        // -0.0 gets coerced to 0.0 due to lack of jsob support for -0.0 (see b/339440054).
+        // -0.0 gets coerced to 0.0 due to lack of JSONB support for -0.0 (see b/339440054).
         floats = floats.map { if (it != -0.0) it else 0.0 },
         timestamps = timestamps.map { it.withMicrosecondPrecision() },
       )
