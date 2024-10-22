@@ -14,43 +14,68 @@
  * limitations under the License.
  */
 
+@file:OptIn(DelicateKotest::class)
+
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.MAX_SAFE_INTEGER
-import java.util.UUID
+import io.kotest.common.DelicateKotest
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.negativeDouble
+import io.kotest.property.arbitrary.negativeInt
+import io.kotest.property.arbitrary.negativeLong
+import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.positiveDouble
+import io.kotest.property.arbitrary.positiveInt
+import io.kotest.property.arbitrary.positiveLong
+import io.kotest.property.arbitrary.uuid
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
+import java.util.UUID
+import kotlin.math.nextDown
+import kotlin.math.nextUp
 
 class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
 
+  private val distinctPositiveInts = Arb.positiveInt(max=Int.MAX_VALUE-1).distinct()
+  private val distinctNegativeInts = Arb.negativeInt(min=Int.MIN_VALUE+1).distinct()
+  private val distinctPositiveLongs = Arb.positiveLong(max=Long.MAX_VALUE-1).distinct()
+  private val distinctNegativeLongs = Arb.negativeLong(min=Long.MIN_VALUE+1).distinct()
+
+  private val distinctPositiveDoubles = Arb.positiveDouble(max=Double.MAX_VALUE.nextDown(), includeNonFiniteEdgeCases=false).distinct()
+
+  private val distinctNegativeDoubles = Arb.negativeDouble(min=Double.MIN_VALUE.nextUp(), includeNonFiniteEdgeCases=false).distinct()
+
   @Test
   fun insertStringVariants() = runTest {
+    val someString1 = Arb.alphanumericString(prefix="someString1_").next(rs)
+    val someString2 = Arb.alphanumericString(prefix="someString2_").next(rs)
+
     val key =
       connector.insertStringVariants
         .execute(
-          nonNullWithNonEmptyValue = "some non-empty value for a *non*-nullable field",
+          nonNullWithNonEmptyValue = someString1,
           nonNullWithEmptyValue = "",
         ) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = "some non-empty value for a *nullable* field"
+          nullableWithNonNullValue = someString2
           nullableWithEmptyValue = ""
         }
         .data
         .key
 
     val queryResult = connector.getStringVariantsByKey.execute(key)
-    assertThat(queryResult.data.stringVariants)
-      .isEqualTo(
+    queryResult.data.stringVariants shouldBe
         GetStringVariantsByKeyQuery.Data.StringVariants(
-          nonNullWithNonEmptyValue = "some non-empty value for a *non*-nullable field",
+          nonNullWithNonEmptyValue = someString1,
           nonNullWithEmptyValue = "",
           nullableWithNullValue = null,
-          nullableWithNonNullValue = "some non-empty value for a *nullable* field",
+          nullableWithNonNullValue = someString2,
           nullableWithEmptyValue = "",
-        )
       )
   }
 
@@ -59,28 +84,28 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val key = connector.insertStringVariantsWithHardcodedDefaults.execute {}.data.key
 
     val queryResult = connector.getStringVariantsByKey.execute(key)
-    assertThat(queryResult.data.stringVariants)
-      .isEqualTo(
+    queryResult.data.stringVariants shouldBe
         GetStringVariantsByKeyQuery.Data.StringVariants(
           nonNullWithNonEmptyValue = "pfnk98yqqs",
           nonNullWithEmptyValue = "",
           nullableWithNullValue = null,
           nullableWithNonNullValue = "af8k72s98t",
           nullableWithEmptyValue = "",
-        )
       )
   }
 
   @Test
   fun updateStringVariantsToNonNullValues() = runTest {
+    val strings = List(6) { Arb.alphanumericString(prefix="string${it}_").next(rs) }
+
     val key =
       connector.insertStringVariants
         .execute(
-          nonNullWithNonEmptyValue = "d94gpbmwf6",
+          nonNullWithNonEmptyValue = strings[0],
           nonNullWithEmptyValue = "",
         ) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = "wcwkenscxd"
+          nullableWithNonNullValue = strings[1]
           nullableWithEmptyValue = ""
         }
         .data
@@ -88,35 +113,36 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
 
     connector.updateStringVariantsByKey.execute(key) {
       nonNullWithNonEmptyValue = ""
-      nonNullWithEmptyValue = "q3vvetx52x"
-      nullableWithNullValue = "d54kpn29pb"
-      nullableWithNonNullValue = "sfbm8epy94"
-      nullableWithEmptyValue = "pxhz7awrz9"
+      nonNullWithEmptyValue = strings[2]
+      nullableWithNullValue = strings[3]
+      nullableWithNonNullValue = strings[4]
+      nullableWithEmptyValue = strings[5]
     }
 
     val queryResult = connector.getStringVariantsByKey.execute(key)
-    assertThat(queryResult.data.stringVariants)
-      .isEqualTo(
+    queryResult.data.stringVariants shouldBe
         GetStringVariantsByKeyQuery.Data.StringVariants(
           nonNullWithNonEmptyValue = "",
-          nonNullWithEmptyValue = "q3vvetx52x",
-          nullableWithNullValue = "d54kpn29pb",
-          nullableWithNonNullValue = "sfbm8epy94",
-          nullableWithEmptyValue = "pxhz7awrz9",
-        )
+          nonNullWithEmptyValue = strings[2],
+          nullableWithNullValue = strings[3],
+          nullableWithNonNullValue = strings[4],
+          nullableWithEmptyValue = strings[5],
       )
   }
 
   @Test
   fun updateStringVariantsToNullValues() = runTest {
+    val someString1 = Arb.alphanumericString(prefix="someString1_").next(rs)
+    val someString2 = Arb.alphanumericString(prefix="someString2_").next(rs)
+
     val key =
       connector.insertStringVariants
         .execute(
-          nonNullWithNonEmptyValue = "pqb9vc52pp",
+          nonNullWithNonEmptyValue = someString1,
           nonNullWithEmptyValue = "",
         ) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = "xyka3gsmad"
+          nullableWithNonNullValue = someString2
           nullableWithEmptyValue = ""
         }
         .data
@@ -129,28 +155,29 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getStringVariantsByKey.execute(key)
-    assertThat(queryResult.data.stringVariants)
-      .isEqualTo(
+    queryResult.data.stringVariants shouldBe
         GetStringVariantsByKeyQuery.Data.StringVariants(
-          nonNullWithNonEmptyValue = "pqb9vc52pp",
+          nonNullWithNonEmptyValue = someString1,
           nonNullWithEmptyValue = "",
           nullableWithNullValue = null,
           nullableWithNonNullValue = null,
           nullableWithEmptyValue = null,
-        )
       )
   }
 
   @Test
   fun updateStringVariantsToUndefinedValues() = runTest {
+    val someString1 = Arb.alphanumericString(prefix="someString1_").next(rs)
+    val someString2 = Arb.alphanumericString(prefix="someString2_").next(rs)
+
     val key =
       connector.insertStringVariants
         .execute(
-          nonNullWithNonEmptyValue = "6t25b9jyxc",
+          nonNullWithNonEmptyValue = someString1,
           nonNullWithEmptyValue = "",
         ) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = "kybbsaxpkw"
+          nullableWithNonNullValue = someString2
           nullableWithEmptyValue = ""
         }
         .data
@@ -159,33 +186,34 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.updateStringVariantsByKey.execute(key) {}
 
     val queryResult = connector.getStringVariantsByKey.execute(key)
-    assertThat(queryResult.data.stringVariants)
-      .isEqualTo(
+    queryResult.data.stringVariants shouldBe
         GetStringVariantsByKeyQuery.Data.StringVariants(
-          nonNullWithNonEmptyValue = "6t25b9jyxc",
+          nonNullWithNonEmptyValue = someString1,
           nonNullWithEmptyValue = "",
           nullableWithNullValue = null,
-          nullableWithNonNullValue = "kybbsaxpkw",
+          nullableWithNonNullValue = someString2,
           nullableWithEmptyValue = "",
-        )
       )
   }
 
   @Test
   fun insertIntVariants() = runTest {
+    val positiveInts = List(2) { distinctPositiveInts.next(rs)}
+    val negativeInts = List(2) { distinctNegativeInts.next(rs)}
+
     val key =
       connector.insertIntVariants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 42424242,
-          nonNullWithNegativeValue = -42424242,
+          nonNullWithPositiveValue = positiveInts[0],
+          nonNullWithNegativeValue = negativeInts[0],
           nonNullWithMaxValue = Int.MAX_VALUE,
           nonNullWithMinValue = Int.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 24242424
-          nullableWithNegativeValue = -24242424
+          nullableWithPositiveValue = positiveInts[1]
+          nullableWithNegativeValue = negativeInts[1]
           nullableWithMaxValue = Int.MAX_VALUE
           nullableWithMinValue = Int.MIN_VALUE
         }
@@ -193,21 +221,19 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         .key
 
     val queryResult = connector.getIntVariantsByKey.execute(key)
-    assertThat(queryResult.data.intVariants)
-      .isEqualTo(
+    queryResult.data.intVariants shouldBe
         GetIntVariantsByKeyQuery.Data.IntVariants(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 42424242,
-          nonNullWithNegativeValue = -42424242,
+          nonNullWithPositiveValue = positiveInts[0],
+          nonNullWithNegativeValue = negativeInts[0],
           nonNullWithMaxValue = Int.MAX_VALUE,
           nonNullWithMinValue = Int.MIN_VALUE,
           nullableWithNullValue = null,
           nullableWithZeroValue = 0,
-          nullableWithPositiveValue = 24242424,
-          nullableWithNegativeValue = -24242424,
+          nullableWithPositiveValue = positiveInts[1],
+          nullableWithNegativeValue = negativeInts[1],
           nullableWithMaxValue = Int.MAX_VALUE,
           nullableWithMinValue = Int.MIN_VALUE,
-        )
       )
   }
 
@@ -216,8 +242,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val key = connector.insertIntVariantsWithHardcodedDefaults.execute {}.data.key
 
     val queryResult = connector.getIntVariantsByKey.execute(key)
-    assertThat(queryResult.data.intVariants)
-      .isEqualTo(
+    queryResult.data.intVariants shouldBe
         GetIntVariantsByKeyQuery.Data.IntVariants(
           nonNullWithZeroValue = 0,
           nonNullWithPositiveValue = 819425,
@@ -230,25 +255,27 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNegativeValue = -171993,
           nullableWithMaxValue = Int.MAX_VALUE,
           nullableWithMinValue = Int.MIN_VALUE,
-        )
       )
   }
 
   @Test
   fun updateIntVariantsToNonNullValues() = runTest {
+    val positiveInts = List(4) { distinctPositiveInts.next(rs)}
+    val negativeInts = List(2) { distinctNegativeInts.next(rs)}
+
     val key =
       connector.insertIntVariants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 42424242,
-          nonNullWithNegativeValue = -42424242,
+          nonNullWithPositiveValue = positiveInts[0],
+          nonNullWithNegativeValue = negativeInts[0],
           nonNullWithMaxValue = Int.MAX_VALUE,
           nonNullWithMinValue = Int.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 24242424
-          nullableWithNegativeValue = -24242424
+          nullableWithPositiveValue = positiveInts[1]
+          nullableWithNegativeValue = negativeInts[1]
           nullableWithMaxValue = Int.MAX_VALUE
           nullableWithMinValue = Int.MIN_VALUE
         }
@@ -256,12 +283,12 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         .key
 
     connector.updateIntVariantsByKey.execute(key) {
-      nonNullWithZeroValue = 7878
+      nonNullWithZeroValue = positiveInts[2]
       nonNullWithPositiveValue = Int.MAX_VALUE
       nonNullWithNegativeValue = Int.MIN_VALUE
       nonNullWithMaxValue = 1
       nonNullWithMinValue = -1
-      nullableWithNullValue = 8787
+      nullableWithNullValue = positiveInts[3]
       nullableWithZeroValue = 0
       nullableWithPositiveValue = Int.MAX_VALUE
       nullableWithNegativeValue = Int.MIN_VALUE
@@ -270,39 +297,40 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getIntVariantsByKey.execute(key)
-    assertThat(queryResult.data.intVariants)
-      .isEqualTo(
+    queryResult.data.intVariants shouldBe
         GetIntVariantsByKeyQuery.Data.IntVariants(
-          nonNullWithZeroValue = 7878,
+          nonNullWithZeroValue = positiveInts[2],
           nonNullWithPositiveValue = Int.MAX_VALUE,
           nonNullWithNegativeValue = Int.MIN_VALUE,
           nonNullWithMaxValue = 1,
           nonNullWithMinValue = -1,
-          nullableWithNullValue = 8787,
+          nullableWithNullValue = positiveInts[3],
           nullableWithZeroValue = 0,
           nullableWithPositiveValue = Int.MAX_VALUE,
           nullableWithNegativeValue = Int.MIN_VALUE,
           nullableWithMaxValue = 1,
           nullableWithMinValue = -1,
-        )
       )
   }
 
   @Test
   fun updateIntVariantsToNullValues() = runTest {
+    val nonNullPositiveInt = distinctPositiveInts.next(rs)
+    val nonNullNegativeInt = distinctNegativeInts.next(rs)
+
     val key =
       connector.insertIntVariants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 42424242,
-          nonNullWithNegativeValue = -42424242,
+          nonNullWithPositiveValue = nonNullPositiveInt,
+          nonNullWithNegativeValue = nonNullNegativeInt,
           nonNullWithMaxValue = Int.MAX_VALUE,
           nonNullWithMinValue = Int.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 24242424
-          nullableWithNegativeValue = -24242424
+          nullableWithPositiveValue = distinctPositiveInts.next(rs)
+          nullableWithNegativeValue = distinctNegativeInts.next(rs)
           nullableWithMaxValue = Int.MAX_VALUE
           nullableWithMinValue = Int.MIN_VALUE
         }
@@ -319,12 +347,11 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getIntVariantsByKey.execute(key)
-    assertThat(queryResult.data.intVariants)
-      .isEqualTo(
+    queryResult.data.intVariants shouldBe
         GetIntVariantsByKeyQuery.Data.IntVariants(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 42424242,
-          nonNullWithNegativeValue = -42424242,
+          nonNullWithPositiveValue = nonNullPositiveInt,
+          nonNullWithNegativeValue = nonNullNegativeInt,
           nonNullWithMaxValue = Int.MAX_VALUE,
           nonNullWithMinValue = Int.MIN_VALUE,
           nullableWithNullValue = null,
@@ -333,25 +360,27 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNegativeValue = null,
           nullableWithMaxValue = null,
           nullableWithMinValue = null,
-        )
       )
   }
 
   @Test
   fun updateIntVariantsToUndefinedValues() = runTest {
+    val positiveInts = List(2) { distinctPositiveInts.next(rs)}
+    val negativeInts = List(2) { distinctNegativeInts.next(rs)}
+
     val key =
       connector.insertIntVariants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 42424242,
-          nonNullWithNegativeValue = -42424242,
+          nonNullWithPositiveValue = positiveInts[0],
+          nonNullWithNegativeValue = negativeInts[0],
           nonNullWithMaxValue = Int.MAX_VALUE,
           nonNullWithMinValue = Int.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 24242424
-          nullableWithNegativeValue = -24242424
+          nullableWithPositiveValue = positiveInts[1]
+          nullableWithNegativeValue = negativeInts[1]
           nullableWithMaxValue = Int.MAX_VALUE
           nullableWithMinValue = Int.MIN_VALUE
         }
@@ -361,33 +390,36 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.updateIntVariantsByKey.execute(key) {}
 
     val queryResult = connector.getIntVariantsByKey.execute(key)
-    assertThat(queryResult.data.intVariants)
-      .isEqualTo(
+    queryResult.data.intVariants shouldBe
+
         GetIntVariantsByKeyQuery.Data.IntVariants(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 42424242,
-          nonNullWithNegativeValue = -42424242,
+          nonNullWithPositiveValue = positiveInts[0],
+          nonNullWithNegativeValue = negativeInts[0],
           nonNullWithMaxValue = Int.MAX_VALUE,
           nonNullWithMinValue = Int.MIN_VALUE,
           nullableWithNullValue = null,
           nullableWithZeroValue = 0,
-          nullableWithPositiveValue = 24242424,
-          nullableWithNegativeValue = -24242424,
+          nullableWithPositiveValue = positiveInts[1],
+          nullableWithNegativeValue = negativeInts[1],
           nullableWithMaxValue = Int.MAX_VALUE,
           nullableWithMinValue = Int.MIN_VALUE,
         )
-      )
+
   }
 
   @Test
   fun insertFloatVariants() = runTest {
+    val positiveDoubles = List(2) { distinctPositiveDoubles.next(rs)}
+    val negativeDoubles = List(2) { distinctNegativeDoubles.next(rs)}
+
     val key =
       connector.insertFloatVariants
         .execute(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = -0.0,
-          nonNullWithPositiveValue = 123.456,
-          nonNullWithNegativeValue = -987.654,
+          nonNullWithPositiveValue = positiveDoubles[0],
+          nonNullWithNegativeValue = negativeDoubles[0],
           nonNullWithMaxValue = Double.MAX_VALUE,
           nonNullWithMinValue = Double.MIN_VALUE,
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
@@ -395,8 +427,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNullValue = null
           nullableWithZeroValue = 0.0
           nullableWithNegativeZeroValue = 0.0
-          nullableWithPositiveValue = 789.012
-          nullableWithNegativeValue = -321.098
+          nullableWithPositiveValue = positiveDoubles[1]
+          nullableWithNegativeValue = negativeDoubles[1]
           nullableWithMaxValue = Double.MAX_VALUE
           nullableWithMinValue = Double.MIN_VALUE
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
@@ -405,26 +437,26 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         .key
 
     val queryResult = connector.getFloatVariantsByKey.execute(key)
-    assertThat(queryResult.data.floatVariants)
-      .isEqualTo(
+    queryResult.data.floatVariants shouldBe
+
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = 0.0,
-          nonNullWithPositiveValue = 123.456,
-          nonNullWithNegativeValue = -987.654,
+          nonNullWithPositiveValue = positiveDoubles[0],
+          nonNullWithNegativeValue = negativeDoubles[0],
           nonNullWithMaxValue = Double.MAX_VALUE,
           nonNullWithMinValue = Double.MIN_VALUE,
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
           nullableWithNullValue = null,
           nullableWithZeroValue = 0.0,
           nullableWithNegativeZeroValue = 0.0,
-          nullableWithPositiveValue = 789.012,
-          nullableWithNegativeValue = -321.098,
+          nullableWithPositiveValue = positiveDoubles[1],
+          nullableWithNegativeValue = negativeDoubles[1],
           nullableWithMaxValue = Double.MAX_VALUE,
           nullableWithMinValue = Double.MIN_VALUE,
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
         )
-      )
+
   }
 
   @Test
@@ -432,8 +464,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val key = connector.insertFloatVariantsWithHardcodedDefaults.execute {}.data.key
 
     val queryResult = connector.getFloatVariantsByKey.execute(key)
-    assertThat(queryResult.data.floatVariants)
-      .isEqualTo(
+    queryResult.data.floatVariants shouldBe
+
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = 0.0,
@@ -451,18 +483,21 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithMinValue = Double.MIN_VALUE,
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
         )
-      )
+
   }
 
   @Test
   fun updateFloatVariantsToNonNullValues() = runTest {
+    val positiveDoubles = List(3) { distinctPositiveDoubles.next(rs)}
+    val negativeDoubles = List(2) { distinctNegativeDoubles.next(rs)}
+
     val key =
       connector.insertFloatVariants
         .execute(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = -0.0,
-          nonNullWithPositiveValue = 662.096,
-          nonNullWithNegativeValue = -817.024,
+          nonNullWithPositiveValue = distinctPositiveDoubles.next(rs),
+          nonNullWithNegativeValue = distinctNegativeDoubles.next(rs),
           nonNullWithMaxValue = Double.MAX_VALUE,
           nonNullWithMinValue = Double.MIN_VALUE,
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
@@ -470,8 +505,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNullValue = null
           nullableWithZeroValue = 0.0
           nullableWithNegativeZeroValue = 0.0
-          nullableWithPositiveValue = 990.273
-          nullableWithNegativeValue = -383.185
+          nullableWithPositiveValue = distinctPositiveDoubles.next(rs)
+          nullableWithNegativeValue = distinctNegativeDoubles.next(rs)
           nullableWithMaxValue = Double.MAX_VALUE
           nullableWithMinValue = Double.MIN_VALUE
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
@@ -484,51 +519,54 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       nonNullWithNegativeZeroValue = Double.MIN_VALUE
       nonNullWithPositiveValue = MAX_SAFE_INTEGER
       nonNullWithNegativeValue = -0.0
-      nonNullWithMaxValue = -270.396
-      nonNullWithMinValue = 470.563
+      nonNullWithMaxValue = negativeDoubles[0]
+      nonNullWithMinValue = positiveDoubles[0]
       nonNullWithMaxSafeIntegerValue = 0.0
-      nullableWithNullValue = 607.386
+      nullableWithNullValue = positiveDoubles[1]
       nullableWithZeroValue = Double.MIN_VALUE
       nullableWithNegativeZeroValue = MAX_SAFE_INTEGER
       nullableWithPositiveValue = -0.0
       nullableWithNegativeValue = MAX_SAFE_INTEGER
-      nullableWithMaxValue = -930.342
-      nullableWithMinValue = 563.398
+      nullableWithMaxValue = negativeDoubles[1]
+      nullableWithMinValue = positiveDoubles[2]
       nullableWithMaxSafeIntegerValue = 0.0
     }
 
     val queryResult = connector.getFloatVariantsByKey.execute(key)
-    assertThat(queryResult.data.floatVariants)
-      .isEqualTo(
+    queryResult.data.floatVariants shouldBe
+
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = Double.MAX_VALUE,
           nonNullWithNegativeZeroValue = Double.MIN_VALUE,
           nonNullWithPositiveValue = MAX_SAFE_INTEGER,
           nonNullWithNegativeValue = 0.0,
-          nonNullWithMaxValue = -270.396,
-          nonNullWithMinValue = 470.563,
+          nonNullWithMaxValue = negativeDoubles[0],
+          nonNullWithMinValue = positiveDoubles[0],
           nonNullWithMaxSafeIntegerValue = 0.0,
-          nullableWithNullValue = 607.386,
+          nullableWithNullValue = positiveDoubles[1],
           nullableWithZeroValue = Double.MIN_VALUE,
           nullableWithNegativeZeroValue = MAX_SAFE_INTEGER,
           nullableWithPositiveValue = 0.0,
           nullableWithNegativeValue = MAX_SAFE_INTEGER,
-          nullableWithMaxValue = -930.342,
-          nullableWithMinValue = 563.398,
+          nullableWithMaxValue = negativeDoubles[1],
+          nullableWithMinValue = positiveDoubles[2],
           nullableWithMaxSafeIntegerValue = 0.0,
         )
-      )
+
   }
 
   @Test
   fun updateFloatVariantsToNullValues() = runTest {
+    val positiveDouble = distinctPositiveDoubles.next(rs)
+    val negativeDouble = distinctNegativeDoubles.next(rs)
+
     val key =
       connector.insertFloatVariants
         .execute(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = -0.0,
-          nonNullWithPositiveValue = 225.954,
-          nonNullWithNegativeValue = -432.366,
+          nonNullWithPositiveValue = positiveDouble,
+          nonNullWithNegativeValue = negativeDouble,
           nonNullWithMaxValue = Double.MAX_VALUE,
           nonNullWithMinValue = Double.MIN_VALUE,
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
@@ -536,8 +574,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNullValue = null
           nullableWithZeroValue = 0.0
           nullableWithNegativeZeroValue = 0.0
-          nullableWithPositiveValue = 446.040
-          nullableWithNegativeValue = -573.104
+          nullableWithPositiveValue = distinctPositiveDoubles.next(rs)
+          nullableWithNegativeValue = distinctPositiveDoubles.next(rs)
           nullableWithMaxValue = Double.MAX_VALUE
           nullableWithMinValue = Double.MIN_VALUE
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
@@ -557,13 +595,13 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getFloatVariantsByKey.execute(key)
-    assertThat(queryResult.data.floatVariants)
-      .isEqualTo(
+    queryResult.data.floatVariants shouldBe
+
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = 0.0,
-          nonNullWithPositiveValue = 225.954,
-          nonNullWithNegativeValue = -432.366,
+          nonNullWithPositiveValue = positiveDouble,
+          nonNullWithNegativeValue = negativeDouble,
           nonNullWithMaxValue = Double.MAX_VALUE,
           nonNullWithMinValue = Double.MIN_VALUE,
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
@@ -576,18 +614,21 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithMinValue = null,
           nullableWithMaxSafeIntegerValue = null,
         )
-      )
+
   }
 
   @Test
   fun updateFloatVariantsToUndefinedValues() = runTest {
+    val positiveDoubles = List(2) { distinctPositiveDoubles.next(rs)}
+    val negativeDoubles = List(2) { distinctNegativeDoubles.next(rs)}
+
     val key =
       connector.insertFloatVariants
         .execute(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = -0.0,
-          nonNullWithPositiveValue = 969.803,
-          nonNullWithNegativeValue = -377.693,
+          nonNullWithPositiveValue = positiveDoubles[0],
+          nonNullWithNegativeValue = negativeDoubles[0],
           nonNullWithMaxValue = Double.MAX_VALUE,
           nonNullWithMinValue = Double.MIN_VALUE,
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
@@ -595,8 +636,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNullValue = null
           nullableWithZeroValue = 0.0
           nullableWithNegativeZeroValue = 0.0
-          nullableWithPositiveValue = 789.821
-          nullableWithNegativeValue = -498.776
+          nullableWithPositiveValue = positiveDoubles[1]
+          nullableWithNegativeValue = negativeDoubles[1]
           nullableWithMaxValue = Double.MAX_VALUE
           nullableWithMinValue = Double.MIN_VALUE
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER
@@ -607,26 +648,26 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.updateFloatVariantsByKey.execute(key) {}
 
     val queryResult = connector.getFloatVariantsByKey.execute(key)
-    assertThat(queryResult.data.floatVariants)
-      .isEqualTo(
+    queryResult.data.floatVariants shouldBe
+
         GetFloatVariantsByKeyQuery.Data.FloatVariants(
           nonNullWithZeroValue = 0.0,
           nonNullWithNegativeZeroValue = 0.0,
-          nonNullWithPositiveValue = 969.803,
-          nonNullWithNegativeValue = -377.693,
+          nonNullWithPositiveValue = positiveDoubles[0],
+          nonNullWithNegativeValue = negativeDoubles[0],
           nonNullWithMaxValue = Double.MAX_VALUE,
           nonNullWithMinValue = Double.MIN_VALUE,
           nonNullWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
           nullableWithNullValue = null,
           nullableWithZeroValue = 0.0,
           nullableWithNegativeZeroValue = 0.0,
-          nullableWithPositiveValue = 789.821,
-          nullableWithNegativeValue = -498.776,
+          nullableWithPositiveValue = positiveDoubles[1],
+          nullableWithNegativeValue = negativeDoubles[1],
           nullableWithMaxValue = Double.MAX_VALUE,
           nullableWithMinValue = Double.MIN_VALUE,
           nullableWithMaxSafeIntegerValue = MAX_SAFE_INTEGER,
         )
-      )
+
   }
 
   @Test
@@ -645,8 +686,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         .key
 
     val queryResult = connector.getBooleanVariantsByKey.execute(key)
-    assertThat(queryResult.data.booleanVariants)
-      .isEqualTo(
+    queryResult.data.booleanVariants shouldBe
+
         GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
           nonNullWithTrueValue = true,
           nonNullWithFalseValue = false,
@@ -654,7 +695,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithTrueValue = true,
           nullableWithFalseValue = false,
         )
-      )
+
   }
 
   @Test
@@ -662,8 +703,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val key = connector.insertBooleanVariantsWithHardcodedDefaults.execute {}.data.key
 
     val queryResult = connector.getBooleanVariantsByKey.execute(key)
-    assertThat(queryResult.data.booleanVariants)
-      .isEqualTo(
+    queryResult.data.booleanVariants shouldBe
+
         GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
           nonNullWithTrueValue = true,
           nonNullWithFalseValue = false,
@@ -671,7 +712,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithTrueValue = true,
           nullableWithFalseValue = false,
         )
-      )
+
   }
 
   @Test
@@ -698,8 +739,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getBooleanVariantsByKey.execute(key)
-    assertThat(queryResult.data.booleanVariants)
-      .isEqualTo(
+    queryResult.data.booleanVariants shouldBe
+
         GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
           nonNullWithTrueValue = false,
           nonNullWithFalseValue = true,
@@ -707,7 +748,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithTrueValue = false,
           nullableWithFalseValue = true,
         )
-      )
+
   }
 
   @Test
@@ -732,8 +773,8 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getBooleanVariantsByKey.execute(key)
-    assertThat(queryResult.data.booleanVariants)
-      .isEqualTo(
+    queryResult.data.booleanVariants shouldBe
+
         GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
           nonNullWithTrueValue = true,
           nonNullWithFalseValue = false,
@@ -741,7 +782,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithTrueValue = null,
           nullableWithFalseValue = null,
         )
-      )
+
   }
 
   @Test
@@ -762,33 +803,34 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.updateBooleanVariantsByKey.execute(key) {}
 
     val queryResult = connector.getBooleanVariantsByKey.execute(key)
-    assertThat(queryResult.data.booleanVariants)
-      .isEqualTo(
+    queryResult.data.booleanVariants shouldBe
         GetBooleanVariantsByKeyQuery.Data.BooleanVariants(
           nonNullWithTrueValue = true,
           nonNullWithFalseValue = false,
           nullableWithNullValue = null,
           nullableWithTrueValue = true,
           nullableWithFalseValue = false,
-        )
       )
   }
 
   @Test
   fun insertInt64Variants() = runTest {
+    val positiveLongs = List(2) { distinctPositiveLongs.next(rs)}
+    val negativeLongs = List(2) { distinctNegativeLongs.next(rs)}
+
     val key =
       connector.insertInt64variants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 4242424242424242,
-          nonNullWithNegativeValue = -4242424242424242,
+          nonNullWithPositiveValue = positiveLongs[0],
+          nonNullWithNegativeValue = negativeLongs[0],
           nonNullWithMaxValue = Long.MAX_VALUE,
           nonNullWithMinValue = Long.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 2424242424242424
-          nullableWithNegativeValue = -2424242424242424
+          nullableWithPositiveValue = positiveLongs[1]
+          nullableWithNegativeValue = negativeLongs[1]
           nullableWithMaxValue = Long.MAX_VALUE
           nullableWithMinValue = Long.MIN_VALUE
         }
@@ -796,22 +838,20 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
         .key
 
     val queryResult = connector.getInt64variantsByKey.execute(key)
-    assertThat(queryResult.data.int64Variants)
-      .isEqualTo(
+    queryResult.data.int64Variants shouldBe
         GetInt64variantsByKeyQuery.Data.Int64variants(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 4242424242424242,
-          nonNullWithNegativeValue = -4242424242424242,
+          nonNullWithPositiveValue = positiveLongs[0],
+          nonNullWithNegativeValue = negativeLongs[0],
           nonNullWithMaxValue = Long.MAX_VALUE,
           nonNullWithMinValue = Long.MIN_VALUE,
           nullableWithNullValue = null,
           nullableWithZeroValue = 0,
-          nullableWithPositiveValue = 2424242424242424,
-          nullableWithNegativeValue = -2424242424242424,
+          nullableWithPositiveValue = positiveLongs[1],
+          nullableWithNegativeValue = negativeLongs[1],
           nullableWithMaxValue = Long.MAX_VALUE,
           nullableWithMinValue = Long.MIN_VALUE,
         )
-      )
   }
 
   @Test
@@ -819,8 +859,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val key = connector.insertInt64variantsWithHardcodedDefaults.execute {}.data.key
 
     val queryResult = connector.getInt64variantsByKey.execute(key)
-    assertThat(queryResult.data.int64Variants)
-      .isEqualTo(
+    queryResult.data.int64Variants shouldBe
         GetInt64variantsByKeyQuery.Data.Int64variants(
           nonNullWithZeroValue = 0,
           nonNullWithPositiveValue = 8140262498000722655,
@@ -834,24 +873,26 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithMaxValue = Long.MAX_VALUE,
           nullableWithMinValue = Long.MIN_VALUE,
         )
-      )
   }
 
   @Test
   fun updateInt64VariantsToNonNullValues() = runTest {
+    val positiveLongs = List(3) { distinctPositiveLongs.next(rs)}
+    val negativeLongs = List(2) { distinctNegativeLongs.next(rs)}
+
     val key =
       connector.insertInt64variants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 4242424242424242,
-          nonNullWithNegativeValue = -4242424242424242,
+          nonNullWithPositiveValue = distinctPositiveLongs.next(rs),
+          nonNullWithNegativeValue = distinctNegativeLongs.next(rs),
           nonNullWithMaxValue = Long.MAX_VALUE,
           nonNullWithMinValue = Long.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 2424242424242424
-          nullableWithNegativeValue = -2424242424242424
+          nullableWithPositiveValue = distinctPositiveLongs.next(rs)
+          nullableWithNegativeValue = distinctNegativeLongs.next(rs)
           nullableWithMaxValue = Long.MAX_VALUE
           nullableWithMinValue = Long.MIN_VALUE
         }
@@ -862,50 +903,51 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
       nonNullWithZeroValue = Long.MAX_VALUE
       nonNullWithPositiveValue = Long.MIN_VALUE
       nonNullWithNegativeValue = 0
-      nonNullWithMaxValue = 6252443364575076407
-      nonNullWithMinValue = -2729456791747763772
+      nonNullWithMaxValue = positiveLongs[0]
+      nonNullWithMinValue = negativeLongs[0]
       nullableWithNullValue = Long.MIN_VALUE
       nullableWithZeroValue = Long.MAX_VALUE
-      nullableWithPositiveValue = -8687725805487568442
-      nullableWithNegativeValue = 2353423753564688753
+      nullableWithPositiveValue = negativeLongs[1]
+      nullableWithNegativeValue = positiveLongs[1]
       nullableWithMaxValue = 0
-      nullableWithMinValue = 1138055334163106400
+      nullableWithMinValue = positiveLongs[2]
     }
 
     val queryResult = connector.getInt64variantsByKey.execute(key)
-    assertThat(queryResult.data.int64Variants)
-      .isEqualTo(
+    queryResult.data.int64Variants shouldBe
         GetInt64variantsByKeyQuery.Data.Int64variants(
           nonNullWithZeroValue = Long.MAX_VALUE,
           nonNullWithPositiveValue = Long.MIN_VALUE,
           nonNullWithNegativeValue = 0,
-          nonNullWithMaxValue = 6252443364575076407,
-          nonNullWithMinValue = -2729456791747763772,
+          nonNullWithMaxValue = positiveLongs[0],
+          nonNullWithMinValue = negativeLongs[0],
           nullableWithNullValue = Long.MIN_VALUE,
           nullableWithZeroValue = Long.MAX_VALUE,
-          nullableWithPositiveValue = -8687725805487568442,
-          nullableWithNegativeValue = 2353423753564688753,
+          nullableWithPositiveValue = negativeLongs[1],
+          nullableWithNegativeValue = positiveLongs[1],
           nullableWithMaxValue = 0,
-          nullableWithMinValue = 1138055334163106400,
-        )
+          nullableWithMinValue = positiveLongs[2],
       )
   }
 
   @Test
   fun updateInt64VariantsToNullValues() = runTest {
+    val positiveLong =  distinctPositiveLongs.next(rs)
+    val negativeLong =  distinctNegativeLongs.next(rs)
+
     val key =
       connector.insertInt64variants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 6015655135498983208,
-          nonNullWithNegativeValue = -6239673548840053697,
+          nonNullWithPositiveValue = positiveLong,
+          nonNullWithNegativeValue = negativeLong,
           nonNullWithMaxValue = Long.MAX_VALUE,
           nonNullWithMinValue = Long.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 2139268131023575155
-          nullableWithNegativeValue = -7753368718652189037
+          nullableWithPositiveValue = distinctPositiveLongs.next(rs)
+          nullableWithNegativeValue = distinctNegativeLongs.next(rs)
           nullableWithMaxValue = Long.MAX_VALUE
           nullableWithMinValue = Long.MIN_VALUE
         }
@@ -922,12 +964,11 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getInt64variantsByKey.execute(key)
-    assertThat(queryResult.data.int64Variants)
-      .isEqualTo(
+    queryResult.data.int64Variants shouldBe
         GetInt64variantsByKeyQuery.Data.Int64variants(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 6015655135498983208,
-          nonNullWithNegativeValue = -6239673548840053697,
+          nonNullWithPositiveValue = positiveLong,
+          nonNullWithNegativeValue = negativeLong,
           nonNullWithMaxValue = Long.MAX_VALUE,
           nonNullWithMinValue = Long.MIN_VALUE,
           nullableWithNullValue = null,
@@ -936,25 +977,27 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithNegativeValue = null,
           nullableWithMaxValue = null,
           nullableWithMinValue = null,
-        )
       )
   }
 
   @Test
   fun updateInt64VariantsToUndefinedValues() = runTest {
+    val positiveLongs = List(2) { distinctPositiveLongs.next(rs)}
+    val negativeLongs = List(2) { distinctNegativeLongs.next(rs)}
+
     val key =
       connector.insertInt64variants
         .execute(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 6701682660019975832,
-          nonNullWithNegativeValue = -4478250605910359747,
+          nonNullWithPositiveValue = positiveLongs[0],
+          nonNullWithNegativeValue = negativeLongs[0],
           nonNullWithMaxValue = Long.MAX_VALUE,
           nonNullWithMinValue = Long.MIN_VALUE,
         ) {
           nullableWithNullValue = null
           nullableWithZeroValue = 0
-          nullableWithPositiveValue = 5813549730210600934
-          nullableWithNegativeValue = -8226376165047801337
+          nullableWithPositiveValue = positiveLongs[1]
+          nullableWithNegativeValue = negativeLongs[1]
           nullableWithMaxValue = Long.MAX_VALUE
           nullableWithMinValue = Long.MIN_VALUE
         }
@@ -964,45 +1007,43 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.updateInt64variantsByKey.execute(key) {}
 
     val queryResult = connector.getInt64variantsByKey.execute(key)
-    assertThat(queryResult.data.int64Variants)
-      .isEqualTo(
+    queryResult.data.int64Variants shouldBe
         GetInt64variantsByKeyQuery.Data.Int64variants(
           nonNullWithZeroValue = 0,
-          nonNullWithPositiveValue = 6701682660019975832,
-          nonNullWithNegativeValue = -4478250605910359747,
+          nonNullWithPositiveValue = positiveLongs[0],
+          nonNullWithNegativeValue = negativeLongs[0],
           nonNullWithMaxValue = Long.MAX_VALUE,
           nonNullWithMinValue = Long.MIN_VALUE,
           nullableWithNullValue = null,
           nullableWithZeroValue = 0,
-          nullableWithPositiveValue = 5813549730210600934,
-          nullableWithNegativeValue = -8226376165047801337,
+          nullableWithPositiveValue = positiveLongs[1],
+          nullableWithNegativeValue = negativeLongs[1],
           nullableWithMaxValue = Long.MAX_VALUE,
           nullableWithMinValue = Long.MIN_VALUE,
-        )
       )
   }
 
   @Test
   fun insertUUIDVariants() = runTest {
+    val uuids = List(2) { Arb.uuid().next(rs) }
+
     val key =
       connector.insertUuidVariants
         .execute(
-          nonNullValue = UUID.fromString("9ceda52f-18a1-431b-b9f7-89b674ca4bee"),
+          nonNullValue = uuids[0],
         ) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = UUID.fromString("7ca7c62a-c551-4cb9-8f86-0a2ce3d68b72")
+          nullableWithNonNullValue = uuids[1]
         }
         .data
         .key
 
     val queryResult = connector.getUuidVariantsByKey.execute(key)
-    assertThat(queryResult.data.uUIDVariants)
-      .isEqualTo(
+    queryResult.data.uUIDVariants shouldBe
         GetUuidVariantsByKeyQuery.Data.UUidVariants(
-          nonNullValue = UUID.fromString("9ceda52f-18a1-431b-b9f7-89b674ca4bee"),
+          nonNullValue = uuids[0],
           nullableWithNullValue = null,
-          nullableWithNonNullValue = UUID.fromString("7ca7c62a-c551-4cb9-8f86-0a2ce3d68b72"),
-        )
+          nullableWithNonNullValue = uuids[1],
       )
   }
 
@@ -1014,55 +1055,52 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     val key = connector.insertUuidVariantsWithHardcodedDefaults.execute().data.key
 
     val queryResult = connector.getUuidVariantsByKey.execute(key)
-    assertThat(queryResult.data.uUIDVariants)
-      .isEqualTo(
+    queryResult.data.uUIDVariants shouldBe
         GetUuidVariantsByKeyQuery.Data.UUidVariants(
           nonNullValue = UUID.fromString("66576fdc-1a35-4b59-8c8b-d3beb65956ca"),
           nullableWithNullValue = null,
           nullableWithNonNullValue = UUID.fromString("59ab3886-8b84-4233-a5e6-da58c0e8b97d"),
-        )
+
       )
   }
 
   @Test
   fun updateUUIDVariantsToNonNullValues() = runTest {
+    val uuids = List(3) { Arb.uuid().next(rs) }
+
     val key =
       connector.insertUuidVariants
-        .execute(
-          nonNullValue = UUID.fromString("e0e9539c-5723-4063-b490-20b0f28c82fc"),
-        ) {
+        .execute(nonNullValue = Arb.uuid().next(rs)) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = UUID.fromString("c198ecf2-8de5-438f-8b9e-4d07e07d2a7e")
+          nullableWithNonNullValue = Arb.uuid().next(rs)
         }
         .data
         .key
 
     connector.updateUuidVariantsByKey.execute(key) {
-      nonNullValue = UUID.fromString("a4d3f3cb-f88a-4aeb-9440-b446780e3f1f")
-      nullableWithNullValue = UUID.fromString("e6fda23b-26ab-422c-a461-75bf2cd08775")
-      nullableWithNonNullValue = UUID.fromString("22d122a7-45c6-4f7a-ba0b-bf00aa47c77a")
+      nonNullValue = uuids[0]
+      nullableWithNullValue = uuids[1]
+      nullableWithNonNullValue = uuids[2]
     }
 
     val queryResult = connector.getUuidVariantsByKey.execute(key)
-    assertThat(queryResult.data.uUIDVariants)
-      .isEqualTo(
+    queryResult.data.uUIDVariants shouldBe
         GetUuidVariantsByKeyQuery.Data.UUidVariants(
-          nonNullValue = UUID.fromString("a4d3f3cb-f88a-4aeb-9440-b446780e3f1f"),
-          nullableWithNullValue = UUID.fromString("e6fda23b-26ab-422c-a461-75bf2cd08775"),
-          nullableWithNonNullValue = UUID.fromString("22d122a7-45c6-4f7a-ba0b-bf00aa47c77a"),
-        )
+          nonNullValue = uuids[0],
+          nullableWithNullValue = uuids[1],
+          nullableWithNonNullValue = uuids[2],
       )
   }
 
   @Test
   fun updateUUIDVariantsToNullValues() = runTest {
+    val uuid = Arb.uuid().next(rs)
+
     val key =
       connector.insertUuidVariants
-        .execute(
-          nonNullValue = UUID.fromString("a319232e-ef2b-4bb2-96e7-c31893914b77"),
-        ) {
+        .execute(nonNullValue = uuid) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = UUID.fromString("95ba2d8e-7908-4b60-999c-7c292616c920")
+          nullableWithNonNullValue = Arb.uuid().next(rs)
         }
         .data
         .key
@@ -1073,25 +1111,25 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     }
 
     val queryResult = connector.getUuidVariantsByKey.execute(key)
-    assertThat(queryResult.data.uUIDVariants)
-      .isEqualTo(
+    queryResult.data.uUIDVariants shouldBe
         GetUuidVariantsByKeyQuery.Data.UUidVariants(
-          nonNullValue = UUID.fromString("a319232e-ef2b-4bb2-96e7-c31893914b77"),
+          nonNullValue = uuid,
           nullableWithNullValue = null,
           nullableWithNonNullValue = null,
-        )
       )
   }
 
   @Test
   fun updateUUIDVariantsToUndefinedValues() = runTest {
+    val uuids = List(2) { Arb.uuid().next(rs) }
+
     val key =
       connector.insertUuidVariants
         .execute(
-          nonNullValue = UUID.fromString("c72c5a7c-f179-48a5-83fb-171a148b0192"),
+          nonNullValue = uuids[0],
         ) {
           nullableWithNullValue = null
-          nullableWithNonNullValue = UUID.fromString("dd55c183-616a-4bc8-a4e0-2a32101450d7")
+          nullableWithNonNullValue = uuids[1]
         }
         .data
         .key
@@ -1099,13 +1137,11 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     connector.updateUuidVariantsByKey.execute(key) {}
 
     val queryResult = connector.getUuidVariantsByKey.execute(key)
-    assertThat(queryResult.data.uUIDVariants)
-      .isEqualTo(
+    queryResult.data.uUIDVariants shouldBe
         GetUuidVariantsByKeyQuery.Data.UUidVariants(
-          nonNullValue = UUID.fromString("c72c5a7c-f179-48a5-83fb-171a148b0192"),
+          nonNullValue = uuids[0],
           nullableWithNullValue = null,
-          nullableWithNonNullValue = UUID.fromString("dd55c183-616a-4bc8-a4e0-2a32101450d7"),
-        )
+          nullableWithNonNullValue = uuids[1],
       )
   }
 }
