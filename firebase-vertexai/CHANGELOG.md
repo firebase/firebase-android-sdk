@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Fixed issue where authorization headers weren't correctly formatted and where ignored by the backend. (#6400)
+* [fixed] Fixed issue where authorization headers weren't correctly formatted and were ignored by the backend. (#6400)
 
 # 16.0.0
 * [feature] {{firebase_vertexai}} is now Generally Available (GA) and can be
