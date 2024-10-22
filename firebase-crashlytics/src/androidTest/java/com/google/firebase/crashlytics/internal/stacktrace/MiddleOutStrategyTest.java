@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.stacktrace;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -61,7 +62,7 @@ public class MiddleOutStrategyTest extends CrashlyticsTestCase {
     final StackTraceElement[] mockStackTrace = mockStackTrace(5);
     final StackTraceElement[] trimmed = middleOutStrategy.getTrimmedStackTrace(mockStackTrace);
 
-    assertEquals(mockStackTrace, trimmed);
+    assertArrayEquals(mockStackTrace, trimmed);
   }
 
   private boolean rangesMatch(
