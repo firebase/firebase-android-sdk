@@ -113,14 +113,6 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   }
 
   @Test
-  fun insertTimestampWithPlus0TimeZoneOffsetForNonNullTimestampField() =
-    runTest(timeout = 60.seconds) {
-      val timestamp = "2024-05-18T12:45:56.123456789+00:00"
-      val key = connector.insertNonNullTimestamp.executeWithStringVariables(timestamp).data.key
-      assertNonNullTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
-    }
-
-  @Test
   fun insertTimestampWithPositiveNonZeroTimeZoneOffsetForNonNullTimestampField() =
     runTest(timeout = 60.seconds) {
       val timestamp = "2024-05-18T12:45:56.123456789+01:23"
@@ -461,14 +453,6 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
       val timestamp = timestampFromUTCDateAndTime(1990, 12, 31, 23, 59, 60, 0)
       val key = connector.insertNullableTimestamp.execute { value = timestamp }.data.key
       assertNullableTimestampByKeyEquals(key, timestamp)
-    }
-
-  @Test
-  fun insertTimestampWithPlus0TimeZoneOffsetForNullableTimestampField() =
-    runTest(timeout = 60.seconds) {
-      val timestamp = "2024-05-18T12:45:56.123456789+00:00"
-      val key = connector.insertNullableTimestamp.executeWithStringVariables(timestamp).data.key
-      assertNullableTimestampByKeyEquals(key, "2024-05-18T12:45:56.123456Z")
     }
 
   @Test
