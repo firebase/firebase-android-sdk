@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Fixed issue where authorization headers weren't correctly formatted and were ignored by the backend. (#6400)
 
 # 16.0.0
 * [feature] {{firebase_vertexai}} is now Generally Available (GA) and can be
@@ -52,4 +52,3 @@
 * [feature] Added support for `responseMimeType` in `GenerationConfig`.
 * [changed] Renamed `GoogleGenerativeAIException` to `FirebaseVertexAIException`.
 * [changed] Updated the KDocs for various classes and functions.
-
