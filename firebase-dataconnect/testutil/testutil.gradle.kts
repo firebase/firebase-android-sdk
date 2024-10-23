@@ -23,9 +23,9 @@ plugins {
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.dataconnect.testutil"
   compileSdk = compileSdkVersion
@@ -66,7 +66,5 @@ dependencies {
 }
 
 tasks.withType<KotlinCompile>().all {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
-  }
+  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
 }

@@ -35,13 +35,12 @@ firebaseLibrary {
     versionName.set("data-connect")
     hasKTX.set(false)
   }
-
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.dataconnect"
   compileSdk = compileSdkVersion
@@ -74,37 +73,19 @@ android {
 }
 
 protobuf {
-  protoc {
-    artifact = "${libs.protoc.get()}"
-  }
+  protoc { artifact = "${libs.protoc.get()}" }
   plugins {
-    create("java") {
-      artifact = "${libs.grpc.protoc.gen.java.get()}"
-    }
-    create("grpc") {
-      artifact = "${libs.grpc.protoc.gen.java.get()}"
-    }
-    create("grpckt") {
-      artifact = "${libs.grpc.protoc.gen.kotlin.get()}:jdk8@jar"
-    }
+    create("java") { artifact = "${libs.grpc.protoc.gen.java.get()}" }
+    create("grpc") { artifact = "${libs.grpc.protoc.gen.java.get()}" }
+    create("grpckt") { artifact = "${libs.grpc.protoc.gen.kotlin.get()}:jdk8@jar" }
   }
   generateProtoTasks {
     all().forEach { task ->
-      task.builtins {
-        create("kotlin") {
-          option("lite")
-        }
-      }
+      task.builtins { create("kotlin") { option("lite") } }
       task.plugins {
-        create("java") {
-          option("lite")
-        }
-        create("grpc") {
-          option("lite")
-        }
-        create("grpckt") {
-          option("lite")
-        }
+        create("java") { option("lite") }
+        create("grpc") { option("lite") }
+        create("grpckt") { option("lite") }
       }
     }
   }
@@ -163,9 +144,7 @@ dependencies {
 }
 
 tasks.withType<KotlinCompile>().all {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
-  }
+  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
