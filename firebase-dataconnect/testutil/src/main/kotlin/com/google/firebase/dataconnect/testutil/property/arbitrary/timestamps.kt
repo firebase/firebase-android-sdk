@@ -42,17 +42,18 @@ data class TimestampTestData(
 
   /**
    * The same string as [string] but (possibly) modified in such a way that it will be accepted when
-   * sent as a variable value in an `executeQuery` or `executeMutation` operation by Data Connect.
+   * sent as a variable in an `executeQuery` or `executeMutation` operation of Firebase Data
+   * Connect.
    *
    * For example, the RFC3339 standard allows the "T" to be lowercase (ie. "t"), but Data Connect
    * fails to parse the lowercase "T"; therefore, this string will always have an uppercase "T".
    */
-  val fdcScrubbedString: String,
+  val fdcStringVariable: String,
 
   /**
    * A regular expression that matches all valid RFC3339 string representations of [timestamp] as
-   * would be returned from `executeQuery` and `executeMutation` operations in Firebase Data
-   * Connect.
+   * would be returned in a field from `executeQuery` and `executeMutation` operations of Firebase
+   * Data Connect.
    *
    * Notably, since Data Connect only supports microsecond precision, this regular expression
    * effectively converts the 3 nanosecond digits to 0. For example, for the timestamp
@@ -60,16 +61,16 @@ data class TimestampTestData(
    * "2024-01-01T12:34:56.123456Z" or "2024-01-01T12:34:56.123456789000Z", but _not_ the string with
    * full nanosecond precision.
    */
-  val fdcRoundTripRegex: Regex,
+  val fdcFieldRegex: Regex,
 
   /**
-   * The timestamp that will be returned from the `executeQuery` and `executeMutation` operations of
-   * Firebase Data Connect for [fdcScrubbedString] or [timestamp].
+   * The same as [timestamp] but (possibly) modified to match a timestamp as would be returned in a
+   * field of `executeQuery` and `executeMutation` operations of Firebase Data Connect.
    *
    * For example, nanoseconds will be truncated to microseconds because Data Connect only supports
    * microsecond precision.
    */
-  val fdcRoundTripTimestamp: Timestamp,
+  val fdcFieldTimestamp: Timestamp,
 
   /** The individual components of this timestamp, such as year, month, hour, etc. */
   val components: TimestampComponents,
@@ -162,7 +163,7 @@ private fun TimestampComponents.toRfc3339String(): String {
  * arguments must conform to their corresponding restrictions in RFC 3339 "Date and Time on the
  * Internet: Timestamps" https://datatracker.ietf.org/doc/html/rfc3339.
  */
-private fun TimestampComponents.toRoundTripRegex(): Regex =
+private fun TimestampComponents.toFdcFieldRegex(): Regex =
   Regex(
     buildString {
       append("$year".padStart(4, '0'))
@@ -204,23 +205,39 @@ private fun TimestampComponents.toUtcTimestamp(): Timestamp =
 private fun TimestampComponents.toTimestampTestData(
   timestamp: Timestamp? = null,
   string: String? = null,
-): TimestampTestData =
-  toTimestampTestData(
-    timestamp = timestamp ?: toUtcTimestamp(),
-    string = string ?: toRfc3339String(),
+  fdcStringVariable: String? = null,
+  fdcFieldTimestamp: Timestamp? = null,
+): TimestampTestData {
+  val effectiveTimestamp = timestamp ?: toUtcTimestamp()
+  val effectiveString = string ?: toRfc3339String()
+
+  val effectiveFdcFieldTimestamp =
+    fdcFieldTimestamp ?: effectiveTimestamp.withMicrosecondPrecision()
+
+  val effectiveFdcStringVariable =
+    fdcStringVariable ?: copy(t = 'T', z = 'Z', nanosecondsNumDigits = 6).toRfc3339String()
+
+  return toTimestampTestData(
+    timestamp = effectiveTimestamp,
+    string = effectiveString,
+    fdcStringVariable = effectiveFdcStringVariable,
+    fdcFieldTimestamp = effectiveFdcFieldTimestamp,
   )
+}
 
 @JvmName("toTimestampTestDataWithRejectingNullArguments")
 private fun TimestampComponents.toTimestampTestData(
   timestamp: Timestamp,
   string: String,
+  fdcStringVariable: String,
+  fdcFieldTimestamp: Timestamp,
 ): TimestampTestData {
   return TimestampTestData(
     timestamp = timestamp,
     string = string,
-    fdcScrubbedString = copy(t = 'T', z = 'Z', nanosecondsNumDigits = 6).toRfc3339String(),
-    fdcRoundTripRegex = toRoundTripRegex(),
-    fdcRoundTripTimestamp = timestamp.withMicrosecondPrecision(),
+    fdcStringVariable = fdcStringVariable,
+    fdcFieldRegex = toFdcFieldRegex(),
+    fdcFieldTimestamp = fdcFieldTimestamp,
     components = this
   )
 }
@@ -228,6 +245,8 @@ private fun TimestampComponents.toTimestampTestData(
 private fun TimestampTestData.Companion.from(
   timestamp: Timestamp? = null,
   string: String? = null,
+  fdcStringVariable: String? = null,
+  fdcFieldTimestamp: Timestamp? = null,
   year: Int,
   month: Int,
   day: Int,
@@ -254,6 +273,8 @@ private fun TimestampTestData.Companion.from(
     .toTimestampTestData(
       timestamp = timestamp,
       string = string,
+      fdcStringVariable = fdcStringVariable,
+      fdcFieldTimestamp = fdcFieldTimestamp,
     )
 
 private fun Int.withNumDigits(numDigits: Int): Int {
@@ -324,6 +345,22 @@ object TimestampEdgeCases {
         second = 0,
         nanoseconds = 0,
       )
+
+  val plusZeroTimeZoneOffset: TimestampTestData
+    get() {
+      val string = "2024-05-18T12:45:56.123456789+00:00"
+      return TimestampTestData.from(
+        string = string,
+        fdcStringVariable = string,
+        year = 2024,
+        month = 5,
+        day = 18,
+        hour = 12,
+        minute = 45,
+        second = 56,
+        nanoseconds = 123456789,
+      )
+    }
 
   val singleDigits: TimestampTestData
     get() =
@@ -487,6 +524,7 @@ object TimestampEdgeCases {
         min,
         max,
         zero,
+        plusZeroTimeZoneOffset,
         singleDigits,
         allDigits,
         nanosecondsAbsent,

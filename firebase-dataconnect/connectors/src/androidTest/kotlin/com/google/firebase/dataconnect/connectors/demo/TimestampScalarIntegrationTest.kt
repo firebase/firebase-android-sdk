@@ -79,7 +79,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
       val queryResult =
         connector.getNonNullTimestampByKey.withStringData().execute(insertResult.data.key)
       val data = withClue("data") { queryResult.data.value.shouldNotBeNull() }
-      data.value shouldMatch testData.fdcRoundTripRegex
+      data.value shouldMatch testData.fdcFieldRegex
     }
   }
 
@@ -105,7 +105,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   ) {
     withClue("$testData") {
       val insertResult =
-        connector.insertNonNullTimestamp.executeWithStringVariables(testData.fdcScrubbedString)
+        connector.insertNonNullTimestamp.executeWithStringVariables(testData.fdcStringVariable)
       val queryResult = connector.getNonNullTimestampByKey.execute(insertResult.data.key)
       val data = withClue("data") { queryResult.data.value.shouldNotBeNull() }
       data.value shouldBe testData.timestamp.withMicrosecondPrecision()
