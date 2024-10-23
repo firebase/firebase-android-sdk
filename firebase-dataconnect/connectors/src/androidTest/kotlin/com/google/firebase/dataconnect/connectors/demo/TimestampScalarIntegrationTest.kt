@@ -94,6 +94,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun insertNonNullTimestamp_AsString_EdgeCases() =
     runTest(timeout = 60.seconds) {
+      assertInsertTimestampAsStringRoundTripsAsTimestamp(EdgeCases.timestamps.singleDigits)
       assertSoftly {
         EdgeCases.timestamps.all.forEach { assertInsertTimestampAsStringRoundTripsAsTimestamp(it) }
       }
@@ -107,7 +108,7 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
         connector.insertNonNullTimestamp.executeWithStringVariables(testData.string)
       val queryResult = connector.getNonNullTimestampByKey.execute(insertResult.data.key)
       val data = withClue("data") { queryResult.data.value.shouldNotBeNull() }
-      data.value shouldBe testData.timestamp
+      data.value shouldBe testData.timestamp.withMicrosecondPrecision()
     }
   }
 
