@@ -218,7 +218,7 @@ private fun TimestampComponents.toTimestampTestData(
   return TimestampTestData(
     timestamp = timestamp,
     string = string,
-    fdcScrubbedString = copy(t = 'T', z = 'Z').toRfc3339String(),
+    fdcScrubbedString = copy(t = 'T', z = 'Z', nanosecondsNumDigits = 6).toRfc3339String(),
     fdcRoundTripRegex = toRoundTripRegex(),
     fdcRoundTripTimestamp = timestamp.withMicrosecondPrecision(),
     components = this
