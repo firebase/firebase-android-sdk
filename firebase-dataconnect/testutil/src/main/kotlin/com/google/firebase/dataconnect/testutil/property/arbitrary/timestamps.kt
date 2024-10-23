@@ -19,15 +19,57 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.Timestamp
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DateEdgeCases.MIN_YEAR
 import com.google.firebase.dataconnect.testutil.timestampFromUTCDateAndTime
+import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.of
 
+/** Information for a test case of a timestamp with Firebase Data Connect. */
 data class TimestampTestData(
+
+  /** The timestamp under test, with full (nanosecond) precision. */
   val timestamp: Timestamp,
+
+  /**
+   * An RFC3339 string representation of [timestamp].
+   *
+   * Any given timestamp can have more than one equivalent representation in RFC3339, and this is
+   * but one such representation, chosen arbitrarily. For example, "2024-01-01T12:34:56.123Z" can
+   * equivalently be represented as "2024-01-01T12:34:56.123000Z" (extra zeroes in the nanosecond).
+   */
   val string: String,
-  val roundTripRegex: Regex,
+
+  /**
+   * The same string as [string] but (possibly) modified in such a way that it will be accepted when
+   * sent as a variable value in an `executeQuery` or `executeMutation` operation by Data Connect.
+   *
+   * For example, the RFC3339 standard allows the "T" to be lowercase (ie. "t"), but Data Connect
+   * fails to parse the lowercase "T"; therefore, this string will always have an uppercase "T".
+   */
+  val fdcScrubbedString: String = string,
+
+  /**
+   * A regular expression that matches all valid RFC3339 string representations of [timestamp] as
+   * would be returned from `executeQuery` and `executeMutation` operations in Firebase Data
+   * Connect.
+   *
+   * Notably, since Data Connect only supports microsecond precision, this regular expression
+   * effectively converts the 3 nanosecond digits to 0. For example, for the timestamp
+   * "2024-01-01T12:34:56.123456789Z" this regular expression would match
+   * "2024-01-01T12:34:56.123456Z" or "2024-01-01T12:34:56.123456789000Z", but _not_ the string with
+   * full nanosecond precision.
+   */
+  val fdcRoundTripRegex: Regex,
+
+  /**
+   * The timestamp that will be returned from the `executeQuery` and `executeMutation` operations of
+   * Firebase Data Connect for [fdcScrubbedString] or [timestamp].
+   *
+   * For example, nanoseconds will be truncated to microseconds because Data Connect only supports
+   * microsecond precision.
+   */
+  val fdcRoundTripTimestamp: Timestamp = timestamp.withMicrosecondPrecision()
 )
 
 fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
@@ -35,7 +77,7 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
   val hourArb: Arb<Int> = hour()
   val minuteArb: Arb<Int> = minute()
   val secondArb: Arb<Int> = second()
-  val nanosecondsNumDigitsArb = Arb.of(-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+  val nanosecondsNumDigitsArb = Arb.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
   val nanosecondsArb = nanosecond()
   val tArb: Arb<Char> = Arb.of('t', 'T')
   val zArb: Arb<Char> = Arb.of('z', 'Z')
@@ -53,7 +95,7 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
 
     val nanosecondsNumDigits = nanosecondsNumDigitsArb.bind()
     val nanoseconds =
-      if (nanosecondsNumDigits == -1) {
+      if (nanosecondsNumDigits == 0) {
         0
       } else {
         nanosecondsArb.bind().withNumDigits(nanosecondsNumDigits)
@@ -71,11 +113,24 @@ fun DataConnectArb.timestamp(): Arb<TimestampTestData> {
           minute = minute,
           second = second,
           nanoseconds = nanoseconds,
-          nanosecondsNumDigits = if (nanosecondsNumDigits == -1) null else nanosecondsNumDigits,
+          nanosecondsNumDigits = nanosecondsNumDigits,
           z = z,
         ),
-      roundTripRegex =
-        roundTripRegexFromTimestampComponents(
+      fdcScrubbedString =
+        timestampStringFromComponents(
+          year = year,
+          month = month,
+          day = day,
+          t = 'T',
+          hour = hour,
+          minute = minute,
+          second = second,
+          nanoseconds = nanoseconds,
+          nanosecondsNumDigits = nanosecondsNumDigits,
+          z = 'Z',
+        ),
+      fdcRoundTripRegex =
+        fdcRoundTripRegexFromTimestampComponents(
           year = year,
           month = month,
           day = day,
@@ -97,7 +152,7 @@ private fun timestampStringFromComponents(
   minute: Int,
   second: Int,
   nanoseconds: Int,
-  nanosecondsNumDigits: Int?,
+  nanosecondsNumDigits: Int,
   z: Char,
 ): String {
   val yearStr = "$year"
@@ -107,18 +162,17 @@ private fun timestampStringFromComponents(
   val minuteStr = "$minute".padStart(2, '0')
   val secondStr = "$second".padStart(2, '0')
 
-  val nanosecondsStrOrNull =
-    if (nanosecondsNumDigits === null) {
+  val nanosecondsStr =
+    if (nanosecondsNumDigits == 0) {
       check(nanoseconds == 0) {
-        "nanoseconds must be zero when nanosecondsNumDigits === null, but was: $nanoseconds"
+        "nanoseconds must be zero when nanosecondsNumDigits==0, but nanoseconds=$nanoseconds"
       }
-      null
+      ""
     } else {
-      "$nanoseconds".padStart(9, '0').substring(0 until nanosecondsNumDigits)
+      "." + "$nanoseconds".padStart(9, '0').substring(0, nanosecondsNumDigits)
     }
-  val nanosecondStr = if (nanosecondsStrOrNull === null) "" else ".$nanosecondsStrOrNull"
 
-  return "$yearStr-$monthStr-$dayStr$t$hourStr:$minuteStr:$secondStr$nanosecondStr$z"
+  return "$yearStr-$monthStr-$dayStr$t$hourStr:$minuteStr:$secondStr$nanosecondsStr$z"
 }
 
 /**
@@ -127,7 +181,7 @@ private fun timestampStringFromComponents(
  * arguments must conform to their corresponding restrictions in RFC 3339 "Date and Time on the
  * Internet: Timestamps" https://datatracker.ietf.org/doc/html/rfc3339.
  */
-private fun roundTripRegexFromTimestampComponents(
+private fun fdcRoundTripRegexFromTimestampComponents(
   year: Int,
   month: Int,
   day: Int,
@@ -192,337 +246,364 @@ object TimestampEdgeCases {
   val min: TimestampTestData
     get() =
       TimestampTestData(
-        Timestamp(-12_212_553_600, 0),
-        "1583-01-01T00:00:00.000000000Z",
-        roundTripRegexFromTimestampComponents(
-          year = 1583,
-          month = 1,
-          day = 1,
-          hour = 0,
-          minute = 0,
-          second = 0,
-          nanoseconds = 0,
-        ),
+        timestamp = Timestamp(-12_212_553_600, 0),
+        string = "1583-01-01T00:00:00.000000000Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 1583,
+            month = 1,
+            day = 1,
+            hour = 0,
+            minute = 0,
+            second = 0,
+            nanoseconds = 0,
+          ),
       )
 
   val max: TimestampTestData
     get() =
       TimestampTestData(
-        Timestamp(253_402_300_799, 999_999_999),
-        "9999-12-31T23:59:59.999999999Z",
-        roundTripRegexFromTimestampComponents(
-          year = 9999,
-          month = 12,
-          day = 31,
-          hour = 23,
-          minute = 59,
-          second = 59,
-          nanoseconds = 999_999_999,
-        ),
+        timestamp = Timestamp(253_402_300_799, 999_999_999),
+        string = "9999-12-31T23:59:59.999999999Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 9999,
+            month = 12,
+            day = 31,
+            hour = 23,
+            minute = 59,
+            second = 59,
+            nanoseconds = 999_999_999,
+          ),
       )
 
   val zero: TimestampTestData
     get() =
       TimestampTestData(
-        Timestamp(0, 0),
-        "1970-01-01T00:00:00.000000000Z",
-        roundTripRegexFromTimestampComponents(
-          year = 1970,
-          month = 1,
-          day = 1,
-          hour = 0,
-          minute = 0,
-          second = 0,
-          nanoseconds = 0,
-        ),
+        timestamp = Timestamp(0, 0),
+        string = "1970-01-01T00:00:00.000000000Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 1970,
+            month = 1,
+            day = 1,
+            hour = 0,
+            minute = 0,
+            second = 0,
+            nanoseconds = 0,
+          ),
       )
 
   val singleDigits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = MIN_YEAR,
-          month = 2,
-          day = 3,
-          hour = 4,
-          minute = 5,
-          second = 6,
-          nanoseconds = 700_000_000,
-        ),
-        "$MIN_YEAR-02-03T04:05:06.7Z",
-        roundTripRegexFromTimestampComponents(
-          year = MIN_YEAR,
-          month = 2,
-          day = 3,
-          hour = 4,
-          minute = 5,
-          second = 6,
-          nanoseconds = 700_000_000,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = MIN_YEAR,
+            month = 2,
+            day = 3,
+            hour = 4,
+            minute = 5,
+            second = 6,
+            nanoseconds = 700_000_000,
+          ),
+        string = "$MIN_YEAR-02-03T04:05:06.7Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = MIN_YEAR,
+            month = 2,
+            day = 3,
+            hour = 4,
+            minute = 5,
+            second = 6,
+            nanoseconds = 700_000_000,
+          ),
       )
 
   val allDigits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = MIN_YEAR,
-          month = 12,
-          day = 15,
-          hour = 12,
-          minute = 35,
-          second = 44,
-          nanoseconds = 123_456_789,
-        ),
-        "$MIN_YEAR-12-15T12:35:44.123456789Z",
-        roundTripRegexFromTimestampComponents(
-          year = MIN_YEAR,
-          month = 12,
-          day = 15,
-          hour = 12,
-          minute = 35,
-          second = 44,
-          nanoseconds = 123_456_789,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = MIN_YEAR,
+            month = 12,
+            day = 15,
+            hour = 12,
+            minute = 35,
+            second = 44,
+            nanoseconds = 123_456_789,
+          ),
+        string = "$MIN_YEAR-12-15T12:35:44.123456789Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = MIN_YEAR,
+            month = 12,
+            day = 15,
+            hour = 12,
+            minute = 35,
+            second = 44,
+            nanoseconds = 123_456_789,
+          ),
       )
 
   val nanosecondsAbsent: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 0,
-        ),
-        "7608-11-21T02:45:08Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 0,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 0,
+          ),
+        string = "7608-11-21T02:45:08Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 0,
+          ),
       )
 
   val nanoseconds1Digit: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 1,
-        ),
-        "7608-11-21T02:45:08.000000001Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 1,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 1,
+          ),
+        string = "7608-11-21T02:45:08.000000001Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 1,
+          ),
       )
 
   val nanoseconds2Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 12,
-        ),
-        "7608-11-21T02:45:08.000000012Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 12,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 12,
+          ),
+        string = "7608-11-21T02:45:08.000000012Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 12,
+          ),
       )
 
   val nanoseconds3Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 123,
-        ),
-        "7608-11-21T02:45:08.000000123Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 123,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 123,
+          ),
+        string = "7608-11-21T02:45:08.000000123Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 123,
+          ),
       )
 
   val nanoseconds4Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 1234,
-        ),
-        "7608-11-21T02:45:08.000001234Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 1234,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 1234,
+          ),
+        string = "7608-11-21T02:45:08.000001234Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 1234,
+          ),
       )
 
   val nanoseconds5Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 12345,
-        ),
-        "7608-11-21T02:45:08.000012345Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 12345,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 12345,
+          ),
+        string = "7608-11-21T02:45:08.000012345Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 12345,
+          ),
       )
 
   val nanoseconds6Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 123456,
-        ),
-        "7608-11-21T02:45:08.000123456Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 123456,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 123456,
+          ),
+        string = "7608-11-21T02:45:08.000123456Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 123456,
+          ),
       )
 
   val nanoseconds7Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 1234567,
-        ),
-        "7608-11-21T02:45:08.001234567Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 1234567,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 1234567,
+          ),
+        string = "7608-11-21T02:45:08.001234567Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 1234567,
+          ),
       )
 
   val nanoseconds8Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 12345678,
-        ),
-        "7608-11-21T02:45:08.012345678Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 12345678,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 12345678,
+          ),
+        string = "7608-11-21T02:45:08.012345678Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 12345678,
+          ),
       )
 
   val nanoseconds9Digits: TimestampTestData
     get() =
       TimestampTestData(
-        timestampFromUTCDateAndTime(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 123456789,
-        ),
-        "7608-11-21T02:45:08.123456789Z",
-        roundTripRegexFromTimestampComponents(
-          year = 7608,
-          month = 11,
-          day = 21,
-          hour = 2,
-          minute = 45,
-          second = 8,
-          nanoseconds = 123456789,
-        ),
+        timestamp =
+          timestampFromUTCDateAndTime(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 123456789,
+          ),
+        string = "7608-11-21T02:45:08.123456789Z",
+        fdcRoundTripRegex =
+          fdcRoundTripRegexFromTimestampComponents(
+            year = 7608,
+            month = 11,
+            day = 21,
+            hour = 2,
+            minute = 45,
+            second = 8,
+            nanoseconds = 123456789,
+          ),
       )
 
   val all: List<TimestampTestData>
