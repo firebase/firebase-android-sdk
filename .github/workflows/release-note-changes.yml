@@ -33,7 +33,7 @@ jobs:
         cache: gradle
 
     - name: Set up Python 3.10
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3
       if: ${{ steps.changed-files.outputs.any_changed == 'true' }}
       with:
         python-version: '3.10'
