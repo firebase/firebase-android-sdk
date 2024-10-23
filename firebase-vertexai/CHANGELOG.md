@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed issue where error AppCheck tokens were missing from the requests unintentionally. (#6409)
 * [fixed] Fixed issue where authorization headers weren't correctly formatted and were ignored by the backend. (#6400)
 
 # 16.0.0
