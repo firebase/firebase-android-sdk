@@ -101,7 +101,8 @@ internal constructor(
               Log.w(TAG, "Error obtaining AppCheck token", token.error)
             }
             // The appcheck backend can differentiate between apps without appcheck, and wrongly
-            // configured apps by verifying the value of the token, so it always needs to be included.
+            // configured apps by verifying the value of the token, so it always needs to be
+            // included.
             headers["X-Firebase-AppCheck"] = token.token
           }
 
