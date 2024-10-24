@@ -20,7 +20,7 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup("config")
+  libraryGroup = "config"
   testLab.enabled = true
   publishSources = true
   releaseNotes {

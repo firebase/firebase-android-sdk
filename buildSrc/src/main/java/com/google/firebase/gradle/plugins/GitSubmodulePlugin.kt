@@ -40,8 +40,8 @@ interface GitSubmodulePluginExtension {
  * the future. More importantly though, this provides a way for us to make sure the submodules are
  * initilized whenever we are building said SDKs- while keeping our system clean and modular.
  *
- * This plugin is automatically applied to all SDKs that utilize [FirebaseLibraryPlugin], and is
- * subsequently bound to the `preBuild` task that is apart of all gradle modules.
+ * This plugin is automatically applied to all SDKs that utilize [FirebaseAndroidLibraryPlugin], and
+ * is subsequently bound to the `preBuild` task that is apart of all gradle modules.
  *
  * The following tasks are registered when this plugin is applied:
  * - [initializeGitSubmodules][registerInitializeGitSubmodulesTask]

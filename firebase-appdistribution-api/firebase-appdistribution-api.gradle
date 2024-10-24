@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appdistribution"
+    libraryGroup = "appdistribution"
     previewMode = "beta"
     releaseNotes {
         name.set("{{appdistro}} API")

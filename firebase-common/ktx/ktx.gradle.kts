@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup("common")
+  libraryGroup = "common"
   publishJavadoc = false
   releaseNotes { enabled.set(false) }
 }

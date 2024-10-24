@@ -25,7 +25,7 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup("dataconnect")
+  libraryGroup = "dataconnect"
   testLab.enabled = false
   publishSources = true
   publishJavadoc = false
