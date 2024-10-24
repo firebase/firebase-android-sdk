@@ -13,10 +13,6 @@
 // limitations under the License.
 
 buildscript {
-    // TODO: remove once all sdks have migrated to version catalog
-    ext.kotlinVersion = libs.versions.kotlin.get()
-    ext.coroutinesVersion = libs.versions.coroutines.get()
-
     repositories {
         google()
         mavenCentral()
@@ -46,15 +42,6 @@ buildscript {
 
 apply from: 'sdkProperties.gradle'
 apply from: "gradle/errorProne.gradle"
-
-ext {
-    // TODO: remove once all sdks have migrated to version catalog
-    googleTruthVersion = libs.versions.truth.get()
-    grpcVersion = libs.versions.grpc.get()
-    robolectricVersion = libs.versions.robolectric.get()
-    androidxTestCoreVersion = libs.versions.androidx.test.core.get()
-    androidxTestJUnitVersion = libs.versions.androidx.test.junit.get()
-}
 
 apply plugin: com.google.firebase.gradle.plugins.PublishingPlugin
 
@@ -88,7 +75,7 @@ configure(subprojects) {
         java {
             target 'src/**/*.java'
             targetExclude '**/test/resources/**'
-            googleJavaFormat('1.22.0').reorderImports(false).skipJavadocFormatting()
+            googleJavaFormat('1.22.0').reorderImports(true).skipJavadocFormatting()
         }
         kotlin {
             target 'src/**/*.kt'
