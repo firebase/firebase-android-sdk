@@ -23,8 +23,11 @@ import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.enum
-import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.of
+import io.kotest.property.arbitrary.orNull
+import kotlin.math.roundToInt
+import kotlin.random.nextInt
 import kotlin.reflect.KClass
 
 /** Information for a test case of a timestamp with Firebase Data Connect. */
@@ -82,6 +85,8 @@ data class TimestampTestData(
   companion object
 }
 
+data class Nanoseconds(val nanoseconds: Int, val numTrailingNanosecondsZeroes: Int)
+
 /**
  * The components that make up an RFC3339 timestamp.
  *
@@ -95,17 +100,10 @@ data class TimestampComponents(
   val hour: Int,
   val minute: Int,
   val second: Int,
-  val nanoseconds: Int,
-  val nanosecondsNumDigits: Int,
+  val nanoseconds: Nanoseconds?,
   val timeZoneOffset: TimeZoneOffset,
   val t: Char,
-) {
-  init {
-    require(nanosecondsNumDigits != 0 || nanoseconds == 0) {
-      "nanoseconds must be zero when nanosecondsNumDigits==0, but nanoseconds=$nanoseconds"
-    }
-  }
-}
+)
 
 sealed interface TimeZoneOffset {
 
@@ -187,20 +185,11 @@ fun DataConnectArb.timestampComponents(
   hourArb: Arb<Int> = hour(),
   minuteArb: Arb<Int> = minute(),
   secondArb: Arb<Int> = second(),
-  nanosecondsNumDigitsArb: Arb<Int> = Arb.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
-  nanosecondsArb: Arb<Int> = nanosecond(),
+  nanosecondsArb: Arb<Nanoseconds?> = nanosecond(),
   timeZoneOffset: Arb<TimeZoneOffset> = timeZoneOffset(),
   tArb: Arb<Char> = Arb.of('t', 'T'),
 ): Arb<TimestampComponents> = arbitrary {
   val date = dateArb.bind()
-
-  val nanosecondsNumDigits = nanosecondsNumDigitsArb.bind()
-  val nanoseconds =
-    if (nanosecondsNumDigits == 0) {
-      0
-    } else {
-      nanosecondsArb.bind().withNumDigits(nanosecondsNumDigits)
-    }
 
   TimestampComponents(
     year = date.year,
@@ -209,8 +198,7 @@ fun DataConnectArb.timestampComponents(
     hour = hourArb.bind(),
     minute = minuteArb.bind(),
     second = secondArb.bind(),
-    nanoseconds = nanoseconds,
-    nanosecondsNumDigits = nanosecondsNumDigits,
+    nanoseconds = nanosecondsArb.bind(),
     timeZoneOffset = timeZoneOffset.bind(),
     t = tArb.bind(),
   )
@@ -223,28 +211,34 @@ fun DataConnectArb.timestamp(
     components.bind().toTimestampTestData(name = "arbitrary")
   }
 
-private fun TimestampComponents.toRfc3339String(): String = buildString {
-  append(year)
-  append('-')
-  append("$month".padStart(2, '0'))
-  append('-')
-  append("$day".padStart(2, '0'))
+private fun TimestampComponents.toRfc3339String(numTrailingNanosecondsZeroes: Int): String =
+  buildString {
+    append(year)
+    append('-')
+    append("$month".padStart(2, '0'))
+    append('-')
+    append("$day".padStart(2, '0'))
 
-  append(t)
+    append(t)
 
-  append("$hour".padStart(2, '0'))
-  append(':')
-  append("$minute".padStart(2, '0'))
-  append(':')
-  append("$second".padStart(2, '0'))
+    append("$hour".padStart(2, '0'))
+    append(':')
+    append("$minute".padStart(2, '0'))
+    append(':')
+    append("$second".padStart(2, '0'))
 
-  if (nanosecondsNumDigits > 0) {
-    append('.')
-    append("$nanoseconds".padStart(9, '0').substring(0, nanosecondsNumDigits))
+    if (nanoseconds !== null) {
+      append('.')
+      if (nanoseconds.nanoseconds == 0) {
+        append('0')
+      } else {
+        append("${nanoseconds.nanoseconds}".padStart(9, '0').trimEnd('0'))
+      }
+      repeat(numTrailingNanosecondsZeroes) { append('0') }
+    }
+
+    append(timeZoneOffset.rfc3339String)
   }
-
-  append(timeZoneOffset.rfc3339String)
-}
 
 /**
  * Creates and returns a [Regex] object that should match the string sent back from the Data Connect
@@ -267,11 +261,11 @@ private fun TimestampComponents.toFdcFieldRegex(): Regex =
       append(':')
       append("$second".padStart(2, '0'))
 
-      if (nanoseconds == 0) {
+      if (nanoseconds === null) {
         append("(\\.0+)?")
       } else {
         append("\\.")
-        append("$nanoseconds".padStart(9, '0').substring(0, 6).trimEnd('0'))
+        append("${nanoseconds.nanoseconds}".padStart(9, '0').substring(0, 6).trimEnd('0'))
         append("0*")
       }
 
@@ -279,16 +273,26 @@ private fun TimestampComponents.toFdcFieldRegex(): Regex =
     }
   )
 
+private fun Timestamp.adjustedForTimeZoneOffset(offset: TimeZoneOffset): Timestamp {
+  val delta = offset.offsetSeconds
+  if (delta == 0) {
+    return this
+  }
+  // TODO: Handle overflow
+  return Timestamp(seconds - delta, nanoseconds)
+}
+
 private fun TimestampComponents.toUtcTimestamp(): Timestamp =
   timestampFromUTCDateAndTime(
-    year = year,
-    month = month,
-    day = day,
-    hour = hour,
-    minute = minute,
-    second = second,
-    nanoseconds = nanoseconds,
-  )
+      year = year,
+      month = month,
+      day = day,
+      hour = hour,
+      minute = minute,
+      second = second,
+      nanoseconds = nanoseconds?.nanoseconds ?: 0,
+    )
+    .adjustedForTimeZoneOffset(timeZoneOffset)
 
 @JvmName("toTimestampTestDataWithAllowingNullArguments")
 private fun TimestampComponents.toTimestampTestData(
@@ -299,19 +303,31 @@ private fun TimestampComponents.toTimestampTestData(
   fdcFieldTimestamp: Timestamp? = null,
 ): TimestampTestData {
   val effectiveTimestamp = timestamp ?: toUtcTimestamp()
-  val effectiveString = string ?: toRfc3339String()
+  val effectiveString = string ?: toRfc3339String(numTrailingNanosecondsZeroes = 0)
 
   val effectiveFdcFieldTimestamp =
     fdcFieldTimestamp ?: effectiveTimestamp.withMicrosecondPrecision()
 
   val effectiveFdcStringVariable =
-    fdcStringVariable
-      ?: copy(
-          t = 'T',
-          timeZoneOffset = TimeZoneOffset.Z(TimeZoneOffset.Z.Case.Uppercase),
-          nanosecondsNumDigits = 6
-        )
-        .toRfc3339String()
+    if (fdcStringVariable !== null) {
+      fdcStringVariable
+    } else {
+      // Do not use 'z' for the time zone offset because Data Connect does not accept it.
+      val fdcTimeZoneOffset =
+        if (
+          timeZoneOffset is TimeZoneOffset.Z &&
+            timeZoneOffset.case == TimeZoneOffset.Z.Case.Lowercase
+        ) {
+          TimeZoneOffset.Z(TimeZoneOffset.Z.Case.Uppercase)
+        } else {
+          timeZoneOffset
+        }
+      // Do not use 't' for the time separator because Data Connect does not accept it.
+      // Also, only use 6 digits of precision for the nanoseconds because Data Connect drops the
+      // any digits beyond 6 in the nanoseconds.
+      copy(t = 'T', timeZoneOffset = fdcTimeZoneOffset)
+        .toRfc3339String(numTrailingNanosecondsZeroes = 0)
+    }
 
   return toTimestampTestData(
     name = name,
@@ -353,8 +369,7 @@ private fun TimestampTestData.Companion.from(
   hour: Int,
   minute: Int,
   second: Int,
-  nanoseconds: Int,
-  nanosecondsNumDigits: Int = 9,
+  nanoseconds: Nanoseconds?,
   timeZoneOffset: TimeZoneOffset = TimeZoneOffset.Z(TimeZoneOffset.Z.Case.Uppercase),
   t: Char = 'T',
 ): TimestampTestData =
@@ -366,7 +381,6 @@ private fun TimestampTestData.Companion.from(
       minute = minute,
       second = second,
       nanoseconds = nanoseconds,
-      nanosecondsNumDigits = nanosecondsNumDigits,
       timeZoneOffset = timeZoneOffset,
       t = t,
     )
@@ -378,29 +392,86 @@ private fun TimestampTestData.Companion.from(
       fdcFieldTimestamp = fdcFieldTimestamp,
     )
 
-private fun Int.withNumDigits(numDigits: Int): Int {
-  require(numDigits >= 0) { "invalid numDigits: $numDigits" }
-  if (numDigits == 0) {
-    return 0
+private fun hour(): Arb<Int> = positiveIntWithUniformNumDigitsProbability(0..23)
+
+private fun minute(): Arb<Int> = positiveIntWithUniformNumDigitsProbability(0..59)
+
+private fun second(): Arb<Int> = positiveIntWithUniformNumDigitsProbability(0..59)
+
+private fun nanosecond(
+  nanoseconds: Arb<Int?> =
+    positiveIntWithUniformNumDigitsProbability(0..999_999_999).orNull(nullProbability = 0.1),
+  numTrailingNanosecondsZeroesProbability: Arb<Float> = Arb.float(0.0f, 1.0f),
+): Arb<Nanoseconds?> = arbitrary {
+  val nanosecondsInt = nanoseconds.bind()
+  if (nanosecondsInt === null) {
+    return@arbitrary null
   }
 
-  val s = buildString {
-    append(this@withNumDigits)
-    while (length < numDigits) {
-      append('0')
-    }
+  val prob = numTrailingNanosecondsZeroesProbability.bind()
+  check(prob in 0.0f..1.0f) {
+    "invalid value produced by numTrailingNanosecondsZeroesProbability: $prob"
   }
 
-  return s.substring(0, numDigits).toInt()
+  val maxNumZeroes = 9 - "$nanosecondsInt".length
+  val numTrailingNanosecondsZeroes = (maxNumZeroes.toFloat() * prob).roundToInt()
+
+  Nanoseconds(
+    nanoseconds = nanosecondsInt,
+    numTrailingNanosecondsZeroes = numTrailingNanosecondsZeroes,
+  )
 }
 
-private fun hour(): Arb<Int> = Arb.int(0..23)
+private fun positiveIntWithUniformNumDigitsProbability(range: IntRange): Arb<Int> {
+  require(!range.isEmpty()) { "empty range is nonsensical" }
+  require(range.first >= 0) { "range.first must be non-negative, but got: ${range.first}" }
 
-private fun minute(): Arb<Int> = Arb.int(0..59)
+  val numDigitsRange = IntRange(range.first.toString().length, range.last.toString().length)
 
-private fun second(): Arb<Int> = Arb.int(0..59)
+  return arbitrary { rs ->
+    val numDigits = rs.random.nextInt(numDigitsRange)
 
-private fun nanosecond(): Arb<Int> = Arb.int(0..999_999_999)
+    val min =
+      if (numDigits == numDigitsRange.first) {
+        range.first
+      } else {
+        pow10(numDigits - 1)
+      }
+
+    val max =
+      if (numDigits == numDigitsRange.last) {
+        range.last
+      } else {
+        pow10(numDigits) - 1
+      }
+
+    val number = rs.random.nextInt(min, max)
+    if (
+      number == 0 || numDigits == numDigitsRange.last || numDigitsRange.first == numDigitsRange.last
+    ) {
+      return@arbitrary number
+    }
+
+    if (rs.random.nextFloat() > 0.333f) {
+      return@arbitrary number
+    }
+
+    val numberTrailingZeroes = rs.random.nextInt(numDigitsRange.first until numDigitsRange.last)
+    val s = buildString {
+      append(number)
+      repeat(numberTrailingZeroes) { append('0') }
+    }
+
+    s.substring(s.length - numDigits).toInt()
+  }
+}
+
+private fun pow10(n: Int): Int {
+  require(n >= 0) { "invalid n: $n" }
+  var result = 1
+  repeat(n) { result *= 10 }
+  return result
+}
 
 @Suppress("MemberVisibilityCanBePrivate")
 object TimestampEdgeCases {
@@ -417,7 +488,7 @@ object TimestampEdgeCases {
         hour = 0,
         minute = 0,
         second = 0,
-        nanoseconds = 0,
+        nanoseconds = Nanoseconds(0, numTrailingNanosecondsZeroes = 9),
       )
 
   val max: TimestampTestData
@@ -432,23 +503,80 @@ object TimestampEdgeCases {
         hour = 23,
         minute = 59,
         second = 59,
-        nanoseconds = 999_999_999,
+        nanoseconds = Nanoseconds(999_999_999, numTrailingNanosecondsZeroes = 9),
       )
 
   val zero: TimestampTestData
-    get() =
-      TimestampTestData.from(
+    get() {
+      val string = "1970-01-01T00:00:00.0Z"
+      return TimestampTestData.from(
         name = "zero timestamp",
         timestamp = Timestamp(0, 0),
-        string = "1970-01-01T00:00:00.000000000Z",
+        string = string,
+        fdcStringVariable = string,
         year = 1970,
         month = 1,
         day = 1,
         hour = 0,
         minute = 0,
         second = 0,
-        nanoseconds = 0,
+        nanoseconds = Nanoseconds(0, numTrailingNanosecondsZeroes = 0),
       )
+    }
+
+  val zeroWith6TrailingZeroes: TimestampTestData
+    get() {
+      val string = "1970-01-01T00:00:00.000000Z"
+      return TimestampTestData.from(
+        name = "zero timestamp",
+        timestamp = Timestamp(0, 0),
+        string = string,
+        fdcStringVariable = string,
+        year = 1970,
+        month = 1,
+        day = 1,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        nanoseconds = Nanoseconds(0, numTrailingNanosecondsZeroes = 6),
+      )
+    }
+
+  val zeroWith9TrailingZeroes: TimestampTestData
+    get() {
+      val string = "1970-01-01T00:00:00.000000000Z"
+      return TimestampTestData.from(
+        name = "zero timestamp",
+        timestamp = Timestamp(0, 0),
+        string = string,
+        fdcStringVariable = string,
+        year = 1970,
+        month = 1,
+        day = 1,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        nanoseconds = Nanoseconds(0, numTrailingNanosecondsZeroes = 9),
+      )
+    }
+
+  val zeroWithOmittingNanoseconds: TimestampTestData
+    get() {
+      val string = "1970-01-01T00:00:00Z"
+      return TimestampTestData.from(
+        name = "zero timestamp",
+        timestamp = Timestamp(0, 0),
+        string = string,
+        fdcStringVariable = string,
+        year = 1970,
+        month = 1,
+        day = 1,
+        hour = 0,
+        minute = 0,
+        second = 0,
+        nanoseconds = null,
+      )
+    }
 
   // The time zone offset "+00:00" is identical to "Z" (i.e. UTC).
   // https://datatracker.ietf.org/doc/html/rfc3339#section-4.3
@@ -465,7 +593,7 @@ object TimestampEdgeCases {
         hour = 12,
         minute = 45,
         second = 56,
-        nanoseconds = 123456789,
+        nanoseconds = Nanoseconds(123456789, numTrailingNanosecondsZeroes = 0),
       )
     }
 
@@ -482,7 +610,7 @@ object TimestampEdgeCases {
         hour = 11,
         minute = 22,
         second = 56,
-        nanoseconds = 123456789,
+        nanoseconds = Nanoseconds(123456789, numTrailingNanosecondsZeroes = 0),
       )
     }
 
@@ -499,7 +627,7 @@ object TimestampEdgeCases {
         hour = 14,
         minute = 8,
         second = 56,
-        nanoseconds = 123456789,
+        nanoseconds = Nanoseconds(123456789, numTrailingNanosecondsZeroes = 0),
       )
     }
 
@@ -514,7 +642,7 @@ object TimestampEdgeCases {
         hour = 4,
         minute = 5,
         second = 6,
-        nanoseconds = 700_000_000,
+        nanoseconds = Nanoseconds(700_000_000, numTrailingNanosecondsZeroes = 0),
       )
 
   val allDigits: TimestampTestData
@@ -528,7 +656,7 @@ object TimestampEdgeCases {
         hour = 12,
         minute = 35,
         second = 44,
-        nanoseconds = 123_456_789,
+        nanoseconds = Nanoseconds(123456789, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanosecondsOmitted: TimestampTestData
@@ -542,7 +670,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 0,
+        nanoseconds = null,
       )
 
   val nanoseconds1Digit: TimestampTestData
@@ -556,7 +684,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 1,
+        nanoseconds = Nanoseconds(1, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds2Digits: TimestampTestData
@@ -570,7 +698,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 12,
+        nanoseconds = Nanoseconds(12, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds3Digits: TimestampTestData
@@ -584,7 +712,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 123,
+        nanoseconds = Nanoseconds(123, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds4Digits: TimestampTestData
@@ -598,7 +726,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 1234,
+        nanoseconds = Nanoseconds(1234, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds5Digits: TimestampTestData
@@ -612,7 +740,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 12345,
+        nanoseconds = Nanoseconds(12345, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds6Digits: TimestampTestData
@@ -626,7 +754,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 123456,
+        nanoseconds = Nanoseconds(123456, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds7Digits: TimestampTestData
@@ -640,7 +768,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 1234567,
+        nanoseconds = Nanoseconds(1234567, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds8Digits: TimestampTestData
@@ -654,7 +782,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 12345678,
+        nanoseconds = Nanoseconds(12345678, numTrailingNanosecondsZeroes = 0),
       )
 
   val nanoseconds9Digits: TimestampTestData
@@ -668,7 +796,7 @@ object TimestampEdgeCases {
         hour = 2,
         minute = 45,
         second = 8,
-        nanoseconds = 123456789,
+        nanoseconds = Nanoseconds(123456789, numTrailingNanosecondsZeroes = 0),
       )
 
   val all: List<TimestampTestData>
@@ -677,6 +805,9 @@ object TimestampEdgeCases {
         min,
         max,
         zero,
+        zeroWith6TrailingZeroes,
+        zeroWith9TrailingZeroes,
+        zeroWithOmittingNanoseconds,
         positiveNonZeroTimeZoneOffset,
         plusZeroTimeZoneOffset,
         negativeNonZeroTimeZoneOffset,
