@@ -22,8 +22,10 @@ import com.google.firebase.dataconnect.testutil.timestampFromUTCDateAndTime
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.of
+import kotlin.reflect.KClass
 
 /** Information for a test case of a timestamp with Firebase Data Connect. */
 data class TimestampTestData(
@@ -95,9 +97,90 @@ data class TimestampComponents(
   val second: Int,
   val nanoseconds: Int,
   val nanosecondsNumDigits: Int,
+  val timeZoneOffset: TimeZoneOffset,
   val t: Char,
-  val z: Char,
-)
+) {
+  init {
+    require(nanosecondsNumDigits != 0 || nanoseconds == 0) {
+      "nanoseconds must be zero when nanosecondsNumDigits==0, but nanoseconds=$nanoseconds"
+    }
+  }
+}
+
+sealed interface TimeZoneOffset {
+
+  val offsetSeconds: Int
+  val rfc3339String: String
+
+  data class Z(val case: Case) : TimeZoneOffset {
+    override val offsetSeconds = 0
+
+    override val rfc3339String =
+      when (case) {
+        Case.Uppercase -> "Z"
+        Case.Lowercase -> "z"
+      }
+
+    enum class Case {
+      Uppercase,
+      Lowercase,
+    }
+  }
+
+  data class Offset(val hours: Int, val minutes: Int, val sign: Sign) : TimeZoneOffset {
+    init {
+      require(hours >= 0) { "hours must be non-negative, but got: $hours" }
+      require(minutes >= 0) { "minutes must be non-negative, but got: $minutes" }
+    }
+
+    override val offsetSeconds = run {
+      val multiplier =
+        when (sign) {
+          Sign.Positive -> 1
+          Sign.Negative -> -1
+        }
+      multiplier * 60 * ((hours * 60) + minutes)
+    }
+
+    override val rfc3339String = buildString {
+      append(
+        when (sign) {
+          Sign.Positive -> '+'
+          Sign.Negative -> '-'
+        }
+      )
+      append("$hours".padStart(2, '0'))
+      append(':')
+      append("$minutes".padStart(2, '0'))
+    }
+
+    enum class Sign {
+      Positive,
+      Negative,
+    }
+  }
+}
+
+@Suppress("UnusedReceiverParameter")
+fun DataConnectArb.timeZoneOffset(
+  type: Arb<KClass<out TimeZoneOffset>> =
+    Arb.of(TimeZoneOffset.Z::class, TimeZoneOffset.Offset::class),
+  case: Arb<TimeZoneOffset.Z.Case> = Arb.enum(),
+  sign: Arb<TimeZoneOffset.Offset.Sign> = Arb.enum(),
+  hour: Arb<Int> = hour(),
+  minute: Arb<Int> = minute(),
+): Arb<TimeZoneOffset> = arbitrary {
+  when (val typeClass = type.bind()) {
+    TimeZoneOffset.Z::class -> TimeZoneOffset.Z(case.bind())
+    TimeZoneOffset.Offset::class ->
+      TimeZoneOffset.Offset(
+        hours = hour.bind(),
+        minutes = minute.bind(),
+        sign = sign.bind(),
+      )
+    else -> throw IllegalStateException("should never get here wwh9arx7x8: $typeClass")
+  }
+}
 
 fun DataConnectArb.timestampComponents(
   dateArb: Arb<DateTestData> = date(),
@@ -106,8 +189,8 @@ fun DataConnectArb.timestampComponents(
   secondArb: Arb<Int> = second(),
   nanosecondsNumDigitsArb: Arb<Int> = Arb.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9),
   nanosecondsArb: Arb<Int> = nanosecond(),
+  timeZoneOffset: Arb<TimeZoneOffset> = timeZoneOffset(),
   tArb: Arb<Char> = Arb.of('t', 'T'),
-  zArb: Arb<Char> = Arb.of('z', 'Z'),
 ): Arb<TimestampComponents> = arbitrary {
   val date = dateArb.bind()
 
@@ -128,8 +211,8 @@ fun DataConnectArb.timestampComponents(
     second = secondArb.bind(),
     nanoseconds = nanoseconds,
     nanosecondsNumDigits = nanosecondsNumDigits,
+    timeZoneOffset = timeZoneOffset.bind(),
     t = tArb.bind(),
-    z = zArb.bind(),
   )
 }
 
@@ -140,25 +223,27 @@ fun DataConnectArb.timestamp(
     components.bind().toTimestampTestData(name = "arbitrary")
   }
 
-private fun TimestampComponents.toRfc3339String(): String {
-  val yearStr = "$year"
-  val monthStr = "$month".padStart(2, '0')
-  val dayStr = "$day".padStart(2, '0')
-  val hourStr = "$hour".padStart(2, '0')
-  val minuteStr = "$minute".padStart(2, '0')
-  val secondStr = "$second".padStart(2, '0')
+private fun TimestampComponents.toRfc3339String(): String = buildString {
+  append(year)
+  append('-')
+  append("$month".padStart(2, '0'))
+  append('-')
+  append("$day".padStart(2, '0'))
 
-  val nanosecondsStr =
-    if (nanosecondsNumDigits == 0) {
-      check(nanoseconds == 0) {
-        "nanoseconds must be zero when nanosecondsNumDigits==0, but nanoseconds=$nanoseconds"
-      }
-      ""
-    } else {
-      "." + "$nanoseconds".padStart(9, '0').substring(0, nanosecondsNumDigits)
-    }
+  append(t)
 
-  return "$yearStr-$monthStr-$dayStr$t$hourStr:$minuteStr:$secondStr$nanosecondsStr$z"
+  append("$hour".padStart(2, '0'))
+  append(':')
+  append("$minute".padStart(2, '0'))
+  append(':')
+  append("$second".padStart(2, '0'))
+
+  if (nanosecondsNumDigits > 0) {
+    append('.')
+    append("$nanoseconds".padStart(9, '0').substring(0, nanosecondsNumDigits))
+  }
+
+  append(timeZoneOffset.rfc3339String)
 }
 
 /**
@@ -220,7 +305,13 @@ private fun TimestampComponents.toTimestampTestData(
     fdcFieldTimestamp ?: effectiveTimestamp.withMicrosecondPrecision()
 
   val effectiveFdcStringVariable =
-    fdcStringVariable ?: copy(t = 'T', z = 'Z', nanosecondsNumDigits = 6).toRfc3339String()
+    fdcStringVariable
+      ?: copy(
+          t = 'T',
+          timeZoneOffset = TimeZoneOffset.Z(TimeZoneOffset.Z.Case.Uppercase),
+          nanosecondsNumDigits = 6
+        )
+        .toRfc3339String()
 
   return toTimestampTestData(
     name = name,
@@ -264,8 +355,8 @@ private fun TimestampTestData.Companion.from(
   second: Int,
   nanoseconds: Int,
   nanosecondsNumDigits: Int = 9,
+  timeZoneOffset: TimeZoneOffset = TimeZoneOffset.Z(TimeZoneOffset.Z.Case.Uppercase),
   t: Char = 'T',
-  z: Char = 'Z',
 ): TimestampTestData =
   TimestampComponents(
       year = year,
@@ -276,8 +367,8 @@ private fun TimestampTestData.Companion.from(
       second = second,
       nanoseconds = nanoseconds,
       nanosecondsNumDigits = nanosecondsNumDigits,
+      timeZoneOffset = timeZoneOffset,
       t = t,
-      z = z,
     )
     .toTimestampTestData(
       name = name,
