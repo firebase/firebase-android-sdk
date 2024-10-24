@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Fixed issue where error Firebase App Check tokens were missing from the requests unintentionally. (#6409)
+* [fixed] Fixed issue where Firebase App Check error tokens were unintentionally missing from the requests. (#6409)
 
 
 # 16.0.1
