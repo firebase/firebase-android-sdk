@@ -60,8 +60,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Top level <a href="https://firebase.google.com/docs/cloud-messaging/">Firebase Cloud
- * Messaging</a> singleton that provides methods for subscribing to topics and sending upstream
- * messages.
+ * Messaging</a> singleton that provides methods for generating tokens and subscribing to topics.
  *
  * <p>In order to receive messages, declare an implementation of <br>
  * {@link FirebaseMessagingService} in the app manifest. To process messages, override base class
@@ -515,9 +514,9 @@ public class FirebaseMessaging {
    * <p>When there is an active connection the message will be sent immediately, otherwise the
    * message will be queued up to the time to live (TTL) set in the message.
    *
-   * @deprecated FCM upstream messaging is deprecated and will be decommissioned in June 2024. Learn
-   *     more in the <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about
-   *     FCM features deprecated in June 2023</a>.
+   * @deprecated FCM upstream messaging is decommissioned. Learn more in the
+   * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
+   * deprecated in June 2023</a>.
    */
   @Deprecated
   public void send(@NonNull RemoteMessage message) {

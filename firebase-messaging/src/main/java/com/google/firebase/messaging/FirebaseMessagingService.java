@@ -35,8 +35,7 @@ import java.util.concurrent.ExecutorService;
  * Base class for receiving messages from Firebase Cloud Messaging.
  *
  * <p>Extending this class is required to be able to handle downstream messages. It also provides
- * functionality to automatically display notifications, and has methods that are invoked to give
- * the status of upstream messages.
+ * functionality to automatically display notifications.
  *
  * <p>Override base class methods to handle any events required by the application. All methods are
  * invoked on a background thread, and <em>may be called when the app is in the background or not
@@ -127,7 +126,12 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    * Called when an upstream message has been successfully sent to the GCM connection server.
    *
    * @param msgId of the upstream message sent using {@link FirebaseMessaging#send}.
+   *
+   * @deprecated FCM upstream messaging is decommissioned. Learn more in the
+   * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
+   * deprecated in June 2023</a>.
    */
+  @Deprecated
   @WorkerThread
   public void onMessageSent(@NonNull String msgId) {}
 
@@ -136,7 +140,12 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    *
    * @param msgId of the upstream message sent using {@link FirebaseMessaging#send}.
    * @param exception description of the error, typically a {@link SendException}.
+   *
+   * @deprecated FCM upstream messaging is decommissioned. Learn more in the
+   * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
+   * deprecated in June 2023</a>.
    */
+  @Deprecated
   @WorkerThread
   public void onSendError(@NonNull String msgId, @NonNull Exception exception) {}
 
