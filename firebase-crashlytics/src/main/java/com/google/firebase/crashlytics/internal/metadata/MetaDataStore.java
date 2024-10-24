@@ -121,7 +121,7 @@ class MetaDataStore {
     final File f =
         isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
-      safeDeleteCorruptFile(f);
+      safeDeleteCorruptFile(f, "The file has a length of zero for session: " + sessionId);
       return Collections.emptyMap();
     }
 
@@ -141,7 +141,7 @@ class MetaDataStore {
   public List<RolloutAssignment> readRolloutsState(String sessionId) {
     final File f = getRolloutsStateForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
-      safeDeleteCorruptFile(f);
+      safeDeleteCorruptFile(f, "The file has a length of zero for session: " + sessionId);
       return Collections.emptyList();
     }
 
@@ -164,7 +164,7 @@ class MetaDataStore {
   public void writeRolloutState(String sessionId, List<RolloutAssignment> rolloutsState) {
     final File f = getRolloutsStateForSession(sessionId);
     if (rolloutsState.isEmpty()) {
-      safeDeleteCorruptFile(f);
+      safeDeleteCorruptFile(f, "Rollout state is empty for session: " + sessionId);
       return;
     }
 
@@ -273,6 +273,14 @@ class MetaDataStore {
   private static void safeDeleteCorruptFile(File file) {
     if (file.exists() && file.delete()) {
       Logger.getLogger().i("Deleted corrupt file: " + file.getAbsolutePath());
+    }
+  }
+
+  // TODO(b/375437048): Remove when fixed
+  private static void safeDeleteCorruptFile(File file, String reason) {
+    if (file.exists() && file.delete()) {
+      Logger.getLogger()
+          .i(String.format("Deleted corrupt file: %s\nReason: %s", file.getAbsolutePath(), reason));
     }
   }
 }

@@ -32,6 +32,7 @@ import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventReceiver;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -52,12 +53,18 @@ public class CrashlyticsAnalyticsListenerTest {
   @Mock private AnalyticsEventLogger analyticsEventLogger;
 
   private CrashlyticsAnalyticsListener listener;
+  private AutoCloseable mocks;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     listener = new CrashlyticsAnalyticsListener();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test

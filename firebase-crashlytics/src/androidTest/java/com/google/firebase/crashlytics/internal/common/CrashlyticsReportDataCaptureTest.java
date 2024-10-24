@@ -51,6 +51,7 @@ import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStr
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,6 +70,7 @@ public class CrashlyticsReportDataCaptureTest {
   private int eventThreadImportance;
   private int maxChainedExceptions;
   private SettingsProvider testSettingsProvider;
+  private AutoCloseable mocks;
   private final CrashlyticsWorkers crashlyticsWorkers =
       new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
 
@@ -80,7 +82,7 @@ public class CrashlyticsReportDataCaptureTest {
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("installId"));
     when(stackTraceTrimmingStrategy.getTrimmedStackTrace(any(StackTraceElement[].class)))
         .thenAnswer(i -> i.getArguments()[0]);
@@ -98,6 +100,11 @@ public class CrashlyticsReportDataCaptureTest {
 
     testSettingsProvider = mock(SettingsProvider.class);
     initDataCapture();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   private void initDataCapture() throws Exception {

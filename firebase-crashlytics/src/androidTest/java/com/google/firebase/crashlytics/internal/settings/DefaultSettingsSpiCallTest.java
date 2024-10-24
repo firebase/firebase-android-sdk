@@ -14,6 +14,11 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 import com.google.firebase.concurrent.TestOnlyExecutors;
@@ -31,6 +36,8 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.Map;
 import java.util.concurrent.Future;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
 
@@ -48,19 +55,12 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
   private Logger mockLogger;
   private DefaultSettingsSpiCall defaultSettingsSpiCall;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     mockLogger = mock(Logger.class);
 
     defaultSettingsSpiCall =
         new DefaultSettingsSpiCall(TEST_URL, mock(HttpRequestFactory.class), mockLogger);
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
   }
 
   public void testWebCall() throws Exception {
@@ -110,6 +110,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
         headers.get(DefaultSettingsSpiCall.HEADER_ACCEPT));
   }
 
+  @Test
   public void testWebCallNoInstanceId() throws Exception {
     final SettingsRequest requestData = buildSettingsRequest(null);
 
@@ -156,6 +157,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
         headers.get(DefaultSettingsSpiCall.HEADER_ACCEPT));
   }
 
+  @Test
   public void testHandleResponse_requestSuccessfulValidJson() throws IOException {
     final HttpResponse mockHttpResponse = mock(HttpResponse.class);
     when(mockHttpResponse.code()).thenReturn(HttpURLConnection.HTTP_OK);
@@ -174,6 +176,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     }
   }
 
+  @Test
   public void testHandleResponse_requestSuccessfulNoJson() {
     final HttpResponse mockHttpResponse = mock(HttpResponse.class);
     when(mockHttpResponse.code()).thenReturn(HttpURLConnection.HTTP_OK);
@@ -184,6 +187,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     verify(mockLogger, never()).e(anyString());
   }
 
+  @Test
   public void testHandleResponse_requestNotSuccessful() throws IOException {
     final HttpResponse mockHttpResponse = mock(HttpResponse.class);
     when(mockHttpResponse.code()).thenReturn(HttpURLConnection.HTTP_INTERNAL_ERROR);
@@ -199,6 +203,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
                     + TEST_URL));
   }
 
+  @Test
   public void testRequestWasSuccessful_successfulStatusCodes() {
     final int[] statusCodes = {
       HttpURLConnection.HTTP_OK,
@@ -211,6 +216,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
     }
   }
 
+  @Test
   public void testRequestWasSuccessful_unsuccessfulStatusCodes() {
     // 204 and 205 are considered unsuccessful in this case, and 206 should never happen. Also
     // test with some of the other common status codes (these are ones that our backend has

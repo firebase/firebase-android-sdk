@@ -15,12 +15,17 @@
 package com.google.firebase.crashlytics.internal.stacktrace;
 
 import static com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData.makeTrimmedThrowableData;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.util.Arrays;
 import java.util.UUID;
+import org.junit.Before;
+import org.junit.Test;
 
 public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
 
@@ -43,6 +48,7 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
   private Exception mockException;
   private Exception mockCause;
 
+  @Before
   public void setUp() throws Exception {
     mockException = mock(Exception.class);
     mockCause = mock(Exception.class);
@@ -50,6 +56,7 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     doReturn("cause").when(mockCause).getLocalizedMessage();
   }
 
+  @Test
   public void testStackTraceIsTrimmed() {
     doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
 
@@ -60,6 +67,7 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     assertEquals(mockException.getStackTrace()[0], t.stacktrace[0]);
   }
 
+  @Test
   public void testCauseStackTraceIsTrimmed() {
     doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
     doReturn(mockStackTrace(3)).when(mockCause).getStackTrace();
@@ -75,6 +83,7 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     assertEquals(mockException.getCause().getStackTrace()[0], t.cause.stacktrace[0]);
   }
 
+  @Test
   public void testStackTraceIsNotModifiedIfSmallEnough() {
     doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
 
@@ -85,6 +94,7 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     assertTrue(Arrays.equals(mockException.getStackTrace(), t.stacktrace));
   }
 
+  @Test
   public void testCauseStackTraceIsNotModifiedIfSmallEnough() {
     doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
     doReturn(mockStackTrace(3)).when(mockCause).getStackTrace();
@@ -100,6 +110,7 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     assertTrue(Arrays.equals(mockException.getCause().getStackTrace(), t.cause.stacktrace));
   }
 
+  @Test
   public void testOnlyCauseStackTraceIsTrimmed() {
     doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
     doReturn(mockStackTrace(5)).when(mockCause).getStackTrace();

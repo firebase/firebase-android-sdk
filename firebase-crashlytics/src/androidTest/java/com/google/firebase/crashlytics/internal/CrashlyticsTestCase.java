@@ -17,16 +17,16 @@ package com.google.firebase.crashlytics.internal;
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
-import junit.framework.TestCase;
+import org.junit.After;
 
 /** Base class for all our TestCases. */
-public class CrashlyticsTestCase extends TestCase {
+public class CrashlyticsTestCase {
   protected Context getContext() {
     return ApplicationProvider.getApplicationContext();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown() throws Exception {
     new FileStore(getContext()).deleteAllCrashlyticsFiles();
   }
 }

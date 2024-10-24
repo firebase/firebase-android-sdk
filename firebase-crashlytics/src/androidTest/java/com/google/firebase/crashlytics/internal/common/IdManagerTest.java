@@ -16,6 +16,12 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static com.google.firebase.crashlytics.internal.common.DataCollectionArbiterTest.MOCK_ARBITER_DISABLED;
 import static com.google.firebase.crashlytics.internal.common.DataCollectionArbiterTest.MOCK_ARBITER_ENABLED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +33,8 @@ import com.google.firebase.crashlytics.internal.common.InstallIdProvider.Install
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.TimeoutException;
+import org.junit.After;
+import org.junit.Before;
 
 public class IdManagerTest extends CrashlyticsTestCase {
 
@@ -36,17 +44,15 @@ public class IdManagerTest extends CrashlyticsTestCase {
   private final CrashlyticsWorkers crashlyticsWorkers =
       new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
 
-  @Override
+  @Before
   public void setUp() throws Exception {
-    super.setUp();
     prefs = CommonUtils.getSharedPrefs(getContext());
     legacyPrefs = CommonUtils.getLegacySharedPrefs(getContext());
     clearPrefs();
   }
 
-  @Override
+  @After
   public void tearDown() throws Exception {
-    super.tearDown();
     clearPrefs();
   }
 

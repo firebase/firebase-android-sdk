@@ -14,6 +14,10 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
@@ -50,6 +54,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mockito;
 
 public class CrashlyticsCoreTest extends CrashlyticsTestCase {
@@ -71,20 +77,14 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   private static final CrashlyticsWorkers crashlyticsWorkers =
       new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     mockBreadcrumbSource = mock(BreadcrumbSource.class);
 
     crashlyticsCore = appRestart();
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-  }
-
+  @Test
   public void testCustomAttributes() throws Exception {
     UserMetadata metadata = crashlyticsCore.getController().getUserMetadata();
 
@@ -159,6 +159,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(longValue, metadata.getCustomKeys().get(key1));
   }
 
+  @Test
   public void testBulkCustomKeys() throws Exception {
     final double DELTA = 1e-15;
 
@@ -283,36 +284,44 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals("", metadata.getCustomKeys().get(longId));
   }
 
+  @Test
   public void testGetVersion() {
     assertFalse(TextUtils.isEmpty(CrashlyticsCore.getVersion()));
     assertFalse(CrashlyticsCore.getVersion().equalsIgnoreCase("version"));
     assertEquals(BuildConfig.VERSION_NAME, CrashlyticsCore.getVersion());
   }
 
+  @Test
   public void testNullBuildIdRequiredTrue() {
     assertFalse(CrashlyticsCore.isBuildIdValid(null, true));
   }
 
+  @Test
   public void testEmptyBuildIdRequiredTrue() {
     assertFalse(CrashlyticsCore.isBuildIdValid("", true));
   }
 
+  @Test
   public void testValidBuildIdRequiredTrue() {
     assertTrue(CrashlyticsCore.isBuildIdValid("buildId", true));
   }
 
+  @Test
   public void testNullBuildIdRequiredFalse() {
     assertTrue(CrashlyticsCore.isBuildIdValid(null, false));
   }
 
+  @Test
   public void testEmptyBuildIdRequiredFalse() {
     assertTrue(CrashlyticsCore.isBuildIdValid("", false));
   }
 
+  @Test
   public void testBreadcrumbSourceIsRegistered() {
     Mockito.verify(mockBreadcrumbSource).registerBreadcrumbHandler(any(BreadcrumbHandler.class));
   }
 
+  @Test
   public void testOnPreExecute_nativeDidCrashOnPreviousExecution() throws Exception {
     appRestart(); // Create a previous execution
     final CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);
@@ -321,6 +330,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.didCrashOnPreviousExecution());
   }
 
+  @Test
   public void testOnPreExecute_nativeDidNotCrashOnPreviousExecution() throws Exception {
     appRestart(); // Create a previous execution
     final CrashlyticsNativeComponent mockNativeComponent = mock(CrashlyticsNativeComponent.class);

@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.settings;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,21 +27,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Before;
+import org.junit.Test;
 
 public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
   CurrentTimeProvider mockCurrentTimeProvider;
   SettingsJsonTransform transform;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     mockCurrentTimeProvider = mock(CurrentTimeProvider.class);
     when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(Long.valueOf(10));
 
     transform = new SettingsV3JsonTransform();
   }
 
+  @Test
   public void testFirebaseSettingsTransform() throws Exception {
     JSONObject testJson = getTestJSON("firebase_settings.json");
     Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);
@@ -47,6 +50,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, settings, false);
   }
 
+  @Test
   public void testFirebaseSettingsTransform_newApp() throws Exception {
     JSONObject testJson = getTestJSON("firebase_settings_new.json");
     Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);
@@ -54,6 +58,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, settings, true);
   }
 
+  @Test
   public void testFirebaseSettingsTransform_collectAnrs() throws Exception {
     JSONObject testJson = getTestJSON("firebase_settings_collect_anrs.json");
     Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);
@@ -61,6 +66,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, settings, false, true);
   }
 
+  @Test
   public void testFirebaseSettingsTransform_collectBuildIds() throws Exception {
     JSONObject testJson = getTestJSON("firebase_settings_collect_build_ids.json");
     Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);

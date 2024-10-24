@@ -14,13 +14,19 @@
 
 package com.google.firebase.crashlytics.internal.stacktrace;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.util.UUID;
+import org.junit.Test;
 
 public class MiddleOutStrategyTest extends CrashlyticsTestCase {
 
   private MiddleOutStrategy middleOutStrategy;
 
+  @Test
   public void testStackTraceRetainsTopAndBottom() {
     final int trimmedSize = 10;
     middleOutStrategy = new MiddleOutStrategy(trimmedSize);
@@ -34,6 +40,7 @@ public class MiddleOutStrategyTest extends CrashlyticsTestCase {
     assertTrue(rangesMatch(mockStackTrace, mockStackTrace.length - 5, trimmed, 5, 5));
   }
 
+  @Test
   public void testStackTraceRetainsExtraFrameOnTop_whenTrimmedSizeIsOdd() {
     final int trimmedSize = 11;
     middleOutStrategy = new MiddleOutStrategy(trimmedSize);
@@ -47,6 +54,7 @@ public class MiddleOutStrategyTest extends CrashlyticsTestCase {
     assertTrue(rangesMatch(mockStackTrace, mockStackTrace.length - 5, trimmed, 6, 5));
   }
 
+  @Test
   public void testStackTraceIsNotModified_whenSmallEnough() {
     final int trimmedSize = 10;
     middleOutStrategy = new MiddleOutStrategy(trimmedSize);
@@ -54,7 +62,7 @@ public class MiddleOutStrategyTest extends CrashlyticsTestCase {
     final StackTraceElement[] mockStackTrace = mockStackTrace(5);
     final StackTraceElement[] trimmed = middleOutStrategy.getTrimmedStackTrace(mockStackTrace);
 
-    assertEquals(mockStackTrace, trimmed);
+    assertArrayEquals(mockStackTrace, trimmed);
   }
 
   private boolean rangesMatch(

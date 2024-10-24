@@ -14,16 +14,23 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.os.BatteryManager;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import org.junit.Test;
 
+@SuppressLint("UnspecifiedRegisterReceiverFlag")
 public class BatteryStateTest extends CrashlyticsTestCase {
   // Tolerance for float comparisons.
   static final float EPSILON = 0.0001f;
@@ -36,6 +43,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
     return intent;
   }
 
+  @Test
   public void testGetBatteryLevel() {
     Context mockContext = mock(Context.class);
     when(mockContext.registerReceiver(isNull(), any())).thenReturn(makeIntent(0, 50, 200));
@@ -47,6 +55,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
     assertEquals(0.25f, batteryLevel, EPSILON);
   }
 
+  @Test
   public void testNullIntent() {
     final Context mockContext = mock(Context.class);
     when(mockContext.registerReceiver(isNull(), any())).thenReturn(null);
@@ -58,6 +67,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
     assertEquals(1, state.getBatteryVelocity());
   }
 
+  @Test
   public void testTooManyReceivers() {
     Context mockContext = mock(Context.class);
     when(mockContext.registerReceiver(isNull(), any()))
@@ -70,6 +80,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
     assertEquals(1, state.getBatteryVelocity());
   }
 
+  @Test
   public void testEmptyIntent() {
     final Context mockContext = mock(Context.class);
     when(mockContext.registerReceiver(isNull(), any())).thenReturn(new Intent());
@@ -88,6 +99,7 @@ public class BatteryStateTest extends CrashlyticsTestCase {
     assertEquals(velocity, state.getBatteryVelocity());
   }
 
+  @Test
   public void testVelocity() {
     doVelocityTest(
         BatteryState.VELOCITY_FULL, makeIntent(BatteryManager.BATTERY_STATUS_CHARGING, 1, 1));

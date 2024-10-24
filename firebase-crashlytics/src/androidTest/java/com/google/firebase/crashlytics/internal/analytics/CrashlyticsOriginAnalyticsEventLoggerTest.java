@@ -18,6 +18,7 @@ import static com.google.firebase.crashlytics.internal.analytics.CrashlyticsOrig
 
 import android.os.Bundle;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -29,12 +30,18 @@ public class CrashlyticsOriginAnalyticsEventLoggerTest {
   @Mock private AnalyticsConnector mockAnalyticsConnector;
 
   private CrashlyticsOriginAnalyticsEventLogger logger;
+  private AutoCloseable mocks;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     logger = new CrashlyticsOriginAnalyticsEventLogger(mockAnalyticsConnector);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test

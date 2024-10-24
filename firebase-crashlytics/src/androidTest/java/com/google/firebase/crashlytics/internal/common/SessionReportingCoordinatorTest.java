@@ -47,6 +47,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -70,13 +71,14 @@ public class SessionReportingCoordinatorTest {
   @Mock private Thread mockThread;
 
   private SessionReportingCoordinator reportingCoordinator;
+  private AutoCloseable mocks;
 
   private CrashlyticsWorkers crashlyticsWorkers =
       new CrashlyticsWorkers(TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     reportingCoordinator =
         new SessionReportingCoordinator(
@@ -87,6 +89,11 @@ public class SessionReportingCoordinatorTest {
             reportMetadata,
             idManager,
             crashlyticsWorkers);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test
