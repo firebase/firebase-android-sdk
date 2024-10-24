@@ -81,7 +81,7 @@ dependencies {
   annotationProcessor("com.google.auto.value:auto-value:1.6.6")
   javadocClasspath("com.google.auto.value:auto-value-annotations:1.6.6")
   compileOnly("com.google.auto.value:auto-value-annotations:1.6.6")
-  compileOnly("com.google.code.findbugs:jsr305:3.0.2")
+  compileOnly(libs.findbugs.jsr305)
 
   // Testing
   testImplementation(libs.junit)

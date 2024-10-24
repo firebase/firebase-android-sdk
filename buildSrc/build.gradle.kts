@@ -51,7 +51,7 @@ dependencies {
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
     implementation(kotlin("gradle-plugin", "1.8.22"))
-    implementation("org.json:json:20210307")
+    implementation(libs.org.json)
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-util:1.0.0.v20140518")
@@ -71,8 +71,8 @@ dependencies {
     implementation(libs.android.gradlePlugin.builder.test.api)
 
     testImplementation(libs.bundles.kotest)
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("com.google.truth:truth:1.4.2")
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
     testImplementation("commons-io:commons-io:2.15.1")
 }
 

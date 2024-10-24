@@ -132,5 +132,5 @@ dependencies {
   androidTestImplementation(libs.mockito.core)
   androidTestImplementation(libs.mockito.dexmaker)
   kapt("com.google.dagger:dagger-android-processor:2.43.2")
-  kapt("com.google.dagger:dagger-compiler:2.43.2")
+  kapt(libs.dagger.compiler)
 }
