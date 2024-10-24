@@ -47,9 +47,9 @@ dependencies {
   api("com.google.firebase:firebase-encoders-json:18.0.1")
   api("com.google.firebase:firebase-encoders:17.0.0")
 
-  compileOnly("com.google.auto.value:auto-value-annotations:1.10.1")
+  compileOnly(libs.autovalue.annotations)
 
-  annotationProcessor("com.google.auto.value:auto-value:1.10.1")
+  annotationProcessor(libs.autovalue)
   annotationProcessor(project(":encoders:firebase-encoders-processor"))
 
   testImplementation(libs.junit)
