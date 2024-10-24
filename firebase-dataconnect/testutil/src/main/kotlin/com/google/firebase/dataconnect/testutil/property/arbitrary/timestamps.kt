@@ -378,6 +378,40 @@ object TimestampEdgeCases {
       )
     }
 
+  val positiveNonZeroTimeZoneOffset: TimestampTestData
+    get() {
+      val string = "2024-05-18T12:45:56.123456789+01:23"
+      return TimestampTestData.from(
+        name = "positive, non-zero time zone offset",
+        string = string,
+        fdcStringVariable = string,
+        year = 2024,
+        month = 5,
+        day = 18,
+        hour = 11,
+        minute = 22,
+        second = 56,
+        nanoseconds = 123456789,
+      )
+    }
+
+  val negativeNonZeroTimeZoneOffset: TimestampTestData
+    get() {
+      val string = "2024-05-18T12:45:56.123456789-01:23"
+      return TimestampTestData.from(
+        name = "negative, non-zero time zone offset",
+        string = string,
+        fdcStringVariable = string,
+        year = 2024,
+        month = 5,
+        day = 18,
+        hour = 14,
+        minute = 8,
+        second = 56,
+        nanoseconds = 123456789,
+      )
+    }
+
   val singleDigits: TimestampTestData
     get() =
       TimestampTestData.from(
@@ -552,7 +586,9 @@ object TimestampEdgeCases {
         min,
         max,
         zero,
+        positiveNonZeroTimeZoneOffset,
         plusZeroTimeZoneOffset,
+        negativeNonZeroTimeZoneOffset,
         singleDigits,
         allDigits,
         nanosecondsOmitted,
