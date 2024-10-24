@@ -73,7 +73,7 @@ class MetaDataStore {
     final File f = getUserDataFileForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
       Logger.getLogger().d("No userId set for session " + sessionId);
-      safeDeleteCorruptFile(f, "No userId set for session " + sessionId);
+      safeDeleteCorruptFile(f);
       return null;
     }
 
@@ -85,7 +85,7 @@ class MetaDataStore {
       return userId;
     } catch (Exception e) {
       Logger.getLogger().w("Error deserializing user metadata.", e);
-      safeDeleteCorruptFile(f, "Error deserializing user metadata: " + e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
@@ -107,7 +107,7 @@ class MetaDataStore {
       writer.flush();
     } catch (Exception e) {
       Logger.getLogger().w("Error serializing key/value metadata.", e);
-      safeDeleteCorruptFile(f, "Error serializing key/value metadata." + e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close key/value metadata file.");
     }
@@ -121,19 +121,7 @@ class MetaDataStore {
     final File f =
         isInternal ? getInternalKeysFileForSession(sessionId) : getKeysFileForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
-      if (!f.exists()) {
-        safeDeleteCorruptFile(
-            f,
-            String.format(
-                "The file at path \"%s\" doesn't exists for session \"%s\"",
-                f.getAbsolutePath(), sessionId));
-      } else {
-        safeDeleteCorruptFile(
-            f,
-            String.format(
-                "The file at path \"%s\" has a length of zero for session \"%s\"",
-                f.getAbsolutePath(), sessionId));
-      }
+      safeDeleteCorruptFile(f, "The file has a length of zero for session: " + sessionId);
       return Collections.emptyMap();
     }
 
@@ -143,7 +131,7 @@ class MetaDataStore {
       return jsonToKeysData(CommonUtils.streamToString(is));
     } catch (Exception e) {
       Logger.getLogger().w("Error deserializing user metadata.", e);
-      safeDeleteCorruptFile(f, "Error deserializing user metadata." + e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
@@ -153,20 +141,7 @@ class MetaDataStore {
   public List<RolloutAssignment> readRolloutsState(String sessionId) {
     final File f = getRolloutsStateForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
-      if (!f.exists()) {
-        safeDeleteCorruptFile(
-            f,
-            String.format(
-                "The file at path \"%s\" doesn't exists for session \"%s\"",
-                f.getAbsolutePath(), sessionId));
-      } else {
-        safeDeleteCorruptFile(
-            f,
-            String.format(
-                "The file at path \"%s\" has a length of zero for session \"%s\"",
-                f.getAbsolutePath(), sessionId));
-      }
-
+      safeDeleteCorruptFile(f, "The file has a length of zero for session: " + sessionId);
       return Collections.emptyList();
     }
 
@@ -179,7 +154,7 @@ class MetaDataStore {
       return rolloutsState;
     } catch (Exception e) {
       Logger.getLogger().w("Error deserializing rollouts state.", e);
-      safeDeleteCorruptFile(f, "Error deserializing rollouts state." + e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close rollouts state file.");
     }
@@ -201,7 +176,7 @@ class MetaDataStore {
       writer.flush();
     } catch (Exception e) {
       Logger.getLogger().w("Error serializing rollouts state.", e);
-      safeDeleteCorruptFile(f, "Error serializing rollouts state." + e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close rollouts state file.");
     }
@@ -295,13 +270,17 @@ class MetaDataStore {
     return !json.isNull(key) ? json.optString(key, null) : null;
   }
 
+  private static void safeDeleteCorruptFile(File file) {
+    if (file.exists() && file.delete()) {
+      Logger.getLogger().i("Deleted corrupt file: " + file.getAbsolutePath());
+    }
+  }
+
+  // TODO(b/375437048): Remove when fixed
   private static void safeDeleteCorruptFile(File file, String reason) {
     if (file.exists() && file.delete()) {
-
       Logger.getLogger()
-          .i(
-              String.format(
-                  "Deleted corrupt file due to \"%s\": %s", reason, file.getAbsolutePath()));
+          .i(String.format("Deleted corrupt file: %s\nReason: %s", file.getAbsolutePath(), reason));
     }
   }
 }

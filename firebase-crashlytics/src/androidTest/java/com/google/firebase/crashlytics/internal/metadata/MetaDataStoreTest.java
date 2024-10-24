@@ -118,6 +118,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  // TODO(b/375437048): Let @daymxn know if this test fails. It's flaky and running away from me:(
   public void testWriteUserData_singleField() throws Exception {
     crashlyticsWorkers.diskWrite.submit(
         () -> {
@@ -167,6 +168,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  // TODO(b/375437048): Let @daymxn know if this test fails. It's flaky and running away from me:(
   public void testWriteUserData_escaped() throws Exception {
     crashlyticsWorkers.diskWrite.submit(
         () -> {
