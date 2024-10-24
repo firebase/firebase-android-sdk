@@ -23,7 +23,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler
 import java.util.concurrent.Executor
@@ -31,19 +31,19 @@ import java.util.concurrent.Executor
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
 // with mocks using the package-private constructor.
 fun createRemoteConfig(
-  context: Context?,
-  firebaseApp: FirebaseApp,
-  firebaseInstallations: FirebaseInstallationsApi,
-  firebaseAbt: FirebaseABTesting?,
-  executor: Executor,
-  fetchedConfigsCache: ConfigCacheClient,
-  activatedConfigsCache: ConfigCacheClient,
-  defaultConfigsCache: ConfigCacheClient,
-  fetchHandler: ConfigFetchHandler,
-  getHandler: ConfigGetParameterHandler,
-  frcMetadata: ConfigMetadataClient,
-  realtimeHandler: ConfigRealtimeHandler,
-  rolloutsStateSubscriptionsHandler: RolloutsStateSubscriptionsHandler
+    context: Context?,
+    firebaseApp: FirebaseApp,
+    firebaseInstallations: FirebaseInstallationsApi,
+    firebaseAbt: FirebaseABTesting?,
+    executor: Executor,
+    fetchedConfigsCache: ConfigCacheClient,
+    activatedConfigsCache: ConfigCacheClient,
+    defaultConfigsCache: ConfigCacheClient,
+    fetchHandler: ConfigFetchHandler,
+    getHandler: ConfigGetParameterHandler,
+    frcMetadata: ConfigSharedPrefsClient,
+    realtimeHandler: ConfigRealtimeHandler,
+    rolloutsStateSubscriptionsHandler: RolloutsStateSubscriptionsHandler
 ): FirebaseRemoteConfig {
   return FirebaseRemoteConfig(
     context,

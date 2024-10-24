@@ -33,7 +33,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
@@ -160,7 +160,7 @@ public class FirebaseRemoteConfig {
   private final ConfigCacheClient defaultConfigsCache;
   private final ConfigFetchHandler fetchHandler;
   private final ConfigGetParameterHandler getHandler;
-  private final ConfigMetadataClient frcMetadata;
+  private final ConfigSharedPrefsClient frcMetadata;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final ConfigRealtimeHandler configRealtimeHandler;
   private final RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler;
@@ -181,7 +181,7 @@ public class FirebaseRemoteConfig {
       ConfigCacheClient defaultConfigsCache,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient frcMetadata,
+      ConfigSharedPrefsClient frcMetadata,
       ConfigRealtimeHandler configRealtimeHandler,
       RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler) {
     this.context = context;
@@ -650,6 +650,28 @@ public class FirebaseRemoteConfig {
     // Convert Task type to Void.
     return putTask.onSuccessTask(
         FirebaseExecutors.directExecutor(), (unusedContainer) -> Tasks.forResult(null));
+  }
+
+  /**
+   * Asynchronously changes the custom signals for this {@link FirebaseRemoteConfig} instance.
+   *
+   * <p>The values in {@code customSignals} must be one of the following types:
+   *
+   * <ul>
+   *   <li><code>Long</code>
+   *   <li><code>String</code>
+   * </ul>
+   *
+   * @param customSignals Map (key, value) of the custom signals to be set for the app instance
+   */
+  @NonNull
+  public Task<Void> setCustomSignals(@NonNull Map<String, Object> customSignals) {
+    return Tasks.call(
+            executor,
+            () -> {
+              frcMetadata.setCustomSignals(customSignals);
+              return null;
+            });
   }
 
   /**

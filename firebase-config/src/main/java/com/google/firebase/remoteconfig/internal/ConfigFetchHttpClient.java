@@ -21,6 +21,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.CUSTOM_SIGNALS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.FIRST_OPEN_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
@@ -93,6 +94,7 @@ public class ConfigFetchHttpClient {
   private final String apiKey;
   private final String projectNumber;
   private final String namespace;
+  Map<String, Object> customSignalMap;
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
 
@@ -106,7 +108,8 @@ public class ConfigFetchHttpClient {
       String apiKey,
       String namespace,
       long connectTimeoutInSeconds,
-      long readTimeoutInSeconds) {
+      long readTimeoutInSeconds,
+      Map<String, Object> customSignalMap) {
     this.context = context;
     this.appId = appId;
     this.apiKey = apiKey;
@@ -114,6 +117,7 @@ public class ConfigFetchHttpClient {
     this.namespace = namespace;
     this.connectTimeoutInSeconds = connectTimeoutInSeconds;
     this.readTimeoutInSeconds = readTimeoutInSeconds;
+    this.customSignalMap = customSignalMap;
   }
 
   /** Used to verify that the timeout is being set correctly. */
@@ -304,7 +308,7 @@ public class ConfigFetchHttpClient {
       String installationAuthToken,
       Map<String, String> analyticsUserProperties,
       Long firstOpenTime)
-      throws FirebaseRemoteConfigClientException {
+          throws FirebaseRemoteConfigClientException {
     Map<String, Object> requestBodyMap = new HashMap<>();
 
     if (installationId == null) {
@@ -346,6 +350,8 @@ public class ConfigFetchHttpClient {
     requestBodyMap.put(SDK_VERSION, BuildConfig.VERSION_NAME);
 
     requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
+
+    requestBodyMap.put(CUSTOM_SIGNALS, new JSONObject(customSignalMap));
 
     if (firstOpenTime != null) {
       requestBodyMap.put(FIRST_OPEN_TIME, convertToISOString(firstOpenTime));

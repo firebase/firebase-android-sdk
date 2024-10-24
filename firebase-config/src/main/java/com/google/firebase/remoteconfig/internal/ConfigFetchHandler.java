@@ -14,7 +14,7 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_NO_FETCH_YET;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
@@ -43,7 +43,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse.Status;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.BackoffMetadata;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
@@ -96,7 +96,7 @@ public class ConfigFetchHandler {
   private final Random randomGenerator;
   private final ConfigCacheClient fetchedConfigsCache;
   private final ConfigFetchHttpClient frcBackendApiClient;
-  private final ConfigMetadataClient frcMetadata;
+  private final ConfigSharedPrefsClient frcMetadata;
 
   private final Map<String, String> customHttpHeaders;
 
@@ -109,7 +109,7 @@ public class ConfigFetchHandler {
       Random randomGenerator,
       ConfigCacheClient fetchedConfigsCache,
       ConfigFetchHttpClient frcBackendApiClient,
-      ConfigMetadataClient frcMetadata,
+      ConfigSharedPrefsClient frcMetadata,
       Map<String, String> customHttpHeaders) {
     this.firebaseInstallations = firebaseInstallations;
     this.analyticsConnector = analyticsConnector;
@@ -124,7 +124,7 @@ public class ConfigFetchHandler {
 
   /**
    * Calls {@link #fetch(long)} with the {@link
-   * ConfigMetadataClient#getMinimumFetchIntervalInSeconds()}.
+   * ConfigSharedPrefsClient#getMinimumFetchIntervalInSeconds()}.
    */
   public Task<FetchResponse> fetch() {
     return fetch(frcMetadata.getMinimumFetchIntervalInSeconds());
@@ -228,7 +228,7 @@ public class ConfigFetchHandler {
    * currently throttled.
    *
    * <p>If a fetch request is made to the backend, updates the last fetch status, last successful
-   * fetch time and {@link BackoffMetadata} in {@link ConfigMetadataClient}.
+   * fetch time and {@link BackoffMetadata} in {@link ConfigSharedPrefsClient}.
    */
   private Task<FetchResponse> fetchIfCacheExpiredAndNotThrottled(
       Task<ConfigContainer> cachedFetchConfigsTask,

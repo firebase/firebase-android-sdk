@@ -19,6 +19,7 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.CUSTOM_SIGNALS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
@@ -29,8 +30,16 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.lang.annotation.Retention;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Client for handling Firebase Remote Config (FRC) metadata that is saved to disk and persisted
@@ -38,7 +47,7 @@ import java.util.Date;
  *
  * @author Miraziz Yusupov
  */
-public class ConfigMetadataClient {
+public class ConfigSharedPrefsClient {
   @Retention(SOURCE)
   @IntDef({
     LAST_FETCH_STATUS_SUCCESS,
@@ -80,12 +89,14 @@ public class ConfigMetadataClient {
   private final Object frcInfoLock;
   private final Object backoffMetadataLock;
   private final Object realtimeBackoffMetadataLock;
+  private final Object customSignalsLock;
 
-  public ConfigMetadataClient(SharedPreferences frcMetadata) {
+  public ConfigSharedPrefsClient(SharedPreferences frcMetadata) {
     this.frcMetadata = frcMetadata;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();
     this.realtimeBackoffMetadataLock = new Object();
+    this.customSignalsLock = new Object();
   }
 
   public long getFetchTimeoutInSeconds() {
@@ -248,6 +259,39 @@ public class ConfigMetadataClient {
           .apply();
     }
   }
+
+  public void setCustomSignals(Map<String, Object> newCustomSignals) {
+    synchronized (customSignalsLock) {
+      // Retrieve existing custom signals
+      Map<String, Object> existingCustomSignals = getCustomSignals();
+
+      // Merge new signals with existing ones (new signals take precedence)
+      existingCustomSignals.putAll(newCustomSignals);
+
+      // Ignore key-value pairs with null values, which signify unset signals.
+      existingCustomSignals.values().removeIf(Objects::isNull);
+      frcMetadata
+              .edit()
+              .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
+              .commit();
+    }
+  }
+  public Map<String, Object> getCustomSignals() {
+    String jsonString = frcMetadata.getString(CUSTOM_SIGNALS, "{}");
+    try {
+      JSONObject existingCustomSignalsJson = new JSONObject(jsonString);
+      Map<String, Object> custom_signals = new HashMap<>();
+      Iterator<String> keys = existingCustomSignalsJson.keys();
+      while (keys.hasNext()) {
+        String key = keys.next();
+        custom_signals.put(key, existingCustomSignalsJson.get(key));
+      }
+      return custom_signals;
+    } catch (JSONException e) {
+      return new HashMap<>();
+    }
+  }
+
 
   void resetBackoff() {
     setBackoffMetadata(NO_FAILED_FETCHES, NO_BACKOFF_TIME);
