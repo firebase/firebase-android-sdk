@@ -30,7 +30,7 @@ spotless {
     java {
         target("src/**/*.java")
         targetExclude("**/test/resources/**")
-        googleJavaFormat("1.22.0").skipJavadocFormatting()
+        googleJavaFormat("1.22.0").reorderImports(true).skipJavadocFormatting()
     }
     kotlin {
         target("src/**/*.kt")
