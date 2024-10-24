@@ -27,6 +27,8 @@ import io.kotest.property.arbitrary.of
 
 /** Information for a test case of a timestamp with Firebase Data Connect. */
 data class TimestampTestData(
+  /** A display name for this test case. */
+  val name: String,
 
   /** The timestamp under test, with full (nanosecond) precision. */
   val timestamp: Timestamp,
@@ -134,7 +136,9 @@ fun DataConnectArb.timestampComponents(
 fun DataConnectArb.timestamp(
   components: Arb<TimestampComponents> = timestampComponents(),
 ): Arb<TimestampTestData> =
-  arbitrary(edgecases = TimestampEdgeCases.all) { components.bind().toTimestampTestData() }
+  arbitrary(edgecases = TimestampEdgeCases.all) {
+    components.bind().toTimestampTestData(name = "arbitrary")
+  }
 
 private fun TimestampComponents.toRfc3339String(): String {
   val yearStr = "$year"
@@ -203,6 +207,7 @@ private fun TimestampComponents.toUtcTimestamp(): Timestamp =
 
 @JvmName("toTimestampTestDataWithAllowingNullArguments")
 private fun TimestampComponents.toTimestampTestData(
+  name: String,
   timestamp: Timestamp? = null,
   string: String? = null,
   fdcStringVariable: String? = null,
@@ -218,6 +223,7 @@ private fun TimestampComponents.toTimestampTestData(
     fdcStringVariable ?: copy(t = 'T', z = 'Z', nanosecondsNumDigits = 6).toRfc3339String()
 
   return toTimestampTestData(
+    name = name,
     timestamp = effectiveTimestamp,
     string = effectiveString,
     fdcStringVariable = effectiveFdcStringVariable,
@@ -227,12 +233,14 @@ private fun TimestampComponents.toTimestampTestData(
 
 @JvmName("toTimestampTestDataWithRejectingNullArguments")
 private fun TimestampComponents.toTimestampTestData(
+  name: String,
   timestamp: Timestamp,
   string: String,
   fdcStringVariable: String,
   fdcFieldTimestamp: Timestamp,
 ): TimestampTestData {
   return TimestampTestData(
+    name = name,
     timestamp = timestamp,
     string = string,
     fdcStringVariable = fdcStringVariable,
@@ -243,6 +251,7 @@ private fun TimestampComponents.toTimestampTestData(
 }
 
 private fun TimestampTestData.Companion.from(
+  name: String,
   timestamp: Timestamp? = null,
   string: String? = null,
   fdcStringVariable: String? = null,
@@ -271,6 +280,7 @@ private fun TimestampTestData.Companion.from(
       z = z,
     )
     .toTimestampTestData(
+      name = name,
       timestamp = timestamp,
       string = string,
       fdcStringVariable = fdcStringVariable,
@@ -307,6 +317,7 @@ object TimestampEdgeCases {
   val min: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "minimum timestamp",
         timestamp = Timestamp(-12_212_553_600, 0),
         string = "1583-01-01T00:00:00Z",
         year = 1583,
@@ -321,6 +332,7 @@ object TimestampEdgeCases {
   val max: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "maximum timestamp",
         timestamp = Timestamp(253_402_300_799, 999_999_999),
         string = "9999-12-31T23:59:59.999999999Z",
         year = 9999,
@@ -335,6 +347,7 @@ object TimestampEdgeCases {
   val zero: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "zero timestamp",
         timestamp = Timestamp(0, 0),
         string = "1970-01-01T00:00:00.000000000Z",
         year = 1970,
@@ -346,10 +359,13 @@ object TimestampEdgeCases {
         nanoseconds = 0,
       )
 
+  // The time zone offset "+00:00" is identical to "Z" (i.e. UTC).
+  // https://datatracker.ietf.org/doc/html/rfc3339#section-4.3
   val plusZeroTimeZoneOffset: TimestampTestData
     get() {
       val string = "2024-05-18T12:45:56.123456789+00:00"
       return TimestampTestData.from(
+        name = "+00:00 time zone offset",
         string = string,
         fdcStringVariable = string,
         year = 2024,
@@ -365,6 +381,7 @@ object TimestampEdgeCases {
   val singleDigits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "single digits",
         string = "$MIN_YEAR-02-03T04:05:06.7Z",
         year = MIN_YEAR,
         month = 2,
@@ -378,8 +395,9 @@ object TimestampEdgeCases {
   val allDigits: TimestampTestData
     get() =
       TimestampTestData.from(
-        string = "$MIN_YEAR-12-15T12:35:44.123456789Z",
-        year = MIN_YEAR,
+        name = "all digits",
+        string = "2345-12-15T12:35:44.123456789Z",
+        year = 2345,
         month = 12,
         day = 15,
         hour = 12,
@@ -388,9 +406,10 @@ object TimestampEdgeCases {
         nanoseconds = 123_456_789,
       )
 
-  val nanosecondsAbsent: TimestampTestData
+  val nanosecondsOmitted: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "nanoseconds omitted",
         string = "7608-11-21T02:45:08Z",
         year = 7608,
         month = 11,
@@ -404,6 +423,7 @@ object TimestampEdgeCases {
   val nanoseconds1Digit: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "1 digit of nanoseconds",
         string = "7608-11-21T02:45:08.000000001Z",
         year = 7608,
         month = 11,
@@ -417,6 +437,7 @@ object TimestampEdgeCases {
   val nanoseconds2Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "2 digits of nanoseconds",
         string = "7608-11-21T02:45:08.000000012Z",
         year = 7608,
         month = 11,
@@ -430,6 +451,7 @@ object TimestampEdgeCases {
   val nanoseconds3Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "3 digits of nanoseconds",
         string = "7608-11-21T02:45:08.000000123Z",
         year = 7608,
         month = 11,
@@ -443,6 +465,7 @@ object TimestampEdgeCases {
   val nanoseconds4Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "4 digits of nanoseconds",
         string = "7608-11-21T02:45:08.000001234Z",
         year = 7608,
         month = 11,
@@ -456,6 +479,7 @@ object TimestampEdgeCases {
   val nanoseconds5Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "5 digits of nanoseconds",
         string = "7608-11-21T02:45:08.000012345Z",
         year = 7608,
         month = 11,
@@ -469,6 +493,7 @@ object TimestampEdgeCases {
   val nanoseconds6Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "6 digits of nanoseconds",
         string = "7608-11-21T02:45:08.000123456Z",
         year = 7608,
         month = 11,
@@ -482,6 +507,7 @@ object TimestampEdgeCases {
   val nanoseconds7Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "7 digits of nanoseconds",
         string = "7608-11-21T02:45:08.001234567Z",
         year = 7608,
         month = 11,
@@ -495,6 +521,7 @@ object TimestampEdgeCases {
   val nanoseconds8Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "8 digits of nanoseconds",
         string = "7608-11-21T02:45:08.012345678Z",
         year = 7608,
         month = 11,
@@ -508,6 +535,7 @@ object TimestampEdgeCases {
   val nanoseconds9Digits: TimestampTestData
     get() =
       TimestampTestData.from(
+        name = "9 digits of nanoseconds",
         string = "7608-11-21T02:45:08.123456789Z",
         year = 7608,
         month = 11,
@@ -527,7 +555,7 @@ object TimestampEdgeCases {
         plusZeroTimeZoneOffset,
         singleDigits,
         allDigits,
-        nanosecondsAbsent,
+        nanosecondsOmitted,
         nanoseconds1Digit,
         nanoseconds2Digits,
         nanoseconds3Digits,

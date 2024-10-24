@@ -94,7 +94,6 @@ class TimestampScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun insertNonNullTimestamp_AsString_EdgeCases() =
     runTest(timeout = 60.seconds) {
-      assertInsertTimestampAsStringRoundTripsAsTimestamp(EdgeCases.timestamps.singleDigits)
       assertSoftly {
         EdgeCases.timestamps.all.forEach { assertInsertTimestampAsStringRoundTripsAsTimestamp(it) }
       }
