@@ -1,5 +1,7 @@
 # Unreleased
-
+* [changed] Changed WithinAppServiceConnection's ScheduledThreadPoolExecutor's
+  configuration to allow the thread to stop polling after the timeout task has
+  been canceled.
 
 # 24.0.3
 * [changed] Updated protobuf dependency to `3.25.5` to fix
