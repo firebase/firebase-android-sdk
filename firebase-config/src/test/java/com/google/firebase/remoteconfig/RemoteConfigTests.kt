@@ -29,8 +29,8 @@ import com.google.firebase.platforminfo.UserAgentPublisher
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler
 import org.junit.After
 import org.junit.Before

@@ -143,7 +143,8 @@ public class ConfigFetchHandlerTest {
     context = ApplicationProvider.getApplicationContext();
     mockClock = new MockClock(0L);
     metadataClient =
-        new ConfigSharedPrefsClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
+        new ConfigSharedPrefsClient(
+            context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
 
     loadBackendApiClient();
     loadInstallationIdAndAuthToken();

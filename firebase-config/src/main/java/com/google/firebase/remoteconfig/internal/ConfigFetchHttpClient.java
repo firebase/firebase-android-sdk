@@ -308,7 +308,7 @@ public class ConfigFetchHttpClient {
       String installationAuthToken,
       Map<String, String> analyticsUserProperties,
       Long firstOpenTime)
-          throws FirebaseRemoteConfigClientException {
+      throws FirebaseRemoteConfigClientException {
     Map<String, Object> requestBodyMap = new HashMap<>();
 
     if (installationId == null) {

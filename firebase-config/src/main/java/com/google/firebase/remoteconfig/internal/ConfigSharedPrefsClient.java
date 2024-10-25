@@ -30,16 +30,13 @@ import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.lang.annotation.Retention;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Client for handling Firebase Remote Config (FRC) metadata that is saved to disk and persisted
@@ -265,17 +262,25 @@ public class ConfigSharedPrefsClient {
       // Retrieve existing custom signals
       Map<String, Object> existingCustomSignals = getCustomSignals();
 
-      // Merge new signals with existing ones (new signals take precedence)
-      existingCustomSignals.putAll(newCustomSignals);
+      for (Map.Entry<String, Object> entry : newCustomSignals.entrySet()) {
+        String key = entry.getKey();
+        Object value = entry.getValue();
 
-      // Ignore key-value pairs with null values, which signify unset signals.
-      existingCustomSignals.values().removeIf(Objects::isNull);
+        // Merge new signals with existing ones, overwriting existing keys.
+        // Also, remove entries where the new value is null.
+        if (value != null) {
+          existingCustomSignals.put(key, value);
+        } else {
+          existingCustomSignals.remove(key);
+        }
+      }
       frcMetadata
-              .edit()
-              .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
-              .commit();
+          .edit()
+          .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
+          .commit();
     }
   }
+
   public Map<String, Object> getCustomSignals() {
     String jsonString = frcMetadata.getString(CUSTOM_SIGNALS, "{}");
     try {
@@ -291,7 +296,6 @@ public class ConfigSharedPrefsClient {
       return new HashMap<>();
     }
   }
-
 
   void resetBackoff() {
     setBackoffMetadata(NO_FAILED_FETCHES, NO_BACKOFF_TIME);
