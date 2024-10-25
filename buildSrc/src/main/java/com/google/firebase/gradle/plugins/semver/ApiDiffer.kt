@@ -68,7 +68,7 @@ abstract class ApiDiffer : DefaultTask() {
         apiDeltas.joinToString(
           prefix =
             "Here is a list of all the minor/major version bump changes which are made since the last release.\n",
-          separator = "\n"
+          separator = "\n",
         ) {
           "[${it.versionDelta}] ${it.description}"
         }
@@ -79,7 +79,7 @@ abstract class ApiDiffer : DefaultTask() {
         deltaViolations.joinToString(
           prefix =
             "Here is a list of all the violations which needs to be fixed before we could release.\n",
-          separator = "\n"
+          separator = "\n",
         ) {
           "[${it.versionDelta}] ${it.description}"
         }

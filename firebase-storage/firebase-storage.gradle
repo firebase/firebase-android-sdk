@@ -20,7 +20,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "storage"
+    libraryGroup = "storage"
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true

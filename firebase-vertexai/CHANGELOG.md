@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed issue where Firebase App Check error tokens were unintentionally missing from the requests. (#6409)
 
 
 # 16.0.1
@@ -55,4 +56,3 @@
 * [feature] Added support for `responseMimeType` in `GenerationConfig`.
 * [changed] Renamed `GoogleGenerativeAIException` to `FirebaseVertexAIException`.
 * [changed] Updated the KDocs for various classes and functions.
-
