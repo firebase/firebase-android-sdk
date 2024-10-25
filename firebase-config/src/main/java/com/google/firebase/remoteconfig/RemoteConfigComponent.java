@@ -36,8 +36,8 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateFactory;
@@ -268,7 +268,9 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
 
   @VisibleForTesting
   synchronized ConfigFetchHandler getFetchHandler(
-      String namespace, ConfigCacheClient fetchedCacheClient, ConfigSharedPrefsClient metadataClient) {
+      String namespace,
+      ConfigCacheClient fetchedCacheClient,
+      ConfigSharedPrefsClient metadataClient) {
     return new ConfigFetchHandler(
         firebaseInstallations,
         isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
@@ -306,7 +308,8 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   }
 
   @VisibleForTesting
-  static ConfigSharedPrefsClient getMetadataClient(Context context, String appId, String namespace) {
+  static ConfigSharedPrefsClient getMetadataClient(
+      Context context, String appId, String namespace) {
     String fileName =
         String.format(
             "%s_%s_%s_%s",

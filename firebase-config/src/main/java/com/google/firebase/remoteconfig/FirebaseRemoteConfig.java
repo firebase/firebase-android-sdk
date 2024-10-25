@@ -33,8 +33,8 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.util.ArrayList;
@@ -667,11 +667,11 @@ public class FirebaseRemoteConfig {
   @NonNull
   public Task<Void> setCustomSignals(@NonNull Map<String, Object> customSignals) {
     return Tasks.call(
-            executor,
-            () -> {
-              frcMetadata.setCustomSignals(customSignals);
-              return null;
-            });
+        executor,
+        () -> {
+          frcMetadata.setCustomSignals(customSignals);
+          return null;
+        });
   }
 
   /**

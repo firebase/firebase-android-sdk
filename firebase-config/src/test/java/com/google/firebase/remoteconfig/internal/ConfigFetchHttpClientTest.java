@@ -86,10 +86,10 @@ public class ConfigFetchHttpClientTest {
       "etag-" + PROJECT_NUMBER + "-" + DEFAULT_NAMESPACE + "-fetch-%d";
   private static final String FIRST_ETAG = String.format(ETAG_FORMAT, 1);
   private static final String SECOND_ETAG = String.format(ETAG_FORMAT, 2);
-  private static final Map<String, Object> SAMPLE_CUSTOM_SIGNALS = ImmutableMap.of(
+  private static final Map<String, Object> SAMPLE_CUSTOM_SIGNALS =
+      ImmutableMap.of(
           "subscription", "premium",
-          "age", "20"
-  );
+          "age", "20");
 
   private Context context;
   private ConfigFetchHttpClient configFetchHttpClient;
@@ -245,7 +245,7 @@ public class ConfigFetchHttpClientTest {
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
         .isEqualTo(new JSONObject(customUserProperties).toString());
     assertThat(requestBody.getJSONObject(CUSTOM_SIGNALS).toString())
-            .isEqualTo(new JSONObject(SAMPLE_CUSTOM_SIGNALS).toString());
+        .isEqualTo(new JSONObject(SAMPLE_CUSTOM_SIGNALS).toString());
   }
 
   @Test

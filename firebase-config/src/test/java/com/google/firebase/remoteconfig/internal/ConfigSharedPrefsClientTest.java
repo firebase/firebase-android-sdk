@@ -35,7 +35,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
 import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LastFetchStatus;
-
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -361,10 +360,10 @@ public class ConfigSharedPrefsClientTest {
 
   @Test
   public void getCustomSignals_isSet_returnsCustomSignals() {
-    Map<String, Object> SAMPLE_CUSTOM_SIGNALS = ImmutableMap.of(
+    Map<String, Object> SAMPLE_CUSTOM_SIGNALS =
+        ImmutableMap.of(
             "subscription", "premium",
-            "age", "20"
-    );
+            "age", "20");
     metadataClient.setCustomSignals(SAMPLE_CUSTOM_SIGNALS);
     assertThat(metadataClient.getCustomSignals()).isEqualTo(SAMPLE_CUSTOM_SIGNALS);
   }
