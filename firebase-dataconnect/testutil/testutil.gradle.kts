@@ -55,6 +55,7 @@ dependencies {
   implementation("com.google.firebase:firebase-auth:22.3.1")
 
   implementation(libs.androidx.test.junit)
+  implementation(libs.kotest.assertions)
   implementation(libs.kotest.property)
   implementation(libs.kotlin.coroutines.test)
   implementation(libs.kotlinx.coroutines.core)
@@ -62,6 +63,7 @@ dependencies {
   implementation(libs.mockk)
   implementation(libs.protobuf.java.lite)
   implementation(libs.robolectric)
+  implementation(libs.three.ten.abp)
   implementation(libs.truth)
 }
 

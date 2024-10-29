@@ -94,6 +94,12 @@ quickcheck = { module = "net.java:quickcheck", version.ref = "quickcheck" }
 spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
 
+# Remove three-ten-abp once minSdkVersion is changed to 26 or later, and, instead use the
+# correspondingly-named classes from the java.time package, which should be drop-in replacements.
+# Do not use three-ten-abp in production code (it's only for tests) because it has performance
+# issues.
+three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.7" }
+
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]
 playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
