@@ -98,7 +98,7 @@ turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
 # correspondingly-named classes from the java.time package, which should be drop-in replacements.
 # Do not use three-ten-abp in production code (it's only for tests) because it has performance
 # issues.
-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.7" }
+testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.7" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]

@@ -86,7 +86,7 @@ dependencies {
   androidTestImplementation(libs.kotest.assertions)
   androidTestImplementation(libs.kotest.property)
   androidTestImplementation(libs.kotlin.coroutines.test)
-  androidTestImplementation(libs.three.ten.abp)
+  androidTestImplementation(libs.testonly.three.ten.abp)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
   androidTestImplementation(libs.turbine)
