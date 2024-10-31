@@ -87,7 +87,6 @@ dependencies {
   implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
   implementation("io.ktor:ktor-client-logging:$ktorVersion")
 
-
   api("com.google.firebase:firebase-common:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-annotations:16.2.0")
