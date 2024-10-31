@@ -86,7 +86,7 @@ dependencies {
   implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
   implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
   implementation("io.ktor:ktor-client-logging:$ktorVersion")
-  compileOnly("io.ktor:ktor-client-mock:$ktorVersion")
+
 
   api("com.google.firebase:firebase-common:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
