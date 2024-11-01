@@ -90,7 +90,7 @@ dependencies {
     compileOnly(libs.autovalue.annotations)
 
     annotationProcessor(project(":encoders:firebase-encoders-processor"))
-    annotationProcessor(libs.autovalue)
+    kapt(libs.autovalue)
 
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.runner)

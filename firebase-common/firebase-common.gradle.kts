@@ -65,7 +65,7 @@ dependencies {
   compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.kotlin.stdlib)
 
-  annotationProcessor(libs.autovalue)
+  kapt(libs.autovalue)
 
   testImplementation("com.google.guava:guava-testlib:12.0-rc2")
   testImplementation(libs.androidx.test.core)
