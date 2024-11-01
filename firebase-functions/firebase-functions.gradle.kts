@@ -112,7 +112,7 @@ dependencies {
   implementation(libs.playservices.basement)
   api(libs.playservices.tasks)
 
- kapt(libs.autovalue)
+  kapt(libs.autovalue)
   annotationProcessor(libs.dagger.compiler)
 
   testImplementation(libs.androidx.test.core)
