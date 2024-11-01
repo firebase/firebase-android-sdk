@@ -125,17 +125,18 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   jsonFile.set(
     project.layout.projectDirectory.file(
       "../gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
-          "plugin/DataConnectExecutableVersions.json"
+        "plugin/DataConnectExecutableVersions.json"
     )
   )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 
-  val propertyNames = object {
-    val version = "version"
-    val versions = "versions"
-    val updateMode = "updateMode"
-    val defaultVersion = "defaultVersion"
-  }
+  val propertyNames =
+    object {
+      val version = "version"
+      val versions = "versions"
+      val updateMode = "updateMode"
+      val defaultVersion = "defaultVersion"
+    }
 
   val singleVersion: String? = project.providers.gradleProperty(propertyNames.version).orNull
   val multipleVersions: List<String>? =
@@ -151,10 +152,10 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
     if (versions.get().isEmpty()) {
       logger.warn(
         "WARNING: no '${propertyNames.version}' or '${propertyNames.versions}' specified " +
-            "for task '$name'; no versions will be added to ${jsonFile.get()}. " +
-            "Try specifying something like '-P${propertyNames.version}=1.2.3' or " +
-            "'-P${propertyNames.versions}=1.2.3,4.5.6' on the gradle command line " +
-            "if you want to add versions (warning code bm6d5ezxzd)"
+          "for task '$name'; no versions will be added to ${jsonFile.get()}. " +
+          "Try specifying something like '-P${propertyNames.version}=1.2.3' or " +
+          "'-P${propertyNames.versions}=1.2.3,4.5.6' on the gradle command line " +
+          "if you want to add versions (warning code bm6d5ezxzd)"
       )
     }
   }
@@ -167,10 +168,10 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
         else ->
           throw Exception(
             "Invalid '${propertyNames.updateMode}' specified for task '$name': $it. " +
-                "Valid values are 'update' and 'overwrite'. " +
-                "Try specifying '-P${propertyNames.updateMode}=update' or " +
-                "'-P${propertyNames.updateMode}=overwrite' on the gradle command line. " +
-                "(error code v2e3cfqbnf)"
+              "Valid values are 'update' and 'overwrite'. " +
+              "Try specifying '-P${propertyNames.updateMode}=update' or " +
+              "'-P${propertyNames.updateMode}=overwrite' on the gradle command line. " +
+              "(error code v2e3cfqbnf)"
           )
       }
     }
@@ -180,11 +181,11 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
     if (!updateMode.isPresent) {
       logger.warn(
         "WARNING: no '${propertyNames.updateMode}' specified for task '$name'; " +
-            "the default update mode of 'update' will be used when updating ${jsonFile.get()}. " +
-            "Try specifying '-P${propertyNames.updateMode}=update' or " +
-            "'-P${propertyNames.updateMode}=overwrite' on the gradle command line " +
-            "if you want a different update mode, or just want to be explicit about " +
-            "which update mode is in effect (warning code tjyscqmdne)"
+          "the default update mode of 'update' will be used when updating ${jsonFile.get()}. " +
+          "Try specifying '-P${propertyNames.updateMode}=update' or " +
+          "'-P${propertyNames.updateMode}=overwrite' on the gradle command line " +
+          "if you want a different update mode, or just want to be explicit about " +
+          "which update mode is in effect (warning code tjyscqmdne)"
       )
     }
   }
@@ -195,10 +196,10 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
     if (!defaultVersion.isPresent) {
       logger.warn(
         "WARNING: no '${propertyNames.defaultVersion}' specified for task '$name'; " +
-            "the default version will not be updated in ${jsonFile.get()}. " +
-            "Try specifying something like '-P${propertyNames.defaultVersion}=1.2.3' " +
-            "on the gradle command line if you want to update the default version " +
-            "(warning code vqrbrktx9f)"
+          "the default version will not be updated in ${jsonFile.get()}. " +
+          "Try specifying something like '-P${propertyNames.defaultVersion}=1.2.3' " +
+          "on the gradle command line if you want to update the default version " +
+          "(warning code vqrbrktx9f)"
       )
     }
   }
