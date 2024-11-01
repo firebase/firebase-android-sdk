@@ -16,21 +16,25 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
-import com.google.firebase.dataconnect.testutil.randomId
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.schemas.AllTypesSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.randomAnimalId
-import com.google.firebase.dataconnect.testutil.schemas.randomFarmId
-import com.google.firebase.dataconnect.testutil.schemas.randomFarmerId
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonName
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.*
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
@@ -40,64 +44,69 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun executeWithASingleResultReturnsTheCorrectResult() = runTest {
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
     personSchema.createPerson(id = person1Id, name = "TestName1", age = 42).execute()
     personSchema.createPerson(id = person2Id, name = "TestName2", age = 43).execute()
     personSchema.createPerson(id = person3Id, name = "TestName3", age = 44).execute()
 
     val result = personSchema.getPerson(id = person2Id).execute()
 
-    assertThat(result.data.person?.name).isEqualTo("TestName2")
-    assertThat(result.data.person?.age).isEqualTo(43)
+    val person = withClue("result.data.person") { result.data.person.shouldNotBeNull() }
+    assertSoftly {
+      withClue("person.name") { person.name shouldBe "TestName2" }
+      withClue("person.age") { person.age shouldBe 43 }
+    }
   }
 
   @Test
   fun executeWithASingleResultReturnsTheUpdatedResult() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     personSchema.createPerson(id = personId, name = "TestName", age = 42).execute()
     personSchema.updatePerson(id = personId, name = "NewTestName", age = 99).execute()
 
     val result = personSchema.getPerson(id = personId).execute()
 
-    assertThat(result.data.person?.name).isEqualTo("NewTestName")
-    assertThat(result.data.person?.age).isEqualTo(99)
+    val person = withClue("result.data.person") { result.data.person.shouldNotBeNull() }
+    assertSoftly {
+      withClue("person.name") { person.name shouldBe "NewTestName" }
+      withClue("person.age") { person.age shouldBe 99 }
+    }
   }
 
   @Test
   fun executeWithASingleResultReturnsNullIfNotFound() = runTest {
-    val personId = randomPersonId()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
     personSchema.deletePerson(personId)
 
     val result = personSchema.getPerson(id = personId).execute()
 
-    assertThat(result.data.person).isNull()
+    result.data.person.shouldBeNull()
   }
 
   @Test
   fun executeWithAListResultReturnsAllResults() = runTest {
-    val personName = randomPersonName()
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val personName = Arb.alphanumericString(prefix = "personName").next()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
     personSchema.createPerson(id = person1Id, name = personName, age = 42).execute()
     personSchema.createPerson(id = person2Id, name = personName, age = 43).execute()
     personSchema.createPerson(id = person3Id, name = personName, age = 44).execute()
 
     val result = personSchema.getPeopleByName(personName).execute()
 
-    assertThat(result.data.people)
-      .containsExactly(
-        PersonSchema.GetPeopleByNameQuery.Data.Person(id = person1Id, age = 42),
-        PersonSchema.GetPeopleByNameQuery.Data.Person(id = person2Id, age = 43),
-        PersonSchema.GetPeopleByNameQuery.Data.Person(id = person3Id, age = 44),
-      )
+    result.data.people.shouldContainExactlyInAnyOrder(
+      PersonSchema.GetPeopleByNameQuery.Data.Person(id = person1Id, age = 42),
+      PersonSchema.GetPeopleByNameQuery.Data.Person(id = person2Id, age = 43),
+      PersonSchema.GetPeopleByNameQuery.Data.Person(id = person3Id, age = 44),
+    )
   }
 
   @Test
   fun executeWithAllPrimitiveGraphQLTypesInDataNoneNull() = runTest {
-    val id = randomId()
+    val id = Arb.dataConnect.uuid().next()
     allTypesSchema
       .createPrimitive(
         AllTypesSchema.PrimitiveData(
@@ -117,22 +126,28 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = allTypesSchema.getPrimitive(id = id).execute()
 
-    val primitive = result.data.primitive ?: error("result.data.primitive is null")
-    assertThat(primitive.id).isEqualTo(id)
-    assertThat(primitive.idFieldNullable).isEqualTo("e03b3062bf604428956a17c0bc444691")
-    assertThat(primitive.intField).isEqualTo(42)
-    assertThat(primitive.intFieldNullable).isEqualTo(43)
-    assertThat(primitive.floatField).isEqualTo(123.45)
-    assertThat(primitive.floatFieldNullable).isEqualTo(678.91)
-    assertThat(primitive.booleanField).isEqualTo(true)
-    assertThat(primitive.booleanFieldNullable).isEqualTo(false)
-    assertThat(primitive.stringField).isEqualTo("TestString")
-    assertThat(primitive.stringFieldNullable).isEqualTo("TestNullableString")
+    val primitive = withClue("result.data.primitive") { result.data.primitive.shouldNotBeNull() }
+    assertSoftly {
+      withClue("id") { primitive.id shouldBe id }
+      withClue("idFieldNullable") {
+        primitive.idFieldNullable shouldBe "e03b3062bf604428956a17c0bc444691"
+      }
+      withClue("intField") { primitive.intField shouldBe 42 }
+      withClue("intFieldNullable") { primitive.intFieldNullable shouldBe 43 }
+      withClue("floatField") { primitive.floatField shouldBe 123.45 }
+      withClue("floatFieldNullable") { primitive.floatFieldNullable shouldBe 678.91 }
+      withClue("booleanField") { primitive.booleanField shouldBe true }
+      withClue("booleanFieldNullable") { primitive.booleanFieldNullable shouldBe false }
+      withClue("stringField") { primitive.stringField shouldBe "TestString" }
+      withClue("stringFieldNullable") {
+        primitive.stringFieldNullable shouldBe "TestNullableString"
+      }
+    }
   }
 
   @Test
   fun executeWithAllPrimitiveGraphQLTypesInDataNullablesAreNull() = runTest {
-    val id = randomId()
+    val id = Arb.dataConnect.uuid().next()
     allTypesSchema
       .createPrimitive(
         AllTypesSchema.PrimitiveData(
@@ -152,18 +167,20 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = allTypesSchema.getPrimitive(id = id).execute()
 
-    val primitive = result.data.primitive ?: error("result.data.primitive is null")
-    assertThat(primitive.idFieldNullable).isNull()
-    assertThat(primitive.intFieldNullable).isNull()
-    assertThat(primitive.floatFieldNullable).isNull()
-    assertThat(primitive.booleanFieldNullable).isNull()
-    assertThat(primitive.stringFieldNullable).isNull()
+    val primitive = withClue("result.data.primitive") { result.data.primitive.shouldNotBeNull() }
+    assertSoftly {
+      withClue("idFieldNullable") { primitive.idFieldNullable.shouldBeNull() }
+      withClue("intFieldNullable") { primitive.intFieldNullable.shouldBeNull() }
+      withClue("floatFieldNullable") { primitive.floatFieldNullable.shouldBeNull() }
+      withClue("booleanFieldNullable") { primitive.booleanFieldNullable.shouldBeNull() }
+      withClue("stringFieldNullable") { primitive.stringFieldNullable.shouldBeNull() }
+    }
   }
 
   @Test
   fun executeWithAllListOfPrimitiveGraphQLTypesInData() = runTest {
     // NOTE: `null` list elements (a.k.a. "sparse arrays") are not supported: b/300331607
-    val id = randomId()
+    val id = Arb.dataConnect.uuid().next()
     allTypesSchema
       .createPrimitiveList(
         AllTypesSchema.PrimitiveListData(
@@ -192,39 +209,60 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = allTypesSchema.getPrimitiveList(id = id).execute()
 
-    val primitive = result.data.primitiveList ?: error("result.data.primitiveList is null")
-    assertThat(primitive.id).isEqualTo(id)
-    assertThat(primitive.idListNullable)
-      .containsExactly("1c2a5a6df81c4252ac86383bb93d3dfb", "b53f44ae5be94354b58d10db98690954")
-      .inOrder()
-    assertThat(primitive.idListOfNullable)
-      .containsExactly("e87004fcb45d4b838ccb3ffca5c98e8d", "ad08635e7b4945119b6edaa3b390235e")
-      .inOrder()
-    assertThat(primitive.intList).containsExactly(42, 43, 44).inOrder()
-    assertThat(primitive.intListNullable).containsExactly(45, 46).inOrder()
-    assertThat(primitive.intListOfNullable).containsExactly(47, 48).inOrder()
-    assertThat(primitive.floatList).containsExactly(12.3, 45.6, 78.9).inOrder()
-    assertThat(primitive.floatListNullable).containsExactly(98.7, 65.4).inOrder()
-    assertThat(primitive.floatListOfNullable).containsExactly(100.1, 100.2).inOrder()
-    assertThat(primitive.booleanList).containsExactly(true, false, true, false).inOrder()
-    assertThat(primitive.booleanListNullable).containsExactly(false, true, false, true).inOrder()
-    assertThat(primitive.booleanListOfNullable).containsExactly(false, false, true, true).inOrder()
-    assertThat(primitive.stringList).containsExactly("xxx", "yyy", "zzz").inOrder()
-    assertThat(primitive.stringListNullable).containsExactly("qqq", "rrr").inOrder()
-    assertThat(primitive.stringListOfNullable).containsExactly("sss", "ttt").inOrder()
+    val primitive =
+      withClue("result.data.primitiveList") { result.data.primitiveList.shouldNotBeNull() }
+    assertSoftly {
+      withClue("id") { primitive.id shouldBe id }
+      withClue("idListNullable") {
+        primitive.idListNullable.shouldContainExactly(
+          "1c2a5a6df81c4252ac86383bb93d3dfb",
+          "b53f44ae5be94354b58d10db98690954"
+        )
+      }
+      withClue("idListOfNullable") {
+        primitive.idListOfNullable.shouldContainExactly(
+          "e87004fcb45d4b838ccb3ffca5c98e8d",
+          "ad08635e7b4945119b6edaa3b390235e"
+        )
+      }
+      withClue("intList") { primitive.intList.shouldContainExactly(42, 43, 44) }
+      withClue("intListNullable") { primitive.intListNullable.shouldContainExactly(45, 46) }
+      withClue("intListOfNullable") { primitive.intListOfNullable.shouldContainExactly(47, 48) }
+      withClue("floatList") { primitive.floatList.shouldContainExactly(12.3, 45.6, 78.9) }
+      withClue("floatListNullable") { primitive.floatListNullable.shouldContainExactly(98.7, 65.4) }
+      withClue("floatListOfNullable") {
+        primitive.floatListOfNullable.shouldContainExactly(100.1, 100.2)
+      }
+      withClue("booleanList") {
+        primitive.booleanList.shouldContainExactly(true, false, true, false)
+      }
+      withClue("booleanListNullable") {
+        primitive.booleanListNullable.shouldContainExactly(false, true, false, true)
+      }
+      withClue("booleanListOfNullable") {
+        primitive.booleanListOfNullable.shouldContainExactly(false, false, true, true)
+      }
+      withClue("stringList") { primitive.stringList.shouldContainExactly("xxx", "yyy", "zzz") }
+      withClue("stringListNullable") {
+        primitive.stringListNullable.shouldContainExactly("qqq", "rrr")
+      }
+      withClue("stringListOfNullable") {
+        primitive.stringListOfNullable.shouldContainExactly("sss", "ttt")
+      }
+    }
   }
 
   @Test
   fun executeWithNestedTypesInData() = runTest {
-    val farmer1Id = randomFarmerId()
-    val farmer2Id = randomFarmerId()
-    val farmer3Id = randomFarmerId()
-    val farmer4Id = randomFarmerId()
-    val farmId = randomFarmId()
-    val animal1Id = randomAnimalId()
-    val animal2Id = randomAnimalId()
-    val animal3Id = randomAnimalId()
-    val animal4Id = randomAnimalId()
+    val farmer1Id = Arb.alphanumericString(prefix = "farmer1Id").next()
+    val farmer2Id = Arb.alphanumericString(prefix = "farmer2Id").next()
+    val farmer3Id = Arb.alphanumericString(prefix = "farmer3Id").next()
+    val farmer4Id = Arb.alphanumericString(prefix = "farmer4Id").next()
+    val farmId = Arb.alphanumericString(prefix = "farmId").next()
+    val animal1Id = Arb.alphanumericString(prefix = "animal1Id").next()
+    val animal2Id = Arb.alphanumericString(prefix = "animal2Id").next()
+    val animal3Id = Arb.alphanumericString(prefix = "animal3Id").next()
+    val animal4Id = Arb.alphanumericString(prefix = "animal4Id").next()
     allTypesSchema.createFarmer(id = farmer1Id, name = "Farmer1Name", parentId = null).execute()
     allTypesSchema
       .createFarmer(id = farmer2Id, name = "Farmer2Name", parentId = farmer1Id)
@@ -275,13 +313,11 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = allTypesSchema.getFarm(farmId).execute()
 
-    assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
-    val farm = result.data.farm!!
-    assertThat(farm.id).isEqualTo(farmId)
-    assertThat(farm.name).isEqualTo("TestFarm")
-    assertWithMessage("farm.farmer")
-      .that(farm.farmer)
-      .isEqualTo(
+    val farm = withClue("result.data.farm") { result.data.farm.shouldNotBeNull() }
+    withClue("farm.id") { farm.id shouldBe farmId }
+    withClue("farm.name") { farm.name shouldBe "TestFarm" }
+    withClue("farm.farmer") {
+      farm.farmer shouldBe
         AllTypesSchema.GetFarmQuery.Farmer(
           id = farmer4Id,
           name = "Farmer4Name",
@@ -292,10 +328,9 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
               parentId = farmer2Id,
             )
         )
-      )
-    assertWithMessage("farm.animals")
-      .that(farm.animals)
-      .containsExactly(
+    }
+    withClue("farm.animals") {
+      farm.animals.shouldContainExactlyInAnyOrder(
         AllTypesSchema.GetFarmQuery.Animal(
           id = animal1Id,
           name = "Animal1Name",
@@ -321,22 +356,23 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
           age = null
         ),
       )
+    }
   }
 
   @Test
   fun executeWithNestedNullTypesInData() = runTest {
-    val farmerId = randomFarmerId()
-    val farmId = randomFarmId()
+    val farmerId = Arb.alphanumericString(prefix = "farmerId").next()
+    val farmId = Arb.alphanumericString(prefix = "farmId").next()
     allTypesSchema.createFarmer(id = farmerId, name = "FarmerName", parentId = null).execute()
     allTypesSchema.createFarm(id = farmId, name = "TestFarm", farmerId = farmerId).execute()
 
     val result = allTypesSchema.getFarm(farmId).execute()
 
-    assertWithMessage("result.data.farm").that(result.data.farm).isNotNull()
-    result.data.farm!!.apply {
-      assertThat(id).isEqualTo(farmId)
-      assertThat(name).isEqualTo("TestFarm")
-      assertWithMessage("farm.farmer.parent").that(farmer.parent).isNull()
+    val farm = withClue("result.data.farm") { result.data.farm.shouldNotBeNull() }
+    assertSoftly {
+      withClue("farm.id") { farm.id shouldBe farmId }
+      withClue("farm.name") { farm.name shouldBe "TestFarm" }
+      withClue("farm.farmer.parent") { farm.farmer.parent.shouldBeNull() }
     }
   }
 
@@ -346,8 +382,8 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
 
     val result = personSchema.getPerson(id = "foo").runCatching { execute() }
 
-    assertWithMessage("result=${result.getOrNull()}").that(result.isFailure).isTrue()
-    assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+    withClue("result=${result.getOrNull()}") { result.isFailure shouldBe true }
+    withClue("exception") { result.exceptionOrNull().shouldBeInstanceOf<IllegalStateException>() }
   }
 
   @Test
@@ -369,8 +405,10 @@ class QueryRefIntegrationTest : DataConnectIntegrationTestBase() {
         }
 
       val results = deferreds.map { it.await() }
-      results.forEachIndexed { index, result ->
-        assertWithMessage("results[$index]").that(result.data.person).isNull()
+      assertSoftly {
+        results.forEachIndexed { index, result ->
+          withClue("results[$index]") { result.data.person.shouldBeNull() }
+        }
       }
     }
 }

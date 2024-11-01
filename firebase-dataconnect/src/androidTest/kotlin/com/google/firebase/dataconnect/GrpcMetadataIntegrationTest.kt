@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect
 
 import android.os.Build
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
@@ -44,6 +43,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import java.util.Date
+import java.util.Objects
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -57,9 +57,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
@@ -284,7 +282,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     expectedValue: String? = null
   ) {
     val metadata = withClue("waiting for metadata to be reported") { job.await() }
-    metadata.asClue {
+    withClue("key=$key, metadata=$metadata") {
       val actualValue = metadata.get(key)
       if (expectedValue === null) {
         actualValue.shouldNotBeNull()
@@ -337,10 +335,17 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
-  class TestGeneratedConnector(override val dataConnect: FirebaseDataConnect) : GeneratedConnector {
+  class TestGeneratedConnector(override val dataConnect: FirebaseDataConnect) :
+    GeneratedConnector<TestGeneratedConnector> {
     override fun equals(other: Any?) = other === this
     override fun hashCode() = System.identityHashCode(this)
     override fun toString() = "TestGeneratedConnector"
+
+    override fun copy(dataConnect: FirebaseDataConnect) =
+      throw Exception("not implemented (error code dtbzbxnfb5)")
+    override fun operations() = throw Exception("not implemented (error code dtbzbxnfb5)")
+    override fun queries() = throw Exception("not implemented (error code dtbzbxnfb5)")
+    override fun mutations() = throw Exception("not implemented (error code dtbzbxnfb5)")
   }
 
   class TestGeneratedQuery(
@@ -349,7 +354,44 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     override val dataDeserializer: DeserializationStrategy<Unit>,
     override val variablesSerializer: SerializationStrategy<Unit>
   ) : GeneratedQuery<TestGeneratedConnector, Unit, Unit> {
-    override fun toString(): String = "TestGeneratedQuery"
+
+    override fun equals(other: Any?) =
+      other is TestGeneratedQuery &&
+        other.connector == connector &&
+        other.operationName == operationName &&
+        other.dataDeserializer == dataDeserializer &&
+        other.variablesSerializer == variablesSerializer
+
+    override fun hashCode() =
+      Objects.hash(
+        TestGeneratedQuery::class,
+        connector,
+        operationName,
+        dataDeserializer,
+        variablesSerializer,
+      )
+
+    override fun toString(): String =
+      "TestGeneratedQuery(" +
+        "operationName=$operationName, " +
+        "dataDeserializer=$dataDeserializer, " +
+        "variablesSerializer=$variablesSerializer, " +
+        "connector=$connector)"
+
+    override fun copy(
+      connector: TestGeneratedConnector,
+      operationName: String,
+      dataDeserializer: DeserializationStrategy<Unit>,
+      variablesSerializer: SerializationStrategy<Unit>
+    ) = throw Exception("not implemented (error code sg6tkvqmxg)")
+
+    override fun <NewData> withDataDeserializer(
+      dataDeserializer: DeserializationStrategy<NewData>
+    ) = throw Exception("not implemented (error code sg6tkvqmxg)")
+
+    override fun <NewVariables> withVariablesSerializer(
+      variablesSerializer: SerializationStrategy<NewVariables>
+    ) = throw Exception("not implemented (error code sg6tkvqmxg)")
   }
 
   class TestGeneratedMutation(
@@ -358,10 +400,47 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     override val dataDeserializer: DeserializationStrategy<Unit>,
     override val variablesSerializer: SerializationStrategy<Unit>
   ) : GeneratedMutation<TestGeneratedConnector, Unit, Unit> {
-    override fun toString(): String = "TestGeneratedMutation"
+    override fun equals(other: Any?) =
+      other is TestGeneratedMutation &&
+        other.connector == connector &&
+        other.operationName == operationName &&
+        other.dataDeserializer == dataDeserializer &&
+        other.variablesSerializer == variablesSerializer
+
+    override fun hashCode() =
+      Objects.hash(
+        TestGeneratedMutation::class,
+        connector,
+        operationName,
+        dataDeserializer,
+        variablesSerializer,
+      )
+
+    override fun toString(): String =
+      "TestGeneratedMutation(" +
+        "operationName=$operationName, " +
+        "dataDeserializer=$dataDeserializer, " +
+        "variablesSerializer=$variablesSerializer, " +
+        "connector=$connector)"
+
+    override fun copy(
+      connector: TestGeneratedConnector,
+      operationName: String,
+      dataDeserializer: DeserializationStrategy<Unit>,
+      variablesSerializer: SerializationStrategy<Unit>
+    ) = throw Exception("not implemented (error code wzvy7vnff5)")
+
+    override fun <NewData> withDataDeserializer(
+      dataDeserializer: DeserializationStrategy<NewData>
+    ) = throw Exception("not implemented (error code wzvy7vnff5)")
+
+    override fun <NewVariables> withVariablesSerializer(
+      variablesSerializer: SerializationStrategy<NewVariables>
+    ) = throw Exception("not implemented (error code wzvy7vnff5)")
   }
 
   private companion object {
+    @Suppress("SpellCheckingInspection")
     const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
 
     val firebaseAuthTokenHeader: Metadata.Key<String> =

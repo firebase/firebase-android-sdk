@@ -14,223 +14,253 @@
  * limitations under the License.
  */
 
+@file:Suppress("ReplaceCallWithBinaryOperator")
+@file:OptIn(ExperimentalKotest::class)
+
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
+import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.matchers.types.shouldNotBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.next
+import io.kotest.property.assume
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 
 class ConnectorConfigUnitTest {
 
-  private val sampleConfig =
-    ConnectorConfig(
-      connector = SAMPLE_CONNECTOR,
-      location = SAMPLE_LOCATION,
-      serviceId = SAMPLE_SERVICE_ID
-    )
+  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
+
+  private val rs by randomSeedTestRule.rs
 
   @Test
-  fun `'connector' property should be the same object given to the constructor`() {
-    val connector = "Test Connector"
-    val config =
-      ConnectorConfig(
-        connector = connector,
-        location = SAMPLE_LOCATION,
-        serviceId = SAMPLE_SERVICE_ID,
-      )
+  fun `properties should be the same objects given to the constructor`() = runTest {
+    val arb = Arb.dataConnect.string()
+    checkAll(propTestConfig, arb, arb, arb) { connector, location, serviceId ->
+      val config =
+        ConnectorConfig(
+          connector = connector,
+          location = location,
+          serviceId = serviceId,
+        )
 
-    assertThat(config.connector).isSameInstanceAs(connector)
+      withClue(config) {
+        assertSoftly {
+          config.connector shouldBeSameInstanceAs connector
+          config.location shouldBeSameInstanceAs location
+          config.serviceId shouldBeSameInstanceAs serviceId
+        }
+      }
+    }
   }
 
   @Test
-  fun `'location' property should be the same object given to the constructor`() {
-    val location = "Test Location"
-    val config =
-      ConnectorConfig(
-        connector = SAMPLE_CONNECTOR,
-        location = location,
-        serviceId = SAMPLE_SERVICE_ID,
-      )
+  fun `toString() returns a string that incorporates all property values`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config ->
+      val toStringResult = config.toString()
 
-    assertThat(config.location).isSameInstanceAs(location)
-  }
-
-  @Test
-  fun `'serviceId' property should be the same object given to the constructor`() {
-    val serviceId = "Test Service Id"
-    val config =
-      ConnectorConfig(
-        connector = SAMPLE_CONNECTOR,
-        location = SAMPLE_LOCATION,
-        serviceId = serviceId,
-      )
-    assertThat(config.serviceId).isSameInstanceAs(serviceId)
-  }
-
-  @Test
-  fun `toString() returns a string that incorporates all property values`() {
-    val config =
-      ConnectorConfig(connector = "MyConnector", location = "MyLocation", serviceId = "MyServiceId")
-
-    val toStringResult = config.toString()
-
-    assertThat(toStringResult).startsWith("ConnectorConfig(")
-    assertThat(toStringResult).endsWith(")")
-    assertThat(toStringResult).containsWithNonAdjacentText("serviceId=MyServiceId")
-    assertThat(toStringResult).containsWithNonAdjacentText("location=MyLocation")
-    assertThat(toStringResult).containsWithNonAdjacentText("connector=MyConnector")
+      withClue(toStringResult) {
+        assertSoftly {
+          toStringResult shouldStartWith "ConnectorConfig("
+          toStringResult shouldEndWith ")"
+          toStringResult shouldContainWithNonAbuttingText "connector=${config.connector}"
+          toStringResult shouldContainWithNonAbuttingText "location=${config.location}"
+          toStringResult shouldContainWithNonAbuttingText "serviceId=${config.serviceId}"
+        }
+      }
+    }
   }
 
   @Test
   fun `equals() should return true for the exact same instance`() {
-    val config = sampleConfig
+    val config = Arb.dataConnect.connectorConfig()
 
-    assertThat(config.equals(config)).isTrue()
+    config.equals(config) shouldBe true
   }
 
   @Test
-  fun `equals() should return true for an equal instance`() {
-    val config = sampleConfig
-    val configCopy = config.copy()
+  fun `equals() should return true for an equal instance`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config ->
+      val configCopy = config.copy()
 
-    assertThat(config.equals(configCopy)).isTrue()
+      config.equals(configCopy) shouldBe true
+      configCopy.equals(config) shouldBe true
+    }
   }
 
   @Test
   fun `equals() should return false for null`() {
-    assertThat(sampleConfig.equals(null)).isFalse()
+    val config = Arb.dataConnect.connectorConfig().next(rs)
+    config.equals(null) shouldBe false
   }
 
   @Test
   fun `equals() should return false for a different type`() {
-    assertThat(sampleConfig.equals("Not A ConnectorConfig Instance")).isFalse()
+    val config = Arb.dataConnect.connectorConfig().next(rs)
+    config.equals("Not A ConnectorConfig Instance") shouldBe false
   }
 
   @Test
   fun `equals() should return false when only 'connector' differs`() {
-    val config1 = sampleConfig.copy(connector = "Connector1")
-    val config2 = sampleConfig.copy(connector = "Connector2")
+    val config1 = Arb.dataConnect.connectorConfig().next(rs)
+    val config2 = config1.copy(connector = config1.connector + "NEW")
 
-    assertThat(config1.equals(config2)).isFalse()
+    config1.equals(config2) shouldBe false
   }
 
   @Test
   fun `equals() should return false when only 'location' differs`() {
-    val config1 = sampleConfig.copy(location = "Location1")
-    val config2 = sampleConfig.copy(location = "Location2")
+    val config1 = Arb.dataConnect.connectorConfig().next(rs)
+    val config2 = config1.copy(location = config1.location + "NEW")
 
-    assertThat(config1.equals(config2)).isFalse()
+    config1.equals(config2) shouldBe false
   }
 
   @Test
   fun `equals() should return false when only 'serviceId' differs`() {
-    val config1 = sampleConfig.copy(serviceId = "ServiceId1")
-    val config2 = sampleConfig.copy(serviceId = "ServiceId2")
+    val config1 = Arb.dataConnect.connectorConfig().next(rs)
+    val config2 = config1.copy(serviceId = config1.serviceId + "NEW")
 
-    assertThat(config1.equals(config2)).isFalse()
+    config1.equals(config2) shouldBe false
   }
 
   @Test
-  fun `hashCode() should return the same value each time it is invoked on a given object`() {
-    val hashCode = sampleConfig.hashCode()
+  fun `hashCode() should return the same value each time it is invoked on a given object`() =
+    runTest {
+      checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config ->
+        val hashCode1 = config.hashCode()
+        repeat(20) { i -> withClue("iteration=$i") { config.hashCode() shouldBe hashCode1 } }
+      }
+    }
 
-    assertThat(sampleConfig.hashCode()).isEqualTo(hashCode)
-    assertThat(sampleConfig.hashCode()).isEqualTo(hashCode)
-    assertThat(sampleConfig.hashCode()).isEqualTo(hashCode)
+  @Test
+  fun `hashCode() should return the same value on equal objects`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config1 ->
+      val config2 = config1.copy()
+      config1.hashCode() shouldBe config2.hashCode()
+    }
   }
 
   @Test
-  fun `hashCode() should return the same value on equal objects`() {
-    val config = sampleConfig
-    val configCopy = config.copy()
-
-    assertThat(config.hashCode()).isEqualTo(configCopy.hashCode())
+  fun `hashCode() should return a different value when only 'connector' differs`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config1 ->
+      val config2 = config1.copy(connector = config1.connector + "NEW")
+      assume(config1.connector.hashCode() != config2.connector.hashCode())
+      config1.hashCode() shouldNotBe config2.hashCode()
+    }
   }
 
   @Test
-  fun `hashCode() should return a different value when only 'connector' differs`() {
-    val config1 = sampleConfig.copy(connector = "Connector1")
-    val config2 = sampleConfig.copy(connector = "Connector2")
-
-    assertThat(config1.hashCode()).isNotEqualTo(config2.hashCode())
+  fun `hashCode() should return a different value when only 'location' differs`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config1 ->
+      val config2 = config1.copy(location = config1.location + "NEW")
+      assume(config1.location.hashCode() != config2.location.hashCode())
+      config1.hashCode() shouldNotBe config2.hashCode()
+    }
   }
 
   @Test
-  fun `hashCode() should return a different value when only 'location' differs`() {
-    val config1 = sampleConfig.copy(location = "Location1")
-    val config2 = sampleConfig.copy(location = "Location2")
-
-    assertThat(config1.hashCode()).isNotEqualTo(config2.hashCode())
+  fun `hashCode() should return a different value when only 'serviceId' differs`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config1 ->
+      val config2 = config1.copy(serviceId = config1.serviceId + "NEW")
+      assume(config1.serviceId.hashCode() != config2.serviceId.hashCode())
+      config1.hashCode() shouldNotBe config2.hashCode()
+    }
   }
 
   @Test
-  fun `hashCode() should return a different value when only 'serviceId' differs`() {
-    val config1 = sampleConfig.copy(serviceId = "ServiceId1")
-    val config2 = sampleConfig.copy(serviceId = "ServiceId2")
+  fun `copy() should return a new, equal object when invoked with no explicit arguments`() =
+    runTest {
+      checkAll(propTestConfig, Arb.dataConnect.connectorConfig()) { config ->
+        val configCopy = config.copy()
+        assertSoftly {
+          configCopy shouldNotBeSameInstanceAs config
+          configCopy.connector shouldBeSameInstanceAs config.connector
+          configCopy.location shouldBeSameInstanceAs config.location
+          configCopy.serviceId shouldBeSameInstanceAs config.serviceId
+        }
+      }
+    }
 
-    assertThat(config1.hashCode()).isNotEqualTo(config2.hashCode())
+  @Test
+  fun `copy() should return an object with the given 'connector'`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.connectorConfig(), Arb.dataConnect.connectorName()) {
+      config,
+      newConnector ->
+      val configCopy = config.copy(connector = newConnector)
+      assertSoftly {
+        configCopy.connector shouldBeSameInstanceAs newConnector
+        configCopy.location shouldBeSameInstanceAs config.location
+        configCopy.serviceId shouldBeSameInstanceAs config.serviceId
+      }
+    }
   }
 
   @Test
-  fun `copy() should return a new, equal object when invoked with no explicit arguments`() {
-    val config2 = sampleConfig.copy()
-
-    assertThat(config2).isNotSameInstanceAs(sampleConfig)
-    assertThat(config2.connector).isSameInstanceAs(sampleConfig.connector)
-    assertThat(config2.location).isSameInstanceAs(sampleConfig.location)
-    assertThat(config2.serviceId).isSameInstanceAs(sampleConfig.serviceId)
+  fun `copy() should return an object with the given 'location'`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.connectorConfig(),
+      Arb.dataConnect.connectorLocation()
+    ) { config, newLocation ->
+      val configCopy = config.copy(location = newLocation)
+      assertSoftly {
+        configCopy.connector shouldBeSameInstanceAs config.connector
+        configCopy.location shouldBeSameInstanceAs newLocation
+        configCopy.serviceId shouldBeSameInstanceAs config.serviceId
+      }
+    }
   }
 
   @Test
-  fun `copy() should return an object with the given 'connector'`() {
-    val newConnector = sampleConfig.connector + "ZZZZ"
-
-    val config2 = sampleConfig.copy(connector = newConnector)
-
-    assertThat(config2.connector).isSameInstanceAs(newConnector)
-    assertThat(config2.location).isSameInstanceAs(sampleConfig.location)
-    assertThat(config2.serviceId).isSameInstanceAs(sampleConfig.serviceId)
+  fun `copy() should return an object with the given 'serviceId'`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.connectorConfig(),
+      Arb.dataConnect.connectorServiceId()
+    ) { config, newServiceId ->
+      val configCopy = config.copy(serviceId = newServiceId)
+      assertSoftly {
+        configCopy.connector shouldBeSameInstanceAs config.connector
+        configCopy.location shouldBeSameInstanceAs config.location
+        configCopy.serviceId shouldBeSameInstanceAs newServiceId
+      }
+    }
   }
 
   @Test
-  fun `copy() should return an object with the given 'location'`() {
-    val newLocation = sampleConfig.location + "ZZZZ"
-
-    val config2 = sampleConfig.copy(location = newLocation)
-
-    assertThat(config2.connector).isSameInstanceAs(sampleConfig.connector)
-    assertThat(config2.location).isSameInstanceAs(newLocation)
-    assertThat(config2.serviceId).isSameInstanceAs(sampleConfig.serviceId)
+  fun `copy() should return an object with properties set to all given arguments`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.connectorConfig(),
+      Arb.dataConnect.connectorName(),
+      Arb.dataConnect.connectorLocation(),
+      Arb.dataConnect.connectorServiceId()
+    ) { config, newConnector, newLocation, newServiceId ->
+      val configCopy =
+        config.copy(connector = newConnector, location = newLocation, serviceId = newServiceId)
+      assertSoftly {
+        configCopy.connector shouldBeSameInstanceAs newConnector
+        configCopy.location shouldBeSameInstanceAs newLocation
+        configCopy.serviceId shouldBeSameInstanceAs newServiceId
+      }
+    }
   }
 
-  @Test
-  fun `copy() should return an object with the given 'serviceId'`() {
-    val newServiceId = sampleConfig.serviceId + "ZZZZ"
-
-    val config2 = sampleConfig.copy(serviceId = newServiceId)
-
-    assertThat(config2.connector).isSameInstanceAs(sampleConfig.connector)
-    assertThat(config2.location).isSameInstanceAs(sampleConfig.location)
-    assertThat(config2.serviceId).isSameInstanceAs(newServiceId)
-  }
-
-  @Test
-  fun `copy() should return an object with properties set to all given arguments`() {
-    val newConnector = sampleConfig.connector + "ZZZZ"
-    val newLocation = sampleConfig.location + "ZZZZ"
-    val newServiceId = sampleConfig.serviceId + "ZZZZ"
-
-    val config2 =
-      sampleConfig.copy(connector = newConnector, location = newLocation, serviceId = newServiceId)
-
-    assertThat(config2.connector).isSameInstanceAs(newConnector)
-    assertThat(config2.location).isSameInstanceAs(newLocation)
-    assertThat(config2.serviceId).isSameInstanceAs(newServiceId)
-  }
-
-  companion object {
-    const val SAMPLE_CONNECTOR = "SampleConnector"
-    const val SAMPLE_LOCATION = "SampleLocation"
-    const val SAMPLE_SERVICE_ID = "SampleServiceId"
+  private companion object {
+    val propTestConfig = PropTestConfig(iterations = 20)
   }
 }

@@ -16,13 +16,16 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.*
-import com.google.firebase.dataconnect.core.Globals.copy
+import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import java.util.Objects
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.launch
 
 internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, Variables>) :
   QuerySubscriptionInternal<Data, Variables> {

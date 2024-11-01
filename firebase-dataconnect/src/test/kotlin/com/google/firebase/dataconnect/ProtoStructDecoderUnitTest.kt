@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalKotest::class)
+
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.SerializationTestData.serializationTestDataAllTypes
@@ -26,9 +28,11 @@ import com.google.protobuf.Value
 import com.google.protobuf.Value.KindCase
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.constant
@@ -52,7 +56,7 @@ class ProtoStructDecoderUnitTest {
     // TODO(b/370992204) Remove the call to withEmptyListOfUnitRecursive() once the bug that a list
     //  of Unit is incorrectly decoded as an empty list is fixed.
     val arb = Arb.serializationTestDataAllTypes().map { it.withEmptyListOfUnitRecursive() }
-    checkAll(iterations = 20, arb) { obj ->
+    checkAll(propTestConfig, arb) { obj ->
       val struct = encodeToStruct(obj)
       val decodedObj = decodeFromStruct<SerializationTestData.AllTheTypes>(struct)
       decodedObj shouldBe obj
@@ -66,7 +70,7 @@ class ProtoStructDecoderUnitTest {
   @Test
   fun `decodeFromStruct() can encode and decode a list of non-nullable Unit`() = runTest {
     @Serializable data class TestData(val list: List<Unit>)
-    checkAll(Arb.list(Arb.constant(Unit))) { list ->
+    checkAll(propTestConfig, Arb.list(Arb.constant(Unit))) { list ->
       val struct = encodeToStruct(TestData(list))
       val decodedObj = decodeFromStruct<TestData>(struct)
       decodedObj shouldBe TestData(list)
@@ -76,7 +80,7 @@ class ProtoStructDecoderUnitTest {
   @Test
   fun `decodeFromStruct() can encode and decode a list of nullable Unit`() = runTest {
     @Serializable data class TestData(val list: List<Unit?>)
-    checkAll(Arb.list(Arb.constant(Unit).orNull())) { list ->
+    checkAll(propTestConfig, Arb.list(Arb.constant(Unit).orNull())) { list ->
       val struct = encodeToStruct(TestData(list))
       val decodedObj = decodeFromStruct<TestData>(struct)
       decodedObj shouldBe TestData(list)
@@ -93,7 +97,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with String values`() = runTest {
     @Serializable data class TestData(val value1: String, val value2: String)
     val strings = Arb.string()
-    checkAll(strings, strings) { value1, value2 ->
+    checkAll(propTestConfig, strings, strings) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -104,7 +108,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with _nullable_ String values`() = runTest {
     @Serializable data class TestData(val value1: String?, val value2: String?)
     val nullableStrings = Arb.string().orNull()
-    checkAll(nullableStrings, nullableStrings) { value1, value2 ->
+    checkAll(propTestConfig, nullableStrings, nullableStrings) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -115,7 +119,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with Boolean values`() = runTest {
     @Serializable data class TestData(val value1: Boolean, val value2: Boolean)
     val booleans = Arb.boolean()
-    checkAll(booleans, booleans) { value1, value2 ->
+    checkAll(propTestConfig, booleans, booleans) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -126,7 +130,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with _nullable_ Boolean values`() = runTest {
     @Serializable data class TestData(val value1: Boolean?, val value2: Boolean?)
     val nullableBooleans = Arb.boolean().orNull()
-    checkAll(nullableBooleans, nullableBooleans) { value1, value2 ->
+    checkAll(propTestConfig, nullableBooleans, nullableBooleans) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -137,7 +141,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with Int values`() = runTest {
     @Serializable data class TestData(val value1: Int, val value2: Int)
     val ints = Arb.int()
-    checkAll(ints, ints) { value1, value2 ->
+    checkAll(propTestConfig, ints, ints) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -148,7 +152,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with _nullable_ Int values`() = runTest {
     @Serializable data class TestData(val value1: Int?, val value2: Int?)
     val nullableInts = Arb.int().orNull()
-    checkAll(nullableInts, nullableInts) { value1, value2 ->
+    checkAll(propTestConfig, nullableInts, nullableInts) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -159,7 +163,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with Double values`() = runTest {
     @Serializable data class TestData(val value1: Double, val value2: Double)
     val doubles = Arb.double()
-    checkAll(doubles, doubles) { value1, value2 ->
+    checkAll(propTestConfig, doubles, doubles) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -170,7 +174,7 @@ class ProtoStructDecoderUnitTest {
   fun `decodeFromStruct() can decode a Struct with _nullable_ Double values`() = runTest {
     @Serializable data class TestData(val value1: Double?, val value2: Double?)
     val nullableDoubles = Arb.double().orNull()
-    checkAll(nullableDoubles, nullableDoubles) { value1, value2 ->
+    checkAll(propTestConfig, nullableDoubles, nullableDoubles) { value1, value2 ->
       val struct = encodeToStruct(TestData(value1 = value1, value2 = value2))
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe TestData(value1 = value1, value2 = value2)
@@ -187,7 +191,7 @@ class ProtoStructDecoderUnitTest {
       TestDataD(TestDataC(TestDataB(TestDataA(Arb.string().bind()))))
     }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestDataD>(struct)
       decodedTestData shouldBe value
@@ -205,7 +209,7 @@ class ProtoStructDecoderUnitTest {
     val arbC: Arb<TestDataC> = arbitrary { arbB.orNull(0.2).run { TestDataC(bind(), bind()) } }
     val arbD: Arb<TestDataD> = arbitrary { arbC.orNull(0.2).run { TestDataD(bind(), bind()) } }
 
-    checkAll(arbD) { value ->
+    checkAll(propTestConfig, arbD) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestDataD>(struct)
       decodedTestData shouldBe value
@@ -219,7 +223,7 @@ class ProtoStructDecoderUnitTest {
       Arb.list(Arb.string()).orNull(0.33).run { TestData(bind(), bind()) }
     }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -231,7 +235,7 @@ class ProtoStructDecoderUnitTest {
     @Serializable data class TestData(val value1: List<String>, val value2: List<String>)
     val arb: Arb<TestData> = arbitrary { Arb.list(Arb.string()).run { TestData(bind(), bind()) } }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -245,7 +249,7 @@ class ProtoStructDecoderUnitTest {
       Arb.list(Arb.string().orNull(0.33)).run { TestData(bind(), bind()) }
     }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -257,7 +261,7 @@ class ProtoStructDecoderUnitTest {
     @Serializable data class TestData(val value1: List<Boolean>, val value2: List<Boolean>)
     val arb: Arb<TestData> = arbitrary { Arb.list(Arb.boolean()).run { TestData(bind(), bind()) } }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -271,7 +275,7 @@ class ProtoStructDecoderUnitTest {
       Arb.list(Arb.boolean().orNull(0.33)).run { TestData(bind(), bind()) }
     }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -283,7 +287,7 @@ class ProtoStructDecoderUnitTest {
     @Serializable data class TestData(val value1: List<Int>, val value2: List<Int>)
     val arb: Arb<TestData> = arbitrary { Arb.list(Arb.int()).run { TestData(bind(), bind()) } }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -297,7 +301,7 @@ class ProtoStructDecoderUnitTest {
       Arb.list(Arb.int().orNull(0.33)).run { TestData(bind(), bind()) }
     }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -309,7 +313,7 @@ class ProtoStructDecoderUnitTest {
     @Serializable data class TestData(val value1: List<Double>, val value2: List<Double>)
     val arb: Arb<TestData> = arbitrary { Arb.list(Arb.double()).run { TestData(bind(), bind()) } }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -323,7 +327,7 @@ class ProtoStructDecoderUnitTest {
       Arb.list(Arb.double().orNull(0.33)).run { TestData(bind(), bind()) }
     }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -341,7 +345,7 @@ class ProtoStructDecoderUnitTest {
     }
     val arb: Arb<TestDataB> = arbitrary { Arb.list(arbA).run { TestDataB(bind(), bind()) } }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestDataB>(struct)
       decodedTestData shouldBe value
@@ -361,7 +365,7 @@ class ProtoStructDecoderUnitTest {
       Arb.list(arbA.orNull(0.33)).run { TestDataB(bind(), bind()) }
     }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestDataB>(struct)
       decodedTestData shouldBe value
@@ -375,7 +379,7 @@ class ProtoStructDecoderUnitTest {
       Arb.list(Arb.list(Arb.int())).run { TestData(bind(), bind()) }
     }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -391,7 +395,7 @@ class ProtoStructDecoderUnitTest {
       TestData(value1, value2)
     }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -405,7 +409,7 @@ class ProtoStructDecoderUnitTest {
       TestData(Arb.testStringValueClass().bind(), Arb.testIntValueClass().bind())
     }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -430,7 +434,7 @@ class ProtoStructDecoderUnitTest {
       )
     }
 
-    checkAll(arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -448,7 +452,7 @@ class ProtoStructDecoderUnitTest {
       )
     }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -466,7 +470,7 @@ class ProtoStructDecoderUnitTest {
       )
     }
 
-    checkAll(iterations = 20, arb) { value ->
+    checkAll(propTestConfig, arb) { value ->
       val struct = encodeToStruct(value)
       val decodedTestData = decodeFromStruct<TestData>(struct)
       decodedTestData shouldBe value
@@ -631,6 +635,8 @@ class ProtoStructDecoderUnitTest {
   @Serializable @JvmInline private value class TestIntValueClass(val a: Int)
 
   private companion object {
+    val propTestConfig = PropTestConfig(iterations = 20)
+
     fun Arb.Companion.testStringValueClass(): Arb<TestStringValueClass> = arbitrary {
       TestStringValueClass(Arb.string().bind())
     }

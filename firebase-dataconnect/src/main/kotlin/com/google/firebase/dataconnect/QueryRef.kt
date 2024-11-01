@@ -16,6 +16,10 @@
 
 package com.google.firebase.dataconnect
 
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
+
 /**
  * A specialization of [OperationRef] for _query_ operations.
  *
@@ -42,6 +46,27 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
    * @return an object that can be used to subscribe to query results.
    */
   public fun subscribe(): QuerySubscription<Data, Variables>
+
+  override fun copy(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+  ): QueryRef<Data, Variables>
+
+  override fun <NewVariables> withVariablesSerializer(
+    variables: NewVariables,
+    variablesSerializer: SerializationStrategy<NewVariables>,
+    variablesSerializersModule: SerializersModule?,
+  ): QueryRef<Data, NewVariables>
+
+  override fun <NewData> withDataDeserializer(
+    dataDeserializer: DeserializationStrategy<NewData>,
+    dataSerializersModule: SerializersModule?,
+  ): QueryRef<NewData, Variables>
 }
 
 /**

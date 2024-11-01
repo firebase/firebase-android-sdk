@@ -16,11 +16,6 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.FirebaseDataConnect
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.modules.SerializersModule
-
 /**
  * Holder for "global" functions in this package.
  *
@@ -56,77 +51,4 @@ internal object Globals {
         )
       }
     }
-
-  fun <Data, Variables> MutationRefImpl<Data, Variables>.copy(
-    dataConnect: FirebaseDataConnectInternal = this.dataConnect,
-    operationName: String = this.operationName,
-    variables: Variables = this.variables,
-    dataDeserializer: DeserializationStrategy<Data> = this.dataDeserializer,
-    variablesSerializer: SerializationStrategy<Variables> = this.variablesSerializer,
-    callerSdkType: FirebaseDataConnect.CallerSdkType = this.callerSdkType,
-    variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
-    dataSerializersModule: SerializersModule? = this.dataSerializersModule,
-  ) =
-    MutationRefImpl(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      variables = variables,
-      dataDeserializer = dataDeserializer,
-      variablesSerializer = variablesSerializer,
-      callerSdkType = callerSdkType,
-      variablesSerializersModule = variablesSerializersModule,
-      dataSerializersModule = dataSerializersModule,
-    )
-
-  fun <Data, NewVariables> MutationRefImpl<Data, *>.withVariablesSerializer(
-    variables: NewVariables,
-    variablesSerializer: SerializationStrategy<NewVariables>,
-    variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
-  ): MutationRefImpl<Data, NewVariables> =
-    MutationRefImpl(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      variables = variables,
-      dataDeserializer = dataDeserializer,
-      variablesSerializer = variablesSerializer,
-      callerSdkType = callerSdkType,
-      variablesSerializersModule = variablesSerializersModule,
-      dataSerializersModule = dataSerializersModule,
-    )
-
-  fun <NewData, Variables> MutationRefImpl<*, Variables>.withDataDeserializer(
-    dataDeserializer: DeserializationStrategy<NewData>,
-    dataSerializersModule: SerializersModule? = this.dataSerializersModule,
-  ): MutationRefImpl<NewData, Variables> =
-    MutationRefImpl(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      variables = variables,
-      dataDeserializer = dataDeserializer,
-      variablesSerializer = variablesSerializer,
-      callerSdkType = callerSdkType,
-      variablesSerializersModule = variablesSerializersModule,
-      dataSerializersModule = dataSerializersModule,
-    )
-
-  fun <Data, Variables> QueryRefImpl<Data, Variables>.copy(
-    dataConnect: FirebaseDataConnectInternal = this.dataConnect,
-    operationName: String = this.operationName,
-    variables: Variables = this.variables,
-    dataDeserializer: DeserializationStrategy<Data> = this.dataDeserializer,
-    variablesSerializer: SerializationStrategy<Variables> = this.variablesSerializer,
-    callerSdkType: FirebaseDataConnect.CallerSdkType = this.callerSdkType,
-    variablesSerializersModule: SerializersModule? = this.variablesSerializersModule,
-    dataSerializersModule: SerializersModule? = this.dataSerializersModule,
-  ) =
-    QueryRefImpl(
-      dataConnect = dataConnect,
-      operationName = operationName,
-      variables = variables,
-      dataDeserializer = dataDeserializer,
-      variablesSerializer = variablesSerializer,
-      callerSdkType = callerSdkType,
-      variablesSerializersModule = variablesSerializersModule,
-      dataSerializersModule = dataSerializersModule,
-    )
 }

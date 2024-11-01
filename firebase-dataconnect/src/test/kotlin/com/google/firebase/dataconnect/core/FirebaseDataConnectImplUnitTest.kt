@@ -19,16 +19,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
-import com.google.firebase.dataconnect.testutil.callerSdkType
-import com.google.firebase.dataconnect.testutil.connectorConfig
-import com.google.firebase.dataconnect.testutil.dataConnectSettings
-import com.google.firebase.dataconnect.testutil.operationName
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.assertions.assertSoftly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
 import io.mockk.mockk
@@ -55,7 +53,6 @@ class FirebaseDataConnectImplUnitTest {
     )
 
   private val rs = RandomSource.default()
-  private val key = "z89k9qab37"
   private val dataConnect: FirebaseDataConnectImpl by lazy {
     val app = firebaseAppFactory.newInstance()
 
@@ -63,13 +60,13 @@ class FirebaseDataConnectImplUnitTest {
       context = app.applicationContext,
       app = app,
       projectId = app.options.projectId!!,
-      config = Arb.connectorConfig(key).next(rs),
+      config = Arb.dataConnect.connectorConfig().next(rs),
       blockingExecutor = mockk(relaxed = true),
       nonBlockingExecutor = mockk(relaxed = true),
       deferredAuthProvider = mockk(relaxed = true),
       deferredAppCheckProvider = mockk(relaxed = true),
       creator = mockk(relaxed = true),
-      settings = Arb.dataConnectSettings(key).next(rs),
+      settings = Arb.dataConnect.dataConnectSettings().next(rs),
     )
   }
 
@@ -80,7 +77,7 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `query() with no options set should use null for each option`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
@@ -106,11 +103,11 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `query() with all options specified should use the given options`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
     val dataSerializersModule: SerializersModule = mockk()
     val variablesSerializersModule: SerializersModule = mockk()
 
@@ -139,7 +136,7 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `mutation() with no options set should use null for each option`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
@@ -165,11 +162,11 @@ class FirebaseDataConnectImplUnitTest {
 
   @Test
   fun `mutation() with all options specified should use the given options`() = runTest {
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val variables = TestVariables(Arb.string(size = 8).next(rs))
     val dataDeserializer: DeserializationStrategy<TestData> = mockk()
     val variablesSerializer: SerializationStrategy<TestVariables> = mockk()
-    val callerSdkType = Arb.callerSdkType().next()
+    val callerSdkType = Arb.enum<CallerSdkType>().next()
     val dataSerializersModule: SerializersModule = mockk()
     val variablesSerializersModule: SerializersModule = mockk()
 

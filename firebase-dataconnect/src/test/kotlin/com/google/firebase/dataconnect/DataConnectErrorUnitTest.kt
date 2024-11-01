@@ -14,68 +14,84 @@
  * limitations under the License.
  */
 
+@file:Suppress("ReplaceCallWithBinaryOperator")
+
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.DataConnectError.PathSegment
-import com.google.firebase.dataconnect.DataConnectError.SourceLocation
-import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectError
+import com.google.firebase.dataconnect.testutil.property.arbitrary.fieldPathSegment
+import com.google.firebase.dataconnect.testutil.property.arbitrary.listIndexPathSegment
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pathSegment
+import com.google.firebase.dataconnect.testutil.property.arbitrary.sourceLocation
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.az
+import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.string
+import io.kotest.property.assume
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class DataConnectErrorUnitTest {
 
   @Test
-  fun `message should be the same object given to the constructor`() {
-    val message = "This is the test message"
-    val dataConnectError =
-      DataConnectError(message = message, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.message).isSameInstanceAs(message)
+  fun `properties should be the same objects given to the constructor`() = runTest {
+    val messages = Arb.dataConnect.string()
+    val paths = Arb.list(Arb.dataConnect.pathSegment(), 0..5)
+    val sourceLocations = Arb.list(Arb.dataConnect.sourceLocation(), 0..5)
+    checkAll(propTestConfig, messages, paths, sourceLocations) { message, path, locations ->
+      val dataConnectError = DataConnectError(message = message, path = path, locations = locations)
+      assertSoftly {
+        dataConnectError.message shouldBeSameInstanceAs message
+        dataConnectError.path shouldBeSameInstanceAs path
+        dataConnectError.locations shouldBeSameInstanceAs locations
+      }
+    }
   }
 
   @Test
-  fun `path should be the same object given to the constructor`() {
-    val path = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42))
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.path).isSameInstanceAs(path)
+  fun `toString() should incorporate the message`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError()) { dataConnectError ->
+      dataConnectError.toString() shouldContainWithNonAbuttingText dataConnectError.message
+    }
   }
 
   @Test
-  fun `locations should be the same object given to the constructor`() {
-    val locations =
-      listOf(SourceLocation(line = 0, column = -1), SourceLocation(line = 5, column = 6))
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = locations)
-    assertThat(dataConnectError.locations).isSameInstanceAs(locations)
+  fun `toString() should incorporate the fields from the path separated by dots`() = runTest {
+    val paths = Arb.list(Arb.dataConnect.fieldPathSegment(), 0..5)
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(path = paths)) { dataConnectError ->
+      val expectedSubstring = dataConnectError.path.joinToString(".")
+      dataConnectError.toString() shouldContainWithNonAbuttingText expectedSubstring
+    }
   }
 
   @Test
-  fun `toString() should incorporate the message`() {
-    val message = "This is the test message"
-    val dataConnectError =
-      DataConnectError(message = message, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText(message)
-  }
-
-  @Test
-  fun `toString() should incorporate the fields from the path separated by dots`() {
-    val path = listOf(PathSegment.Field("foo"), PathSegment.Field("bar"), PathSegment.Field("baz"))
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("foo.bar.baz")
-  }
-
-  @Test
-  fun `toString() should incorporate the list indexes from the path surround by square brackets`() {
-    val path =
-      listOf(PathSegment.ListIndex(42), PathSegment.ListIndex(99), PathSegment.ListIndex(1))
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("[42][99][1]")
-  }
+  fun `toString() should incorporate the list indexes from the path surround by square brackets`() =
+    runTest {
+      val paths = Arb.list(Arb.dataConnect.listIndexPathSegment(), 1..5)
+      checkAll(propTestConfig, Arb.dataConnect.dataConnectError(path = paths)) { dataConnectError ->
+        val expectedSubstring = dataConnectError.path.joinToString(separator = "") { "[$it]" }
+        dataConnectError.toString() shouldContainWithNonAbuttingText expectedSubstring
+      }
+    }
 
   @Test
   fun `toString() should incorporate the fields and list indexes from the path`() {
+    // Use an example instead of Arb here because using Arb would essentially be re-writing the
+    // logic that is implemented in DataConnectError.toString().
     val path =
       listOf(
         PathSegment.Field("foo"),
@@ -84,213 +100,204 @@ class DataConnectErrorUnitTest {
         PathSegment.ListIndex(22),
         PathSegment.ListIndex(33)
       )
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = path, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("foo[99].bar[22][33]")
+    val dataConnectError = Arb.dataConnect.dataConnectError(path = Arb.constant(path)).next()
+
+    dataConnectError.toString() shouldContainWithNonAbuttingText "foo[99].bar[22][33]"
   }
 
   @Test
-  fun `toString() should incorporate the locations`() {
-    val locations =
-      listOf(SourceLocation(line = 1, column = 2), SourceLocation(line = -1, column = -2))
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = locations)
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("1:2")
-    assertThat(dataConnectError.toString()).containsWithNonAdjacentText("-1:-2")
+  fun `toString() should incorporate the locations`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError()) { dataConnectError ->
+      assertSoftly {
+        dataConnectError.locations.forEach {
+          dataConnectError.toString() shouldContainWithNonAbuttingText "${it.line}:${it.column}"
+        }
+      }
+    }
   }
 
   @Test
-  fun `equals() should return true for the exact same instance`() {
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.equals(dataConnectError)).isTrue()
+  fun `equals() should return true for the exact same instance`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError()) { dataConnectError ->
+      dataConnectError.equals(dataConnectError) shouldBe true
+    }
   }
 
   @Test
-  fun `equals() should return true for an equal instance`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = "Test Message",
-        path = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42)),
-        locations =
-          listOf(SourceLocation(line = 36, column = 32), SourceLocation(line = 4, column = 5))
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = "Test Message",
-        path = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42)),
-        locations =
-          listOf(SourceLocation(line = 36, column = 32), SourceLocation(line = 4, column = 5))
-      )
-    assertThat(dataConnectError1.equals(dataConnectError2)).isTrue()
+  fun `equals() should return true for an equal instance`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError()) { dataConnectError1 ->
+      val dataConnectError2 =
+        DataConnectError(
+          message = dataConnectError1.message,
+          path = List(dataConnectError1.path.size) { dataConnectError1.path[it] },
+          locations = List(dataConnectError1.locations.size) { dataConnectError1.locations[it] },
+        )
+      dataConnectError1.equals(dataConnectError2) shouldBe true
+      dataConnectError2.equals(dataConnectError1) shouldBe true
+    }
   }
 
   @Test
-  fun `equals() should return false for null`() {
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.equals(null)).isFalse()
+  fun `equals() should return false for null`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError()) { dataConnectError ->
+      dataConnectError.equals(null) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false for a different type`() {
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError.equals(listOf("foo"))).isFalse()
+  fun `equals() should return false for a different type`() = runTest {
+    val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.sourceLocation())
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(), otherTypes) {
+      dataConnectError,
+      other ->
+      dataConnectError.equals(other) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false when only message differs`() {
-    val dataConnectError1 =
-      DataConnectError(message = "Test Message1", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    val dataConnectError2 =
-      DataConnectError(message = "Test Message2", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
+  fun `equals() should return false when only message differs`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(), Arb.string()) {
+      dataConnectError1,
+      newMessage ->
+      assume(dataConnectError1.message != newMessage)
+      val dataConnectError2 =
+        DataConnectError(
+          message = newMessage,
+          path = dataConnectError1.path,
+          locations = dataConnectError1.locations,
+        )
+      dataConnectError1.equals(dataConnectError2) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false when message differs only in character case`() {
-    val dataConnectError1 =
-      DataConnectError(message = "A", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    val dataConnectError2 =
-      DataConnectError(message = "a", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
+  fun `equals() should return false when message differs only in character case`() = runTest {
+    val message = Arb.string(1..100, Codepoint.az())
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(message = message)) { dataConnectError
+      ->
+      val dataConnectError1 =
+        DataConnectError(
+          message = dataConnectError.message.uppercase(),
+          path = dataConnectError.path,
+          locations = dataConnectError.locations,
+        )
+      val dataConnectError2 =
+        DataConnectError(
+          message = dataConnectError.message.lowercase(),
+          path = dataConnectError.path,
+          locations = dataConnectError.locations,
+        )
+      dataConnectError1.equals(dataConnectError2) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false when path differs, with field`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.Field("a")),
-        locations = SAMPLE_LOCATIONS
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.Field("z")),
-        locations = SAMPLE_LOCATIONS
-      )
-    assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
+  fun `equals() should return false when path differs`() = runTest {
+    val paths = Arb.list(Arb.dataConnect.pathSegment(), 0..5)
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(), paths) {
+      dataConnectError1,
+      otherPath ->
+      assume(dataConnectError1.path != otherPath)
+      val dataConnectError2 =
+        DataConnectError(
+          message = dataConnectError1.message,
+          path = otherPath,
+          locations = dataConnectError1.locations,
+        )
+      dataConnectError1.equals(dataConnectError2) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false when path differs, with list index`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.ListIndex(1)),
-        locations = SAMPLE_LOCATIONS
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.ListIndex(2)),
-        locations = SAMPLE_LOCATIONS
-      )
-    assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
+  fun `equals() should return false when locations differ`() = runTest {
+    val location = Arb.list(Arb.dataConnect.sourceLocation(), 0..5)
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(), location) {
+      dataConnectError1,
+      otherLocations ->
+      assume(dataConnectError1.locations != otherLocations)
+      val dataConnectError2 =
+        DataConnectError(
+          message = dataConnectError1.message,
+          path = dataConnectError1.path,
+          locations = otherLocations,
+        )
+      dataConnectError1.equals(dataConnectError2) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false when path differs, with field and list index`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.ListIndex(1)),
-        locations = SAMPLE_LOCATIONS
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.Field("foo")),
-        locations = SAMPLE_LOCATIONS
-      )
-    assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
+  fun `hashCode() should return the same value each time it is invoked on a given object`() =
+    runTest {
+      checkAll(propTestConfig, Arb.dataConnect.dataConnectError()) { dataConnectError ->
+        val hashCode1 = dataConnectError.hashCode()
+        dataConnectError.hashCode() shouldBe hashCode1
+        dataConnectError.hashCode() shouldBe hashCode1
+      }
+    }
+
+  @Test
+  fun `hashCode() should return the same value on equal objects`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError()) { dataConnectError1 ->
+      val dataConnectError2 =
+        DataConnectError(
+          message = dataConnectError1.message,
+          path = dataConnectError1.path,
+          locations = dataConnectError1.locations,
+        )
+      dataConnectError1.hashCode() shouldBe dataConnectError2.hashCode()
+    }
   }
 
   @Test
-  fun `equals() should return false when locations differ`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = SAMPLE_PATH,
-        locations = listOf(SourceLocation(line = 36, column = 32))
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = SAMPLE_PATH,
-        locations = listOf(SourceLocation(line = 32, column = 36))
-      )
-    assertThat(dataConnectError1.equals(dataConnectError2)).isFalse()
+  fun `hashCode() should return a different value if message is different`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(), Arb.string()) {
+      dataConnectError1,
+      newMessage ->
+      assume(dataConnectError1.message.hashCode() != newMessage.hashCode())
+      val dataConnectError2 =
+        DataConnectError(
+          message = newMessage,
+          path = dataConnectError1.path,
+          locations = dataConnectError1.locations,
+        )
+      dataConnectError1.hashCode() shouldNotBe dataConnectError2.hashCode()
+    }
   }
 
   @Test
-  fun `hashCode() should return the same value each time it is invoked on a given object`() {
-    val dataConnectError =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    val hashCode = dataConnectError.hashCode()
-    assertThat(dataConnectError.hashCode()).isEqualTo(hashCode)
-    assertThat(dataConnectError.hashCode()).isEqualTo(hashCode)
-    assertThat(dataConnectError.hashCode()).isEqualTo(hashCode)
+  fun `hashCode() should return a different value if path is different`() = runTest {
+    val paths = Arb.list(Arb.dataConnect.pathSegment(), 0..5)
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(), paths) { dataConnectError1, newPath
+      ->
+      assume(dataConnectError1.path.hashCode() != newPath.hashCode())
+      val dataConnectError2 =
+        DataConnectError(
+          message = dataConnectError1.message,
+          path = newPath,
+          locations = dataConnectError1.locations,
+        )
+      dataConnectError1.hashCode() shouldNotBe dataConnectError2.hashCode()
+    }
   }
 
   @Test
-  fun `hashCode() should return the same value on equal objects`() {
-    val dataConnectError1 =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    val dataConnectError2 =
-      DataConnectError(message = SAMPLE_MESSAGE, path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError1.hashCode()).isEqualTo(dataConnectError2.hashCode())
-  }
-
-  @Test
-  fun `hashCode() should return a different value if message is different`() {
-    val dataConnectError1 =
-      DataConnectError(message = "Test Message 1", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    val dataConnectError2 =
-      DataConnectError(message = "Test Message 2", path = SAMPLE_PATH, locations = SAMPLE_LOCATIONS)
-    assertThat(dataConnectError1.hashCode()).isNotEqualTo(dataConnectError2.hashCode())
-  }
-
-  @Test
-  fun `hashCode() should return a different value if path is different`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.Field("foo")),
-        locations = SAMPLE_LOCATIONS
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = listOf(PathSegment.ListIndex(42)),
-        locations = SAMPLE_LOCATIONS
-      )
-    assertThat(dataConnectError1.hashCode()).isNotEqualTo(dataConnectError2.hashCode())
-  }
-
-  @Test
-  fun `hashCode() should return a different value if locations is different`() {
-    val dataConnectError1 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = SAMPLE_PATH,
-        locations = listOf(SourceLocation(line = 81, column = 18))
-      )
-    val dataConnectError2 =
-      DataConnectError(
-        message = SAMPLE_MESSAGE,
-        path = SAMPLE_PATH,
-        locations = listOf(SourceLocation(line = 18, column = 81))
-      )
-    assertThat(dataConnectError1.hashCode()).isNotEqualTo(dataConnectError2.hashCode())
+  fun `hashCode() should return a different value if locations is different`() = runTest {
+    val locations = Arb.list(Arb.dataConnect.sourceLocation(), 0..5)
+    checkAll(propTestConfig, Arb.dataConnect.dataConnectError(), locations) {
+      dataConnectError1,
+      newLocations ->
+      assume(dataConnectError1.locations.hashCode() != newLocations.hashCode())
+      val dataConnectError2 =
+        DataConnectError(
+          message = dataConnectError1.message,
+          path = dataConnectError1.path,
+          locations = newLocations,
+        )
+      dataConnectError1.hashCode() shouldNotBe dataConnectError2.hashCode()
+    }
   }
 
   private companion object {
-    val SAMPLE_MESSAGE = "This is a sample message"
-    val SAMPLE_PATH = listOf(PathSegment.Field("foo"), PathSegment.ListIndex(42))
-    val SAMPLE_LOCATIONS =
-      listOf(SourceLocation(line = 42, column = 24), SourceLocation(line = 91, column = 19))
+    val propTestConfig = PropTestConfig(iterations = 20)
   }
 }
