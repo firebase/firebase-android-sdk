@@ -192,7 +192,7 @@ internal constructor(
      * Returns a [Schema] for an array.
      *
      * @param item The [Schema] of the elements stored in the array.
-     * @param description An optional description of what the array represent.
+     * @param description An optional description of what the array represents.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
