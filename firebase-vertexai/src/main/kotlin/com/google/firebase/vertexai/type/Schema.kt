@@ -26,7 +26,7 @@ public abstract class StringFormat private constructor(internal val value: Strin
  * These types can be objects, but also primitives and arrays. Represents a select subset of an
  * [OpenAPI 3.0 schema object](https://spec.openapis.org/oas/v3.0.3#schema).
  *
- * **Note:** while optional, including a the `description` field in your `Schema`s is strongly
+ * **Note:** While optional, including a `description` field in your `Schema` is strongly
  * encouraged. The more information the model has about what it's expected to generate, the better
  * the results.
  */
@@ -63,7 +63,7 @@ internal constructor(
      *
      * **Important:** This [Schema] provides a hint to the model that it should generate a 32-bit
      * integer, but only guarantees that the value will be an integer. Therefore it's *possible*
-     * that decoding it as an `Int` variable, `int` in Java, could overflow.
+     * that decoding it as an `Int` variable (or `int` in Java) could overflow.
      *
      * @param description An optional description of what the integer should contain or represent.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
@@ -112,7 +112,7 @@ internal constructor(
      *
      * **Important:** This [Schema] provides a hint to the model that it should generate a
      * single-precision floating-point number, but only guarantees that the value will be a number.
-     * Therefore it's *possible* that decoding it as a `Float` variable, `float` in Java, could
+     * Therefore it's *possible* that decoding it as a `Float` variable (or `float` in Java) could
      * overflow.
      *
      * @param description An optional description of what the number should contain or represent.
@@ -152,7 +152,7 @@ internal constructor(
      * This schema instructs the model to produce data of type object, which has keys of type
      * `String` and values of type [Schema].
      *
-     * **Example:** A `City` could be represented with the following object `Schema`.
+     * **Example:** A `city` could be represented with the following object `Schema`.
      * ```
      * Schema.obj(mapOf(
      *   "name"  to Schema.string(),
@@ -191,7 +191,7 @@ internal constructor(
     /**
      * Returns a [Schema] for an array.
      *
-     * @param item The [Schema] of the elements of stored in the array.
+     * @param item The [Schema] of the elements stored in the array.
      * @param description An optional description of what the array represent.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
