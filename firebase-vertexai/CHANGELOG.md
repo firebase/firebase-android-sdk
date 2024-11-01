@@ -1,6 +1,6 @@
 # Unreleased
 * [fixed] Fixed issue where Firebase App Check error tokens were unintentionally missing from the requests. (#6409)
-* [fixed] Clarified in kdocs that `Schema.integer` and `Schema.float` only provide hints to the model. (#6420)
+* [fixed] Clarified in the documentation that `Schema.integer` and `Schema.float` only provide hints to the model. (#6420)
 
 # 16.0.1
 * [fixed] Fixed issue where authorization headers weren't correctly formatted and were ignored by the backend. (#6400)
