@@ -160,9 +160,10 @@ internal constructor(
      * ))
      * ```
      *
-     * @param properties The map of the object's property names to their [Schema]s. by the model.
-     * These names must correspond to the keys provided in the `properties` map. By default it's
-     * empty, signaling the model that all properties are to be included.
+     * @param properties The map of the object's property names to their [Schema]s.
+     * @param optionalProperties The list of optional properties. They must correspond to the keys
+     * provided in the `properties` map. By default it's empty, signaling the model that all
+     * properties are to be included.
      * @param description An optional description of what the object represents.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
@@ -191,7 +192,7 @@ internal constructor(
     /**
      * Returns a [Schema] for an array.
      *
-     * @param item The [Schema] of the elements stored in the array.
+     * @param items The [Schema] of the elements stored in the array.
      * @param description An optional description of what the array represents.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
