@@ -129,29 +129,77 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 
-  val singleVersion: String? = project.providers.gradleProperty("version").orNull
+  val propertyNames =
+    object {
+      val version = "version"
+      val versions = "versions"
+      val updateMode = "updateMode"
+      val defaultVersion = "defaultVersion"
+    }
+
+  val singleVersion: String? = project.providers.gradleProperty(propertyNames.version).orNull
   val multipleVersions: List<String>? =
-    project.providers.gradleProperty("versions").orNull?.split(',')
+    project.providers.gradleProperty(propertyNames.versions).orNull?.split(',')
   versions.set(
     buildList {
       singleVersion?.let { add(it) }
       multipleVersions?.let { addAll(it) }
-      if (isEmpty()) {
-        throw Exception("bm6d5ezxzd 'version' or 'versions' property must be specified")
-      }
     }
   )
 
+  doFirst {
+    if (versions.get().isEmpty()) {
+      logger.warn(
+        "WARNING: no '${propertyNames.version}' or '${propertyNames.versions}' specified " +
+          "for task '$name'; no versions will be added to ${jsonFile.get()}. " +
+          "Try specifying something like '-P${propertyNames.version}=1.2.3' or " +
+          "'-P${propertyNames.versions}=1.2.3,4.5.6' on the gradle command line " +
+          "if you want to add versions (warning code bm6d5ezxzd)"
+      )
+    }
+  }
+
   updateMode.set(
-    project.providers.gradleProperty("updateMode").map {
+    project.providers.gradleProperty(propertyNames.updateMode).map {
       when (it) {
         "overwrite" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Overwrite
         "update" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Update
         else ->
-          throw Exception("ahe4zadcjs 'updateMode' must be 'overwrite' or 'update', but got: $it")
+          throw Exception(
+            "Invalid '${propertyNames.updateMode}' specified for task '$name': $it. " +
+              "Valid values are 'update' and 'overwrite'. " +
+              "Try specifying '-P${propertyNames.updateMode}=update' or " +
+              "'-P${propertyNames.updateMode}=overwrite' on the gradle command line. " +
+              "(error code v2e3cfqbnf)"
+          )
       }
     }
   )
 
-  defaultVersion.set(project.providers.gradleProperty("defaultVersion"))
+  doFirst {
+    if (!updateMode.isPresent) {
+      logger.warn(
+        "WARNING: no '${propertyNames.updateMode}' specified for task '$name'; " +
+          "the default update mode of 'update' will be used when updating ${jsonFile.get()}. " +
+          "Try specifying '-P${propertyNames.updateMode}=update' or " +
+          "'-P${propertyNames.updateMode}=overwrite' on the gradle command line " +
+          "if you want a different update mode, or just want to be explicit about " +
+          "which update mode is in effect (warning code tjyscqmdne)"
+      )
+    }
+  }
+
+  defaultVersion.set(project.providers.gradleProperty(propertyNames.defaultVersion))
+
+  doFirst {
+    if (!defaultVersion.isPresent) {
+      logger.warn(
+        "WARNING: no '${propertyNames.defaultVersion}' specified for task '$name'; " +
+          "the default version will not be updated in ${jsonFile.get()}. " +
+          "Try specifying something like '-P${propertyNames.defaultVersion}=1.2.3' " +
+          "on the gradle command line if you want to update the default version " +
+          "(warning code vqrbrktx9f)"
+      )
+    }
+  }
 }
