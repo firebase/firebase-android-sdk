@@ -100,6 +100,7 @@ dependencies {
   implementation("com.google.firebase:firebase-components:18.0.0")
 
   compileOnly(libs.javax.annotation.jsr250)
+  compileOnly(libs.kotlinx.datetime)
   implementation(libs.grpc.android)
   implementation(libs.grpc.kotlin.stub)
   implementation(libs.grpc.okhttp)
@@ -117,6 +118,7 @@ dependencies {
   testImplementation(libs.kotest.property)
   testImplementation(libs.kotest.property.arbs)
   testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.kotlinx.datetime)
   testImplementation(libs.kotlinx.serialization.json)
   testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
@@ -136,6 +138,7 @@ dependencies {
   androidTestImplementation(libs.kotest.property)
   androidTestImplementation(libs.kotest.property.arbs)
   androidTestImplementation(libs.kotlin.coroutines.test)
+  androidTestImplementation(libs.kotlinx.datetime)
   androidTestImplementation(libs.mockk)
   androidTestImplementation(libs.mockk.android)
   androidTestImplementation(libs.truth)
