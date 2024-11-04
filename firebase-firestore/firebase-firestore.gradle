@@ -21,7 +21,6 @@ plugins {
 
 firebaseLibrary {
     libraryGroup = "firestore"
-    publishSources = true
     testLab {
         enabled = true
         timeout = '45m'

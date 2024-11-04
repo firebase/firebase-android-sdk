@@ -20,7 +20,6 @@ plugins {
 firebaseLibrary {
     libraryGroup = "appcheck"
     testLab.enabled = true
-    publishSources = true
     releaseNotes {
         name.set("{{app_check}} Debug Testing")
         versionName.set("appcheck-debug-testing")

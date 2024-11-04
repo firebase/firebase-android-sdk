@@ -21,7 +21,6 @@ firebaseLibrary {
   libraryGroup = "functions"
   publishJavadoc = false
   releaseNotes { enabled.set(false) }
-  publishSources = true
   testLab.enabled = true
 }
 

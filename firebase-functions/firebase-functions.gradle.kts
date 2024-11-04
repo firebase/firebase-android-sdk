@@ -25,7 +25,6 @@ plugins {
 firebaseLibrary {
   libraryGroup = "functions"
   testLab.enabled = true
-  publishSources = true
   releaseNotes {
     name.set("{{functions_client}}")
     versionName.set("functions-client")

@@ -19,7 +19,6 @@ plugins {
 
 firebaseLibrary {
     libraryGroup = "appcheck"
-    publishSources = true
     releaseNotes {
         name.set("{{app_check}}")
         versionName.set("appcheck")
