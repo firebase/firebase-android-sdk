@@ -70,20 +70,6 @@ constructor(val project: Project, val type: LibraryType) {
   abstract val publishJavadoc: Property<Boolean>
 
   /**
-   * Publish source files for this library.
-   *
-   * Publishing sources alongside your standard `jar` or `aar` allows the IDE to offer better
-   * auto-complete and inline linkage.
-   *
-   * If your SDK lives in the public repo, there's no real reason for you to have this disabled.
-   *
-   * Defaults to `true`.
-   *
-   * @see [FirebaseLibraryExtension]
-   */
-  abstract val publishSources: Property<Boolean>
-
-  /**
    * Indicates the library is in a preview mode (such as `alpha` or `beta`).
    *
    * Setting a [previewMode] will cause a descriptive error to be thrown if you attempt to release

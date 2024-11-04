@@ -24,7 +24,6 @@ firebaseLibrary {
   libraryGroup = "database"
   publishJavadoc = false
   releaseNotes { enabled.set(false) }
-  publishSources = true
 }
 
 android {

@@ -26,7 +26,6 @@ firebaseLibrary {
   libraryGroup = "crashlytics"
 
   testLab.enabled = true
-  publishSources = true
   publishJavadoc = false
   releaseNotes { enabled.set(false) }
 }

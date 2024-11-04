@@ -1,4 +1,10 @@
 # Unreleased
+* [deprecated] Deprecated additional FCM upstream messaging methods. See the
+  [FAQ](https://firebase.google.com/support/faq#fcm-23-deprecation) for more
+  details.
+* [changed] Changed WithinAppServiceConnection's ScheduledThreadPoolExecutor's
+  configuration to allow the thread to stop polling after the timeout task has
+  been canceled.
 
 
 # 24.0.3
