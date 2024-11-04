@@ -23,7 +23,6 @@ firebaseLibrary {
     releaseNotes { 
         enabled.set(false)
     }
-    publishSources = true
 }
 
 android {
