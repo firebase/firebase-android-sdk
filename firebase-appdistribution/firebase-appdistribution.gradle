@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appdistribution"
+    libraryGroup = "appdistribution"
     publishJavadoc = false
     previewMode = "beta"
     releaseNotes {
@@ -78,7 +78,7 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation libs.javax.inject
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
+    implementation libs.kotlin.stdlib.jdk8
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
 
@@ -95,11 +95,11 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
+    testImplementation libs.junit
     testImplementation 'org.mockito:mockito-inline:5.2.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     androidTestImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
@@ -107,8 +107,8 @@ dependencies {
     }
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.truth
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-inline:2.25.0'

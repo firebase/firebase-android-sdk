@@ -19,7 +19,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "inappmessaging"
+    libraryGroup = "inappmessaging"
     testLab.enabled = true
     releaseNotes {
         name.set("{{inappmessaging}} Display")
@@ -101,25 +101,25 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.11.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
-    implementation 'javax.inject:javax.inject:1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation libs.javax.inject
+    implementation libs.kotlin.stdlib
 
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
     annotationProcessor libs.dagger.compiler
 
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
          exclude group: "com.google.firebase", module: "firebase-common"
      }
     testImplementation 'com.google.guava:guava:30.1-android'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation "com.google.truth:truth:1.0"
     testImplementation "junit:junit:4.12"
     testImplementation 'junit:junit:4.12'
     testImplementation "org.mockito:mockito-core:2.25.0"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     androidTestImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
@@ -129,7 +129,7 @@ dependencies {
     androidTestImplementation 'androidx.annotation:annotation:1.1.0'
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
+    androidTestImplementation libs.androidx.test.junit
     androidTestImplementation "com.google.dexmaker:dexmaker:1.2"
     androidTestImplementation ("com.google.firebase:firebase-analytics:17.4.0") {
          exclude group: "com.google.firebase", module: "firebase-common"

@@ -18,7 +18,6 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.eclipse.jgit.api.Git
@@ -43,7 +42,7 @@ import org.gradle.api.tasks.TaskAction
  *
  * @property changesByLibraryName contains libs which have opted into the release, and their changes
  * @property changedLibrariesWithNoChangelog contains libs not opted into the release, despite
- * having changes
+ *   having changes
  */
 @Serializable
 data class ReleaseReport(
@@ -184,8 +183,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       .setListMode(ListBranchCommand.ListMode.REMOTE)
       .call()
       .firstOrNull { it.name == "refs/remotes/origin/releases/$branchName" }
-      ?.objectId
-      ?: throw RuntimeException("Could not find branch named $branchName")
+      ?.objectId ?: throw RuntimeException("Could not find branch named $branchName")
 
   private fun getChangedLibraries(
     repo: Git,
@@ -197,7 +195,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       .filter {
         checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "${getRelativeDir(it)}/")
       }
-      .flatMap { libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroupName, emptyList()) }
+      .flatMap { libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroup.get(), emptyList()) }
       .map { it.path }
       .toSet()
 
@@ -217,7 +215,10 @@ abstract class ReleaseGenerator : DefaultTask() {
         )
       }
       .flatMap {
-        libraryGroups.getOrDefault(it.firebaseLibrary.libraryGroupName, listOf(it.firebaseLibrary))
+        libraryGroups.getOrDefault(
+          it.firebaseLibrary.libraryGroup.get(),
+          listOf(it.firebaseLibrary),
+        )
       }
       .map { it.project }
       .toSet()

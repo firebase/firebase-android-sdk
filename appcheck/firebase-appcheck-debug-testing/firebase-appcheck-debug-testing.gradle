@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
+    libraryGroup = "appcheck"
     testLab.enabled = true
     publishSources = true
     releaseNotes {
@@ -60,21 +60,21 @@ dependencies {
     api 'com.google.firebase:firebase-common-ktx:21.0.0'
     api 'com.google.firebase:firebase-components:18.0.0'
 
-    implementation "androidx.test:core:$androidxTestCoreVersion"
+    implementation libs.androidx.test.core
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     testImplementation project(':appcheck:firebase-appcheck-playintegrity')
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     androidTestImplementation project(':firebase-storage')
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.truth
     androidTestImplementation 'junit:junit:4.13-beta-2'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
 }

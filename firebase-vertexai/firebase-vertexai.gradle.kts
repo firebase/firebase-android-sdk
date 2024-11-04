@@ -86,7 +86,6 @@ dependencies {
   implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
   implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
   implementation("io.ktor:ktor-client-logging:$ktorVersion")
-  compileOnly("io.ktor:ktor-client-mock:$ktorVersion")
 
   api("com.google.firebase:firebase-common:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
@@ -117,7 +116,6 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
 
-  androidTestImplementation("androidx.test.ext:junit:1.1.5")
   androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)

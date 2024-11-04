@@ -23,7 +23,7 @@ plugins {
 }
 
 firebaseLibrary {
-  libraryGroup("functions")
+  libraryGroup = "functions"
   testLab.enabled = true
   publishSources = true
   releaseNotes {
@@ -112,7 +112,7 @@ dependencies {
   implementation(libs.playservices.basement)
   api(libs.playservices.tasks)
 
-  annotationProcessor(libs.autovalue)
+  kapt(libs.autovalue)
   annotationProcessor(libs.dagger.compiler)
 
   testImplementation(libs.androidx.test.core)
@@ -132,5 +132,5 @@ dependencies {
   androidTestImplementation(libs.mockito.core)
   androidTestImplementation(libs.mockito.dexmaker)
   kapt("com.google.dagger:dagger-android-processor:2.43.2")
-  kapt("com.google.dagger:dagger-compiler:2.43.2")
+  kapt(libs.dagger.compiler)
 }

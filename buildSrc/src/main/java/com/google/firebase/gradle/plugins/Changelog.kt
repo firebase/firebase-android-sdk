@@ -118,7 +118,7 @@ data class Changelog(val releases: List<ReleaseEntry>) {
 data class ReleaseEntry(
   val version: ModuleVersion?,
   val content: ReleaseContent,
-  val ktx: ReleaseContent?
+  val ktx: ReleaseContent?,
 ) {
 
   override fun toString(): String {
@@ -151,7 +151,7 @@ data class ReleaseEntry(
      * This exists to provide a means for tooling to create new sections explicitly, versus offering
      * default values to [ReleaseEntry]
      * - as this could lead to edge case scenarios where empty [ReleaseEntry] instances are
-     * accidentally created.
+     *   accidentally created.
      */
     val Empty = ReleaseEntry(null, ReleaseContent("", emptyList()), null)
 

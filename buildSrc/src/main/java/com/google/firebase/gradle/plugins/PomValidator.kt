@@ -75,7 +75,7 @@ abstract class PomValidator : DefaultTask() {
   data class DependencyDiff(
     val artifactId: String,
     val oldVersion: ModuleVersion,
-    val currentVersion: ModuleVersion
+    val currentVersion: ModuleVersion,
   )
 
   fun diffWithPomFromURL(url: String): String {
