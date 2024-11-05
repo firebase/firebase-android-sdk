@@ -118,14 +118,14 @@ internal class GenerativeModelTesting {
         controller = apiController
       )
 
-    val exception = shouldThrow<ServerException> {
-      withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
-    }
+    val exception =
+      shouldThrow<ServerException> {
+        withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+      }
 
     // Let's not be too strict on the wording to avoid breaking the test unnecessarily.
     exception.message shouldContain "location"
   }
-
 
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
