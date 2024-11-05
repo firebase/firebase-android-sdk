@@ -38,6 +38,8 @@ public class BlockingAnalyticsEventLoggerTest {
 
   @Mock private CrashlyticsOriginAnalyticsEventLogger mockLogger;
 
+  private AutoCloseable mocks;
+
   private BlockingAnalyticsEventLogger blockingAnalyticsEventLogger;
 
   @Before
@@ -49,12 +51,13 @@ public class BlockingAnalyticsEventLoggerTest {
             .setApiKey("API-KEY-API-KEY-API-KEY-API-KEY-API-KEY")
             .setProjectId("project-id")
             .build());
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
   }
 
   @After
-  public void cleanUp() {
+  public void cleanUp() throws Exception {
     FirebaseApp.clearInstancesForTest();
+    mocks.close();
   }
 
   @Test

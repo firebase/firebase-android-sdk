@@ -14,6 +14,9 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,6 +49,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 
 public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
 
@@ -64,10 +69,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   private SettingsController mockSettingsController;
   private AppData appData;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     mockAppContext = newMockContext();
     mockResources = mock(Resources.class);
     testFirebaseOptions = new FirebaseOptions.Builder().setApplicationId(GOOGLE_APP_ID).build();
@@ -78,11 +81,6 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     Settings settings = new TestSettings();
     when(mockSettingsController.getSettingsSync()).thenReturn(settings);
     when(mockSettingsController.getSettingsAsync()).thenReturn(Tasks.forResult(settings));
-  }
-
-  @Override
-  public void tearDown() throws Exception {
-    super.tearDown();
   }
 
   private static final class CoreBuilder {
@@ -195,14 +193,16 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   // FIXME: Restore this test without hasOpenSession
-  //  public void testOnPreExecute_openSessionExists() {
-  //    final CrashlyticsCore crashlyticsCore = builder().build();
-  //    setupBuildIdRequired("false");
-  //    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
-  //    assertNotNull(crashlyticsCore.getController());
-  //    assertTrue(crashlyticsCore.getController().hasOpenSession());
-  //  }
+  //  @Test
+  public void testOnPreExecute_openSessionExists() {
+    //    final CrashlyticsCore crashlyticsCore = builder().build();
+    //    setupBuildIdRequired("false");
+    //    assertTrue(crashlyticsCore.onPreExecute(mockSettingsController));
+    //    assertNotNull(crashlyticsCore.getController());
+    //    assertTrue(crashlyticsCore.getController().hasOpenSession());
+  }
 
+  @Test
   public void testOnPreExecute_buildIdRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("true");
@@ -210,6 +210,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
+  @Test
   public void testOnPreExecute_buildIdRequiredAndDoesNotExist() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("true");
@@ -222,6 +223,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     }
   }
 
+  @Test
   public void testOnPreExecute_buildIdNotRequiredAndExists() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired("false");
@@ -229,6 +231,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
+  @Test
   public void testOnPreExecute_buildIdNotRequiredAndDoesNotExist() {
     setupBuildIdRequired("false");
     setupAppData(null);
@@ -236,6 +239,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertTrue(crashlyticsCore.onPreExecute(appData, mockSettingsController));
   }
 
+  @Test
   public void testOnPreExecute_didCrashOnPreviousExecution() throws Exception {
     // Use the same file store for core as the crash marker.
     CrashlyticsCore crashlyticsCore = builder().setFileStore(fileStore).build();
@@ -249,6 +253,7 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
     assertFalse(getCrashMarkerFile().exists());
   }
 
+  @Test
   public void testOnPreExecute_didNotCrashOnPreviousExecution() {
     final CrashlyticsCore crashlyticsCore = builder().build();
     setupBuildIdRequired(String.valueOf(false));
