@@ -12,22 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-    id("firebase-library")
-}
+plugins { id("firebase-library") }
 
 firebaseLibrary {
-    publishSources = true
-    publishJavadoc = false
-    releaseNotes { 
-        enabled.set(false)
-    }
+  publishJavadoc = false
+  releaseNotes { enabled.set(false) }
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
   compileSdk = compileSdkVersion
   namespace = "com.google.firebase.components"
   defaultConfig {

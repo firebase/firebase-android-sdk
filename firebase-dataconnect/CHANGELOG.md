@@ -1,6 +1,9 @@
 # Unreleased
+
+
+# 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix
-  [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
 
 # 16.0.0-beta01
 * [feature] Initial release of the Data Connect SDK (public preview). Learn how to

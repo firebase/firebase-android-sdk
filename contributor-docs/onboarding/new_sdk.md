@@ -75,7 +75,6 @@ plugins {
 firebaseLibrary {
     // enable this only if you have tests in `androidTest`.
     testLab.enabled = true
-    publishSources = true
     publishJavadoc = true
 }
 

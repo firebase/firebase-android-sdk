@@ -22,10 +22,11 @@ package com.google.firebase.vertexai.type
  *
  * @param harmCategory The relevant [HarmCategory].
  * @param threshold The threshold form harm allowable.
- * @param method Specify if the threshold is used for probability or severity score.
+ * @param method Specify if the threshold is used for probability or severity score, if not
+ * specified it will default to [HarmBlockMethod.PROBABILITY].
  */
 public class SafetySetting(
   internal val harmCategory: HarmCategory,
   internal val threshold: HarmBlockThreshold,
-  internal val method: HarmBlockMethod = HarmBlockMethod.PROBABILITY
+  internal val method: HarmBlockMethod? = null,
 )

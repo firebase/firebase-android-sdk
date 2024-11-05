@@ -13,8 +13,8 @@
 // limitations under the License.
 
 plugins {
-    id("com.ncorti.ktfmt.gradle") version "0.11.0"
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.spotless)
     `kotlin-dsl`
 }
 
@@ -26,14 +26,22 @@ repositories {
     maven(url = "https://plugins.gradle.org/m2/")
 }
 
+spotless {
+    java {
+        target("src/**/*.java")
+        targetExclude("**/test/resources/**")
+        googleJavaFormat("1.22.0").reorderImports(true).skipJavadocFormatting()
+    }
+    kotlin {
+        target("src/**/*.kt")
+        ktfmt("0.52").googleStyle()
+    }
+}
+
 // Refer latest "perf-plugin" released version on https://maven.google.com/web/index.html?q=perf-plugin#com.google.firebase:perf-plugin
 // The System property allows us to integrate with an unreleased version from https://bityl.co/3oYt.
 // Refer go/fireperf-plugin-test-on-head for more details.
 val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
-
-ktfmt {
-    googleStyle()
-}
 
 dependencies {
     // Firebase performance plugin, it should be added here because of how gradle dependency
@@ -43,7 +51,7 @@ dependencies {
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
     implementation(kotlin("gradle-plugin", "1.8.22"))
-    implementation("org.json:json:20210307")
+    implementation(libs.org.json)
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-util:1.0.0.v20140518")
@@ -63,8 +71,8 @@ dependencies {
     implementation(libs.android.gradlePlugin.builder.test.api)
 
     testImplementation(libs.bundles.kotest)
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("com.google.truth:truth:1.4.2")
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
     testImplementation("commons-io:commons-io:2.15.1")
 }
 
@@ -84,7 +92,7 @@ gradlePlugin {
         }
         register("firebaseLibraryPlugin") {
             id = "firebase-library"
-            implementationClass = "com.google.firebase.gradle.plugins.FirebaseLibraryPlugin"
+            implementationClass = "com.google.firebase.gradle.plugins.FirebaseAndroidLibraryPlugin"
         }
         register("firebaseJavaLibraryPlugin") {
             id = "firebase-java-library"

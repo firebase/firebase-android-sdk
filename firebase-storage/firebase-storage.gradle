@@ -20,10 +20,9 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "storage"
+    libraryGroup = "storage"
     testLab.enabled = true
     publishJavadoc = true
-    publishSources = true
     releaseNotes {
         name.set("{{firebase_storage_full}}")
         versionName.set("storage")
@@ -85,7 +84,7 @@ android {
 
 dependencies {
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
-    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
+    javadocClasspath libs.findbugs.jsr305
 
     api("com.google.firebase:firebase-annotations:16.2.0")
     api("com.google.firebase:firebase-appcheck:17.1.0") {
@@ -106,20 +105,20 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+    implementation libs.kotlin.stdlib
+    implementation libs.kotlinx.coroutines.core
 
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'org.mockito:mockito-core:3.3.3'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.truth
     androidTestImplementation 'junit:junit:4.12'
 }

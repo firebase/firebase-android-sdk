@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-  id("firebase-library")
-}
+plugins { id("firebase-library") }
 
 group = "com.google.firebase"
 
 firebaseLibrary {
   testLab.enabled = false
-  publishSources = true
   publishJavadoc = false
   releaseNotes {
     name.set("Dynamic feature modules support")
@@ -30,9 +27,9 @@ firebaseLibrary {
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
   compileSdk = compileSdkVersion
   namespace = "com.google.firebase.dynamicloading"
   defaultConfig {
@@ -50,7 +47,7 @@ android {
 
 dependencies {
   implementation("com.google.android.play:feature-delivery:2.0.0")
-  implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
+  implementation(libs.kotlin.stdlib.jdk8)
   api("com.google.firebase:firebase-common:21.0.0")
   api("com.google.firebase:firebase-components:18.0.0")
 }

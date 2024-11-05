@@ -20,12 +20,11 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-    libraryGroup "storage"
+    libraryGroup = "storage"
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)
     }
-    publishSources = true
 }
 
 android {
@@ -65,13 +64,13 @@ dependencies {
 
     implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:3.3.3'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation libs.truth
     androidTestImplementation 'junit:junit:4.12'
 }

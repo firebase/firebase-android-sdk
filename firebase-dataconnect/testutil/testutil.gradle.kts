@@ -23,9 +23,9 @@ plugins {
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.dataconnect.testutil"
   compileSdk = compileSdkVersion
@@ -55,6 +55,7 @@ dependencies {
   implementation("com.google.firebase:firebase-auth:22.3.1")
 
   implementation(libs.androidx.test.junit)
+  implementation(libs.kotest.assertions)
   implementation(libs.kotest.property)
   implementation(libs.kotlin.coroutines.test)
   implementation(libs.kotlinx.coroutines.core)
@@ -62,11 +63,10 @@ dependencies {
   implementation(libs.mockk)
   implementation(libs.protobuf.java.lite)
   implementation(libs.robolectric)
+  implementation(libs.testonly.three.ten.abp)
   implementation(libs.truth)
 }
 
 tasks.withType<KotlinCompile>().all {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
-  }
+  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
 }

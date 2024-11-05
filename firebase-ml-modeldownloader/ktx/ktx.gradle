@@ -18,12 +18,11 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "ml-modeldownloader"
+    libraryGroup = "ml-modeldownloader"
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)
     }
-    publishSources = true
     testLab.enabled = false
 }
 
@@ -52,9 +51,9 @@ dependencies {
     implementation("com.google.firebase:firebase-components:18.0.0")
 
     testImplementation 'androidx.test:runner:1.5.1'
-    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.truth
+    testImplementation libs.junit
     testImplementation 'org.mockito:mockito-core:3.6.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 }

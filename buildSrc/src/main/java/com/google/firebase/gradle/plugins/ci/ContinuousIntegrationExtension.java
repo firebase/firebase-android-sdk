@@ -18,11 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+// TODO(b/372719032): Migrate to Kotlin/Conventions
 /** Contains plugin configuration properties. */
 public class ContinuousIntegrationExtension {
 
   /** List of paths that the plugin should ignore when querying the Git commit. */
-  private List<Pattern> ignorePaths = new ArrayList<>();
+  public List<Pattern> ignorePaths = new ArrayList<>();
 
   public List<Pattern> getIgnorePaths() {
     return ignorePaths;
