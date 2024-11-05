@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(com.google.firebase.dataconnect.FirebaseDataConnectExperimental::class)
+@file:OptIn(com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect::class)
 
 package com.google.firebase.dataconnect.core
 

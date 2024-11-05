@@ -16,8 +16,8 @@
 
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.FirebaseDataConnectExperimental
 import com.google.firebase.dataconnect.QueryRef
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -51,7 +51,7 @@ public interface GeneratedQuery<Connector : GeneratedConnector<Connector>, Data,
       callerSdkType = FirebaseDataConnect.CallerSdkType.Generated
     }
 
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   override fun copy(
     connector: Connector,
     operationName: String,
@@ -59,12 +59,12 @@ public interface GeneratedQuery<Connector : GeneratedConnector<Connector>, Data,
     variablesSerializer: SerializationStrategy<Variables>,
   ): GeneratedQuery<Connector, Data, Variables>
 
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   override fun <NewVariables> withVariablesSerializer(
     variablesSerializer: SerializationStrategy<NewVariables>,
   ): GeneratedQuery<Connector, Data, NewVariables>
 
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   override fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,
   ): GeneratedQuery<Connector, NewData, Variables>

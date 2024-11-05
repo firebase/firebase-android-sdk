@@ -13,12 +13,13 @@
   must implement equals() to be a _logical_ comparsion, rather than just
   checking for _referencial_ equality using the `===` operator.
   ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
-* [feature] FirebaseDataConnectExperimental annotation added, and some
+* [feature] ExperimentalFirebaseDataConnect annotation added, and some
   APIs have been annotated with it, requiring applications that make use of
   these experimental APIs to opt-in using
-  `@OptIn(FirebaseDataConnectExperimental::class)` to suppress warnings or
+  `@OptIn(ExperimentalFirebaseDataConnect::class)` to suppress warnings or
   errors related to using these experimental APIs.
-  ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
+  ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424)) and
+  ([#6433](https://github.com/firebase/firebase-android-sdk/pull/6433))
 
 # 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix

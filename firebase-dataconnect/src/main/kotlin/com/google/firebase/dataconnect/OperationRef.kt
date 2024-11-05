@@ -184,7 +184,7 @@ public interface OperationRef<Data, Variables> {
    * @see withDataDeserializer
    * @see withVariablesSerializer
    */
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   public fun copy(
     operationName: String = this.operationName,
     variables: Variables = this.variables,
@@ -202,7 +202,7 @@ public interface OperationRef<Data, Variables> {
    * @see copy
    * @see withDataDeserializer
    */
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   public fun <NewVariables> withVariablesSerializer(
     variables: NewVariables,
     variablesSerializer: SerializationStrategy<NewVariables>,
@@ -216,7 +216,7 @@ public interface OperationRef<Data, Variables> {
    * @see copy
    * @see withVariablesSerializer
    */
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   public fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,
     dataSerializersModule: SerializersModule? = this.dataSerializersModule,

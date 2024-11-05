@@ -47,7 +47,7 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
    */
   public fun subscribe(): QuerySubscription<Data, Variables>
 
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   override fun copy(
     operationName: String,
     variables: Variables,
@@ -58,14 +58,14 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
     variablesSerializersModule: SerializersModule?,
   ): QueryRef<Data, Variables>
 
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   override fun <NewVariables> withVariablesSerializer(
     variables: NewVariables,
     variablesSerializer: SerializationStrategy<NewVariables>,
     variablesSerializersModule: SerializersModule?,
   ): QueryRef<Data, NewVariables>
 
-  @FirebaseDataConnectExperimental
+  @ExperimentalFirebaseDataConnect
   override fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,
     dataSerializersModule: SerializersModule?,

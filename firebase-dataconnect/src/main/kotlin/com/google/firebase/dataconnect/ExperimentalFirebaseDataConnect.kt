@@ -19,7 +19,7 @@ package com.google.firebase.dataconnect
 /**
  * Marks declarations in the Firebase Data Connect SDK that are **experimental**.
  *
- * A declaration annotated with [FirebaseDataConnectExperimental] is "experimental": its signature
+ * A declaration annotated with [ExperimentalFirebaseDataConnect] is "experimental": its signature
  * and/or semantics may change in backwards-incompatible ways at any time without notice, up to and
  * including complete removal. If you have a use case that relies on such a declaration please open
  * a "feature request" issue at https://github.com/firebase/firebase-android-sdk requesting the
@@ -37,4 +37,4 @@ package com.google.firebase.dataconnect
       "\"feature request\" issue at https://github.com/firebase/firebase-android-sdk " +
       "requesting this declaration's promotion from \"experimental\" to \"fully-supported\"."
 )
-public annotation class FirebaseDataConnectExperimental
+public annotation class ExperimentalFirebaseDataConnect
