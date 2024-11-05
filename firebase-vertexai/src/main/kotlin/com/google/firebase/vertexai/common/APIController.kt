@@ -42,7 +42,9 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.withCharset
 import io.ktor.serialization.kotlinx.json.json
+import io.ktor.utils.io.charsets.Charset
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -225,6 +227,15 @@ internal interface HeaderProvider {
 
 private suspend fun validateResponse(response: HttpResponse) {
   if (response.status == HttpStatusCode.OK) return
+
+  val htmlContentType = ContentType.Text.Html.withCharset(Charset.forName("utf-8"))
+  if (response.status == HttpStatusCode.NotFound && response.contentType() == htmlContentType)
+    throw ServerException(
+      """URL not found. Please verify the location used to create the `FirebaseVertexAI` object
+          | See https://cloud.google.com/vertex-ai/generative-ai/docs/learn/locations#available-regions
+          | for the list of available locations. Raw response: ${response.bodyAsText()}"""
+        .trimMargin()
+    )
   val text = response.bodyAsText()
   val error =
     try {
