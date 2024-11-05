@@ -36,6 +36,7 @@ import kotlinx.serialization.modules.SerializersModule
 public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
   override suspend fun execute(): MutationResult<Data, Variables>
 
+  @FirebaseDataConnectExperimental
   override fun copy(
     operationName: String,
     variables: Variables,
@@ -46,12 +47,14 @@ public interface MutationRef<Data, Variables> : OperationRef<Data, Variables> {
     variablesSerializersModule: SerializersModule?,
   ): MutationRef<Data, Variables>
 
+  @FirebaseDataConnectExperimental
   override fun <NewVariables> withVariablesSerializer(
     variables: NewVariables,
     variablesSerializer: SerializationStrategy<NewVariables>,
     variablesSerializersModule: SerializersModule?,
   ): MutationRef<Data, NewVariables>
 
+  @FirebaseDataConnectExperimental
   override fun <NewData> withDataDeserializer(
     dataDeserializer: DeserializationStrategy<NewData>,
     dataSerializersModule: SerializersModule?,

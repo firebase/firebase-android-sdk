@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(FlowPreview::class)
+@file:OptIn(FlowPreview::class, FirebaseDataConnectExperimental::class)
 
 package com.google.firebase.dataconnect
 

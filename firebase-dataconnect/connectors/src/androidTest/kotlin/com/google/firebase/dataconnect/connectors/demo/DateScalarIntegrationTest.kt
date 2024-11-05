@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+@file:OptIn(FirebaseDataConnectExperimental::class)
+
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.FirebaseDataConnectExperimental
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery

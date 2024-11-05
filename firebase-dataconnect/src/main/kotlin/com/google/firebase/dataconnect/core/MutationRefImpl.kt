@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(com.google.firebase.dataconnect.FirebaseDataConnectExperimental::class)
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.DataConnectUntypedVariables
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn

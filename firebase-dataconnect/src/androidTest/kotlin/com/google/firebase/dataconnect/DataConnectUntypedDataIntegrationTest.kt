@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(FirebaseDataConnectExperimental::class)
+
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase

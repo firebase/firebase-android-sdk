@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.google.firebase.dataconnect.FirebaseDataConnectExperimental::class)
+
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.QueryResult
+import com.google.firebase.dataconnect.QuerySubscription
 import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy

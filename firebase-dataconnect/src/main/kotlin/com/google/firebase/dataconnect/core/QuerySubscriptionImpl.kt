@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.google.firebase.dataconnect.FirebaseDataConnectExperimental::class)
+
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.QuerySubscriptionResult
