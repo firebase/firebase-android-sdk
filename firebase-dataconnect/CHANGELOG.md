@@ -22,7 +22,7 @@
   ([#6433](https://github.com/firebase/firebase-android-sdk/pull/6433))
 * [changed] Replaced java.util.Date with
   com.google.firebase.dataconnect.LocalDate.
-  ([#XXXX](https://github.com/firebase/firebase-android-sdk/pull/XXXX))
+  ([#6434](https://github.com/firebase/firebase-android-sdk/pull/6434))
 
 # 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix
