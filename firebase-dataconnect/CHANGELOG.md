@@ -20,6 +20,9 @@
   errors related to using these experimental APIs.
   ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424)) and
   ([#6433](https://github.com/firebase/firebase-android-sdk/pull/6433))
+* [changed] Replaced java.util.Date with
+  com.google.firebase.dataconnect.LocalDate.
+  ([#6434](https://github.com/firebase/firebase-android-sdk/pull/6434))
 
 # 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix
