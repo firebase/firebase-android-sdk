@@ -27,7 +27,6 @@ plugins {
 firebaseLibrary {
   libraryGroup = "dataconnect"
   testLab.enabled = false
-  publishSources = true
   publishJavadoc = false
   previewMode = "beta"
   releaseNotes {

@@ -18,7 +18,6 @@ group = "com.google.firebase"
 
 firebaseLibrary {
   testLab.enabled = false
-  publishSources = true
   publishJavadoc = false
   releaseNotes {
     name.set("Dynamic feature modules support")

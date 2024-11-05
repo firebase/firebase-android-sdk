@@ -21,7 +21,6 @@ group = "com.google.firebase"
 
 firebaseLibrary {
     libraryGroup = "firestore"
-    publishSources = true
     publishJavadoc = false
     releaseNotes { 
         enabled.set(false)
