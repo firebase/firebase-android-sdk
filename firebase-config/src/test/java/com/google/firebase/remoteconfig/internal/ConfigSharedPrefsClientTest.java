@@ -25,6 +25,7 @@ import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.
 import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_BACKOFF_TIME;
 import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_FAILED_FETCHES;
+import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -37,6 +38,7 @@ import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.Backoff
 import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LastFetchStatus;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -366,5 +368,44 @@ public class ConfigSharedPrefsClientTest {
             "age", "20");
     metadataClient.setCustomSignals(SAMPLE_CUSTOM_SIGNALS);
     assertThat(metadataClient.getCustomSignals()).isEqualTo(SAMPLE_CUSTOM_SIGNALS);
+  }
+
+  @Test
+  public void setCustomSignals_multipleTimes_addsNewSignals() {
+    Map<String, Object> signals1 = ImmutableMap.of("subscription", "premium");
+    Map<String, Object> signals2 = ImmutableMap.of("age", 20L);
+    metadataClient.setCustomSignals(signals1);
+    metadataClient.setCustomSignals(signals2);
+    Map<String, Object> expectedSignals = ImmutableMap.of("subscription", "premium", "age", 20L);
+    assertThat(metadataClient.getCustomSignals()).isEqualTo(expectedSignals);
+  }
+
+  @Test
+  public void setCustomSignals_nullValue_removesSignal() {
+    Map<String, Object> signals1 = ImmutableMap.of("subscription", "premium", "age", 20L);
+    metadataClient.setCustomSignals(signals1);
+    Map<String, Object> signals2 = new HashMap<>();
+    signals2.put("age", null);
+    metadataClient.setCustomSignals(signals2);
+    Map<String, Object> expectedSignals = ImmutableMap.of("subscription", "premium");
+    assertThat(metadataClient.getCustomSignals()).isEqualTo(expectedSignals);
+  }
+
+  @Test
+  public void setCustomSignals_invalidInput_throwsException() {
+    Map<String, Object> invalidSignals1 = new HashMap<>();
+    invalidSignals1.put("name", true);
+    assertThrows(
+        IllegalArgumentException.class, () -> metadataClient.setCustomSignals(invalidSignals1));
+
+    Map<String, Object> invalidSignals2 = new HashMap<>();
+    invalidSignals2.put("a".repeat(251), "value");
+    assertThrows(
+        IllegalArgumentException.class, () -> metadataClient.setCustomSignals(invalidSignals2));
+
+    Map<String, Object> invalidSignals3 = new HashMap<>();
+    invalidSignals3.put("key", "a".repeat(501));
+    assertThrows(
+        IllegalArgumentException.class, () -> metadataClient.setCustomSignals(invalidSignals3));
   }
 }

@@ -266,6 +266,15 @@ public class ConfigSharedPrefsClient {
         String key = entry.getKey();
         Object value = entry.getValue();
 
+        // Validate value type, and key and value length
+        if (value != null && !(value instanceof String || value instanceof Long)) {
+          throw new IllegalArgumentException("Custom signal values must be of type String or Long");
+        }
+        if (key.length() > 250 || (value instanceof String && ((String) value).length() > 500)) {
+          throw new IllegalArgumentException(
+              "Custom signal keys must be 250 characters or less, and string values must be 500 characters or less.");
+        }
+
         // Merge new signals with existing ones, overwriting existing keys.
         // Also, remove entries where the new value is null.
         if (value != null) {
@@ -274,6 +283,16 @@ public class ConfigSharedPrefsClient {
           existingCustomSignals.remove(key);
         }
       }
+
+      // Check if the map has actually changed and the size limit
+      if (existingCustomSignals.equals(getCustomSignals())) {
+        return;
+      }
+      if (existingCustomSignals.size() > 100) {
+        throw new IllegalArgumentException(
+            "Too many custom signals provided. The maximum allowed is 100.");
+      }
+
       frcMetadata
           .edit()
           .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
@@ -289,7 +308,11 @@ public class ConfigSharedPrefsClient {
       Iterator<String> keys = existingCustomSignalsJson.keys();
       while (keys.hasNext()) {
         String key = keys.next();
-        custom_signals.put(key, existingCustomSignalsJson.get(key));
+        Object value = existingCustomSignalsJson.get(key);
+        if (value instanceof Integer) {
+          value = existingCustomSignalsJson.getLong(key);
+        }
+        custom_signals.put(key, value);
       }
       return custom_signals;
     } catch (JSONException e) {
