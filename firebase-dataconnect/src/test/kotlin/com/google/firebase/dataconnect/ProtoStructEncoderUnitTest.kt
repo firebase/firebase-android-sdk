@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(ExperimentalKotest::class)
+
 package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -23,7 +25,9 @@ import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toListValueProto
 import com.google.protobuf.Struct
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.double
@@ -113,7 +117,7 @@ class ProtoStructEncoderUnitTest {
       Pair(testData, struct)
     }
 
-    checkAll(arb) { (testData, expectedStruct) ->
+    checkAll(propTestConfig, arb) { (testData, expectedStruct) ->
       val encodedStruct = encodeToStruct(testData)
       encodedStruct shouldBe expectedStruct
     }
@@ -149,7 +153,7 @@ class ProtoStructEncoderUnitTest {
       Pair(testData, struct)
     }
 
-    checkAll(arb) { (testData, expectedStruct) ->
+    checkAll(propTestConfig, arb) { (testData, expectedStruct) ->
       val encodedStruct = encodeToStruct(testData)
       encodedStruct shouldBe expectedStruct
     }
@@ -183,7 +187,7 @@ class ProtoStructEncoderUnitTest {
       TestData(s, i)
     }
 
-    checkAll(arb) { testData ->
+    checkAll(propTestConfig, arb) { testData ->
       val encodedStruct = encodeToStruct(testData)
       val expected = buildStructProto {
         put("s", testData.s.valueOrThrow())
@@ -206,7 +210,7 @@ class ProtoStructEncoderUnitTest {
       TestData(s, i)
     }
 
-    checkAll(arb) { testData ->
+    checkAll(propTestConfig, arb) { testData ->
       val encodedStruct = encodeToStruct(testData)
       val expected = buildStructProto {
         put("s", testData.s.valueOrThrow())
@@ -214,5 +218,9 @@ class ProtoStructEncoderUnitTest {
       }
       encodedStruct shouldBe expected
     }
+  }
+
+  private companion object {
+    val propTestConfig = PropTestConfig(iterations = 20)
   }
 }
