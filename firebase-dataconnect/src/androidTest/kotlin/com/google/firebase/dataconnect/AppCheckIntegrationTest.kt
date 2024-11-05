@@ -24,8 +24,6 @@ import com.google.firebase.dataconnect.testutil.DataConnectTestAppCheckProviderF
 import com.google.firebase.dataconnect.testutil.InvalidInstrumentationArgumentException
 import com.google.firebase.dataconnect.testutil.getInstrumentationArgument
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonName
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.asClue
@@ -33,6 +31,8 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeNotNull
@@ -73,9 +73,9 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   fun queryAndMutationShouldSucceedWhenAppCheckTokenIsProvided() = runTest {
     appCheck.installAppCheckProviderFactory(DataConnectTestAppCheckProviderFactory(appId))
 
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
 
     personSchema.createPerson(id = person1Id, name = "TestName1", age = 42).execute()
     personSchema.createPerson(id = person2Id, name = "TestName2", age = 43).execute()
@@ -91,7 +91,8 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   fun queryShouldFailWhenAppCheckTokenIsThePlaceholder() = runTest {
     // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
     // appcheck token is sent at all.
-    val queryRef = personSchema.getPerson(id = randomPersonId())
+    val personId = Arb.alphanumericString(prefix = "personId").next()
+    val queryRef = personSchema.getPerson(id = personId)
 
     val thrownException = shouldThrow<StatusException> { queryRef.execute() }
 
@@ -102,7 +103,9 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
   fun mutationShouldFailWhenAppCheckTokenIsThePlaceholder() = runTest {
     // TODO: Add an integration test where the AppCheck dependency is absent, and ensure that no
     // appcheck token is sent at all.
-    val mutationRef = personSchema.createPerson(id = randomPersonId(), name = randomPersonName())
+    val personId = Arb.alphanumericString(prefix = "personId").next()
+    val personName = Arb.alphanumericString(prefix = "personName").next()
+    val mutationRef = personSchema.createPerson(id = personId, name = personName)
 
     val thrownException = shouldThrow<StatusException> { mutationRef.execute() }
 
@@ -146,7 +149,8 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
     // Send an ExecuteQuery request that should be retired because the first request is sent with
     // the expired token, which should fail with UNAUTHORIZED, triggering a token refresh and
     // request retry.
-    personSchema.getPerson(id = randomPersonId()).execute()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
+    personSchema.getPerson(id = personId).execute()
 
     appCheckProviderFactory.tokens.test {
       withClue("token1") {
@@ -197,7 +201,9 @@ class AppCheckIntegrationTest : DataConnectIntegrationTestBase() {
     // Send an ExecuteMutation request that should be retired because the first request is sent with
     // the expired token, which should fail with UNAUTHORIZED, triggering a token refresh and
     // request retry.
-    personSchema.createPerson(id = randomPersonId(), name = randomPersonName()).execute()
+    val personId = Arb.alphanumericString(prefix = "personId").next()
+    val personName = Arb.alphanumericString(prefix = "personName").next()
+    personSchema.createPerson(id = personId, name = personName).execute()
 
     appCheckProviderFactory.tokens.test {
       withClue("token1") {

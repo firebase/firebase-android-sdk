@@ -16,8 +16,10 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -25,27 +27,26 @@ class OptionalArgumentsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun optionalStrings() = runTest {
-    val key =
-      connector.insertOptionalStrings
-        .execute(required1 = "aaa", required2 = "bbb") {
-          this.nullable1 = null
-          this.nullable2 = "ccc"
-        }
-        .data
-        .key
+    val required1 = Arb.alphanumericString(prefix = "required1_").next(rs)
+    val required2 = Arb.alphanumericString(prefix = "required2_").next(rs)
+    val nullable2 = Arb.alphanumericString(prefix = "nullable2_").next(rs)
 
-    val queryResult = connector.getOptionalStringsByKey.execute(key)
+    val insertResult =
+      connector.insertOptionalStrings.execute(required1 = required1, required2 = required2) {
+        this.nullable1 = null
+        this.nullable2 = nullable2
+      }
 
-    assertThat(queryResult.data.optionalStrings)
-      .isEqualTo(
-        GetOptionalStringsByKeyQuery.Data.OptionalStrings(
-          required1 = "aaa",
-          required2 = "bbb",
-          nullable1 = null,
-          nullable2 = "ccc",
-          nullable3 = null,
-          nullableWithSchemaDefault = "pb429m"
-        )
+    val queryResult = connector.getOptionalStringsByKey.execute(insertResult.data.key)
+
+    queryResult.data.optionalStrings shouldBe
+      GetOptionalStringsByKeyQuery.Data.OptionalStrings(
+        required1 = required1,
+        required2 = required2,
+        nullable1 = null,
+        nullable2 = nullable2,
+        nullable3 = null,
+        nullableWithSchemaDefault = "pb429m"
       )
   }
 }

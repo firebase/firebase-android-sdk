@@ -1,5 +1,24 @@
 # Unreleased
-
+* [changed] Requires Data Connect emulator version 1.6.1 or later for code generation.
+* [feature] QueryRef and MutationRef gain methods copy(), withDataDeserializer(),
+  and withVariablesSerializer().
+  ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
+* [feature] GeneratedConnector gains methods copy(), operations(), queries(),
+  and mutations().
+  ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
+* [feature] GeneratedQuery and GeneratedMutation gain methods copy(),
+  withVariablesSerializer(), and withDataDeserializer().
+  ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
+* [feature] GeneratedConnector, GeneratedQuery, and GeneratedMutation now
+  must implement equals() to be a _logical_ comparsion, rather than just
+  checking for _referencial_ equality using the `===` operator.
+  ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
+* [feature] FirebaseDataConnectExperimental annotation added, and some
+  APIs have been annotated with it, requiring applications that make use of
+  these experimental APIs to opt-in using
+  `@OptIn(FirebaseDataConnectExperimental::class)` to suppress warnings or
+  errors related to using these experimental APIs.
+  ([#6424](https://github.com/firebase/firebase-android-sdk/pull/6424))
 
 # 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix

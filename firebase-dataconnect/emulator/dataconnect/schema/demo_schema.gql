@@ -278,12 +278,16 @@ type NullableDatesWithDefaults @table {
   requestTime2: Date @default(expr: "request.time")
 }
 
-type NonNullTimestamp @table {
+type NonNullTimestamp @table @index(fields: ["tag"]) {
   value: Timestamp!
+  tag: String
+  position: Int
 }
 
-type NullableTimestamp @table {
+type NullableTimestamp @table @index(fields: ["tag"]) {
   value: Timestamp
+  tag: String
+  position: Int
 }
 
 type NonNullTimestampsWithDefaults @table {

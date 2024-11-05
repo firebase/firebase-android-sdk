@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(com.google.firebase.dataconnect.FirebaseDataConnectExperimental::class)
+
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.OperationRef
+import com.google.firebase.dataconnect.OperationResult
 import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -29,21 +33,47 @@ internal abstract class OperationRefImpl<Data, Variables>(
   override val dataDeserializer: DeserializationStrategy<Data>,
   override val variablesSerializer: SerializationStrategy<Variables>,
   override val callerSdkType: FirebaseDataConnect.CallerSdkType,
-  override val variablesSerializersModule: SerializersModule?,
   override val dataSerializersModule: SerializersModule?,
+  override val variablesSerializersModule: SerializersModule?,
 ) : OperationRef<Data, Variables> {
   abstract override suspend fun execute(): OperationResultImpl
 
+  abstract fun withDataConnect(
+    dataConnect: FirebaseDataConnectInternal
+  ): OperationRefImpl<Data, Variables>
+
+  abstract override fun copy(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+  ): OperationRefImpl<Data, Variables>
+
+  abstract override fun <NewVariables> withVariablesSerializer(
+    variables: NewVariables,
+    variablesSerializer: SerializationStrategy<NewVariables>,
+    variablesSerializersModule: SerializersModule?,
+  ): OperationRefImpl<Data, NewVariables>
+
+  abstract override fun <NewData> withDataDeserializer(
+    dataDeserializer: DeserializationStrategy<NewData>,
+    dataSerializersModule: SerializersModule?,
+  ): OperationRefImpl<NewData, Variables>
+
   override fun hashCode() =
     Objects.hash(
+      OperationRefImpl::class,
       dataConnect,
       operationName,
       variables,
       dataDeserializer,
       variablesSerializer,
       callerSdkType,
+      dataSerializersModule,
       variablesSerializersModule,
-      dataSerializersModule
     )
 
   override fun equals(other: Any?) =
@@ -54,8 +84,8 @@ internal abstract class OperationRefImpl<Data, Variables>(
       other.dataDeserializer == dataDeserializer &&
       other.variablesSerializer == variablesSerializer &&
       other.callerSdkType == callerSdkType &&
-      other.variablesSerializersModule == variablesSerializersModule &&
-      other.dataSerializersModule == dataSerializersModule
+      other.dataSerializersModule == dataSerializersModule &&
+      other.variablesSerializersModule == variablesSerializersModule
 
   override fun toString() =
     "OperationRefImpl(" +
@@ -63,10 +93,10 @@ internal abstract class OperationRefImpl<Data, Variables>(
       "operationName=$operationName, " +
       "variables=$variables, " +
       "dataDeserializer=$dataDeserializer, " +
-      "variablesSerializer=$variablesSerializer" +
+      "variablesSerializer=$variablesSerializer, " +
       "callerSdkType=$callerSdkType, " +
-      "variablesSerializersModule=$variablesSerializersModule, " +
-      "dataSerializersModule=$dataSerializersModule" +
+      "dataSerializersModule=$dataSerializersModule, " +
+      "variablesSerializersModule=$variablesSerializersModule" +
       ")"
 
   abstract inner class OperationResultImpl(override val data: Data) :

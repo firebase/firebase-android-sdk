@@ -13,10 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(com.google.firebase.dataconnect.FirebaseDataConnectExperimental::class)
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.*
+import com.google.firebase.dataconnect.DataConnectUntypedVariables
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.MutationResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -37,8 +41,8 @@ internal class MutationRefImpl<Data, Variables>(
   dataDeserializer: DeserializationStrategy<Data>,
   variablesSerializer: SerializationStrategy<Variables>,
   callerSdkType: FirebaseDataConnect.CallerSdkType,
-  variablesSerializersModule: SerializersModule?,
   dataSerializersModule: SerializersModule?,
+  variablesSerializersModule: SerializersModule?,
 ) :
   MutationRef<Data, Variables>,
   OperationRefImpl<Data, Variables>(
@@ -48,8 +52,8 @@ internal class MutationRefImpl<Data, Variables>(
     dataDeserializer = dataDeserializer,
     variablesSerializer = variablesSerializer,
     callerSdkType = callerSdkType,
-    variablesSerializersModule = variablesSerializersModule,
     dataSerializersModule = dataSerializersModule,
+    variablesSerializersModule = variablesSerializersModule,
   ) {
 
   internal val logger = Logger("MutationRefImpl[$operationName]")
@@ -83,6 +87,71 @@ internal class MutationRefImpl<Data, Variables>(
       .let { MutationResultImpl(it) }
   }
 
+  override fun withDataConnect(
+    dataConnect: FirebaseDataConnectInternal
+  ): MutationRefImpl<Data, Variables> =
+    MutationRefImpl(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      callerSdkType = callerSdkType,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+    )
+
+  override fun copy(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+  ): MutationRefImpl<Data, Variables> =
+    MutationRefImpl(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      callerSdkType = callerSdkType,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+    )
+
+  override fun <NewVariables> withVariablesSerializer(
+    variables: NewVariables,
+    variablesSerializer: SerializationStrategy<NewVariables>,
+    variablesSerializersModule: SerializersModule?,
+  ): MutationRefImpl<Data, NewVariables> =
+    MutationRefImpl(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      callerSdkType = callerSdkType,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+    )
+
+  override fun <NewData> withDataDeserializer(
+    dataDeserializer: DeserializationStrategy<NewData>,
+    dataSerializersModule: SerializersModule?,
+  ): MutationRefImpl<NewData, Variables> =
+    MutationRefImpl(
+      dataConnect = dataConnect,
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      callerSdkType = callerSdkType,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+    )
+
   override fun hashCode(): Int = Objects.hash("MutationRefImpl", super.hashCode())
 
   override fun equals(other: Any?): Boolean = other is MutationRefImpl<*, *> && super.equals(other)
@@ -95,8 +164,8 @@ internal class MutationRefImpl<Data, Variables>(
       "dataDeserializer=$dataDeserializer, " +
       "variablesSerializer=$variablesSerializer, " +
       "callerSdkType=$callerSdkType, " +
-      "variablesSerializersModule=$variablesSerializersModule, " +
-      "dataSerializersModule=$dataSerializersModule" +
+      "dataSerializersModule=$dataSerializersModule, " +
+      "variablesSerializersModule=$variablesSerializersModule" +
       ")"
 
   inner class MutationResultImpl(data: Data) :

@@ -16,12 +16,14 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import kotlinx.coroutines.test.*
+import io.kotest.assertions.withClue
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-class NoVariablesQIntegrationTest : DemoConnectorIntegrationTestBase() {
+class NoVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun queryExecuteShouldReturnTheResult() = runTest {
@@ -30,15 +32,18 @@ class NoVariablesQIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getHardcodedFoo.execute()
 
-    assertThat(queryResult.ref).isEqualTo(connector.getHardcodedFoo.ref())
-    assertThat(queryResult.data.foo?.bar).isEqualTo("BAR")
+    withClue("ref") { queryResult.ref shouldBe connector.getHardcodedFoo.ref() }
+    val foo = withClue("foo") { queryResult.data.foo.shouldNotBeNull() }
+    withClue("foo.bar") { foo.bar shouldBe "BAR" }
   }
 
   @Test
   fun mutationExecuteShouldReturnTheResult() = runTest {
     val mutationResult = connector.upsertHardcodedFoo.execute()
 
-    assertThat(mutationResult.ref).isEqualTo(connector.upsertHardcodedFoo.ref())
-    assertThat(mutationResult.data.key).isEqualTo(FooKey("18e61f0a-8abc-4b18-9c4c-28c2f4e82c8f"))
+    withClue("ref") { mutationResult.ref shouldBe connector.upsertHardcodedFoo.ref() }
+    withClue("data.key") {
+      mutationResult.data.key shouldBe FooKey("18e61f0a-8abc-4b18-9c4c-28c2f4e82c8f")
+    }
   }
 }
