@@ -15,6 +15,7 @@
  */
 
 @file:Suppress("ReplaceCallWithBinaryOperator")
+@file:OptIn(ExperimentalKotest::class)
 
 package com.google.firebase.dataconnect
 
@@ -27,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.pathSegment
 import com.google.firebase.dataconnect.testutil.property.arbitrary.sourceLocation
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs

@@ -15,7 +15,7 @@
  */
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.FirebaseDataConnectExperimental
+import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
 import com.google.firebase.dataconnect.generated.GeneratedOperation
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -42,6 +42,6 @@ private class EmptyVariablesSerializer : KSerializer<EmptyVariables> {
   }
 }
 
-@FirebaseDataConnectExperimental
+@ExperimentalFirebaseDataConnect
 suspend fun <Data> GeneratedOperation<*, Data, *>.executeWithEmptyVariables() =
   withVariablesSerializer(serializer<EmptyVariables>()).ref(EmptyVariables).execute()

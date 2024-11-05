@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalKotest::class, FirebaseDataConnectExperimental::class)
+@file:OptIn(ExperimentalKotest::class, ExperimentalFirebaseDataConnect::class)
 
 package com.google.firebase.dataconnect.connectors
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.FirebaseDataConnectExperimental
 import com.google.firebase.dataconnect.connectors.demo.DemoConnector
 import com.google.firebase.dataconnect.connectors.demo.getInstance
 import com.google.firebase.dataconnect.generated.GeneratedConnector
