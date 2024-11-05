@@ -283,14 +283,14 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   @Test
   public void getIsServiceCollectionEnabled_deviceCacheHasSameValueAsFrc_returnCacheValue() {
     when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-            .thenReturn(Optional.of(true));
+        .thenReturn(Optional.of(true));
     when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_CACHE_KEY))
-            .thenReturn(Optional.of(true));
+        .thenReturn(Optional.of(true));
 
     when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-            .thenReturn(Optional.of(""));
+        .thenReturn(Optional.of(""));
     when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-            .thenReturn(Optional.of(""));
+        .thenReturn(Optional.of(""));
 
     assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
     verify(mockDeviceCacheManager, never()).setValue(any(), anyBoolean());
