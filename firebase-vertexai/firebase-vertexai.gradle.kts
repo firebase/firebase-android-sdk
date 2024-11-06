@@ -26,7 +26,6 @@ plugins {
 
 firebaseLibrary {
   testLab.enabled = false
-  publishSources = true
   publishJavadoc = true
   releaseNotes {
     name.set("{{firebase_vertexai}}")

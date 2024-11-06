@@ -25,7 +25,6 @@ plugins {
 firebaseLibrary {
   libraryGroup = "functions"
   testLab.enabled = true
-  publishSources = true
   releaseNotes {
     name.set("{{functions_client}}")
     versionName.set("functions-client")
@@ -112,7 +111,7 @@ dependencies {
   implementation(libs.playservices.basement)
   api(libs.playservices.tasks)
 
-  annotationProcessor(libs.autovalue)
+  kapt(libs.autovalue)
   annotationProcessor(libs.dagger.compiler)
 
   testImplementation(libs.androidx.test.core)

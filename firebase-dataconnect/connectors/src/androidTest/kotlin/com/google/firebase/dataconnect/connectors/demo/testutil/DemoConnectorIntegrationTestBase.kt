@@ -51,25 +51,16 @@ abstract class DemoConnectorIntegrationTestBase : DataConnectIntegrationTestBase
 
   suspend fun insertFooWithRandomId(): String = connector.insertFooWithRandomId()
 
-  suspend fun DemoConnector.insertFooWithRandomId(): String {
+  private suspend fun DemoConnector.insertFooWithRandomId(): String {
     val fooId = Arb.fooId().next(rs)
     insertFoo.execute(id = fooId) { bar = Arb.bar().next(rs) }
     return fooId
   }
 
   companion object {
-    suspend fun DemoConnector.fooWithId(
-      id: String
-    ): QueryResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables> = getFooById.execute(id)
-
     @JvmName("getFooByIdShouldNotExist")
     fun QueryResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables>.shouldNotExist() {
       this shouldNot GetFooById.exist()
-    }
-
-    @JvmName("getFooByIdShouldExist")
-    fun QueryResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables>.shouldExist() {
-      this should GetFooById.exist()
     }
 
     infix fun QueryResult<GetFooByIdQuery.Data, GetFooByIdQuery.Variables>.shouldExistWithBar(

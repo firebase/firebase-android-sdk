@@ -53,7 +53,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     with(library) {
       previewMode.convention("")
       publishJavadoc.convention(true)
-      publishSources.convention(true)
       artifactId.convention(project.name)
       groupId.convention(project.provider { project.group.toString() })
       libraryGroup.convention(artifactId)

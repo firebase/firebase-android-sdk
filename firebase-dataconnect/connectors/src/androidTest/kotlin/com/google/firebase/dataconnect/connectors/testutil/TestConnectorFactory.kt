@@ -28,7 +28,7 @@ import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
  * A JUnit test rule that creates instances of a connector for use during testing, and closes their
  * underlying [FirebaseDataConnect] instances upon test completion.
  */
-abstract class TestConnectorFactory<T : GeneratedConnector>(
+abstract class TestConnectorFactory<T : GeneratedConnector<T>>(
   private val firebaseAppFactory: TestFirebaseAppFactory,
   private val dataConnectFactory: TestDataConnectFactory
 ) : FactoryTestRule<T, Nothing>() {

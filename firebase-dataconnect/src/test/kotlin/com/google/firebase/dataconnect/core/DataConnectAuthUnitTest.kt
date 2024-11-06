@@ -29,10 +29,9 @@ import com.google.firebase.dataconnect.testutil.DelayedDeferred
 import com.google.firebase.dataconnect.testutil.ImmediateDeferred
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.UnavailableDeferred
-import com.google.firebase.dataconnect.testutil.accessToken
 import com.google.firebase.dataconnect.testutil.newBackgroundScopeThatAdvancesLikeForeground
 import com.google.firebase.dataconnect.testutil.newMockLogger
-import com.google.firebase.dataconnect.testutil.requestId
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedExactlyOneMessageContaining
 import com.google.firebase.dataconnect.testutil.shouldNotHaveLoggedAnyMessagesContaining
@@ -83,16 +82,15 @@ class DataConnectAuthUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
-  private val key = "qqddxntcwk"
   private val rs = RandomSource.default()
-  private val accessTokenGenerator = Arb.accessToken(key)
+  private val accessTokenGenerator = Arb.dataConnect.accessToken()
   private val accessToken: String = accessTokenGenerator.next(rs)
-  private val requestId = Arb.requestId(key).next(rs)
+  private val requestId = Arb.dataConnect.requestId().next(rs)
   private val mockInternalAuthProvider: InternalAuthProvider =
-    mockk(relaxed = true, name = "mockInternalAuthProvider-$key") {
+    mockk(relaxed = true, name = "mockInternalAuthProvider-ddjy572m5s") {
       excludeRecords { this@mockk.toString() }
     }
-  private val mockLogger = newMockLogger(key)
+  private val mockLogger = newMockLogger("ecvqkga56c")
 
   @Test
   fun `close() should succeed if called _before_ initialize()`() = runTest {

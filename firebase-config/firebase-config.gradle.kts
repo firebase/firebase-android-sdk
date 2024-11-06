@@ -22,7 +22,6 @@ plugins {
 firebaseLibrary {
   libraryGroup = "config"
   testLab.enabled = true
-  publishSources = true
   releaseNotes {
     name.set("{{remote_config}}")
     versionName.set("remote-config")

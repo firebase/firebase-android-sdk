@@ -14,22 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.testutil
+package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.property.Arb
-import io.kotest.property.RandomSource
-import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.filter
+import io.kotest.property.arbitrary.map
 
-interface ArbIterator<T> {
-  fun next(rs: RandomSource): T
-}
+fun <A> Arb<A>.filterNotNull(): Arb<A & Any> = filter { it !== null }.map { it!! }
 
-fun <T> Arb<T>.iterator(edgeCaseProbability: Float): ArbIterator<T> {
-  require(edgeCaseProbability in 0.0..1.0) { "invalid edgeCaseProbability: $edgeCaseProbability" }
-  return object : ArbIterator<T> {
-    override fun next(rs: RandomSource) =
-      if (edgeCaseProbability == 1.0f || edgeCaseProbability < rs.random.nextFloat())
-        this@iterator.edgecase(rs)!!
-      else this@iterator.next(rs)
-  }
-}
+fun <A> Arb<A>.filterNotEqual(other: A) = filter { it != other }

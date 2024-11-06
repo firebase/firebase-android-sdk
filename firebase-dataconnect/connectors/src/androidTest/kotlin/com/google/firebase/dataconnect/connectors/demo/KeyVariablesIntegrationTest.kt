@@ -16,12 +16,20 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.connectors.demo.testutil.*
-import com.google.firebase.dataconnect.testutil.*
-import java.util.UUID
-import kotlin.random.Random
-import kotlinx.coroutines.test.*
+import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.date
+import com.google.firebase.dataconnect.testutil.randomTimestamp
+import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.uuid
+import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
 
@@ -29,99 +37,97 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun primaryKeyIsAString() = runTest {
-    val id = randomAlphanumericString()
-    val value = randomAlphanumericString()
+    val id = Arb.alphanumericString().next(rs)
+    val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsString.execute(id = id, value = value).data.key
 
     val queryResult = connector.getPrimaryKeyIsStringByKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsString)
-      .isEqualTo(GetPrimaryKeyIsStringByKeyQuery.Data.PrimaryKeyIsString(id = id, value = value))
+    queryResult.data.primaryKeyIsString shouldBe
+      GetPrimaryKeyIsStringByKeyQuery.Data.PrimaryKeyIsString(id = id, value = value)
   }
 
   @Test
   fun primaryKeyIsUUID() = runTest {
-    val id = UUID.randomUUID()
-    val value = randomAlphanumericString()
+    val id = Arb.uuid().next(rs)
+    val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsUuid.execute(id = id, value = value).data.key
 
     val queryResult = connector.getPrimaryKeyIsUuidByKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsUUID)
-      .isEqualTo(GetPrimaryKeyIsUuidByKeyQuery.Data.PrimaryKeyIsUuid(id = id, value = value))
+    queryResult.data.primaryKeyIsUUID shouldBe
+      GetPrimaryKeyIsUuidByKeyQuery.Data.PrimaryKeyIsUuid(id = id, value = value)
   }
 
   @Test
   fun primaryKeyIsInt() = runTest {
-    val id = Random.nextInt()
-    val value = randomAlphanumericString()
+    val id = Arb.int().next(rs)
+    val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsInt.execute(foo = id, value = value).data.key
 
     val queryResult = connector.getPrimaryKeyIsIntByKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsInt)
-      .isEqualTo(GetPrimaryKeyIsIntByKeyQuery.Data.PrimaryKeyIsInt(foo = id, value = value))
+    queryResult.data.primaryKeyIsInt shouldBe
+      GetPrimaryKeyIsIntByKeyQuery.Data.PrimaryKeyIsInt(foo = id, value = value)
   }
 
   @Test
   fun primaryKeyIsFloat() = runTest {
-    val id = Random.nextDouble()
-    val value = randomAlphanumericString()
+    val id = Arb.double().next(rs)
+    val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsFloat.execute(foo = id, value = value).data.key
 
     val queryResult = connector.getPrimaryKeyIsFloatByKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsFloat)
-      .isEqualTo(GetPrimaryKeyIsFloatByKeyQuery.Data.PrimaryKeyIsFloat(foo = id, value = value))
+    queryResult.data.primaryKeyIsFloat shouldBe
+      GetPrimaryKeyIsFloatByKeyQuery.Data.PrimaryKeyIsFloat(foo = id, value = value)
   }
 
   @Test
   fun primaryKeyIsDate() = runTest {
-    val id = randomDate()
-    val value = randomAlphanumericString()
+    val id = Arb.dataConnect.date().next(rs).date
+    val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsDate.execute(foo = id, value = value).data.key
 
     val queryResult = connector.getPrimaryKeyIsDateByKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsDate)
-      .isEqualTo(GetPrimaryKeyIsDateByKeyQuery.Data.PrimaryKeyIsDate(foo = id, value = value))
+    queryResult.data.primaryKeyIsDate shouldBe
+      GetPrimaryKeyIsDateByKeyQuery.Data.PrimaryKeyIsDate(foo = id, value = value)
   }
 
   @Test
   fun primaryKeyIsTimestamp() = runTest {
-    val id = randomTimestamp()
-    val value = randomAlphanumericString()
+    val id = randomTimestamp() // TODO: use Arb.dataConnect.timestamp() once it's written.
+    val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsTimestamp.execute(foo = id, value = value).data.key
 
     val queryResult = connector.getPrimaryKeyIsTimestampByKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsTimestamp)
-      .isEqualTo(
-        GetPrimaryKeyIsTimestampByKeyQuery.Data.PrimaryKeyIsTimestamp(
-          foo = id.withMicrosecondPrecision(),
-          value = value
-        )
+    queryResult.data.primaryKeyIsTimestamp shouldBe
+      GetPrimaryKeyIsTimestampByKeyQuery.Data.PrimaryKeyIsTimestamp(
+        foo = id.withMicrosecondPrecision(),
+        value = value
       )
   }
 
   @Test
   fun primaryKeyIsInt64() = runTest {
-    val id = Random.nextLong()
-    val value = randomAlphanumericString()
+    val id = Arb.long().next(rs)
+    val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsInt64.execute(foo = id, value = value).data.key
 
     val queryResult = connector.getPrimaryKeyIsInt64byKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsInt64)
-      .isEqualTo(GetPrimaryKeyIsInt64byKeyQuery.Data.PrimaryKeyIsInt64(foo = id, value = value))
+    queryResult.data.primaryKeyIsInt64 shouldBe
+      GetPrimaryKeyIsInt64byKeyQuery.Data.PrimaryKeyIsInt64(foo = id, value = value)
   }
 
   @Test
   fun primaryKeyIsComposite() = runTest {
-    val foo = Random.nextInt()
-    val bar = randomAlphanumericString()
-    val baz = Random.nextBoolean()
-    val value = randomAlphanumericString()
+    val foo = Arb.int().next(rs)
+    val bar = Arb.alphanumericString().next(rs)
+    val baz = Arb.boolean().next(rs)
+    val value = Arb.dataConnect.string().next(rs)
 
     val key =
       connector.insertPrimaryKeyIsComposite
@@ -130,14 +136,12 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
         .key
 
     val queryResult = connector.getPrimaryKeyIsCompositeByKey.execute(key)
-    assertThat(queryResult.data.primaryKeyIsComposite)
-      .isEqualTo(
-        GetPrimaryKeyIsCompositeByKeyQuery.Data.PrimaryKeyIsComposite(
-          foo = foo,
-          bar = bar,
-          baz = baz,
-          value = value
-        )
+    queryResult.data.primaryKeyIsComposite shouldBe
+      GetPrimaryKeyIsCompositeByKeyQuery.Data.PrimaryKeyIsComposite(
+        foo = foo,
+        bar = bar,
+        baz = baz,
+        value = value
       )
   }
 
@@ -158,45 +162,43 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getPrimaryKeyNested7byKey.execute(nested7.key)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetPrimaryKeyNested7byKeyQuery.Data(
-          GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7(
-            nested7.value,
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a(
-              nested5a.value,
-              GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a.Nested1(
-                nested1s[0].key.id,
-                nested1s[0].value
-              ),
-              GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a.Nested2(
-                nested2s[0].key.id,
-                nested2s[0].value
-              ),
+    queryResult.data shouldBe
+      GetPrimaryKeyNested7byKeyQuery.Data(
+        GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7(
+          nested7.value,
+          GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a(
+            nested5a.value,
+            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a.Nested1(
+              nested1s[0].key.id,
+              nested1s[0].value
             ),
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b(
-              nested5b.value,
-              GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b.Nested1(
-                nested1s[1].key.id,
-                nested1s[1].value
-              ),
-              GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b.Nested2(
-                nested2s[1].key.id,
-                nested2s[1].value
-              ),
+            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a.Nested2(
+              nested2s[0].key.id,
+              nested2s[0].value
             ),
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6(
-              nested6.value,
-              GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6.Nested3(
-                nested3.key.id,
-                nested3.value
-              ),
-              GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6.Nested4(
-                nested4.key.id,
-                nested4.value
-              ),
+          ),
+          GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b(
+            nested5b.value,
+            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b.Nested1(
+              nested1s[1].key.id,
+              nested1s[1].value
             ),
-          )
+            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b.Nested2(
+              nested2s[1].key.id,
+              nested2s[1].value
+            ),
+          ),
+          GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6(
+            nested6.value,
+            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6.Nested3(
+              nested3.key.id,
+              nested3.value
+            ),
+            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6.Nested4(
+              nested4.key.id,
+              nested4.value
+            ),
+          ),
         )
       )
   }
@@ -204,7 +206,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
   data class PrimaryKeyNested1Info(val key: PrimaryKeyNested1Key, val value: String)
 
   private suspend fun createPrimaryKeyNested1(): PrimaryKeyNested1Info {
-    val value = randomAlphanumericString("nested1")
+    val value = Arb.alphanumericString(prefix = "nested1_").next(rs)
     val key = connector.insertPrimaryKeyNested1.execute(value).data.key
     return PrimaryKeyNested1Info(key, value)
   }
@@ -212,7 +214,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
   data class PrimaryKeyNested2Info(val key: PrimaryKeyNested2Key, val value: String)
 
   private suspend fun createPrimaryKeyNested2(): PrimaryKeyNested2Info {
-    val value = randomAlphanumericString("nested2")
+    val value = Arb.alphanumericString(prefix = "nested2_").next(rs)
     val key = connector.insertPrimaryKeyNested2.execute(value).data.key
     return PrimaryKeyNested2Info(key, value)
   }
@@ -220,7 +222,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
   data class PrimaryKeyNested3Info(val key: PrimaryKeyNested3Key, val value: String)
 
   private suspend fun createPrimaryKeyNested3(): PrimaryKeyNested3Info {
-    val value = randomAlphanumericString("nested3")
+    val value = Arb.alphanumericString(prefix = "nested3_").next(rs)
     val key = connector.insertPrimaryKeyNested3.execute(value).data.key
     return PrimaryKeyNested3Info(key, value)
   }
@@ -228,7 +230,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
   data class PrimaryKeyNested4Info(val key: PrimaryKeyNested4Key, val value: String)
 
   private suspend fun createPrimaryKeyNested4(): PrimaryKeyNested4Info {
-    val value = randomAlphanumericString("nested4")
+    val value = Arb.alphanumericString(prefix = "nested4_").next(rs)
     val key = connector.insertPrimaryKeyNested4.execute(value).data.key
     return PrimaryKeyNested4Info(key, value)
   }
@@ -239,7 +241,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
     nested1: PrimaryKeyNested1Key,
     nested2: PrimaryKeyNested2Key
   ): PrimaryKeyNested5Info {
-    val value = randomAlphanumericString("nested5")
+    val value = Arb.alphanumericString(prefix = "nested5_").next(rs)
     val key = connector.insertPrimaryKeyNested5.execute(value, nested1, nested2).data.key
     return PrimaryKeyNested5Info(key, value)
   }
@@ -250,7 +252,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
     nested3: PrimaryKeyNested3Key,
     nested4: PrimaryKeyNested4Key
   ): PrimaryKeyNested6Info {
-    val value = randomAlphanumericString("nested6")
+    val value = Arb.alphanumericString(prefix = "nested6_").next(rs)
     val key = connector.insertPrimaryKeyNested6.execute(value, nested3, nested4).data.key
     return PrimaryKeyNested6Info(key, value)
   }
@@ -262,7 +264,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
     nested5b: PrimaryKeyNested5Key,
     nested6: PrimaryKeyNested6Key
   ): PrimaryKeyNested7Info {
-    val value = randomAlphanumericString("nested7")
+    val value = Arb.alphanumericString(prefix = "nested7_").next(rs)
     val key =
       connector.insertPrimaryKeyNested7
         .execute(value, nested5a = nested5a, nested5b = nested5b, nested6 = nested6)
