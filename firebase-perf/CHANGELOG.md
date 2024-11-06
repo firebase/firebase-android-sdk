@@ -2,6 +2,8 @@
 
 
 # 21.0.2
+* [fixed] Fixed a performance issue with shared preferences
+  calling `.apply()` every time a value is read from remote config (#6407)
 * [fixed] Fixed `IllegalStateException` that happened when starting a trace
   before Firebase initializes.
 * [changed] Updated protobuf dependency to `3.25.5` to fix
