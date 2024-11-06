@@ -105,7 +105,7 @@ internal constructor(
     @JvmName("numDouble")
     @JvmOverloads
     public fun double(description: String? = null, nullable: Boolean = false): Schema =
-      Schema(description = description, nullable = nullable, type = "NUMBER", format = "double")
+      Schema(description = description, nullable = nullable, type = "NUMBER")
 
     /**
      * Returns a [Schema] for a single-precision floating-point number.
