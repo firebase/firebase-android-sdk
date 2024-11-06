@@ -23,8 +23,8 @@ import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler
 import java.util.concurrent.Executor
 
@@ -41,7 +41,7 @@ fun createRemoteConfig(
   defaultConfigsCache: ConfigCacheClient,
   fetchHandler: ConfigFetchHandler,
   getHandler: ConfigGetParameterHandler,
-  frcMetadata: ConfigSharedPrefsClient,
+  frcMetadata: ConfigMetadataClient,
   realtimeHandler: ConfigRealtimeHandler,
   rolloutsStateSubscriptionsHandler: RolloutsStateSubscriptionsHandler
 ): FirebaseRemoteConfig {

@@ -33,8 +33,8 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
 import com.google.firebase.remoteconfig.internal.DefaultsXmlParser;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.util.ArrayList;
@@ -160,7 +160,7 @@ public class FirebaseRemoteConfig {
   private final ConfigCacheClient defaultConfigsCache;
   private final ConfigFetchHandler fetchHandler;
   private final ConfigGetParameterHandler getHandler;
-  private final ConfigSharedPrefsClient frcMetadata;
+  private final ConfigMetadataClient frcMetadata;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final ConfigRealtimeHandler configRealtimeHandler;
   private final RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler;
@@ -181,7 +181,7 @@ public class FirebaseRemoteConfig {
       ConfigCacheClient defaultConfigsCache,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigSharedPrefsClient frcMetadata,
+      ConfigMetadataClient frcMetadata,
       ConfigRealtimeHandler configRealtimeHandler,
       RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler) {
     this.context = context;

@@ -21,10 +21,10 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
-import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET;
-import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_NO_FETCH_YET;
-import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_BACKOFF_TIME;
-import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_FAILED_FETCHES;
+import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_BACKOFF_TIME;
+import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_FAILED_FETCHES;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 
 import android.content.Context;
@@ -34,8 +34,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LastFetchStatus;
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.BackoffMetadata;
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LastFetchStatus;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -47,14 +47,14 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 /**
- * Unit tests for the {@link ConfigSharedPrefsClient}.
+ * Unit tests for the {@link ConfigMetadataClient}.
  *
  * @author Miraziz Yusupov
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class ConfigSharedPrefsClientTest {
-  private ConfigSharedPrefsClient metadataClient;
+public class ConfigMetadataClientTest {
+  private ConfigMetadataClient metadataClient;
   private FirebaseRemoteConfigSettings.Builder settingsBuilder;
 
   @Before
@@ -65,7 +65,7 @@ public class ConfigSharedPrefsClientTest {
 
     metadata.edit().clear().commit();
 
-    metadataClient = new ConfigSharedPrefsClient(metadata);
+    metadataClient = new ConfigMetadataClient(metadata);
 
     settingsBuilder = new FirebaseRemoteConfigSettings.Builder();
   }
@@ -160,7 +160,7 @@ public class ConfigSharedPrefsClientTest {
 
   @Test
   public void getRealtimeBackoffMetadata_isNotSet_returnsNoFailedStreamsAndNotThrottled() {
-    ConfigSharedPrefsClient.RealtimeBackoffMetadata defaultRealtimeBackoffMetadata =
+    ConfigMetadataClient.RealtimeBackoffMetadata defaultRealtimeBackoffMetadata =
         metadataClient.getRealtimeBackoffMetadata();
 
     assertThat(defaultRealtimeBackoffMetadata.getNumFailedStreams()).isEqualTo(NO_FAILED_FETCHES);
@@ -173,7 +173,7 @@ public class ConfigSharedPrefsClientTest {
     Date backoffEndTime = new Date(1000L);
     metadataClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
 
-    ConfigSharedPrefsClient.RealtimeBackoffMetadata backoffMetadata =
+    ConfigMetadataClient.RealtimeBackoffMetadata backoffMetadata =
         metadataClient.getRealtimeBackoffMetadata();
 
     assertThat(backoffMetadata.getNumFailedStreams()).isEqualTo(numFailedStreams);
@@ -185,7 +185,7 @@ public class ConfigSharedPrefsClientTest {
     metadataClient.setRealtimeBackoffMetadata(
         /* numFailedStreams= */ 5, /* backoffEndTime= */ new Date(1000L));
 
-    ConfigSharedPrefsClient.RealtimeBackoffMetadata realtimeBackoffMetadata =
+    ConfigMetadataClient.RealtimeBackoffMetadata realtimeBackoffMetadata =
         metadataClient.getRealtimeBackoffMetadata();
     Preconditions.checkArgument(realtimeBackoffMetadata.getNumFailedStreams() != NO_FAILED_FETCHES);
     Preconditions.checkArgument(
@@ -193,7 +193,7 @@ public class ConfigSharedPrefsClientTest {
 
     metadataClient.resetRealtimeBackoff();
 
-    ConfigSharedPrefsClient.RealtimeBackoffMetadata resetMetadata =
+    ConfigMetadataClient.RealtimeBackoffMetadata resetMetadata =
         metadataClient.getRealtimeBackoffMetadata();
     assertThat(resetMetadata.getNumFailedStreams()).isEqualTo(NO_FAILED_FETCHES);
     assertThat(resetMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);

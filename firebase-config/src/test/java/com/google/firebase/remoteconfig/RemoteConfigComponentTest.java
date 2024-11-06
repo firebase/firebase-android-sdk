@@ -39,7 +39,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
 import java.util.Date;
@@ -73,7 +73,7 @@ public class RemoteConfigComponentTest {
   @Mock private ConfigCacheClient mockDefaultsCache;
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetParameterHandler;
-  @Mock private ConfigSharedPrefsClient mockMetadataClient;
+  @Mock private ConfigMetadataClient mockMetadataClient;
   @Mock private RolloutsStateSubscriptionsHandler mockRolloutsStateSubscriptionsHandler;
 
   @Mock private RolloutsStateSubscriber mockRolloutsStateSubscriber;
@@ -82,7 +82,7 @@ public class RemoteConfigComponentTest {
   private ExecutorService directExecutor;
   private ScheduledExecutorService scheduledExecutorService;
   private FirebaseApp defaultApp;
-  private ConfigSharedPrefsClient metadataClient;
+  private ConfigMetadataClient metadataClient;
 
   @Before
   public void setUp() {
@@ -183,7 +183,7 @@ public class RemoteConfigComponentTest {
   public void registerRolloutsStateSubscriber_firebaseNamespace_callsSubscriptionHandler() {
     // Mock metadata client response since Realtime handler can't be mocked here.
     when(mockMetadataClient.getRealtimeBackoffMetadata())
-        .thenReturn(new ConfigSharedPrefsClient.RealtimeBackoffMetadata(0, new Date()));
+        .thenReturn(new ConfigMetadataClient.RealtimeBackoffMetadata(0, new Date()));
 
     RemoteConfigComponent frcComponent = getNewFrcComponentWithoutLoadingDefault();
     FirebaseRemoteConfig instance = getFrcInstanceFromComponent(frcComponent, DEFAULT_NAMESPACE);

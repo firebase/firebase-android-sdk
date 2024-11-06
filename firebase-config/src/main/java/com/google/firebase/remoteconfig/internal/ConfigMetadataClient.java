@@ -44,7 +44,7 @@ import org.json.JSONObject;
  *
  * @author Miraziz Yusupov
  */
-public class ConfigSharedPrefsClient {
+public class ConfigMetadataClient {
   @Retention(SOURCE)
   @IntDef({
     LAST_FETCH_STATUS_SUCCESS,
@@ -88,7 +88,7 @@ public class ConfigSharedPrefsClient {
   private final Object realtimeBackoffMetadataLock;
   private final Object customSignalsLock;
 
-  public ConfigSharedPrefsClient(SharedPreferences frcMetadata) {
+  public ConfigMetadataClient(SharedPreferences frcMetadata) {
     this.frcMetadata = frcMetadata;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();

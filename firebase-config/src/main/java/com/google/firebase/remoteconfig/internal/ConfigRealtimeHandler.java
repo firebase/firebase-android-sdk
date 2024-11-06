@@ -39,7 +39,7 @@ public class ConfigRealtimeHandler {
   private final ConfigCacheClient activatedCacheClient;
   private final Context context;
   private final String namespace;
-  private final ConfigSharedPrefsClient metadataClient;
+  private final ConfigMetadataClient metadataClient;
   private final ScheduledExecutorService scheduledExecutorService;
 
   public ConfigRealtimeHandler(
@@ -49,7 +49,7 @@ public class ConfigRealtimeHandler {
       ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
-      ConfigSharedPrefsClient metadataClient,
+      ConfigMetadataClient metadataClient,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
