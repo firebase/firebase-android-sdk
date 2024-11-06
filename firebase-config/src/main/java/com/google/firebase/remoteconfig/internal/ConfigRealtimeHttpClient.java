@@ -110,7 +110,7 @@ public class ConfigRealtimeHttpClient {
   private final String namespace;
   private final Random random;
   private final Clock clock;
-  private final ConfigSharedPrefsClient metadataClient;
+  private final ConfigMetadataClient metadataClient;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -120,7 +120,7 @@ public class ConfigRealtimeHttpClient {
       Context context,
       String namespace,
       Set<ConfigUpdateListener> listeners,
-      ConfigSharedPrefsClient metadataClient,
+      ConfigMetadataClient metadataClient,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = listeners;
@@ -473,7 +473,7 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
-    ConfigSharedPrefsClient.RealtimeBackoffMetadata backoffMetadata =
+    ConfigMetadataClient.RealtimeBackoffMetadata backoffMetadata =
         metadataClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
     if (currentTime.before(backoffMetadata.getBackoffEndTime())) {

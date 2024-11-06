@@ -74,7 +74,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchRespons
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.FakeHttpURLConnection;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
@@ -155,7 +155,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigCacheClient mockDefaultsCache;
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetHandler;
-  @Mock private ConfigSharedPrefsClient metadataClient;
+  @Mock private ConfigMetadataClient metadataClient;
 
   @Mock private ConfigRealtimeHandler mockConfigRealtimeHandler;
   @Mock private ConfigAutoFetch mockConfigAutoFetch;
@@ -192,7 +192,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigContainer realtimeFetchedContainer;
   private ConfigAutoFetch configAutoFetch;
   private ConfigRealtimeHttpClient configRealtimeHttpClient;
-  private ConfigSharedPrefsClient realtimeMetadataClient;
+  private ConfigMetadataClient realtimeMetadataClient;
 
   private FetchResponse firstFetchedContainerResponse;
 
@@ -350,7 +350,7 @@ public final class FirebaseRemoteConfigTest {
             mockRetryListener,
             scheduledExecutorService);
     realtimeMetadataClient =
-        new ConfigSharedPrefsClient(
+        new ConfigMetadataClient(
             context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(

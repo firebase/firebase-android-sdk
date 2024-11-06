@@ -36,7 +36,7 @@ import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient;
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,7 +60,7 @@ public class FirebaseRemoteConfigIntegrationTest {
   @Mock private ConfigCacheClient mockDefaultsCache;
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetHandler;
-  @Mock private ConfigSharedPrefsClient metadataClient;
+  @Mock private ConfigMetadataClient metadataClient;
   @Mock private ConfigRealtimeHandler mockConfigRealtimeHandler;
   @Mock private RolloutsStateSubscriptionsHandler mockRolloutsStateSubscriptionHandler;
 

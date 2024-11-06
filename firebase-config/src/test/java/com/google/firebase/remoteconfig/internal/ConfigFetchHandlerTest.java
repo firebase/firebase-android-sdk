@@ -29,9 +29,9 @@ import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.BACKO
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FIRST_OPEN_TIME_KEY;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.HTTP_TOO_MANY_REQUESTS;
-import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_NO_FETCH_YET;
-import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_BACKOFF_TIME;
-import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_FAILED_FETCHES;
+import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_BACKOFF_TIME;
+import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_FAILED_FETCHES;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -70,7 +70,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledExcept
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
-import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
+import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.BackoffMetadata;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -127,7 +127,7 @@ public class ConfigFetchHandlerTest {
 
   private Context context;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
-  private ConfigSharedPrefsClient metadataClient;
+  private ConfigMetadataClient metadataClient;
 
   private ConfigFetchHandler fetchHandler;
 
@@ -143,7 +143,7 @@ public class ConfigFetchHandlerTest {
     context = ApplicationProvider.getApplicationContext();
     mockClock = new MockClock(0L);
     metadataClient =
-        new ConfigSharedPrefsClient(
+        new ConfigMetadataClient(
             context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
 
     loadBackendApiClient();
