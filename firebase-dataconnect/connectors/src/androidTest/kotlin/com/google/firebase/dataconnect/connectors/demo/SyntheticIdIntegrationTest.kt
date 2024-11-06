@@ -16,22 +16,24 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.connectors.demo.testutil.*
-import com.google.firebase.dataconnect.testutil.*
-import kotlinx.coroutines.test.*
+import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.next
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class SyntheticIdIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun syntheticIdShouldBeGeneratedIfNoExplicitlySpecifiedInGQL() = runTest {
-    val value = randomAlphanumericString()
+    val value = Arb.dataConnect.string().next(rs)
 
     val id = connector.insertSyntheticId.execute(value).data.key.id
 
     val queryResult = connector.getSyntheticIdById.execute(id)
-    assertThat(queryResult.data.syntheticId)
-      .isEqualTo(GetSyntheticIdByIdQuery.Data.SyntheticId(id = id, value = value))
+    queryResult.data.syntheticId shouldBe
+      GetSyntheticIdByIdQuery.Data.SyntheticId(id = id, value = value)
   }
 }

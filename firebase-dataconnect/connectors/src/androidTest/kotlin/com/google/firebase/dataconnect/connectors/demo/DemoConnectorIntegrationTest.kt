@@ -14,36 +14,48 @@
  * limitations under the License.
  */
 
+@file:Suppress("ReplaceCallWithBinaryOperator")
+
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
-import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.containsWithNonAdjacentText
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import io.kotest.assertions.assertSoftly
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldNotBeSameInstanceAs
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class DemoConnectorIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
-  fun getFooById_ShouldAlwaysReturnTheExactSameObject() {
+  fun getFooById_ShouldAlwaysReturnTheExactSameObject() = runTest {
     verifyBlockInvokedConcurrentlyAlwaysReturnsTheSameObject { connector.getFooById }
   }
 
   @Test
   fun equals_ShouldReturnFalseWhenArgumentIsNull() {
-    assertThat(connector.equals(null)).isFalse()
+    connector.equals(null) shouldBe false
   }
 
   @Test
   fun equals_ShouldReturnFalseWhenArgumentIsAnInstanceOfADifferentClass() {
-    assertThat(connector.equals("foo")).isFalse()
+    connector.equals("foo") shouldBe false
   }
 
   @Test
   fun equals_ShouldReturnFalseWhenInvokedOnADistinctObject() {
-    assertThat(connector.equals(demoConnectorFactory.newInstance())).isFalse()
+    connector.equals(demoConnectorFactory.newInstance()) shouldBe false
   }
 
   @Test
@@ -51,16 +63,16 @@ class DemoConnectorIntegrationTest : DemoConnectorIntegrationTestBase() {
     val connector1 = demoConnectorFactory.newInstance()
     connector1.dataConnect.close()
     val connector2 = demoConnectorFactory.newInstance()
-    assertThat(connector1).isNotSameInstanceAs(connector2)
+    connector1 shouldNotBeSameInstanceAs connector2
 
-    assertThat(connector1.equals(connector2)).isFalse()
+    connector1.equals(connector2) shouldBe false
   }
 
   @Test
   fun equals_ShouldReturnFalseWhenInvokedOnAnApparentlyEqualButDifferentImplementation() {
     val connectorAlternateImpl = DemoConnectorAlternateImpl(connector)
 
-    assertThat(connector.equals(connectorAlternateImpl)).isFalse()
+    connector.equals(connectorAlternateImpl) shouldBe false
   }
 
   @Test
@@ -68,7 +80,7 @@ class DemoConnectorIntegrationTest : DemoConnectorIntegrationTestBase() {
     val hashCode1 = connector.hashCode()
     val hashCode2 = connector.hashCode()
 
-    assertThat(hashCode1).isEqualTo(hashCode2)
+    hashCode1 shouldBe hashCode2
   }
 
   @Test
@@ -76,45 +88,47 @@ class DemoConnectorIntegrationTest : DemoConnectorIntegrationTestBase() {
     val hashCode1 = demoConnectorFactory.newInstance().hashCode()
     val hashCode2 = demoConnectorFactory.newInstance().hashCode()
 
-    assertThat(hashCode1).isNotEqualTo(hashCode2)
+    hashCode1 shouldNotBe hashCode2
   }
 
   @Test
-  fun toString_ShouldReturnAStringThatStartsWithClassName() {
-    assertThat("$connector").startsWith("DemoConnectorImpl(")
-    assertThat("$connector").endsWith(")")
-  }
+  fun toString_ShouldReturnAStringWithCorrectComponents() {
+    val toStringResult = connector.toString()
 
-  @Test
-  fun toString_ShouldReturnAStringThatContainsTheToStringOfTheDataConnectInstance() {
-    assertThat("$connector").containsWithNonAdjacentText("dataConnect=${connector.dataConnect}")
+    assertSoftly {
+      toStringResult shouldStartWith "DemoConnectorImpl("
+      toStringResult shouldContainWithNonAbuttingText "dataConnect=${connector.dataConnect}"
+      toStringResult shouldEndWith ")"
+    }
   }
 
   class DemoConnectorAlternateImpl(delegate: DemoConnector) : DemoConnector by delegate
 
   // TODO: Write tests for each property in DemoConnector.
 
-  private fun <T> verifyBlockInvokedConcurrentlyAlwaysReturnsTheSameObject(block: () -> T) {
+  private suspend fun <T> TestScope.verifyBlockInvokedConcurrentlyAlwaysReturnsTheSameObject(
+    block: () -> T
+  ) {
+    val resultsMutex = Mutex()
     val results = mutableListOf<T>()
-    val futures = mutableListOf<Future<*>>()
-    val executor = Executors.newFixedThreadPool(6)
-    try {
-      repeat(1000) {
-        executor
-          .submit {
-            val result = block()
-            synchronized(results) { results.add(result) }
-          }
-          .also { futures.add(it) }
+    val numCoroutines = 1000
+    val latch = SuspendingCountDownLatch(numCoroutines)
+
+    // Start the coroutines.
+    val coroutines =
+      List(numCoroutines) {
+        // Use Dispatchers.Default, which guarantees at least threads.
+        backgroundScope.launch(Dispatchers.Default) {
+          latch.countDown()
+          val result = block()
+          resultsMutex.withLock { results.add(result) }
+        }
       }
 
-      futures.forEach { it.get() }
-    } finally {
-      executor.shutdownNow()
-    }
+    // Wait for each coroutine to finish.
+    coroutines.forEach { it.join() }
 
-    assertWithMessage("results.size").that(results.size).isGreaterThan(0)
     val expectedResults = List(1000) { results[0] }
-    assertWithMessage("results").that(results).containsExactlyElementsIn(expectedResults)
+    results shouldContainExactly expectedResults
   }
 }

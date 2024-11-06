@@ -1206,23 +1206,45 @@ query GetNullableDatesWithDefaultsByKey($key: NullableDatesWithDefaults_Key!) @a
   }
 }
 
-mutation InsertNonNullTimestamp($value: Timestamp!) @auth(level: PUBLIC) {
+###############################################################################
+# Operations for table: NonNullTimestamp
+###############################################################################
+
+mutation NonNullTimestamp_Insert($value: Timestamp!) @auth(level: PUBLIC) {
   nonNullTimestamp_insert(data: { value: $value })
 }
 
-mutation UpdateNonNullTimestamp($key: NonNullTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
+mutation NonNullTimestamp_UpdateByKey($key: NonNullTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
   nonNullTimestamp_update(key: $key, data: { value: $value })
 }
 
-query GetNonNullTimestampByKey($key: NonNullTimestamp_Key!) @auth(level: PUBLIC) {
-  value: nonNullTimestamp(key: $key) { value }
+mutation NonNullTimestamp_Insert3($tag: String, $value1: Timestamp!, $value2: Timestamp!, $value3: Timestamp!) @auth(level: PUBLIC) {
+  key1: nonNullTimestamp_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: nonNullTimestamp_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: nonNullTimestamp_insert(data: { value: $value3, tag: $tag, position: 3 })
 }
 
-mutation InsertNonNullTimestampsWithDefaults($value: Timestamp! = "3575-04-12T10:11:12.541991Z") @auth(level: PUBLIC) {
+query NonNullTimestamp_GetByKey($key: NonNullTimestamp_Key!) @auth(level: PUBLIC) {
+  item: nonNullTimestamp(key: $key) { value }
+}
+
+query NonNullTimestamp_GetAllByTagAndValue($tag: String, $value: Timestamp!) @auth(level: PUBLIC) {
+  items: nonNullTimestamps(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: NonNullTimestampsWithDefaults
+###############################################################################
+
+mutation NonNullTimestampsWithDefaults_Insert($value: Timestamp! = "3575-04-12T10:11:12.541991Z") @auth(level: PUBLIC) {
   nonNullTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
 }
 
-query GetNonNullTimestampsWithDefaultsByKey($key: NonNullTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
+query NonNullTimestampsWithDefaults_GetByKey($key: NonNullTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
   nonNullTimestampsWithDefaults(key: $key) {
     valueWithVariableDefault
     valueWithSchemaDefault

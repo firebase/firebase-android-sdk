@@ -14,17 +14,21 @@
 
 package com.google.firebase.crashlytics.internal.stacktrace;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import org.junit.Test;
 import org.mockito.InOrder;
 
 public class MiddleOutFallbackStrategyTest extends CrashlyticsTestCase {
 
   private MiddleOutFallbackStrategy trimmingStrategy;
 
+  @Test
   public void testStrategyCallsGivenStrategiesInOrderThenMiddleOut() {
     final int expectedTrimmedSize = 10;
     final StackTraceElement[] stacktrace = mockStackTrace(30);
@@ -53,6 +57,7 @@ public class MiddleOutFallbackStrategyTest extends CrashlyticsTestCase {
     assertEquals(stacktrace[stacktrace.length - 1], trimmed[trimmed.length - 1]);
   }
 
+  @Test
   public void testStrategyFallsBackToMiddleOut_ifNoOtherStrategiesGiven() {
     final int expectedTrimmedSize = 10;
     final StackTraceElement[] stacktrace = mockStackTrace(30);
@@ -66,6 +71,7 @@ public class MiddleOutFallbackStrategyTest extends CrashlyticsTestCase {
     assertEquals(stacktrace[stacktrace.length - 1], trimmed[trimmed.length - 1]);
   }
 
+  @Test
   public void testStrategySkipsMiddleOut_ifOtherStrategiesSatisfy() {
     final int expectedTrimmedSize = 10;
     final StackTraceElement[] stacktrace = mockStackTrace(30);
@@ -81,6 +87,7 @@ public class MiddleOutFallbackStrategyTest extends CrashlyticsTestCase {
     assertSame(expectedTrimmedTrace, trimmed);
   }
 
+  @Test
   public void testStrategySkipsTrimming_ifTraceIsSmallEnough() {
     final StackTraceElement[] stacktrace = mockStackTrace(10);
 

@@ -14,61 +14,94 @@
  * limitations under the License.
  */
 
+@file:Suppress("ReplaceCallWithBinaryOperator")
+@file:OptIn(ExperimentalKotest::class)
+
 package com.google.firebase.dataconnect
 
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.dataconnect.DataConnectError.PathSegment
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.fieldPathSegment
+import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.string
+import io.kotest.property.assume
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class PathSegmentFieldUnitTest {
 
   @Test
-  fun `field should equal the value given to the constructor`() {
-    val segment = PathSegment.Field("foo")
-    assertThat(segment.field).isEqualTo("foo")
+  fun `field should equal the value given to the constructor`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string()) { field ->
+      val segment = PathSegment.Field(field)
+      segment.field shouldBe field
+    }
   }
 
   @Test
-  fun `toString() should equal the field`() {
-    val segment = PathSegment.Field("foo")
-    assertThat(segment.toString()).isEqualTo("foo")
+  fun `toString() should equal the field`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string()) { field ->
+      val segment = PathSegment.Field(field)
+      segment.toString() shouldBe field
+    }
   }
 
   @Test
-  fun `equals() should return true for the same instance`() {
-    val segment = PathSegment.Field("foo")
-    assertThat(segment.equals(segment)).isTrue()
+  fun `equals() should return true for the same instance`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.fieldPathSegment()) { segment ->
+      segment.equals(segment) shouldBe true
+    }
   }
 
   @Test
-  fun `equals() should return true for an equal field`() {
-    val segment1 = PathSegment.Field("foo")
-    val segment2 = PathSegment.Field("foo")
-    assertThat(segment1.equals(segment2)).isTrue()
+  fun `equals() should return true for an equal field`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string()) { field ->
+      val segment1 = PathSegment.Field(field)
+      val segment2 = PathSegment.Field(field)
+      segment1.equals(segment2) shouldBe true
+    }
   }
 
   @Test
-  fun `equals() should return false for null`() {
-    val segment = PathSegment.Field("foo")
-    assertThat(segment.equals(null)).isFalse()
+  fun `equals() should return false for null`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.fieldPathSegment()) { segment ->
+      segment.equals(null) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false for a different type`() {
-    val segment = PathSegment.Field("foo")
-    assertThat(segment.equals(listOf("foo"))).isFalse()
+  fun `equals() should return false for a different type`() = runTest {
+    val others = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.dataConnectSettings())
+    checkAll(propTestConfig, Arb.dataConnect.fieldPathSegment(), others) { segment, other ->
+      segment.equals(other) shouldBe false
+    }
   }
 
   @Test
-  fun `equals() should return false for a different field`() {
-    val segment1 = PathSegment.Field("foo")
-    val segment2 = PathSegment.Field("bar")
-    assertThat(segment1.equals(segment2)).isFalse()
+  fun `equals() should return false for a different field`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.dataConnect.string()) { field1, field2 ->
+      assume(field1 != field2)
+      val segment1 = PathSegment.Field(field1)
+      val segment2 = PathSegment.Field(field2)
+      segment1.equals(segment2) shouldBe false
+    }
   }
 
   @Test
-  fun `hashCode() should return the same value as the field's hashCode() method`() {
-    assertThat(PathSegment.Field("foo").hashCode()).isEqualTo("foo".hashCode())
-    assertThat(PathSegment.Field("bar").hashCode()).isEqualTo("bar".hashCode())
+  fun `hashCode() should return the same value as the field's hashCode() method`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string()) { field ->
+      val segment = PathSegment.Field(field)
+      segment.hashCode() shouldBe field.hashCode()
+    }
+  }
+
+  private companion object {
+    val propTestConfig = PropTestConfig(iterations = 20)
   }
 }
