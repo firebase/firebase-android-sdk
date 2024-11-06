@@ -234,7 +234,9 @@ public class ConfigResolver {
 
       Boolean newValue = rcValue.get();
       // b. Only cache and return this value if it is different from the current value.
-      if (deviceCacheValue == null || !deviceCacheValue.isAvailable() || deviceCacheValue.get() != newValue) {
+      if (deviceCacheValue == null
+          || !deviceCacheValue.isAvailable()
+          || deviceCacheValue.get() != newValue) {
         deviceCacheManager.setValue(config.getDeviceCacheFlag(), newValue);
       }
 
@@ -270,7 +272,9 @@ public class ConfigResolver {
       // Do not check FRC last fetch status because it is the most recent value device can get.
       String newValue = rcValue.get();
       // Only cache and return this value if it is different from the current value.
-      if (deviceCacheValue == null || !deviceCacheValue.isAvailable() || !deviceCacheValue.get().equals(newValue)) {
+      if (deviceCacheValue == null
+          || !deviceCacheValue.isAvailable()
+          || !deviceCacheValue.get().equals(newValue)) {
         deviceCacheManager.setValue(config.getDeviceCacheFlag(), newValue);
       }
       return isFireperfSdkVersionInList(newValue);
