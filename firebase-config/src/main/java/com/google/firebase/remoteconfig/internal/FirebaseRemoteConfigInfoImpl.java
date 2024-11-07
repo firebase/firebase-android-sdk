@@ -16,7 +16,7 @@ package com.google.firebase.remoteconfig.internal;
 
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LastFetchStatus;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LastFetchStatus;
 
 /**
  * Impl class for FirebaseRemoteConfigInfo.
