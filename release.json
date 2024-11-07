@@ -6,6 +6,7 @@
         ":firebase-messaging-directboot",
         ":firebase-messaging:ktx",
         ":firebase-functions",
+        ":firebase-functions:ktx",
         ":firebase-vertexai"
     ]
 }
