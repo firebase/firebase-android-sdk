@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.Task
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -40,6 +41,8 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
 
   @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
+  @get:Optional @get:InputFile abstract val ktfmtJarFile: RegularFileProperty
+
   @TaskAction
   fun run() {
     val dataConnectExecutable: File = dataConnectExecutable.get().asFile
@@ -47,12 +50,14 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     val connectors: Collection<String> = connectors.get().distinct().sorted()
     val buildDirectory: File = buildDirectory.get().asFile
     val outputDirectory: File = outputDirectory.get().asFile
+    val ktfmtJarFile: File? = ktfmtJarFile.orNull?.asFile
 
     logger.info("dataConnectExecutable={}", dataConnectExecutable.absolutePath)
     logger.info("configDirectory={}", configDirectory?.absolutePath)
     logger.info("connectors={}", connectors.joinToString(", "))
     logger.info("buildDirectory={}", buildDirectory.absolutePath)
     logger.info("outputDirectory={}", outputDirectory.absolutePath)
+    logger.info("ktfmtJarFile={}", ktfmtJarFile?.absolutePath)
 
     if (outputDirectory.exists()) {
       logger.info("Deleting directory: $outputDirectory")
@@ -71,9 +76,50 @@ abstract class DataConnectGenerateCodeTask : DefaultTask() {
     ) {
       this.connectors = connectors
       this.outputDirectory = outputDirectory
-      this.logFile = File(buildDirectory, "log.txt")
+      this.logFile = File(buildDirectory, "codegen.log.txt")
+    }
+
+    if (ktfmtJarFile !== null) {
+      logger.info("Running ktfmt on generated code")
+      runKtfmt(
+        ktfmtJarFile = ktfmtJarFile,
+        directory = outputDirectory,
+        logFile = File(buildDirectory, "ktfmt.log.txt")
+      )
     }
 
     logger.info("Completed successfully")
+  }
+}
+
+private fun Task.runKtfmt(
+  ktfmtJarFile: File,
+  directory: File,
+  logFile: File,
+) {
+  project.mkdir(logFile.parentFile)
+  val logFileStream = logFile.outputStream()
+
+  try {
+    project.javaexec { execSpec ->
+      execSpec.run {
+        classpath(ktfmtJarFile)
+        mainClass.set("com.facebook.ktfmt.cli.Main")
+        args("--google-style")
+        args(directory.absolutePath)
+        isIgnoreExitValue = false
+        standardOutput = logFileStream
+        errorOutput = logFileStream
+      }
+    }
+  } catch (e: Exception) {
+    logFileStream.close()
+    logFile.forEachLine { logger.error(it.trimEnd()) }
+    throw e
+  } finally {
+    logFileStream.close()
+    if (logger.isInfoEnabled) {
+      logFile.forEachLine { logger.error(it.trimEnd()) }
+    }
   }
 }
