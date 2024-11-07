@@ -1,0 +1,10 @@
+{
+    "name": "m156",
+    "libraries": [
+        ":firebase-dataconnect",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx",
+        ":firebase-vertexai"
+    ]
+}
