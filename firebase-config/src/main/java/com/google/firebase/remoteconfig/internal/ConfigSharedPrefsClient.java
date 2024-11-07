@@ -39,12 +39,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Client for handling Firebase Remote Config (FRC) metadata that is saved to disk and persisted
- * across App life cycles.
+ * Client for handling Firebase Remote Config (FRC) metadata and custom signals that are saved to
+ * disk and persisted across App life cycles.
  *
  * @author Miraziz Yusupov
  */
-public class ConfigMetadataClient {
+public class ConfigSharedPrefsClient {
   @Retention(SOURCE)
   @IntDef({
     LAST_FETCH_STATUS_SUCCESS,
@@ -81,15 +81,15 @@ public class ConfigMetadataClient {
   private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
       "realtime_backoff_end_time_in_millis";
 
-  private final SharedPreferences frcMetadata;
+  private final SharedPreferences frcSharedPrefs;
 
   private final Object frcInfoLock;
   private final Object backoffMetadataLock;
   private final Object realtimeBackoffMetadataLock;
   private final Object customSignalsLock;
 
-  public ConfigMetadataClient(SharedPreferences frcMetadata) {
-    this.frcMetadata = frcMetadata;
+  public ConfigSharedPrefsClient(SharedPreferences frcSharedPrefs) {
+    this.frcSharedPrefs = frcSharedPrefs;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();
     this.realtimeBackoffMetadataLock = new Object();
@@ -97,51 +97,52 @@ public class ConfigMetadataClient {
   }
 
   public long getFetchTimeoutInSeconds() {
-    return frcMetadata.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS);
+    return frcSharedPrefs.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS);
   }
 
   public long getMinimumFetchIntervalInSeconds() {
-    return frcMetadata.getLong(
+    return frcSharedPrefs.getLong(
         MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY, DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
   }
 
   @LastFetchStatus
   int getLastFetchStatus() {
-    return frcMetadata.getInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_NO_FETCH_YET);
+    return frcSharedPrefs.getInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_NO_FETCH_YET);
   }
 
   Date getLastSuccessfulFetchTime() {
     return new Date(
-        frcMetadata.getLong(
+        frcSharedPrefs.getLong(
             LAST_SUCCESSFUL_FETCH_TIME_IN_MILLIS_KEY, LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET));
   }
 
   @Nullable
   String getLastFetchETag() {
-    return frcMetadata.getString(LAST_FETCH_ETAG_KEY, null);
+    return frcSharedPrefs.getString(LAST_FETCH_ETAG_KEY, null);
   }
 
   long getLastTemplateVersion() {
-    return frcMetadata.getLong(LAST_TEMPLATE_VERSION, 0);
+    return frcSharedPrefs.getLong(LAST_TEMPLATE_VERSION, 0);
   }
 
   public FirebaseRemoteConfigInfo getInfo() {
     // A lock is used here to prevent the setters in this class from changing the state of
-    // frcMetadata during a getInfo call.
+    // frcSharedPrefs during a getInfo call.
     synchronized (frcInfoLock) {
       long lastSuccessfulFetchTimeInMillis =
-          frcMetadata.getLong(
+          frcSharedPrefs.getLong(
               LAST_SUCCESSFUL_FETCH_TIME_IN_MILLIS_KEY, LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
       @LastFetchStatus
       int lastFetchStatus =
-          frcMetadata.getInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_NO_FETCH_YET);
+          frcSharedPrefs.getInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_NO_FETCH_YET);
 
       FirebaseRemoteConfigSettings settings =
           new FirebaseRemoteConfigSettings.Builder()
               .setFetchTimeoutInSeconds(
-                  frcMetadata.getLong(FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS))
+                  frcSharedPrefs.getLong(
+                      FETCH_TIMEOUT_IN_SECONDS_KEY, CONNECTION_TIMEOUT_IN_SECONDS))
               .setMinimumFetchIntervalInSeconds(
-                  frcMetadata.getLong(
+                  frcSharedPrefs.getLong(
                       MINIMUM_FETCH_INTERVAL_IN_SECONDS_KEY,
                       DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS))
               .build();
@@ -155,14 +156,14 @@ public class ConfigMetadataClient {
   }
 
   /**
-   * Clears all metadata values from memory and disk.
+   * Clears all metadata and custom signals values from memory and disk.
    *
    * <p>The method is blocking and returns only when the values in disk are also cleared.
    */
   @WorkerThread
   public void clear() {
     synchronized (frcInfoLock) {
-      frcMetadata.edit().clear().commit();
+      frcSharedPrefs.edit().clear().commit();
     }
   }
 
@@ -175,7 +176,7 @@ public class ConfigMetadataClient {
   @WorkerThread
   public void setConfigSettings(FirebaseRemoteConfigSettings settings) {
     synchronized (frcInfoLock) {
-      frcMetadata
+      frcSharedPrefs
           .edit()
           .putLong(FETCH_TIMEOUT_IN_SECONDS_KEY, settings.getFetchTimeoutInSeconds())
           .putLong(
@@ -192,7 +193,7 @@ public class ConfigMetadataClient {
    */
   public void setConfigSettingsWithoutWaitingOnDiskWrite(FirebaseRemoteConfigSettings settings) {
     synchronized (frcInfoLock) {
-      frcMetadata
+      frcSharedPrefs
           .edit()
           .putLong(FETCH_TIMEOUT_IN_SECONDS_KEY, settings.getFetchTimeoutInSeconds())
           .putLong(
@@ -203,7 +204,7 @@ public class ConfigMetadataClient {
 
   void updateLastFetchAsSuccessfulAt(Date fetchTime) {
     synchronized (frcInfoLock) {
-      frcMetadata
+      frcSharedPrefs
           .edit()
           .putInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_SUCCESS)
           .putLong(LAST_SUCCESSFUL_FETCH_TIME_IN_MILLIS_KEY, fetchTime.getTime())
@@ -213,25 +214,25 @@ public class ConfigMetadataClient {
 
   void updateLastFetchAsFailed() {
     synchronized (frcInfoLock) {
-      frcMetadata.edit().putInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_FAILURE).apply();
+      frcSharedPrefs.edit().putInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_FAILURE).apply();
     }
   }
 
   void updateLastFetchAsThrottled() {
     synchronized (frcInfoLock) {
-      frcMetadata.edit().putInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_THROTTLED).apply();
+      frcSharedPrefs.edit().putInt(LAST_FETCH_STATUS_KEY, LAST_FETCH_STATUS_THROTTLED).apply();
     }
   }
 
   void setLastFetchETag(String eTag) {
     synchronized (frcInfoLock) {
-      frcMetadata.edit().putString(LAST_FETCH_ETAG_KEY, eTag).apply();
+      frcSharedPrefs.edit().putString(LAST_FETCH_ETAG_KEY, eTag).apply();
     }
   }
 
   void setLastTemplateVersion(long templateVersion) {
     synchronized (frcInfoLock) {
-      frcMetadata.edit().putLong(LAST_TEMPLATE_VERSION, templateVersion).apply();
+      frcSharedPrefs.edit().putLong(LAST_TEMPLATE_VERSION, templateVersion).apply();
     }
   }
 
@@ -242,14 +243,15 @@ public class ConfigMetadataClient {
   BackoffMetadata getBackoffMetadata() {
     synchronized (backoffMetadataLock) {
       return new BackoffMetadata(
-          frcMetadata.getInt(NUM_FAILED_FETCHES_KEY, NO_FAILED_FETCHES),
-          new Date(frcMetadata.getLong(BACKOFF_END_TIME_IN_MILLIS_KEY, NO_BACKOFF_TIME_IN_MILLIS)));
+          frcSharedPrefs.getInt(NUM_FAILED_FETCHES_KEY, NO_FAILED_FETCHES),
+          new Date(
+              frcSharedPrefs.getLong(BACKOFF_END_TIME_IN_MILLIS_KEY, NO_BACKOFF_TIME_IN_MILLIS)));
     }
   }
 
   void setBackoffMetadata(int numFailedFetches, Date backoffEndTime) {
     synchronized (backoffMetadataLock) {
-      frcMetadata
+      frcSharedPrefs
           .edit()
           .putInt(NUM_FAILED_FETCHES_KEY, numFailedFetches)
           .putLong(BACKOFF_END_TIME_IN_MILLIS_KEY, backoffEndTime.getTime())
@@ -293,7 +295,7 @@ public class ConfigMetadataClient {
             "Too many custom signals provided. The maximum allowed is 100.");
       }
 
-      frcMetadata
+      frcSharedPrefs
           .edit()
           .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
           .commit();
@@ -301,7 +303,7 @@ public class ConfigMetadataClient {
   }
 
   public Map<String, Object> getCustomSignals() {
-    String jsonString = frcMetadata.getString(CUSTOM_SIGNALS, "{}");
+    String jsonString = frcSharedPrefs.getString(CUSTOM_SIGNALS, "{}");
     try {
       JSONObject existingCustomSignalsJson = new JSONObject(jsonString);
       Map<String, Object> custom_signals = new HashMap<>();
@@ -357,16 +359,16 @@ public class ConfigMetadataClient {
   public RealtimeBackoffMetadata getRealtimeBackoffMetadata() {
     synchronized (realtimeBackoffMetadataLock) {
       return new RealtimeBackoffMetadata(
-          frcMetadata.getInt(NUM_FAILED_REALTIME_STREAMS_KEY, NO_FAILED_REALTIME_STREAMS),
+          frcSharedPrefs.getInt(NUM_FAILED_REALTIME_STREAMS_KEY, NO_FAILED_REALTIME_STREAMS),
           new Date(
-              frcMetadata.getLong(
+              frcSharedPrefs.getLong(
                   REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, NO_BACKOFF_TIME_IN_MILLIS)));
     }
   }
 
   void setRealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
     synchronized (realtimeBackoffMetadataLock) {
-      frcMetadata
+      frcSharedPrefs
           .edit()
           .putInt(NUM_FAILED_REALTIME_STREAMS_KEY, numFailedStreams)
           .putLong(REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, backoffEndTime.getTime())

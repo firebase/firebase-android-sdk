@@ -14,7 +14,7 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_NO_FETCH_YET;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
@@ -43,7 +43,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse.Status;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.BackoffMetadata;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.HttpURLConnection;
@@ -96,7 +96,7 @@ public class ConfigFetchHandler {
   private final Random randomGenerator;
   private final ConfigCacheClient fetchedConfigsCache;
   private final ConfigFetchHttpClient frcBackendApiClient;
-  private final ConfigMetadataClient frcMetadata;
+  private final ConfigSharedPrefsClient frcSharedPrefs;
 
   private final Map<String, String> customHttpHeaders;
 
@@ -109,7 +109,7 @@ public class ConfigFetchHandler {
       Random randomGenerator,
       ConfigCacheClient fetchedConfigsCache,
       ConfigFetchHttpClient frcBackendApiClient,
-      ConfigMetadataClient frcMetadata,
+      ConfigSharedPrefsClient frcSharedPrefs,
       Map<String, String> customHttpHeaders) {
     this.firebaseInstallations = firebaseInstallations;
     this.analyticsConnector = analyticsConnector;
@@ -118,16 +118,16 @@ public class ConfigFetchHandler {
     this.randomGenerator = randomGenerator;
     this.fetchedConfigsCache = fetchedConfigsCache;
     this.frcBackendApiClient = frcBackendApiClient;
-    this.frcMetadata = frcMetadata;
+    this.frcSharedPrefs = frcSharedPrefs;
     this.customHttpHeaders = customHttpHeaders;
   }
 
   /**
    * Calls {@link #fetch(long)} with the {@link
-   * ConfigMetadataClient#getMinimumFetchIntervalInSeconds()}.
+   * ConfigSharedPrefsClient#getMinimumFetchIntervalInSeconds()}.
    */
   public Task<FetchResponse> fetch() {
-    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds());
+    return fetch(frcSharedPrefs.getMinimumFetchIntervalInSeconds());
   }
 
   /**
@@ -228,7 +228,7 @@ public class ConfigFetchHandler {
    * currently throttled.
    *
    * <p>If a fetch request is made to the backend, updates the last fetch status, last successful
-   * fetch time and {@link BackoffMetadata} in {@link ConfigMetadataClient}.
+   * fetch time and {@link BackoffMetadata} in {@link ConfigSharedPrefsClient}.
    */
   private Task<FetchResponse> fetchIfCacheExpiredAndNotThrottled(
       Task<ConfigContainer> cachedFetchConfigsTask,
@@ -295,7 +295,7 @@ public class ConfigFetchHandler {
    * on.
    */
   private boolean areCachedFetchConfigsValid(long cacheExpirationInSeconds, Date newFetchTime) {
-    Date lastSuccessfulFetchTime = frcMetadata.getLastSuccessfulFetchTime();
+    Date lastSuccessfulFetchTime = frcSharedPrefs.getLastSuccessfulFetchTime();
     // RC always fetches if the client has not previously had a successful fetch.
 
     if (lastSuccessfulFetchTime.equals(LAST_FETCH_TIME_NO_FETCH_YET)) {
@@ -315,7 +315,7 @@ public class ConfigFetchHandler {
    */
   @Nullable
   private Date getBackoffEndTimeInMillis(Date currentTime) {
-    Date backoffEndTime = frcMetadata.getBackoffMetadata().getBackoffEndTime();
+    Date backoffEndTime = frcSharedPrefs.getBackoffMetadata().getBackoffEndTime();
     if (currentTime.before(backoffEndTime)) {
       return backoffEndTime;
     }
@@ -381,21 +381,22 @@ public class ConfigFetchHandler {
               installationId,
               installationToken,
               getUserProperties(),
-              frcMetadata.getLastFetchETag(),
+              frcSharedPrefs.getLastFetchETag(),
               customFetchHeaders,
               getFirstOpenTime(),
               currentTime);
 
       if (response.getFetchedConfigs() != null) {
         // Set template version in metadata to be saved on disk.
-        frcMetadata.setLastTemplateVersion(response.getFetchedConfigs().getTemplateVersionNumber());
+        frcSharedPrefs.setLastTemplateVersion(
+            response.getFetchedConfigs().getTemplateVersionNumber());
       }
       if (response.getLastFetchETag() != null) {
-        frcMetadata.setLastFetchETag(response.getLastFetchETag());
+        frcSharedPrefs.setLastFetchETag(response.getLastFetchETag());
       }
       // If the execute method did not throw exceptions, then the server sent a successful response
       // and the client can stop backing off.
-      frcMetadata.resetBackoff();
+      frcSharedPrefs.resetBackoff();
 
       return response;
     } catch (FirebaseRemoteConfigServerException serverHttpError) {
@@ -473,7 +474,7 @@ public class ConfigFetchHandler {
     if (isThrottleableServerError(statusCode)) {
       updateBackoffMetadataWithLastFailedFetchTime(currentTime);
     }
-    return frcMetadata.getBackoffMetadata();
+    return frcSharedPrefs.getBackoffMetadata();
   }
 
   /**
@@ -497,14 +498,14 @@ public class ConfigFetchHandler {
    * disk-backed metadata.
    */
   private void updateBackoffMetadataWithLastFailedFetchTime(Date lastFailedFetchTime) {
-    int numFailedFetches = frcMetadata.getBackoffMetadata().getNumFailedFetches();
+    int numFailedFetches = frcSharedPrefs.getBackoffMetadata().getNumFailedFetches();
 
     numFailedFetches++;
 
     long backoffDurationInMillis = getRandomizedBackoffDurationInMillis(numFailedFetches);
     Date backoffEndTime = new Date(lastFailedFetchTime.getTime() + backoffDurationInMillis);
 
-    frcMetadata.setBackoffMetadata(numFailedFetches, backoffEndTime);
+    frcSharedPrefs.setBackoffMetadata(numFailedFetches, backoffEndTime);
   }
 
   /**
@@ -551,7 +552,7 @@ public class ConfigFetchHandler {
   private void updateLastFetchStatusAndTime(
       Task<FetchResponse> completedFetchTask, Date fetchTime) {
     if (completedFetchTask.isSuccessful()) {
-      frcMetadata.updateLastFetchAsSuccessfulAt(fetchTime);
+      frcSharedPrefs.updateLastFetchAsSuccessfulAt(fetchTime);
       return;
     }
 
@@ -562,9 +563,9 @@ public class ConfigFetchHandler {
     }
 
     if (fetchException instanceof FirebaseRemoteConfigFetchThrottledException) {
-      frcMetadata.updateLastFetchAsThrottled();
+      frcSharedPrefs.updateLastFetchAsThrottled();
     } else {
-      frcMetadata.updateLastFetchAsFailed();
+      frcSharedPrefs.updateLastFetchAsFailed();
     }
   }
 
@@ -602,7 +603,7 @@ public class ConfigFetchHandler {
   }
 
   public long getTemplateVersionNumber() {
-    return frcMetadata.getLastTemplateVersion();
+    return frcSharedPrefs.getLastTemplateVersion();
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
