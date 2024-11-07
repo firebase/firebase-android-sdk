@@ -99,21 +99,21 @@ android {
 }
 
 dependencies {
-    annotationProcessor libs.dagger.compiler
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
     compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
-    implementation libs.androidx.annotation
-    implementation "androidx.lifecycle:lifecycle-process:2.8.7"
-    implementation libs.playservices.tasks
+    implementation "androidx.annotation:annotation:1.1.0"
+    implementation "androidx.lifecycle:lifecycle-process:2.3.1"
+    implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation libs.protobuf.java.lite
     implementation libs.kotlin.stdlib
-    implementation libs.androidx.annotation
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.android.datatransport:transport-api:4.0.0'
-    implementation libs.dagger.dagger
+    implementation 'androidx.annotation:annotation:1.7.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    implementation 'com.google.dagger:dagger:2.27'
     api 'com.google.firebase:firebase-annotations:16.2.0'
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
     api 'com.google.firebase:protolite-well-known-types:18.0.0'
-    implementation libs.okhttp
+    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
     api("com.google.firebase:firebase-components:18.0.0")
@@ -124,7 +124,7 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    javadocClasspath libs.autovalue.annotations
+    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
     javadocClasspath libs.findbugs.jsr305
     runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
@@ -134,9 +134,9 @@ dependencies {
     testImplementation libs.androidx.test.core
     testImplementation libs.truth
     testImplementation libs.robolectric
-    testImplementation libs.androidx.test.rules
-    testImplementation libs.junit
+    testImplementation 'androidx.test:rules:1.2.0'
+    testImplementation 'junit:junit:4.12'
     testImplementation libs.mockito.core
     testImplementation 'org.mockito:mockito-inline:5.2.0'
-    testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
+    testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
 }
