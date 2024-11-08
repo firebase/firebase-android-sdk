@@ -57,11 +57,14 @@ android {
 
   @Suppress("UnstableApiUsage")
   testOptions {
+    targetSdk = targetSdkVersion
     unitTests {
       isIncludeAndroidResources = true
       isReturnDefaultValues = true
     }
   }
+
+  lint { targetSdk = targetSdkVersion }
 
   packaging {
     resources {
