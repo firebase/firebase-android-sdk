@@ -14,7 +14,6 @@
 
 package com.google.firebase.gradle.plugins.ci;
 
-import com.google.common.collect.ImmutableList;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
 import java.util.List;
 import java.util.Set;
@@ -124,7 +123,7 @@ public class ContinuousIntegrationPlugin implements Plugin<Project> {
   }
 
   private static final List<String> ANDROID_PLUGINS =
-      ImmutableList.of("com.android.application", "com.android.library", "com.android.test");
+      List.of("com.android.application", "com.android.library", "com.android.test");
 
   private static boolean isAndroidProject(Project project) {
     return ANDROID_PLUGINS.stream()
