@@ -54,6 +54,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -72,6 +74,9 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
 
   val lazyGrpcClient: SuspendingLazy<DataConnectGrpcClient>
   val lazyQueryManager: SuspendingLazy<QueryManager>
+
+  suspend fun awaitAuthReady()
+  suspend fun awaitAppCheckReady()
 }
 
 internal class FirebaseDataConnectImpl(
@@ -107,10 +112,17 @@ internal class FirebaseDataConnectImpl(
       SupervisorJob() +
         nonBlockingDispatcher +
         CoroutineName(instanceId) +
-        CoroutineExceptionHandler { _, throwable ->
-          logger.warn(throwable) { "uncaught exception from a coroutine" }
+        CoroutineExceptionHandler { context, throwable ->
+          logger.warn(throwable) {
+            val coroutineName = context[CoroutineName]?.name
+            "WARNING: uncaught exception from coroutine named \"$coroutineName\" " +
+              "(error code jszxcbe37k)"
+          }
         }
     )
+
+  private val authProviderAvailable = MutableStateFlow(false)
+  private val appCheckProviderAvailable = MutableStateFlow(false)
 
   // Protects `closed`, `grpcClient`, `emulatorSettings`, and `queryManager`.
   private val mutex = Mutex()
@@ -121,29 +133,49 @@ internal class FirebaseDataConnectImpl(
   // All accesses to this variable _must_ have locked `mutex`.
   private var closed = false
 
-  private val lazyDataConnectAuth =
-    SuspendingLazy(mutex) {
-      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      DataConnectAuth(
-          deferredAuthProvider = deferredAuthProvider,
-          parentCoroutineScope = coroutineScope,
-          blockingDispatcher = blockingDispatcher,
-          logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
-        )
-        .apply { initialize() }
-    }
+  private val dataConnectAuth: DataConnectAuth =
+    DataConnectAuth(
+      deferredAuthProvider = deferredAuthProvider,
+      parentCoroutineScope = coroutineScope,
+      blockingDispatcher = blockingDispatcher,
+      logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
+    )
 
-  private val lazyDataConnectAppCheck =
-    SuspendingLazy(mutex) {
-      if (closed) throw IllegalStateException("FirebaseDataConnect instance has been closed")
-      DataConnectAppCheck(
-          deferredAppCheckTokenProvider = deferredAppCheckProvider,
-          parentCoroutineScope = coroutineScope,
-          blockingDispatcher = blockingDispatcher,
-          logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
-        )
-        .apply { initialize() }
+  override suspend fun awaitAuthReady() {
+    authProviderAvailable.first { it }
+  }
+
+  init {
+    coroutineScope.launch(CoroutineName("DataConnectAuth initializer for $instanceId")) {
+      dataConnectAuth.initialize()
+      dataConnectAuth.providerAvailable.collect { isProviderAvailable ->
+        logger.debug { "authProviderAvailable=$isProviderAvailable" }
+        authProviderAvailable.value = isProviderAvailable
+      }
     }
+  }
+
+  private val dataConnectAppCheck: DataConnectAppCheck =
+    DataConnectAppCheck(
+      deferredAppCheckTokenProvider = deferredAppCheckProvider,
+      parentCoroutineScope = coroutineScope,
+      blockingDispatcher = blockingDispatcher,
+      logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
+    )
+
+  override suspend fun awaitAppCheckReady() {
+    appCheckProviderAvailable.first { it }
+  }
+
+  init {
+    coroutineScope.launch(CoroutineName("DataConnectAppCheck initializer for $instanceId")) {
+      dataConnectAppCheck.initialize()
+      dataConnectAppCheck.providerAvailable.collect { isProviderAvailable ->
+        logger.debug { "appCheckProviderAvailable=$isProviderAvailable" }
+        appCheckProviderAvailable.value = isProviderAvailable
+      }
+    }
+  }
 
   private val lazyGrpcRPCs =
     SuspendingLazy(mutex) {
@@ -181,8 +213,8 @@ internal class FirebaseDataConnectImpl(
       val grpcMetadata =
         DataConnectGrpcMetadata.forSystemVersions(
           firebaseApp = app,
-          dataConnectAuth = lazyDataConnectAuth.getLocked(),
-          dataConnectAppCheck = lazyDataConnectAppCheck.getLocked(),
+          dataConnectAuth = dataConnectAuth,
+          dataConnectAppCheck = dataConnectAppCheck,
           connectorLocation = config.location,
           parentLogger = logger,
         )
@@ -210,8 +242,8 @@ internal class FirebaseDataConnectImpl(
         projectId = projectId,
         connector = config,
         grpcRPCs = lazyGrpcRPCs.getLocked(),
-        dataConnectAuth = lazyDataConnectAuth.getLocked(),
-        dataConnectAppCheck = lazyDataConnectAppCheck.getLocked(),
+        dataConnectAuth = dataConnectAuth,
+        dataConnectAppCheck = dataConnectAppCheck,
         logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
       )
     }
@@ -397,8 +429,8 @@ internal class FirebaseDataConnectImpl(
 
     // Close Auth and AppCheck synchronously to avoid race conditions with auth callbacks.
     // Since close() is re-entrant, this is safe even if they have already been closed.
-    lazyDataConnectAuth.initializedValueOrNull?.close()
-    lazyDataConnectAppCheck.initializedValueOrNull?.close()
+    dataConnectAuth.close()
+    dataConnectAppCheck.close()
 
     // Start the job to asynchronously close the gRPC client.
     while (true) {

@@ -45,6 +45,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.yield
 
@@ -57,6 +60,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 ) {
   val instanceId: String
     get() = logger.nameWithId
+
+  private val _providerAvailable = MutableStateFlow(false)
+  val providerAvailable: StateFlow<Boolean> = _providerAvailable.asStateFlow()
 
   @Suppress("LeakingThis") private val weakThis = WeakReference(this)
 
@@ -448,6 +454,8 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
         break
       }
     }
+
+    _providerAvailable.value = true
   }
 
   /**
