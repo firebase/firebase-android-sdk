@@ -52,14 +52,7 @@ dependencies {
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
     implementation(kotlin("gradle-plugin", "1.8.22"))
     implementation(libs.org.json)
-    implementation(libs.maven.resolver.api)
-    implementation(libs.maven.resolver.connector.basic)
-    implementation(libs.maven.resolver.transport.file)
-    implementation(libs.maven.resolver.transport.http)
-    implementation(libs.maven.resolver.impl)
-    implementation(libs.maven.resolver.util)
-
-    implementation(libs.maven.resolver.provider)
+    implementation(libs.bundles.maven.resolver)
 
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.ow2.asm:asm-tree:9.5")
