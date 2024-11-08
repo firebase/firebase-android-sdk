@@ -31,7 +31,6 @@ android {
 
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -40,6 +39,9 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
+
+  testOptions { targetSdk = targetSdkVersion }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {
