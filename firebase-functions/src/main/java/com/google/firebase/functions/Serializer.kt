@@ -175,6 +175,7 @@ internal class Serializer {
     internal const val LONG_TYPE: String = "type.googleapis.com/google.protobuf.Int64Value"
 
     @VisibleForTesting
-    internal const val UNSIGNED_LONG_TYPE: String = "type.googleapis.com/google.protobuf.UInt64Value"
+    internal const val UNSIGNED_LONG_TYPE: String =
+      "type.googleapis.com/google.protobuf.UInt64Value"
   }
 }
