@@ -29,8 +29,8 @@ public class FirebaseFunctionsException : FirebaseException {
    */
   public enum class Code(private val value: Int) {
     /**
-     * The operation completed successfully. `FirebaseFunctionsException` will never have a status of
-     * `OK`.
+     * The operation completed successfully. `FirebaseFunctionsException` will never have a status
+     * of `OK`.
      */
     OK(0),
 
@@ -126,8 +126,8 @@ public class FirebaseFunctionsException : FirebaseException {
       }
 
       /**
-       * Takes an HTTP status code and returns the corresponding [Code] error code. This is
-       * the standard HTTP status code -> error mapping defined in:
+       * Takes an HTTP status code and returns the corresponding [Code] error code. This is the
+       * standard HTTP status code -> error mapping defined in:
        * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
        *
        * @param status An HTTP status code.
