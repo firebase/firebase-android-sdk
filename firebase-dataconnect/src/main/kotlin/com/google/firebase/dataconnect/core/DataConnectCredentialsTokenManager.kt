@@ -236,9 +236,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 
       if (state.compareAndSet(oldState, State.Closed)) {
         providerListenerPair?.run {
-          provider?.let { provider ->
-            runIgnoringFirebaseAppDeleted { removeTokenListener(provider, tokenListener) }
-          }
+          provider?.let { provider -> removeTokenListener(provider, tokenListener) }
         }
         return
       }
@@ -422,7 +420,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
   @DeferredApi
   private fun onProviderAvailable(newProvider: T, tokenListener: L) {
     logger.debug { "onProviderAvailable(newProvider=$newProvider)" }
-    runIgnoringFirebaseAppDeleted { addTokenListener(newProvider, tokenListener) }
+    addTokenListener(newProvider, tokenListener)
 
     while (true) {
       val oldState = state.get()
@@ -437,7 +435,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
               "onProviderAvailable(newProvider=$newProvider)" +
                 " unregistering token listener that was just added"
             }
-            runIgnoringFirebaseAppDeleted { removeTokenListener(newProvider, tokenListener) }
+            removeTokenListener(newProvider, tokenListener)
             break
           }
           is State.Ready ->
@@ -485,20 +483,6 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, L : Any>(
 
   private class GetTokenCancelledException(cause: Throwable) :
     DataConnectException("getToken() was cancelled, likely by close()", cause)
-
-  // Work around a race condition where addIdTokenListener() and removeIdTokenListener() throw if
-  // the FirebaseApp is deleted during or before its invocation.
-  private fun runIgnoringFirebaseAppDeleted(block: () -> Unit) {
-    try {
-      block()
-    } catch (e: IllegalStateException) {
-      if (e.message == "FirebaseApp was deleted") {
-        logger.warn(e) { "ignoring exception: $e" }
-      } else {
-        throw e
-      }
-    }
-  }
 
   protected data class GetTokenResult(val token: String?)
 
