@@ -99,21 +99,21 @@ android {
 }
 
 dependencies {
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
+    annotationProcessor libs.dagger.compiler
     compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
-    implementation "androidx.annotation:annotation:1.1.0"
+    implementation libs.androidx.annotation
     implementation "androidx.lifecycle:lifecycle-process:2.3.1"
-    implementation "com.google.android.gms:play-services-tasks:18.0.1"
+    implementation libs.playservices.tasks
     implementation libs.protobuf.java.lite
     implementation libs.kotlin.stdlib
-    implementation 'androidx.annotation:annotation:1.7.0'
+    // implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
-    implementation 'com.google.dagger:dagger:2.27'
+    implementation libs.dagger.dagger
     api 'com.google.firebase:firebase-annotations:16.2.0'
     api 'com.google.firebase:firebase-installations-interop:17.1.0'
     api 'com.google.firebase:protolite-well-known-types:18.0.0'
-    implementation 'com.squareup.okhttp3:okhttp:3.12.1'
+    implementation libs.okhttp
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
     api("com.google.firebase:firebase-components:18.0.0")
@@ -134,8 +134,8 @@ dependencies {
     testImplementation libs.androidx.test.core
     testImplementation libs.truth
     testImplementation libs.robolectric
-    testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation 'junit:junit:4.12'
+    testImplementation libs.androidx.test.rules
+    testImplementation libs.junit
     testImplementation libs.mockito.core
     testImplementation 'org.mockito:mockito-inline:5.2.0'
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
