@@ -106,7 +106,6 @@ dependencies {
     implementation libs.playservices.tasks
     implementation libs.protobuf.java.lite
     implementation libs.kotlin.stdlib
-    // implementation 'androidx.annotation:annotation:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation libs.dagger.dagger
