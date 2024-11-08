@@ -23,7 +23,7 @@ import org.json.JSONException
 import org.json.JSONObject
 
 /** Converts raw Java types into JSON objects. */
-public class Serializer {
+internal class Serializer {
   private val dateFormat: DateFormat
 
   init {
@@ -32,7 +32,7 @@ public class Serializer {
     dateFormat.timeZone = TimeZone.getTimeZone("UTC")
   }
 
-  public fun encode(obj: Any?): Any {
+  internal fun encode(obj: Any?): Any {
     if (obj == null || obj === JSONObject.NULL) {
       return JSONObject.NULL
     }
@@ -113,7 +113,7 @@ public class Serializer {
     throw IllegalArgumentException("Object cannot be encoded in JSON: $obj")
   }
 
-  public fun decode(obj: Any): Any? {
+  internal fun decode(obj: Any): Any? {
     // TODO: Maybe this should throw a FirebaseFunctionsException instead?
     if (obj is Number) {
       return obj
@@ -170,11 +170,11 @@ public class Serializer {
     throw IllegalArgumentException("Object cannot be decoded from JSON: $obj")
   }
 
-  public companion object {
+  internal companion object {
     @VisibleForTesting
-    public const val LONG_TYPE: String = "type.googleapis.com/google.protobuf.Int64Value"
+    internal const val LONG_TYPE: String = "type.googleapis.com/google.protobuf.Int64Value"
 
     @VisibleForTesting
-    public const val UNSIGNED_LONG_TYPE: String = "type.googleapis.com/google.protobuf.UInt64Value"
+    internal const val UNSIGNED_LONG_TYPE: String = "type.googleapis.com/google.protobuf.UInt64Value"
   }
 }
