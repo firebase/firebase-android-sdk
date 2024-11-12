@@ -123,6 +123,7 @@ dependencies {
   testImplementation(libs.kotlinx.datetime)
   testImplementation(libs.kotlinx.serialization.json)
   testImplementation(libs.mockk)
+  testImplementation(libs.testonly.three.ten.abp)
   testImplementation(libs.robolectric)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
