@@ -16,7 +16,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.common.collect.ImmutableList
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
@@ -56,7 +55,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
-      kotlinOptions.freeCompilerArgs = ImmutableList.of("-module-name", kotlinModuleName(project))
+      kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
     }
   }
 

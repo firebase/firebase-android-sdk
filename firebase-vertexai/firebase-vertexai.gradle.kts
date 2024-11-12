@@ -41,7 +41,6 @@ android {
   compileSdk = 34
   defaultConfig {
     minSdk = 21
-    targetSdk = 34
     consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -58,9 +57,13 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
   testOptions {
-    unitTests.isIncludeAndroidResources = true
-    unitTests.isReturnDefaultValues = true
+    targetSdk = targetSdkVersion
+    unitTests {
+      isIncludeAndroidResources = true
+      isReturnDefaultValues = true
+    }
   }
+  lint { targetSdk = targetSdkVersion }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any

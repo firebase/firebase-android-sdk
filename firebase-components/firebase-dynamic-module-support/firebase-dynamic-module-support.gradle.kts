@@ -34,7 +34,6 @@ android {
   namespace = "com.google.firebase.dynamicloading"
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -42,7 +41,11 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {

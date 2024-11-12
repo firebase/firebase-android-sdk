@@ -23,11 +23,11 @@ android {
   val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
+
   compileSdk = compileSdkVersion
   namespace = "com.google.firebase.components"
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("proguard.txt")
@@ -36,7 +36,11 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {
