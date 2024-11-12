@@ -1,5 +1,5 @@
 # Unreleased
-
+* [unchanged] Updated to keep messaging SDK versions aligned.
 
 # 24.0.3
 * [changed] Updated protobuf dependency to `3.25.5` to fix

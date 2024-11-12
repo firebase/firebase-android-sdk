@@ -52,19 +52,11 @@ dependencies {
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
     implementation(kotlin("gradle-plugin", "1.8.22"))
     implementation(libs.org.json)
+    implementation(libs.bundles.maven.resolver)
 
-    implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
-    implementation("org.eclipse.aether:aether-util:1.0.0.v20140518")
+    implementation("com.google.guava:guava:31.1-jre")
     implementation("org.ow2.asm:asm-tree:9.5")
-    implementation("org.eclipse.aether:aether-impl:1.0.0.v20140518")
-    implementation("org.eclipse.aether:aether-connector-basic:1.0.0.v20140518")
-    implementation("org.eclipse.aether:aether-transport-file:1.0.0.v20140518")
-    implementation("org.eclipse.aether:aether-transport-http:1.0.0.v20140518")
-    implementation("org.eclipse.aether:aether-transport-wagon:1.0.0.v20140518")
-    implementation("org.apache.maven:maven-aether-provider:3.3.9")
-
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
-
     implementation(libs.kotlinx.serialization.json)
     implementation("com.google.code.gson:gson:2.8.9")
     implementation(libs.android.gradlePlugin.gradle)

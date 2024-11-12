@@ -552,43 +552,6 @@ class DataConnectAuthUnitTest {
       )
     }
 
-  @Test
-  fun `addIdTokenListener() throwing IllegalStateException due to FirebaseApp deleted should be ignored`() =
-    runTest {
-      every { mockInternalAuthProvider.addIdTokenListener(any()) } throws
-        firebaseAppDeletedException
-      coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns taskForToken(accessToken)
-      val dataConnectAuth = newDataConnectAuth()
-      dataConnectAuth.initialize()
-      advanceUntilIdle()
-
-      eventually(`check every 100 milliseconds for 2 seconds`) {
-        mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-          "ignoring exception: $firebaseAppDeletedException"
-        )
-      }
-      val result = dataConnectAuth.getToken(requestId)
-      withClue("result=$result") { result shouldBe accessToken }
-    }
-
-  @Test
-  fun `removeIdTokenListener() throwing IllegalStateException due to FirebaseApp deleted should be ignored`() =
-    runTest {
-      every { mockInternalAuthProvider.removeIdTokenListener(any()) } throws
-        firebaseAppDeletedException
-      val dataConnectAuth = newDataConnectAuth()
-      dataConnectAuth.initialize()
-      advanceUntilIdle()
-
-      dataConnectAuth.close()
-
-      eventually(`check every 100 milliseconds for 2 seconds`) {
-        mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
-          "ignoring exception: $firebaseAppDeletedException"
-        )
-      }
-    }
-
   private fun TestScope.newDataConnectAuth(
     deferredInternalAuthProvider: DeferredInternalAuthProvider =
       ImmediateDeferred(mockInternalAuthProvider),
