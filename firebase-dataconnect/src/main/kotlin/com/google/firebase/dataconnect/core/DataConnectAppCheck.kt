@@ -32,24 +32,20 @@ internal class DataConnectAppCheck(
   blockingDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
-  DataConnectCredentialsTokenManager<InteropAppCheckTokenProvider, AppCheckTokenListener>(
+  DataConnectCredentialsTokenManager<InteropAppCheckTokenProvider>(
     deferredProvider = deferredAppCheckTokenProvider,
     parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
     logger = logger,
   ) {
-  override fun newTokenListener(): AppCheckTokenListener = AppCheckTokenListenerImpl(logger)
+  private val appCheckTokenListener = AppCheckTokenListenerImpl(logger)
 
   @DeferredApi
-  override fun addTokenListener(
-    provider: InteropAppCheckTokenProvider,
-    listener: AppCheckTokenListener
-  ) = provider.addAppCheckTokenListener(listener)
+  override fun addTokenListener(provider: InteropAppCheckTokenProvider) =
+    provider.addAppCheckTokenListener(appCheckTokenListener)
 
-  override fun removeTokenListener(
-    provider: InteropAppCheckTokenProvider,
-    listener: AppCheckTokenListener
-  ) = provider.removeAppCheckTokenListener(listener)
+  override fun removeTokenListener(provider: InteropAppCheckTokenProvider) =
+    provider.removeAppCheckTokenListener(appCheckTokenListener)
 
   override suspend fun getToken(provider: InteropAppCheckTokenProvider, forceRefresh: Boolean) =
     provider.getToken(forceRefresh).await().let { GetTokenResult(it.token) }
