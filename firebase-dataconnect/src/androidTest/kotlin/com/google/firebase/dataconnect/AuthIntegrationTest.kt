@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
@@ -201,6 +202,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   private suspend fun signIn() {
+    (personSchema.dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val authResult = auth.run { signInAnonymously().await() }
     withClue("authResult.user returned from signInAnonymously()") {
       authResult.user.shouldNotBeNull()

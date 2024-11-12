@@ -86,9 +86,8 @@ internal class FirebaseDataConnectImpl(
   override val config: ConnectorConfig,
   override val blockingExecutor: Executor,
   override val nonBlockingExecutor: Executor,
-  private val deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
-  private val deferredAppCheckProvider:
-    com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
+  deferredAuthProvider: com.google.firebase.inject.Deferred<InternalAuthProvider>,
+  deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
 ) : FirebaseDataConnectInternal {
@@ -146,8 +145,8 @@ internal class FirebaseDataConnectImpl(
   }
 
   init {
-    coroutineScope.launch(CoroutineName("DataConnectAuth initializer for $instanceId")) {
-      dataConnectAuth.initialize()
+    val name = CoroutineName("DataConnectAuth isProviderAvailable pipe for $instanceId")
+    coroutineScope.launch(name) {
       dataConnectAuth.providerAvailable.collect { isProviderAvailable ->
         logger.debug { "authProviderAvailable=$isProviderAvailable" }
         authProviderAvailable.value = isProviderAvailable
@@ -168,8 +167,8 @@ internal class FirebaseDataConnectImpl(
   }
 
   init {
-    coroutineScope.launch(CoroutineName("DataConnectAppCheck initializer for $instanceId")) {
-      dataConnectAppCheck.initialize()
+    val name = CoroutineName("DataConnectAppCheck isProviderAvailable pipe for $instanceId")
+    coroutineScope.launch(name) {
       dataConnectAppCheck.providerAvailable.collect { isProviderAvailable ->
         logger.debug { "appCheckProviderAvailable=$isProviderAvailable" }
         appCheckProviderAvailable.value = isProviderAvailable

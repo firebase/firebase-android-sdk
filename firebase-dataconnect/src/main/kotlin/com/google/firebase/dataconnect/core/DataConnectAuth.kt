@@ -32,20 +32,20 @@ internal class DataConnectAuth(
   blockingDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
-  DataConnectCredentialsTokenManager<InternalAuthProvider, IdTokenListener>(
+  DataConnectCredentialsTokenManager<InternalAuthProvider>(
     deferredProvider = deferredAuthProvider,
     parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
     logger = logger,
   ) {
-  override fun newTokenListener(): IdTokenListener = IdTokenListenerImpl(logger)
+  private val idTokenListener = IdTokenListenerImpl(logger)
 
   @DeferredApi
-  override fun addTokenListener(provider: InternalAuthProvider, listener: IdTokenListener) =
-    provider.addIdTokenListener(listener)
+  override fun addTokenListener(provider: InternalAuthProvider) =
+    provider.addIdTokenListener(idTokenListener)
 
-  override fun removeTokenListener(provider: InternalAuthProvider, listener: IdTokenListener) =
-    provider.removeIdTokenListener(listener)
+  override fun removeTokenListener(provider: InternalAuthProvider) =
+    provider.removeIdTokenListener(idTokenListener)
 
   override suspend fun getToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
     provider.getAccessToken(forceRefresh).await().let { GetTokenResult(it.token) }
