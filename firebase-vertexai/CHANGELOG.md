@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Added support for Civic Integrity in Harm Category. (#6502)
 * [fixed] Improved error message when using an invalid location. (#6428)
 * [fixed] Fixed issue where Firebase App Check error tokens were unintentionally missing from the requests. (#6409)
 * [fixed] Clarified in the documentation that `Schema.integer` and `Schema.float` only provide hints to the model. (#6420)
