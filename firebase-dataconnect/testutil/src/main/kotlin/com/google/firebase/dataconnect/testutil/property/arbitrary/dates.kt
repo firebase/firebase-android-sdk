@@ -18,63 +18,92 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.LocalDate
+import com.google.firebase.dataconnect.testutil.NullableReference
 import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
+import com.google.firebase.dataconnect.testutil.dayRangeInYear
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DateEdgeCases.MAX_YEAR
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DateEdgeCases.MIN_YEAR
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.arbitrary
-import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.RandomSource
+import io.kotest.property.Sample
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.long
-import java.util.Date
-import java.util.GregorianCalendar
-import java.util.TimeZone
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.next
+import io.kotest.property.asSample
+import java.util.UUID
+import kotlin.random.nextInt
+import org.threeten.bp.Month
+import org.threeten.bp.Year
 
-data class DateTestData(
-  val date: Date,
-  val string: String,
-  val year: Int,
-  val month: Int,
-  val day: Int
-) {
-  fun withMillisOffset(millisOffset: Long): DateTestData =
-    copy(date = Date(date.time + millisOffset))
-}
+fun DataConnectArb.dateTestData(): Arb<DateTestData> = DateTestDataArb()
 
-fun DataConnectArb.date(): Arb<DateTestData> =
-  arbitrary(edgecases = DateEdgeCases.all) {
-    val year = year().bind()
-    val month = month().bind()
-    val day = day(month).bind()
+fun DataConnectArb.localDate(): Arb<LocalDate> = dateTestData().map { it.date }
 
-    val date = dateFromYearMonthDayUTC(year, month, day)
+fun DataConnectArb.threeNonNullDatesTestData(
+  dateTestData: Arb<DateTestData> = dateTestData()
+): Arb<ThreeDateTestDatas> = ThreeDateTestDatasArb(dateTestData.map { NullableReference(it) })
+
+fun DataConnectArb.threePossiblyNullDatesTestData(
+  dateTestData: Arb<NullableReference<DateTestData>> =
+    dateTestData().orNullableReference(nullProbability = 0.333)
+): Arb<ThreeDateTestDatas> = ThreeDateTestDatasArb(dateTestData)
+
+/** An [Arb] that produces [DateTestData] objects that are accepted by Firebase Data Connect. */
+private class DateTestDataArb : Arb<DateTestData>() {
+
+  private val yearArb: Arb<Year> = Arb.intWithEvenNumDigitsDistribution(yearRange).map(Year::of)
+  private val monthArb: Arb<Month> = Arb.intWithEvenNumDigitsDistribution(monthRange).map(Month::of)
+
+  override fun sample(rs: RandomSource): Sample<DateTestData> {
+    val year = yearArb.next(rs)
+    val month = monthArb.next(rs)
+    val dayRange = month.dayRangeInYear(year)
+    val day = dayRange.random(rs.random)
+    return toDateTestData(year = year, month = month, day = day).asSample()
+  }
+
+  override fun edgecase(rs: RandomSource): DateTestData {
+    val year = rs.edgeCaseFrom(yearArb)
+    val month = rs.edgeCaseFrom(monthArb)
+    val day = rs.edgeCaseFrom(Arb.int(month.dayRangeInYear(year)))
+    return toDateTestData(year = year, month = month, day = day)
+  }
+
+  private fun toDateTestData(year: Year, month: Month, day: Int): DateTestData {
+    val localDate = LocalDate(year = year.value, month = month.value, day = day)
 
     val yearStr = "$year"
-    val monthStr = "$month".padStart(2, '0')
+    val monthStr = "${month.value}".padStart(2, '0')
     val dayStr = "$day".padStart(2, '0')
     val string = "$yearStr-$monthStr-$dayStr"
 
-    DateTestData(date, string, year = year, month = month, day = day)
+    return DateTestData(localDate, string)
   }
 
-fun DataConnectArb.dateOffDayBoundary(): Arb<DateTestData> =
-  arbitrary(edgecases = DateEdgeCases.offDayBoundary) {
-    // Skip dates with the maximum year, as adding non-zero milliseconds will result in the year
-    // 10,000, which is invalid.
-    val dateAndStrings = date().filterNot { it.string.contains("9999") }
-    // Don't add more than 86_400_000L, the number of milliseconds per day, to the date.
-    val millisOffsets = Arb.long(0L until 86_400_000L)
+  companion object {
+    val yearRange: IntRange = MIN_YEAR..MAX_YEAR
+    val monthRange: IntRange = 1..12
 
-    val dateAndString = dateAndStrings.bind()
-    val millisOffset = millisOffsets.bind()
-    val dateOffDayBoundary = Date(dateAndString.date.time + millisOffset)
-
-    DateTestData(
-      dateOffDayBoundary,
-      dateAndString.string,
-      year = dateAndString.year,
-      month = dateAndString.month,
-      day = dateAndString.day,
-    )
+    private fun <T> RandomSource.edgeCaseFrom(arb: Arb<T>): T {
+      if (random.nextBoolean()) {
+        val edgeCase = arb.edgecase(this)
+        if (edgeCase !== null) {
+          return edgeCase
+        }
+      }
+      return arb.next(this)
+    }
   }
+}
+
+data class DateTestData(
+  val date: LocalDate,
+  val string: String,
+)
+
+fun DateTestData.toJavaUtilDate(): java.util.Date =
+  dateFromYearMonthDayUTC(year = date.year, month = date.month, day = date.day)
 
 @Suppress("MemberVisibilityCanBePrivate")
 object DateEdgeCases {
@@ -84,66 +113,82 @@ object DateEdgeCases {
   const val MAX_YEAR = 9999
 
   val min: DateTestData
-    get() =
-      DateTestData(
-        date = dateFromYearMonthDayUTC(MIN_YEAR, 1, 1),
-        string = "$MIN_YEAR-01-01",
-        year = MIN_YEAR,
-        month = 1,
-        day = 1,
-      )
-
+    get() = DateTestData(LocalDate(MIN_YEAR, 1, 1), "$MIN_YEAR-01-01")
   val max: DateTestData
-    get() =
-      DateTestData(
-        date = dateFromYearMonthDayUTC(MAX_YEAR, 12, 31),
-        string = "$MAX_YEAR-12-31",
-        year = MAX_YEAR,
-        month = 12,
-        day = 31,
-      )
+    get() = DateTestData(LocalDate(MAX_YEAR, 12, 31), "$MAX_YEAR-12-31")
+  val epoch: DateTestData
+    get() = DateTestData(LocalDate(1970, 1, 1), "1970-01-01")
 
-  val zero: DateTestData
-    get() =
-      DateTestData(
-        date = GregorianCalendar(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 }.time,
-        string = "1970-01-01",
-        year = 1970,
-        month = 1,
-        day = 1,
-      )
-
-  val all: List<DateTestData> = listOf(min, max, zero)
-
-  val offDayBoundary: List<DateTestData> =
-    listOf(
-      min.withMillisOffset(1),
-      max.withMillisOffset(1),
-      zero.withMillisOffset(1),
-    )
+  fun all(): List<DateTestData> = listOf(min, max, epoch)
 }
 
-private fun maxDayForMonth(month: Int): Int {
-  return when (month) {
-    1 -> 31
-    2 -> 28
-    3 -> 31
-    4 -> 30
-    5 -> 31
-    6 -> 30
-    7 -> 31
-    8 -> 31
-    9 -> 30
-    10 -> 31
-    11 -> 30
-    12 -> 31
-    else ->
-      throw IllegalArgumentException("invalid month: $month (must be between 1 and 12, inclusive)")
+data class ThreeDateTestDatas(
+  val testData1: DateTestData?,
+  val testData2: DateTestData?,
+  val testData3: DateTestData?,
+  private val index: Int,
+) {
+  init {
+    require(index in 0..2) { "invalid index: $index (error code shfwcz4j4w)" }
+  }
+
+  val all: List<DateTestData?>
+    get() = listOf(testData1, testData2, testData3)
+
+  val selected: DateTestData? =
+    when (index) {
+      0 -> testData1
+      1 -> testData2
+      2 -> testData3
+      else -> throw Exception("internal error: unknown index: $index")
+    }
+
+  fun idsMatchingSelected(getter: (ItemNumber) -> UUID): List<UUID> =
+    idsMatching(selected?.date, getter)
+
+  fun idsMatching(localDate: LocalDate?, getter: (ItemNumber) -> UUID): List<UUID> {
+    val ids = listOf(getter(ItemNumber.ONE), getter(ItemNumber.TWO), getter(ItemNumber.THREE))
+    return ids.filterIndexed { index, _ -> all[index]?.date == localDate }
+  }
+
+  enum class ItemNumber {
+    ONE,
+    TWO,
+    THREE,
   }
 }
 
-private fun year(): Arb<Int> = Arb.int(DateEdgeCases.MIN_YEAR..DateEdgeCases.MAX_YEAR)
+private class ThreeDateTestDatasArb(
+  private val dateTestData: Arb<NullableReference<DateTestData>>
+) : Arb<ThreeDateTestDatas>() {
+  override fun sample(rs: RandomSource): Sample<ThreeDateTestDatas> =
+    rs.nextThreeLocalDates { dateTestData.next(rs) }.asSample()
 
-private fun month(): Arb<Int> = Arb.int(1..12)
+  override fun edgecase(rs: RandomSource): ThreeDateTestDatas {
+    val result: ThreeDateTestDatas =
+      rs.nextThreeLocalDates {
+        if (rs.random.nextBoolean()) {
+          dateTestData.edgecase(rs)!!
+        } else {
+          dateTestData.next(rs)
+        }
+      }
 
-private fun day(month: Int): Arb<Int> = Arb.int(1..maxDayForMonth(month))
+    return when (val case = rs.random.nextInt(0..4)) {
+      0 -> result
+      1 -> result.copy(testData2 = result.testData1)
+      2 -> result.copy(testData3 = result.testData1)
+      3 -> result.copy(testData3 = result.testData2)
+      4 -> result.copy(testData2 = result.testData1, testData3 = result.testData1)
+      else -> throw Exception("should never get here: case=$case (error code yzqq7kw3eh)")
+    }
+  }
+
+  private fun RandomSource.nextThreeLocalDates(
+    nextDateTestData: () -> NullableReference<DateTestData>
+  ): ThreeDateTestDatas {
+    val dates = List(3) { nextDateTestData().ref }
+    val index = random.nextInt(dates.indices)
+    return ThreeDateTestDatas(dates[0], dates[1], dates[2], index)
+  }
+}

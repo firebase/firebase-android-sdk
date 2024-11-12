@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.Timestamp
-import com.google.firebase.dataconnect.LocalDate
-import org.threeten.bp.Instant
-
-fun Instant.toTimestamp(): Timestamp = Timestamp(epochSecond, nano)
-
-fun LocalDate.toTheeTenAbpJavaLocalDate(): org.threeten.bp.LocalDate =
-  org.threeten.bp.LocalDate.of(year, month, day)
+/**
+ * A class that simply wraps a reference to another object, which may be null. This class can be
+ * useful for use in the case where the meaning of `null` is overloaded, such as
+ * [io.kotest.property.Arb.edgecase] and [kotlinx.coroutines.flow.MutableStateFlow.compareAndSet]
+ */
+class NullableReference<out T>(val ref: T? = null) {
+  override fun equals(other: Any?) = (other is NullableReference<*>) && other.ref == ref
+  override fun hashCode() = ref?.hashCode() ?: 0
+  override fun toString() = ref?.toString() ?: "null"
+}

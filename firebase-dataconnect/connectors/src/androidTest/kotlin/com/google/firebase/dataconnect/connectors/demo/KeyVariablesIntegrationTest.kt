@@ -18,7 +18,8 @@ package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.date
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dateTestData
+import com.google.firebase.dataconnect.testutil.property.arbitrary.toJavaUtilDate
 import com.google.firebase.dataconnect.testutil.randomTimestamp
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import io.kotest.matchers.shouldBe
@@ -85,7 +86,7 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun primaryKeyIsDate() = runTest {
-    val id = Arb.dataConnect.date().next(rs).date
+    val id = Arb.dataConnect.dateTestData().next(rs).toJavaUtilDate()
     val value = Arb.dataConnect.string().next(rs)
 
     val key = connector.insertPrimaryKeyIsDate.execute(foo = id, value = value).data.key

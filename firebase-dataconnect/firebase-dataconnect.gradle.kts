@@ -142,6 +142,7 @@ dependencies {
   androidTestImplementation(libs.kotlinx.datetime)
   androidTestImplementation(libs.mockk)
   androidTestImplementation(libs.mockk.android)
+  androidTestImplementation(libs.testonly.three.ten.abp)
   androidTestImplementation(libs.turbine)
 }
 

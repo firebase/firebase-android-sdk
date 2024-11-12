@@ -21,7 +21,8 @@ import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorInt
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.date
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dateTestData
+import com.google.firebase.dataconnect.testutil.property.arbitrary.toJavaUtilDate
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
@@ -523,7 +524,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
             booleans = EdgeCases.booleans,
             uuids = EdgeCases.uuids,
             int64s = EdgeCases.int64s,
-            dates = EdgeCases.dates.all.map { it.date },
+            dates = EdgeCases.dates.all().map { it.toJavaUtilDate() },
             timestamps = EdgeCases.javaTime.instants.all.map { it.timestamp },
           )
     }
@@ -545,7 +546,8 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
       booleans: Arb<List<Boolean>> = Arb.list(Arb.boolean(), 1..100),
       uuids: Arb<List<UUID>> = Arb.list(Arb.uuid(), 1..100),
       int64s: Arb<List<Long>> = Arb.list(Arb.long(), 1..100),
-      dates: Arb<List<Date>> = Arb.list(Arb.dataConnect.date().map { it.date }, 1..100),
+      dates: Arb<List<Date>> =
+        Arb.list(Arb.dataConnect.dateTestData().map { it.toJavaUtilDate() }, 1..100),
       timestamps: Arb<List<Timestamp>> =
         Arb.list(Arb.dataConnect.javaTime.instantTestCase().map { it.timestamp }, 1..100),
     ): Arb<Lists> = arbitrary {
