@@ -29,7 +29,7 @@
   `com.google.firebase.dataconnect.LocalDate` instead of `java.util.Date`.
   Therefore, this version of the SDK must be paired with an appropriate version
   of the Data Connect emulator.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#6513](https://github.com/firebase/firebase-android-sdk/pull/6513))
 
 # 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix
