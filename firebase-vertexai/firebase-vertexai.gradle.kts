@@ -18,7 +18,6 @@
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -27,7 +26,6 @@ plugins {
 
 firebaseLibrary {
   testLab.enabled = false
-  publishSources = true
   publishJavadoc = true
   releaseNotes {
     name.set("{{firebase_vertexai}}")
@@ -43,7 +41,6 @@ android {
   compileSdk = 34
   defaultConfig {
     minSdk = 21
-    targetSdk = 34
     consumerProguardFiles("consumer-rules.pro")
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -51,10 +48,7 @@ android {
   buildTypes {
     release {
       isMinifyEnabled = false
-      proguardFiles(
-        getDefaultProguardFile("proguard-android-optimize.txt"),
-        "proguard-rules.pro"
-      )
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
   compileOptions {
@@ -63,9 +57,13 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
   testOptions {
-    unitTests.isIncludeAndroidResources = true
-    unitTests.isReturnDefaultValues = true
+    targetSdk = targetSdkVersion
+    unitTests {
+      isIncludeAndroidResources = true
+      isReturnDefaultValues = true
+    }
   }
+  lint { targetSdk = targetSdkVersion }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -82,7 +80,6 @@ tasks.withType<KotlinCompile>().all {
   }
 }
 
-
 dependencies {
   val ktorVersion = "2.3.2"
 
@@ -91,7 +88,6 @@ dependencies {
   implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
   implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
   implementation("io.ktor:ktor-client-logging:$ktorVersion")
-  compileOnly("io.ktor:ktor-client-mock:$ktorVersion")
 
   api("com.google.firebase:firebase-common:21.0.0")
   implementation("com.google.firebase:firebase-components:18.0.0")
@@ -122,7 +118,6 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
 
-  androidTestImplementation("androidx.test.ext:junit:1.1.5")
   androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)

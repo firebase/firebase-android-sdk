@@ -20,8 +20,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "firestore"
-    publishSources = true
+    libraryGroup = "firestore"
     testLab {
         enabled = true
         timeout = '45m'
@@ -40,7 +39,7 @@ protobuf {
     }
     plugins {
         grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+            artifact = libs.grpc.protoc.gen.java.get().toString()
         }
     }
     generateProtoTasks {
@@ -135,17 +134,17 @@ dependencies {
     api('com.google.firebase:firebase-database-collection:18.0.1')
 
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-basement:18.1.0'
-    implementation "io.grpc:grpc-android:$grpcVersion"
-    implementation "io.grpc:grpc-okhttp:$grpcVersion"
-    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
-    implementation "io.grpc:grpc-stub:$grpcVersion"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+    implementation libs.playservices.base
+    implementation libs.playservices.basement
+    implementation libs.grpc.android
+    implementation libs.grpc.okhttp
+    implementation libs.grpc.protobuf.lite
+    implementation libs.grpc.stub
+    implementation libs.kotlin.stdlib
+    implementation libs.kotlinx.coroutines.core
 
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
-    compileOnly 'javax.annotation:jsr250-api:1.0'
+    compileOnly libs.javax.annotation.jsr250
 
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
@@ -153,28 +152,28 @@ dependencies {
 
     testImplementation project(':firebase-database-collection')
     testImplementation project(':firebase-firestore')
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.android.gms:play-services-tasks:18.0.1'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation libs.junit
     testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 
     testCompileOnly libs.protobuf.java
 
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
-    androidTestImplementation 'androidx.test:rules:1.5.0'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
+    androidTestImplementation libs.androidx.test.rules
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.junit
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
-    androidTestImplementation("com.google.truth:truth:$googleTruthVersion") {
+    androidTestImplementation(libs.truth) {
         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
     }
-    androidTestImplementation 'junit:junit:4.13.2'
+    androidTestImplementation libs.junit
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
 }

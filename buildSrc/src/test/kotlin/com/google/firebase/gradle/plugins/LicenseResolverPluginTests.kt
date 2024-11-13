@@ -103,10 +103,10 @@ class LicenseResolverPluginTests {
       .fromJson(
         File(
             "${testProjectDir.root}/build/generated/third_party_licenses/",
-            "third_party_licenses.json"
+            "third_party_licenses.json",
           )
           .readText(),
-        object : TypeToken<Map<String, FileOffset>>() {}.type
+        object : TypeToken<Map<String, FileOffset>>() {}.type,
       )
 
   private fun getLicenseText(): String =

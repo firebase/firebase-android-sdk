@@ -21,7 +21,6 @@ firebaseLibrary {
     releaseNotes { 
         enabled.set(false)
     }
-    publishSources = true
 }
 
 android {
@@ -57,11 +56,11 @@ dependencies {
     implementation 'com.google.android.datatransport:transport-api:3.1.0'
     implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
     implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22")
+    implementation(libs.kotlin.stdlib.jdk8)
 
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 }

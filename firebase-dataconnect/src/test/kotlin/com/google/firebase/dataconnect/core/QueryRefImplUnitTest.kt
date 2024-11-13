@@ -16,50 +16,87 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.core.Globals.copy
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.querymgr.QueryManager
-import com.google.firebase.dataconnect.testutil.callerSdkType
-import com.google.firebase.dataconnect.testutil.filterNotEqual
-import com.google.firebase.dataconnect.testutil.queryRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
+import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
+import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SuspendingLazy
-import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.retry
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.assertions.withClue
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldEndWith
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.alphanumeric
-import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
+import io.kotest.property.assume
+import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlin.time.Duration
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 import org.junit.Test
 
 @Suppress("ReplaceCallWithBinaryOperator")
+@OptIn(ExperimentalKotest::class)
 class QueryRefImplUnitTest {
 
-  private class TestData(val foo: String)
-  private class TestVariables(val bar: String)
+  private interface TestData
+  private interface TestVariables
+  private interface TestData2
+  private interface TestVariables2
 
   @Test
-  fun `execute() returns the result on success`() = runTest {
-    val data = TestData("gy54w6f5be")
+  fun `constructor should initialize properties to the given objects`() = runTest {
+    val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
+    checkAll(propTestConfig, argsArb) { args ->
+      val queryRefImpl =
+        QueryRefImpl(
+          dataConnect = args.dataConnect,
+          operationName = args.operationName,
+          variables = args.variables,
+          dataDeserializer = args.dataDeserializer,
+          variablesSerializer = args.variablesSerializer,
+          callerSdkType = args.callerSdkType,
+          dataSerializersModule = args.dataSerializersModule,
+          variablesSerializersModule = args.variablesSerializersModule,
+        )
+
+      queryRefImpl.shouldHavePropertiesEqualTo(args)
+    }
+  }
+
+  @Test
+  fun `execute() should return the result on success`() = runTest {
+    val data: TestData = mockk()
     val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
     val dataConnect = dataConnectWithQueryResult(Result.success(data), querySlot)
-    val queryRefImpl = Arb.queryRefImpl().next().copy(dataConnect = dataConnect)
+    val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     val queryResult = queryRefImpl.execute()
 
@@ -71,11 +108,11 @@ class QueryRefImplUnitTest {
   }
 
   @Test
-  fun `execute() throws on failure`() = runTest {
+  fun `execute() should throw on failure`() = runTest {
     val exception = Exception("forced exception h4sab92yy8")
     val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
     val dataConnect = dataConnectWithQueryResult(Result.failure(exception), querySlot)
-    val queryRefImpl = Arb.queryRefImpl().next().copy(dataConnect = dataConnect)
+    val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     val thrownException = shouldThrow<Exception> { queryRefImpl.execute() }
 
@@ -87,7 +124,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `subscribe() should return a QuerySubscription`() = runTest {
-    val queryRefImpl = Arb.queryRefImpl().next()
+    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
 
     val querySubscription = queryRefImpl.subscribe()
 
@@ -96,7 +133,7 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `subscribe() should always return a new object`() = runTest {
-    val queryRefImpl = Arb.queryRefImpl().next()
+    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
 
     val querySubscription1 = queryRefImpl.subscribe()
     val querySubscription2 = queryRefImpl.subscribe()
@@ -105,320 +142,435 @@ class QueryRefImplUnitTest {
   }
 
   @Test
-  fun `constructor accepts non-null values`() {
-    val values = Arb.queryRefImpl().next()
-    val queryRefImpl =
-      QueryRefImpl(
-        dataConnect = values.dataConnect,
-        operationName = values.operationName,
-        variables = values.variables,
-        dataDeserializer = values.dataDeserializer,
-        variablesSerializer = values.variablesSerializer,
-        callerSdkType = values.callerSdkType,
-        variablesSerializersModule = values.variablesSerializersModule,
-        dataSerializersModule = values.dataSerializersModule,
-      )
-
-    queryRefImpl.asClue {
-      assertSoftly {
-        it.dataConnect shouldBeSameInstanceAs values.dataConnect
-        it.operationName shouldBeSameInstanceAs values.operationName
-        it.variables shouldBeSameInstanceAs values.variables
-        it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
-        it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
-        it.callerSdkType shouldBe values.callerSdkType
-        it.variablesSerializersModule shouldBeSameInstanceAs values.variablesSerializersModule
-        it.dataSerializersModule shouldBeSameInstanceAs values.dataSerializersModule
-      }
+  fun `hashCode() should return the same value when invoked repeatedly`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+      val hashCode = queryRefImpl.hashCode()
+      repeat(3) { queryRefImpl.hashCode() shouldBe hashCode }
     }
   }
 
   @Test
-  fun `constructor accepts null values for nullable parameters`() {
-    val values = Arb.queryRefImpl().next()
-    val queryRefImpl =
-      QueryRefImpl(
-        dataConnect = values.dataConnect,
-        operationName = values.operationName,
-        variables = values.variables,
-        dataDeserializer = values.dataDeserializer,
-        variablesSerializer = values.variablesSerializer,
-        callerSdkType = values.callerSdkType,
-        variablesSerializersModule = null,
-        dataSerializersModule = null,
-      )
-
-    queryRefImpl.asClue {
-      assertSoftly {
-        it.dataConnect shouldBeSameInstanceAs values.dataConnect
-        it.operationName shouldBeSameInstanceAs values.operationName
-        it.variables shouldBeSameInstanceAs values.variables
-        it.dataDeserializer shouldBeSameInstanceAs values.dataDeserializer
-        it.variablesSerializer shouldBeSameInstanceAs values.variablesSerializer
-        it.callerSdkType shouldBe values.callerSdkType
-        it.variablesSerializersModule.shouldBeNull()
-        it.dataSerializersModule.shouldBeNull()
+  fun `hashCode() should return the same value when invoked on distinct, but equal, objects`() =
+    runTest {
+      checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+        queryRefImpl.hashCode() shouldBe queryRefImpl.copy().hashCode()
       }
     }
-  }
-
-  @Test
-  fun `hashCode() should return the same value when invoked repeatedly`() {
-    val queryRefImpl: QueryRefImpl<*, *> = Arb.queryRefImpl().next()
-    val hashCode = queryRefImpl.hashCode()
-    repeat(10) { queryRefImpl.hashCode() shouldBe hashCode }
-  }
-
-  @Test
-  fun `hashCode() should return the same value when invoked on distinct, but equal, objects`() {
-    val queryRefImpl1: QueryRefImpl<*, *> = Arb.queryRefImpl().next()
-    val queryRefImpl2: QueryRefImpl<*, *> = queryRefImpl1.copy()
-    queryRefImpl1 shouldNotBeSameInstanceAs queryRefImpl2 // verify test precondition
-    repeat(10) { queryRefImpl1.hashCode() shouldBe queryRefImpl2.hashCode() }
-  }
 
   @Test
   fun `hashCode() should incorporate dataConnect`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(dataConnect = mockk(name = stringArb.next())) }
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<FirebaseDataConnectInternal>()
+    ) { queryRefImpl1, newDataConnect ->
+      assume(queryRefImpl1.dataConnect.hashCode() != newDataConnect.hashCode())
+      val queryRefImpl2 = queryRefImpl1.withDataConnect(newDataConnect)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
+    }
   }
 
   @Test
   fun `hashCode() should incorporate operationName`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(operationName = stringArb.next()) }
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.string()) {
+      queryRefImpl1,
+      newOperationName ->
+      assume(queryRefImpl1.operationName.hashCode() != newOperationName.hashCode())
+      val queryRefImpl2 = queryRefImpl1.copy(operationName = newOperationName)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
+    }
   }
 
   @Test
   fun `hashCode() should incorporate variables`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(variables = TestVariables(stringArb.next())) }
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.mock<TestVariables>()) {
+      queryRefImpl1,
+      newVariables ->
+      assume(queryRefImpl1.variables.hashCode() != newVariables.hashCode())
+      val queryRefImpl2 = queryRefImpl1.copy(variables = newVariables)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
+    }
   }
 
   @Test
   fun `hashCode() should incorporate dataDeserializer`() = runTest {
-    verifyHashCodeEventuallyDiffers { it.copy(dataDeserializer = mockk(name = stringArb.next())) }
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<DeserializationStrategy<TestData>>()
+    ) { queryRefImpl1, newDataDeserializer ->
+      assume(queryRefImpl1.dataDeserializer.hashCode() != newDataDeserializer.hashCode())
+      val queryRefImpl2 = queryRefImpl1.copy(dataDeserializer = newDataDeserializer)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
+    }
   }
 
   @Test
   fun `hashCode() should incorporate variablesSerializer`() = runTest {
-    verifyHashCodeEventuallyDiffers {
-      it.copy(variablesSerializer = mockk(name = stringArb.next()))
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<SerializationStrategy<TestVariables>>()
+    ) { queryRefImpl1, newVariablesSerializer ->
+      assume(queryRefImpl1.variablesSerializer.hashCode() != newVariablesSerializer.hashCode())
+      val queryRefImpl2 = queryRefImpl1.copy(variablesSerializer = newVariablesSerializer)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
     }
   }
 
   @Test
   fun `hashCode() should incorporate callerSdkType`() = runTest {
-    verifyHashCodeEventuallyDiffers {
-      it.copy(callerSdkType = Arb.callerSdkType().filterNotEqual(it.callerSdkType).next())
-    }
-  }
-
-  @Test
-  fun `hashCode() should incorporate variablesSerializersModule`() = runTest {
-    verifyHashCodeEventuallyDiffers {
-      it.copy(variablesSerializersModule = mockk(name = stringArb.next()))
-    }
-    verifyHashCodeEventuallyDiffers {
-      it.copy(
-        variablesSerializersModule =
-          if (it.variablesSerializersModule === null) mockk(name = stringArb.next()) else null
-      )
+    // Increase the `maxDiscardPercentage` because it's default value is 10%, but roughly 50% will
+    // be discarded because there are only two distinct values for `callerSdkType`.
+    checkAll(
+      propTestConfig.copy(maxDiscardPercentage = 70),
+      Arb.dataConnect.queryRefImpl(),
+      Arb.enum<CallerSdkType>()
+    ) { queryRefImpl1, newCallerSdkType ->
+      assume(queryRefImpl1.callerSdkType.hashCode() != newCallerSdkType.hashCode())
+      val queryRefImpl2 = queryRefImpl1.copy(callerSdkType = newCallerSdkType)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
     }
   }
 
   @Test
   fun `hashCode() should incorporate dataSerializersModule`() = runTest {
-    verifyHashCodeEventuallyDiffers {
-      it.copy(dataSerializersModule = mockk(name = stringArb.next()))
-    }
-    verifyHashCodeEventuallyDiffers {
-      it.copy(
-        dataSerializersModule =
-          if (it.dataSerializersModule === null) mockk(name = stringArb.next()) else null
-      )
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.serializersModule()) {
+      queryRefImpl1,
+      newDataSerializersModule ->
+      assume(queryRefImpl1.dataSerializersModule.hashCode() != newDataSerializersModule.hashCode())
+      val queryRefImpl2 = queryRefImpl1.copy(dataSerializersModule = newDataSerializersModule)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
     }
   }
 
-  private suspend fun verifyHashCodeEventuallyDiffers(
-    otherFactory:
-      (other: QueryRefImpl<TestData, TestVariables>) -> QueryRefImpl<TestData, TestVariables>
-  ) {
-    val obj1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    retry(maxRetry = 50, timeout = Duration.INFINITE) {
-      val obj2: QueryRefImpl<TestData, TestVariables> = otherFactory(obj1)
-      obj1.hashCode() shouldNotBe obj2.hashCode()
+  @Test
+  fun `hashCode() should incorporate variablesSerializersModule`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.serializersModule()) {
+      queryRefImpl1,
+      newVariablesSerializersModule ->
+      assume(
+        queryRefImpl1.variablesSerializersModule.hashCode() !=
+          newVariablesSerializersModule.hashCode()
+      )
+      val queryRefImpl2 =
+        queryRefImpl1.copy(variablesSerializersModule = newVariablesSerializersModule)
+      queryRefImpl1.hashCode() shouldNotBe queryRefImpl2.hashCode()
     }
   }
 
   @Test
   fun `equals(this) should return true`() = runTest {
-    val queryRefImpl: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    queryRefImpl.equals(queryRefImpl) shouldBe true
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+      queryRefImpl.equals(queryRefImpl) shouldBe true
+    }
   }
 
   @Test
   fun `equals(equal, but distinct, instance) should return true`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2: QueryRefImpl<TestData, TestVariables> = queryRefImpl1.copy()
-    queryRefImpl1 shouldNotBeSameInstanceAs queryRefImpl2 // verify test precondition
-    queryRefImpl1.equals(queryRefImpl2) shouldBe true
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl1 ->
+      val queryRefImpl2 = queryRefImpl1.copy()
+      queryRefImpl1.equals(queryRefImpl2) shouldBe true
+    }
   }
 
   @Test
   fun `equals(null) should return false`() = runTest {
-    val queryRefImpl: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    queryRefImpl.equals(null) shouldBe false
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+      queryRefImpl.equals(null) shouldBe false
+    }
   }
 
   @Test
   fun `equals(an object of a different type) should return false`() = runTest {
-    val queryRefImpl: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    queryRefImpl.equals("not a QueryRefImpl") shouldBe false
+    val othersArb =
+      Arb.choice(
+        Arb.string(),
+        Arb.int(),
+        Arb.dataConnect.operationRefImpl<Nothing, TestVariables>(),
+        Arb.dataConnect.mutationRefImpl<Nothing, TestVariables>()
+      )
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), othersArb) { queryRefImpl, other ->
+      queryRefImpl.equals(other) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only dataConnect differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 = queryRefImpl1.copy(dataConnect = mockk(stringArb.next()))
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<FirebaseDataConnectInternal>()
+    ) { queryRefImpl1, newDataConnect ->
+      assume(queryRefImpl1.dataConnect != newDataConnect)
+      val queryRefImpl2 = queryRefImpl1.withDataConnect(newDataConnect)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only operationName differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 = queryRefImpl1.copy(operationName = queryRefImpl1.operationName + "2")
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.string()) {
+      queryRefImpl1,
+      newOperationName ->
+      assume(queryRefImpl1.operationName != newOperationName)
+      val queryRefImpl2 = queryRefImpl1.copy(operationName = newOperationName)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only variables differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 =
-      queryRefImpl1.copy(variables = TestVariables(queryRefImpl1.variables.bar + "2"))
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.mock<TestVariables>()) {
+      queryRefImpl1,
+      newVariables ->
+      assume(queryRefImpl1.variables != newVariables)
+      val queryRefImpl2 = queryRefImpl1.copy(variables = newVariables)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only dataDeserializer differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 = queryRefImpl1.copy(dataDeserializer = mockk(stringArb.next()))
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<DeserializationStrategy<TestData>>()
+    ) { queryRefImpl1, newDataDeserializer ->
+      assume(queryRefImpl1.dataDeserializer != newDataDeserializer)
+      val queryRefImpl2 = queryRefImpl1.copy(dataDeserializer = newDataDeserializer)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only variablesSerializer differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 = queryRefImpl1.copy(variablesSerializer = mockk(stringArb.next()))
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.mock<SerializationStrategy<TestVariables>>()
+    ) { queryRefImpl1, newVariablesSerializer ->
+      assume(queryRefImpl1.variablesSerializer != newVariablesSerializer)
+      val queryRefImpl2 = queryRefImpl1.copy(variablesSerializer = newVariablesSerializer)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only callerSdkType differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(queryRefImpl1.callerSdkType).next()
-    val queryRefImpl2 = queryRefImpl1.copy(callerSdkType = callerSdkType2)
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
-  }
-
-  @Test
-  fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 = queryRefImpl1.copy(variablesSerializersModule = mockk(stringArb.next()))
-    val queryRefImplNull = queryRefImpl1.copy(variablesSerializersModule = null)
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
-    queryRefImplNull.equals(queryRefImpl1) shouldBe false
-    queryRefImpl1.equals(queryRefImplNull) shouldBe false
+    // Increase the `maxDiscardPercentage` because it's default value is 10%, but roughly 50% will
+    // be discarded because there are only two distinct values for `callerSdkType`.
+    checkAll(
+      propTestConfig.copy(maxDiscardPercentage = 70),
+      Arb.dataConnect.queryRefImpl(),
+      Arb.enum<CallerSdkType>()
+    ) { queryRefImpl1, newCallerSdkType ->
+      assume(queryRefImpl1.callerSdkType != newCallerSdkType)
+      val queryRefImpl2 = queryRefImpl1.copy(callerSdkType = newCallerSdkType)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `equals() should return false when only dataSerializersModule differs`() = runTest {
-    val queryRefImpl1: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val queryRefImpl2 = queryRefImpl1.copy(dataSerializersModule = mockk(stringArb.next()))
-    val queryRefImplNull = queryRefImpl1.copy(dataSerializersModule = null)
-    queryRefImpl1.equals(queryRefImpl2) shouldBe false
-    queryRefImplNull.equals(queryRefImpl1) shouldBe false
-    queryRefImpl1.equals(queryRefImplNull) shouldBe false
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.serializersModule()) {
+      queryRefImpl1,
+      newDataSerializersModule ->
+      assume(queryRefImpl1.dataSerializersModule != newDataSerializersModule)
+      val queryRefImpl2 = queryRefImpl1.copy(dataSerializersModule = newDataSerializersModule)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
+  }
+
+  @Test
+  fun `equals() should return false when only variablesSerializersModule differs`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.serializersModule()) {
+      queryRefImpl1,
+      newVariablesSerializersModule ->
+      assume(queryRefImpl1.variablesSerializersModule != newVariablesSerializersModule)
+      val queryRefImpl2 =
+        queryRefImpl1.copy(variablesSerializersModule = newVariablesSerializersModule)
+      queryRefImpl1.equals(queryRefImpl2) shouldBe false
+    }
   }
 
   @Test
   fun `toString() should incorporate the string representations of public properties`() = runTest {
-    val queryRefImpl: QueryRefImpl<TestData, TestVariables> = Arb.queryRefImpl().next()
-    val callerSdkType2 = Arb.callerSdkType().filterNotEqual(queryRefImpl.callerSdkType).next()
-    val queryRefImpls =
-      listOf(
-        queryRefImpl,
-        queryRefImpl.copy(callerSdkType = callerSdkType2),
-        queryRefImpl.copy(dataSerializersModule = null),
-        queryRefImpl.copy(variablesSerializersModule = null),
-      )
-    val toStringResult = queryRefImpl.toString()
-
-    assertSoftly {
-      queryRefImpls.forEach {
-        it.asClue {
-          toStringResult.shouldContain("dataConnect=${queryRefImpl.dataConnect}")
-          toStringResult.shouldContain("operationName=${queryRefImpl.operationName}")
-          toStringResult.shouldContain("variables=${queryRefImpl.variables}")
-          toStringResult.shouldContain("dataDeserializer=${queryRefImpl.dataDeserializer}")
-          toStringResult.shouldContain("variablesSerializer=${queryRefImpl.variablesSerializer}")
-          toStringResult.shouldContain("callerSdkType=${queryRefImpl.callerSdkType}")
-          toStringResult.shouldContain(
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl ->
+      val toStringResult = queryRefImpl.toString()
+      assertSoftly {
+        withClue("shouldStartWith") { toStringResult shouldStartWith "QueryRefImpl(" }
+        withClue("shouldEndWith") { toStringResult shouldEndWith ")" }
+        withClue("dataConnect") {
+          toStringResult shouldContainWithNonAbuttingText "dataConnect=${queryRefImpl.dataConnect}"
+        }
+        withClue("operationName") {
+          toStringResult shouldContainWithNonAbuttingText
+            "operationName=${queryRefImpl.operationName}"
+        }
+        withClue("variables") {
+          toStringResult shouldContainWithNonAbuttingText "variables=${queryRefImpl.variables}"
+        }
+        withClue("dataDeserializer") {
+          toStringResult shouldContainWithNonAbuttingText
+            "dataDeserializer=${queryRefImpl.dataDeserializer}"
+        }
+        withClue("variablesSerializer") {
+          toStringResult shouldContainWithNonAbuttingText
+            "variablesSerializer=${queryRefImpl.variablesSerializer}"
+        }
+        withClue("callerSdkType") {
+          toStringResult shouldContainWithNonAbuttingText
+            "callerSdkType=${queryRefImpl.callerSdkType}"
+        }
+        withClue("dataSerializersModule") {
+          toStringResult shouldContainWithNonAbuttingText
             "dataSerializersModule=${queryRefImpl.dataSerializersModule}"
-          )
-          toStringResult.shouldContain(
+        }
+        withClue("variablesSerializersModule") {
+          toStringResult shouldContainWithNonAbuttingText
             "variablesSerializersModule=${queryRefImpl.variablesSerializersModule}"
-          )
         }
       }
     }
   }
 
   @Test
-  fun `toString() should include null when dataSerializersModule is null`() = runTest {
-    val queryRefImpl: QueryRefImpl<TestData, TestVariables> =
-      Arb.queryRefImpl().next().copy(dataSerializersModule = null)
-    val toStringResult = queryRefImpl.toString()
-
-    assertSoftly {
-      toStringResult.shouldContain("dataConnect=${queryRefImpl.dataConnect}")
-      toStringResult.shouldContain("operationName=${queryRefImpl.operationName}")
-      toStringResult.shouldContain("variables=${queryRefImpl.variables}")
-      toStringResult.shouldContain("dataDeserializer=${queryRefImpl.dataDeserializer}")
-      toStringResult.shouldContain("variablesSerializer=${queryRefImpl.variablesSerializer}")
-      toStringResult.shouldContain("callerSdkType=${queryRefImpl.callerSdkType}")
-      toStringResult.shouldContain("dataSerializersModule=null")
-      toStringResult.shouldContain(
-        "variablesSerializersModule=${queryRefImpl.variablesSerializersModule}"
-      )
+  fun `copy() with no arguments should return an equal, but distinct, object`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { queryRefImpl1 ->
+      val queryRefImpl2 = queryRefImpl1.copy()
+      queryRefImpl2 shouldNotBeSameInstanceAs queryRefImpl1
+      queryRefImpl2.shouldHavePropertiesEqualTo(queryRefImpl1)
     }
   }
 
   @Test
-  fun `toString() should include null when variablesSerializersModule is null`() = runTest {
-    val queryRefImpl: QueryRefImpl<TestData, TestVariables> =
-      Arb.queryRefImpl().next().copy(variablesSerializersModule = null)
-    val toStringResult = queryRefImpl.toString()
+  fun `copy() with all arguments should return an object with its properties set to the given arguments`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.queryRefImpl(),
+        Arb.dataConnect.operationRefConstructorArguments<TestData?, TestVariables>()
+      ) { queryRefImpl1, newValues ->
+        val queryRefImpl2 =
+          queryRefImpl1.copy(
+            operationName = newValues.operationName,
+            variables = newValues.variables,
+            dataDeserializer = newValues.dataDeserializer,
+            variablesSerializer = newValues.variablesSerializer,
+            callerSdkType = newValues.callerSdkType,
+            dataSerializersModule = newValues.dataSerializersModule,
+            variablesSerializersModule = newValues.variablesSerializersModule,
+          )
 
-    assertSoftly {
-      toStringResult.shouldContain("dataConnect=${queryRefImpl.dataConnect}")
-      toStringResult.shouldContain("operationName=${queryRefImpl.operationName}")
-      toStringResult.shouldContain("variables=${queryRefImpl.variables}")
-      toStringResult.shouldContain("dataDeserializer=${queryRefImpl.dataDeserializer}")
-      toStringResult.shouldContain("variablesSerializer=${queryRefImpl.variablesSerializer}")
-      toStringResult.shouldContain("callerSdkType=${queryRefImpl.callerSdkType}")
-      toStringResult.shouldContain("dataSerializersModule=${queryRefImpl.dataSerializersModule}")
-      toStringResult.shouldContain("variablesSerializersModule=null")
+        queryRefImpl2 shouldNotBeSameInstanceAs queryRefImpl1
+        queryRefImpl2.shouldHavePropertiesEqualTo(
+          newValues.copy(dataConnect = queryRefImpl1.dataConnect)
+        )
+      }
     }
-  }
+
+  @Test
+  fun `withVariablesSerializer() with only required arguments should return an equal object, except for the given arguments`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.queryRefImpl(),
+        Arb.mock<TestVariables2>(),
+        Arb.mock<SerializationStrategy<TestVariables2>>()
+      ) { queryRefImpl1, newVariables, newVariablesSerializer ->
+        val queryRefImpl2 =
+          queryRefImpl1.withVariablesSerializer(
+            variables = newVariables,
+            variablesSerializer = newVariablesSerializer,
+          )
+
+        val expected =
+          OperationRefConstructorArguments(queryRefImpl1)
+            .withVariablesSerializer(newVariables, newVariablesSerializer)
+        queryRefImpl2.shouldHavePropertiesEqualTo(expected)
+      }
+    }
+
+  @Test
+  fun `withVariablesSerializer() with all arguments should return an equal object, except for the given arguments`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.queryRefImpl(),
+        Arb.mock<TestVariables2>(),
+        Arb.mock<SerializationStrategy<TestVariables2>>(),
+        Arb.mock<SerializersModule>()
+      ) { queryRefImpl1, newVariables, newVariablesSerializer, newVariablesSerializersModule ->
+        val queryRefImpl2 =
+          queryRefImpl1.withVariablesSerializer(
+            variables = newVariables,
+            variablesSerializer = newVariablesSerializer,
+            variablesSerializersModule = newVariablesSerializersModule,
+          )
+
+        val expected =
+          OperationRefConstructorArguments(queryRefImpl1)
+            .withVariablesSerializer(newVariables, newVariablesSerializer)
+            .copy(variablesSerializersModule = newVariablesSerializersModule)
+        queryRefImpl2.shouldHavePropertiesEqualTo(expected)
+      }
+    }
+
+  @Test
+  fun `withDataDeserializer() with only required arguments should return an equal object, except for the given arguments`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.queryRefImpl(),
+        Arb.mock<DeserializationStrategy<TestData2>>()
+      ) { queryRefImpl1, newDataDeserializer ->
+        val queryRefImpl2 =
+          queryRefImpl1.withDataDeserializer(dataDeserializer = newDataDeserializer)
+
+        val expected =
+          OperationRefConstructorArguments(queryRefImpl1).withDataDeserializer(newDataDeserializer)
+        queryRefImpl2.shouldHavePropertiesEqualTo(expected)
+      }
+    }
+
+  @Test
+  fun `withDataDeserializer() with all arguments should return an equal object, except for the given arguments`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.queryRefImpl(),
+        Arb.mock<DeserializationStrategy<TestData2>>(),
+        Arb.mock<SerializersModule>()
+      ) { queryRefImpl1, newDataDeserializer, newDataSerializersModule ->
+        val queryRefImpl2 =
+          queryRefImpl1.withDataDeserializer(
+            dataDeserializer = newDataDeserializer,
+            dataSerializersModule = newDataSerializersModule
+          )
+
+        val expected =
+          OperationRefConstructorArguments(queryRefImpl1)
+            .withDataDeserializer(newDataDeserializer)
+            .copy(dataSerializersModule = newDataSerializersModule)
+        queryRefImpl2.shouldHavePropertiesEqualTo(expected)
+      }
+    }
 
   private companion object {
-    val stringArb = Arb.string(6, codepoints = Codepoint.alphanumeric())
+    val propTestConfig =
+      PropTestConfig(
+        iterations = 100,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
+      )
 
-    fun Arb.Companion.testVariables(): Arb<TestVariables> = arbitrary {
-      val stringArb = Arb.string(6, Codepoint.alphanumeric())
-      TestVariables(stringArb.bind())
-    }
+    fun DataConnectArb.queryRefImpl(): Arb<QueryRefImpl<TestData?, TestVariables>> =
+      queryRefImpl<TestData?, TestVariables>()
 
-    fun Arb.Companion.queryRefImpl(): Arb<QueryRefImpl<TestData, TestVariables>> =
-      queryRefImpl(Arb.testVariables())
+    fun DataConnectArb.queryRefImpl(
+      dataConnect: FirebaseDataConnectInternal
+    ): Arb<QueryRefImpl<TestData?, TestVariables>> =
+      queryRefImpl().map { it.withDataConnect(dataConnect) }
 
     fun <Data, Variables> dataConnectWithQueryResult(
       result: Result<Data>,

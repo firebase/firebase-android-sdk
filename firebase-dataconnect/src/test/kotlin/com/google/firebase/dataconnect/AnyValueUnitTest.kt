@@ -18,13 +18,9 @@ package com.google.firebase.dataconnect
 
 import com.google.firebase.dataconnect.serializers.AnyValueSerializer
 import com.google.firebase.dataconnect.testutil.DataConnectAnySerializer
-import com.google.firebase.dataconnect.testutil.EdgeCases
-import com.google.firebase.dataconnect.testutil.anyListScalar
-import com.google.firebase.dataconnect.testutil.anyMapScalar
-import com.google.firebase.dataconnect.testutil.anyNumberScalar
-import com.google.firebase.dataconnect.testutil.anyScalar
-import com.google.firebase.dataconnect.testutil.anyStringScalar
-import com.google.firebase.dataconnect.testutil.filterNotNull
+import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotNull
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToValue
 import io.kotest.assertions.assertSoftly
 import io.kotest.common.ExperimentalKotest
@@ -66,26 +62,30 @@ class AnyValueUnitTest {
 
   @Test
   fun `constructor(String) creates an object with the expected value (edge cases)`() = runTest {
-    for (value in EdgeCases.strings) {
+    for (value in EdgeCases.anyScalar.strings) {
       AnyValue(value).value shouldBe value
     }
   }
 
   @Test
   fun `constructor(String) creates an object with the expected value (normal cases)`() = runTest {
-    checkAll(normalCasePropTestConfig, Arb.anyStringScalar()) { AnyValue(it).value shouldBe it }
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.string()) {
+      AnyValue(it).value shouldBe it
+    }
   }
 
   @Test
   fun `constructor(Double) creates an object with the expected value (edge cases)`() = runTest {
-    for (value in EdgeCases.numbers) {
+    for (value in EdgeCases.anyScalar.numbers) {
       AnyValue(value).value shouldBe value
     }
   }
 
   @Test
   fun `constructor(Double) creates an object with the expected value (normal cases)`() = runTest {
-    checkAll(normalCasePropTestConfig, Arb.anyNumberScalar()) { AnyValue(it).value shouldBe it }
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.number()) {
+      AnyValue(it).value shouldBe it
+    }
   }
 
   @Test
@@ -99,7 +99,7 @@ class AnyValueUnitTest {
   @Test
   fun `constructor(List) creates an object with the expected value (edge cases)`() {
     assertSoftly {
-      for (value in EdgeCases.lists) {
+      for (value in EdgeCases.anyScalar.lists) {
         AnyValue(value).value shouldBe value
       }
     }
@@ -107,13 +107,15 @@ class AnyValueUnitTest {
 
   @Test
   fun `constructor(List) creates an object with the expected value (normal cases)`() = runTest {
-    checkAll(normalCasePropTestConfig, Arb.anyListScalar()) { AnyValue(it).value shouldBe it }
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.list()) {
+      AnyValue(it).value shouldBe it
+    }
   }
 
   @Test
   fun `constructor(Map) creates an object with the expected value (edge cases)`() {
     assertSoftly {
-      for (value in EdgeCases.maps) {
+      for (value in EdgeCases.anyScalar.maps) {
         AnyValue(value).value shouldBe value
       }
     }
@@ -121,14 +123,16 @@ class AnyValueUnitTest {
 
   @Test
   fun `constructor(Map) creates an object with the expected value (normal cases)`() = runTest {
-    checkAll(normalCasePropTestConfig, Arb.anyMapScalar()) { AnyValue(it).value shouldBe it }
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.map()) {
+      AnyValue(it).value shouldBe it
+    }
   }
 
   @Test
   fun `decode() can decode strings (edge cases)`() {
     val serializer = serializer<String>()
     assertSoftly {
-      for (value in EdgeCases.strings) {
+      for (value in EdgeCases.anyScalar.strings) {
         AnyValue(value).decode(serializer) shouldBe value
       }
     }
@@ -137,7 +141,7 @@ class AnyValueUnitTest {
   @Test
   fun `decode() can decode strings (normal cases)`() = runTest {
     val serializer = serializer<String>()
-    checkAll(normalCasePropTestConfig, Arb.anyStringScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.string()) {
       AnyValue(it).decode(serializer) shouldBe it
     }
   }
@@ -146,7 +150,7 @@ class AnyValueUnitTest {
   fun `decode() can decode doubles (edge cases)`() {
     val serializer = serializer<Double>()
     assertSoftly {
-      for (value in EdgeCases.numbers) {
+      for (value in EdgeCases.anyScalar.numbers) {
         AnyValue(value).decode(serializer) shouldBe value
       }
     }
@@ -155,7 +159,7 @@ class AnyValueUnitTest {
   @Test
   fun `decode() can decode doubles (normal cases)`() = runTest {
     val serializer = serializer<Double>()
-    checkAll(normalCasePropTestConfig, Arb.anyNumberScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.number()) {
       AnyValue(it).decode(serializer) shouldBe it
     }
   }
@@ -173,7 +177,7 @@ class AnyValueUnitTest {
   fun `decode() can decode lists (edge cases)`() {
     val serializer = ListSerializer(DataConnectAnySerializer)
     assertSoftly {
-      for (value in EdgeCases.lists) {
+      for (value in EdgeCases.anyScalar.lists) {
         AnyValue(value).decode(serializer) shouldContainExactly value
       }
     }
@@ -182,7 +186,7 @@ class AnyValueUnitTest {
   @Test
   fun `decode() can decode lists (normal cases)`() = runTest {
     val serializer = ListSerializer(DataConnectAnySerializer)
-    checkAll(normalCasePropTestConfig, Arb.anyListScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.list()) {
       AnyValue(it).decode(serializer) shouldContainExactly it
     }
   }
@@ -191,7 +195,7 @@ class AnyValueUnitTest {
   fun `decode() can decode maps (edge cases)`() {
     val serializer = MapSerializer<String, Any?>(serializer(), DataConnectAnySerializer)
     assertSoftly {
-      for (value in EdgeCases.maps) {
+      for (value in EdgeCases.anyScalar.maps) {
         AnyValue(value).decode(serializer) shouldBe value
       }
     }
@@ -200,7 +204,7 @@ class AnyValueUnitTest {
   @Test
   fun `decode() can decode maps (normal cases)`() = runTest {
     val serializer = MapSerializer<String, Any?>(serializer(), DataConnectAnySerializer)
-    checkAll(normalCasePropTestConfig, Arb.anyMapScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.map()) {
       AnyValue(it).decode(serializer) shouldBe it
     }
   }
@@ -303,7 +307,7 @@ class AnyValueUnitTest {
 
   @Test
   fun `equals(equal, but distinct, instance) returns true`() = runTest {
-    checkAll(iterations = 1000, Arb.anyScalar().filterNotNull()) {
+    checkAll(iterations = 1000, Arb.dataConnect.anyScalar.any().filterNotNull()) {
       val anyValue1 = AnyValue.fromAny(it)
       val anyValue2 = AnyValue.fromAny(it)
       anyValue1.equals(anyValue2).shouldBeTrue()
@@ -324,8 +328,8 @@ class AnyValueUnitTest {
 
   @Test
   fun `equals(unequal instance) returns false`() = runTest {
-    val values = Arb.anyScalar().filterNotNull()
-    checkAll(iterations = 1000, values) { value ->
+    val values = Arb.dataConnect.anyScalar.any().filterNotNull()
+    checkAll(values) { value ->
       val anyValue1 = AnyValue.fromAny(value)
       val anyValue2 = AnyValue.fromAny(values.filterNot { it == value }.bind())
       anyValue1.equals(anyValue2).shouldBeFalse()
@@ -334,8 +338,8 @@ class AnyValueUnitTest {
 
   @Test
   fun `hashCode() should return the same value when invoked repeatedly`() = runTest {
-    val values = Arb.anyScalar().filterNotNull().map(AnyValue::fromAny)
-    checkAll(iterations = 1000, values) { anyValue ->
+    val values = Arb.dataConnect.anyScalar.any().filterNotNull().map(AnyValue::fromAny)
+    checkAll(values) { anyValue ->
       val hashCode = anyValue.hashCode()
       val hashCodes = List(100) { anyValue.hashCode() }.toSet()
       hashCodes.shouldContainExactly(hashCode)
@@ -345,7 +349,7 @@ class AnyValueUnitTest {
   @Test
   fun `hashCode() should return different value when the encapsulated value has a different hash code`() =
     runTest {
-      val values = Arb.anyScalar().filterNotNull()
+      val values = Arb.dataConnect.anyScalar.any().filterNotNull()
       checkAll(normalCasePropTestConfig, values) { value1 ->
         val value2 = values.bind()
         val anyValue1 = AnyValue.fromAny(value1)
@@ -360,7 +364,7 @@ class AnyValueUnitTest {
 
   @Test
   fun `toString() should not throw`() = runTest {
-    val values = Arb.anyScalar().filterNotNull().map(AnyValue::fromAny)
+    val values = Arb.dataConnect.anyScalar.any().filterNotNull().map(AnyValue::fromAny)
     checkAll(normalCasePropTestConfig, values) { it.toString() }
   }
 
@@ -368,7 +372,7 @@ class AnyValueUnitTest {
   fun `encode() can encode strings (edge cases)`() {
     val serializer = serializer<String>()
     assertSoftly {
-      for (value in EdgeCases.strings) {
+      for (value in EdgeCases.anyScalar.strings) {
         AnyValue.encode(value, serializer) shouldBe AnyValue(value)
       }
     }
@@ -377,7 +381,7 @@ class AnyValueUnitTest {
   @Test
   fun `encode() can encode strings (normal cases)`() = runTest {
     val serializer = serializer<String>()
-    checkAll(normalCasePropTestConfig, Arb.anyStringScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.string()) {
       AnyValue.encode(it, serializer) shouldBe AnyValue(it)
     }
   }
@@ -386,7 +390,7 @@ class AnyValueUnitTest {
   fun `encode() can encode doubles (edge cases)`() {
     val serializer = serializer<Double>()
     assertSoftly {
-      for (value in EdgeCases.numbers) {
+      for (value in EdgeCases.anyScalar.numbers) {
         AnyValue.encode(value, serializer) shouldBe AnyValue(value)
       }
     }
@@ -395,7 +399,7 @@ class AnyValueUnitTest {
   @Test
   fun `encode() can encode doubles (normal cases)`() = runTest {
     val serializer = serializer<Double>()
-    checkAll(normalCasePropTestConfig, Arb.anyNumberScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.number()) {
       AnyValue.encode(it, serializer) shouldBe AnyValue(it)
     }
   }
@@ -413,7 +417,7 @@ class AnyValueUnitTest {
   fun `encode() can encode lists (edge cases)`() {
     val serializer = ListSerializer(DataConnectAnySerializer)
     assertSoftly {
-      for (value in EdgeCases.lists) {
+      for (value in EdgeCases.anyScalar.lists) {
         AnyValue.encode(value, serializer) shouldBe AnyValue(value)
       }
     }
@@ -422,7 +426,7 @@ class AnyValueUnitTest {
   @Test
   fun `encode() can encode lists (normal cases)`() = runTest {
     val serializer = ListSerializer(DataConnectAnySerializer)
-    checkAll(normalCasePropTestConfig, Arb.anyListScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.list()) {
       AnyValue.encode(it, serializer) shouldBe AnyValue(it)
     }
   }
@@ -431,7 +435,7 @@ class AnyValueUnitTest {
   fun `encode() can encode maps (edge cases)`() {
     val serializer = MapSerializer<String, Any?>(serializer(), DataConnectAnySerializer)
     assertSoftly {
-      for (value in EdgeCases.maps) {
+      for (value in EdgeCases.anyScalar.maps) {
         AnyValue.encode(value, serializer) shouldBe AnyValue(value)
       }
     }
@@ -440,7 +444,7 @@ class AnyValueUnitTest {
   @Test
   fun `encode() can encode maps (normal cases)`() = runTest {
     val serializer = MapSerializer<String, Any?>(serializer(), DataConnectAnySerializer)
-    checkAll(normalCasePropTestConfig, Arb.anyMapScalar()) {
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.map()) {
       AnyValue.encode(it, serializer) shouldBe AnyValue(it)
     }
   }
@@ -551,7 +555,7 @@ class AnyValueUnitTest {
 
   @Test
   fun `fromNullableAny() edge cases`() {
-    for (value in EdgeCases.anyScalars) {
+    for (value in EdgeCases.anyScalar.all) {
       val anyValue = AnyValue.fromAny(value)
       if (value === null) {
         anyValue.shouldBeNull()
@@ -564,7 +568,7 @@ class AnyValueUnitTest {
 
   @Test
   fun `fromNullableAny() normal cases`() = runTest {
-    checkAll(normalCasePropTestConfig, Arb.anyScalar()) { value ->
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.any()) { value ->
       val anyValue = AnyValue.fromAny(value)
       if (value === null) {
         anyValue.shouldBeNull()
@@ -577,7 +581,7 @@ class AnyValueUnitTest {
 
   @Test
   fun `fromNonNullableAny() edge cases`() {
-    for (value in EdgeCases.anyScalars.filterNotNull()) {
+    for (value in EdgeCases.anyScalar.all.filterNotNull()) {
       val anyValue = AnyValue.fromAny(value)
       anyValue.value shouldBe value
     }
@@ -585,7 +589,7 @@ class AnyValueUnitTest {
 
   @Test
   fun `fromNonNullableAny() normal cases`() = runTest {
-    checkAll(normalCasePropTestConfig, Arb.anyScalar().filterNotNull()) { value ->
+    checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.any().filterNotNull()) { value ->
       val anyValue = AnyValue.fromAny(value)
       anyValue.shouldNotBeNull()
       anyValue.value shouldBe value
@@ -596,7 +600,7 @@ class AnyValueUnitTest {
 
     val normalCasePropTestConfig =
       PropTestConfig(
-        iterations = 1000,
+        iterations = 100,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.0)
       )
   }

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   id("com.android.library")
@@ -25,9 +25,9 @@ plugins {
 }
 
 android {
-  val compileSdkVersion : Int by rootProject
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.dataconnect.connectors"
   compileSdk = compileSdkVersion
@@ -59,9 +59,7 @@ android {
 
   dataconnect {
     configDir = file("../emulator/dataconnect")
-    codegen {
-      connectors = listOf("demo", "keywords")
-    }
+    codegen { connectors = listOf("demo", "keywords") }
   }
 }
 
@@ -72,10 +70,11 @@ dependencies {
 
   testImplementation(project(":firebase-dataconnect:testutil"))
   testImplementation(libs.androidx.test.junit)
+  testImplementation(libs.kotest.assertions)
+  testImplementation(libs.kotest.property)
   testImplementation(libs.kotlin.coroutines.test)
   testImplementation(libs.mockk)
   testImplementation(libs.robolectric)
-  testImplementation(libs.truth)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))
@@ -86,15 +85,14 @@ dependencies {
   androidTestImplementation(libs.kotest.assertions)
   androidTestImplementation(libs.kotest.property)
   androidTestImplementation(libs.kotlin.coroutines.test)
+  androidTestImplementation(libs.testonly.three.ten.abp)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.truth.liteproto.extension)
   androidTestImplementation(libs.turbine)
 }
 
 tasks.withType<KotlinCompile>().all {
-  kotlinOptions {
-    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
-  }
+  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
 }
 
 // Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
@@ -123,28 +121,85 @@ tasks.withType<KotlinCompile>().all {
 // The `--info` argument can be omitted; it merely controls the level of log output.
 tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   outputs.upToDateWhen { false }
-  jsonFile.set(project.layout.projectDirectory.file(
-    "../gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
-        "plugin/DataConnectExecutableVersions.json"))
+  jsonFile.set(
+    project.layout.projectDirectory.file(
+      "../gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/" +
+        "plugin/DataConnectExecutableVersions.json"
+    )
+  )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 
-  val singleVersion: String? = project.providers.gradleProperty("version").orNull
-  val multipleVersions: List<String>? = project.providers.gradleProperty("versions").orNull?.split(',')
-  versions.set(buildList {
-    singleVersion?.let{add(it)}
-    multipleVersions?.let{addAll(it)}
-    if (isEmpty()) {
-      throw Exception("bm6d5ezxzd 'version' or 'versions' property must be specified")
+  val propertyNames =
+    object {
+      val version = "version"
+      val versions = "versions"
+      val updateMode = "updateMode"
+      val defaultVersion = "defaultVersion"
     }
-  })
 
-  updateMode.set(project.providers.gradleProperty("updateMode").map {
-    when (it) {
-      "overwrite" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Overwrite
-      "update" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Update
-      else -> throw Exception("ahe4zadcjs 'updateMode' must be 'overwrite' or 'update', but got: $it")
+  val singleVersion: String? = project.providers.gradleProperty(propertyNames.version).orNull
+  val multipleVersions: List<String>? =
+    project.providers.gradleProperty(propertyNames.versions).orNull?.split(',')
+  versions.set(
+    buildList {
+      singleVersion?.let { add(it) }
+      multipleVersions?.let { addAll(it) }
     }
-  })
+  )
 
-  defaultVersion.set(project.providers.gradleProperty("defaultVersion"))
+  doFirst {
+    if (versions.get().isEmpty()) {
+      logger.warn(
+        "WARNING: no '${propertyNames.version}' or '${propertyNames.versions}' specified " +
+          "for task '$name'; no versions will be added to ${jsonFile.get()}. " +
+          "Try specifying something like '-P${propertyNames.version}=1.2.3' or " +
+          "'-P${propertyNames.versions}=1.2.3,4.5.6' on the gradle command line " +
+          "if you want to add versions (warning code bm6d5ezxzd)"
+      )
+    }
+  }
+
+  updateMode.set(
+    project.providers.gradleProperty(propertyNames.updateMode).map {
+      when (it) {
+        "overwrite" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Overwrite
+        "update" -> UpdateDataConnectExecutableVersionsTask.UpdateMode.Update
+        else ->
+          throw Exception(
+            "Invalid '${propertyNames.updateMode}' specified for task '$name': $it. " +
+              "Valid values are 'update' and 'overwrite'. " +
+              "Try specifying '-P${propertyNames.updateMode}=update' or " +
+              "'-P${propertyNames.updateMode}=overwrite' on the gradle command line. " +
+              "(error code v2e3cfqbnf)"
+          )
+      }
+    }
+  )
+
+  doFirst {
+    if (!updateMode.isPresent) {
+      logger.warn(
+        "WARNING: no '${propertyNames.updateMode}' specified for task '$name'; " +
+          "the default update mode of 'update' will be used when updating ${jsonFile.get()}. " +
+          "Try specifying '-P${propertyNames.updateMode}=update' or " +
+          "'-P${propertyNames.updateMode}=overwrite' on the gradle command line " +
+          "if you want a different update mode, or just want to be explicit about " +
+          "which update mode is in effect (warning code tjyscqmdne)"
+      )
+    }
+  }
+
+  defaultVersion.set(project.providers.gradleProperty(propertyNames.defaultVersion))
+
+  doFirst {
+    if (!defaultVersion.isPresent) {
+      logger.warn(
+        "WARNING: no '${propertyNames.defaultVersion}' specified for task '$name'; " +
+          "the default version will not be updated in ${jsonFile.get()}. " +
+          "Try specifying something like '-P${propertyNames.defaultVersion}=1.2.3' " +
+          "on the gradle command line if you want to update the default version " +
+          "(warning code vqrbrktx9f)"
+      )
+    }
+  }
 }

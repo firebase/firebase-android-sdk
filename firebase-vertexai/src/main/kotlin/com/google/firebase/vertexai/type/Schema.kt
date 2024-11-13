@@ -20,7 +20,16 @@ public abstract class StringFormat private constructor(internal val value: Strin
   public class Custom(value: String) : StringFormat(value)
 }
 
-/** Represents a schema */
+/**
+ * Definition of a data type.
+ *
+ * These types can be objects, but also primitives and arrays. Represents a select subset of an
+ * [OpenAPI 3.0 schema object](https://spec.openapis.org/oas/v3.0.3#schema).
+ *
+ * **Note:** While optional, including a `description` field in your `Schema` is strongly
+ * encouraged. The more information the model has about what it's expected to generate, the better
+ * the results.
+ */
 public class Schema
 internal constructor(
   public val type: String,
@@ -34,7 +43,12 @@ internal constructor(
 ) {
 
   public companion object {
-    /** Returns a schema for a boolean */
+    /**
+     * Returns a [Schema] representing a boolean value.
+     *
+     * @param description An optional description of what the boolean should contain or represent.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
+     */
     @JvmStatic
     @JvmOverloads
     public fun boolean(description: String? = null, nullable: Boolean = false): Schema =
@@ -45,10 +59,14 @@ internal constructor(
       )
 
     /**
-     * Returns a schema for a 32-bit integer number
+     * Returns a [Schema] for a 32-bit signed integer number.
      *
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
+     * **Important:** This [Schema] provides a hint to the model that it should generate a 32-bit
+     * integer, but only guarantees that the value will be an integer. Therefore it's *possible*
+     * that decoding it as an `Int` variable (or `int` in Java) could overflow.
+     *
+     * @param description An optional description of what the integer should contain or represent.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmName("numInt")
@@ -62,10 +80,10 @@ internal constructor(
       )
 
     /**
-     * Returns a schema for a 64-bit integer number
+     * Returns a [Schema] for a 64-bit signed integer number.
      *
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
+     * @param description An optional description of what the number should contain or represent.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmName("numLong")
@@ -78,22 +96,27 @@ internal constructor(
       )
 
     /**
-     * Returns a schema for a floating point number
+     * Returns a [Schema] for a double-precision floating-point number.
      *
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
+     * @param description An optional description of what the number should contain or represent.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmName("numDouble")
     @JvmOverloads
     public fun double(description: String? = null, nullable: Boolean = false): Schema =
-      Schema(description = description, nullable = nullable, type = "NUMBER", format = "double")
+      Schema(description = description, nullable = nullable, type = "NUMBER")
 
     /**
-     * Returns a schema for a floating point number
+     * Returns a [Schema] for a single-precision floating-point number.
      *
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
+     * **Important:** This [Schema] provides a hint to the model that it should generate a
+     * single-precision floating-point number, but only guarantees that the value will be a number.
+     * Therefore it's *possible* that decoding it as a `Float` variable (or `float` in Java) could
+     * overflow.
+     *
+     * @param description An optional description of what the number should contain or represent.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmName("numFloat")
@@ -102,11 +125,11 @@ internal constructor(
       Schema(description = description, nullable = nullable, type = "NUMBER", format = "float")
 
     /**
-     * Returns a schema for a string
+     * Returns a [Schema] for a string.
      *
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
-     * @param format: The pattern that values need to adhere to
+     * @param description An optional description of what the string should contain or represent.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
+     * @param format An optional pattern that values need to adhere to.
      */
     @JvmStatic
     @JvmName("str")
@@ -124,11 +147,25 @@ internal constructor(
       )
 
     /**
-     * Returns a schema for a complex object. In a function, it will be returned as a [JSONObject].
+     * Returns a [Schema] for a complex data type.
      *
-     * @param properties: The map of the object's fields to their schema
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
+     * This schema instructs the model to produce data of type object, which has keys of type
+     * `String` and values of type [Schema].
+     *
+     * **Example:** A `city` could be represented with the following object `Schema`.
+     * ```
+     * Schema.obj(mapOf(
+     *   "name"  to Schema.string(),
+     *   "population" to Schema.integer()
+     * ))
+     * ```
+     *
+     * @param properties The map of the object's property names to their [Schema]s.
+     * @param optionalProperties The list of optional properties. They must correspond to the keys
+     * provided in the `properties` map. By default it's empty, signaling the model that all
+     * properties are to be included.
+     * @param description An optional description of what the object represents.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmOverloads
@@ -153,11 +190,11 @@ internal constructor(
     }
 
     /**
-     * Returns a schema for an array.
+     * Returns a [Schema] for an array.
      *
-     * @param items: The schema of the elements of this array
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
+     * @param items The [Schema] of the elements stored in the array.
+     * @param description An optional description of what the array represents.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmOverloads
@@ -174,11 +211,17 @@ internal constructor(
       )
 
     /**
-     * Returns a schema for an enumeration
+     * Returns a [Schema] for an enumeration.
      *
-     * @param values: The list of valid values for this enumeration
-     * @param description: The description of what the parameter should contain or represent
-     * @param nullable: Whether null is a valid value for this schema
+     * For example, the cardinal directions can be represented as:
+     *
+     * ```
+     * Schema.enumeration(listOf("north", "east", "south", "west"), "Cardinal directions")
+     * ```
+     *
+     * @param values The list of valid values for this enumeration
+     * @param description The description of what the parameter should contain or represent
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmOverloads

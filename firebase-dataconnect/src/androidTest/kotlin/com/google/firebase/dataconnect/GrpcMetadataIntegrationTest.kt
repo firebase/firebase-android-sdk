@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalFirebaseDataConnect::class)
+
 package com.google.firebase.dataconnect
 
 import android.os.Build
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.appcheck.AppCheckProvider
 import com.google.firebase.appcheck.AppCheckProviderFactory
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.generated.GeneratedConnector
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
@@ -44,6 +46,7 @@ import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
 import java.util.Date
+import java.util.Objects
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -57,9 +60,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
 
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
@@ -137,6 +138,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldNotSendAuthMetadataWhenNotLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val queryRef = dataConnect.query("qryfyk7yfppfe", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
 
@@ -149,6 +151,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldNotSendAuthMetadataWhenNotLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val mutationRef =
       dataConnect.mutation("mutckjpte9v9j", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
@@ -162,6 +165,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldSendAuthMetadataWhenLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     firebaseAuthSignIn(dataConnect)
@@ -175,6 +179,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldSendAuthMetadataWhenLoggedIn() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val mutationRef =
       dataConnect.mutation("mutayn7as5k7d", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
@@ -189,6 +194,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldNotSendAuthMetadataAfterLogout() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob1 = async { grpcServer.metadatas.first() }
     val metadatasJob2 = async { grpcServer.metadatas.take(2).last() }
@@ -206,6 +212,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldNotSendAuthMetadataAfterLogout() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val mutationRef =
       dataConnect.mutation("mutvw945ag3vv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob1 = async { grpcServer.metadatas.first() }
@@ -226,6 +233,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     // appcheck token is sent at all.
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
     val queryRef = dataConnect.query("qrybbeekpkkck", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
 
@@ -240,6 +248,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     // appcheck token is sent at all.
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
     val mutationRef =
       dataConnect.mutation("mutbs7hhxk39c", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
@@ -253,6 +262,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeQueryShouldSendAppCheckMetadataWhenAppCheckIsEnabled() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
     val queryRef = dataConnect.query("qryyarwrxe2fv", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
     val appCheck = FirebaseAppCheck.getInstance(dataConnect.app)
@@ -267,6 +277,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
   fun executeMutationShouldSendAppCheckMetadataWhenAppCheckIsEnabled() = runTest {
     val grpcServer = inProcessDataConnectGrpcServer.newInstance()
     val dataConnect = dataConnectFactory.newInstance(grpcServer)
+    (dataConnect as FirebaseDataConnectInternal).awaitAppCheckReady()
     val mutationRef =
       dataConnect.mutation("mutz4hzqzpgb4", Unit, serializer<Unit>(), serializer<Unit>())
     val metadatasJob = async { grpcServer.metadatas.first() }
@@ -284,7 +295,7 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     expectedValue: String? = null
   ) {
     val metadata = withClue("waiting for metadata to be reported") { job.await() }
-    metadata.asClue {
+    withClue("key=$key, metadata=$metadata") {
       val actualValue = metadata.get(key)
       if (expectedValue === null) {
         actualValue.shouldNotBeNull()
@@ -337,10 +348,17 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
-  class TestGeneratedConnector(override val dataConnect: FirebaseDataConnect) : GeneratedConnector {
+  class TestGeneratedConnector(override val dataConnect: FirebaseDataConnect) :
+    GeneratedConnector<TestGeneratedConnector> {
     override fun equals(other: Any?) = other === this
     override fun hashCode() = System.identityHashCode(this)
     override fun toString() = "TestGeneratedConnector"
+
+    override fun copy(dataConnect: FirebaseDataConnect) =
+      throw Exception("not implemented (error code dtbzbxnfb5)")
+    override fun operations() = throw Exception("not implemented (error code dtbzbxnfb5)")
+    override fun queries() = throw Exception("not implemented (error code dtbzbxnfb5)")
+    override fun mutations() = throw Exception("not implemented (error code dtbzbxnfb5)")
   }
 
   class TestGeneratedQuery(
@@ -349,7 +367,44 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     override val dataDeserializer: DeserializationStrategy<Unit>,
     override val variablesSerializer: SerializationStrategy<Unit>
   ) : GeneratedQuery<TestGeneratedConnector, Unit, Unit> {
-    override fun toString(): String = "TestGeneratedQuery"
+
+    override fun equals(other: Any?) =
+      other is TestGeneratedQuery &&
+        other.connector == connector &&
+        other.operationName == operationName &&
+        other.dataDeserializer == dataDeserializer &&
+        other.variablesSerializer == variablesSerializer
+
+    override fun hashCode() =
+      Objects.hash(
+        TestGeneratedQuery::class,
+        connector,
+        operationName,
+        dataDeserializer,
+        variablesSerializer,
+      )
+
+    override fun toString(): String =
+      "TestGeneratedQuery(" +
+        "operationName=$operationName, " +
+        "dataDeserializer=$dataDeserializer, " +
+        "variablesSerializer=$variablesSerializer, " +
+        "connector=$connector)"
+
+    override fun copy(
+      connector: TestGeneratedConnector,
+      operationName: String,
+      dataDeserializer: DeserializationStrategy<Unit>,
+      variablesSerializer: SerializationStrategy<Unit>
+    ) = throw Exception("not implemented (error code sg6tkvqmxg)")
+
+    override fun <NewData> withDataDeserializer(
+      dataDeserializer: DeserializationStrategy<NewData>
+    ) = throw Exception("not implemented (error code sg6tkvqmxg)")
+
+    override fun <NewVariables> withVariablesSerializer(
+      variablesSerializer: SerializationStrategy<NewVariables>
+    ) = throw Exception("not implemented (error code sg6tkvqmxg)")
   }
 
   class TestGeneratedMutation(
@@ -358,10 +413,47 @@ class GrpcMetadataIntegrationTest : DataConnectIntegrationTestBase() {
     override val dataDeserializer: DeserializationStrategy<Unit>,
     override val variablesSerializer: SerializationStrategy<Unit>
   ) : GeneratedMutation<TestGeneratedConnector, Unit, Unit> {
-    override fun toString(): String = "TestGeneratedMutation"
+    override fun equals(other: Any?) =
+      other is TestGeneratedMutation &&
+        other.connector == connector &&
+        other.operationName == operationName &&
+        other.dataDeserializer == dataDeserializer &&
+        other.variablesSerializer == variablesSerializer
+
+    override fun hashCode() =
+      Objects.hash(
+        TestGeneratedMutation::class,
+        connector,
+        operationName,
+        dataDeserializer,
+        variablesSerializer,
+      )
+
+    override fun toString(): String =
+      "TestGeneratedMutation(" +
+        "operationName=$operationName, " +
+        "dataDeserializer=$dataDeserializer, " +
+        "variablesSerializer=$variablesSerializer, " +
+        "connector=$connector)"
+
+    override fun copy(
+      connector: TestGeneratedConnector,
+      operationName: String,
+      dataDeserializer: DeserializationStrategy<Unit>,
+      variablesSerializer: SerializationStrategy<Unit>
+    ) = throw Exception("not implemented (error code wzvy7vnff5)")
+
+    override fun <NewData> withDataDeserializer(
+      dataDeserializer: DeserializationStrategy<NewData>
+    ) = throw Exception("not implemented (error code wzvy7vnff5)")
+
+    override fun <NewVariables> withVariablesSerializer(
+      variablesSerializer: SerializationStrategy<NewVariables>
+    ) = throw Exception("not implemented (error code wzvy7vnff5)")
   }
 
   private companion object {
+    @Suppress("SpellCheckingInspection")
     const val PLACEHOLDER_APP_CHECK_TOKEN = "eyJlcnJvciI6IlVOS05PV05fRVJST1IifQ=="
 
     val firebaseAuthTokenHeader: Metadata.Key<String> =

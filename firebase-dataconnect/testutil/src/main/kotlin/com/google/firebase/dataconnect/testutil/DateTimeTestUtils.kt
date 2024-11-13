@@ -22,7 +22,6 @@ import java.util.Date
 import java.util.GregorianCalendar
 import java.util.TimeZone
 import kotlin.random.Random
-import kotlin.random.nextInt
 
 /**
  * Creates and returns a new [Date] object that represents the given year, month, and day in UTC.
@@ -43,27 +42,6 @@ fun dateFromYearMonthDayUTC(year: Int, month: Int, day: Int): Date {
     }
     .time
 }
-
-val MIN_DATE: Date
-  get() = dateFromYearMonthDayUTC(1583, 1, 1)
-
-val MAX_DATE: Date
-  get() = dateFromYearMonthDayUTC(9999, 12, 31)
-
-val ZERO_DATE: Date
-  get() = GregorianCalendar(TimeZone.getTimeZone("UTC")).apply { timeInMillis = 0 }.time
-
-/**
- * Generates and returns a random [Date] object with hour, minute, and second set to zero.
- *
- * @see https://en.wikipedia.org/wiki/ISO_8601#Years for rationale of lower bound of 1583.
- */
-fun randomDate(): Date =
-  dateFromYearMonthDayUTC(
-    year = Random.nextInt(1583..9999),
-    month = Random.nextInt(1..12),
-    day = Random.nextInt(1..28)
-  )
 
 /** Generates and returns a random [Timestamp] object. */
 fun randomTimestamp(): Timestamp {
@@ -107,7 +85,7 @@ fun timestampFromUTCDateAndTime(
   require(year in 0..9999) { "year must be between 0 and 9999, inclusive" }
   require(month in 1..12) { "month must be between 1 and 12, inclusive" }
   require(day in 1..31) { "day must be between 1 and 31, inclusive" }
-  require(hour in 0..24) { "hour must be between 0 and 23, inclusive" }
+  require(hour in 0..24) { "hour must be between 0 and 24, inclusive" }
   require(minute in 0..59) { "minute must be between 0 and 59, inclusive" }
   require(second in 0..60) { "second must be between 0 and 60, inclusive" }
   require(nanoseconds in 0..999_999_999) {

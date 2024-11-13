@@ -1,4 +1,28 @@
 # Unreleased
+* [changed] Added support for Civic Integrity in Harm Category. (#6502)
+* [fixed] Improved error message when using an invalid location. (#6428)
+* [fixed] Fixed issue where Firebase App Check error tokens were unintentionally missing from the requests. (#6409)
+* [fixed] Clarified in the documentation that `Schema.integer` and `Schema.float` only provide hints to the model. (#6420)
+* [fixed] Fixed issue were `Schema.double` set the format parameter in `Schema`. (#6432)
+
+# 16.0.1
+* [fixed] Fixed issue where authorization headers weren't correctly formatted and were ignored by the backend. (#6400)
+
+# 16.0.0
+* [feature] {{firebase_vertexai}} is now Generally Available (GA) and can be
+  used in production apps.
+
+  Use the {{firebase_vertexai_sdk}} to call the {{gemini_api_vertexai_long}}
+  directly from your app. This client SDK is built specifically for use with
+  Android apps, offering security options against unauthorized clients
+  as well as integrations with other Firebase services.
+
+    * If you're new to this library, visit the
+      [getting started guide](/docs/vertex-ai/get-started?platform=android).
+
+    * If you were using the preview version of the library, visit the
+      [migration guide](/docs/vertex-ai/migrate-to-ga?platform=android) to learn
+      about some important updates.
 * [changed] **Breaking Change**: Changed `functionCallingConfig` parameter type to be nullable in `ToolConfig`. (#6373)
 * [changed] **Breaking Change**: Removed `functionResponse` accessor method from `GenerateContentResponse`. (#6373)
 * [changed] **Breaking Change**: Migrated `FirebaseVertexAIException` from a sealed class to an abstract class, and marked constructors as internal. (#6368)
@@ -18,7 +42,7 @@
 * [changed] **Breaking Change**: Replaced sealed classes with abstract classes for `StringFormat`. (#6334)
 * [changed] **Breaking Change**: Refactored enum classes to be normal classes. (#6340)
 * [changed] **Breaking Change**: Marked `GenerativeModel` properties as private. (#6309)
-
+* [changed] **Breaking Change**: Changed `method` parameter type to be nullable in `SafetySettings`. (#6379)
 
 # 16.0.0-beta05
 * [changed] Merged core networking code into VertexAI from a separate library

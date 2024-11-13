@@ -22,11 +22,12 @@ import com.android.build.api.variant.VariantExtension
 import com.android.build.api.variant.VariantExtensionConfig
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension.DataConnectCodegenDslExtension
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension.DataConnectEmulatorDslExtension
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectDslExtension.DataConnectKtfmtDslExtension
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.Property
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.newInstance
 
 /**
  * This is the extension type for extending [com.android.build.api.variant.Variant].
@@ -104,6 +105,14 @@ abstract class DataConnectVariantDslExtension(
       productFlavorExtensions.map { it.emulator },
     )
 
+  /** @see DataConnectDslExtension.ktfmt */
+  val ktfmt: DataConnectKtfmtVariantDslExtension =
+    objectFactory.newInstance(
+      variant,
+      buildTypeExtension.ktfmt,
+      productFlavorExtensions.map { it.ktfmt },
+    )
+
   /** Values to use when performing code generation. */
   abstract class DataConnectCodegenVariantDslExtension
   @Inject
@@ -154,6 +163,27 @@ abstract class DataConnectVariantDslExtension(
         productFlavorExtensions,
         "schemaExtensionsOutputEnabled",
         DataConnectEmulatorDslExtension::schemaExtensionsOutputEnabled
+      )
+    }
+  }
+
+  /** Values to use formatting code with ktfmt. */
+  abstract class DataConnectKtfmtVariantDslExtension
+  @Inject
+  constructor(
+    variant: Variant,
+    buildTypeExtension: DataConnectKtfmtDslExtension,
+    productFlavorExtensions: List<DataConnectKtfmtDslExtension>,
+  ) {
+    /** @see DataConnectKtfmtDslExtension.jarFile */
+    abstract val jarFile: Property<File>
+    init {
+      jarFile.setFrom(
+        variant,
+        buildTypeExtension,
+        productFlavorExtensions,
+        "jarFile",
+        DataConnectKtfmtDslExtension::jarFile
       )
     }
   }

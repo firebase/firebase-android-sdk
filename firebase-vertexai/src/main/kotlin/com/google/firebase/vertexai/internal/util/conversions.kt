@@ -100,7 +100,7 @@ internal fun SafetySetting.toInternal() =
   com.google.firebase.vertexai.common.shared.SafetySetting(
     harmCategory.toInternal(),
     threshold.toInternal(),
-    method.toInternal()
+    method?.toInternal()
   )
 
 internal fun makeMissingCaseException(source: String, ordinal: Int): SerializationException {
@@ -137,6 +137,8 @@ internal fun HarmCategory.toInternal() =
       com.google.firebase.vertexai.common.shared.HarmCategory.SEXUALLY_EXPLICIT
     HarmCategory.DANGEROUS_CONTENT ->
       com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT
+    HarmCategory.CIVIC_INTEGRITY ->
+      com.google.firebase.vertexai.common.shared.HarmCategory.CIVIC_INTEGRITY
     HarmCategory.UNKNOWN -> com.google.firebase.vertexai.common.shared.HarmCategory.UNKNOWN
     else -> throw makeMissingCaseException("HarmCategory", ordinal)
   }
@@ -315,6 +317,8 @@ internal fun com.google.firebase.vertexai.common.shared.HarmCategory.toPublic() 
       HarmCategory.SEXUALLY_EXPLICIT
     com.google.firebase.vertexai.common.shared.HarmCategory.DANGEROUS_CONTENT ->
       HarmCategory.DANGEROUS_CONTENT
+    com.google.firebase.vertexai.common.shared.HarmCategory.CIVIC_INTEGRITY ->
+      HarmCategory.CIVIC_INTEGRITY
     else -> HarmCategory.UNKNOWN
   }
 

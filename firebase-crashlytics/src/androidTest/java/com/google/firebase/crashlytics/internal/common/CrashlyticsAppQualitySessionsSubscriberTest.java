@@ -21,6 +21,8 @@ import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.sessions.api.SessionSubscriber.SessionDetails;
+import org.junit.Before;
+import org.junit.Test;
 
 public final class CrashlyticsAppQualitySessionsSubscriberTest extends CrashlyticsTestCase {
   private static final String SESSION_ID = "64e61da7023800012303a14eecd3f58d";
@@ -30,14 +32,15 @@ public final class CrashlyticsAppQualitySessionsSubscriberTest extends Crashlyti
 
   private CrashlyticsAppQualitySessionsSubscriber aqsSubscriber;
 
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() throws Exception {
     // The files created by each test case will get cleaned up in super.tearDown().
     aqsSubscriber =
         new CrashlyticsAppQualitySessionsSubscriber(
             mock(DataCollectionArbiter.class), new FileStore(getContext()));
   }
 
+  @Test
   public void testGetAppQualitySessionId_returnsLatestAqsIdForSession() {
     aqsSubscriber.setSessionId(SESSION_ID);
 
@@ -49,6 +52,7 @@ public final class CrashlyticsAppQualitySessionsSubscriberTest extends Crashlyti
     assertThat(aqsSubscriber.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
   }
 
+  @Test
   public void testGetAppQualitySessionId_returnsCorrectAqsIdForEachSession() {
     String session_id_1 = "session id 1";
     String session_id_2 = "session id 2";

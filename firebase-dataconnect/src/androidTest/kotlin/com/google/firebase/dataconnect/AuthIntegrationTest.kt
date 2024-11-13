@@ -16,16 +16,15 @@
 
 package com.google.firebase.dataconnect
 
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
 import com.google.firebase.dataconnect.testutil.newInstance
-import com.google.firebase.dataconnect.testutil.operationName
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema
 import com.google.firebase.dataconnect.testutil.schemas.PersonSchema.GetPersonAuthQuery
-import com.google.firebase.dataconnect.testutil.schemas.randomPersonId
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
 import google.firebase.dataconnect.proto.executeMutationResponse
@@ -53,9 +52,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 
-@RunWith(AndroidJUnit4::class)
 class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val key = "e6w33rw36t"
@@ -73,9 +70,9 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun authenticatedRequestsAreSuccessful() = runTest {
     signIn()
-    val person1Id = randomPersonId()
-    val person2Id = randomPersonId()
-    val person3Id = randomPersonId()
+    val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
+    val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
+    val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
 
     personSchema.createPersonAuth(id = person1Id, name = "TestName1", age = 42).execute()
     personSchema.createPersonAuth(id = person2Id, name = "TestName2", age = 43).execute()
@@ -130,7 +127,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef =
       dataConnect.query(operationName, Unit, serializer<TestData>(), serializer<Unit>())
 
@@ -158,7 +155,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
       dataConnect.mutation(operationName, Unit, serializer<TestData>(), serializer<Unit>())
 
@@ -179,7 +176,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef = dataConnect.query(operationName, Unit, serializer<Unit>(), serializer<Unit>())
 
     val thrownException = shouldThrow<StatusException> { queryRef.execute() }
@@ -195,7 +192,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    val operationName = Arb.operationName(key).next(rs)
+    val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
       dataConnect.mutation(operationName, Unit, serializer<Unit>(), serializer<Unit>())
 
@@ -205,6 +202,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   private suspend fun signIn() {
+    (personSchema.dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
     val authResult = auth.run { signInAnonymously().await() }
     withClue("authResult.user returned from signInAnonymously()") {
       authResult.user.shouldNotBeNull()

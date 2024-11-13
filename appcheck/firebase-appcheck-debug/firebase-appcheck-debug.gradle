@@ -17,8 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
-    publishSources = true
+    libraryGroup = "appcheck"
     releaseNotes {
         name.set("{{app_check}} Debug")
         versionName.set("appcheck-debug")
@@ -63,10 +62,10 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation libs.androidx.test.core
     testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    testImplementation libs.robolectric
 }

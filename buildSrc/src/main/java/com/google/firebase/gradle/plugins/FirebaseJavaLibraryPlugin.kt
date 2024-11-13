@@ -16,7 +16,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.common.collect.ImmutableList
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
@@ -31,18 +30,32 @@ import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+/**
+ * Plugin for Java Firebase Libraries.
+ *
+ * ```kts
+ * plugins {
+ *   id("firebase-java-library")
+ * }
+ * ```
+ *
+ * @see [FirebaseAndroidLibraryPlugin]
+ * @see [BaseFirebaseLibraryPlugin]
+ * @see [FirebaseLibraryExtension]
+ */
 class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
     project.apply<JavaLibraryPlugin>()
-    project.apply<DackkaPlugin>()
 
     setupFirebaseLibraryExtension(project)
     registerMakeReleaseNotesTask(project)
 
+    project.apply<DackkaPlugin>()
+
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
-      kotlinOptions.freeCompilerArgs = ImmutableList.of("-module-name", kotlinModuleName(project))
+      kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
     }
   }
 
@@ -50,6 +63,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     val firebaseLibrary =
       project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, JAVA)
 
+    setupDefaults(project, firebaseLibrary)
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
@@ -62,7 +76,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       groupId.value(firebaseLibrary.groupId.get())
       artifactId.value(firebaseLibrary.artifactId.get())
       version.value(firebaseLibrary.version)
-      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
     project.mkdir("semver")
     project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {

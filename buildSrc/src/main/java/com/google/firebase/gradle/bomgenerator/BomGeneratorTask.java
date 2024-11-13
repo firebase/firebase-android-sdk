@@ -16,7 +16,6 @@ package com.google.firebase.gradle.bomgenerator;
 
 import static java.util.stream.Collectors.toList;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.firebase.gradle.bomgenerator.model.Dependency;
@@ -51,7 +50,7 @@ import org.xml.sax.SAXException;
 
 public abstract class BomGeneratorTask extends DefaultTask {
   private static final List<String> BOM_ARTIFACTS =
-      ImmutableList.of(
+      List.of(
           "com.google.firebase:firebase-analytics",
           "com.google.firebase:firebase-analytics-ktx",
           "com.google.firebase:firebase-appcheck-debug",
@@ -92,9 +91,9 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "com.google.firebase:firebase-perf-ktx",
           "com.google.firebase:firebase-storage",
           "com.google.firebase:firebase-storage-ktx",
-          "firebase-vertexai");
+          "com.google.firebase:firebase-vertexai");
   private static final List<String> IGNORED_ARTIFACTS =
-      ImmutableList.of(
+      List.of(
           "crash-plugin",
           "firebase-ml-vision",
           "crashlytics",
@@ -175,7 +174,7 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "firebase-ml-natural-language-translate",
           "firebase-ml-natural-language-translate-model");
   private static final List<String> IMPORTANT_NON_FIREBASE_LIBRARIES =
-      ImmutableList.of(
+      List.of(
           "com.google.android.gms:play-services-ads",
           "com.google.gms:google-services",
           "com.android.tools.build:gradle",
