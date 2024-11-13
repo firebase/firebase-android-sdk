@@ -18,11 +18,11 @@ set -euo pipefail
 
 readonly PROJECT_ROOT_DIR="$(dirname "$0")/../.."
 
-readonly TARGETS=(
-  ":firebase-dataconnect:testDebugUnitTest"
-  ":firebase-dataconnect:androidTestutil:testDebugUnitTest"
-  ":firebase-dataconnect:connectors:testDebugUnitTest"
-  ":firebase-dataconnect:testutil:testDebugUnitTest"
+(
+  set -xv
+  cd "${PROJECT_ROOT_DIR}"/firebase-dataconnect/emulator
+  ./wipe_postgres_db.sh
+  ./start_postgres_pod.sh
 )
 
 readonly args=(
@@ -31,7 +31,7 @@ readonly args=(
   "${PROJECT_ROOT_DIR}"
   "--configure-on-demand"
   "$@"
-  "${TARGETS[@]}"
+  ":firebase-dataconnect:connectors:runDebugDataConnectEmulator"
 )
 
 echo "${args[*]}"
