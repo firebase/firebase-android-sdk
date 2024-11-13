@@ -16,11 +16,6 @@
 
 set -euo pipefail
 
-if [[ $# -gt 0 ]] ; then
-  echo "ERROR: no command-line arguments are supported, but got $*" >&2
-  exit 2
-fi
-
 readonly PROJECT_ROOT_DIR="$(dirname "$0")/../.."
 
 readonly TARGETS=(
@@ -32,6 +27,7 @@ readonly args=(
   "-p"
   "${PROJECT_ROOT_DIR}"
   "--configure-on-demand"
+  "$@"
   "${TARGETS[@]}"
 )
 
