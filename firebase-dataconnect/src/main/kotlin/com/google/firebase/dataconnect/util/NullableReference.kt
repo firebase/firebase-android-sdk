@@ -15,7 +15,7 @@
  */
 package com.google.firebase.dataconnect.util
 
-internal class NullableReference<T>(val ref: T? = null) {
+internal class NullableReference<out T>(val ref: T? = null) {
   override fun equals(other: Any?) = (other is NullableReference<*>) && other.ref == ref
   override fun hashCode() = ref?.hashCode() ?: 0
   override fun toString() = ref?.toString() ?: "null"
