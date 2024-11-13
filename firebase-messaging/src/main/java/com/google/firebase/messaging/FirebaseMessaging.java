@@ -514,7 +514,8 @@ public class FirebaseMessaging {
    * <p>When there is an active connection the message will be sent immediately, otherwise the
    * message will be queued up to the time to live (TTL) set in the message.
    *
-   * @deprecated FCM upstream messaging is decommissioned. Learn more in the
+   * @deprecated This function is actually <strong>decommissioned</strong> along with all of FCM
+   * upstream messaging. Learn more in the
    * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
    * deprecated in June 2023</a>.
    */

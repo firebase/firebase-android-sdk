@@ -31,7 +31,7 @@ private constructor(
     return limitedUseAppCheckTokens
   }
 
-  /** Builder class for [com.google.firebase.functions.HttpsCallableOptions] */
+  /** A builder for creating [com.google.firebase.functions.HttpsCallableOptions]. */
   public class Builder {
     @JvmField public var limitedUseAppCheckTokens: Boolean = false
 

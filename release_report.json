@@ -1,0 +1,234 @@
+{
+    "changesByLibraryName": {
+        "firebase-dataconnect": [
+            {
+                "commitId": "80019caa303e76251182b1351dff6834ed678e42",
+                "prId": "6434",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: LocalDate and LocalDateSerializer added (#6434)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/80019caa303e76251182b1351dff6834ed678e42",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6434"
+            },
+            {
+                "commitId": "93640ce59ce303475f8df2e7d80b2949f8449b17",
+                "prId": "6433",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: Rename FirebaseDataConnectExperimental to ExperimentalFirebaseDataConnect (#6433)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/93640ce59ce303475f8df2e7d80b2949f8449b17",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6433"
+            },
+            {
+                "commitId": "312d14a71319964da182713f81863662f543f4d0",
+                "prId": "6424",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: some small new APIs and major testing refactor (#6424)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/312d14a71319964da182713f81863662f543f4d0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6424"
+            },
+            {
+                "commitId": "75428316385b3b8134d7c28fcd8853d3314135e8",
+                "prId": "6426",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: connectors.gradle.kts: fix unwarranted error from updateJson task during configure time (#6426)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/75428316385b3b8134d7c28fcd8853d3314135e8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6426"
+            },
+            {
+                "commitId": "e3ad5d79b74c46d4ec593a5fcd0fcb26bde44507",
+                "prId": "6425",
+                "author": "Denver Coneybeare",
+                "message": "libs.versions.toml: add kotlinx-datetime (#6425)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e3ad5d79b74c46d4ec593a5fcd0fcb26bde44507",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6425"
+            },
+            {
+                "commitId": "98ce6bb752c1fedb94a0ce77caeef400cb284aea",
+                "prId": "6418",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectExecutableVersions.json updated with versions 1.5.1 and 1.6.0 (#6418)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98ce6bb752c1fedb94a0ce77caeef400cb284aea",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6418"
+            },
+            {
+                "commitId": "5af4621bfef8706387efbfc952a6bd3b484a0cdf",
+                "prId": "6416",
+                "author": "Denver Coneybeare",
+                "message": "libs.versions.toml: add ThreeTenAbp (backport of java.time for Android) (#6416)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5af4621bfef8706387efbfc952a6bd3b484a0cdf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6416"
+            },
+            {
+                "commitId": "0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prId": "6377",
+                "author": "Daymon",
+                "message": "Modernize FirebaseLibraryExtension (#6377)\n\nPer [b/270576405](https://b.corp.google.com/issues/270576405),\r\n\r\nThis migrates `FirebaseLibraryExtension` to Kotlin, and takes advantage\r\nof more modern gradle features (such as properties/conventions) to help\r\nwith build time and maintenance.\r\n\r\nThis also adds documentation for all the exposed properties and options\r\non `FirebaseLibraryExtension`.\r\n\r\nFuture `TODO`s have been left denoting possible future modernization\r\nefforts.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/374137268](https://b.corp.google.com/issues/374137268) -> Migrate\r\nbuildSrc to spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6377"
+            },
+            {
+                "commitId": "3afa1c4fb2051fa65742f05c387d662eeae84201",
+                "prId": "6399",
+                "author": "Rodrigo Lazo",
+                "message": "Add spotless support for *.gradle.kts files (#6399)\n\nThe more we cover by the formatter the better.\n\nThat being said, support for groovy is broken. I hit\nhttps://github.com/diffplug/spotless/issues/1922 when trying to use\ngroovyGradle formatting.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3afa1c4fb2051fa65742f05c387d662eeae84201",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6399"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "531f25bb0417370c0da56825e5f2505b3cc49666",
+                "prId": "6402",
+                "author": "Daymon",
+                "message": "Migrate crashlytics tests to JUnit4 (#6402)\n\nPer [b/375055031](https://b.corp.google.com/issues/375055031),\r\n\r\nThis performs various cleanups on the integration tests for crashlytics.\r\nThis should help narrow down flakey test behavior, and avoid any issues\r\nthat may arise from deprecated usages.\r\n\r\nNamely, this PR does the following:\r\n- Fully migrates all the tests to JUnit4. Some of them were still using\r\nJUnit3 behaviors.\r\n- Migrates `initMocks` to `openMocks`. There may have been broken\r\nbehavior from `initMocks` leakage.\r\n- Updates some existing `openMocks` to properly close. There may have\r\nbeen leakage into other tests, which could cause false positives.\r\n- Migrate `AndroidJunit4` usages to the new import. Some of the tests\r\nwere still using the old (deprecated) version.\r\n- Suppresses the receiver filter warning. This is a false positive as\r\nthe use-site only specifies two arguments. By suppressing the warning-\r\nit should help depollute our logs.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/531f25bb0417370c0da56825e5f2505b3cc49666",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6402"
+            },
+            {
+                "commitId": "6383f6d71218b24318372573aaf962711776f4d1",
+                "prId": "6414",
+                "author": "Greg Sakakihara",
+                "message": "Change WithinAppServiceConnection's ScheduledThreadPoolExecutor's con… (#6414)\n\n…figuration to avoid polling.\r\n\r\n* Changed WithinAppServiceConnection's ScheduledThreadPoolExecutor's\r\nconfiguration to allow the thread to stop polling after the timeout task\r\nhas been canceled.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6383f6d71218b24318372573aaf962711776f4d1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6414"
+            },
+            {
+                "commitId": "d402ad035d2fec7462130f8663987fa9ccd164a0",
+                "prId": "6411",
+                "author": "Greg Sakakihara",
+                "message": "Deprecate additional FCM upstream messaging methods. (#6411)\n\n* Also removed references to upstream in documentation.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d402ad035d2fec7462130f8663987fa9ccd164a0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6411"
+            },
+            {
+                "commitId": "0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prId": "6377",
+                "author": "Daymon",
+                "message": "Modernize FirebaseLibraryExtension (#6377)\n\nPer [b/270576405](https://b.corp.google.com/issues/270576405),\r\n\r\nThis migrates `FirebaseLibraryExtension` to Kotlin, and takes advantage\r\nof more modern gradle features (such as properties/conventions) to help\r\nwith build time and maintenance.\r\n\r\nThis also adds documentation for all the exposed properties and options\r\non `FirebaseLibraryExtension`.\r\n\r\nFuture `TODO`s have been left denoting possible future modernization\r\nefforts.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/374137268](https://b.corp.google.com/issues/374137268) -> Migrate\r\nbuildSrc to spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6377"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prId": "6377",
+                "author": "Daymon",
+                "message": "Modernize FirebaseLibraryExtension (#6377)\n\nPer [b/270576405](https://b.corp.google.com/issues/270576405),\r\n\r\nThis migrates `FirebaseLibraryExtension` to Kotlin, and takes advantage\r\nof more modern gradle features (such as properties/conventions) to help\r\nwith build time and maintenance.\r\n\r\nThis also adds documentation for all the exposed properties and options\r\non `FirebaseLibraryExtension`.\r\n\r\nFuture `TODO`s have been left denoting possible future modernization\r\nefforts.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/374137268](https://b.corp.google.com/issues/374137268) -> Migrate\r\nbuildSrc to spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6377"
+            }
+        ],
+        "firebase-messaging/ktx": [
+            {
+                "commitId": "0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prId": "6377",
+                "author": "Daymon",
+                "message": "Modernize FirebaseLibraryExtension (#6377)\n\nPer [b/270576405](https://b.corp.google.com/issues/270576405),\r\n\r\nThis migrates `FirebaseLibraryExtension` to Kotlin, and takes advantage\r\nof more modern gradle features (such as properties/conventions) to help\r\nwith build time and maintenance.\r\n\r\nThis also adds documentation for all the exposed properties and options\r\non `FirebaseLibraryExtension`.\r\n\r\nFuture `TODO`s have been left denoting possible future modernization\r\nefforts.\r\n\r\nThis PR also fixes the following:\r\n\r\n- [b/374137268](https://b.corp.google.com/issues/374137268) -> Migrate\r\nbuildSrc to spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0697dd3aadd6c13d9e2d321c75173992bfbaac3b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6377"
+            }
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "9754546e1e2c26cb6385f42df8fb09bfe716ca7e",
+                "prId": "6432",
+                "author": "Rodrigo Lazo",
+                "message": "Remove format from `double` helper function (#6432)\n\nWe can omit the format for the double-precision floating point type\r\n\r\nSee https://github.com/firebase/firebase-ios-sdk/pull/13990 for further\r\ncontext",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9754546e1e2c26cb6385f42df8fb09bfe716ca7e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6432"
+            },
+            {
+                "commitId": "b9013d5cde6e80e077b4cd46849c17e47234819d",
+                "prId": "6428",
+                "author": "Rodrigo Lazo",
+                "message": "Improve error message for invalid locations (#6428)\n\nIf an invalid location is used when creating the `FirebaseVertexAI`\r\nobject, all requests will fail. The error returned is 404 and HTML\r\ncontent. The message as-is is not easy to read.\r\n\r\nThe new messaging points to the most likely reason for the\r\n404 (invalid location).",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b9013d5cde6e80e077b4cd46849c17e47234819d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6428"
+            },
+            {
+                "commitId": "22ace2511b8f0ee6ada293ece60ef7f0e63de77c",
+                "prId": "6420",
+                "author": "Rodrigo Lazo",
+                "message": "Improved refdocs for Schema  (#6420)\n\nThe improvements include:\r\n\r\n- Clarify that `integer` and `float` types are hints to the model, and\r\nthe returned data could potentially overflow the respective native\r\ntypes.\r\n- Include missing parameters for some of the functions.\r\n- Add examples for `enumerations` and `obj`.\r\n\r\n---------\r\n\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/22ace2511b8f0ee6ada293ece60ef7f0e63de77c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6420"
+            },
+            {
+                "commitId": "5687f6d4f69ac788e9149be6f48f4b919354f869",
+                "prId": "6417",
+                "author": "Rodrigo Lazo",
+                "message": "Remove unnecessary ktor client mock dep (#6417)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5687f6d4f69ac788e9149be6f48f4b919354f869",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6417"
+            },
+            {
+                "commitId": "ec4874252a1d59c6188430c24661c3b6427e556c",
+                "prId": "6409",
+                "author": "Rodrigo Lazo",
+                "message": "[vertexai] Include appcheck token unconditionally (#6409)\n\nThe app check backend can differentiate between apps that do not use\r\nappcheck at all, and those sending invalid data, by using a special\r\nplaceholder token when errors happen. We were previously not including\r\nthe token value in error cases, but we should.\r\n\r\n---------\r\n\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ec4874252a1d59c6188430c24661c3b6427e556c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6409"
+            },
+            {
+                "commitId": "bcb4607a22bae0e56be5c4066b38bc59f06ec0ca",
+                "prId": "6400",
+                "author": "Rodrigo Lazo",
+                "message": "Fix vertexAI authorization header (#6400)\n\nThe header for authenticated request from vertex was using an invalid\r\nauthorization value\r\n\r\n---------\r\n\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bcb4607a22bae0e56be5c4066b38bc59f06ec0ca",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6400"
+            },
+            {
+                "commitId": "3afa1c4fb2051fa65742f05c387d662eeae84201",
+                "prId": "6399",
+                "author": "Rodrigo Lazo",
+                "message": "Add spotless support for *.gradle.kts files (#6399)\n\nThe more we cover by the formatter the better.\n\nThat being said, support for groovy is broken. I hit\nhttps://github.com/diffplug/spotless/issues/1922 when trying to use\ngroovyGradle formatting.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3afa1c4fb2051fa65742f05c387d662eeae84201",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6399"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-components",
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-config-interop",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-database",
+        ":firebase-database:ktx",
+        ":firebase-database-collection",
+        ":firebase-dynamic-links",
+        ":firebase-dynamic-links:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-installations",
+        ":firebase-installations:ktx",
+        ":firebase-ml-modeldownloader",
+        ":firebase-ml-modeldownloader:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-storage",
+        ":firebase-storage:ktx",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck:ktx",
+        ":firebase-components:firebase-dynamic-module-support",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
