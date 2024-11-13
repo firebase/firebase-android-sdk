@@ -1,5 +1,6 @@
 # Unreleased
-* [deprecated] Deprecated additional FCM upstream messaging methods. See the
+* [deprecated] Deprecated additional FCM upstream messaging methods and updated
+  all upstream methods to indicate they are now decommissioned. See the
   [FAQ](https://firebase.google.com/support/faq#fcm-23-deprecation) for more
   details.
 * [changed] Changed WithinAppServiceConnection's ScheduledThreadPoolExecutor's
