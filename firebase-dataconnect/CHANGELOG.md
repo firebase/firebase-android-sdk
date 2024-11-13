@@ -23,6 +23,13 @@
 * [changed] Replaced java.util.Date with
   com.google.firebase.dataconnect.LocalDate.
   ([#6434](https://github.com/firebase/firebase-android-sdk/pull/6434))
+* [changed] `DateSerializer` removed, as it is superceded by
+  `LocalDateSerializer`.
+  As of Data Connect emulator version 1.7.0, the generated Kotlin code uses
+  `com.google.firebase.dataconnect.LocalDate` instead of `java.util.Date`.
+  Therefore, this version of the SDK must be paired with an appropriate version
+  of the Data Connect emulator.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix
