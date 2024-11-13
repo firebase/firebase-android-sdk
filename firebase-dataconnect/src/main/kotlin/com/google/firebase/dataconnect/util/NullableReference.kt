@@ -15,6 +15,11 @@
  */
 package com.google.firebase.dataconnect.util
 
+/**
+ * A class that simply wraps a reference to another object, possibly a null reference. Instances of
+ * this class can be useful for the case where the meaning of `null` is overloaded, such as
+ * [kotlinx.coroutines.flow.MutableStateFlow.compareAndSet].
+ */
 internal class NullableReference<out T>(val ref: T? = null) {
   override fun equals(other: Any?) = (other is NullableReference<*>) && other.ref == ref
   override fun hashCode() = ref?.hashCode() ?: 0
