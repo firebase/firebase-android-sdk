@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.testutil.NullableReference
 import com.google.firebase.dataconnect.testutil.dayRangeInYear
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DateEdgeCases.MAX_YEAR
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DateEdgeCases.MIN_YEAR
+import com.google.firebase.dataconnect.toDataConnectLocalDate
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.Sample
@@ -99,7 +100,17 @@ private class DateTestDataArb : Arb<DateTestData>() {
 data class DateTestData(
   val date: LocalDate,
   val string: String,
-)
+) {
+  constructor(
+    date: java.time.LocalDate,
+    string: String
+  ) : this(date.toDataConnectLocalDate(), string)
+
+  constructor(
+    date: kotlinx.datetime.LocalDate,
+    string: String
+  ) : this(date.toDataConnectLocalDate(), string)
+}
 
 @Suppress("MemberVisibilityCanBePrivate")
 object DateEdgeCases {
@@ -149,10 +160,23 @@ data class ThreeDateTestDatas(
   fun idsMatchingSelected(getter: (ItemNumber) -> UUID): List<UUID> =
     idsMatching(selected?.date, getter)
 
-  fun idsMatching(localDate: LocalDate?, getter: (ItemNumber) -> UUID): List<UUID> {
+  fun idsMatching(
+    localDate: LocalDate?,
+    getter: (ItemNumber) -> UUID,
+  ): List<UUID> {
     val ids = listOf(getter(ItemNumber.ONE), getter(ItemNumber.TWO), getter(ItemNumber.THREE))
     return ids.filterIndexed { index, _ -> all[index]?.date == localDate }
   }
+
+  fun idsMatching(
+    localDate: java.time.LocalDate?,
+    getter: (ItemNumber) -> UUID,
+  ): List<UUID> = idsMatching(localDate?.toDataConnectLocalDate(), getter)
+
+  fun idsMatching(
+    localDate: kotlinx.datetime.LocalDate?,
+    getter: (ItemNumber) -> UUID,
+  ): List<UUID> = idsMatching(localDate?.toDataConnectLocalDate(), getter)
 
   enum class ItemNumber {
     ONE,

@@ -16,11 +16,22 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.Timestamp
-import com.google.firebase.dataconnect.LocalDate
-import org.threeten.bp.Instant
+import android.annotation.SuppressLint
 
-fun Instant.toTimestamp(): Timestamp = Timestamp(epochSecond, nano)
+fun org.threeten.bp.Instant.toTimestamp(): com.google.firebase.Timestamp =
+  com.google.firebase.Timestamp(epochSecond, nano)
 
-fun LocalDate.toTheeTenAbpJavaLocalDate(): org.threeten.bp.LocalDate =
-  org.threeten.bp.LocalDate.of(year, month, day)
+fun com.google.firebase.dataconnect.LocalDate.toTheeTenAbpJavaLocalDate():
+  org.threeten.bp.LocalDate = org.threeten.bp.LocalDate.of(year, month, day)
+
+@SuppressLint("NewApi")
+fun java.time.LocalDate.toTheeTenAbpJavaLocalDate(): org.threeten.bp.LocalDate {
+  val threeTenBpMonth = org.threeten.bp.Month.of(monthValue)
+  return org.threeten.bp.LocalDate.of(year, threeTenBpMonth, dayOfMonth)
+}
+
+@SuppressLint("NewApi")
+fun kotlinx.datetime.LocalDate.toTheeTenAbpJavaLocalDate(): org.threeten.bp.LocalDate {
+  val threeTenBpMonth = org.threeten.bp.Month.of(monthNumber)
+  return org.threeten.bp.LocalDate.of(year, threeTenBpMonth, dayOfMonth)
+}
