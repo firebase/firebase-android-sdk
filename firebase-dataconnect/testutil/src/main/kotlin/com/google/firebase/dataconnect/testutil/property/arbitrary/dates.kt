@@ -20,7 +20,6 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.LocalDate
 import com.google.firebase.dataconnect.testutil.NullableReference
-import com.google.firebase.dataconnect.testutil.dateFromYearMonthDayUTC
 import com.google.firebase.dataconnect.testutil.dayRangeInYear
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DateEdgeCases.MAX_YEAR
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DateEdgeCases.MIN_YEAR
@@ -101,9 +100,6 @@ data class DateTestData(
   val date: LocalDate,
   val string: String,
 )
-
-fun DateTestData.toJavaUtilDate(): java.util.Date =
-  dateFromYearMonthDayUTC(year = date.year, month = date.month, day = date.day)
 
 @Suppress("MemberVisibilityCanBePrivate")
 object DateEdgeCases {
