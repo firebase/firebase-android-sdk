@@ -1,0 +1,7 @@
+connectorId: demo_dataconnectdatetime
+authMode: PUBLIC
+generate:
+  kotlinSdk:
+    outputDir: ../../.generated/demo_dateconnectdatetime
+    package: com.google.firebase.dataconnect.connectors.dataconnectdatetime
+    dateClass: com.google.firebase.dataconnect.LocalDate

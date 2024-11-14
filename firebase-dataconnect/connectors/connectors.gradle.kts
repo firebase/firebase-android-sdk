@@ -59,13 +59,23 @@ android {
 
   dataconnect {
     configDir = file("../emulator/dataconnect")
-    codegen { connectors = listOf("demo", "keywords") }
+    codegen {
+      connectors =
+        listOf(
+          "demo",
+          "demo_dataconnectdatetime",
+          "demo_javatime",
+          "demo_kotlinxdatetime",
+          "keywords",
+        )
+    }
   }
 }
 
 dependencies {
   implementation(project(":firebase-dataconnect"))
   implementation(libs.kotlinx.coroutines.core)
+  implementation(libs.kotlinx.datetime)
   implementation(libs.kotlinx.serialization.core)
 
   testImplementation(project(":firebase-dataconnect:testutil"))

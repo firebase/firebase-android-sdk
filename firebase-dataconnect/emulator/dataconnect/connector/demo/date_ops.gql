@@ -1,0 +1,165 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+###############################################################################
+# Operations for table: DateNonNullable
+###############################################################################
+
+mutation DateNonNullable_Insert($value: Date!) @auth(level: PUBLIC) {
+  key: dateNonNullable_insert(data: { value: $value })
+}
+
+mutation DateNonNullable_Insert3($tag: String!, $value1: Date!, $value2: Date!, $value3: Date!) @auth(level: PUBLIC) {
+  key1: dateNonNullable_insert(data: { value: $value1, tag: $tag })
+  key2: dateNonNullable_insert(data: { value: $value2, tag: $tag })
+  key3: dateNonNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query DateNonNullable_GetByKey($key: DateNonNullable_Key!) @auth(level: PUBLIC) {
+  item: dateNonNullable(key: $key) { value }
+}
+
+query DateNonNullable_GetAllByTagAndValue($tag: String!, $value: Date!) @auth(level: PUBLIC) {
+  items: dateNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query DateNonNullable_GetAllByTagAndMaybeValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  items: dateNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query DateNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: Date! = "2692-05-21") @auth(level: PUBLIC) {
+  items: dateNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation DateNonNullable_UpdateByKey($key: DateNonNullable_Key!, $value: Date) @auth(level: PUBLIC) {
+  dateNonNullable_update(key: $key, data: { value: $value })
+}
+
+mutation DateNonNullable_UpdateByTagAndValue($tag: String!, $value: Date, $newValue: Date) @auth(level: PUBLIC) {
+  dateNonNullable_updateMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+    data: { value: $newValue }
+  )
+}
+
+mutation DateNonNullable_DeleteByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  dateNonNullable_deleteMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } }
+  )
+}
+
+###############################################################################
+# Operations for table: DateNonNullableWithDefaults
+###############################################################################
+
+mutation DateNonNullableWithDefaults_Insert($value: Date! = "6904-11-30") @auth(level: PUBLIC) {
+  key: dateNonNullableWithDefaults_insert(data: {
+    valueWithVariableDefault: $value
+  })
+}
+
+query DateNonNullableWithDefaults_GetByKey($key: DateNonNullableWithDefaults_Key!) @auth(level: PUBLIC) {
+  item: dateNonNullableWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+###############################################################################
+# Operations for table: DateNullable
+###############################################################################
+
+mutation DateNullable_Insert($value: Date) @auth(level: PUBLIC) {
+  key: dateNullable_insert(data: { value: $value })
+}
+
+mutation DateNullable_Insert3($tag: String!, $value1: Date, $value2: Date, $value3: Date) @auth(level: PUBLIC) {
+  key1: dateNullable_insert(data: { value: $value1, tag: $tag })
+  key2: dateNullable_insert(data: { value: $value2, tag: $tag })
+  key3: dateNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query DateNullable_GetByKey($key: DateNullable_Key!) @auth(level: PUBLIC) {
+  item: dateNullable(key: $key) { value }
+}
+
+query DateNullable_GetAllByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  items: dateNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query DateNullable_GetAllByTagAndDefaultValue($tag: String!, $value: Date! = "1771-10-28") @auth(level: PUBLIC) {
+  items: dateNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation DateNullable_UpdateByKey($key: DateNullable_Key!, $value: Date) @auth(level: PUBLIC) {
+  dateNullable_update(key: $key, data: { value: $value })
+}
+
+mutation DateNullable_UpdateByTagAndValue($tag: String!, $value: Date, $newValue: Date) @auth(level: PUBLIC) {
+  dateNullable_updateMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+    data: { value: $newValue }
+  )
+}
+
+mutation DateNullable_DeleteByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  dateNullable_deleteMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } }
+  )
+}
+
+###############################################################################
+# Operations for table: DateNullableWithDefaults
+###############################################################################
+
+mutation DateNullableWithDefaults_Insert(
+  $valueWithVariableDefault: Date = "8113-02-09",
+  $valueWithVariableNullDefault: Date = null,
+) @auth(level: PUBLIC) {
+  key: dateNullableWithDefaults_insert(data: {
+    valueWithVariableDefault: $valueWithVariableDefault,
+    valueWithVariableNullDefault: $valueWithVariableNullDefault,
+  })
+}
+
+query DateNullableWithDefaults_GetByKey($key: DateNullableWithDefaults_Key!) @auth(level: PUBLIC) {
+  item: dateNullableWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithVariableNullDefault
+    valueWithSchemaDefault
+    valueWithSchemaNullDefault
+    valueWithNoDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
