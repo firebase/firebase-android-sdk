@@ -54,7 +54,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
   fun build() {
     val namesOfFilesWeDoNotNeed =
       listOf("index.html", "classes.html", "packages.html", "package-list")
-    val rootDirectory = dackkaFiles.get().asFile
+    val rootDirectory = dackkaFiles.get().asFile.childFile("docs/reference")
     val targetDirectory = outputDirectory.get().asFile
     targetDirectory.deleteRecursively()
 
