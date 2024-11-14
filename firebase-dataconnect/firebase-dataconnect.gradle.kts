@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import com.google.firebase.dataconnect.gradle.buildutils.generateLocalDateSerializerIntegrationTest
-import com.google.firebase.dataconnect.gradle.buildutils.generateLocalDateSerializerUnitTest
+import com.google.firebase.dataconnect.gradle.buildutils.GenerateLocalDateSerializerIntegrationTestTask
+import com.google.firebase.dataconnect.gradle.buildutils.GenerateLocalDateSerializerUnitTestTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -167,46 +167,67 @@ tasks.withType<KotlinCompile>().all {
   }
 }
 
-tasks.register("generateDataConnectTestingSources") {
-  doLast {
-    val dir = file("src/test/kotlin/com/google/firebase/dataconnect/serializers")
-    val srcFile = File(dir, "LocalDateSerializerUnitTest.kt")
-    generateLocalDateSerializerUnitTest(
-      srcFile = srcFile,
-      classNameUnderTest = "JavaTimeLocalDateSerializer",
-      localDateFullyQualifiedClassName = "java.time.LocalDate",
-      localDateFactoryCall = ".of",
-      logger = logger,
-    )
-    generateLocalDateSerializerUnitTest(
-      srcFile = srcFile,
-      classNameUnderTest = "KotlinxDatetimeLocalDateSerializer",
-      localDateFullyQualifiedClassName = "kotlinx.datetime.LocalDate",
-      localDateFactoryCall = "",
-      logger = logger,
-    )
+// Register tasks to generate JavaTimeLocalDateSerializerUnitTest.kt and
+// KotlinxDatetimeLocalDateSerializerUnitTest.kt
+run {
+  val dir =
+    layout.projectDirectory.dir("src/test/kotlin/com/google/firebase/dataconnect/serializers")
+  val localDateSerializerUnitTestFile = dir.file("LocalDateSerializerUnitTest.kt")
+
+  tasks.register<GenerateLocalDateSerializerUnitTestTask>(
+    "generateJavaTimeLocalDateSerializerUnitTest"
+  ) {
+    srcFile.set(localDateSerializerUnitTestFile)
+    destFile.set(dir.file("JavaTimeLocalDateSerializerUnitTest.kt"))
+    localDateFullyQualifiedClassName.set("java.time.LocalDate")
+    localDateFactoryCall.set(".of")
+    classNameUnderTest.set("JavaTimeLocalDateSerializer")
   }
 
-  doLast {
-    val dir = file("src/androidTest/kotlin/com/google/firebase/dataconnect")
-    val srcFile = File(dir, "LocalDateIntegrationTest.kt")
-    generateLocalDateSerializerIntegrationTest(
-      srcFile = srcFile,
-      destClassName = "JavaTimeLocalDateIntegrationTest",
-      localDateFullyQualifiedClassName = "java.time.LocalDate",
-      localDateFactoryCall = ".of",
-      convertFromDataConnectLocalDateFunctionName = "toJavaLocalDate",
-      serializerClassName = "JavaTimeLocalDateSerializer",
-      logger = logger,
-    )
-    generateLocalDateSerializerIntegrationTest(
-      srcFile = srcFile,
-      destClassName = "KotlinxDatetimeLocalDateIntegrationTest",
-      localDateFullyQualifiedClassName = "kotlinx.datetime.LocalDate",
-      localDateFactoryCall = "",
-      convertFromDataConnectLocalDateFunctionName = "toKotlinxLocalDate",
-      serializerClassName = "KotlinxDatetimeLocalDateSerializer",
-      logger = logger,
-    )
+  tasks.register<GenerateLocalDateSerializerUnitTestTask>(
+    "generateKotlinxDatetimeLocalDateSerializerUnitTest"
+  ) {
+    srcFile.set(localDateSerializerUnitTestFile)
+    destFile.set(dir.file("KotlinxDatetimeLocalDateSerializerUnitTest.kt"))
+    localDateFullyQualifiedClassName.set("kotlinx.datetime.LocalDate")
+    localDateFactoryCall.set("")
+    classNameUnderTest.set("KotlinxDatetimeLocalDateSerializer")
   }
+}
+
+// Register tasks to generate JavaTimeLocalDateIntegrationTest.kt and
+// KotlinxDatetimeLocalDateIntegrationTest.kt
+run {
+  val dir = layout.projectDirectory.dir("src/androidTest/kotlin/com/google/firebase/dataconnect")
+  val localDateIntegrationTestFile = dir.file("LocalDateIntegrationTest.kt")
+
+  tasks.register<GenerateLocalDateSerializerIntegrationTestTask>(
+    "generateJavaTimeLocalDateIntegrationTest"
+  ) {
+    srcFile.set(localDateIntegrationTestFile)
+    destFile.set(dir.file("JavaTimeLocalDateIntegrationTest.kt"))
+    destClassName.set("JavaTimeLocalDateIntegrationTest")
+    localDateFullyQualifiedClassName.set("java.time.LocalDate")
+    localDateFactoryCall.set(".of")
+    convertFromDataConnectLocalDateFunctionName.set("toJavaLocalDate")
+    serializerClassName.set("JavaTimeLocalDateSerializer")
+  }
+
+  tasks.register<GenerateLocalDateSerializerIntegrationTestTask>(
+    "generateKotlinxDatetimeLocalDateIntegrationTest"
+  ) {
+    srcFile.set(localDateIntegrationTestFile)
+    destFile.set(dir.file("KotlinxDatetimeLocalDateIntegrationTest.kt"))
+    destClassName.set("KotlinxDatetimeLocalDateIntegrationTest")
+    localDateFullyQualifiedClassName.set("kotlinx.datetime.LocalDate")
+    convertFromDataConnectLocalDateFunctionName.set("toKotlinxLocalDate")
+    serializerClassName.set("KotlinxDatetimeLocalDateSerializer")
+  }
+}
+
+tasks.register("generateDataConnectTestingSources") {
+  dependsOn("generateJavaTimeLocalDateSerializerUnitTest")
+  dependsOn("generateKotlinxDatetimeLocalDateSerializerUnitTest")
+  dependsOn("generateJavaTimeLocalDateIntegrationTest")
+  dependsOn("generateKotlinxDatetimeLocalDateSerializerUnitTest")
 }
