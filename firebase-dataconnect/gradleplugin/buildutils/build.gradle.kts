@@ -26,15 +26,13 @@ java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 dependencies {
   compileOnly(firebaseLibs.android.gradlePlugin.gradle.api)
   implementation(gradleKotlinDsl())
-  implementation(firebaseLibs.kotlinx.serialization.core)
-  implementation(firebaseLibs.kotlinx.serialization.json)
 }
 
 gradlePlugin {
   plugins {
-    create("dataconnect") {
-      id = "com.google.firebase.dataconnect.gradle.plugin"
-      implementationClass = "com.google.firebase.dataconnect.gradle.plugin.DataConnectGradlePlugin"
+    create("buildutils") {
+      id = "com.google.firebase.dataconnect.gradle.buildutils"
+      implementationClass = "com.google.firebase.dataconnect.gradle.buildutils.StubPlugin"
     }
   }
 }

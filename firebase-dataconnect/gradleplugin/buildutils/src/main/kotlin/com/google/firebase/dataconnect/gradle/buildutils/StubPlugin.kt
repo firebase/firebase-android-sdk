@@ -13,31 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-rootProject.name = "dataconnect-gradle-plugin"
 
-pluginManagement {
-  repositories {
-    maven { url = uri("") }
-    gradlePluginPortal()
-    google()
-    mavenCentral()
-  }
+package com.google.firebase.dataconnect.gradle.buildutils
+
+import org.gradle.api.Plugin
+import org.gradle.api.Project
+
+@Suppress("unused")
+abstract class StubPlugin : Plugin<Project> {
+  override fun apply(project: Project) {}
 }
-
-dependencyResolutionManagement {
-  repositories {
-    maven { url = uri("") }
-    google()
-    mavenCentral()
-  }
-
-  // Reuse libs.version.toml from the main Gradle project.
-  versionCatalogs {
-    create("firebaseLibs") {
-      from(files("../../gradle/libs.versions.toml"))
-    }
-  }
-}
-
-include(":plugin")
-include(":buildutils")
