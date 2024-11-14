@@ -35,7 +35,7 @@
   and/or `kotlinx.datetime.LocalDate` instead of the bespoke
   `com.google.firebase.dataconnect.LocalDate` class for `Date` GraphQL fields
   and variables.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#6519](https://github.com/firebase/firebase-android-sdk/pull/6519))
 
 # 16.0.0-beta02
 * [changed] Updated protobuf dependency to `3.25.5` to fix
