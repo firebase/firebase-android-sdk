@@ -139,6 +139,13 @@ data class ThreeDateTestDatas(
       else -> throw Exception("internal error: unknown index: $index")
     }
 
+  val numMatchingSelected: Int = run {
+    val v1 = if (testData1 == selected) 1 else 0
+    val v2 = if (testData2 == selected) 1 else 0
+    val v3 = if (testData3 == selected) 1 else 0
+    v1 + v2 + v3
+  }
+
   fun idsMatchingSelected(getter: (ItemNumber) -> UUID): List<UUID> =
     idsMatching(selected?.date, getter)
 
