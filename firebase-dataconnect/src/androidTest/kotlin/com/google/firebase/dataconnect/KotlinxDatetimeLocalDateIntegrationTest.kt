@@ -18,10 +18,10 @@
 @file:UseSerializers(UUIDSerializer::class, KotlinxDatetimeLocalDateSerializer::class)
 
 ////////////////////////////////////////////////////////////////////////////////
-// THIS FILE WAS COPIED AND ADAPTED FROM LocalDateIntegrationTest.kt
-// MAKE SURE THAT ANY CHANGES TO THIS FILE ARE BACKPORTED TO
-// LocalDateIntegrationTest.kt AND PORTED TO JavaTimeLocalDateIntegrationTest.kt,
-// if appropriate.
+// WARNING: THIS FILE IS GENERATED FROM LocalDateIntegrationTest.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew :firebase-dataconnect:generateDataConnectTestingSources
 ////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect
 
@@ -69,10 +69,10 @@ import kotlinx.serialization.serializer
 import org.junit.Test
 
 ////////////////////////////////////////////////////////////////////////////////
-// THIS FILE WAS COPIED AND ADAPTED FROM LocalDateIntegrationTest.kt
-// MAKE SURE THAT ANY CHANGES TO THIS FILE ARE BACKPORTED TO
-// LocalDateIntegrationTest.kt AND PORTED TO JavaTimeLocalDateIntegrationTest.kt,
-// if appropriate.
+// WARNING: THIS FILE IS GENERATED FROM LocalDateIntegrationTest.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew :firebase-dataconnect:generateDataConnectTestingSources
 ////////////////////////////////////////////////////////////////////////////////
 class KotlinxDatetimeLocalDateIntegrationTest : DataConnectIntegrationTestBase() {
 
