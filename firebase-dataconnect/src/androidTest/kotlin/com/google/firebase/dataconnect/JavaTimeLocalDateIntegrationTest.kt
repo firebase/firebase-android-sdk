@@ -15,16 +15,17 @@
  */
 
 @file:OptIn(ExperimentalKotest::class)
-@file:UseSerializers(UUIDSerializer::class)
+@file:UseSerializers(UUIDSerializer::class, JavaTimeLocalDateSerializer::class)
 
 ////////////////////////////////////////////////////////////////////////////////
-// THIS FILE WAS COPIED TO JavaTimeLocalDateIntegrationTest.kt and
-// KotlinxDatetimeLocalDateIntegrationTest.kt AND ADAPTED TO TEST THE
-// CORRESPONDING IMPLEMENTATIONS OF LocalDate. ANY CHANGES MADE TO THIS FILE
-// MUST ALSO BE PORTED TO THOSE OTHER FILES, IF APPROPRIATE.
+// THIS FILE WAS COPIED AND ADAPTED FROM LocalDateIntegrationTest.kt
+// MAKE SURE THAT ANY CHANGES TO THIS FILE ARE BACKPORTED TO
+// LocalDateIntegrationTest.kt AND PORTED TO LocalDateIntegrationTest.kt,
+// if appropriate.
 ////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.serializers.JavaTimeLocalDateSerializer
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DateTestData
@@ -55,6 +56,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
@@ -67,12 +69,12 @@ import kotlinx.serialization.serializer
 import org.junit.Test
 
 ////////////////////////////////////////////////////////////////////////////////
-// THIS FILE WAS COPIED TO JavaTimeLocalDateIntegrationTest.kt and
-// KotlinxDatetimeLocalDateIntegrationTest.kt AND ADAPTED TO TEST THE
-// CORRESPONDING IMPLEMENTATIONS OF LocalDate. ANY CHANGES MADE TO THIS FILE
-// MUST ALSO BE PORTED TO THOSE OTHER FILES, IF APPROPRIATE.
+// THIS FILE WAS COPIED AND ADAPTED FROM LocalDateIntegrationTest.kt
+// MAKE SURE THAT ANY CHANGES TO THIS FILE ARE BACKPORTED TO
+// LocalDateIntegrationTest.kt AND PORTED TO LocalDateIntegrationTest.kt,
+// if appropriate.
 ////////////////////////////////////////////////////////////////////////////////
-class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
+class JavaTimeLocalDateIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val dataConnect: FirebaseDataConnect by lazy {
     val connectorConfig = testConnectorConfig.copy(connector = "demo")
@@ -87,7 +89,8 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun dateNonNullable_MutationVariable() =
     runTest(timeout = 1.minutes) {
-      checkAll(propTestConfig, Arb.dataConnect.localDate()) { localDate ->
+      checkAll(propTestConfig, Arb.dataConnect.localDate().map { it.toJavaLocalDate() }) { localDate
+        ->
         val insertResult = nonNullableDate.insert(localDate)
         val queryResult = nonNullableDate.getByKey(insertResult.data.key)
         queryResult.data.item?.value shouldBe localDate
@@ -103,7 +106,8 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
         Arb.dataConnect.threeNonNullDatesTestData()
       ) { tag, testDatas ->
         val insertResult = nonNullableDate.insert3(tag, testDatas)
-        val queryResult = nonNullableDate.getAllByTagAndValue(tag, testDatas.selected!!.date)
+        val queryResult =
+          nonNullableDate.getAllByTagAndValue(tag, testDatas.selected!!.date.toJavaLocalDate())
         val matchingIds = testDatas.idsMatchingSelected(insertResult)
         queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
       }
@@ -161,7 +165,11 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun dateNullable_MutationVariable() =
     runTest(timeout = 1.minutes) {
-      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      val localDates =
+        Arb.dataConnect
+          .localDate()
+          .map { it.toJavaLocalDate() }
+          .orNullableReference(nullProbability = 0.2)
       checkAll(propTestConfig, localDates) { localDate ->
         val insertResult = nullableDate.insert(localDate.ref)
         val queryResult = nullableDate.getByKey(insertResult.data.key)
@@ -178,7 +186,8 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
         Arb.dataConnect.threePossiblyNullDatesTestData()
       ) { tag, testDatas ->
         val insertResult = nullableDate.insert3(tag, testDatas)
-        val queryResult = nullableDate.getAllByTagAndValue(tag, testDatas.selected?.date)
+        val queryResult =
+          nullableDate.getAllByTagAndValue(tag, testDatas.selected?.date?.toJavaLocalDate())
         val matchingIds = testDatas.idsMatchingSelected(insertResult)
         queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
       }
@@ -217,12 +226,12 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
     assertSoftly {
       withClue(item) {
         withClue("valueWithVariableDefault") {
-          item.valueWithVariableDefault shouldBe LocalDate(6904, 11, 30)
+          item.valueWithVariableDefault shouldBe java.time.LocalDate.of(6904, 11, 30)
         }
         withClue("valueWithSchemaDefault") {
-          item.valueWithSchemaDefault shouldBe LocalDate(2112, 1, 31)
+          item.valueWithSchemaDefault shouldBe java.time.LocalDate.of(2112, 1, 31)
         }
-        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date }
+        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date.toJavaLocalDate() }
         withClue("requestTime1") { item.requestTime1.shouldNotBeNull() }
         withClue("requestTime2") { item.requestTime2 shouldBe item.requestTime1 }
       }
@@ -240,7 +249,7 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun dateNonNullable_QueryVariableDefaults() =
     runTest(timeout = 1.minutes) {
-      val defaultTestData = DateTestData(LocalDate(2692, 5, 21), "2692-05-21")
+      val defaultTestData = DateTestData(java.time.LocalDate.of(2692, 5, 21), "2692-05-21")
       val localDateArb = Arb.dataConnect.dateTestData().withEdgecases(defaultTestData)
       checkAll(
         propTestConfig,
@@ -249,7 +258,8 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
       ) { testDatas, tag ->
         val insertResult = nonNullableDate.insert3(tag, testDatas)
         val queryResult = nonNullableDate.getAllByTagAndDefaultValue(tag)
-        val matchingIds = testDatas.idsMatching(insertResult, defaultTestData.date)
+        val matchingIds =
+          testDatas.idsMatching(insertResult, defaultTestData.date.toJavaLocalDate())
         queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
       }
     }
@@ -263,17 +273,17 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
     assertSoftly {
       withClue(item) {
         withClue("valueWithVariableDefault") {
-          item.valueWithVariableDefault shouldBe LocalDate(8113, 2, 9)
+          item.valueWithVariableDefault shouldBe java.time.LocalDate.of(8113, 2, 9)
         }
         withClue("valueWithVariableNullDefault") {
           item.valueWithVariableNullDefault.shouldBeNull()
         }
         withClue("valueWithSchemaDefault") {
-          item.valueWithSchemaDefault shouldBe LocalDate(1921, 12, 2)
+          item.valueWithSchemaDefault shouldBe java.time.LocalDate.of(1921, 12, 2)
         }
         withClue("valueWithSchemaNullDefault") { item.valueWithSchemaNullDefault.shouldBeNull() }
         withClue("valueWithNoDefault") { item.valueWithNoDefault.shouldBeNull() }
-        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date }
+        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date.toJavaLocalDate() }
         withClue("requestTime1") { item.requestTime1.shouldNotBeNull() }
         withClue("requestTime2") { item.requestTime2 shouldBe item.requestTime1 }
       }
@@ -291,7 +301,7 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun dateNullable_QueryVariableDefaults() =
     runTest(timeout = 1.minutes) {
-      val defaultTestData = DateTestData(LocalDate(1771, 10, 28), "1771-10-28")
+      val defaultTestData = DateTestData(java.time.LocalDate.of(1771, 10, 28), "1771-10-28")
       val dateTestDataArb =
         Arb.dataConnect
           .dateTestData()
@@ -304,7 +314,8 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
       ) { testDatas, tag ->
         val insertResult = nullableDate.insert3(tag, testDatas)
         val queryResult = nullableDate.getAllByTagAndDefaultValue(tag)
-        val matchingIds = testDatas.idsMatching(insertResult, defaultTestData.date)
+        val matchingIds =
+          testDatas.idsMatching(insertResult, defaultTestData.date.toJavaLocalDate())
         queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
       }
     }
@@ -396,41 +407,42 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Serializable private data class ThreeKeysData(val key1: Key, val key2: Key, val key3: Key)
 
-  @Serializable private data class InsertVariables(val value: LocalDate?)
+  @Serializable private data class InsertVariables(val value: java.time.LocalDate?)
 
   @Serializable private data class InsertStringVariables(val value: String)
 
   @Serializable
   private data class Insert3Variables(
     val tag: String,
-    val value1: LocalDate?,
-    val value2: LocalDate?,
-    val value3: LocalDate?,
+    val value1: java.time.LocalDate?,
+    val value2: java.time.LocalDate?,
+    val value3: java.time.LocalDate?,
   )
 
   @Serializable private data class TagVariables(val tag: String)
 
-  @Serializable private data class TagAndValueVariables(val tag: String, val value: LocalDate?)
+  @Serializable
+  private data class TagAndValueVariables(val tag: String, val value: java.time.LocalDate?)
 
   @Serializable private data class TagAndStringValueVariables(val tag: String, val value: String)
 
   @Serializable
   private data class QueryData(val item: Item?) {
-    @Serializable data class Item(val value: LocalDate?)
+    @Serializable data class Item(val value: java.time.LocalDate?)
   }
 
   @Serializable
   private data class GetInsertedWithDefaultsByKeyQueryData(val item: Item?) {
     @Serializable
     data class Item(
-      val valueWithVariableDefault: LocalDate,
-      val valueWithVariableNullDefault: LocalDate?,
-      val valueWithSchemaDefault: LocalDate,
-      val valueWithSchemaNullDefault: LocalDate?,
-      val valueWithNoDefault: LocalDate?,
-      val epoch: LocalDate?,
-      val requestTime1: LocalDate?,
-      val requestTime2: LocalDate?,
+      val valueWithVariableDefault: java.time.LocalDate,
+      val valueWithVariableNullDefault: java.time.LocalDate?,
+      val valueWithSchemaDefault: java.time.LocalDate,
+      val valueWithSchemaNullDefault: java.time.LocalDate?,
+      val valueWithNoDefault: java.time.LocalDate?,
+      val epoch: java.time.LocalDate?,
+      val requestTime1: java.time.LocalDate?,
+      val requestTime2: java.time.LocalDate?,
     )
   }
 
@@ -473,8 +485,9 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
     getInsertedWithDefaultsByKeyQueryName: String,
   ) {
 
-    suspend fun insert(localDate: LocalDate?): MutationResult<SingleKeyData, InsertVariables> =
-      insert(InsertVariables(localDate))
+    suspend fun insert(
+      localDate: java.time.LocalDate?
+    ): MutationResult<SingleKeyData, InsertVariables> = insert(InsertVariables(localDate))
 
     suspend fun insert(variables: InsertVariables): MutationResult<SingleKeyData, InsertVariables> =
       mutations.insert(variables).execute()
@@ -492,16 +505,16 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
     ): MutationResult<ThreeKeysData, Insert3Variables> =
       insert3(
         tag = tag,
-        value1 = testDatas.testData1?.date,
-        value2 = testDatas.testData2?.date,
-        value3 = testDatas.testData3?.date
+        value1 = testDatas.testData1?.date?.toJavaLocalDate(),
+        value2 = testDatas.testData2?.date?.toJavaLocalDate(),
+        value3 = testDatas.testData3?.date?.toJavaLocalDate()
       )
 
     suspend fun insert3(
       tag: String,
-      value1: LocalDate?,
-      value2: LocalDate?,
-      value3: LocalDate?,
+      value1: java.time.LocalDate?,
+      value2: java.time.LocalDate?,
+      value3: java.time.LocalDate?,
     ): MutationResult<ThreeKeysData, Insert3Variables> =
       insert3(Insert3Variables(tag = tag, value1 = value1, value2 = value2, value3 = value3))
 
@@ -518,7 +531,7 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
 
     suspend fun getAllByTagAndValue(
       tag: String,
-      value: LocalDate?
+      value: java.time.LocalDate?
     ): QueryResult<MultipleKeysData, TagAndValueVariables> =
       getAllByTagAndValue(TagAndValueVariables(tag, value))
 
@@ -689,12 +702,12 @@ class LocalDateIntegrationTest : DataConnectIntegrationTestBase() {
 
     fun ThreeDateTestDatas.idsMatching(
       result: MutationResult<ThreeKeysData, *>,
-      localDate: LocalDate?,
+      localDate: java.time.LocalDate?,
     ): List<UUID> = idsMatching(result.data, localDate)
 
     fun ThreeDateTestDatas.idsMatching(
       data: ThreeKeysData,
-      localDate: LocalDate?,
+      localDate: java.time.LocalDate?,
     ): List<UUID> = idsMatching(localDate) { data.uuidFromItemNumber(it) }
 
     fun ThreeKeysData.uuidFromItemNumber(itemNumber: ItemNumber): UUID =

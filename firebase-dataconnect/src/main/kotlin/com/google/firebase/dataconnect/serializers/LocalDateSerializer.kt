@@ -29,6 +29,9 @@ import kotlinx.serialization.encoding.Encoder
 /**
  * An implementation of [KSerializer] for serializing and deserializing [LocalDate] objects in the
  * wire format expected by the Firebase Data Connect backend.
+ *
+ * @see JavaTimeLocalDateSerializer
+ * @see KotlinxDatetimeLocalDateSerializer
  */
 public object LocalDateSerializer : KSerializer<LocalDate> {
 
