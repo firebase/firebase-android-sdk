@@ -216,7 +216,7 @@ abstract class DackkaPlugin : Plugin<Project> {
   ) =
     project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
       val outputDir by tempFile("dackkaTransformedFiles")
-      
+
       dackkaFiles.set(dackkaOutputDirectory)
       outputDirectory.set(outputDir)
     }
