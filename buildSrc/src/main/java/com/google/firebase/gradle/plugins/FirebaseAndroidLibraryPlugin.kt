@@ -23,7 +23,6 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
-import java.io.File
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
@@ -164,14 +163,14 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
   }
 
   private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {
-    val srcDirs = android.sourceSets.getByName("main").java.srcDirs
+    val srcDirs = project.files(android.sourceSets.getByName("main").java.srcDirs)
 
     val mainSourceSets = android.sourceSets.getByName("main")
     val getKotlinDirectories = mainSourceSets::class.java.getDeclaredMethod("getKotlinDirectories")
     val kotlinSrcDirs = getKotlinDirectories.invoke(mainSourceSets)
 
-    val apiInfo = getApiInfo(project, kotlinSrcDirs as Set<File>)
-    val generateApiTxt = getGenerateApiTxt(project, kotlinSrcDirs)
+    val apiInfo = getApiInfo(project, srcDirs)
+    val generateApiTxt = getGenerateApiTxt(project, project.files(kotlinSrcDirs))
     val docStubs = getDocStubs(project, srcDirs)
 
     project.tasks.getByName("check").dependsOn(docStubs)
