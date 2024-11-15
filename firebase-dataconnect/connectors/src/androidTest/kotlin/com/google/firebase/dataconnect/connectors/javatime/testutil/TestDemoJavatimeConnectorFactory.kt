@@ -1,0 +1,50 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM TestDemoConnectorFactory.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
+package com.google.firebase.dataconnect.connectors.javatime.testutil
+
+import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.DataConnectSettings
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.connectors.javatime.DemoJavatimeConnector
+import com.google.firebase.dataconnect.connectors.javatime.getInstance
+import com.google.firebase.dataconnect.connectors.testutil.TestConnectorFactory
+import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
+
+/**
+ * A JUnit test rule that creates instances of [DemoJavatimeConnector] for use during testing, and
+ * closes their underlying [FirebaseDataConnect] instances upon test completion.
+ */
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM TestDemoConnectorFactory.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
+class DemoJavatimeConnectorFactory(
+  firebaseAppFactory: TestFirebaseAppFactory,
+  dataConnectFactory: TestDataConnectFactory
+) : TestConnectorFactory<DemoJavatimeConnector>(firebaseAppFactory, dataConnectFactory) {
+  override fun createConnector(firebaseApp: FirebaseApp, settings: DataConnectSettings) =
+    DemoJavatimeConnector.getInstance(firebaseApp, settings)
+}

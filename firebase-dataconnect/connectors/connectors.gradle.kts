@@ -253,8 +253,34 @@ run {
     connectorPackageName.set("com.google.firebase.dataconnect.connectors.dataconnectdatetime")
     connectorClassName.set("DemoDataconnectdatetimeConnector")
   }
+
+  tasks.register<GenerateConnectorsDateScalarIntegrationTestTask>(
+    "generateDateScalarJavaTimeLocalDateIntegrationTest"
+  ) {
+    val destDir = baseDir.dir("javatime")
+    testSrcFile.set(testFile)
+    testDestFile.set(destDir.file("DateScalarJavaTimeLocalDateIntegrationTest.kt"))
+    testKotlinPackage.set("com.google.firebase.dataconnect.connectors.javatime")
+    testClassName.set("DateScalarJavaTimeLocalDateIntegrationTest")
+
+    testBaseSrcFile.set(testBaseFile)
+    testBaseDestFile.set(destDir.file("testutil/DemoJavatimeConnectorIntegrationTestBase.kt"))
+    testBaseKotlinPackage.set("com.google.firebase.dataconnect.connectors.javatime.testutil")
+    testBaseClassName.set("DemoJavatimeConnectorIntegrationTestBase")
+
+    connectorFactorySrcFile.set(connectorFactoryFile)
+    connectorFactoryDestFile.set(destDir.file("testutil/TestDemoJavatimeConnectorFactory.kt"))
+    connectorFactoryKotlinPackage.set(
+      "com.google.firebase.dataconnect.connectors.javatime.testutil"
+    )
+    connectorFactoryClassName.set("DemoJavatimeConnectorFactory")
+
+    connectorPackageName.set("com.google.firebase.dataconnect.connectors.javatime")
+    connectorClassName.set("DemoJavatimeConnector")
+  }
 }
 
 tasks.register("generateDataConnectTestingSources") {
   dependsOn("generateDateScalarDataConnectLocalDateIntegrationTest")
+  dependsOn("generateDateScalarJavaTimeLocalDateIntegrationTest")
 }
