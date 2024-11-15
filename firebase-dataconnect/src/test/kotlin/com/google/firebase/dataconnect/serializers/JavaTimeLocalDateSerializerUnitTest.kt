@@ -16,14 +16,14 @@
 @file:OptIn(ExperimentalKotest::class)
 
 ////////////////////////////////////////////////////////////////////////////////
-// THIS FILE WAS COPIED TO JavaTimeLocalDateSerializerUnitTest.kt and
-// KotlinxDatetimeLocalDateSerializerUnitTest.kt AND ADAPTED TO TEST THE
-// CORRESPONDING IMPLEMENTATIONS OF LocalDate. ANY CHANGES MADE TO THIS FILE
-// MUST ALSO BE PORTED TO THOSE OTHER FILES, IF APPROPRIATE.
+// THIS FILE WAS COPIED AND ADAPTED FROM LocalDateSerializerUnitTest.kt
+// MAKE SURE THAT ANY CHANGES TO THIS FILE ARE BACKPORTED TO
+// LocalDateIntegrationTest.kt AND PORTED TO KotlinxDatetimeLocalDateSerializerUnitTest.kt,
+// if appropriate.
 ////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect.serializers
 
-import com.google.firebase.dataconnect.LocalDate
+import com.google.firebase.dataconnect.testutil.dayRangeInYear
 import com.google.firebase.dataconnect.testutil.property.arbitrary.intWithEvenNumDigitsDistribution
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromValue
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToValue
@@ -63,17 +63,17 @@ import kotlinx.serialization.encoding.Decoder
 import org.junit.Test
 
 ////////////////////////////////////////////////////////////////////////////////
-// THIS FILE WAS COPIED TO JavaTimeLocalDateSerializerUnitTest.kt and
-// KotlinxDatetimeLocalDateSerializerUnitTest.kt AND ADAPTED TO TEST THE
-// CORRESPONDING IMPLEMENTATIONS OF LocalDate. ANY CHANGES MADE TO THIS FILE
-// MUST ALSO BE PORTED TO THOSE OTHER FILES, IF APPROPRIATE.
+// THIS FILE WAS COPIED AND ADAPTED FROM LocalDateSerializerUnitTest.kt
+// MAKE SURE THAT ANY CHANGES TO THIS FILE ARE BACKPORTED TO
+// LocalDateIntegrationTest.kt AND PORTED TO KotlinxDatetimeLocalDateSerializerUnitTest.kt,
+// if appropriate.
 ////////////////////////////////////////////////////////////////////////////////
-class LocalDateSerializerUnitTest {
+class JavaTimeLocalDateSerializerUnitTest {
 
   @Test
   fun `serialize() should produce the expected serialized string`() = runTest {
     checkAll(propTestConfig, Arb.localDate()) { localDate ->
-      val value = encodeToValue(localDate, LocalDateSerializer, serializersModule = null)
+      val value = encodeToValue(localDate, JavaTimeLocalDateSerializer, serializersModule = null)
       value.stringValue shouldBe localDate.toYYYYMMDDWithZeroPadding()
     }
   }
@@ -93,7 +93,8 @@ class LocalDateSerializerUnitTest {
           )
           .toValueProto()
 
-      val decodedLocalDate = decodeFromValue(value, LocalDateSerializer, serializersModule = null)
+      val decodedLocalDate =
+        decodeFromValue(value, JavaTimeLocalDateSerializer, serializersModule = null)
       decodedLocalDate shouldBe localDate
     }
   }
@@ -103,7 +104,7 @@ class LocalDateSerializerUnitTest {
     runTest {
       checkAll(propTestConfig, Arb.unparseableDate()) { encodedDate ->
         val decoder: Decoder = mockk { every { decodeString() } returns encodedDate }
-        shouldThrow<IllegalArgumentException> { LocalDateSerializer.deserialize(decoder) }
+        shouldThrow<IllegalArgumentException> { JavaTimeLocalDateSerializer.deserialize(decoder) }
       }
     }
 
@@ -114,14 +115,14 @@ class LocalDateSerializerUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2)
       )
 
-    fun LocalDate.toYYYYMMDDWithZeroPadding(
+    fun java.time.LocalDate.toYYYYMMDDWithZeroPadding(
       yearPadding: Int = 4,
       monthPadding: Int = 2,
       dayPadding: Int = 2,
     ): String {
       val yearString = year.toZeroPaddedString(yearPadding)
-      val monthString = month.toZeroPaddedString(monthPadding)
-      val dayString = day.toZeroPaddedString(dayPadding)
+      val monthString = month.value.toZeroPaddedString(monthPadding)
+      val dayString = dayOfMonth.toZeroPaddedString(dayPadding)
       return "$yearString-$monthString-$dayString"
     }
 
@@ -147,18 +148,34 @@ class LocalDateSerializerUnitTest {
     }
 
     fun Arb.Companion.localDate(
-      year: Arb<Int> = intWithEvenNumDigitsDistribution(),
-      month: Arb<Int> = intWithEvenNumDigitsDistribution(),
-      day: Arb<Int> = intWithEvenNumDigitsDistribution(),
-    ): Arb<LocalDate> {
+      year: Arb<Int> =
+        intWithEvenNumDigitsDistribution(java.time.Year.MIN_VALUE..java.time.Year.MAX_VALUE),
+      month: Arb<Int> = intWithEvenNumDigitsDistribution(1..12),
+      day: Arb<Int> = intWithEvenNumDigitsDistribution(1..31),
+    ): Arb<java.time.LocalDate> {
+      fun Int.coerceDayOfMonthIntoValidRangeFor(month: Int, year: Int): Int {
+        val monthObject = org.threeten.bp.Month.of(month)
+        val yearObject = org.threeten.bp.Year.of(year)
+        val dayRange = monthObject.dayRangeInYear(yearObject)
+        return coerceIn(dayRange)
+      }
       return arbitrary(
         edgecaseFn = { rs ->
           val yearInt = if (rs.random.nextBoolean()) year.next(rs) else year.edgecase(rs)!!
           val monthInt = if (rs.random.nextBoolean()) month.next(rs) else month.edgecase(rs)!!
           val dayInt = if (rs.random.nextBoolean()) day.next(rs) else day.edgecase(rs)!!
-          LocalDate(year = yearInt, month = monthInt, day = dayInt)
+          val coercedDayInt =
+            dayInt.coerceDayOfMonthIntoValidRangeFor(month = monthInt, year = yearInt)
+          java.time.LocalDate.of(yearInt, monthInt, coercedDayInt)
         },
-        sampleFn = { LocalDate(year = year.bind(), month = month.bind(), day = day.bind()) }
+        sampleFn = {
+          val yearInt = year.bind()
+          val monthInt = month.bind()
+          val dayInt = day.bind()
+          val coercedDayInt =
+            dayInt.coerceDayOfMonthIntoValidRangeFor(month = monthInt, year = yearInt)
+          java.time.LocalDate.of(yearInt, monthInt, coercedDayInt)
+        }
       )
     }
 
