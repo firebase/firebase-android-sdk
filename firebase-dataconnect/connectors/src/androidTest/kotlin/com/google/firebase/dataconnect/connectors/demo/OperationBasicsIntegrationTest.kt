@@ -69,12 +69,12 @@ class OperationBasicsIntegrationTest : DemoConnectorIntegrationTestBase() {
     // Note: This test is very important because the [QueryManager] uses object identity of the
     // variables serializer when fanning out results.
     val variables = Arb.getFooByIdVariables().next(rs)
-    val connector1 = demoConnectorFactory.newInstance()
-    val connector2 = demoConnectorFactory.newInstance()
+    val connector1 = connectorFactory.newInstance()
+    val connector2 = connectorFactory.newInstance()
     connector1 shouldNotBeSameInstanceAs connector2
 
-    val ref1 = demoConnectorFactory.newInstance().getFooById.ref(variables)
-    val ref2 = demoConnectorFactory.newInstance().getFooById.ref(variables)
+    val ref1 = connectorFactory.newInstance().getFooById.ref(variables)
+    val ref2 = connectorFactory.newInstance().getFooById.ref(variables)
 
     assertSoftly {
       withClue("dataDeserializer") {

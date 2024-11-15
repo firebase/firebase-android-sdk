@@ -55,14 +55,14 @@ class DemoConnectorIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun equals_ShouldReturnFalseWhenInvokedOnADistinctObject() {
-    connector.equals(demoConnectorFactory.newInstance()) shouldBe false
+    connector.equals(connectorFactory.newInstance()) shouldBe false
   }
 
   @Test
   fun equals_ShouldReturnFalseWhenInvokedOnTheSameObjectAfterClose() {
-    val connector1 = demoConnectorFactory.newInstance()
+    val connector1 = connectorFactory.newInstance()
     connector1.dataConnect.close()
-    val connector2 = demoConnectorFactory.newInstance()
+    val connector2 = connectorFactory.newInstance()
     connector1 shouldNotBeSameInstanceAs connector2
 
     connector1.equals(connector2) shouldBe false
@@ -85,8 +85,8 @@ class DemoConnectorIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun hashCode_ShouldReturnDistinctValuesOnDistinctInstances() {
-    val hashCode1 = demoConnectorFactory.newInstance().hashCode()
-    val hashCode2 = demoConnectorFactory.newInstance().hashCode()
+    val hashCode1 = connectorFactory.newInstance().hashCode()
+    val hashCode2 = connectorFactory.newInstance().hashCode()
 
     hashCode1 shouldNotBe hashCode2
   }
