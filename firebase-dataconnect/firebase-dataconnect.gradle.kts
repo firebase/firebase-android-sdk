@@ -99,18 +99,12 @@ protobuf {
 dependencies {
   api(project(":firebase-common"))
 
-  implementation("com.google.firebase:firebase-annotations:16.2.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-  }
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-  }
+  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
   }
-  implementation("com.google.firebase:firebase-components:18.0.0") {
-    exclude(group = "com.google.firebase", module = "firebase-common")
-  }
+  implementation("com.google.firebase:firebase-components:18.0.0")
 
   compileOnly(libs.javax.annotation.jsr250)
   compileOnly(libs.kotlinx.datetime)
