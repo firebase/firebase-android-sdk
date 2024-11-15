@@ -310,14 +310,6 @@ package com.google.firebase.dataconnect.serializers {
     field @NonNull public static final com.google.firebase.dataconnect.serializers.AnyValueSerializer INSTANCE;
   }
 
-  public final class DateSerializer implements kotlinx.serialization.KSerializer<java.util.Date> {
-    method @NonNull public java.util.Date deserialize(@NonNull kotlinx.serialization.encoding.Decoder decoder);
-    method @NonNull public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
-    method public void serialize(@NonNull kotlinx.serialization.encoding.Encoder encoder, @NonNull java.util.Date value);
-    property @NonNull public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
-    field @NonNull public static final com.google.firebase.dataconnect.serializers.DateSerializer INSTANCE;
-  }
-
   public final class LocalDateSerializer implements kotlinx.serialization.KSerializer<com.google.firebase.dataconnect.LocalDate> {
     method @NonNull public com.google.firebase.dataconnect.LocalDate deserialize(@NonNull kotlinx.serialization.encoding.Decoder decoder);
     method @NonNull public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
