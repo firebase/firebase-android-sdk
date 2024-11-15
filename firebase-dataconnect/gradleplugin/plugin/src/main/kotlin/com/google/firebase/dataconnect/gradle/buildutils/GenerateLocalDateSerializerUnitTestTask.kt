@@ -16,33 +16,27 @@
 
 package com.google.firebase.dataconnect.gradle.buildutils
 
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 
 @Suppress("unused")
 abstract class GenerateLocalDateSerializerUnitTestTask : DefaultTask() {
 
-  @get:InputFile
-  abstract val srcFile: RegularFileProperty
+  @get:InputFile abstract val srcFile: RegularFileProperty
 
-  @get:OutputFile
-  abstract val destFile: RegularFileProperty
+  @get:OutputFile abstract val destFile: RegularFileProperty
 
-  @get:Input
-  abstract val localDateFullyQualifiedClassName: Property<String>
+  @get:Input abstract val localDateFullyQualifiedClassName: Property<String>
 
-  @get:Input
-  abstract val localDateFactoryCall: Property<String>
+  @get:Input abstract val localDateFactoryCall: Property<String>
 
-  @get:Input
-  abstract val classNameUnderTest: Property<String>
+  @get:Input abstract val classNameUnderTest: Property<String>
 
   @TaskAction
   fun run() {
@@ -64,19 +58,19 @@ abstract class GenerateLocalDateSerializerUnitTestTask : DefaultTask() {
     val linesByReplacementId =
       mapOf(
         "CoerceDayOfMonthIntoValidRangeFor" to
-            listOf(
-              "fun Int.coerceDayOfMonthIntoValidRangeFor(month: Int, year: Int): Int {",
-              "  val monthObject = org.threeten.bp.Month.of(month)",
-              "  val yearObject = org.threeten.bp.Year.of(year)",
-              "  val dayRange = monthObject.dayRangeInYear(yearObject)",
-              "  return coerceIn(dayRange)",
-              "}",
-            ),
+          listOf(
+            "fun Int.coerceDayOfMonthIntoValidRangeFor(month: Int, year: Int): Int {",
+            "  val monthObject = org.threeten.bp.Month.of(month)",
+            "  val yearObject = org.threeten.bp.Year.of(year)",
+            "  val dayRange = monthObject.dayRangeInYear(yearObject)",
+            "  return coerceIn(dayRange)",
+            "}",
+          ),
         "LocalDateSample" to
-            listOf(
-              "val coercedDayInt = dayInt.coerceDayOfMonthIntoValidRangeFor(month=monthInt, year=yearInt)",
-              "$localDateFullyQualifiedClassName$localDateFactoryCall(yearInt, monthInt, coercedDayInt)",
-            ),
+          listOf(
+            "val coercedDayInt = dayInt.coerceDayOfMonthIntoValidRangeFor(month=monthInt, year=yearInt)",
+            "$localDateFullyQualifiedClassName$localDateFactoryCall(yearInt, monthInt, coercedDayInt)",
+          ),
       )
 
     val generatedFileWarningLines = TextLinesTransformer.getGeneratedFileWarningLines(srcFile)
@@ -120,5 +114,4 @@ abstract class GenerateLocalDateSerializerUnitTestTask : DefaultTask() {
     logger.info("Writing {}", destFile.absolutePath)
     destFile.writeText(transformer.lines.joinToString("\n"))
   }
-
 }

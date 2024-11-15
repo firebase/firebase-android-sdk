@@ -23,7 +23,7 @@ plugins {
   id("kotlin-android")
   id("com.google.protobuf")
   id("copy-google-services")
-  id("com.google.firebase.dataconnect.gradle.buildutils")
+  id("com.google.firebase.dataconnect.gradle.lib")
   alias(libs.plugins.kotlinx.serialization)
 }
 

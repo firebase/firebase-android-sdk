@@ -40,4 +40,3 @@ dependencyResolutionManagement {
 }
 
 include(":plugin")
-include(":buildutils")

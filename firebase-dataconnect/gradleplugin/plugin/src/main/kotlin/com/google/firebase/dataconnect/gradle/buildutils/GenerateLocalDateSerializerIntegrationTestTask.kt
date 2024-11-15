@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.gradle.buildutils
 
+import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
@@ -23,31 +24,23 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import java.io.File
 
 @Suppress("unused")
 abstract class GenerateLocalDateSerializerIntegrationTestTask : DefaultTask() {
 
-  @get:InputFile
-  abstract val srcFile: RegularFileProperty
+  @get:InputFile abstract val srcFile: RegularFileProperty
 
-  @get:OutputFile
-  abstract val destFile: RegularFileProperty
+  @get:OutputFile abstract val destFile: RegularFileProperty
 
-  @get:Input
-  abstract val destClassName: Property<String>
+  @get:Input abstract val destClassName: Property<String>
 
-  @get:Input
-  abstract val localDateFullyQualifiedClassName: Property<String>
+  @get:Input abstract val localDateFullyQualifiedClassName: Property<String>
 
-  @get:Input
-  abstract val localDateFactoryCall: Property<String>
+  @get:Input abstract val localDateFactoryCall: Property<String>
 
-  @get:Input
-  abstract val convertFromDataConnectLocalDateFunctionName: Property<String>
+  @get:Input abstract val convertFromDataConnectLocalDateFunctionName: Property<String>
 
-  @get:Input
-  abstract val serializerClassName: Property<String>
+  @get:Input abstract val serializerClassName: Property<String>
 
   @TaskAction
   fun run() {
@@ -102,5 +95,4 @@ abstract class GenerateLocalDateSerializerIntegrationTestTask : DefaultTask() {
     logger.info("Writing {}", destFile.absolutePath)
     destFile.writeText(transformer.lines.joinToString("\n"))
   }
-
 }

@@ -39,6 +39,15 @@ gradlePlugin {
   }
 }
 
+gradlePlugin {
+  plugins {
+    create("lib") {
+      id = "com.google.firebase.dataconnect.gradle.lib"
+      implementationClass = "com.google.firebase.dataconnect.gradle.buildutils.StubPlugin"
+    }
+  }
+}
+
 spotless {
   kotlin { ktfmt("0.43").googleStyle() }
   kotlinGradle {

@@ -21,6 +21,7 @@ import java.io.File
 /**
  * Performs various transformations on a mutable list of strings. This class is _not_ thread safe;
  * any concurrent use must be synchronized externally or else the behavior is undefined.
+ *
  * @property lines the lines to mutate; this list is modified in-place.
  */
 class TextLinesTransformer(val lines: MutableList<String>) {
@@ -86,9 +87,9 @@ class TextLinesTransformer(val lines: MutableList<String>) {
         linesByReplacementId[replacementId]
           ?: throw Exception(
             "Replacement ID \"$replacementId\" is not known; " +
-                "there are ${linesByReplacementId.size} known replacementIds: " +
-                linesByReplacementId.keys.sorted().joinToString(", ") +
-                " (error code zgcc257b23)"
+              "there are ${linesByReplacementId.size} known replacementIds: " +
+              linesByReplacementId.keys.sorted().joinToString(", ") +
+              " (error code zgcc257b23)"
           )
 
       repeat(lineDeleteCount) { lines.removeAt(index) }
