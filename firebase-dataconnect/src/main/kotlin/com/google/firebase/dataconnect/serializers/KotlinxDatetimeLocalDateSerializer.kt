@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.serializers
 
 import com.google.firebase.dataconnect.toDataConnectLocalDate
 import com.google.firebase.dataconnect.toKotlinxLocalDate
-import kotlinx.datetime.LocalDate
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -27,8 +26,8 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
 /**
- * An implementation of [KSerializer] for serializing and deserializing [LocalDate] objects in the
- * wire format expected by the Firebase Data Connect backend.
+ * An implementation of [KSerializer] for serializing and deserializing [kotlinx.datetime.LocalDate]
+ * objects in the wire format expected by the Firebase Data Connect backend.
  *
  * Be sure to _only_ use this class if your application has a dependency on
  * `org.jetbrains.kotlinx:kotlinx-datetime`. See the documentation for [toKotlinxLocalDate] for
@@ -37,16 +36,16 @@ import kotlinx.serialization.encoding.Encoder
  * @see LocalDateSerializer
  * @see JavaTimeLocalDateSerializer
  */
-public object KotlinxDatetimeLocalDateSerializer : KSerializer<LocalDate> {
+public object KotlinxDatetimeLocalDateSerializer : KSerializer<kotlinx.datetime.LocalDate> {
 
   override val descriptor: SerialDescriptor =
-    PrimitiveSerialDescriptor("java.time.LocalDate", PrimitiveKind.STRING)
+    PrimitiveSerialDescriptor("kotlinx.datetime.LocalDate", PrimitiveKind.STRING)
 
-  override fun serialize(encoder: Encoder, value: LocalDate) {
+  override fun serialize(encoder: Encoder, value: kotlinx.datetime.LocalDate) {
     LocalDateSerializer.serialize(encoder, value.toDataConnectLocalDate())
   }
 
-  override fun deserialize(decoder: Decoder): LocalDate {
+  override fun deserialize(decoder: Decoder): kotlinx.datetime.LocalDate {
     return LocalDateSerializer.deserialize(decoder).toKotlinxLocalDate()
   }
 }
