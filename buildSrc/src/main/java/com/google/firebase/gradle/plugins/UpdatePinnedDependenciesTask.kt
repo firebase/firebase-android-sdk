@@ -18,7 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.Property
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.StopExecutionException
@@ -55,10 +55,10 @@ import org.gradle.api.tasks.TaskAction
  */
 abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   @get:[InputFile]
-  abstract val buildFile: Property<File>
+  abstract val buildFile: RegularFileProperty
 
   @get:[OutputFile]
-  abstract val outputFile: Property<File>
+  abstract val outputFile: RegularFileProperty
 
   @TaskAction
   fun updateBuildFileDependencies() {
@@ -67,12 +67,12 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
     if (dependenciesToChange.isEmpty()) throw StopExecutionException("No libraries to change.")
 
-    val buildFileContent = buildFile.get().readLines()
+    val buildFileContent = buildFile.get().asFile.readLines()
     val updatedContent = replaceProjectLevelDependencies(buildFileContent, dependenciesToChange)
 
     validateDependenciesHaveChanged(dependenciesToChange, buildFileContent, updatedContent)
 
-    outputFile.get().writeText(updatedContent.joinToString("\n") + "\n")
+    outputFile.get().asFile.writeText(updatedContent.joinToString("\n") + "\n")
   }
 
   private fun validateDependenciesHaveChanged(

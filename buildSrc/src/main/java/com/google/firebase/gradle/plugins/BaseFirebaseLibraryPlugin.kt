@@ -23,6 +23,7 @@ import java.nio.file.Paths
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
@@ -124,7 +125,10 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     Coverage.apply(library)
   }
 
-  protected fun getApiInfo(project: Project, srcDirs: Set<File>): TaskProvider<ApiInformationTask> {
+  protected fun getApiInfo(
+    project: Project,
+    srcDirs: ConfigurableFileCollection,
+  ): TaskProvider<ApiInformationTask> {
     val outputFile =
       project.rootProject.file(
         Paths.get(
@@ -138,7 +142,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       project.file("api.txt").takeIf { it.exists() } ?: project.rootProject.file("empty-api.txt")
     val apiInfo =
       project.tasks.register<ApiInformationTask>("apiInformation") {
-        sources.value(project.provider { srcDirs })
+        sources.from(project.provider { srcDirs })
         apiTxtFile.set(apiTxt)
         baselineFile.set(project.file("baseline.txt"))
         this.outputFile.set(outputFile)
@@ -157,17 +161,17 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     }
   }
 
-  protected fun getGenerateApiTxt(project: Project, srcDirs: Set<File>) =
+  protected fun getGenerateApiTxt(project: Project, srcDirs: ConfigurableFileCollection) =
     project.tasks.register<GenerateApiTxtTask>("generateApiTxtFile") {
-      sources.value(project.provider { srcDirs })
+      sources.from(project.provider { srcDirs })
       apiTxtFile.set(project.file("api.txt"))
       baselineFile.set(project.file("baseline.txt"))
       updateBaseline.set(project.hasProperty("updateBaseline"))
     }
 
-  protected fun getDocStubs(project: Project, srcDirs: Set<File>) =
+  protected fun getDocStubs(project: Project, srcDirs: ConfigurableFileCollection) =
     project.tasks.register<GenerateStubsTask>("docStubs") {
-      sources.value(project.provider { srcDirs })
+      sources.from(project.provider { srcDirs })
     }
 
   /**
