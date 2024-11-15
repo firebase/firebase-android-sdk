@@ -14,12 +14,24 @@
  * limitations under the License.
  */
 
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM DemoConnectorIntegrationTestBase.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect.connectors.dataconnectdatetime.testutil
 
 import com.google.firebase.dataconnect.connectors.dataconnectdatetime.DemoDataconnectdatetimeConnector
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import org.junit.Rule
 
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM DemoConnectorIntegrationTestBase.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
 abstract class DemoDataconnectdatetimeConnectorIntegrationTestBase :
   DataConnectIntegrationTestBase() {
 

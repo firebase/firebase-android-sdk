@@ -16,6 +16,12 @@
 
 @file:OptIn(ExperimentalKotest::class, ExperimentalFirebaseDataConnect::class)
 
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM DateScalarIntegrationTest.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect.connectors.dataconnectdatetime
 
 import com.google.firebase.dataconnect.DataConnectException
@@ -63,6 +69,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import org.junit.Test
 
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM DateScalarIntegrationTest.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
 class DateScalarDataConnectLocalDateIntegrationTest :
   DemoDataconnectdatetimeConnectorIntegrationTestBase() {
 

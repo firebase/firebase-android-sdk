@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM TestDemoConnectorFactory.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect.connectors.dataconnectdatetime.testutil
 
 import com.google.firebase.FirebaseApp
@@ -29,6 +35,12 @@ import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
  * A JUnit test rule that creates instances of [DemoDataconnectdatetimeConnector] for use during
  * testing, and closes their underlying [FirebaseDataConnect] instances upon test completion.
  */
+////////////////////////////////////////////////////////////////////////////////
+// WARNING: THIS FILE IS GENERATED FROM TestDemoConnectorFactory.kt
+// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
+// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
+// ./gradlew generateDataConnectTestingSources
+////////////////////////////////////////////////////////////////////////////////
 class TestDemoDataconnectdatetimeConnectorFactory(
   firebaseAppFactory: TestFirebaseAppFactory,
   dataConnectFactory: TestDataConnectFactory

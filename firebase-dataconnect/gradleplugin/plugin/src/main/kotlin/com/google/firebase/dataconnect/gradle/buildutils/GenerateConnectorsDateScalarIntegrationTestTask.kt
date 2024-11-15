@@ -141,11 +141,15 @@ private class TestDestFileGenerator(
     logger.info("Reading from file: {}", srcFile)
     val transformer = TextLinesTransformer(srcFile)
 
-    transformer.atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
-    transformer.replaceWord("DateScalarIntegrationTest", className)
-    transformer.replaceWord("DemoConnectorIntegrationTestBase", superClassName)
-    transformer.replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
-    transformer.replaceWord("DemoConnector", connectorClassName)
+    transformer.run {
+      atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
+      replaceWord("DateScalarIntegrationTest", className)
+      replaceWord("DemoConnectorIntegrationTestBase", superClassName)
+      replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
+      replaceWord("DemoConnector", connectorClassName)
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "package ")
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "class ")
+    }
 
     logger.info("Writing to file: {}", destFile)
     transformer.writeLines(destFile)
@@ -167,11 +171,15 @@ private class TestBaseDestFileGenerator(
     logger.info("Reading from file: {}", srcFile)
     val transformer = TextLinesTransformer(srcFile)
 
-    transformer.atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
-    transformer.replaceWord("DemoConnectorIntegrationTestBase", className)
-    transformer.replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
-    transformer.replaceWord("DemoConnector", connectorClassName)
-    transformer.replaceWord("TestDemoConnectorFactory", connectorFactoryClassName)
+    transformer.run {
+      atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
+      replaceWord("DemoConnectorIntegrationTestBase", className)
+      replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
+      replaceWord("DemoConnector", connectorClassName)
+      replaceWord("TestDemoConnectorFactory", connectorFactoryClassName)
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "package ")
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "abstract class ")
+    }
 
     logger.info("Writing to file: {}", destFile)
     transformer.writeLines(destFile)
@@ -192,10 +200,14 @@ private class ConnectorFactoryDestFileGenerator(
     logger.info("Reading from file: {}", srcFile)
     val transformer = TextLinesTransformer(srcFile)
 
-    transformer.atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
-    transformer.replaceWord("TestDemoConnectorFactory", className)
-    transformer.replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
-    transformer.replaceWord("DemoConnector", connectorClassName)
+    transformer.run {
+      atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
+      replaceWord("TestDemoConnectorFactory", className)
+      replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
+      replaceWord("DemoConnector", connectorClassName)
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "package ")
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "class ")
+    }
 
     logger.info("Writing to file: {}", destFile)
     transformer.writeLines(destFile)

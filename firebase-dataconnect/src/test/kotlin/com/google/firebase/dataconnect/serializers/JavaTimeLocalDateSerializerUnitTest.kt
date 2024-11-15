@@ -19,7 +19,7 @@
 // WARNING: THIS FILE IS GENERATED FROM LocalDateSerializerUnitTest.kt
 // DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
 // THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
-// ./gradlew :firebase-dataconnect:generateDataConnectTestingSources
+// ./gradlew generateDataConnectTestingSources
 ////////////////////////////////////////////////////////////////////////////////
 package com.google.firebase.dataconnect.serializers
 
@@ -66,7 +66,7 @@ import org.junit.Test
 // WARNING: THIS FILE IS GENERATED FROM LocalDateSerializerUnitTest.kt
 // DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN
 // THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:
-// ./gradlew :firebase-dataconnect:generateDataConnectTestingSources
+// ./gradlew generateDataConnectTestingSources
 ////////////////////////////////////////////////////////////////////////////////
 class JavaTimeLocalDateSerializerUnitTest {
 

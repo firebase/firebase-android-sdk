@@ -73,8 +73,6 @@ abstract class GenerateLocalDateSerializerUnitTestTask : DefaultTask() {
           ),
       )
 
-    val generatedFileWarningLines = TextLinesTransformer.getGeneratedFileWarningLines(srcFile)
-
     transformer.run {
       atLineThatStartsWith("import ")
         .insertAbove("import com.google.firebase.dataconnect.testutil.dayRangeInYear")
@@ -103,12 +101,8 @@ abstract class GenerateLocalDateSerializerUnitTestTask : DefaultTask() {
       )
 
       applyReplacements(linesByReplacementId)
-
-      listOf("package ", "class ").forEach { linePrefix ->
-        atLineThatStartsWith(linePrefix)
-          .deleteLinesAboveThatStartWith("//")
-          .insertAbove(generatedFileWarningLines)
-      }
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "package ")
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "class ")
     }
 
     logger.info("Writing {}", destFile.absolutePath)

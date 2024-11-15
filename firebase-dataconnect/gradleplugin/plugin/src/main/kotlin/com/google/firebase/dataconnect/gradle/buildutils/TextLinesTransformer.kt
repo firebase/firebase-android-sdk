@@ -33,10 +33,12 @@ class TextLinesTransformer(val lines: MutableList<String>) {
     file.writeText(lines.joinToString("\n"))
   }
 
-  fun indexOf(predicateDescription: String, predicate: (String) -> Boolean): Int {
+  private fun indexOf(predicateDescription: String, predicate: (String) -> Boolean): Int {
     val index = lines.indexOfFirst(predicate)
     if (index < 0) {
-      throw TextLinesTransformerException("unable to find a line that $predicateDescription")
+      throw TextLinesTransformerException(
+        "unable to find a line that $predicateDescription (error code 9w35p9cpn2)"
+      )
     }
     return index
   }
@@ -83,23 +85,53 @@ class TextLinesTransformer(val lines: MutableList<String>) {
   }
 
   fun applyReplacements(linesByReplacementId: Map<String, List<String>>) {
+    val unknownReplacementIds = mutableSetOf<String>()
+    val missingReplacementIds = linesByReplacementId.keys.toMutableSet()
+
     for (index in lines.indices.reversed()) {
       val line = lines[index]
       val matchResult = replacementsRegex.matchEntire(line.trim()) ?: continue
       val lineDeleteCount = matchResult.groupValues[1].toInt() + 1
       val replacementId = matchResult.groupValues[2]
 
-      val replacementLines =
-        linesByReplacementId[replacementId]
-          ?: throw Exception(
-            "Replacement ID \"$replacementId\" is not known; " +
-              "there are ${linesByReplacementId.size} known replacementIds: " +
-              linesByReplacementId.keys.sorted().joinToString(", ") +
-              " (error code zgcc257b23)"
-          )
+      val replacementLines = linesByReplacementId[replacementId]
+      if (replacementLines === null) {
+        unknownReplacementIds.add(replacementId)
+        continue
+      } else {
+        missingReplacementIds.remove(replacementId)
+      }
 
       repeat(lineDeleteCount) { lines.removeAt(index) }
       lines.addAll(index, replacementLines)
+    }
+
+    if (unknownReplacementIds.isNotEmpty() && missingReplacementIds.isNotEmpty()) {
+      throw TextLinesTransformerException(
+        "There were ${unknownReplacementIds.size} unknown replacement IDs found: " +
+          unknownReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
+          ". The known replacement IDs are: " +
+          linesByReplacementId.keys.sorted().joinToString(", ") { "\"$it\"" } +
+          ". There were also ${missingReplacementIds.size} replacement IDs that were expected " +
+          "to be found but were _not_ found: " +
+          missingReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
+          ". (error code 2aap434gw7)"
+      )
+    } else if (unknownReplacementIds.isNotEmpty()) {
+      throw TextLinesTransformerException(
+        "There were ${unknownReplacementIds.size} unknown replacement IDs found: " +
+          unknownReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
+          ". The known replacement IDs are: " +
+          linesByReplacementId.keys.sorted().joinToString(", ") { "\"$it\"" } +
+          ". (error code 65f2aphm43)"
+      )
+    } else if (missingReplacementIds.isNotEmpty()) {
+      throw TextLinesTransformerException(
+        "There were ${missingReplacementIds.size} replacement IDs that were expected " +
+          "to be found but were _not_ found: " +
+          missingReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
+          ". (error code ha37aja3z3)"
+      )
     }
   }
 
@@ -111,13 +143,30 @@ class TextLinesTransformer(val lines: MutableList<String>) {
       }
     }
 
-    fun replaceWith(line: String): IndexBasedOperations = apply { lines.set(index, line) }
+    fun replaceWith(line: String): IndexBasedOperations = apply { lines[index] = line }
 
     fun insertAbove(line: String): IndexBasedOperations = apply { lines.add(index, line) }
 
     fun insertAbove(lines: Collection<String>): IndexBasedOperations = apply {
       this@TextLinesTransformer.lines.addAll(index, lines)
     }
+  }
+
+  private fun getGeneratedFileWarningLines(srcFile: File) =
+    listOf(
+      "/".repeat(80),
+      "// WARNING: THIS FILE IS GENERATED FROM ${srcFile.name}",
+      "// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN",
+      "// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:",
+      "// ./gradlew generateDataConnectTestingSources",
+      "/".repeat(80),
+    )
+
+  fun insertGeneratedFileWarningLines(srcFile: File, linePrefix: String) {
+    val generatedFileWarningLines = getGeneratedFileWarningLines(srcFile)
+    atLineThatStartsWith(linePrefix)
+      .deleteLinesAboveThatStartWith("//")
+      .insertAbove(generatedFileWarningLines)
   }
 
   private class TextLinesTransformerException(message: String) : Exception(message)
@@ -136,15 +185,5 @@ class TextLinesTransformer(val lines: MutableList<String>) {
       }
       Regex(pattern)
     }
-
-    fun getGeneratedFileWarningLines(srcFile: File) =
-      listOf(
-        "/".repeat(80),
-        "// WARNING: THIS FILE IS GENERATED FROM ${srcFile.name}",
-        "// DO NOT MODIFY THIS FILE BY HAND BECAUSE MANUAL CHANGES WILL GET OVERWRITTEN",
-        "// THE NEXT TIME THAT THIS FILE IS REGENERATED. TO REGENERATE THIS FILE, RUN:",
-        "// ./gradlew :firebase-dataconnect:generateDataConnectTestingSources",
-        "/".repeat(80),
-      )
   }
 }

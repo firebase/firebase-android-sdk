@@ -56,8 +56,6 @@ abstract class GenerateLocalDateSerializerIntegrationTestTask : DefaultTask() {
     logger.info("Reading {}", srcFile.absolutePath)
     val transformer = TextLinesTransformer(srcFile)
 
-    val generatedFileWarningLines = TextLinesTransformer.getGeneratedFileWarningLines(srcFile)
-
     transformer.run {
       removeLine("import com.google.firebase.dataconnect.LocalDate")
       replaceLine(
@@ -83,13 +81,8 @@ abstract class GenerateLocalDateSerializerIntegrationTestTask : DefaultTask() {
         "$localDateFullyQualifiedClassName$localDateFactoryCall("
       )
 
-      atLineThatStartsWith("package ")
-        .deleteLinesAboveThatStartWith("//")
-        .insertAbove(generatedFileWarningLines)
-
-      atLineThatStartsWith("class ")
-        .deleteLinesAboveThatStartWith("//")
-        .insertAbove(generatedFileWarningLines)
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "package ")
+      insertGeneratedFileWarningLines(srcFile, linePrefix = "class ")
     }
 
     logger.info("Writing {}", destFile.absolutePath)
