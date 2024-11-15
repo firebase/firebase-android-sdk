@@ -169,7 +169,7 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
     val getKotlinDirectories = mainSourceSets::class.java.getDeclaredMethod("getKotlinDirectories")
     val kotlinSrcDirs = getKotlinDirectories.invoke(mainSourceSets)
 
-    val apiInfo = getApiInfo(project, srcDirs)
+    val apiInfo = getApiInfo(project, project.files(kotlinSrcDirs))
     val generateApiTxt = getGenerateApiTxt(project, project.files(kotlinSrcDirs))
     val docStubs = getDocStubs(project, srcDirs)
 
