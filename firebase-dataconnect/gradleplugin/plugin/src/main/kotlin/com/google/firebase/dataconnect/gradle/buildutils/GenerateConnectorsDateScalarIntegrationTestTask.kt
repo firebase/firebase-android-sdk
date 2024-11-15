@@ -23,6 +23,7 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
@@ -57,6 +58,14 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
 
   @get:Input abstract val connectorFactoryClassName: Property<String>
 
+  @get:Input abstract val localDateFullyQualifiedClassName: Property<String>
+
+  @get:Input
+  @get:Optional
+  abstract val convertFromDataConnectLocalDateFunctionName: Property<String>
+
+  @get:Input @get:Optional abstract val localDateFactoryCall: Property<String>
+
   @TaskAction
   fun run() {
     val testSrcFile: File = testSrcFile.get().asFile
@@ -73,6 +82,10 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
     val testBaseClassName: String = testBaseClassName.get()
     val connectorFactoryKotlinPackage: String = connectorFactoryKotlinPackage.get()
     val connectorFactoryClassName: String = connectorFactoryClassName.get()
+    val localDateFullyQualifiedClassName: String = localDateFullyQualifiedClassName.get()
+    val convertFromDataConnectLocalDateFunctionName: String? =
+      convertFromDataConnectLocalDateFunctionName.orNull
+    val localDateFactoryCall: String? = localDateFactoryCall.orNull
 
     logger.info("testSrcFile: {}", testSrcFile)
     logger.info("testBaseSrcFile: {}", testBaseSrcFile)
@@ -88,6 +101,12 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
     logger.info("testBaseClassName: {}", testBaseClassName)
     logger.info("connectorFactoryKotlinPackage: {}", connectorFactoryKotlinPackage)
     logger.info("connectorFactoryClassName: {}", connectorFactoryClassName)
+    logger.info("localDateFullyQualifiedClassName: {}", localDateFullyQualifiedClassName)
+    logger.info(
+      "convertFromDataConnectLocalDateFunctionName: {}",
+      convertFromDataConnectLocalDateFunctionName
+    )
+    logger.info("localDateFactoryCall: {}", localDateFactoryCall)
 
     TestDestFileGenerator(
         srcFile = testSrcFile,
@@ -97,6 +116,9 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
         superClassName = testBaseClassName,
         connectorPackageName = connectorPackageName,
         connectorClassName = connectorClassName,
+        convertFromDataConnectLocalDateFunctionName = convertFromDataConnectLocalDateFunctionName,
+        localDateFullyQualifiedClassName = localDateFullyQualifiedClassName,
+        localDateFactoryCall = localDateFactoryCall,
         logger = logger,
       )
       .run()
@@ -134,6 +156,9 @@ private class TestDestFileGenerator(
   val superClassName: String,
   val connectorPackageName: String,
   val connectorClassName: String,
+  val localDateFullyQualifiedClassName: String,
+  val convertFromDataConnectLocalDateFunctionName: String?,
+  val localDateFactoryCall: String?,
   val logger: Logger,
 ) {
 
@@ -143,10 +168,23 @@ private class TestDestFileGenerator(
 
     transformer.run {
       atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
+      removeLine("import com.google.firebase.dataconnect.LocalDate")
       replaceWord("DateScalarIntegrationTest", className)
       replaceWord("DemoConnectorIntegrationTestBase", superClassName)
       replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
       replaceWord("DemoConnector", connectorClassName)
+      replaceWord("LocalDate", localDateFullyQualifiedClassName)
+      convertFromDataConnectLocalDateFunctionName?.let {
+        atLineThatStartsWith("import ")
+          .insertAbove("import com.google.firebase.dataconnect.$it")
+          .insertAbove("import io.kotest.property.arbitrary.map")
+        replaceRegex("""\?\.date(\W|$)""", "?.date?.$it()$1")
+        replaceRegex("""([^?])\.date(\W|${'$'})""", "$1.date.$it()$2")
+        replaceWord("Arb.dataConnect.localDate()", "Arb.dataConnect.localDate().map{it.$it()}")
+      }
+      localDateFactoryCall?.let {
+        replaceText("$localDateFullyQualifiedClassName(", "$localDateFullyQualifiedClassName$it(")
+      }
       insertGeneratedFileWarningLines(srcFile, linePrefix = "package ")
       insertGeneratedFileWarningLines(srcFile, linePrefix = "class ")
     }

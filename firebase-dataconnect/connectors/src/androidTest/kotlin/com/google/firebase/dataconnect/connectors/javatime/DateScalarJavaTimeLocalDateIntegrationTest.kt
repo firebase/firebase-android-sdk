@@ -26,7 +26,6 @@ package com.google.firebase.dataconnect.connectors.javatime
 
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
-import com.google.firebase.dataconnect.LocalDate
 import com.google.firebase.dataconnect.MutationResult
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.connectors.javatime.testutil.DemoJavatimeConnectorIntegrationTestBase
@@ -45,6 +44,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.threePossibly
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.toTheeTenAbpJavaLocalDate
+import com.google.firebase.dataconnect.toJavaLocalDate
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
@@ -59,6 +59,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
@@ -86,7 +87,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   fun dateNonNullable_MutationLocalDateVariable() =
     runTest(timeout = 1.minutes) {
       checkAll(propTestConfig, Arb.dataConnect.dateTestData()) { testData ->
-        val insertResult = connector.dateNonNullableInsert.execute(testData.date)
+        val insertResult = connector.dateNonNullableInsert.execute(testData.date.toJavaLocalDate())
         val returnedString =
           connector.dateNonNullableGetByKey.executeWithStringData(insertResult.data.key)
         returnedString shouldBe testData.string
@@ -99,14 +100,17 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
       checkAll(propTestConfig, Arb.dataConnect.dateTestData()) { testData ->
         val insertResult = connector.dateNonNullableInsert.execute(testData.string)
         val queryResult = connector.dateNonNullableGetByKey.execute(insertResult.data.key)
-        queryResult.data.item?.value shouldBe testData.date
+        queryResult.data.item?.value shouldBe testData.date.toJavaLocalDate()
       }
     }
 
   @Test
   fun dateNonNullable_QueryLocalDateVariable() =
     dateNonNullable_QueryVariable { tag, dateTestData ->
-      connector.dateNonNullableGetAllByTagAndValue.execute(tag = tag, dateTestData.date)
+      connector.dateNonNullableGetAllByTagAndValue.execute(
+        tag = tag,
+        dateTestData.date.toJavaLocalDate()
+      )
     }
 
   @Test
@@ -184,9 +188,11 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNonNullable_Update() =
     runTest(timeout = 1.minutes) {
-      checkAll(propTestConfig, Arb.dataConnect.localDate(), Arb.dataConnect.localDate()) {
-        date1,
-        date2 ->
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.localDate().map { it.toJavaLocalDate() },
+        Arb.dataConnect.localDate().map { it.toJavaLocalDate() }
+      ) { date1, date2 ->
         val insertResult = connector.dateNonNullableInsert.execute(date1)
         val updateResult =
           connector.dateNonNullableUpdateByKey.execute(insertResult.data.key) { value = date2 }
@@ -200,7 +206,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNonNullable_UpdateToNullShouldFail() =
     runTest(timeout = 1.minutes) {
-      checkAll(propTestConfig, Arb.dataConnect.localDate()) { date ->
+      checkAll(propTestConfig, Arb.dataConnect.localDate().map { it.toJavaLocalDate() }) { date ->
         val insertResult = connector.dateNonNullableInsert.execute(date)
         shouldThrow<DataConnectException> {
           connector.dateNonNullableUpdateByKey.execute(insertResult.data.key) { value = null }
@@ -211,7 +217,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNonNullable_UpdateToOmittedShouldLeaveValueUnchanged() =
     runTest(timeout = 1.minutes) {
-      checkAll(propTestConfig, Arb.dataConnect.localDate()) { date ->
+      checkAll(propTestConfig, Arb.dataConnect.localDate().map { it.toJavaLocalDate() }) { date ->
         val insertResult = connector.dateNonNullableInsert.execute(date)
         val updateResult = connector.dateNonNullableUpdateByKey.execute(insertResult.data.key) {}
         updateResult.asClue { it.data.key shouldBe insertResult.data.key }
@@ -228,13 +234,13 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         propTestConfig,
         Arb.dataConnect.tag(),
         Arb.dataConnect.threeNonNullDatesTestData(),
-        Arb.dataConnect.localDate()
+        Arb.dataConnect.localDate().map { it.toJavaLocalDate() }
       ) { tag, testDatas, date2 ->
         val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
         val selectedDate = testDatas.selected!!
         val updateResult =
           connector.dateNonNullableUpdateByTagAndValue.execute(tag) {
-            value = selectedDate.date
+            value = selectedDate.date.toJavaLocalDate()
             newValue = date2
           }
         withClue("updateResult.data.count") {
@@ -255,7 +261,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         propTestConfig,
         Arb.dataConnect.tag(),
         Arb.dataConnect.threeNonNullDatesTestData(),
-        Arb.dataConnect.localDate()
+        Arb.dataConnect.localDate().map { it.toJavaLocalDate() }
       ) { tag, testDatas, date2 ->
         val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
         val updateResult =
@@ -297,7 +303,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         propTestConfig,
         Arb.dataConnect.tag(),
         Arb.dataConnect.threeNonNullDatesTestData(),
-        Arb.dataConnect.localDate()
+        Arb.dataConnect.localDate().map { it.toJavaLocalDate() }
       ) { tag, testDatas, date2 ->
         val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
         val updateResult =
@@ -323,7 +329,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         Arb.dataConnect.threeNonNullDatesTestData()
       ) { tag, testDatas ->
         val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
-        val selectedDate = testDatas.selected!!.date
+        val selectedDate = testDatas.selected!!.date.toJavaLocalDate()
         val updateResult =
           connector.dateNonNullableUpdateByTagAndValue.execute(tag) { value = selectedDate }
         withClue("updateResult.data.count") {
@@ -344,7 +350,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         Arb.dataConnect.threeNonNullDatesTestData()
       ) { tag, testDatas ->
         val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
-        val selectedDate = testDatas.selected!!.date
+        val selectedDate = testDatas.selected!!.date.toJavaLocalDate()
         val deleteResult =
           connector.dateNonNullableDeleteByTagAndValue.execute(tag) { value = selectedDate }
         withClue("deleteResult.data.count") {
@@ -407,7 +413,8 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
     runTest(timeout = 1.minutes) {
       val localDates = Arb.dataConnect.dateTestData().orNullableReference(nullProbability = 0.2)
       checkAll(propTestConfig, localDates) { testData ->
-        val insertResult = connector.dateNullableInsert.execute { value = testData.ref?.date }
+        val insertResult =
+          connector.dateNullableInsert.execute { value = testData.ref?.date?.toJavaLocalDate() }
         val returnedString =
           connector.dateNullableGetByKey.executeWithStringData(insertResult.data.key)
         returnedString shouldBe testData.ref?.string
@@ -421,13 +428,15 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
       checkAll(propTestConfig, localDates) { testData ->
         val insertResult = connector.dateNullableInsert.execute(testData.ref?.string)
         val queryResult = connector.dateNullableGetByKey.execute(insertResult.data.key)
-        queryResult.data.item?.value shouldBe testData.ref?.date
+        queryResult.data.item?.value shouldBe testData.ref?.date?.toJavaLocalDate()
       }
     }
 
   @Test
   fun dateNullable_QueryLocalDateVariable() = dateNullable_QueryVariable { tag, dateTestData ->
-    connector.dateNullableGetAllByTagAndValue.execute(tag = tag) { value = dateTestData?.date }
+    connector.dateNullableGetAllByTagAndValue.execute(tag = tag) {
+      value = dateTestData?.date?.toJavaLocalDate()
+    }
   }
 
   @Test
@@ -477,7 +486,11 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNullable_Update() =
     runTest(timeout = 1.minutes) {
-      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      val localDates =
+        Arb.dataConnect
+          .localDate()
+          .map { it.toJavaLocalDate() }
+          .orNullableReference(nullProbability = 0.2)
       checkAll(propTestConfig, localDates, localDates) { date1, date2 ->
         val insertResult = connector.dateNullableInsert.execute { value = date1.ref }
         val updateResult =
@@ -492,7 +505,11 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNullable_UpdateToOmittedShouldLeaveValueUnchanged() =
     runTest(timeout = 1.minutes) {
-      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      val localDates =
+        Arb.dataConnect
+          .localDate()
+          .map { it.toJavaLocalDate() }
+          .orNullableReference(nullProbability = 0.2)
       checkAll(propTestConfig, localDates) { date ->
         val insertResult = connector.dateNullableInsert.execute { value = date.ref }
         val updateResult = connector.dateNullableUpdateByKey.execute(insertResult.data.key) {}
@@ -506,7 +523,11 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNullable_UpdateMany() =
     runTest(timeout = 1.minutes) {
-      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      val localDates =
+        Arb.dataConnect
+          .localDate()
+          .map { it.toJavaLocalDate() }
+          .orNullableReference(nullProbability = 0.2)
       checkAll(
         propTestConfig,
         Arb.dataConnect.tag(),
@@ -514,7 +535,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         localDates
       ) { tag, testDatas, date2 ->
         val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
-        val selectedDate = testDatas.selected?.date
+        val selectedDate = testDatas.selected?.date?.toJavaLocalDate()
         val updateResult =
           connector.dateNullableUpdateByTagAndValue.execute(tag) {
             value = selectedDate
@@ -535,7 +556,11 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNullable_UpdateManyOmittedValueShouldUpdateAll() =
     runTest(timeout = 1.minutes) {
-      val localDates = Arb.dataConnect.localDate().orNullableReference(nullProbability = 0.2)
+      val localDates =
+        Arb.dataConnect
+          .localDate()
+          .map { it.toJavaLocalDate() }
+          .orNullableReference(nullProbability = 0.2)
       checkAll(
         propTestConfig,
         Arb.dataConnect.tag(),
@@ -567,7 +592,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         Arb.dataConnect.threePossiblyNullDatesTestData()
       ) { tag, testDatas ->
         val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
-        val selectedDate = testDatas.selected?.date
+        val selectedDate = testDatas.selected?.date?.toJavaLocalDate()
         val updateResult =
           connector.dateNullableUpdateByTagAndValue.execute(tag) { value = selectedDate }
         withClue("updateResult.data.count") {
@@ -589,7 +614,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
         Arb.dataConnect.threePossiblyNullDatesTestData(),
       ) { tag, testDatas ->
         val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
-        val selectedDate = testDatas.selected?.date
+        val selectedDate = testDatas.selected?.date?.toJavaLocalDate()
         val deleteResult =
           connector.dateNullableDeleteByTagAndValue.execute(tag) { value = selectedDate }
         withClue("deleteResult.data.count") {
@@ -632,12 +657,12 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
     assertSoftly {
       withClue(item) {
         withClue("valueWithVariableDefault") {
-          item.valueWithVariableDefault shouldBe LocalDate(6904, 11, 30)
+          item.valueWithVariableDefault shouldBe java.time.LocalDate.of(6904, 11, 30)
         }
         withClue("valueWithSchemaDefault") {
-          item.valueWithSchemaDefault shouldBe LocalDate(2112, 1, 31)
+          item.valueWithSchemaDefault shouldBe java.time.LocalDate.of(2112, 1, 31)
         }
-        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date }
+        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date.toJavaLocalDate() }
         withClue("requestTime2") { item.requestTime2 shouldBe item.requestTime1 }
       }
     }
@@ -654,7 +679,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNonNullable_QueryVariableDefaults() =
     runTest(timeout = 1.minutes) {
-      val defaultTestData = DateTestData(LocalDate(2692, 5, 21), "2692-05-21")
+      val defaultTestData = DateTestData(java.time.LocalDate.of(2692, 5, 21), "2692-05-21")
       val localDateArb = Arb.dataConnect.dateTestData().withEdgecases(defaultTestData)
       checkAll(
         propTestConfig,
@@ -663,7 +688,8 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
       ) { testDatas, tag ->
         val insertResult = connector.dateNonNullableInsert3.execute(tag, testDatas)
         val queryResult = connector.dateNonNullableGetAllByTagAndDefaultValue.execute(tag) {}
-        val matchingIds = testDatas.idsMatching(insertResult, defaultTestData.date)
+        val matchingIds =
+          testDatas.idsMatching(insertResult, defaultTestData.date.toJavaLocalDate())
         queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
       }
     }
@@ -677,17 +703,17 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
     assertSoftly {
       withClue(item) {
         withClue("valueWithVariableDefault") {
-          item.valueWithVariableDefault shouldBe LocalDate(8113, 2, 9)
+          item.valueWithVariableDefault shouldBe java.time.LocalDate.of(8113, 2, 9)
         }
         withClue("valueWithVariableNullDefault") {
           item.valueWithVariableNullDefault.shouldBeNull()
         }
         withClue("valueWithSchemaDefault") {
-          item.valueWithSchemaDefault shouldBe LocalDate(1921, 12, 2)
+          item.valueWithSchemaDefault shouldBe java.time.LocalDate.of(1921, 12, 2)
         }
         withClue("valueWithSchemaNullDefault") { item.valueWithSchemaNullDefault.shouldBeNull() }
         withClue("valueWithNoDefault") { item.valueWithNoDefault.shouldBeNull() }
-        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date }
+        withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date.toJavaLocalDate() }
         withClue("requestTime1") { item.requestTime1.shouldNotBeNull() }
         withClue("requestTime2") { item.requestTime2 shouldBe item.requestTime1 }
       }
@@ -705,7 +731,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
   @Test
   fun dateNullable_QueryVariableDefaults() =
     runTest(timeout = 1.minutes) {
-      val defaultTestData = DateTestData(LocalDate(1771, 10, 28), "1771-10-28")
+      val defaultTestData = DateTestData(java.time.LocalDate.of(1771, 10, 28), "1771-10-28")
       val dateTestDataArb =
         Arb.dataConnect
           .dateTestData()
@@ -718,7 +744,8 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
       ) { testDatas, tag ->
         val insertResult = connector.dateNullableInsert3.execute(tag, testDatas)
         val queryResult = connector.dateNullableGetAllByTagAndDefaultValue.execute(tag) {}
-        val matchingIds = testDatas.idsMatching(insertResult, defaultTestData.date)
+        val matchingIds =
+          testDatas.idsMatching(insertResult, defaultTestData.date.toJavaLocalDate())
         queryResult.data.items.map { it.id } shouldContainExactlyInAnyOrder matchingIds
       }
     }
@@ -820,7 +847,7 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
 
   @Serializable private data class TagAndNullValueVariables(val tag: String, val value: Nothing?)
 
-  private suspend fun DemoJavatimeConnector.requestTime(): LocalDate {
+  private suspend fun DemoJavatimeConnector.requestTime(): java.time.LocalDate {
     val insertResult = exprValuesInsert.execute()
     val queryResult = exprValuesGetByKey.execute(insertResult.data.key)
     return withClue("exprValuesGetByKey queryResult.data.item") {
@@ -839,9 +866,9 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
       testDatas: ThreeDateTestDatas,
     ): MutationResult<DateNullableInsert3Mutation.Data, DateNullableInsert3Mutation.Variables> =
       execute(tag = tag) {
-        value1 = testDatas.testData1?.date
-        value2 = testDatas.testData2?.date
-        value3 = testDatas.testData3?.date
+        value1 = testDatas.testData1?.date?.toJavaLocalDate()
+        value2 = testDatas.testData2?.date?.toJavaLocalDate()
+        value3 = testDatas.testData3?.date?.toJavaLocalDate()
       }
 
     suspend fun DateNonNullableInsert3Mutation.execute(
@@ -852,9 +879,9 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
     > =
       execute(
         tag = tag,
-        value1 = testDatas.testData1!!.date,
-        value2 = testDatas.testData2!!.date,
-        value3 = testDatas.testData3!!.date,
+        value1 = testDatas.testData1!!.date.toJavaLocalDate(),
+        value2 = testDatas.testData2!!.date.toJavaLocalDate(),
+        value3 = testDatas.testData3!!.date.toJavaLocalDate(),
       )
 
     suspend fun DateNonNullableGetByKeyQuery.executeWithStringData(
@@ -912,13 +939,13 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
     @JvmName("idsMatching_DateNonNullable")
     fun ThreeDateTestDatas.idsMatching(
       result: MutationResult<DateNonNullableInsert3Mutation.Data, *>,
-      localDate: LocalDate?,
+      localDate: java.time.LocalDate?,
     ): List<UUID> = idsMatching(result.data, localDate)
 
     @JvmName("idsMatching_DateNonNullable")
     fun ThreeDateTestDatas.idsMatching(
       data: DateNonNullableInsert3Mutation.Data,
-      localDate: LocalDate?,
+      localDate: java.time.LocalDate?,
     ): List<UUID> = idsMatching(localDate) { data.uuidFromItemNumber(it) }
 
     @JvmName("idsMatchingSelected_DateNonNullable")
@@ -941,13 +968,13 @@ class DateScalarJavaTimeLocalDateIntegrationTest : DemoJavatimeConnectorIntegrat
     @JvmName("idsMatching_DateNullable")
     fun ThreeDateTestDatas.idsMatching(
       result: MutationResult<DateNullableInsert3Mutation.Data, *>,
-      localDate: LocalDate?,
+      localDate: java.time.LocalDate?,
     ): List<UUID> = idsMatching(result.data, localDate)
 
     @JvmName("idsMatching_DateNullable")
     fun ThreeDateTestDatas.idsMatching(
       data: DateNullableInsert3Mutation.Data,
-      localDate: LocalDate?,
+      localDate: java.time.LocalDate?,
     ): List<UUID> = idsMatching(localDate) { data.uuidFromItemNumber(it) }
 
     @JvmName("idsMatchingSelected_DateNullable")

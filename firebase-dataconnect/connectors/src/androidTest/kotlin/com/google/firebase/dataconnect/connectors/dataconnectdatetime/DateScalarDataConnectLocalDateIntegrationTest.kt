@@ -26,7 +26,6 @@ package com.google.firebase.dataconnect.connectors.dataconnectdatetime
 
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
-import com.google.firebase.dataconnect.LocalDate
 import com.google.firebase.dataconnect.MutationResult
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.connectors.dataconnectdatetime.testutil.DemoDataconnectdatetimeConnectorIntegrationTestBase
@@ -633,10 +632,12 @@ class DateScalarDataConnectLocalDateIntegrationTest :
     assertSoftly {
       withClue(item) {
         withClue("valueWithVariableDefault") {
-          item.valueWithVariableDefault shouldBe LocalDate(6904, 11, 30)
+          item.valueWithVariableDefault shouldBe
+            com.google.firebase.dataconnect.LocalDate(6904, 11, 30)
         }
         withClue("valueWithSchemaDefault") {
-          item.valueWithSchemaDefault shouldBe LocalDate(2112, 1, 31)
+          item.valueWithSchemaDefault shouldBe
+            com.google.firebase.dataconnect.LocalDate(2112, 1, 31)
         }
         withClue("epoch") { item.epoch shouldBe EdgeCases.dates.epoch.date }
         withClue("requestTime2") { item.requestTime2 shouldBe item.requestTime1 }
@@ -655,7 +656,8 @@ class DateScalarDataConnectLocalDateIntegrationTest :
   @Test
   fun dateNonNullable_QueryVariableDefaults() =
     runTest(timeout = 1.minutes) {
-      val defaultTestData = DateTestData(LocalDate(2692, 5, 21), "2692-05-21")
+      val defaultTestData =
+        DateTestData(com.google.firebase.dataconnect.LocalDate(2692, 5, 21), "2692-05-21")
       val localDateArb = Arb.dataConnect.dateTestData().withEdgecases(defaultTestData)
       checkAll(
         propTestConfig,
@@ -678,13 +680,15 @@ class DateScalarDataConnectLocalDateIntegrationTest :
     assertSoftly {
       withClue(item) {
         withClue("valueWithVariableDefault") {
-          item.valueWithVariableDefault shouldBe LocalDate(8113, 2, 9)
+          item.valueWithVariableDefault shouldBe
+            com.google.firebase.dataconnect.LocalDate(8113, 2, 9)
         }
         withClue("valueWithVariableNullDefault") {
           item.valueWithVariableNullDefault.shouldBeNull()
         }
         withClue("valueWithSchemaDefault") {
-          item.valueWithSchemaDefault shouldBe LocalDate(1921, 12, 2)
+          item.valueWithSchemaDefault shouldBe
+            com.google.firebase.dataconnect.LocalDate(1921, 12, 2)
         }
         withClue("valueWithSchemaNullDefault") { item.valueWithSchemaNullDefault.shouldBeNull() }
         withClue("valueWithNoDefault") { item.valueWithNoDefault.shouldBeNull() }
@@ -706,7 +710,8 @@ class DateScalarDataConnectLocalDateIntegrationTest :
   @Test
   fun dateNullable_QueryVariableDefaults() =
     runTest(timeout = 1.minutes) {
-      val defaultTestData = DateTestData(LocalDate(1771, 10, 28), "1771-10-28")
+      val defaultTestData =
+        DateTestData(com.google.firebase.dataconnect.LocalDate(1771, 10, 28), "1771-10-28")
       val dateTestDataArb =
         Arb.dataConnect
           .dateTestData()
@@ -821,7 +826,8 @@ class DateScalarDataConnectLocalDateIntegrationTest :
 
   @Serializable private data class TagAndNullValueVariables(val tag: String, val value: Nothing?)
 
-  private suspend fun DemoDataconnectdatetimeConnector.requestTime(): LocalDate {
+  private suspend fun DemoDataconnectdatetimeConnector.requestTime():
+    com.google.firebase.dataconnect.LocalDate {
     val insertResult = exprValuesInsert.execute()
     val queryResult = exprValuesGetByKey.execute(insertResult.data.key)
     return withClue("exprValuesGetByKey queryResult.data.item") {
@@ -913,13 +919,13 @@ class DateScalarDataConnectLocalDateIntegrationTest :
     @JvmName("idsMatching_DateNonNullable")
     fun ThreeDateTestDatas.idsMatching(
       result: MutationResult<DateNonNullableInsert3Mutation.Data, *>,
-      localDate: LocalDate?,
+      localDate: com.google.firebase.dataconnect.LocalDate?,
     ): List<UUID> = idsMatching(result.data, localDate)
 
     @JvmName("idsMatching_DateNonNullable")
     fun ThreeDateTestDatas.idsMatching(
       data: DateNonNullableInsert3Mutation.Data,
-      localDate: LocalDate?,
+      localDate: com.google.firebase.dataconnect.LocalDate?,
     ): List<UUID> = idsMatching(localDate) { data.uuidFromItemNumber(it) }
 
     @JvmName("idsMatchingSelected_DateNonNullable")
@@ -942,13 +948,13 @@ class DateScalarDataConnectLocalDateIntegrationTest :
     @JvmName("idsMatching_DateNullable")
     fun ThreeDateTestDatas.idsMatching(
       result: MutationResult<DateNullableInsert3Mutation.Data, *>,
-      localDate: LocalDate?,
+      localDate: com.google.firebase.dataconnect.LocalDate?,
     ): List<UUID> = idsMatching(result.data, localDate)
 
     @JvmName("idsMatching_DateNullable")
     fun ThreeDateTestDatas.idsMatching(
       data: DateNullableInsert3Mutation.Data,
-      localDate: LocalDate?,
+      localDate: com.google.firebase.dataconnect.LocalDate?,
     ): List<UUID> = idsMatching(localDate) { data.uuidFromItemNumber(it) }
 
     @JvmName("idsMatchingSelected_DateNullable")

@@ -252,6 +252,8 @@ run {
 
     connectorPackageName.set("com.google.firebase.dataconnect.connectors.dataconnectdatetime")
     connectorClassName.set("DemoDataconnectdatetimeConnector")
+
+    localDateFullyQualifiedClassName.set("com.google.firebase.dataconnect.LocalDate")
   }
 
   tasks.register<GenerateConnectorsDateScalarIntegrationTestTask>(
@@ -277,6 +279,10 @@ run {
 
     connectorPackageName.set("com.google.firebase.dataconnect.connectors.javatime")
     connectorClassName.set("DemoJavatimeConnector")
+
+    localDateFullyQualifiedClassName.set("java.time.LocalDate")
+    convertFromDataConnectLocalDateFunctionName.set("toJavaLocalDate")
+    localDateFactoryCall.set(".of")
   }
 }
 
