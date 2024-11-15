@@ -106,30 +106,45 @@ class TextLinesTransformer(val lines: MutableList<String>) {
       lines.addAll(index, replacementLines)
     }
 
+    val notMissingReplacementIds = linesByReplacementId.keys - missingReplacementIds
     if (unknownReplacementIds.isNotEmpty() && missingReplacementIds.isNotEmpty()) {
       throw TextLinesTransformerException(
-        "There were ${unknownReplacementIds.size} unknown replacement IDs found: " +
+        "There were ${unknownReplacementIds.size} replacement IDs found in the file that were " +
+          "not configured for replacement: " +
           unknownReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
-          ". The known replacement IDs are: " +
-          linesByReplacementId.keys.sorted().joinToString(", ") { "\"$it\"" } +
-          ". There were also ${missingReplacementIds.size} replacement IDs that were expected " +
-          "to be found but were _not_ found: " +
+          ". There were also ${missingReplacementIds.size} replacement IDs that were configured " +
+          "for replacement but were not found in the file: " +
           missingReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
+          if (notMissingReplacementIds.isEmpty()) {
+            ""
+          } else {
+            ". The other ${notMissingReplacementIds.size} configured replacement IDs that " +
+              "were found were: " +
+              notMissingReplacementIds.sorted().joinToString(", ") { "\"$it\"" }
+          } +
           ". (error code 2aap434gw7)"
       )
     } else if (unknownReplacementIds.isNotEmpty()) {
       throw TextLinesTransformerException(
-        "There were ${unknownReplacementIds.size} unknown replacement IDs found: " +
+        "There were ${unknownReplacementIds.size} replacement IDs found in the file that were " +
+          "not configured for replacement: " +
           unknownReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
-          ". The known replacement IDs are: " +
+          ". The ${linesByReplacementId.size} configured replacement IDs are: " +
           linesByReplacementId.keys.sorted().joinToString(", ") { "\"$it\"" } +
           ". (error code 65f2aphm43)"
       )
     } else if (missingReplacementIds.isNotEmpty()) {
       throw TextLinesTransformerException(
-        "There were ${missingReplacementIds.size} replacement IDs that were expected " +
-          "to be found but were _not_ found: " +
+        "There were ${missingReplacementIds.size} replacement IDs that were configured " +
+          "for replacement but were not found in the file: " +
           missingReplacementIds.sorted().joinToString(", ") { "\"$it\"" } +
+          if (notMissingReplacementIds.isEmpty()) {
+            ""
+          } else {
+            ". The other ${notMissingReplacementIds.size} configured replacement IDs that " +
+              "were found were: " +
+              notMissingReplacementIds.sorted().joinToString(", ") { "\"$it\"" }
+          } +
           ". (error code ha37aja3z3)"
       )
     }
