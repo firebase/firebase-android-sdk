@@ -316,8 +316,10 @@ object JavaTimeArbs {
         repeat(digitCounts.leadingZeroes) { append('0') }
         if (digitCounts.proper > 0) {
           append(nonZeroDigits.bind())
-          repeat(digitCounts.proper - 2) { append(digits.bind()) }
-          append(nonZeroDigits.bind())
+          if (digitCounts.proper > 1) {
+            repeat(digitCounts.proper - 2) { append(digits.bind()) }
+            append(nonZeroDigits.bind())
+          }
         }
         repeat(digitCounts.trailingZeroes) { append('0') }
       }
@@ -327,10 +329,23 @@ object JavaTimeArbs {
         if (nanosecondsStringTrimmed.isEmpty()) {
           0
         } else {
-          nanosecondsStringTrimmed.toInt()
+          try {
+            nanosecondsStringTrimmed.toInt()
+          } catch (e: NumberFormatException) {
+            throw IllegalStateException(
+              "internal error vp4pv5wbjn: parsing nanoseconds as an Int failed: " +
+                "$nanosecondsStringTrimmed (digitCounts=$digitCounts): $e",
+              e
+            )
+          }
         }
 
-      Nanoseconds(nanosecondsInt, nanosecondsString)
+      Nanoseconds(nanosecondsInt, nanosecondsString).also {
+        check(it.nanoseconds in 0..999_999_999) {
+          "internal error shmbbj687g: nanoseconds is out of range: $it " +
+            "(digitCounts=$digitCounts)"
+        }
+      }
     }
   }
 
