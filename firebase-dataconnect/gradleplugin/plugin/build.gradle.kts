@@ -49,9 +49,9 @@ gradlePlugin {
 }
 
 spotless {
-  kotlin { ktfmt("0.43").googleStyle() }
+  kotlin { ktfmt("0.41").googleStyle() }
   kotlinGradle {
     target("*.gradle.kts")
-    ktfmt("0.43").googleStyle()
+    ktfmt("0.41").googleStyle()
   }
 }

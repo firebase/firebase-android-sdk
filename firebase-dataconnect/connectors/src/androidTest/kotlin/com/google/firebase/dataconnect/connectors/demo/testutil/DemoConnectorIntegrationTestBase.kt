@@ -22,8 +22,7 @@ import org.junit.Rule
 
 abstract class DemoConnectorIntegrationTestBase : DataConnectIntegrationTestBase() {
 
-  @get:Rule
-  val demoConnectorFactory = TestDemoConnectorFactory(firebaseAppFactory, dataConnectFactory)
+  @get:Rule val connectorFactory = TestDemoConnectorFactory(firebaseAppFactory, dataConnectFactory)
 
-  val connector: DemoConnector by lazy { demoConnectorFactory.newInstance() }
+  val connector: DemoConnector by lazy { connectorFactory.newInstance() }
 }

@@ -47,13 +47,13 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
 
   @get:Input abstract val testKotlinPackage: Property<String>
 
-  @get:Input abstract val testBaseKotlinPackage: Property<String>
-
-  @get:Input abstract val connectorFactoryKotlinPackage: Property<String>
-
   @get:Input abstract val testClassName: Property<String>
 
+  @get:Input abstract val testBaseKotlinPackage: Property<String>
+
   @get:Input abstract val testBaseClassName: Property<String>
+
+  @get:Input abstract val connectorFactoryKotlinPackage: Property<String>
 
   @get:Input abstract val connectorFactoryClassName: Property<String>
 
@@ -68,10 +68,10 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
     val connectorPackageName: String = connectorPackageName.get()
     val connectorClassName: String = connectorClassName.get()
     val testKotlinPackage: String = testKotlinPackage.get()
-    val testBaseKotlinPackage: String = testBaseKotlinPackage.get()
-    val connectorFactoryKotlinPackage: String = connectorFactoryKotlinPackage.get()
     val testClassName: String = testClassName.get()
+    val testBaseKotlinPackage: String = testBaseKotlinPackage.get()
     val testBaseClassName: String = testBaseClassName.get()
+    val connectorFactoryKotlinPackage: String = connectorFactoryKotlinPackage.get()
     val connectorFactoryClassName: String = connectorFactoryClassName.get()
 
     logger.info("testSrcFile: {}", testSrcFile)
@@ -83,10 +83,10 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
     logger.info("connectorPackageName: {}", connectorPackageName)
     logger.info("connectorClassName: {}", connectorClassName)
     logger.info("testKotlinPackage: {}", testKotlinPackage)
-    logger.info("testBaseKotlinPackage: {}", testBaseKotlinPackage)
-    logger.info("connectorFactoryKotlinPackage: {}", connectorFactoryKotlinPackage)
     logger.info("testClassName: {}", testClassName)
+    logger.info("testBaseKotlinPackage: {}", testBaseKotlinPackage)
     logger.info("testBaseClassName: {}", testBaseClassName)
+    logger.info("connectorFactoryKotlinPackage: {}", connectorFactoryKotlinPackage)
     logger.info("connectorFactoryClassName: {}", connectorFactoryClassName)
 
     TestDestFileGenerator(
@@ -95,6 +95,7 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
         kotlinPackage = testKotlinPackage,
         className = testClassName,
         superClassName = testBaseClassName,
+        connectorPackageName = connectorPackageName,
         connectorClassName = connectorClassName,
         logger = logger,
       )
@@ -105,6 +106,9 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
         destFile = testBaseDestFile,
         kotlinPackage = testBaseKotlinPackage,
         className = testBaseClassName,
+        connectorPackageName = connectorPackageName,
+        connectorClassName = connectorClassName,
+        connectorFactoryClassName = connectorFactoryClassName,
         logger = logger,
       )
       .run()
@@ -114,8 +118,8 @@ abstract class GenerateConnectorsDateScalarIntegrationTestTask : DefaultTask() {
         destFile = connectorFactoryDestFile,
         kotlinPackage = connectorFactoryKotlinPackage,
         className = connectorFactoryClassName,
-        connectorClassName = connectorClassName,
         connectorPackageName = connectorPackageName,
+        connectorClassName = connectorClassName,
         logger = logger,
       )
       .run()
@@ -128,6 +132,7 @@ private class TestDestFileGenerator(
   val kotlinPackage: String,
   val className: String,
   val superClassName: String,
+  val connectorPackageName: String,
   val connectorClassName: String,
   val logger: Logger,
 ) {
@@ -136,9 +141,10 @@ private class TestDestFileGenerator(
     logger.info("Reading from file: {}", srcFile)
     val transformer = TextLinesTransformer(srcFile)
 
-    transformer.atLineThatStartsWith("package ").replaceWith(" package $kotlinPackage")
+    transformer.atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
     transformer.replaceWord("DateScalarIntegrationTest", className)
     transformer.replaceWord("DemoConnectorIntegrationTestBase", superClassName)
+    transformer.replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
     transformer.replaceWord("DemoConnector", connectorClassName)
 
     logger.info("Writing to file: {}", destFile)
@@ -151,6 +157,9 @@ private class TestBaseDestFileGenerator(
   val destFile: File,
   val kotlinPackage: String,
   val className: String,
+  val connectorPackageName: String,
+  val connectorClassName: String,
+  val connectorFactoryClassName: String,
   val logger: Logger,
 ) {
 
@@ -158,8 +167,11 @@ private class TestBaseDestFileGenerator(
     logger.info("Reading from file: {}", srcFile)
     val transformer = TextLinesTransformer(srcFile)
 
-    transformer.atLineThatStartsWith("package ").replaceWith(" package $kotlinPackage")
+    transformer.atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
     transformer.replaceWord("DemoConnectorIntegrationTestBase", className)
+    transformer.replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
+    transformer.replaceWord("DemoConnector", connectorClassName)
+    transformer.replaceWord("TestDemoConnectorFactory", connectorFactoryClassName)
 
     logger.info("Writing to file: {}", destFile)
     transformer.writeLines(destFile)
@@ -180,10 +192,10 @@ private class ConnectorFactoryDestFileGenerator(
     logger.info("Reading from file: {}", srcFile)
     val transformer = TextLinesTransformer(srcFile)
 
-    transformer.atLineThatStartsWith("package ").replaceWith(" package $kotlinPackage")
+    transformer.atLineThatStartsWith("package ").replaceWith("package $kotlinPackage")
     transformer.replaceWord("TestDemoConnectorFactory", className)
-    transformer.replaceWord("DemoDataconnectdatetimeConnector", connectorClassName)
     transformer.replaceWord("com.google.firebase.dataconnect.connectors.demo", connectorPackageName)
+    transformer.replaceWord("DemoConnector", connectorClassName)
 
     logger.info("Writing to file: {}", destFile)
     transformer.writeLines(destFile)

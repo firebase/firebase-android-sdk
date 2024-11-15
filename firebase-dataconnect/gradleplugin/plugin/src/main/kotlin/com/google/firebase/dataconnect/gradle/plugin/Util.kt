@@ -55,7 +55,7 @@ class Debouncer(val period: Duration) {
  * and the 26 lowercase English characters.
  *
  * @param length the number of random characters to generate and include in the returned string;
- *   must be greater than or equal to zero.
+ * must be greater than or equal to zero.
  * @return a string containing the given number of random alphanumeric characters.
  */
 fun Random.nextAlphanumericString(length: Int): String {
