@@ -215,6 +215,7 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
   }
 }
 
+// Register Gradle tasks that generate some unit and/or integration tests.
 run {
   val baseDir =
     layout.projectDirectory.dir("src/androidTest/kotlin/com/google/firebase/dataconnect/connectors")
@@ -284,9 +285,42 @@ run {
     convertFromDataConnectLocalDateFunctionName.set("toJavaLocalDate")
     localDateFactoryCall.set(".of")
   }
+
+  tasks.register<GenerateConnectorsDateScalarIntegrationTestTask>(
+    "generateDateScalarKotlinxDatetimeLocalDateIntegrationTest"
+  ) {
+    val destDir = baseDir.dir("kotlinxdatetime")
+    testSrcFile.set(testFile)
+    testDestFile.set(destDir.file("DateScalarKotlinxDatetimeLocalDateIntegrationTest.kt"))
+    testKotlinPackage.set("com.google.firebase.dataconnect.connectors.kotlinxdatetime")
+    testClassName.set("DateScalarKotlinxDatetimeLocalDateIntegrationTest")
+
+    testBaseSrcFile.set(testBaseFile)
+    testBaseDestFile.set(
+      destDir.file("testutil/DemoKotlinxdatetimeConnectorIntegrationTestBase.kt")
+    )
+    testBaseKotlinPackage.set("com.google.firebase.dataconnect.connectors.kotlinxdatetime.testutil")
+    testBaseClassName.set("DemoKotlinxdatetimeConnectorIntegrationTestBase")
+
+    connectorFactorySrcFile.set(connectorFactoryFile)
+    connectorFactoryDestFile.set(
+      destDir.file("testutil/TestDemoKotlinxdatetimeConnectorFactory.kt")
+    )
+    connectorFactoryKotlinPackage.set(
+      "com.google.firebase.dataconnect.connectors.kotlinxdatetime.testutil"
+    )
+    connectorFactoryClassName.set("DemoKotlinxdatetimeConnectorFactory")
+
+    connectorPackageName.set("com.google.firebase.dataconnect.connectors.kotlinxdatetime")
+    connectorClassName.set("DemoKotlinxdatetimeConnector")
+
+    localDateFullyQualifiedClassName.set("kotlinx.datetime.LocalDate")
+    convertFromDataConnectLocalDateFunctionName.set("toKotlinxLocalDate")
+  }
 }
 
 tasks.register("generateDataConnectTestingSources") {
   dependsOn("generateDateScalarDataConnectLocalDateIntegrationTest")
   dependsOn("generateDateScalarJavaTimeLocalDateIntegrationTest")
+  dependsOn("generateDateScalarKotlinxDatetimeLocalDateIntegrationTest")
 }
