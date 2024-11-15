@@ -52,8 +52,12 @@ dependencies {
   implementation(project(":firebase-dataconnect"))
   implementation(project(":firebase-dataconnect:testutil"))
 
-  implementation("com.google.firebase:firebase-auth:22.3.1")
-  implementation("com.google.firebase:firebase-appcheck:18.0.0")
+  implementation("com.google.firebase:firebase-auth:22.3.1") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  implementation("com.google.firebase:firebase-appcheck:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
 
   implementation(libs.androidx.test.core)
   implementation(libs.androidx.test.junit)

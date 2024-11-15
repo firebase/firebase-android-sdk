@@ -97,12 +97,20 @@ protobuf {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:21.0.0")
+  api(project(":firebase-common"))
 
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-  implementation("com.google.firebase:firebase-auth-interop:20.0.0")
-  implementation("com.google.firebase:firebase-components:18.0.0")
+  implementation("com.google.firebase:firebase-annotations:16.2.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  implementation("com.google.firebase:firebase-components:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
 
   compileOnly(libs.javax.annotation.jsr250)
   compileOnly(libs.kotlinx.datetime)
@@ -132,8 +140,12 @@ dependencies {
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
   androidTestImplementation(project(":firebase-dataconnect:testutil"))
-  androidTestImplementation("com.google.firebase:firebase-appcheck:18.0.0")
-  androidTestImplementation("com.google.firebase:firebase-auth:22.3.1")
+  androidTestImplementation("com.google.firebase:firebase-appcheck:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  androidTestImplementation("com.google.firebase:firebase-auth:22.3.1") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
   androidTestImplementation(libs.androidx.test.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)

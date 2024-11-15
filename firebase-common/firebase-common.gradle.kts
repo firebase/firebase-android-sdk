@@ -66,6 +66,7 @@ dependencies {
   compileOnly(libs.autovalue.annotations)
   compileOnly(libs.findbugs.jsr305)
   compileOnly(libs.kotlin.stdlib)
+  compileOnly(libs.kotlinx.datetime)
 
   annotationProcessor(libs.autovalue)
 

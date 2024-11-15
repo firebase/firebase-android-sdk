@@ -51,8 +51,12 @@ android {
 dependencies {
   implementation(project(":firebase-dataconnect"))
 
-  implementation("com.google.firebase:firebase-components:18.0.0")
-  implementation("com.google.firebase:firebase-auth:22.3.1")
+  implementation("com.google.firebase:firebase-components:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  implementation("com.google.firebase:firebase-auth:22.3.1") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
 
   compileOnly(libs.kotlinx.datetime)
 

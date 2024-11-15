@@ -35,6 +35,10 @@ import kotlinx.serialization.encoding.Encoder
 /**
  * An implementation of [KSerializer] for serializing and deserializing [Timestamp] objects in the
  * wire format expected by the Firebase Data Connect backend.
+ *
+ * @see JavaTimeInstantSerializer
+ * @see KotlinxDatetimeInstantSerializer
+ *
  */
 public object TimestampSerializer : KSerializer<Timestamp> {
 

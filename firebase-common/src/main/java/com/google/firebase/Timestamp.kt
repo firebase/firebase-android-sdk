@@ -20,7 +20,6 @@ import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.annotation.RequiresApi
-import java.time.Instant
 import java.util.Date
 
 /**
@@ -64,7 +63,9 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
     this.nanoseconds = nanoseconds
   }
 
-  @RequiresApi(Build.VERSION_CODES.O) constructor(time: Instant) : this(time.epochSecond, time.nano)
+  @RequiresApi(Build.VERSION_CODES.O) constructor(time: java.time.Instant) : this(time.epochSecond, time.nano)
+
+  constructor(time: kotlinx.datetime.Instant) : this(time.epochSeconds, time.nanosecondsOfSecond)
 
   /**
    * Returns a new [Date] corresponding to this timestamp.
@@ -73,9 +74,12 @@ class Timestamp : Comparable<Timestamp>, Parcelable {
    */
   fun toDate(): Date = Date(seconds * 1_000 + (nanoseconds / 1_000_000))
 
-  /** Returns a new [Instant] that matches the time defined by this timestamp. */
+  /** Returns a new [java.time.Instant] that matches the time defined by this timestamp. */
   @RequiresApi(Build.VERSION_CODES.O)
-  fun toInstant(): Instant = Instant.ofEpochSecond(seconds, nanoseconds.toLong())
+  fun toInstant(): java.time.Instant = java.time.Instant.ofEpochSecond(seconds, nanoseconds.toLong())
+
+  /** Returns a new [kotlinx.datetime.Instant] that matches the time defined by this timestamp. */
+  fun toKotlinxInstant(): kotlinx.datetime.Instant = kotlinx.datetime.Instant.fromEpochSeconds(seconds, nanoseconds.toLong())
 
   override fun compareTo(other: Timestamp): Int =
     compareValuesBy(this, other, Timestamp::seconds, Timestamp::nanoseconds)
