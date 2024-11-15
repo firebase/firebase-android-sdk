@@ -76,6 +76,7 @@ dependencies {
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)
   testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.kotlinx.datetime)
   testImplementation(libs.mockito.core)
   testImplementation(libs.org.json)
   testImplementation(libs.robolectric)

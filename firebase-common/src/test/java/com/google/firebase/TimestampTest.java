@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.common.testutil.Assert.assertThrows;
 
 import android.os.Parcel;
-import java.time.Instant;
 import java.util.Date;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,15 +48,28 @@ public class TimestampTest {
 
   @Test
   public void testFromInstant() {
-    Instant input1 = Instant.now();
+    java.time.Instant input1 = java.time.Instant.now();
     Timestamp output1 = new Timestamp(input1);
     assertThat(output1.getSeconds()).isEqualTo(input1.getEpochSecond());
     assertThat(output1.getNanoseconds()).isEqualTo(input1.getNano());
 
     Timestamp input2 = new Timestamp(12345, 1);
-    Instant output2 = input2.toInstant();
+    java.time.Instant output2 = input2.toInstant();
     assertThat(input2.getSeconds()).isEqualTo(output2.getEpochSecond());
     assertThat(input2.getNanoseconds()).isEqualTo(output2.getNano());
+  }
+
+  @Test
+  public void testFromKotlinxInstant() {
+    kotlinx.datetime.Instant input1 = kotlinx.datetime.Clock.System.INSTANCE.now();
+    Timestamp output1 = new Timestamp(input1);
+    assertThat(output1.getSeconds()).isEqualTo(input1.getEpochSeconds());
+    assertThat(output1.getNanoseconds()).isEqualTo(input1.getNanosecondsOfSecond());
+
+    Timestamp input2 = new Timestamp(12345, 1);
+    kotlinx.datetime.Instant output2 = input2.toKotlinxInstant();
+    assertThat(input2.getSeconds()).isEqualTo(output2.getEpochSeconds());
+    assertThat(input2.getNanoseconds()).isEqualTo(output2.getNanosecondsOfSecond());
   }
 
   @Test
