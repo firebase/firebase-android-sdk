@@ -53,7 +53,7 @@ abstract class GenerateLocalDateSerializerUnitTestTask : DefaultTask() {
     logger.info("classNameUnderTest: {}", classNameUnderTest)
 
     logger.info("Reading {}", srcFile.absolutePath)
-    val transformer = TextLinesTransformer(srcFile.readLines(Charsets.UTF_8))
+    val transformer = TextLinesTransformer(srcFile)
 
     val linesByReplacementId =
       mapOf(
@@ -112,6 +112,6 @@ abstract class GenerateLocalDateSerializerUnitTestTask : DefaultTask() {
     }
 
     logger.info("Writing {}", destFile.absolutePath)
-    destFile.writeText(transformer.lines.joinToString("\n"))
+    transformer.writeLines(destFile)
   }
 }

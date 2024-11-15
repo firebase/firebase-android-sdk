@@ -54,7 +54,7 @@ abstract class GenerateLocalDateSerializerIntegrationTestTask : DefaultTask() {
     val serializerClassName: String = serializerClassName.get()
 
     logger.info("Reading {}", srcFile.absolutePath)
-    val transformer = TextLinesTransformer(srcFile.readLines(Charsets.UTF_8))
+    val transformer = TextLinesTransformer(srcFile)
 
     val generatedFileWarningLines = TextLinesTransformer.getGeneratedFileWarningLines(srcFile)
 
@@ -93,6 +93,6 @@ abstract class GenerateLocalDateSerializerIntegrationTestTask : DefaultTask() {
     }
 
     logger.info("Writing {}", destFile.absolutePath)
-    destFile.writeText(transformer.lines.joinToString("\n"))
+    transformer.writeLines(destFile)
   }
 }

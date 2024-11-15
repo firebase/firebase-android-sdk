@@ -27,6 +27,12 @@ import java.io.File
 class TextLinesTransformer(val lines: MutableList<String>) {
   constructor(lines: Iterable<String>) : this(lines.toMutableList())
 
+  constructor(file: File) : this(file.readLines(Charsets.UTF_8))
+
+  fun writeLines(file: File) {
+    file.writeText(lines.joinToString("\n"))
+  }
+
   fun indexOf(predicateDescription: String, predicate: (String) -> Boolean): Int {
     val index = lines.indexOfFirst(predicate)
     if (index < 0) {
@@ -104,6 +110,8 @@ class TextLinesTransformer(val lines: MutableList<String>) {
         index--
       }
     }
+
+    fun replaceWith(line: String): IndexBasedOperations = apply { lines.set(index, line) }
 
     fun insertAbove(line: String): IndexBasedOperations = apply { lines.add(index, line) }
 

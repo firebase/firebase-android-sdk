@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import com.google.firebase.dataconnect.gradle.buildutils.GenerateConnectorsDateScalarIntegrationTestTask
 import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -212,4 +213,48 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
       )
     }
   }
+}
+
+run {
+  val baseDir =
+    layout.projectDirectory.dir("src/androidTest/kotlin/com/google/firebase/dataconnect/connectors")
+  val srcDir = baseDir.dir("demo")
+  val testFile = srcDir.file("DateScalarIntegrationTest.kt")
+  val testBaseFile = srcDir.file("testutil/DemoConnectorIntegrationTestBase.kt")
+  val connectorFactoryFile = srcDir.file("testutil/TestDemoConnectorFactory.kt")
+
+  tasks.register<GenerateConnectorsDateScalarIntegrationTestTask>(
+    "generateDateScalarDataConnectLocalDateIntegrationTest"
+  ) {
+    val destDir = baseDir.dir("dataconnectdatetime")
+    testSrcFile.set(testFile)
+    testDestFile.set(destDir.file("DateScalarDataConnectLocalDateIntegrationTest.kt"))
+    testKotlinPackage.set("com.google.firebase.dataconnect.connectors.dataconnectdatetime")
+    testClassName.set("DateScalarDataConnectLocalDateIntegrationTest")
+
+    testBaseSrcFile.set(testBaseFile)
+    testBaseDestFile.set(
+      destDir.file("testutil/DemoDataconnectdatetimeConnectorIntegrationTestBase.kt")
+    )
+    testBaseKotlinPackage.set(
+      "com.google.firebase.dataconnect.connectors.dataconnectdatetime.testutil"
+    )
+    testBaseClassName.set("DemoDataconnectdatetimeConnectorIntegrationTestBase")
+
+    connectorFactorySrcFile.set(connectorFactoryFile)
+    connectorFactoryDestFile.set(
+      destDir.file("testutil/TestDemoDataconnectdatetimeConnectorFactory.kt")
+    )
+    connectorFactoryKotlinPackage.set(
+      "com.google.firebase.dataconnect.connectors.dataconnectdatetime.testutil"
+    )
+    connectorFactoryClassName.set("TestDemoDataconnectdatetimeConnectorFactory")
+
+    connectorPackageName.set("com.google.firebase.dataconnect.connectors.dataconnectdatetime")
+    connectorClassName.set("DemoDataconnectdatetimeConnector")
+  }
+}
+
+tasks.register("generateDataConnectTestingSources") {
+  dependsOn("generateDateScalarDataConnectLocalDateIntegrationTest")
 }
