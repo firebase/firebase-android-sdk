@@ -125,7 +125,7 @@ object DataConnectArb {
     }
   }
 
-  fun tag(string: Arb<String> = Arb.string(size = 20, Codepoint.alphanumeric())): Arb<String> =
+  fun tag(string: Arb<String> = Arb.string(size = 50, Codepoint.alphanumeric())): Arb<String> =
     arbitrary {
       "tag_${string.bind()}"
     }
