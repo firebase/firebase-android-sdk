@@ -25,7 +25,7 @@ import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAS
 import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_BACKOFF_TIME;
 import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_FAILED_FETCHES;
-import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
+import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -392,20 +392,17 @@ public class ConfigMetadataClientTest {
   }
 
   @Test
-  public void setCustomSignals_invalidInput_throwsException() {
-    Map<String, Object> invalidSignals1 = new HashMap<>();
-    invalidSignals1.put("name", true);
-    assertThrows(
-        IllegalArgumentException.class, () -> metadataClient.setCustomSignals(invalidSignals1));
+  public void setCustomSignals_invalidInput_rejectsSignals() {
+    Map<String, Object> invalidSignals1 = ImmutableMap.of("name", true);
+    metadataClient.setCustomSignals(invalidSignals1);
+    assertFalse(metadataClient.getCustomSignals().containsKey("name"));
 
-    Map<String, Object> invalidSignals2 = new HashMap<>();
-    invalidSignals2.put("a".repeat(251), "value");
-    assertThrows(
-        IllegalArgumentException.class, () -> metadataClient.setCustomSignals(invalidSignals2));
+    Map<String, Object> invalidSignals2 = ImmutableMap.of("a".repeat(251), "value");
+    metadataClient.setCustomSignals(invalidSignals2);
+    assertFalse(metadataClient.getCustomSignals().containsKey("a".repeat(251)));
 
-    Map<String, Object> invalidSignals3 = new HashMap<>();
-    invalidSignals3.put("key", "a".repeat(501));
-    assertThrows(
-        IllegalArgumentException.class, () -> metadataClient.setCustomSignals(invalidSignals3));
+    Map<String, Object> invalidSignals3 = ImmutableMap.of("key", "a".repeat(501));
+    metadataClient.setCustomSignals(invalidSignals3);
+    assertFalse(metadataClient.getCustomSignals().containsKey("key"));
   }
 }

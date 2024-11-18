@@ -18,12 +18,14 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.CUSTOM_SIGNALS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.content.SharedPreferences;
+import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -80,6 +82,12 @@ public class ConfigMetadataClient {
 
   private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
       "realtime_backoff_end_time_in_millis";
+
+  /** Constants for custom signal limits. */
+  private static final int CUSTOM_SIGNALS_MAX_KEY_LENGTH = 250;
+
+  private static final int CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH = 500;
+  private static final int CUSTOM_SIGNALS_MAX_COUNT = 100;
 
   private final SharedPreferences frcMetadata;
 
@@ -268,11 +276,18 @@ public class ConfigMetadataClient {
 
         // Validate value type, and key and value length
         if (value != null && !(value instanceof String || value instanceof Long)) {
-          throw new IllegalArgumentException("Custom signal values must be of type String or Long");
+          Log.w(TAG, "Invalid custom signal: Custom signal values must be of type String or Long.");
+          return;
         }
-        if (key.length() > 250 || (value instanceof String && ((String) value).length() > 500)) {
-          throw new IllegalArgumentException(
-              "Custom signal keys must be 250 characters or less, and string values must be 500 characters or less.");
+        if (key.length() > CUSTOM_SIGNALS_MAX_KEY_LENGTH
+            || (value instanceof String
+                && ((String) value).length() > CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH)) {
+          Log.w(
+              TAG,
+              String.format(
+                  "Invalid custom signal: Custom signal keys must be %d characters or less, and string values must be %d characters or less.",
+                  CUSTOM_SIGNALS_MAX_KEY_LENGTH, CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH));
+          return;
         }
 
         // Merge new signals with existing ones, overwriting existing keys.
@@ -288,9 +303,13 @@ public class ConfigMetadataClient {
       if (existingCustomSignals.equals(getCustomSignals())) {
         return;
       }
-      if (existingCustomSignals.size() > 100) {
-        throw new IllegalArgumentException(
-            "Too many custom signals provided. The maximum allowed is 100.");
+      if (existingCustomSignals.size() > CUSTOM_SIGNALS_MAX_COUNT) {
+        Log.w(
+            TAG,
+            String.format(
+                "Invalid custom signal: Too many custom signals provided. The maximum allowed is %d.",
+                CUSTOM_SIGNALS_MAX_COUNT));
+        return;
       }
 
       frcMetadata

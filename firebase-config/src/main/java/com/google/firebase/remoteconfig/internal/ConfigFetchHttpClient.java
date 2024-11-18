@@ -351,7 +351,13 @@ public class ConfigFetchHttpClient {
 
     requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
 
-    requestBodyMap.put(CUSTOM_SIGNALS, new JSONObject(customSignalMap));
+    if (!customSignalMap.isEmpty()) {
+      Map<String, String> customSignalsStringMap = new HashMap<>();
+      for (Map.Entry<String, Object> entry : customSignalMap.entrySet()) {
+        customSignalsStringMap.put(entry.getKey(), String.valueOf(entry.getValue()));
+      }
+      requestBodyMap.put(CUSTOM_SIGNALS, new JSONObject(customSignalsStringMap));
+    }
 
     if (firstOpenTime != null) {
       requestBodyMap.put(FIRST_OPEN_TIME, convertToISOString(firstOpenTime));
