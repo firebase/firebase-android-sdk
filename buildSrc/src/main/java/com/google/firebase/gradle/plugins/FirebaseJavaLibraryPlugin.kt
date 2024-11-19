@@ -107,7 +107,14 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupApiInformationAnalysis(project: Project) {
     val srcDirs =
-      project.convention.getPlugin<JavaPluginConvention>().sourceSets.getByName("main").java.srcDirs
+      project.files(
+        project.convention
+          .getPlugin<JavaPluginConvention>()
+          .sourceSets
+          .getByName("main")
+          .java
+          .srcDirs
+      )
 
     val apiInfo = getApiInfo(project, srcDirs)
 

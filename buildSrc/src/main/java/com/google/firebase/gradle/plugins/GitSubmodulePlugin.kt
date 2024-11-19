@@ -19,7 +19,7 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.provider.Property
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.register
@@ -30,7 +30,7 @@ import org.gradle.kotlin.dsl.register
  * @param submodules the parent directory of the SDK's Git Submodules. Defaults to `src/third_party`
  */
 interface GitSubmodulePluginExtension {
-  val submodules: Property<File>
+  val submodules: RegularFileProperty
 }
 
 /**
@@ -56,15 +56,15 @@ abstract class GitSubmodulePlugin : Plugin<Project> {
 
   override fun apply(project: Project) {
     with(configureExtension(project)) {
-      registerInitializeGitSubmodulesTask(project, submodules.get())
-      registerUpdateGitSubmodulesTask(project, submodules.get())
-      registerRemoveGitSubmodulesTask(project, submodules.get())
+      registerInitializeGitSubmodulesTask(project, submodules.get().asFile)
+      registerUpdateGitSubmodulesTask(project, submodules.get().asFile)
+      registerRemoveGitSubmodulesTask(project, submodules.get().asFile)
     }
   }
 
   private fun configureExtension(project: Project) =
     project.extensions.create<GitSubmodulePluginExtension>("GitSubmodule").apply {
-      submodules.convention(project.file("src/third_party"))
+      submodules.convention(project.layout.projectDirectory.file("src/third_party"))
     }
 
   /**
