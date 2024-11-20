@@ -43,6 +43,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -202,11 +203,26 @@ public class FirebaseCrashlytics {
    * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
    */
   public void recordException(@NonNull Throwable throwable) {
+    recordException(throwable, Map.of());
+  }
+
+  /**
+   * Records a non-fatal report to send to Crashlytics.
+   *
+   * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
+   * @param userInfo a {@link Map} to add key value pairs to be recorded with the non fatal exception.
+   */
+  public void recordException(@NonNull Throwable throwable, @NonNull Map<String, String> userInfo) {
     if (throwable == null) { // Users could call this with null despite the annotation.
       Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
       return;
     }
-    core.logException(throwable);
+
+    if (userInfo == null) { // It's possible to set this to null even with the annotation.
+      userInfo = Map.of();
+    }
+
+    core.logException(throwable, userInfo);
   }
 
   /**
