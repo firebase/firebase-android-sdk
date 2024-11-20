@@ -19,6 +19,7 @@ jobs:
           fetch-depth: 0
           submodules: true
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
+          committer: google-oss-bot <firebase-oss-bot@google.com>
       - name: Force push HEAD to private repo main branch
         run: |
           git remote add mirror https://github.com/FirebasePrivate/firebase-android-sdk.git
