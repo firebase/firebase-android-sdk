@@ -86,7 +86,7 @@ public class ConfigFetchHttpClientTest {
       "etag-" + PROJECT_NUMBER + "-" + DEFAULT_NAMESPACE + "-fetch-%d";
   private static final String FIRST_ETAG = String.format(ETAG_FORMAT, 1);
   private static final String SECOND_ETAG = String.format(ETAG_FORMAT, 2);
-  private static final Map<String, Object> SAMPLE_CUSTOM_SIGNALS =
+  private static final Map<String, String> SAMPLE_CUSTOM_SIGNALS =
       ImmutableMap.of(
           "subscription", "premium",
           "age", "20");

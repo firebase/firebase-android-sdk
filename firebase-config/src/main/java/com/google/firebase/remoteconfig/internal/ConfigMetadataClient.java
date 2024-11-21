@@ -265,27 +265,22 @@ public class ConfigMetadataClient {
     }
   }
 
-  public void setCustomSignals(Map<String, Object> newCustomSignals) {
+  public void setCustomSignals(Map<String, String> newCustomSignals) {
     synchronized (customSignalsLock) {
       // Retrieve existing custom signals
-      Map<String, Object> existingCustomSignals = getCustomSignals();
+      Map<String, String> existingCustomSignals = getCustomSignals();
 
-      for (Map.Entry<String, Object> entry : newCustomSignals.entrySet()) {
+      for (Map.Entry<String, String> entry : newCustomSignals.entrySet()) {
         String key = entry.getKey();
-        Object value = entry.getValue();
+        String value = entry.getValue();
 
-        // Validate value type, and key and value length
-        if (value != null && !(value instanceof String || value instanceof Long)) {
-          Log.w(TAG, "Invalid custom signal: Custom signal values must be of type String or Long.");
-          return;
-        }
+        // Validate key and value length
         if (key.length() > CUSTOM_SIGNALS_MAX_KEY_LENGTH
-            || (value instanceof String
-                && ((String) value).length() > CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH)) {
+            || (value != null && value.length() > CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH)) {
           Log.w(
               TAG,
               String.format(
-                  "Invalid custom signal: Custom signal keys must be %d characters or less, and string values must be %d characters or less.",
+                  "Invalid custom signal: Custom signal keys must be %d characters or less, and values must be %d characters or less.",
                   CUSTOM_SIGNALS_MAX_KEY_LENGTH, CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH));
           return;
         }
@@ -319,18 +314,15 @@ public class ConfigMetadataClient {
     }
   }
 
-  public Map<String, Object> getCustomSignals() {
+  public Map<String, String> getCustomSignals() {
     String jsonString = frcMetadata.getString(CUSTOM_SIGNALS, "{}");
     try {
       JSONObject existingCustomSignalsJson = new JSONObject(jsonString);
-      Map<String, Object> custom_signals = new HashMap<>();
+      Map<String, String> custom_signals = new HashMap<>();
       Iterator<String> keys = existingCustomSignalsJson.keys();
       while (keys.hasNext()) {
         String key = keys.next();
-        Object value = existingCustomSignalsJson.get(key);
-        if (value instanceof Integer) {
-          value = existingCustomSignalsJson.getLong(key);
-        }
+        String value = existingCustomSignalsJson.optString(key);
         custom_signals.put(key, value);
       }
       return custom_signals;
