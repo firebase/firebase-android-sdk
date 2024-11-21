@@ -1,5 +1,6 @@
 # Unreleased
-
+* [feature] Added an overload to the `recordException` API to allow attaching additional custom
+  keys to the non fatal report.
 
 # 19.2.1
 * [changed] Updated protobuf dependency to `3.25.5` to fix
