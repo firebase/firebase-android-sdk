@@ -140,7 +140,7 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
-        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
+        mockException, mockThread, new EventMetadata(sessionId, timestamp));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -166,7 +166,7 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
-        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
+        mockException, mockThread, new EventMetadata(sessionId, timestamp));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -188,7 +188,7 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
-        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
+        mockException, mockThread, new EventMetadata(sessionId, timestamp));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -266,7 +266,7 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
-        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
+        mockException, mockThread, new EventMetadata(sessionId, timestamp));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -292,13 +292,102 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
-        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
+        mockException, mockThread, new EventMetadata(sessionId, timestamp));
 
     crashlyticsWorkers.diskWrite.await();
 
     verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
+    verify(logFileManager, never()).clearLog();
+  }
+
+  @Test
+  public void testNonFatalEvent_addsUserInfoKeysToEventWhenAvailable() throws Exception {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
+
+    final String sessionId = "testSessionId";
+
+    final Map<String, String> attributes = Collections.emptyMap();
+    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+
+    final String testKey1 = "testKey1";
+    final String testValue1 = "testValue1";
+
+    final Map<String, String> userInfo = new HashMap<>();
+    userInfo.put(testKey1, testValue1);
+
+    final CustomAttribute customAttribute1 =
+        CustomAttribute.builder().setKey(testKey1).setValue(testValue1).build();
+
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, userInfo));
+
+    crashlyticsWorkers.diskWrite.await();
+
+    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
+    verify(mockEventAppBuilder).build();
+    verify(mockEventBuilder).setApp(mockEventApp);
+    verify(mockEventBuilder).build();
+    verify(logFileManager, never()).clearLog();
+  }
+
+  @Test
+  public void testNonFatalEvent_mergesUserInfoKeysWithCustomKeys() throws Exception {
+    final long timestamp = System.currentTimeMillis();
+
+    mockEventInteractions();
+
+    final String sessionId = "testSessionId";
+
+    final String testKey1 = "testKey1";
+    final String testValue1 = "testValue1";
+
+    final String testKey2 = "testKey2";
+    final String testValue2 = "testValue2";
+
+    final Map<String, String> attributes = new HashMap<>();
+    attributes.put(testKey1, testValue1);
+    attributes.put(testKey2, testValue2);
+
+    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+
+    final String testValue1UserInfo = "testValue1";
+    final String testKey3 = "testKey3";
+    final String testValue3 = "testValue3";
+
+    final Map<String, String> userInfo = new HashMap<>();
+    userInfo.put(testKey1, testValue1UserInfo);
+    userInfo.put(testKey3, testValue3);
+
+    final CustomAttribute customAttribute1 =
+        CustomAttribute.builder().setKey(testKey1).setValue(testValue1UserInfo).build();
+    final CustomAttribute customAttribute2 =
+        CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
+    final CustomAttribute customAttribute3 =
+        CustomAttribute.builder().setKey(testKey3).setValue(testValue3).build();
+
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
+    expectedCustomAttributes.add(customAttribute3);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, userInfo));
+
+    crashlyticsWorkers.diskWrite.await();
+
+    verify(mockEventAppBuilder).setCustomAttributes(expectedCustomAttributes);
+    verify(mockEventAppBuilder).build();
+    verify(mockEventBuilder).setApp(mockEventApp);
     verify(mockEventBuilder).build();
     verify(logFileManager, never()).clearLog();
   }
@@ -316,7 +405,7 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
-        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
+        mockException, mockThread, new EventMetadata(sessionId, timestamp));
 
     crashlyticsWorkers.diskWrite.await();
 
