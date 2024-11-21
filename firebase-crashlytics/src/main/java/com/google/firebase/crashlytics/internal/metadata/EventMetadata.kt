@@ -14,7 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.metadata
 
-/** A class that represents information to attach to a specific event. */
+/**
+ * A class that represents information to attach to a specific event.
+ *
+ * @property sessionId the sessionId to attach to the event.
+ * @property timestamp the timestamp to attach to the event.
+ * @property userInfo a [Map<String, String>] of key value pairs to attach to the event.
+ */
 data class EventMetadata
 @JvmOverloads
 constructor(
