@@ -173,7 +173,11 @@ def ci(pull_request: bool, changed_modules_file: Path, repeat: int):
   with open(output_path) as output_file:
     output = json.load(output_file)
     project_name = 'test-changed' if pull_request else 'test-all'
-    ftl_dirs = list(filter(lambda x: x['project'] == project_name, output))[0]['successful_runs']
+    ftl_run = list(filter(lambda x: x['project'] == project_name, output))
+    if not ftl_run:
+      logger.warning(f'No output for "{project_name}", ignoring.')
+      return
+    ftl_dirs = ftl_run[0]['successful_runs']
     ftl_bucket_name = 'fireescape-benchmark-results'
 
     log = ci_utils.ci_log_link()
