@@ -294,7 +294,6 @@ public class SessionReportingCoordinator {
         getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
     if (!sortedCustomAttributes.isEmpty() || !sortedInternalKeys.isEmpty()) {
-      // TODO(b/380072776): Change implementation to *not* override existing custom attributes.
       eventBuilder.setApp(
           capturedEvent.getApp().toBuilder()
               .setCustomAttributes(sortedCustomAttributes)
