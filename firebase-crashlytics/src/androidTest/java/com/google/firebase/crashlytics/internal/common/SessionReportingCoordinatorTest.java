@@ -35,6 +35,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -138,7 +139,8 @@ public class SessionReportingCoordinatorTest {
     mockEventInteractions();
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -163,7 +165,8 @@ public class SessionReportingCoordinatorTest {
     when(logFileManager.getLogString()).thenReturn(testLog);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -184,7 +187,8 @@ public class SessionReportingCoordinatorTest {
     when(logFileManager.getLogString()).thenReturn(null);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -261,7 +265,8 @@ public class SessionReportingCoordinatorTest {
     when(reportMetadata.getInternalKeys()).thenReturn(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -286,7 +291,8 @@ public class SessionReportingCoordinatorTest {
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
 
     crashlyticsWorkers.diskWrite.await();
 
@@ -309,7 +315,8 @@ public class SessionReportingCoordinatorTest {
     when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
-    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(
+        mockException, mockThread, new EventMetadata(sessionId, timestamp, Map.of()));
 
     crashlyticsWorkers.diskWrite.await();
 
