@@ -24,6 +24,7 @@ package com.google.firebase.remoteconfig {
     method @NonNull public com.google.firebase.remoteconfig.CustomSignals build();
     method @NonNull public com.google.firebase.remoteconfig.CustomSignals.Builder put(@NonNull String, @Nullable String);
     method @NonNull public com.google.firebase.remoteconfig.CustomSignals.Builder put(@NonNull String, long);
+    method @NonNull public com.google.firebase.remoteconfig.CustomSignals.Builder put(@NonNull String, double);
   }
 
   public class FirebaseRemoteConfig {
