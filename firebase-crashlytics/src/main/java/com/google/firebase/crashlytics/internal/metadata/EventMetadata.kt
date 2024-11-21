@@ -19,7 +19,8 @@ package com.google.firebase.crashlytics.internal.metadata
  *
  * @property sessionId the sessionId to attach to the event.
  * @property timestamp the timestamp to attach to the event.
- * @property userInfo a [Map<String, String>] of key value pairs to attach to the event.
+ * @property userInfo a [Map<String, String>] of key value pairs to attach to the event, in addition
+ * to the global custom keys.
  */
 data class EventMetadata
 @JvmOverloads
