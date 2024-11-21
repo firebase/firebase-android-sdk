@@ -126,7 +126,7 @@ public class SessionReportingCoordinator {
   public void persistFatalEvent(
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
     Logger.getLogger().v("Persisting fatal event for session " + sessionId);
-    EventMetadata eventMetadata = new EventMetadata(sessionId, timestamp, Map.of());
+    EventMetadata eventMetadata = new EventMetadata(sessionId, timestamp);
     persistEvent(event, thread, EVENT_TYPE_CRASH, eventMetadata, true);
   }
 
