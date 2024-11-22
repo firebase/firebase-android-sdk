@@ -1,4 +1,4 @@
-name: build-src-check
+name: Check buildSrc
 
 on:
   pull_request:
