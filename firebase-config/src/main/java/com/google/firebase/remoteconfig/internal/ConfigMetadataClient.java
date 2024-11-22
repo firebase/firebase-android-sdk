@@ -83,9 +83,11 @@ public class ConfigMetadataClient {
   private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
       "realtime_backoff_end_time_in_millis";
 
-  /** Constants for custom signal limits. */
+  /** Constants for custom signal limits.*/
   private static final int CUSTOM_SIGNALS_MAX_KEY_LENGTH = 250;
+
   private static final int CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH = 500;
+
   private static final int CUSTOM_SIGNALS_MAX_COUNT = 100;
 
   private final SharedPreferences frcMetadata;
