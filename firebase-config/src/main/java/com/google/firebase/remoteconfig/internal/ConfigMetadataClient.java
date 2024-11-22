@@ -85,7 +85,6 @@ public class ConfigMetadataClient {
 
   /** Constants for custom signal limits. */
   private static final int CUSTOM_SIGNALS_MAX_KEY_LENGTH = 250;
-
   private static final int CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH = 500;
   private static final int CUSTOM_SIGNALS_MAX_COUNT = 100;
 
