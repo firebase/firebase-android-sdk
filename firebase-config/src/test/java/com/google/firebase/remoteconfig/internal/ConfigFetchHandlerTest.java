@@ -29,9 +29,9 @@ import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.BACKO
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FIRST_OPEN_TIME_KEY;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.HTTP_TOO_MANY_REQUESTS;
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_BACKOFF_TIME;
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_FAILED_FETCHES;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_BACKOFF_TIME;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_FAILED_FETCHES;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
@@ -70,7 +70,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigFetchThrottledExcept
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchResponse;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.BackoffMetadata;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -127,7 +127,7 @@ public class ConfigFetchHandlerTest {
 
   private Context context;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
-  private ConfigMetadataClient metadataClient;
+  private ConfigSharedPrefsClient sharedPrefsClient;
 
   private ConfigFetchHandler fetchHandler;
 
@@ -142,8 +142,9 @@ public class ConfigFetchHandlerTest {
     directExecutor = MoreExecutors.directExecutor();
     context = ApplicationProvider.getApplicationContext();
     mockClock = new MockClock(0L);
-    metadataClient =
-        new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
+    sharedPrefsClient =
+        new ConfigSharedPrefsClient(
+            context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
 
     loadBackendApiClient();
     loadInstallationIdAndAuthToken();
@@ -549,7 +550,7 @@ public class ConfigFetchHandlerTest {
 
     assertWithMessage("Fetch() failed!").that(fetchTask.isSuccessful()).isTrue();
 
-    BackoffMetadata backoffMetadata = metadataClient.getBackoffMetadata();
+    BackoffMetadata backoffMetadata = sharedPrefsClient.getBackoffMetadata();
     assertThat(backoffMetadata.getNumFailedFetches()).isEqualTo(NO_FAILED_FETCHES);
     assertThat(backoffMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);
   }
@@ -706,8 +707,9 @@ public class ConfigFetchHandlerTest {
 
     fetchHandler.fetch();
 
-    assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
-    assertThat(metadataClient.getLastSuccessfulFetchTime()).isEqualTo(LAST_FETCH_TIME_NO_FETCH_YET);
+    assertThat(sharedPrefsClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
+    assertThat(sharedPrefsClient.getLastSuccessfulFetchTime())
+        .isEqualTo(LAST_FETCH_TIME_NO_FETCH_YET);
   }
 
   @Test
@@ -716,8 +718,8 @@ public class ConfigFetchHandlerTest {
 
     fetchHandler.fetch();
 
-    assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
-    assertThat(metadataClient.getLastSuccessfulFetchTime())
+    assertThat(sharedPrefsClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
+    assertThat(sharedPrefsClient.getLastSuccessfulFetchTime())
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
@@ -731,8 +733,8 @@ public class ConfigFetchHandlerTest {
 
     fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0);
 
-    assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
-    assertThat(metadataClient.getLastSuccessfulFetchTime())
+    assertThat(sharedPrefsClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
+    assertThat(sharedPrefsClient.getLastSuccessfulFetchTime())
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
@@ -745,8 +747,8 @@ public class ConfigFetchHandlerTest {
 
     fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0);
 
-    assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
-    assertThat(metadataClient.getLastSuccessfulFetchTime())
+    assertThat(sharedPrefsClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
+    assertThat(sharedPrefsClient.getLastSuccessfulFetchTime())
         .isEqualTo(secondFetchedContainer.getFetchTime());
   }
 
@@ -759,8 +761,8 @@ public class ConfigFetchHandlerTest {
 
     fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0);
 
-    assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_THROTTLED);
-    assertThat(metadataClient.getLastSuccessfulFetchTime())
+    assertThat(sharedPrefsClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_THROTTLED);
+    assertThat(sharedPrefsClient.getLastSuccessfulFetchTime())
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
@@ -775,7 +777,7 @@ public class ConfigFetchHandlerTest {
                 mockRandom,
                 mockFetchedCache,
                 mockBackendFetchApiClient,
-                metadataClient,
+                sharedPrefsClient,
                 /* customHttpHeaders= */ ImmutableMap.of()));
     return fetchHandler;
   }
@@ -875,7 +877,8 @@ public class ConfigFetchHandlerTest {
 
     long backoffDurationInMillis =
         loadAndGetNextBackoffDuration(
-            /* numFailedFetches= */ metadataClient.getBackoffMetadata().getNumFailedFetches() + 1);
+            /* numFailedFetches= */ sharedPrefsClient.getBackoffMetadata().getNumFailedFetches()
+                + 1);
 
     assertThrowsThrottledException(fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0L));
 
@@ -900,7 +903,7 @@ public class ConfigFetchHandlerTest {
   }
 
   private void setMinimumFetchIntervalInMetadata(long minimumFetchIntervalInSeconds) {
-    metadataClient.setConfigSettings(
+    sharedPrefsClient.setConfigSettings(
         new FirebaseRemoteConfigSettings.Builder()
             .setMinimumFetchIntervalInSeconds(minimumFetchIntervalInSeconds)
             .build());
@@ -957,7 +960,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any());
-    assertThat(metadataClient.getLastFetchETag()).isEqualTo(responseETag);
+    assertThat(sharedPrefsClient.getLastFetchETag()).isEqualTo(responseETag);
   }
 
   private void loadBackendApiClient() throws Exception {
@@ -966,7 +969,7 @@ public class ConfigFetchHandlerTest {
   }
 
   private void loadETags(String requestETag, String responseETag) {
-    metadataClient.setLastFetchETag(requestETag);
+    sharedPrefsClient.setLastFetchETag(requestETag);
     this.responseETag = responseETag;
   }
 
@@ -981,7 +984,7 @@ public class ConfigFetchHandlerTest {
     when(cacheClient.getBlocking()).thenReturn(container);
     when(cacheClient.get()).thenReturn(Tasks.forResult(container));
     mockClock.setCurrentTime(container.getFetchTime().getTime());
-    metadataClient.updateLastFetchAsSuccessfulAt(container.getFetchTime());
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(container.getFetchTime());
   }
 
   private static void cachePutReturnsConfig(
