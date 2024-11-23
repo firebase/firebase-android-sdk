@@ -94,7 +94,7 @@ public class ConfigFetchHttpClient {
   private final String apiKey;
   private final String projectNumber;
   private final String namespace;
-  Map<String, Object> customSignalMap;
+  Map<String, String> customSignalsMap;
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
 
@@ -109,7 +109,7 @@ public class ConfigFetchHttpClient {
       String namespace,
       long connectTimeoutInSeconds,
       long readTimeoutInSeconds,
-      Map<String, Object> customSignalMap) {
+      Map<String, String> customSignalsMap) {
     this.context = context;
     this.appId = appId;
     this.apiKey = apiKey;
@@ -117,7 +117,7 @@ public class ConfigFetchHttpClient {
     this.namespace = namespace;
     this.connectTimeoutInSeconds = connectTimeoutInSeconds;
     this.readTimeoutInSeconds = readTimeoutInSeconds;
-    this.customSignalMap = customSignalMap;
+    this.customSignalsMap = customSignalsMap;
   }
 
   /** Used to verify that the timeout is being set correctly. */
@@ -351,7 +351,9 @@ public class ConfigFetchHttpClient {
 
     requestBodyMap.put(ANALYTICS_USER_PROPERTIES, new JSONObject(analyticsUserProperties));
 
-    requestBodyMap.put(CUSTOM_SIGNALS, new JSONObject(customSignalMap));
+    if (!customSignalsMap.isEmpty()) {
+      requestBodyMap.put(CUSTOM_SIGNALS, new JSONObject(customSignalsMap));
+    }
 
     if (firstOpenTime != null) {
       requestBodyMap.put(FIRST_OPEN_TIME, convertToISOString(firstOpenTime));

@@ -18,12 +18,14 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.CUSTOM_SIGNALS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.content.SharedPreferences;
+import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -80,6 +82,13 @@ public class ConfigSharedPrefsClient {
 
   private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
       "realtime_backoff_end_time_in_millis";
+
+  /** Constants for custom signal limits.*/
+  private static final int CUSTOM_SIGNALS_MAX_KEY_LENGTH = 250;
+
+  private static final int CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH = 500;
+
+  private static final int CUSTOM_SIGNALS_MAX_COUNT = 100;
 
   private final SharedPreferences frcSharedPrefs;
 
@@ -259,22 +268,24 @@ public class ConfigSharedPrefsClient {
     }
   }
 
-  public void setCustomSignals(Map<String, Object> newCustomSignals) {
+  public void setCustomSignals(Map<String, String> newCustomSignals) {
     synchronized (customSignalsLock) {
       // Retrieve existing custom signals
-      Map<String, Object> existingCustomSignals = getCustomSignals();
+      Map<String, String> existingCustomSignals = getCustomSignals();
 
-      for (Map.Entry<String, Object> entry : newCustomSignals.entrySet()) {
+      for (Map.Entry<String, String> entry : newCustomSignals.entrySet()) {
         String key = entry.getKey();
-        Object value = entry.getValue();
+        String value = entry.getValue();
 
-        // Validate value type, and key and value length
-        if (value != null && !(value instanceof String || value instanceof Long)) {
-          throw new IllegalArgumentException("Custom signal values must be of type String or Long");
-        }
-        if (key.length() > 250 || (value instanceof String && ((String) value).length() > 500)) {
-          throw new IllegalArgumentException(
-              "Custom signal keys must be 250 characters or less, and string values must be 500 characters or less.");
+        // Validate key and value length
+        if (key.length() > CUSTOM_SIGNALS_MAX_KEY_LENGTH
+            || (value != null && value.length() > CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH)) {
+          Log.w(
+              TAG,
+              String.format(
+                  "Invalid custom signal: Custom signal keys must be %d characters or less, and values must be %d characters or less.",
+                  CUSTOM_SIGNALS_MAX_KEY_LENGTH, CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH));
+          return;
         }
 
         // Merge new signals with existing ones, overwriting existing keys.
@@ -290,9 +301,13 @@ public class ConfigSharedPrefsClient {
       if (existingCustomSignals.equals(getCustomSignals())) {
         return;
       }
-      if (existingCustomSignals.size() > 100) {
-        throw new IllegalArgumentException(
-            "Too many custom signals provided. The maximum allowed is 100.");
+      if (existingCustomSignals.size() > CUSTOM_SIGNALS_MAX_COUNT) {
+        Log.w(
+            TAG,
+            String.format(
+                "Invalid custom signal: Too many custom signals provided. The maximum allowed is %d.",
+                CUSTOM_SIGNALS_MAX_COUNT));
+        return;
       }
 
       frcSharedPrefs
@@ -302,18 +317,15 @@ public class ConfigSharedPrefsClient {
     }
   }
 
-  public Map<String, Object> getCustomSignals() {
+  public Map<String, String> getCustomSignals() {
     String jsonString = frcSharedPrefs.getString(CUSTOM_SIGNALS, "{}");
     try {
       JSONObject existingCustomSignalsJson = new JSONObject(jsonString);
-      Map<String, Object> custom_signals = new HashMap<>();
+      Map<String, String> custom_signals = new HashMap<>();
       Iterator<String> keys = existingCustomSignalsJson.keys();
       while (keys.hasNext()) {
         String key = keys.next();
-        Object value = existingCustomSignalsJson.get(key);
-        if (value instanceof Integer) {
-          value = existingCustomSignalsJson.getLong(key);
-        }
+        String value = existingCustomSignalsJson.optString(key);
         custom_signals.put(key, value);
       }
       return custom_signals;
