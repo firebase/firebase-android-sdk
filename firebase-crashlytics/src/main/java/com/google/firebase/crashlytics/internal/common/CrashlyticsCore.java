@@ -368,7 +368,9 @@ public class CrashlyticsCore {
    * @throws NullPointerException if any key in keysAndValues is null.
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
-    crashlyticsWorkers.common.submit(() -> controller.setCustomKeys(keysAndValues));
+    if (!keysAndValues.isEmpty()) {
+      crashlyticsWorkers.common.submit(() -> controller.setCustomKeys(keysAndValues));
+    }
   }
 
   // endregion

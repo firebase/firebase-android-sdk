@@ -17,38 +17,43 @@
 package com.google.firebase.crashlytics
 
 /** Helper class to enable fluent syntax in [setCustomKeys] */
-class KeyValueBuilder internal constructor() {
+@Suppress("DEPRECATION")
+class KeyValueBuilder(
+  // TODO(mrober): Remove this param and make ctor internal in 2025.
+  @Deprecated(message = "The crashlytics instance is no longer needed and will be removed in 2025.")
+  private val crashlytics: FirebaseCrashlytics? = null
+) {
   private val builder = CustomKeysAndValues.Builder()
 
   internal fun build(): CustomKeysAndValues = builder.build()
 
   /** Sets a custom key and value that are associated with reports. */
   fun key(key: String, value: Boolean) {
-    builder.putBoolean(key, value)
+    crashlytics?.setCustomKey(key, value) ?: builder.putBoolean(key, value)
   }
 
   /** Sets a custom key and value that are associated with reports. */
   fun key(key: String, value: Double) {
-    builder.putDouble(key, value)
+    crashlytics?.setCustomKey(key, value) ?: builder.putDouble(key, value)
   }
 
   /** Sets a custom key and value that are associated with reports. */
   fun key(key: String, value: Float) {
-    builder.putFloat(key, value)
+    crashlytics?.setCustomKey(key, value) ?: builder.putFloat(key, value)
   }
 
   /** Sets a custom key and value that are associated with reports. */
   fun key(key: String, value: Int) {
-    builder.putInt(key, value)
+    crashlytics?.setCustomKey(key, value) ?: builder.putInt(key, value)
   }
 
   /** Sets a custom key and value that are associated with reports. */
   fun key(key: String, value: Long) {
-    builder.putLong(key, value)
+    crashlytics?.setCustomKey(key, value) ?: builder.putLong(key, value)
   }
 
   /** Sets a custom key and value that are associated with reports. */
   fun key(key: String, value: String) {
-    builder.putString(key, value)
+    crashlytics?.setCustomKey(key, value) ?: builder.putString(key, value)
   }
 }

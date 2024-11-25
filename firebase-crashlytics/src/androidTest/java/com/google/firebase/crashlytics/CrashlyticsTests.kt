@@ -68,8 +68,21 @@ class CrashlyticsTests {
 
     val result: Map<String, String> = keyValueBuilder.build().keysAndValues
 
-    // TODO(mrober): Make unit tests for this.
+    // The result is not empty because we need to pass the CustomKeysAndValues around.
     assertThat(result).isNotEmpty()
+  }
+
+  @Test
+  fun keyValueBuilder_withCrashlyticsInstance() {
+    val keyValueBuilder = KeyValueBuilder(Firebase.crashlytics)
+    keyValueBuilder.key("hello", "world")
+    keyValueBuilder.key("hello2", 23)
+    keyValueBuilder.key("hello3", 0.1)
+
+    val result: Map<String, String> = keyValueBuilder.build().keysAndValues
+
+    // The result is empty because it called crashlytics.setCustomKey for every key.
+    assertThat(result).isEmpty()
   }
 
   companion object {
