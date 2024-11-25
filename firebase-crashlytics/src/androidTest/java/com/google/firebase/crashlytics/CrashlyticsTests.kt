@@ -59,6 +59,19 @@ class CrashlyticsTests {
     Firebase.app.get(UserAgentPublisher::class.java)
   }
 
+  @Test
+  fun keyValueBuilder() {
+    val keyValueBuilder = KeyValueBuilder()
+    keyValueBuilder.key("hello", "world")
+    keyValueBuilder.key("hello2", 23)
+    keyValueBuilder.key("hello3", 0.1)
+
+    val result: Map<String, String> = keyValueBuilder.build().keysAndValues
+
+    // TODO(mrober): Make unit tests for this.
+    assertThat(result).isNotEmpty()
+  }
+
   companion object {
     private const val APP_ID = "1:1:android:1a"
     private const val API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY"

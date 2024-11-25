@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
 
 # 19.2.1
 * [changed] Updated protobuf dependency to `3.25.5` to fix
