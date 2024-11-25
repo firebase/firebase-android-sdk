@@ -19,6 +19,7 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /** Handles any key/values for metadata. */
@@ -54,6 +55,7 @@ class KeysMap {
       keys.put(sanitizedKey, value == null ? "" : santitizedAttribute);
       return true;
     }
+    // TODO: Explore using a LinkedHashMap to overwrite keys in this case.
     Logger.getLogger()
         .w(
             "Ignored entry \""
