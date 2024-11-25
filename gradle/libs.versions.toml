@@ -7,6 +7,9 @@ android-lint = "31.3.2"
 autovalue = "1.10.1"
 coroutines = "1.7.3"
 dagger = "2.43.2"
+featureDelivery = "2.1.0"
+firebaseCommon = "21.0.0"
+firebaseComponents = "18.0.0"
 grpc = "1.62.2"
 grpcKotlin = "1.4.1"
 javalite = "3.25.5"
@@ -45,7 +48,10 @@ autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.26.0" }
+feature-delivery = { module = "com.google.android.play:feature-delivery", version.ref = "featureDelivery" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
+firebase-common = { module = "com.google.firebase:firebase-common", version.ref = "firebaseCommon" }
+firebase-components = { module = "com.google.firebase:firebase-components", version.ref = "firebaseComponents" }
 grpc-android = { module = "io.grpc:grpc-android", version.ref = "grpc" }
 grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlin" }
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }

@@ -49,8 +49,8 @@ android {
 }
 
 dependencies {
-  implementation("com.google.android.play:feature-delivery:2.0.0")
+  implementation(libs.feature.delivery)
   implementation(libs.kotlin.stdlib.jdk8)
-  api("com.google.firebase:firebase-common:21.0.0")
-  api("com.google.firebase:firebase-components:18.0.0")
+  api(libs.firebase.common)
+  api(libs.firebase.components)
 }
