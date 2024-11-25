@@ -20,8 +20,8 @@ internal constructor( // The actual result data, as generic types decoded from J
    * The data that was returned from the Callable HTTPS trigger.
    *
    * The data is in the form of native Java objects. For example, if your trigger returned an array,
-   * this object would be a `List<Object>`. If your trigger returned a JavaScript object with keys and
-   * values, this object would be a `Map<String, Object>`.
+   * this object would be a `List<Object>`. If your trigger returned a JavaScript object with keys
+   * and values, this object would be a `Map<String, Object>`.
    */
   @JvmField public val data: Any?
 ) {
@@ -29,8 +29,8 @@ internal constructor( // The actual result data, as generic types decoded from J
    * Returns the data that was returned from the Callable HTTPS trigger.
    *
    * The data is in the form of native Java objects. For example, if your trigger returned an array,
-   * this object would be a `List<Object>`. If your trigger returned a JavaScript object with keys and
-   * values, this object would be a `Map<String, Object>`.
+   * this object would be a `List<Object>`. If your trigger returned a JavaScript object with keys
+   * and values, this object would be a `Map<String, Object>`.
    */
   public fun getData(): Any? {
     return data
