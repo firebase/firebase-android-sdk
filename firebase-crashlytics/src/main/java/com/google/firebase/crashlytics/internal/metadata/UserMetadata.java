@@ -145,6 +145,10 @@ public class UserMetadata {
    * @return the {Map<String, String>} respecting the custom key constraints.
    */
   public Map<String, String> getCustomKeys(Map<String, String> eventKeys) {
+    // In case of empty event keys, preserve existing behavior.
+    if (eventKeys.isEmpty()) return customKeys.getKeys();
+
+    // Otherwise merge the event keys with custom keys as appropriate.
     Map<String, String> globalKeys = customKeys.getKeys();
     HashMap<String, String> result = new HashMap<>(globalKeys);
     for (Map.Entry<String, String> entry : eventKeys.entrySet()) {

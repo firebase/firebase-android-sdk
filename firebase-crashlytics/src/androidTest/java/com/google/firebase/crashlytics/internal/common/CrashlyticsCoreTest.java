@@ -160,6 +160,124 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  public void testCustomAttributes_retrievedWithEmptyEventKeys() throws Exception {
+    UserMetadata metadata = crashlyticsCore.getController().getUserMetadata();
+
+    assertTrue(metadata.getCustomKeys(Map.of()).isEmpty());
+
+    final String id = "id012345";
+    crashlyticsCore.setUserId(id);
+    crashlyticsWorkers.common.await();
+    assertEquals(id, metadata.getUserId());
+
+    final StringBuffer idBuffer = new StringBuffer(id);
+    while (idBuffer.length() < UserMetadata.MAX_ATTRIBUTE_SIZE) {
+      idBuffer.append("0");
+    }
+    final String longId = idBuffer.toString();
+    final String superLongId = longId + "more chars";
+
+    crashlyticsCore.setUserId(superLongId);
+    crashlyticsWorkers.common.await();
+    assertEquals(longId, metadata.getUserId());
+
+    final String key1 = "key1";
+    final String value1 = "value1";
+    crashlyticsCore.setCustomKey(key1, value1);
+    crashlyticsWorkers.common.await();
+    assertEquals(value1, metadata.getCustomKeys(Map.of()).get(key1));
+
+    // Adding an existing key with the same value should return false
+    assertFalse(metadata.setCustomKey(key1, value1));
+    assertTrue(metadata.setCustomKey(key1, "someOtherValue"));
+    assertTrue(metadata.setCustomKey(key1, value1));
+    assertFalse(metadata.setCustomKey(key1, value1));
+
+    final String longValue = longId.replaceAll("0", "x");
+    final String superLongValue = longValue + "some more chars";
+
+    // test truncation of custom keys and attributes
+    crashlyticsCore.setCustomKey(superLongId, superLongValue);
+    crashlyticsWorkers.common.await();
+    assertNull(metadata.getCustomKeys(Map.of()).get(superLongId));
+    assertEquals(longValue, metadata.getCustomKeys().get(longId));
+
+    // test the max number of attributes. We've already set 2.
+    for (int i = 2; i < UserMetadata.MAX_ATTRIBUTES; ++i) {
+      final String key = "key" + i;
+      final String value = "value" + i;
+      crashlyticsCore.setCustomKey(key, value);
+      crashlyticsWorkers.common.await();
+      assertEquals(value, metadata.getCustomKeys(Map.of()).get(key));
+    }
+    // should be full now, extra key, value pairs will be dropped.
+    final String key = "new key";
+    crashlyticsCore.setCustomKey(key, "some value");
+    crashlyticsWorkers.common.await();
+    assertFalse(metadata.getCustomKeys(Map.of()).containsKey(key));
+
+    // should be able to update existing keys
+    crashlyticsCore.setCustomKey(key1, longValue);
+    crashlyticsWorkers.common.await();
+    assertEquals(longValue, metadata.getCustomKeys(Map.of()).get(key1));
+
+    // when we set a key to null, it should still exist with an empty value
+    crashlyticsCore.setCustomKey(key1, null);
+    crashlyticsWorkers.common.await();
+    assertEquals("", metadata.getCustomKeys(Map.of()).get(key1));
+
+    // keys and values are trimmed.
+    crashlyticsCore.setCustomKey(" " + key1 + " ", " " + longValue + " ");
+    crashlyticsWorkers.common.await();
+    assertTrue(metadata.getCustomKeys(Map.of()).containsKey(key1));
+    assertEquals(longValue, metadata.getCustomKeys(Map.of()).get(key1));
+  }
+
+  @Test
+  public void testCustomKeysMergedWithEventKeys() throws Exception {
+    UserMetadata metadata = crashlyticsCore.getController().getUserMetadata();
+
+    Map<String, String> keysAndValues = new HashMap<>();
+    keysAndValues.put("1", "value");
+    keysAndValues.put("2", "value");
+    keysAndValues.put("3", "value");
+
+    metadata.setCustomKeys(keysAndValues);
+    crashlyticsWorkers.common.await();
+
+    Map<String, String> eventKeysAndValues = new HashMap<>();
+    eventKeysAndValues.put("4", "eventValue");
+    eventKeysAndValues.put("5", "eventValue");
+
+    // Tests reading custom keys with event keys.
+    assertEquals(keysAndValues.size(), metadata.getCustomKeys().size());
+    assertEquals(keysAndValues.size(), metadata.getCustomKeys(Map.of()).size());
+    assertEquals(
+        keysAndValues.size() + eventKeysAndValues.size(),
+        metadata.getCustomKeys(eventKeysAndValues).size());
+
+    // Tests event keys don't add to custom keys in future reads.
+    assertEquals(keysAndValues.size(), metadata.getCustomKeys().size());
+    assertEquals(keysAndValues.size(), metadata.getCustomKeys(Map.of()).size());
+
+    // Tests additional event keys.
+    eventKeysAndValues.put("6", "eventValue");
+    eventKeysAndValues.put("7", "eventValue");
+    assertEquals(
+        keysAndValues.size() + eventKeysAndValues.size(),
+        metadata.getCustomKeys(eventKeysAndValues).size());
+
+    // Tests overriding custom key with event keys.
+    keysAndValues.put("7", "value");
+    metadata.setCustomKeys(keysAndValues);
+    crashlyticsWorkers.common.await();
+
+    assertEquals("value", metadata.getCustomKeys().get("7"));
+    assertEquals("value", metadata.getCustomKeys(Map.of()).get("7"));
+    assertEquals("eventValue", metadata.getCustomKeys(eventKeysAndValues).get("7"));
+  }
+
+  @Test
   public void testBulkCustomKeys() throws Exception {
     final double DELTA = 1e-15;
 
