@@ -152,6 +152,8 @@ public class UserMetadata {
         String key = KeysMap.sanitizeString(entry.getKey(), MAX_ATTRIBUTE_SIZE);
         String value = KeysMap.sanitizeString(entry.getValue(), MAX_ATTRIBUTE_SIZE);
         result.put(key, value);
+        
+        continue;
       }
 
       // TODO: Explore using a LinkedHashMap to overwrite keys in this case.
