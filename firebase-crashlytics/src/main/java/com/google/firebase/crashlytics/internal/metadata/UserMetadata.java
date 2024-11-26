@@ -148,15 +148,13 @@ public class UserMetadata {
     Map<String, String> globalKeys = customKeys.getKeys();
     HashMap<String, String> result = new HashMap<>(globalKeys);
     for (Map.Entry<String, String> entry : eventKeys.entrySet()) {
-      if (result.size() < MAX_ATTRIBUTES) {
-        String key = KeysMap.sanitizeString(entry.getKey(), MAX_ATTRIBUTE_SIZE);
-        String value = KeysMap.sanitizeString(entry.getValue(), MAX_ATTRIBUTE_SIZE);
-        result.put(key, value);
-        
+      String sanitizedKey = KeysMap.sanitizeString(entry.getKey(), MAX_ATTRIBUTE_SIZE);
+      if (result.size() < MAX_ATTRIBUTES || result.containsKey(sanitizedKey)) {
+        String sanitizedValue = KeysMap.sanitizeString(entry.getValue(), MAX_ATTRIBUTE_SIZE);
+        result.put(sanitizedKey, sanitizedValue);
         continue;
       }
 
-      // TODO: Explore using a LinkedHashMap to overwrite keys in this case.
       long ignoredEventKeysCount = eventKeys.size() - (MAX_ATTRIBUTES - globalKeys.size());
       Logger.getLogger()
           .w(

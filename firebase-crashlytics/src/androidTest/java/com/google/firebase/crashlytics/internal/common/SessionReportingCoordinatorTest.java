@@ -34,13 +34,16 @@ import static org.mockito.Mockito.when;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.concurrent.TestOnlyExecutors;
+import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.metadata.RolloutAssignment;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.File;
 import java.util.ArrayList;
@@ -55,13 +58,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class SessionReportingCoordinatorTest {
+public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
+
+  private static String TEST_SESSION_ID = "testSession1";
 
   @Mock private CrashlyticsReportDataCapture dataCapture;
   @Mock private CrashlyticsReportPersistence reportPersistence;
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
-  @Mock private UserMetadata reportMetadata;
   @Mock private IdManager idManager;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
@@ -71,6 +75,7 @@ public class SessionReportingCoordinatorTest {
   @Mock private Exception mockException;
   @Mock private Thread mockThread;
 
+  private UserMetadata reportMetadata;
   private SessionReportingCoordinator reportingCoordinator;
   private AutoCloseable mocks;
 
@@ -80,6 +85,9 @@ public class SessionReportingCoordinatorTest {
   @Before
   public void setUp() {
     mocks = MockitoAnnotations.openMocks(this);
+
+    FileStore testFileStore = new FileStore(getContext());
+    reportMetadata = new UserMetadata(TEST_SESSION_ID, testFileStore, crashlyticsWorkers);
 
     reportingCoordinator =
         new SessionReportingCoordinator(
@@ -261,8 +269,7 @@ public class SessionReportingCoordinatorTest {
     expectedCustomAttributes.add(customAttribute1);
     expectedCustomAttributes.add(customAttribute2);
 
-    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
-    when(reportMetadata.getInternalKeys()).thenReturn(attributes);
+    addKeysToUserMetadata(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
@@ -286,10 +293,6 @@ public class SessionReportingCoordinatorTest {
 
     final String sessionId = "testSessionId";
 
-    final Map<String, String> attributes = Collections.emptyMap();
-
-    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
-
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
         mockException, mockThread, new EventMetadata(sessionId, timestamp));
@@ -310,9 +313,6 @@ public class SessionReportingCoordinatorTest {
     mockEventInteractions();
 
     final String sessionId = "testSessionId";
-
-    final Map<String, String> attributes = Collections.emptyMap();
-    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
     final String testKey1 = "testKey1";
     final String testValue1 = "testValue1";
@@ -357,7 +357,7 @@ public class SessionReportingCoordinatorTest {
     attributes.put(testKey1, testValue1);
     attributes.put(testKey2, testValue2);
 
-    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+    addKeysToUserMetadata(attributes);
 
     final String testValue1UserInfo = "testValue1";
     final String testKey3 = "testKey3";
@@ -374,10 +374,8 @@ public class SessionReportingCoordinatorTest {
     final CustomAttribute customAttribute3 =
         CustomAttribute.builder().setKey(testKey3).setValue(testValue3).build();
 
-    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
-    expectedCustomAttributes.add(customAttribute1);
-    expectedCustomAttributes.add(customAttribute2);
-    expectedCustomAttributes.add(customAttribute3);
+    final List<CustomAttribute> expectedCustomAttributes =
+        List.of(customAttribute1, customAttribute2, customAttribute3);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
@@ -398,10 +396,10 @@ public class SessionReportingCoordinatorTest {
     String sessionId = "testSessionId";
     mockEventInteractions();
 
-    List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
-        new ArrayList<CrashlyticsReport.Session.Event.RolloutAssignment>();
-    rolloutsState.add(mockRolloutAssignment());
-    when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
+    List<RolloutAssignment> rolloutsState = new ArrayList<>();
+    rolloutsState.add(fakeRolloutAssignment());
+    reportMetadata.updateRolloutsState(rolloutsState);
+    crashlyticsWorkers.diskWrite.await();
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
@@ -412,14 +410,13 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
-    verify(reportMetadata).getRolloutsState();
     // first build for custom keys
     // second build for rollouts
     verify(mockEventBuilder, times(2)).build();
   }
 
   @Test
-  public void testFatalEvent_addsSortedCustomKeysToEvent() {
+  public void testFatalEvent_addsSortedCustomKeysToEvent() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
     mockEventInteractions();
@@ -444,7 +441,7 @@ public class SessionReportingCoordinatorTest {
     expectedCustomAttributes.add(customAttribute1);
     expectedCustomAttributes.add(customAttribute2);
 
-    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
+    addKeysToUserMetadata(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
@@ -457,7 +454,7 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testFatalEvent_addsSortedInternalKeysToEvent() {
+  public void testFatalEvent_addsSortedInternalKeysToEvent() throws Exception {
     final long timestamp = System.currentTimeMillis();
 
     mockEventInteractions();
@@ -482,7 +479,7 @@ public class SessionReportingCoordinatorTest {
     expectedCustomAttributes.add(customAttribute1);
     expectedCustomAttributes.add(customAttribute2);
 
-    when(reportMetadata.getInternalKeys()).thenReturn(attributes);
+    addKeysToUserMetadata(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
@@ -502,10 +499,6 @@ public class SessionReportingCoordinatorTest {
 
     final String sessionId = "testSessionId";
 
-    final Map<String, String> attributes = Collections.emptyMap();
-
-    when(reportMetadata.getCustomKeys()).thenReturn(attributes);
-
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
 
@@ -517,15 +510,16 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
-  public void testFatalEvent_addRolloutsToEvent() {
+  public void testFatalEvent_addRolloutsToEvent() throws Exception {
     long timestamp = System.currentTimeMillis();
     String sessionId = "testSessionId";
     mockEventInteractions();
 
-    List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
-        new ArrayList<CrashlyticsReport.Session.Event.RolloutAssignment>();
-    rolloutsState.add(mockRolloutAssignment());
-    when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
+    List<RolloutAssignment> rolloutsState = new ArrayList<>();
+    rolloutsState.add(fakeRolloutAssignment());
+
+    reportMetadata.updateRolloutsState(rolloutsState);
+    crashlyticsWorkers.diskWrite.await();
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
@@ -533,7 +527,6 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventAppBuilder, never()).setCustomAttributes(anyList());
     verify(mockEventAppBuilder, never()).build();
     verify(mockEventBuilder, never()).setApp(mockEventApp);
-    verify(reportMetadata).getRolloutsState();
     // first build for custom keys
     // second build for rollouts
     verify(mockEventBuilder, times(2)).build();
@@ -618,6 +611,14 @@ public class SessionReportingCoordinatorTest {
     verify(reportPersistence).deleteAllReports();
   }
 
+  private void addKeysToUserMetadata(Map<String, String> customKeys) throws Exception {
+    reportMetadata.setCustomKeys(customKeys);
+    for (Map.Entry<String, String> entry : customKeys.entrySet()) {
+      reportMetadata.setInternalKey(entry.getKey(), entry.getValue());
+    }
+    crashlyticsWorkers.diskWrite.await();
+  }
+
   private void mockEventInteractions() {
     when(mockEvent.toBuilder()).thenReturn(mockEventBuilder);
     when(mockEventBuilder.build()).thenReturn(mockEvent);
@@ -652,16 +653,7 @@ public class SessionReportingCoordinatorTest {
         mockReport(sessionId), sessionId, new File("fake"));
   }
 
-  private static CrashlyticsReport.Session.Event.RolloutAssignment mockRolloutAssignment() {
-    return CrashlyticsReport.Session.Event.RolloutAssignment.builder()
-        .setTemplateVersion(2)
-        .setParameterKey("my_feature")
-        .setParameterValue("false")
-        .setRolloutVariant(
-            CrashlyticsReport.Session.Event.RolloutAssignment.RolloutVariant.builder()
-                .setRolloutId("rollout_1")
-                .setVariantId("enabled")
-                .build())
-        .build();
+  private static RolloutAssignment fakeRolloutAssignment() {
+    return RolloutAssignment.create("rollout_1", "my_feature", "false", "enabled", 2);
   }
 }
