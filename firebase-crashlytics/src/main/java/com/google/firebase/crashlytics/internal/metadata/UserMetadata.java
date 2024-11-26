@@ -22,6 +22,8 @@ import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -163,7 +165,7 @@ public class UserMetadata {
                   + MAX_ATTRIBUTES);
       break;
     }
-    return result;
+    return Collections.unmodifiableMap(result);
   }
 
   /**
