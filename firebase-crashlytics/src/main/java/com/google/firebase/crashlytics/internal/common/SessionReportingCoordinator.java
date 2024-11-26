@@ -43,7 +43,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
@@ -283,12 +282,8 @@ public class SessionReportingCoordinator {
     // TODO: Put this back once support for reports endpoint is removed.
     // logFileManager.clearLog(); // Clear log to prepare for next event.
 
-    // Merges the app level custom keys and the event specific custom keys.
-    Map<String, String> customKeysForEvent =
-        mergeEventKeysIntoCustomKeys(reportMetadata.getCustomKeys(), eventKeys);
-
     final List<CustomAttribute> sortedCustomAttributes =
-        getSortedCustomAttributes(customKeysForEvent);
+        getSortedCustomAttributes(reportMetadata.getCustomKeys(eventKeys));
     final List<CustomAttribute> sortedInternalKeys =
         getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
@@ -379,17 +374,6 @@ public class SessionReportingCoordinator {
     Logger.getLogger()
         .w("Crashlytics report could not be enqueued to DataTransport", task.getException());
     return false;
-  }
-
-  @NonNull
-  private static Map<String, String> mergeEventKeysIntoCustomKeys(
-      Map<String, String> globalCustomKeys, Map<String, String> eventKeys) {
-    Map<String, String> result = new HashMap<>(globalCustomKeys);
-    result.putAll(eventKeys);
-
-    // TODO: Add 64 key restriction.
-    // TODO: Add 1024 character restriction.
-    return result;
   }
 
   @NonNull

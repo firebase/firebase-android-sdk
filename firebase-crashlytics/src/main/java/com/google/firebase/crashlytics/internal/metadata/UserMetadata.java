@@ -17,10 +17,12 @@ package com.google.firebase.crashlytics.internal.metadata;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicMarkableReference;
@@ -135,7 +137,37 @@ public class UserMetadata {
     crashlyticsWorkers.diskWrite.submit(this::serializeUserDataIfNeeded);
   }
 
+  /** Creates a {Map<String, String>} with all the custom keys to attach to the event.
+   *
+   * @param eventKeys a {Map<String, String>} representing event specific keys.
+   *
+   * @return the {Map<String, String>} respecting the custom key constraints.
+   */
+  public Map<String, String> getCustomKeys(Map<String, String> eventKeys) {
+    Map<String, String> globalKeys = customKeys.getKeys();
+    HashMap<String, String> result = new HashMap<>(globalKeys);
+    for (Map.Entry<String, String> entry : eventKeys.entrySet()) {
+      if (result.size() < MAX_ATTRIBUTES) {
+        String key = KeysMap.sanitizeString(entry.getKey(), MAX_ATTRIBUTE_SIZE);
+        String value = KeysMap.sanitizeString(entry.getValue(), MAX_ATTRIBUTE_SIZE);
+        result.put(key, value);
+      }
+
+      // TODO: Explore using a LinkedHashMap to overwrite keys in this case.
+      long ignoredEventKeysCount = eventKeys.size() - (MAX_ATTRIBUTES - globalKeys.size());
+      Logger.getLogger()
+          .w(
+              "Ignored "
+                  + ignoredEventKeysCount
+                  + " event specific keys. Maximum key count is "
+                  + MAX_ATTRIBUTES);
+      break;
+    }
+    return result;
+  }
+
   /**
+   *
    * @return defensive copy of the custom keys.
    */
   public Map<String, String> getCustomKeys() {
