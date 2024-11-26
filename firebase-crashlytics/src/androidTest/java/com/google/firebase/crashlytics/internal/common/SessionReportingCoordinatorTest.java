@@ -60,7 +60,7 @@ import org.mockito.MockitoAnnotations;
 
 public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
 
-  private static String TEST_SESSION_ID = "testSession1";
+  private static final String TEST_SESSION_ID = "testSessionId";
 
   @Mock private CrashlyticsReportDataCapture dataCapture;
   @Mock private CrashlyticsReportPersistence reportPersistence;
@@ -269,7 +269,8 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     expectedCustomAttributes.add(customAttribute1);
     expectedCustomAttributes.add(customAttribute2);
 
-    addKeysToUserMetadata(attributes);
+    addCustomKeysToUserMetadata(attributes);
+    addInternalKeysToUserMetadata(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistNonFatalEvent(
@@ -357,7 +358,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     attributes.put(testKey1, testValue1);
     attributes.put(testKey2, testValue2);
 
-    addKeysToUserMetadata(attributes);
+    addCustomKeysToUserMetadata(attributes);
 
     final String testValue1UserInfo = "testValue1";
     final String testKey3 = "testKey3";
@@ -441,7 +442,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     expectedCustomAttributes.add(customAttribute1);
     expectedCustomAttributes.add(customAttribute2);
 
-    addKeysToUserMetadata(attributes);
+    addCustomKeysToUserMetadata(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
@@ -479,7 +480,7 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     expectedCustomAttributes.add(customAttribute1);
     expectedCustomAttributes.add(customAttribute2);
 
-    addKeysToUserMetadata(attributes);
+    addInternalKeysToUserMetadata(attributes);
 
     reportingCoordinator.onBeginSession(sessionId, timestamp);
     reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
@@ -611,9 +612,16 @@ public class SessionReportingCoordinatorTest extends CrashlyticsTestCase {
     verify(reportPersistence).deleteAllReports();
   }
 
-  private void addKeysToUserMetadata(Map<String, String> customKeys) throws Exception {
+  private void addCustomKeysToUserMetadata(Map<String, String> customKeys) throws Exception {
     reportMetadata.setCustomKeys(customKeys);
     for (Map.Entry<String, String> entry : customKeys.entrySet()) {
+      reportMetadata.setInternalKey(entry.getKey(), entry.getValue());
+    }
+    crashlyticsWorkers.diskWrite.await();
+  }
+
+  private void addInternalKeysToUserMetadata(Map<String, String> internalKeys) throws Exception {
+    for (Map.Entry<String, String> entry : internalKeys.entrySet()) {
       reportMetadata.setInternalKey(entry.getKey(), entry.getValue());
     }
     crashlyticsWorkers.diskWrite.await();
