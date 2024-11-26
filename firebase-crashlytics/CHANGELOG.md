@@ -1,70 +1,9 @@
 # Unreleased
-* [feature] Added an overload to the `recordException` API to allow attaching additional custom
-  keys to the non fatal report.
 
-# 19.2.1
-* [changed] Updated protobuf dependency to `3.25.5` to fix
-  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-crashlytics` library. The Kotlin extensions library has no additional
-updates.
-
-# 19.2.0
-* [fixed] Improved data consistency for rapid user actions.
-* [fixed] Fixed exception propagation in the case of no default uncaught exception handler.
-* [changed] Internal changes to improve startup time.
-* [changed] Internal changes to the way background tasks are scheduled.
-* [changed] Migrated SDK to use standard Firebase executors.
-
-# 19.1.0
-* [feature] Added the `isCrashlyticsCollectionEnabled` API to check if Crashlytics collection is
-  enabled.
-  (GitHub [#5919](https://github.com/firebase/firebase-android-sdk/issues/5919){: .external})
-* [fixed] Ensure that on-demand fatal events are never processed on the main thread.
-  (GitHub [#4345](https://github.com/firebase/firebase-android-sdk/issues/4345){: .external})
-* [changed] Internal changes to the way session IDs are generated.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-crashlytics` library. The Kotlin extensions library has no additional
-updates.
-
-# 19.0.3
-* [changed] Update the internal file system to handle long file names.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-crashlytics` library. The Kotlin extensions library has no additional
-updates.
-
-# 19.0.2
-* [changed] Changing caught exception type to fail safely on any exception type.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-crashlytics` library. The Kotlin extensions library has no additional
-updates.
-
-# 19.0.1
-* [changed] Improve cold initialization time.
-* [fixed] Fixed version compatibility issues with other Firebase libraries.
-
-
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-crashlytics` library. The Kotlin extensions library has no additional
-updates.
 
 # 19.0.0
 * [fixed] Force validation or rotation of FIDs.
 * [fixed] Added keep rule for shrinkage of Crashlytics build resources in strict mode.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
