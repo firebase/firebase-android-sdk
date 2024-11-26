@@ -314,6 +314,9 @@ public class ConfigSharedPrefsClient {
           .edit()
           .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
           .commit();
+
+      // Log the final updated custom signals.
+      Log.d(TAG, "Updated custom signals: " + getCustomSignals());
     }
   }
 
