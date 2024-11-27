@@ -211,20 +211,28 @@ public class FirebaseCrashlytics {
   /**
    * Records a non-fatal report to send to Crashlytics.
    *
+   * <p>Combined with app level custom keys, the event is restricted to a maximum of 64 key/value
+   * pairs. New keys beyond that limit are ignored. Keys or values that exceed 1024 characters are
+   * truncated.
+   *
+   * <p>The values of event keys override the values of app level custom keys if they're identical.
+   *
    * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
-   * @param userInfo a {@link Map} to add key value pairs to be recorded with the non fatal exception.
+   * @param customKeys a {@link Map<String, String>} containing key value pairs to be associated
+   *                   with the non fatal exception, in addition to the global custom keys.
    */
-  public void recordException(@NonNull Throwable throwable, @NonNull Map<String, String> userInfo) {
+  public void recordException(
+      @NonNull Throwable throwable, @NonNull Map<String, String> customKeys) {
     if (throwable == null) { // Users could call this with null despite the annotation.
       Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
       return;
     }
 
-    if (userInfo == null) { // It's possible to set this to null even with the annotation.
-      userInfo = Map.of();
+    if (customKeys == null) { // It's possible to set this to null even with the annotation.
+      customKeys = Map.of();
     }
 
-    core.logException(throwable, userInfo);
+    core.logException(throwable, customKeys);
   }
 
   /**
