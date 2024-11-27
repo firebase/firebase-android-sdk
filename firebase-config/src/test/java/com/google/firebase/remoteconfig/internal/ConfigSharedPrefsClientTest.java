@@ -21,10 +21,10 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET;
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LAST_FETCH_TIME_NO_FETCH_YET;
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_BACKOFF_TIME;
-import static com.google.firebase.remoteconfig.internal.ConfigMetadataClient.NO_FAILED_FETCHES;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LAST_FETCH_TIME_NO_FETCH_YET;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_BACKOFF_TIME;
+import static com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.NO_FAILED_FETCHES;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -32,8 +32,8 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.common.base.Preconditions;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.BackoffMetadata;
-import com.google.firebase.remoteconfig.internal.ConfigMetadataClient.LastFetchStatus;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
+import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LastFetchStatus;
 import java.util.Date;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,121 +42,123 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 /**
- * Unit tests for the {@link ConfigMetadataClient}.
+ * Unit tests for the {@link ConfigSharedPrefsClient}.
  *
  * @author Miraziz Yusupov
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class ConfigMetadataClientTest {
-  private ConfigMetadataClient metadataClient;
+public class ConfigSharedPrefsClientTest {
+  private ConfigSharedPrefsClient sharedPrefsClient;
   private FirebaseRemoteConfigSettings.Builder settingsBuilder;
 
   @Before
   public void setUp() {
-    SharedPreferences metadata =
+    SharedPreferences sharedPrefs =
         ApplicationProvider.getApplicationContext()
             .getSharedPreferences("TEST_FILE_NAME", Context.MODE_PRIVATE);
 
-    metadata.edit().clear().commit();
+    sharedPrefs.edit().clear().commit();
 
-    metadataClient = new ConfigMetadataClient(metadata);
+    sharedPrefsClient = new ConfigSharedPrefsClient(sharedPrefs);
 
     settingsBuilder = new FirebaseRemoteConfigSettings.Builder();
   }
 
   @Test
   public void getFetchTimeoutInSeconds_isNotSet_returnsDefault() {
-    assertThat(metadataClient.getFetchTimeoutInSeconds()).isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
+    assertThat(sharedPrefsClient.getFetchTimeoutInSeconds())
+        .isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
   }
 
   @Test
   public void getFetchTimeoutInSeconds_isSetTo10Seconds_returns10Seconds() {
     long expectedFetchTimeout = 10L;
-    metadataClient.setConfigSettings(
+    sharedPrefsClient.setConfigSettings(
         settingsBuilder.setFetchTimeoutInSeconds(expectedFetchTimeout).build());
 
-    long fetchTimeout = metadataClient.getFetchTimeoutInSeconds();
+    long fetchTimeout = sharedPrefsClient.getFetchTimeoutInSeconds();
 
     assertThat(fetchTimeout).isEqualTo(expectedFetchTimeout);
   }
 
   @Test
   public void getMinimumFetchIntervalInSeconds_isNotSet_returnsDefault() {
-    assertThat(metadataClient.getMinimumFetchIntervalInSeconds())
+    assertThat(sharedPrefsClient.getMinimumFetchIntervalInSeconds())
         .isEqualTo(DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
   }
 
   @Test
   public void getMinimumFetchIntervalInSeconds_isSetTo10Seconds_returns10Seconds() {
     long expectedMinimumFetchInterval = 10L;
-    metadataClient.setConfigSettings(
+    sharedPrefsClient.setConfigSettings(
         settingsBuilder.setMinimumFetchIntervalInSeconds(expectedMinimumFetchInterval).build());
 
-    long minimumFetchInterval = metadataClient.getMinimumFetchIntervalInSeconds();
+    long minimumFetchInterval = sharedPrefsClient.getMinimumFetchIntervalInSeconds();
 
     assertThat(minimumFetchInterval).isEqualTo(expectedMinimumFetchInterval);
   }
 
   @Test
   public void getLastFetchStatus_isNotSet_returnsZero() {
-    assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
+    assertThat(sharedPrefsClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
   }
 
   @Test
   public void getLastFetchStatus_isSetToSuccess_returnsSuccess() {
-    metadataClient.updateLastFetchAsSuccessfulAt(new Date(100L));
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(new Date(100L));
 
-    @LastFetchStatus int lastFetchStatus = metadataClient.getLastFetchStatus();
+    @LastFetchStatus int lastFetchStatus = sharedPrefsClient.getLastFetchStatus();
 
     assertThat(lastFetchStatus).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
   }
 
   @Test
   public void getLastSuccessfulFetchTime_isNotSet_returnsZero() {
-    assertThat(metadataClient.getLastSuccessfulFetchTime()).isEqualTo(LAST_FETCH_TIME_NO_FETCH_YET);
+    assertThat(sharedPrefsClient.getLastSuccessfulFetchTime())
+        .isEqualTo(LAST_FETCH_TIME_NO_FETCH_YET);
   }
 
   @Test
   public void getLastSuccessfulFetchTime_isSet_returnsTime() {
     Date fetchTime = new Date(1000L);
-    metadataClient.updateLastFetchAsSuccessfulAt(fetchTime);
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(fetchTime);
 
-    Date lastSuccessfulFetchTime = metadataClient.getLastSuccessfulFetchTime();
+    Date lastSuccessfulFetchTime = sharedPrefsClient.getLastSuccessfulFetchTime();
 
     assertThat(lastSuccessfulFetchTime).isEqualTo(fetchTime);
   }
 
   @Test
   public void getLastFetchETag_isNotSet_returnsEmptyString() {
-    assertThat(metadataClient.getLastFetchETag()).isNull();
+    assertThat(sharedPrefsClient.getLastFetchETag()).isNull();
   }
 
   @Test
   public void getLastFetchETag_isSet_returnsETag() {
     String expectedETag = "an etag";
-    metadataClient.setLastFetchETag(expectedETag);
+    sharedPrefsClient.setLastFetchETag(expectedETag);
 
-    String eTag = metadataClient.getLastFetchETag();
+    String eTag = sharedPrefsClient.getLastFetchETag();
 
     assertThat(eTag).isEqualTo(expectedETag);
   }
 
   @Test
   public void getLastTemplateVersion_isNotSet_returnsDefault() {
-    assertThat(metadataClient.getLastTemplateVersion()).isEqualTo(0);
+    assertThat(sharedPrefsClient.getLastTemplateVersion()).isEqualTo(0);
   }
 
   @Test
   public void getLastTemplateVersion_isSet_returnsTemplateVersion() {
-    metadataClient.setLastTemplateVersion(1);
-    assertThat(metadataClient.getLastTemplateVersion()).isEqualTo(1);
+    sharedPrefsClient.setLastTemplateVersion(1);
+    assertThat(sharedPrefsClient.getLastTemplateVersion()).isEqualTo(1);
   }
 
   @Test
   public void getRealtimeBackoffMetadata_isNotSet_returnsNoFailedStreamsAndNotThrottled() {
-    ConfigMetadataClient.RealtimeBackoffMetadata defaultRealtimeBackoffMetadata =
-        metadataClient.getRealtimeBackoffMetadata();
+    ConfigSharedPrefsClient.RealtimeBackoffMetadata defaultRealtimeBackoffMetadata =
+        sharedPrefsClient.getRealtimeBackoffMetadata();
 
     assertThat(defaultRealtimeBackoffMetadata.getNumFailedStreams()).isEqualTo(NO_FAILED_FETCHES);
     assertThat(defaultRealtimeBackoffMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);
@@ -166,10 +168,10 @@ public class ConfigMetadataClientTest {
   public void getRealtimeBackoffMetadata_hasValues_returnsValues() {
     int numFailedStreams = 5;
     Date backoffEndTime = new Date(1000L);
-    metadataClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
+    sharedPrefsClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
 
-    ConfigMetadataClient.RealtimeBackoffMetadata backoffMetadata =
-        metadataClient.getRealtimeBackoffMetadata();
+    ConfigSharedPrefsClient.RealtimeBackoffMetadata backoffMetadata =
+        sharedPrefsClient.getRealtimeBackoffMetadata();
 
     assertThat(backoffMetadata.getNumFailedStreams()).isEqualTo(numFailedStreams);
     assertThat(backoffMetadata.getBackoffEndTime()).isEqualTo(backoffEndTime);
@@ -177,26 +179,26 @@ public class ConfigMetadataClientTest {
 
   @Test
   public void resetRealtimeBackoff_hasValues_clearsAllValues() {
-    metadataClient.setRealtimeBackoffMetadata(
+    sharedPrefsClient.setRealtimeBackoffMetadata(
         /* numFailedStreams= */ 5, /* backoffEndTime= */ new Date(1000L));
 
-    ConfigMetadataClient.RealtimeBackoffMetadata realtimeBackoffMetadata =
-        metadataClient.getRealtimeBackoffMetadata();
+    ConfigSharedPrefsClient.RealtimeBackoffMetadata realtimeBackoffMetadata =
+        sharedPrefsClient.getRealtimeBackoffMetadata();
     Preconditions.checkArgument(realtimeBackoffMetadata.getNumFailedStreams() != NO_FAILED_FETCHES);
     Preconditions.checkArgument(
         !realtimeBackoffMetadata.getBackoffEndTime().equals(NO_BACKOFF_TIME));
 
-    metadataClient.resetRealtimeBackoff();
+    sharedPrefsClient.resetRealtimeBackoff();
 
-    ConfigMetadataClient.RealtimeBackoffMetadata resetMetadata =
-        metadataClient.getRealtimeBackoffMetadata();
+    ConfigSharedPrefsClient.RealtimeBackoffMetadata resetMetadata =
+        sharedPrefsClient.getRealtimeBackoffMetadata();
     assertThat(resetMetadata.getNumFailedStreams()).isEqualTo(NO_FAILED_FETCHES);
     assertThat(resetMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);
   }
 
   @Test
   public void getBackoffMetadata_isNotSet_returnsNoFailedFetchesAndNotThrottled() {
-    BackoffMetadata defaultBackoffMetadata = metadataClient.getBackoffMetadata();
+    BackoffMetadata defaultBackoffMetadata = sharedPrefsClient.getBackoffMetadata();
 
     assertThat(defaultBackoffMetadata.getNumFailedFetches()).isEqualTo(NO_FAILED_FETCHES);
     assertThat(defaultBackoffMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);
@@ -206,9 +208,9 @@ public class ConfigMetadataClientTest {
   public void getBackoffMetadata_hasValues_returnsValues() {
     int numFailedFetches = 5;
     Date backoffEndTime = new Date(1000L);
-    metadataClient.setBackoffMetadata(numFailedFetches, backoffEndTime);
+    sharedPrefsClient.setBackoffMetadata(numFailedFetches, backoffEndTime);
 
-    BackoffMetadata backoffMetadata = metadataClient.getBackoffMetadata();
+    BackoffMetadata backoffMetadata = sharedPrefsClient.getBackoffMetadata();
 
     assertThat(backoffMetadata.getNumFailedFetches()).isEqualTo(numFailedFetches);
     assertThat(backoffMetadata.getBackoffEndTime()).isEqualTo(backoffEndTime);
@@ -216,23 +218,23 @@ public class ConfigMetadataClientTest {
 
   @Test
   public void resetBackoff_hasValues_clearsAllValues() {
-    metadataClient.setBackoffMetadata(
+    sharedPrefsClient.setBackoffMetadata(
         /* numFailedFetches= */ 5, /* backoffEndTime= */ new Date(1000L));
 
-    BackoffMetadata backoffMetadata = metadataClient.getBackoffMetadata();
+    BackoffMetadata backoffMetadata = sharedPrefsClient.getBackoffMetadata();
     Preconditions.checkArgument(backoffMetadata.getNumFailedFetches() != NO_FAILED_FETCHES);
     Preconditions.checkArgument(!backoffMetadata.getBackoffEndTime().equals(NO_BACKOFF_TIME));
 
-    metadataClient.resetBackoff();
+    sharedPrefsClient.resetBackoff();
 
-    BackoffMetadata resetMetadata = metadataClient.getBackoffMetadata();
+    BackoffMetadata resetMetadata = sharedPrefsClient.getBackoffMetadata();
     assertThat(resetMetadata.getNumFailedFetches()).isEqualTo(NO_FAILED_FETCHES);
     assertThat(resetMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);
   }
 
   @Test
   public void getInfo_hasNoSetValues_returnsDefaults() {
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
 
     assertThat(info.getFetchTimeMillis()).isEqualTo(LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
@@ -245,18 +247,18 @@ public class ConfigMetadataClientTest {
   @Test
   public void getInfo_hasSetValues_returnsValues() {
     Date lastSuccessfulFetchTime = new Date(1000L);
-    metadataClient.updateLastFetchAsSuccessfulAt(lastSuccessfulFetchTime);
-    metadataClient.updateLastFetchAsFailed();
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(lastSuccessfulFetchTime);
+    sharedPrefsClient.updateLastFetchAsFailed();
 
     long fetchTimeout = 666L;
     long minimumFetchInterval = 666L;
-    metadataClient.setConfigSettings(
+    sharedPrefsClient.setConfigSettings(
         new FirebaseRemoteConfigSettings.Builder()
             .setFetchTimeoutInSeconds(fetchTimeout)
             .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
             .build());
 
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
 
     assertThat(info.getFetchTimeMillis()).isEqualTo(lastSuccessfulFetchTime.getTime());
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
@@ -267,9 +269,9 @@ public class ConfigMetadataClientTest {
 
   @Test
   public void getInfo_firstAndOnlyFetchFails_failStatusAndNoFetchYetTime() {
-    metadataClient.updateLastFetchAsFailed();
+    sharedPrefsClient.updateLastFetchAsFailed();
 
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
 
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
     assertThat(info.getFetchTimeMillis()).isEqualTo(LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
@@ -278,9 +280,9 @@ public class ConfigMetadataClientTest {
   @Test
   public void getInfo_fetchSucceeds_successStatusAndFetchTimeUpdated() {
     Date fetchTime = new Date(100L);
-    metadataClient.updateLastFetchAsSuccessfulAt(fetchTime);
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(fetchTime);
 
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
 
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
     assertThat(info.getFetchTimeMillis()).isEqualTo(fetchTime.getTime());
@@ -289,11 +291,11 @@ public class ConfigMetadataClientTest {
   @Test
   public void getInfo_firstFetchSucceedsSecondFetchFails_failStatusAndFirstFetchTime() {
     Date fetchTime = new Date(100L);
-    metadataClient.updateLastFetchAsSuccessfulAt(fetchTime);
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(fetchTime);
 
-    metadataClient.updateLastFetchAsFailed();
+    sharedPrefsClient.updateLastFetchAsFailed();
 
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
 
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
     assertThat(info.getFetchTimeMillis()).isEqualTo(fetchTime.getTime());
@@ -302,12 +304,12 @@ public class ConfigMetadataClientTest {
   @Test
   public void getInfo_twoFetchesSucceed_successStatusAndSecondFetchTime() {
     Date fetchTime = new Date(100L);
-    metadataClient.updateLastFetchAsSuccessfulAt(fetchTime);
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(fetchTime);
 
     Date secondFetchTime = new Date(200L);
-    metadataClient.updateLastFetchAsSuccessfulAt(secondFetchTime);
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(secondFetchTime);
 
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
 
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
     assertThat(info.getFetchTimeMillis()).isEqualTo(secondFetchTime.getTime());
@@ -316,11 +318,11 @@ public class ConfigMetadataClientTest {
   @Test
   public void getInfo_hitsThrottleLimit_throttledStatus() {
     Date fetchTime = new Date(100L);
-    metadataClient.updateLastFetchAsSuccessfulAt(fetchTime);
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(fetchTime);
 
-    metadataClient.updateLastFetchAsThrottled();
+    sharedPrefsClient.updateLastFetchAsThrottled();
 
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
 
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_THROTTLED);
     assertThat(info.getFetchTimeMillis()).isEqualTo(fetchTime.getTime());
@@ -329,19 +331,19 @@ public class ConfigMetadataClientTest {
   @Test
   public void clear_hasSetValues_clearsAll() {
     Date lastSuccessfulFetchTime = new Date(1000L);
-    metadataClient.updateLastFetchAsSuccessfulAt(lastSuccessfulFetchTime);
+    sharedPrefsClient.updateLastFetchAsSuccessfulAt(lastSuccessfulFetchTime);
 
     long fetchTimeout = 666L;
     long minimumFetchInterval = 666L;
-    metadataClient.setConfigSettings(
+    sharedPrefsClient.setConfigSettings(
         new FirebaseRemoteConfigSettings.Builder()
             .setFetchTimeoutInSeconds(fetchTimeout)
             .setMinimumFetchIntervalInSeconds(minimumFetchInterval)
             .build());
 
-    metadataClient.clear();
+    sharedPrefsClient.clear();
 
-    FirebaseRemoteConfigInfo info = metadataClient.getInfo();
+    FirebaseRemoteConfigInfo info = sharedPrefsClient.getInfo();
     assertThat(info.getFetchTimeMillis()).isEqualTo(LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
     assertThat(info.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_NO_FETCH_YET);
     assertThat(info.getConfigSettings().getFetchTimeoutInSeconds())
