@@ -242,7 +242,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     keysAndValues.put("customKey2", "value");
     keysAndValues.put("customKey3", "value");
 
-    metadata.setCustomKeys(keysAndValues);
+    crashlyticsCore.setCustomKeys(keysAndValues);
     crashlyticsWorkers.common.await();
 
     Map<String, String> eventKeysAndValues = new HashMap<>();
@@ -269,7 +269,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     // Tests overriding custom key with event keys.
     keysAndValues.put("eventKey1", "value");
-    metadata.setCustomKeys(keysAndValues);
+    crashlyticsCore.setCustomKeys(keysAndValues);
     crashlyticsWorkers.common.await();
 
     assertEquals("value", metadata.getCustomKeys().get("eventKey1"));
@@ -280,7 +280,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     for (int i = keysAndValues.size(); i < UserMetadata.MAX_ATTRIBUTES; ++i) {
       final String key = "key" + i;
       final String value = "value" + i;
-      metadata.setCustomKey(key, value);
+      crashlyticsCore.setCustomKey(key, value);
       crashlyticsWorkers.common.await();
       assertEquals(value, metadata.getCustomKeys().get(key));
     }
