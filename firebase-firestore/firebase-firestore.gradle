@@ -152,6 +152,7 @@ dependencies {
 
     testImplementation project(':firebase-database-collection')
     testImplementation project(':firebase-firestore')
+    testProtobuf("com.google.api.grpc:proto-google-common-protos:1.18.0")
     testImplementation libs.androidx.test.core
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.android.gms:play-services-tasks:18.0.1'
