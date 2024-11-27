@@ -275,6 +275,21 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals("value", metadata.getCustomKeys().get("7"));
     assertEquals("value", metadata.getCustomKeys(Map.of()).get("7"));
     assertEquals("eventValue", metadata.getCustomKeys(eventKeysAndValues).get("7"));
+
+    // Test the event key behavior when the count of custom keys is max.
+    for (int i = keysAndValues.size(); i < UserMetadata.MAX_ATTRIBUTES; ++i) {
+      final String key = "key" + i;
+      final String value = "value" + i;
+      metadata.setCustomKey(key, value);
+      crashlyticsWorkers.common.await();
+      assertEquals(value, metadata.getCustomKeys().get(key));
+    }
+
+    assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size());
+
+    assertEquals("value", metadata.getCustomKeys().get("7"));
+    assertEquals("value", metadata.getCustomKeys(Map.of()).get("7"));
+    assertEquals("eventValue", metadata.getCustomKeys(eventKeysAndValues).get("7"));
   }
 
   @Test

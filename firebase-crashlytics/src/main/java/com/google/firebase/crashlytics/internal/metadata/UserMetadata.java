@@ -159,14 +159,12 @@ public class UserMetadata {
         continue;
       }
 
-      long ignoredEventKeysCount = eventKeys.size() - (MAX_ATTRIBUTES - globalKeys.size());
       Logger.getLogger()
           .w(
-              "Ignored "
-                  + ignoredEventKeysCount
-                  + " event specific keys. Maximum key count is "
-                  + MAX_ATTRIBUTES);
-      break;
+              "Ignored entry \""
+                  + entry.getKey()
+                  + "\" when adding event specific keys. Maximum allowable: "
+                  + MAX_ATTRIBUTE_SIZE);
     }
     return Collections.unmodifiableMap(result);
   }
