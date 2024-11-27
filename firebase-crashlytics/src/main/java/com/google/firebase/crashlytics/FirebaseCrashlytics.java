@@ -219,7 +219,7 @@ public class FirebaseCrashlytics {
    *
    * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
    * @param customKeys a {@link Map<String, String>} containing key value pairs to be associated
-   *                   with the non fatal exception, in addition to the global custom keys.
+   *                   with the non fatal exception, in addition to the app level custom keys.
    */
   public void recordException(
       @NonNull Throwable throwable, @NonNull Map<String, String> customKeys) {
