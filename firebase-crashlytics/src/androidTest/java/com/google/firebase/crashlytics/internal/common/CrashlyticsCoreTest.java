@@ -238,16 +238,16 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     UserMetadata metadata = crashlyticsCore.getController().getUserMetadata();
 
     Map<String, String> keysAndValues = new HashMap<>();
-    keysAndValues.put("1", "value");
-    keysAndValues.put("2", "value");
-    keysAndValues.put("3", "value");
+    keysAndValues.put("customKey1", "value");
+    keysAndValues.put("customKey2", "value");
+    keysAndValues.put("customKey3", "value");
 
     metadata.setCustomKeys(keysAndValues);
     crashlyticsWorkers.common.await();
 
     Map<String, String> eventKeysAndValues = new HashMap<>();
-    eventKeysAndValues.put("4", "eventValue");
-    eventKeysAndValues.put("5", "eventValue");
+    eventKeysAndValues.put("eventKey1", "eventValue");
+    eventKeysAndValues.put("eventKey2", "eventValue");
 
     // Tests reading custom keys with event keys.
     assertEquals(keysAndValues.size(), metadata.getCustomKeys().size());
@@ -261,20 +261,20 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
     assertEquals(keysAndValues.size(), metadata.getCustomKeys(Map.of()).size());
 
     // Tests additional event keys.
-    eventKeysAndValues.put("6", "eventValue");
-    eventKeysAndValues.put("7", "eventValue");
+    eventKeysAndValues.put("eventKey3", "eventValue");
+    eventKeysAndValues.put("eventKey4", "eventValue");
     assertEquals(
         keysAndValues.size() + eventKeysAndValues.size(),
         metadata.getCustomKeys(eventKeysAndValues).size());
 
     // Tests overriding custom key with event keys.
-    keysAndValues.put("7", "value");
+    keysAndValues.put("eventKey1", "value");
     metadata.setCustomKeys(keysAndValues);
     crashlyticsWorkers.common.await();
 
-    assertEquals("value", metadata.getCustomKeys().get("7"));
-    assertEquals("value", metadata.getCustomKeys(Map.of()).get("7"));
-    assertEquals("eventValue", metadata.getCustomKeys(eventKeysAndValues).get("7"));
+    assertEquals("value", metadata.getCustomKeys().get("eventKey1"));
+    assertEquals("value", metadata.getCustomKeys(Map.of()).get("eventKey1"));
+    assertEquals("eventValue", metadata.getCustomKeys(eventKeysAndValues).get("eventKey1"));
 
     // Test the event key behavior when the count of custom keys is max.
     for (int i = keysAndValues.size(); i < UserMetadata.MAX_ATTRIBUTES; ++i) {
@@ -287,9 +287,13 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
 
     assertEquals(UserMetadata.MAX_ATTRIBUTES, metadata.getCustomKeys().size());
 
-    assertEquals("value", metadata.getCustomKeys().get("7"));
-    assertEquals("value", metadata.getCustomKeys(Map.of()).get("7"));
-    assertEquals("eventValue", metadata.getCustomKeys(eventKeysAndValues).get("7"));
+    // Tests event keys override global custom keys when the key exists.
+    assertEquals("value", metadata.getCustomKeys().get("eventKey1"));
+    assertEquals("value", metadata.getCustomKeys(Map.of()).get("eventKey1"));
+    assertEquals("eventValue", metadata.getCustomKeys(eventKeysAndValues).get("eventKey1"));
+
+    // Test when event keys *don't* override global custom keys.
+    assertNull(metadata.getCustomKeys(eventKeysAndValues).get("eventKey2"));
   }
 
   @Test
