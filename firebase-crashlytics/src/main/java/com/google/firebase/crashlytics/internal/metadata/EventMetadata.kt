@@ -19,13 +19,13 @@ package com.google.firebase.crashlytics.internal.metadata
  *
  * @property sessionId the sessionId to attach to the event.
  * @property timestamp the timestamp to attach to the event.
- * @property userInfo a [Map<String, String>] of key value pairs to attach to the event, in addition
- * to the global custom keys.
+ * @property additionalCustomKeys a [Map<String, String>] of key value pairs to attach to the event,
+ * in addition to the global custom keys.
  */
 data class EventMetadata
 @JvmOverloads
 constructor(
   val sessionId: String,
   val timestamp: Long,
-  val userInfo: Map<String, String> = mapOf()
+  val additionalCustomKeys: Map<String, String> = mapOf()
 )

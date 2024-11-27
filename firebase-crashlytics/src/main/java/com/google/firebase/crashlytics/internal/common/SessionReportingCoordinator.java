@@ -342,7 +342,7 @@ public class SessionReportingCoordinator {
             MAX_CHAINED_EXCEPTION_DEPTH,
             isFatal);
     CrashlyticsReport.Session.Event finallizedEvent =
-        addMetaDataToEvent(capturedEvent, eventMetadata.getUserInfo());
+        addMetaDataToEvent(capturedEvent, eventMetadata.getAdditionalCustomKeys());
 
     // Non-fatal, persistence write task we move to diskWriteWorker
     if (!isFatal) {
