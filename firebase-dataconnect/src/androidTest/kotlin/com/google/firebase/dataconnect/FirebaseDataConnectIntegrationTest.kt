@@ -20,9 +20,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
-import com.google.firebase.dataconnect.testutil.connectorConfig
-import com.google.firebase.dataconnect.testutil.dataConnectSettings
 import com.google.firebase.dataconnect.testutil.newInstance
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
@@ -51,12 +50,12 @@ class FirebaseDataConnectIntegrationTest : DataConnectIntegrationTestBase() {
 
   @get:Rule val inProcessDataConnectGrpcServer = InProcessDataConnectGrpcServer()
 
-  private val connectorConfig1 = Arb.connectorConfig("foo").next(rs)
-  private val connectorConfig2 = Arb.connectorConfig("bar").next(rs)
-  private val connectorConfig3 = Arb.connectorConfig("baz").next(rs)
+  private val connectorConfig1 = Arb.dataConnect.connectorConfig("foo").next(rs)
+  private val connectorConfig2 = Arb.dataConnect.connectorConfig("bar").next(rs)
+  private val connectorConfig3 = Arb.dataConnect.connectorConfig("baz").next(rs)
 
-  private val settings1 = Arb.dataConnectSettings("foo").next(rs)
-  private val settings2 = Arb.dataConnectSettings("bar").next(rs)
+  private val settings1 = Arb.dataConnect.dataConnectSettings("foo").next(rs)
+  private val settings2 = Arb.dataConnect.dataConnectSettings("bar").next(rs)
 
   @Before
   fun validateInvariants() {

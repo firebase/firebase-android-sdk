@@ -16,8 +16,11 @@
 
 package com.google.firebase.dataconnect.generated
 
+import com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
 
 /**
  * The specialization of [GeneratedOperation] for mutations.
@@ -35,8 +38,9 @@ import com.google.firebase.dataconnect.MutationRef
  * outright deletion, until the Firebase Data Connect product graduates from "alpha" and/or "beta"
  * to "Generally Available" status.
  */
-public interface GeneratedMutation<C : GeneratedConnector, Data, Variables> :
-  GeneratedOperation<C, Data, Variables> {
+public interface GeneratedMutation<Connector : GeneratedConnector<Connector>, Data, Variables> :
+  GeneratedOperation<Connector, Data, Variables> {
+
   override fun ref(variables: Variables): MutationRef<Data, Variables> =
     connector.dataConnect.mutation(
       operationName,
@@ -46,4 +50,22 @@ public interface GeneratedMutation<C : GeneratedConnector, Data, Variables> :
     ) {
       callerSdkType = FirebaseDataConnect.CallerSdkType.Generated
     }
+
+  @ExperimentalFirebaseDataConnect
+  override fun copy(
+    connector: Connector,
+    operationName: String,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+  ): GeneratedMutation<Connector, Data, Variables>
+
+  @ExperimentalFirebaseDataConnect
+  override fun <NewVariables> withVariablesSerializer(
+    variablesSerializer: SerializationStrategy<NewVariables>,
+  ): GeneratedMutation<Connector, Data, NewVariables>
+
+  @ExperimentalFirebaseDataConnect
+  override fun <NewData> withDataDeserializer(
+    dataDeserializer: DeserializationStrategy<NewData>,
+  ): GeneratedMutation<Connector, NewData, Variables>
 }

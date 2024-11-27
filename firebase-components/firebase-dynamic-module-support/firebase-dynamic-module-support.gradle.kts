@@ -34,7 +34,6 @@ android {
   namespace = "com.google.firebase.dynamicloading"
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -42,12 +41,16 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {
-  implementation("com.google.android.play:feature-delivery:2.0.0")
+  implementation(libs.feature.delivery)
   implementation(libs.kotlin.stdlib.jdk8)
-  api("com.google.firebase:firebase-common:21.0.0")
-  api("com.google.firebase:firebase-components:18.0.0")
+  api(libs.firebase.common)
+  api(libs.firebase.components)
 }

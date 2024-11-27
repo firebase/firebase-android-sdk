@@ -18,7 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import org.gradle.api.DefaultTask
-import org.gradle.api.provider.Property
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
@@ -46,16 +46,16 @@ import org.gradle.api.tasks.TaskAction
 abstract class FiresiteTransformTask : DefaultTask() {
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)
-  abstract val dackkaFiles: Property<File>
+  abstract val dackkaFiles: RegularFileProperty
 
-  @get:OutputDirectory abstract val outputDirectory: Property<File>
+  @get:OutputDirectory abstract val outputDirectory: RegularFileProperty
 
   @TaskAction
   fun build() {
     val namesOfFilesWeDoNotNeed =
       listOf("index.html", "classes.html", "packages.html", "package-list")
-    val rootDirectory = dackkaFiles.get()
-    val targetDirectory = outputDirectory.get()
+    val rootDirectory = dackkaFiles.get().asFile.childFile("docs/reference")
+    val targetDirectory = outputDirectory.get().asFile
     targetDirectory.deleteRecursively()
 
     rootDirectory.walkTopDown().forEach {

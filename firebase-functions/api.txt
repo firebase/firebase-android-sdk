@@ -110,6 +110,7 @@ package com.google.firebase.functions {
 
   public final class HttpsCallableResult {
     method @Nullable public Object getData();
+    field @Nullable public final Object data;
   }
 
   public final class Serializer {

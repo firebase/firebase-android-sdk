@@ -22,9 +22,10 @@ import java.io.OutputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -72,7 +73,7 @@ fun Project.runMetalavaWithArgs(
 
 abstract class GenerateStubsTask : DefaultTask() {
   /** Source files against which API signatures will be validated. */
-  @get:InputFiles abstract val sources: SetProperty<File>
+  @get:InputFiles abstract val sources: ConfigurableFileCollection
 
   @get:[InputFiles Classpath]
   lateinit var classPath: FileCollection
@@ -81,8 +82,7 @@ abstract class GenerateStubsTask : DefaultTask() {
 
   @TaskAction
   fun run() {
-    val sourcePath =
-      sources.get().asSequence().filter { it.exists() }.map { it.absolutePath }.joinToString(":")
+    val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
 
     val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
@@ -103,20 +103,19 @@ abstract class GenerateStubsTask : DefaultTask() {
 
 abstract class GenerateApiTxtTask : DefaultTask() {
   /** Source files against which API signatures will be validated. */
-  @get:InputFiles abstract val sources: SetProperty<File>
+  @get:InputFiles abstract val sources: ConfigurableFileCollection
 
   @get:InputFiles lateinit var classPath: FileCollection
 
-  @get:OutputFile abstract val apiTxtFile: Property<File>
+  @get:OutputFile abstract val apiTxtFile: RegularFileProperty
 
-  @get:OutputFile abstract val baselineFile: Property<File>
+  @get:OutputFile abstract val baselineFile: RegularFileProperty
 
   @get:Input abstract val updateBaseline: Property<Boolean>
 
   @TaskAction
   fun run() {
-    val sourcePath =
-      sources.get().asSequence().filter { it.exists() }.map { it.absolutePath }.joinToString(":")
+    val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
 
     val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
@@ -128,11 +127,12 @@ abstract class GenerateApiTxtTask : DefaultTask() {
         "--classpath",
         classPath.joinToString(":"),
         "--api",
-        apiTxtFile.get().absolutePath,
+        apiTxtFile.get().asFile.absolutePath,
         "--format=v2",
       ) +
         if (updateBaseline.get()) listOf("--update-baseline")
-        else if (baselineFile.get().exists()) listOf("--baseline", baselineFile.get().absolutePath)
+        else if (baselineFile.get().asFile.exists())
+          listOf("--baseline", baselineFile.get().asFile.absolutePath)
         else listOf(),
       ignoreFailure = true,
     )
@@ -141,24 +141,23 @@ abstract class GenerateApiTxtTask : DefaultTask() {
 
 abstract class ApiInformationTask : DefaultTask() {
   /** Source files against which API signatures will be validated. */
-  @get:InputFiles abstract val sources: SetProperty<File>
+  @get:InputFiles abstract val sources: ConfigurableFileCollection
 
   @get:InputFiles lateinit var classPath: FileCollection
 
-  @get:InputFile abstract val apiTxtFile: Property<File>
+  @get:InputFile abstract val apiTxtFile: RegularFileProperty
 
-  @get:OutputFile abstract val outputApiFile: Property<File>
+  @get:OutputFile abstract val outputApiFile: RegularFileProperty
 
-  @get:OutputFile abstract val baselineFile: Property<File>
+  @get:OutputFile abstract val baselineFile: RegularFileProperty
 
-  @get:OutputFile abstract val outputFile: Property<File>
+  @get:OutputFile abstract val outputFile: RegularFileProperty
 
   @get:Input abstract val updateBaseline: Property<Boolean>
 
   @TaskAction
   fun run() {
-    val sourcePath =
-      sources.get().asSequence().filter { it.exists() }.map { it.absolutePath }.joinToString(":")
+    val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
 
     val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
@@ -170,7 +169,7 @@ abstract class ApiInformationTask : DefaultTask() {
         "--classpath",
         classPath.joinToString(":"),
         "--api",
-        outputApiFile.get().absolutePath,
+        outputApiFile.get().asFile.absolutePath,
         "--format=v2",
       ),
       ignoreFailure = true,
@@ -179,9 +178,9 @@ abstract class ApiInformationTask : DefaultTask() {
     project.runMetalavaWithArgs(
       listOf(
         "--source-files",
-        outputApiFile.get().absolutePath,
+        outputApiFile.get().asFile.absolutePath,
         "--check-compatibility:api:released",
-        apiTxtFile.get().absolutePath,
+        apiTxtFile.get().asFile.absolutePath,
         "--error",
         "AddedClass",
         "--error",
@@ -192,10 +191,11 @@ abstract class ApiInformationTask : DefaultTask() {
         "--no-color",
       ) +
         if (updateBaseline.get()) listOf("--update-baseline")
-        else if (baselineFile.get().exists()) listOf("--baseline", baselineFile.get().absolutePath)
+        else if (baselineFile.get().asFile.exists())
+          listOf("--baseline", baselineFile.get().asFile.absolutePath)
         else listOf(),
       ignoreFailure = true,
-      stdOut = FileOutputStream(outputFile.get()),
+      stdOut = FileOutputStream(outputFile.get().asFile),
     )
   }
 }

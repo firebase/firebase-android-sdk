@@ -1,4 +1,4 @@
-name: Changelog
+name: Verify changelog update
 
 on:
   pull_request

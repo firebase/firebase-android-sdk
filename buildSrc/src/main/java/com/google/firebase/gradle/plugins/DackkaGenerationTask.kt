@@ -20,6 +20,7 @@ import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
@@ -53,7 +54,7 @@ import org.json.JSONObject
 @CacheableTask
 abstract class GenerateDocumentationTaskExtension : DefaultTask() {
   @get:[InputFile Classpath]
-  abstract val dackkaJarFile: Property<File>
+  abstract val dackkaJarFile: RegularFileProperty
 
   @get:[InputFiles Classpath]
   abstract val dependencies: Property<FileCollection>
@@ -72,7 +73,7 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
 
   @get:Input abstract val clientName: Property<String>
 
-  @get:OutputDirectory abstract val outputDirectory: Property<File>
+  @get:OutputDirectory abstract val outputDirectory: RegularFileProperty
 }
 
 /**
@@ -123,7 +124,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
     val jsonMap =
       mapOf(
         "moduleName" to "",
-        "outputDir" to outputDirectory.get().absolutePath,
+        "outputDir" to outputDirectory.get().asFile.absolutePath,
         "globalLinks" to "",
         "sourceSets" to
           listOf(
@@ -215,7 +216,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
  */
 interface DackkaParams : WorkParameters {
   val args: ListProperty<String>
-  val dackkaFile: Property<File>
+  val dackkaFile: RegularFileProperty
 }
 
 /**

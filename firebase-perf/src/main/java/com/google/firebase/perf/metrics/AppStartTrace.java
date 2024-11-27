@@ -355,10 +355,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     final boolean isExperimentTTIDEnabled = configResolver.getIsExperimentTTIDEnabled();
     if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
-      rootView.getViewTreeObserver().addOnDrawListener(onDrawCounterListener);
-      FirstDrawDoneListener.registerForNextDraw(rootView, this::recordOnDrawFrontOfQueue);
-      PreDrawListener.registerForNextDraw(
-          rootView, this::recordPreDraw, this::recordPreDrawFrontOfQueue);
+      if (rootView != null) {
+        rootView.getViewTreeObserver().addOnDrawListener(onDrawCounterListener);
+        FirstDrawDoneListener.registerForNextDraw(rootView, this::recordOnDrawFrontOfQueue);
+        PreDrawListener.registerForNextDraw(
+            rootView, this::recordPreDraw, this::recordPreDrawFrontOfQueue);
+      }
     }
 
     if (onResumeTime != null) { // An activity already called onResume()
@@ -444,7 +446,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       return;
     }
     View rootView = activity.findViewById(android.R.id.content);
-    rootView.getViewTreeObserver().removeOnDrawListener(onDrawCounterListener);
+    if (rootView != null) {
+      rootView.getViewTreeObserver().removeOnDrawListener(onDrawCounterListener);
+    }
   }
 
   @Override

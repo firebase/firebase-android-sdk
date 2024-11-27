@@ -38,7 +38,6 @@ android {
   namespace = "com.google.firebase.database"
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -56,7 +55,12 @@ android {
     kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
-    testOptions.unitTests.isIncludeAndroidResources = true
+
+    testOptions {
+      targetSdk = targetSdkVersion
+      unitTests { isIncludeAndroidResources = true }
+    }
+    lint { targetSdk = targetSdkVersion }
   }
 }
 

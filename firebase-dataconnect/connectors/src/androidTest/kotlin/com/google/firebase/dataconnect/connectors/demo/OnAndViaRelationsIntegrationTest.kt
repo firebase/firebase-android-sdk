@@ -16,10 +16,12 @@
 
 package com.google.firebase.dataconnect.connectors.demo
 
-import com.google.common.truth.Truth.assertThat
-import com.google.firebase.dataconnect.connectors.demo.testutil.*
-import com.google.firebase.dataconnect.testutil.*
-import kotlinx.coroutines.test.*
+import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
+import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
 
@@ -35,14 +37,31 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
         connector.insertManyToOneParent.execute { child = childKey }.data.key
       }
 
-    val queryResult = connector.getManyToOneChildByKey.execute(children[0])
+    run {
+      val queryResult = connector.getManyToOneChildByKey.execute(children[0])
+      val manyToOneChild =
+        withClue("manyToOneChild1") { queryResult.data.manyToOneChild.shouldNotBeNull() }
+      withClue("parents1") {
+        manyToOneChild.parents.shouldContainExactlyInAnyOrder(
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[0].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[2].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[4].id),
+        )
+      }
+    }
 
-    assertThat(queryResult.data.manyToOneChild?.parents)
-      .containsExactly(
-        GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[0].id),
-        GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[2].id),
-        GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[4].id),
-      )
+    run {
+      val queryResult = connector.getManyToOneChildByKey.execute(children[1])
+      val manyToOneChild =
+        withClue("manyToOneChild2") { queryResult.data.manyToOneChild.shouldNotBeNull() }
+      withClue("parents2") {
+        manyToOneChild.parents.shouldContainExactlyInAnyOrder(
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[1].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[3].id),
+          GetManyToOneChildByKeyQuery.Data.ManyToOneChild.ParentsItem(parents[5].id),
+        )
+      }
+    }
   }
 
   @Test
@@ -59,13 +78,15 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getManyToManyChildAByKey.execute(childAKey)
 
-    assertThat(queryResult.data.manyToManyChildA?.manyToManyChildBS_via_ManyToManyParent)
-      .containsExactlyElementsIn(
+    val manyToManyChildA =
+      withClue("manyToManyChildA") { queryResult.data.manyToManyChildA.shouldNotBeNull() }
+    withClue("manyToManyChildBS_via_ManyToManyParent") {
+      manyToManyChildA.manyToManyChildBS_via_ManyToManyParent shouldContainExactlyInAnyOrder
         childBKeys.map {
           GetManyToManyChildAByKeyQuery.Data.ManyToManyChildA
             .ManyToManyChildBsViaManyToManyParentItem(it.id)
         }
-      )
+    }
   }
 
   @Test
@@ -76,13 +97,11 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getManyToOneSelfCustomNameByKey.execute(key3)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetManyToOneSelfCustomNameByKeyQuery.Data(
-          GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName(
-            key3.id,
-            GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName.Ref(key2.id, key1.id)
-          )
+    queryResult.data shouldBe
+      GetManyToOneSelfCustomNameByKeyQuery.Data(
+        GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName(
+          key3.id,
+          GetManyToOneSelfCustomNameByKeyQuery.Data.ManyToOneSelfCustomName.Ref(key2.id, key1.id)
         )
       )
   }
@@ -95,14 +114,12 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val queryResult = connector.getManyToOneSelfMatchingNameByKey.execute(key3)
 
-    assertThat(queryResult.data)
-      .isEqualTo(
-        GetManyToOneSelfMatchingNameByKeyQuery.Data(
-          GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName(
-            key3.id,
-            GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName
-              .ManyToOneSelfMatchingName(key2.id, key1.id)
-          )
+    queryResult.data shouldBe
+      GetManyToOneSelfMatchingNameByKeyQuery.Data(
+        GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName(
+          key3.id,
+          GetManyToOneSelfMatchingNameByKeyQuery.Data.ManyToOneSelfMatchingName
+            .ManyToOneSelfMatchingName(key2.id, key1.id)
         )
       )
   }
@@ -124,19 +141,19 @@ class OnAndViaRelationsIntegrationTest : DemoConnectorIntegrationTestBase() {
       keys1: List<ManyToManySelfChildKey>,
       keys2: List<ManyToManySelfChildKey>
     ) {
-      assertThat(
-          manyToManySelfChild?.manyToManySelfChildren_via_ManyToManySelfParent_on_child1?.map {
-            it.id
-          }
-        )
-        .containsExactlyElementsIn(keys1.map { it.id })
-      assertThat(
-          manyToManySelfChild?.manyToManySelfChildren_via_ManyToManySelfParent_on_child2?.map {
-            it.id
-          }
-        )
-        .containsExactlyElementsIn(keys2.map { it.id })
+      val child = withClue("child") { manyToManySelfChild.shouldNotBeNull() }
+      withClue("child1") {
+        val children =
+          child.manyToManySelfChildren_via_ManyToManySelfParent_on_child1.shouldNotBeNull()
+        children.map { it.id } shouldContainExactlyInAnyOrder keys1.map { it.id }
+      }
+      withClue("child2") {
+        val children =
+          child.manyToManySelfChildren_via_ManyToManySelfParent_on_child2.shouldNotBeNull()
+        children.map { it.id } shouldContainExactlyInAnyOrder keys2.map { it.id }
+      }
     }
+
     queryResults[0]
       .data
       .assertEquals(

@@ -23,13 +23,13 @@ import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorInt
 import com.google.firebase.dataconnect.fromAny
 import com.google.firebase.dataconnect.generated.GeneratedMutation
 import com.google.firebase.dataconnect.generated.GeneratedQuery
-import com.google.firebase.dataconnect.testutil.EdgeCases
-import com.google.firebase.dataconnect.testutil.anyListScalar
-import com.google.firebase.dataconnect.testutil.anyScalar
 import com.google.firebase.dataconnect.testutil.expectedAnyScalarRoundTripValue
-import com.google.firebase.dataconnect.testutil.filterNotAnyScalarMatching
-import com.google.firebase.dataconnect.testutil.filterNotIncludesAllMatchingAnyScalars
-import com.google.firebase.dataconnect.testutil.filterNotNull
+import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotAnyScalarMatching
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotIncludesAllMatchingAnyScalars
+import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotNull
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
@@ -39,7 +39,6 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContainIgnoringCase
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -66,7 +65,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNonNullable_MutationVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        for (value in EdgeCases.anyScalars.filterNotNull()) {
+        for (value in EdgeCases.anyScalar.all.filterNotNull()) {
           withClue("value=$value") { verifyAnyScalarNonNullableRoundTrip(value) }
         }
       }
@@ -76,8 +75,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNonNullable_QueryVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        for (value in EdgeCases.anyScalars.filterNotNull()) {
-          val otherValues = Arb.anyScalar().filterNotNull().filterNotAnyScalarMatching(value)
+        for (value in EdgeCases.anyScalar.all.filterNotNull()) {
+          val otherValues =
+            Arb.dataConnect.anyScalar.any().filterNotNull().filterNotAnyScalarMatching(value)
           withClue("value=$value otherValues=$otherValues") {
             verifyAnyScalarNonNullableQueryVariable(value, otherValues.next(), otherValues.next())
           }
@@ -88,7 +88,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullable_MutationVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      checkAll(normalCasePropTestConfig, Arb.anyScalar().filterNotNull()) { value ->
+      checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.any().filterNotNull()) { value ->
         verifyAnyScalarNonNullableRoundTrip(value)
       }
     }
@@ -96,8 +96,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullable_QueryVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      checkAll(normalCasePropTestConfig, Arb.anyScalar().filterNotNull()) { value ->
-        val otherValues = Arb.anyScalar().filterNotNull().filterNotAnyScalarMatching(value)
+      checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.any().filterNotNull()) { value ->
+        val otherValues =
+          Arb.dataConnect.anyScalar.any().filterNotNull().filterNotAnyScalarMatching(value)
         verifyAnyScalarNonNullableQueryVariable(value, otherValues.next(), otherValues.next())
       }
     }
@@ -168,7 +169,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNullable_MutationVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        for (value in EdgeCases.anyScalars) {
+        for (value in EdgeCases.anyScalar.all) {
           withClue("value=$value") { verifyAnyScalarNullableRoundTrip(value) }
         }
       }
@@ -178,8 +179,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNullable_QueryVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        for (value in EdgeCases.anyScalars) {
-          val otherValues = Arb.anyScalar().filterNotAnyScalarMatching(value)
+        for (value in EdgeCases.anyScalar.all) {
+          val otherValues = Arb.dataConnect.anyScalar.any().filterNotAnyScalarMatching(value)
           withClue("value=$value otherValues=$otherValues") {
             verifyAnyScalarNullableQueryVariable(value, otherValues.next(), otherValues.next())
           }
@@ -190,7 +191,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullable_MutationVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      checkAll(normalCasePropTestConfig, Arb.anyScalar()) { value ->
+      checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.any()) { value ->
         verifyAnyScalarNullableRoundTrip(value)
       }
     }
@@ -198,8 +199,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullable_QueryVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      checkAll(normalCasePropTestConfig, Arb.anyScalar()) { value ->
-        val otherValues = Arb.anyScalar().filterNotAnyScalarMatching(value)
+      checkAll(normalCasePropTestConfig, Arb.dataConnect.anyScalar.any()) { value ->
+        val otherValues = Arb.dataConnect.anyScalar.any().filterNotAnyScalarMatching(value)
         verifyAnyScalarNullableQueryVariable(value, otherValues.next(), otherValues.next())
       }
     }
@@ -213,7 +214,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullable_QuerySucceedsIfAnyVariableIsMissing() = runTest {
-    val values = Arb.anyScalar().map { AnyValue.fromAny(it) }
+    val values = Arb.dataConnect.anyScalar.any().map { AnyValue.fromAny(it) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNullableInsert3
@@ -240,7 +241,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullable_QuerySucceedsIfAnyVariableIsNull() = runTest {
-    val values = Arb.anyScalar().filter { it !== null }.map { AnyValue.fromAny(it) }
+    val values = Arb.dataConnect.anyScalar.any().filter { it !== null }.map { AnyValue.fromAny(it) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNullableInsert3
@@ -316,7 +317,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNullableListOfNullable_MutationVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        val edgeCases = EdgeCases.lists.map { it.filterNotNull() }
+        val edgeCases = EdgeCases.anyScalar.lists.map { it.filterNotNull() }
         for (value in edgeCases) {
           withClue("value=$value") { verifyAnyScalarNullableListOfNullableRoundTrip(value) }
         }
@@ -326,8 +327,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullableListOfNullable_QueryVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
-      val edgeCases = EdgeCases.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val edgeCases =
+        EdgeCases.anyScalar.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       assertSoftly {
         for (value in edgeCases) {
@@ -347,7 +349,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullableListOfNullable_MutationVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }
+      val values = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
       checkAll(normalCasePropTestConfig, values) { value ->
         verifyAnyScalarNullableListOfNullableRoundTrip(value)
       }
@@ -356,8 +358,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullableListOfNullable_QueryVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val values =
+        Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       checkAll(normalCasePropTestConfig, values) { value ->
         val curOtherValues =
@@ -379,7 +382,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullableListOfNullable_QuerySucceedsIfAnyVariableIsMissing() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNullableListOfNullableInsert3
@@ -407,7 +411,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullableListOfNullable_QuerySucceedsIfAnyVariableIsNull() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     connector.anyScalarNullableListOfNullableInsert3.execute {
       this.tag = tag
@@ -427,7 +432,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullableListOfNullable_QuerySucceedsIfAnyVariableIsEmpty() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNullableListOfNullableInsert3
@@ -502,7 +508,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNullableListOfNonNullable_MutationVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        val edgeCases = EdgeCases.lists.map { it.filterNotNull() }
+        val edgeCases = EdgeCases.anyScalar.lists.map { it.filterNotNull() }
         for (value in edgeCases) {
           withClue("value=$value") { verifyAnyScalarNullableListOfNonNullableRoundTrip(value) }
         }
@@ -512,8 +518,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullableListOfNonNullable_QueryVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
-      val edgeCases = EdgeCases.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val edgeCases =
+        EdgeCases.anyScalar.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       assertSoftly {
         for (value in edgeCases) {
@@ -533,7 +540,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullableListOfNonNullable_MutationVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }
+      val values = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
       checkAll(normalCasePropTestConfig, values) { value ->
         verifyAnyScalarNullableListOfNonNullableRoundTrip(value)
       }
@@ -542,8 +549,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNullableListOfNonNullable_QueryVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val values =
+        Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       checkAll(normalCasePropTestConfig, values) { value ->
         val curOtherValues =
@@ -565,7 +573,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullableListOfNonNullable_QuerySucceedsIfAnyVariableIsMissing() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNullableListOfNonNullableInsert3
@@ -593,7 +602,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullableListOfNonNullable_QuerySucceedsIfAnyVariableIsNull() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     connector.anyScalarNullableListOfNonNullableInsert3.execute {
       this.tag = tag
@@ -613,7 +623,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNullableListOfNonNullable_QuerySucceedsIfAnyVariableIsEmpty() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNullableListOfNonNullableInsert3
@@ -688,7 +699,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNonNullableListOfNullable_MutationVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        val edgeCases = EdgeCases.lists.map { it.filterNotNull() }
+        val edgeCases = EdgeCases.anyScalar.lists.map { it.filterNotNull() }
         for (value in edgeCases) {
           withClue("value=$value") { verifyAnyScalarNonNullableListOfNullableRoundTrip(value) }
         }
@@ -698,8 +709,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullableListOfNullable_QueryVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
-      val edgeCases = EdgeCases.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val edgeCases =
+        EdgeCases.anyScalar.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       assertSoftly {
         for (value in edgeCases) {
@@ -718,7 +730,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullableListOfNullable_MutationVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }
+      val values = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
       checkAll(normalCasePropTestConfig, values) { value ->
         verifyAnyScalarNonNullableListOfNullableRoundTrip(value)
       }
@@ -727,8 +739,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullableListOfNullable_QueryVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val values =
+        Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       checkAll(normalCasePropTestConfig, values) { value ->
         val curOtherValues = otherValues.filterNotIncludesAllMatchingAnyScalars(value)
@@ -764,7 +777,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNonNullableListOfNullable_QuerySucceedsIfAnyVariableIsEmpty() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNonNullableListOfNullableInsert3
@@ -829,7 +843,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   fun anyScalarNonNullableListOfNonNullable_MutationVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
       assertSoftly {
-        val edgeCases = EdgeCases.lists.map { it.filterNotNull() }
+        val edgeCases = EdgeCases.anyScalar.lists.map { it.filterNotNull() }
         for (value in edgeCases) {
           withClue("value=$value") { verifyAnyScalarNonNullableListOfNonNullableRoundTrip(value) }
         }
@@ -839,8 +853,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullableListOfNonNullable_QueryVariableEdgeCases() =
     runTest(timeout = 60.seconds) {
-      val edgeCases = EdgeCases.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val edgeCases =
+        EdgeCases.anyScalar.lists.map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       assertSoftly {
         for (value in edgeCases) {
@@ -859,7 +874,7 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullableListOfNonNullable_MutationVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }
+      val values = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
       checkAll(normalCasePropTestConfig, values) { value ->
         verifyAnyScalarNonNullableListOfNonNullableRoundTrip(value)
       }
@@ -868,8 +883,9 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
   @Test
   fun anyScalarNonNullableListOfNonNullable_QueryVariableNormalCases() =
     runTest(timeout = 60.seconds) {
-      val values = Arb.anyListScalar().map { it.filterNotNull() }.filter { it.isNotEmpty() }
-      val otherValues = Arb.anyListScalar().map { it.filterNotNull() }
+      val values =
+        Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.filter { it.isNotEmpty() }
+      val otherValues = Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }
 
       checkAll(normalCasePropTestConfig, values) { value ->
         val curOtherValues = otherValues.filterNotIncludesAllMatchingAnyScalars(value)
@@ -905,7 +921,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
   @Test
   fun anyScalarNonNullableListOfNonNullable_QuerySucceedsIfAnyVariableIsEmpty() = runTest {
-    val values = Arb.anyListScalar().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
+    val values =
+      Arb.dataConnect.anyScalar.list().map { it.filterNotNull() }.map { it.map(AnyValue::fromAny) }
     val tag = UUID.randomUUID().toString()
     val keys =
       connector.anyScalarNonNullableListOfNonNullableInsert3
@@ -998,7 +1015,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     suspend fun OperationRef<*, *>.verifyExecuteFailsDueToMissingVariable() {
       val exception = shouldThrow<DataConnectException> { execute() }
-      exception.message shouldContainIgnoringCase "\$value is missing"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "\$value"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "is missing"
     }
 
     suspend fun GeneratedMutation<*, *, *>.verifyFailsWithNullVariableValue() {
@@ -1027,7 +1045,8 @@ class AnyScalarIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     suspend fun OperationRef<*, *>.verifyExecuteFailsDueToNullVariable() {
       val exception = shouldThrow<DataConnectException> { execute() }
-      exception.message shouldContainIgnoringCase "\$value is null"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "\$value"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase "is null"
     }
   }
 }

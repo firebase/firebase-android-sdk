@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.common.truth.StringSubject
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.OperationRef
@@ -32,8 +31,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.random.Random
-import kotlin.reflect.KClass
-import kotlin.reflect.safeCast
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -90,43 +87,6 @@ infix fun String?.shouldContainWithNonAbuttingTextIgnoringCase(s: String): Strin
 }
 
 /**
- * Asserts that a string contains another string, verifying that the character immediately preceding
- * the text, if any, is a non-word character, and that the character immediately following the text,
- * if any, is also a non-word character. This effectively verifies that the given string is included
- * in the string being checked without being "mashed" into adjacent text.
- */
-@Deprecated(
-  message = "use shouldContainWithNonAbuttingText instead",
-  replaceWith =
-    ReplaceWith(
-      expression = "shouldContainWithNonAbuttingText(...)",
-      "com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText"
-    )
-)
-fun StringSubject.containsWithNonAdjacentText(text: String, ignoreCase: Boolean = false) =
-  containsMatchWithNonAdjacentText(Pattern.quote(text), ignoreCase = ignoreCase)
-
-/**
- * Asserts that a string contains a pattern, verifying that the character immediately preceding the
- * text, if any, is a non-word character, and that the character immediately following the text, if
- * any, is also a non-word character. This effectively verifies that the given pattern is included
- * in the string being checked without being "mashed" into adjacent text.
- */
-@Deprecated(
-  message = "use shouldContainWithNonAbuttingText instead",
-  replaceWith =
-    ReplaceWith(
-      expression = "shouldContainWithNonAbuttingText(...)",
-      "com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText"
-    )
-)
-fun StringSubject.containsMatchWithNonAdjacentText(pattern: String, ignoreCase: Boolean = false) {
-  val fullPattern = "(^|\\W)${pattern}($|\\W)"
-  val expr = Pattern.compile(fullPattern, if (ignoreCase) Pattern.CASE_INSENSITIVE else 0)
-  containsMatch(expr)
-}
-
-/**
  * Calls [kotlinx.coroutines.delay] in such a way that it _really_ will delay, even when called from
  * [kotlinx.coroutines.test.runTest], which _skips_ delays. This is achieved by switching contexts
  * to a dispatcher that does _not_ use the [kotlinx.coroutines.test.TestCoroutineScheduler]
@@ -165,27 +125,6 @@ fun fail(message: String): Nothing {
   Assert.fail(message)
   throw IllegalStateException("Should never get here")
 }
-
-/** Calls the given block and asserts that it throws the given exception. */
-@Deprecated(
-  message = "use io.kotest.assertions.throwables.shouldThrow instead",
-  replaceWith =
-    ReplaceWith(expression = "shouldThrow<E> {...}", "io.kotest.assertions.throwables.shouldThrow")
-)
-inline fun <T, R, E : Any> T.assertThrows(expectedException: KClass<E>, block: T.() -> R): E =
-  runCatching { block() }
-    .fold(
-      onSuccess = {
-        fail(
-          "Expected block to throw ${expectedException.qualifiedName}, " +
-            "but it did not throw and returned: $it"
-        )
-      },
-      onFailure = {
-        expectedException.safeCast(it)
-          ?: fail("Expected block to throw ${expectedException.qualifiedName}, but it threw: $it")
-      }
-    )
 
 /**
  * The largest positive integer value that can be represented by a 64-bit double.
