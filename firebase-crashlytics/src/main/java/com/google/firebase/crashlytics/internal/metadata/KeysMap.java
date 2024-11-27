@@ -54,7 +54,6 @@ class KeysMap {
       keys.put(sanitizedKey, value == null ? "" : sanitizedAttribute);
       return true;
     }
-    // TODO: Explore using a LinkedHashMap to overwrite keys in this case.
     Logger.getLogger()
         .w(
             "Ignored entry \""
