@@ -138,11 +138,14 @@ public class UserMetadata {
     crashlyticsWorkers.diskWrite.submit(this::serializeUserDataIfNeeded);
   }
 
-  /** Creates a {Map<String, String>} with all the custom keys to attach to the event.
+  /**
+   * Returns a {@link Map<String, String>} containing all the custom keys to attach to the event.
+   * It overrides the values of app level custom keys with the values of event level custom keys if
+   * they're identical, and event keys or values that exceed 1024 characters are truncated.
+   * Combined with app level custom keys, the map is restricted to 64 key value pairs.
    *
-   * @param eventKeys a {Map<String, String>} representing event specific keys.
-   *
-   * @return the {Map<String, String>} respecting the custom key constraints.
+   * @param eventKeys a {@link Map<String, String>} representing event specific keys.
+   * @return a {@link Map<String, String>} containing all the custom keys to attach to the event.
    */
   public Map<String, String> getCustomKeys(Map<String, String> eventKeys) {
     // In case of empty event keys, preserve existing behavior.
