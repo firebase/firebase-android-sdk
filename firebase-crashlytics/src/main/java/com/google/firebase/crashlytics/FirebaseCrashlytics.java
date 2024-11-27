@@ -205,7 +205,7 @@ public class FirebaseCrashlytics {
    * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
    */
   public void recordException(@NonNull Throwable throwable) {
-    recordException(throwable, Map.of());
+    core.logException(throwable, Map.of());
   }
 
   /**
@@ -218,21 +218,17 @@ public class FirebaseCrashlytics {
    * <p>The values of event keys override the values of app level custom keys if they're identical.
    *
    * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
-   * @param customKeys a {@link Map<String, String>} containing key value pairs to be associated
-   *                   with the non fatal exception, in addition to the app level custom keys.
+   * @param keysAndValues A dictionary of keys and the values to associate with the non fatal
+   *                      exception, in addition to the app level custom keys.
    */
   public void recordException(
-      @NonNull Throwable throwable, @NonNull Map<String, String> customKeys) {
+      @NonNull Throwable throwable, @NonNull CustomKeysAndValues keysAndValues) {
     if (throwable == null) { // Users could call this with null despite the annotation.
       Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
       return;
     }
 
-    if (customKeys == null) { // Users could call this with null despite the annotation.
-      customKeys = Map.of();
-    }
-
-    core.logException(throwable, customKeys);
+    core.logException(throwable, keysAndValues.keysAndValues);
   }
 
   /**
