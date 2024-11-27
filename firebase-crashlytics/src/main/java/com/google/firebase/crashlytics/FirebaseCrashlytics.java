@@ -205,6 +205,11 @@ public class FirebaseCrashlytics {
    * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
    */
   public void recordException(@NonNull Throwable throwable) {
+    if (throwable == null) { // Users could call this with null despite the annotation.
+      Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
+      return;
+    }
+
     core.logException(throwable, Map.of());
   }
 
