@@ -228,7 +228,7 @@ public class FirebaseCrashlytics {
       return;
     }
 
-    if (customKeys == null) { // It's possible to set this to null even with the annotation.
+    if (customKeys == null) { // Users could call this with null despite the annotation.
       customKeys = Map.of();
     }
 
