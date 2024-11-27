@@ -409,7 +409,7 @@ class CrashlyticsController {
   void writeNonFatalException(
       @NonNull final Thread thread,
       @NonNull final Throwable ex,
-      @NonNull Map<String, String> userInfo) {
+      @NonNull Map<String, String> eventKeys) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
     final long timestampMillis = System.currentTimeMillis();
@@ -421,7 +421,8 @@ class CrashlyticsController {
         Logger.getLogger().w("Tried to write a non-fatal exception while no session was open.");
         return;
       }
-      EventMetadata eventMetadata = new EventMetadata(currentSessionId, timestampSeconds, userInfo);
+      EventMetadata eventMetadata =
+          new EventMetadata(currentSessionId, timestampSeconds, eventKeys);
       reportingCoordinator.persistNonFatalEvent(ex, thread, eventMetadata);
     }
   }
