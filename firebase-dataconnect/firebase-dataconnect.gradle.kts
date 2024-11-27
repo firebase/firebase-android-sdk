@@ -57,11 +57,14 @@ android {
 
   @Suppress("UnstableApiUsage")
   testOptions {
+    targetSdk = targetSdkVersion
     unitTests {
       isIncludeAndroidResources = true
       isReturnDefaultValues = true
     }
   }
+
+  lint { targetSdk = targetSdkVersion }
 
   packaging {
     resources {
@@ -120,9 +123,8 @@ dependencies {
   testImplementation(libs.kotlinx.datetime)
   testImplementation(libs.kotlinx.serialization.json)
   testImplementation(libs.mockk)
+  testImplementation(libs.testonly.three.ten.abp)
   testImplementation(libs.robolectric)
-  testImplementation(libs.truth)
-  testImplementation(libs.truth.liteproto.extension)
 
   androidTestImplementation(project(":firebase-dataconnect:androidTestutil"))
   androidTestImplementation(project(":firebase-dataconnect:connectors"))
@@ -140,8 +142,7 @@ dependencies {
   androidTestImplementation(libs.kotlinx.datetime)
   androidTestImplementation(libs.mockk)
   androidTestImplementation(libs.mockk.android)
-  androidTestImplementation(libs.truth)
-  androidTestImplementation(libs.truth.liteproto.extension)
+  androidTestImplementation(libs.testonly.three.ten.abp)
   androidTestImplementation(libs.turbine)
 }
 

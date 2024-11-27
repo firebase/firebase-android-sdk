@@ -18,9 +18,9 @@ package com.google.firebase.gradle.plugins
 
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.gradle.LibraryExtension
-import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
@@ -204,26 +204,26 @@ abstract class DackkaPlugin : Plugin<Project> {
   private fun GenerateDocumentationTask.applyCommonConfigurations() {
     dependsOnAndMustRunAfter("createFullJarRelease")
 
-    val dackkaFile = project.provider { project.dackkaConfig.singleFile }
+    val dackkaFile = project.layout.projectDirectory.file(project.dackkaConfig.singleFile.path)
 
-    dackkaJarFile.set(dackkaFile)
+    dackkaJarFile.convention(dackkaFile)
     clientName.set(project.firebaseLibrary.artifactId)
   }
 
   private fun registerFiresiteTransformTask(
     project: Project,
-    dackkaOutputDirectory: Provider<File>,
+    dackkaOutputDirectory: Provider<RegularFile>,
   ) =
     project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
       val outputDir by tempFile("dackkaTransformedFiles")
 
-      dackkaFiles.set(dackkaOutputDirectory.childFile("docs/reference"))
+      dackkaFiles.set(dackkaOutputDirectory)
       outputDirectory.set(outputDir)
     }
 
   private fun registerCopyDocsToCommonDirectoryTask(
     project: Project,
-    transformedFilesDirectory: Provider<File>,
+    transformedFilesDirectory: Provider<RegularFile>,
   ) =
     project.tasks.register<Copy>("copyDocsToCommonDirectory") {
       from(transformedFilesDirectory)

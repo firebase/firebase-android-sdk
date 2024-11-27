@@ -67,7 +67,8 @@ public class FirebaseCrashlytics {
       @NonNull Deferred<AnalyticsConnector> analyticsConnector,
       @NonNull Deferred<FirebaseRemoteConfigInterop> remoteConfigInteropDeferred,
       ExecutorService backgroundExecutorService,
-      ExecutorService blockingExecutorService) {
+      ExecutorService blockingExecutorService,
+      ExecutorService lightExecutorService) {
 
     Context context = app.getApplicationContext();
     final String appIdentifier = context.getPackageName();
@@ -160,7 +161,8 @@ public class FirebaseCrashlytics {
     // Kick off actually fetching the settings.
     settingsController
         .loadSettingsData(crashlyticsWorkers)
-        .addOnFailureListener(ex -> Logger.getLogger().e("Error fetching settings.", ex));
+        .addOnFailureListener(
+            lightExecutorService, ex -> Logger.getLogger().e("Error fetching settings.", ex));
 
     final boolean finishCoreInBackground = core.onPreExecute(appData, settingsController);
 

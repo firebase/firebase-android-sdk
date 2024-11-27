@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -41,7 +42,7 @@ import org.gradle.kotlin.dsl.provideDelegate
  */
 abstract class MoveUnreleasedChangesTask : DefaultTask() {
   @get:[Optional InputFile]
-  abstract val changelogFile: Property<File>
+  abstract val changelogFile: RegularFileProperty
 
   @get:[Optional Input]
   abstract val releaseVersion: Property<ModuleVersion>
@@ -52,7 +53,7 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
 
   @TaskAction
   fun build() {
-    val file = changelogFile.get()
+    val file = changelogFile.get().asFile
     val changelog = Changelog.fromFile(file)
     val (unreleased, previousReleases) = changelog.releases.separateAt(1)
 
@@ -105,7 +106,7 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
   }
 
   private fun configure() {
-    changelogFile.convention(project.file("CHANGELOG.md"))
+    changelogFile.convention(project.layout.projectDirectory.file("CHANGELOG.md"))
     releaseVersion.convention(computeReleaseVersion())
   }
 

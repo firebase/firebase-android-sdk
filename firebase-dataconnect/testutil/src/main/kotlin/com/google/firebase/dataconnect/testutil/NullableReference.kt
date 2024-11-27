@@ -13,23 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.google.firebase.dataconnect.testutil
 
-import io.kotest.property.Arb
-import io.kotest.property.RandomSource
-import io.kotest.property.arbitrary.next
-
-interface ArbIterator<T> {
-  fun next(rs: RandomSource): T
-}
-
-fun <T> Arb<T>.iterator(edgeCaseProbability: Float): ArbIterator<T> {
-  require(edgeCaseProbability in 0.0..1.0) { "invalid edgeCaseProbability: $edgeCaseProbability" }
-  return object : ArbIterator<T> {
-    override fun next(rs: RandomSource) =
-      if (edgeCaseProbability == 1.0f || edgeCaseProbability < rs.random.nextFloat())
-        this@iterator.edgecase(rs)!!
-      else this@iterator.next(rs)
-  }
+/**
+ * A class that simply wraps a reference to another object, which may be null. This class can be
+ * useful for use in the case where the meaning of `null` is overloaded, such as
+ * [io.kotest.property.Arb.edgecase] and [kotlinx.coroutines.flow.MutableStateFlow.compareAndSet]
+ */
+class NullableReference<out T>(val ref: T? = null) {
+  override fun equals(other: Any?) = (other is NullableReference<*>) && other.ref == ref
+  override fun hashCode() = ref?.hashCode() ?: 0
+  override fun toString() = ref?.toString() ?: "null"
 }

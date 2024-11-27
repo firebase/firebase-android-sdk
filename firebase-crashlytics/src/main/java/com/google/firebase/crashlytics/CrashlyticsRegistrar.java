@@ -18,6 +18,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -42,6 +43,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
       Qualified.qualified(Background.class, ExecutorService.class);
   private final Qualified<ExecutorService> blockingExecutorService =
       Qualified.qualified(Blocking.class, ExecutorService.class);
+  private final Qualified<ExecutorService> lightweightExecutorService =
+      Qualified.qualified(Lightweight.class, ExecutorService.class);
 
   static {
     // Add Crashlytics as a dependency of Sessions when this class is loaded into memory.
@@ -57,6 +60,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(backgroundExecutorService))
             .add(Dependency.required(blockingExecutorService))
+            .add(Dependency.required(lightweightExecutorService))
             .add(Dependency.deferred(CrashlyticsNativeComponent.class))
             .add(Dependency.deferred(AnalyticsConnector.class))
             .add(Dependency.deferred(FirebaseRemoteConfigInterop.class))
@@ -79,7 +83,8 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             container.getDeferred(AnalyticsConnector.class),
             container.getDeferred(FirebaseRemoteConfigInterop.class),
             container.get(backgroundExecutorService),
-            container.get(blockingExecutorService));
+            container.get(blockingExecutorService),
+            container.get(lightweightExecutorService));
 
     long duration = System.currentTimeMillis() - startTime;
     if (duration > 16) {

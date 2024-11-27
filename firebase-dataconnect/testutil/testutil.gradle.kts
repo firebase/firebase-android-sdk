@@ -54,6 +54,8 @@ dependencies {
   implementation("com.google.firebase:firebase-components:18.0.0")
   implementation("com.google.firebase:firebase-auth:22.3.1")
 
+  compileOnly(libs.kotlinx.datetime)
+
   implementation(libs.androidx.test.junit)
   implementation(libs.kotest.assertions)
   implementation(libs.kotest.property)

@@ -18,7 +18,9 @@ plugins {
 }
 
 android {
-    compileSdkVersion 32
+    compileSdkVersion 34
+
+    namespace "com.google.firebase.macrobenchmark"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -51,7 +53,7 @@ android {
 dependencies {
     implementation 'androidx.benchmark:benchmark-macro-junit4:1.1.0'
     implementation 'androidx.test.espresso:espresso-core:3.4.0'
-    implementation libs.androidx.test.junit
+    implementation 'androidx.test.ext:junit:1.1.5'
     implementation 'androidx.test.uiautomator:uiautomator:2.2.0'
 }
 

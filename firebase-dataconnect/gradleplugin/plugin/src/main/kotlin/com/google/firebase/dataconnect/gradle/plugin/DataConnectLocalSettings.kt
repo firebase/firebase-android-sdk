@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.util.Properties
 import org.gradle.api.Project
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 class DataConnectLocalSettings(project: Project) {
@@ -68,12 +69,18 @@ class DataConnectLocalSettings(project: Project) {
       }
     }
 
+  val ktfmtJarFile: Provider<RegularFile> =
+    project.providerForDataConnectLocalSetting(KEY_KTFMT_JAR_FILE) { settingValue, project ->
+      project.layout.projectDirectory.file(settingValue)
+    }
+
   companion object {
     const val FILE_NAME = "dataconnect.local.properties"
     const val KEY_DATA_CONNECT_EXECUTABLE_FILE = "dataConnectExecutable.file"
     const val KEY_DATA_CONNECT_EXECUTABLE_VERSION = "dataConnectExecutable.version"
     const val KEY_POSTGRES_CONNECTION_URL = "emulator.postgresConnectionUrl"
     const val KEY_SCHEMA_EXTENSIONS_OUTPUT_ENABLED = "emulator.schemaExtensionsOutputEnabled"
+    const val KEY_KTFMT_JAR_FILE = "ktfmt.jar.file"
 
     fun Project.providerForDataConnectLocalSetting(settingName: String): Provider<String> =
       providerForDataConnectLocalSetting(settingName) { value, _ -> value }

@@ -33,5 +33,8 @@ public class HarmCategory private constructor(public val ordinal: Int) {
 
     /** Dangerous content. */
     @JvmField public val DANGEROUS_CONTENT: HarmCategory = HarmCategory(4)
+
+    /** Content that may be used to harm civic integrity. */
+    @JvmField public val CIVIC_INTEGRITY: HarmCategory = HarmCategory(5)
   }
 }

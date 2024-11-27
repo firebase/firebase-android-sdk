@@ -22,6 +22,12 @@ import com.google.firebase.app
 import com.google.firebase.initialize
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * A JUnit test rule that creates instances of [FirebaseApp] for use during testing, and closes them
@@ -37,6 +43,12 @@ class TestFirebaseAppFactory : FactoryTestRule<FirebaseApp, Nothing>() {
     )
 
   override fun destroyInstance(instance: FirebaseApp) {
-    instance.delete()
+    // Work around app crash due to IllegalStateException from FirebaseAuth if `delete()` is called
+    // very quickly after `FirebaseApp.getInstance()`. See b/378116261 for details.
+    @OptIn(DelicateCoroutinesApi::class)
+    GlobalScope.launch(Dispatchers.IO) {
+      delay(1.seconds)
+      instance.delete()
+    }
   }
 }

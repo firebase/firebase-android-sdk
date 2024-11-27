@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -43,7 +44,7 @@ import org.gradle.kotlin.dsl.provideDelegate
  */
 abstract class VersionBumpTask : DefaultTask() {
   @get:[Optional InputFile]
-  abstract val versionFile: Property<File>
+  abstract val versionFile: RegularFileProperty
 
   @get:[Optional Input]
   abstract val releasedVersion: Property<ModuleVersion>
@@ -57,7 +58,7 @@ abstract class VersionBumpTask : DefaultTask() {
 
   @TaskAction
   fun build() {
-    versionFile.get().rewriteLines {
+    versionFile.get().asFile.rewriteLines {
       when {
         it.startsWith("version=") -> "version=${newVersion.get()}"
         it.startsWith("latestReleasedVersion") -> "latestReleasedVersion=${releasedVersion.get()}"
@@ -67,7 +68,7 @@ abstract class VersionBumpTask : DefaultTask() {
   }
 
   fun configure() {
-    versionFile.convention(project.file("gradle.properties"))
+    versionFile.convention(project.layout.projectDirectory.file("gradle.properties"))
     releasedVersion.convention(computeReleasedVersion())
     newVersion.convention(releasedVersion.map { it.bump() })
   }

@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 
 class DataConnectProviders(
@@ -113,6 +114,24 @@ class DataConnectProviders(
       variantExtension.emulator.schemaExtensionsOutputEnabled
     val valueFromProject: Provider<Boolean> =
       project.provider { projectExtension.emulator.schemaExtensionsOutputEnabled }
+
+    valueFromLocalSettings
+      .orElse(valueFromGradleProperty)
+      .orElse(valueFromVariant)
+      .orElse(valueFromProject)
+  }
+
+  val ktfmtJarFile: Provider<RegularFile> = run {
+    val gradlePropertyName = "ktfmt.jar.file"
+    val valueFromLocalSettings: Provider<RegularFile> = localSettings.ktfmtJarFile
+    val valueFromGradleProperty: Provider<RegularFile> =
+      project.providers.gradleProperty(gradlePropertyName).flatMap {
+        project.layout.file(project.provider { project.file(it) })
+      }
+    val valueFromVariant: Provider<RegularFile> =
+      project.layout.file(variantExtension.ktfmt.jarFile)
+    val valueFromProject: Provider<RegularFile> =
+      project.layout.file(project.provider { projectExtension.ktfmt.jarFile })
 
     valueFromLocalSettings
       .orElse(valueFromGradleProperty)
