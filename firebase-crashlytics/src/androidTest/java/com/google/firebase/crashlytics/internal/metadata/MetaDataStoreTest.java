@@ -118,13 +118,13 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
-  // TODO(b/375437048): Let @daymxn know if this test fails. It's flaky and running away from me:(
   public void testWriteUserData_singleField() throws Exception {
     crashlyticsWorkers.diskWrite.submit(
-        () -> {
-          storeUnderTest.writeUserData(SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId());
-        });
+        () ->
+            storeUnderTest.writeUserData(
+                SESSION_ID_1, metadataWithUserId(SESSION_ID_1).getUserId()));
     crashlyticsWorkers.diskWrite.await();
+    Thread.sleep(10);
     UserMetadata userData =
         UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, crashlyticsWorkers);
     assertEquals(USER_ID, userData.getUserId());
