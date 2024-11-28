@@ -62,6 +62,7 @@ grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.re
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 javax-annotation-jsr250 = { module = "javax.annotation:jsr250-api", version = "1.0" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
