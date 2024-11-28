@@ -2,7 +2,7 @@
 # javalite, protoc and protobufjavautil versions should be in sync while updating and
 # it needs to match the protobuf version which grpc has transitive dependency on, which
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
-androidGradlePlugin = "8.2.1"
+androidGradlePlugin = "8.3.2"
 android-lint = "31.3.2"
 autovalue = "1.10.1"
 coroutines = "1.7.3"
@@ -62,6 +62,7 @@ grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.re
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 javax-annotation-jsr250 = { module = "javax.annotation:jsr250-api", version = "1.0" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
