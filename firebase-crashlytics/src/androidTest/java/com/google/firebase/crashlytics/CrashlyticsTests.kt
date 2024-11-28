@@ -68,13 +68,12 @@ class CrashlyticsTests {
 
     val result: Map<String, String> = keyValueBuilder.build().keysAndValues
 
-    // The result is not empty because we need to pass the CustomKeysAndValues around.
-    assertThat(result).isNotEmpty()
+    assertThat(result).containsExactly("hello", "world", "hello2", "23", "hello3", "0.1");
   }
 
   @Test
   fun keyValueBuilder_withCrashlyticsInstance() {
-    val keyValueBuilder = KeyValueBuilder(Firebase.crashlytics)
+    @Suppress("DEPRECATION") val keyValueBuilder = KeyValueBuilder(Firebase.crashlytics)
     keyValueBuilder.key("hello", "world")
     keyValueBuilder.key("hello2", 23)
     keyValueBuilder.key("hello3", 0.1)
