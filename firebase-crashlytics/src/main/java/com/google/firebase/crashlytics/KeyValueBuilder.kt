@@ -22,7 +22,9 @@ private constructor(
   private val crashlytics: FirebaseCrashlytics?,
   private val builder: CustomKeysAndValues.Builder,
 ) {
-  @Deprecated("Do not construct this directly. Use `setCustomKeys` instead. To be removed in 2025.")
+  @Deprecated(
+    "Do not construct this directly. Use `setCustomKeys` instead. To be removed in the next major release."
+  )
   constructor(crashlytics: FirebaseCrashlytics) : this(crashlytics, CustomKeysAndValues.Builder())
 
   internal constructor() : this(crashlytics = null, CustomKeysAndValues.Builder())
