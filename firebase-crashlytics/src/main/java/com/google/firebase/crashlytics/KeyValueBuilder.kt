@@ -17,7 +17,8 @@
 package com.google.firebase.crashlytics
 
 /** Helper class to enable convenient syntax in [setCustomKeys] */
-class KeyValueBuilder private constructor(
+class KeyValueBuilder
+private constructor(
   private val crashlytics: FirebaseCrashlytics?,
   private val builder: CustomKeysAndValues.Builder,
 ) {
