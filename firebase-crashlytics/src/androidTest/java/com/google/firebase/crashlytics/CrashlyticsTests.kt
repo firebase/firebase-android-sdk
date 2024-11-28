@@ -68,7 +68,7 @@ class CrashlyticsTests {
 
     val result: Map<String, String> = keyValueBuilder.build().keysAndValues
 
-    assertThat(result).containsExactly("hello", "world", "hello2", "23", "hello3", "0.1");
+    assertThat(result).containsExactly("hello", "world", "hello2", "23", "hello3", "0.1")
   }
 
   @Test
