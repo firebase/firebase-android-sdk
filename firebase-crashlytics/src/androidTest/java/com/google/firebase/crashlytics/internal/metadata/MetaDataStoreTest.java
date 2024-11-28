@@ -168,17 +168,15 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
-  // TODO(b/375437048): Let @daymxn know if this test fails. It's flaky and running away from me:(
   public void testWriteUserData_escaped() throws Exception {
     crashlyticsWorkers.diskWrite.submit(
-        () -> {
-          storeUnderTest.writeUserData(
-              SESSION_ID_1, metadataWithUserId(SESSION_ID_1, ESCAPED).getUserId());
-        });
+        () ->
+            storeUnderTest.writeUserData(
+                SESSION_ID_1, metadataWithUserId(SESSION_ID_1, ESCAPED).getUserId()));
     crashlyticsWorkers.diskWrite.await();
+    Thread.sleep(10);
     UserMetadata userData =
         UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, crashlyticsWorkers);
-    Thread.sleep(10);
     assertEquals(ESCAPED.trim(), userData.getUserId());
   }
 
