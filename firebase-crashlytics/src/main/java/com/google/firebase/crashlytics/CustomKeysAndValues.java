@@ -69,6 +69,42 @@ public class CustomKeysAndValues {
       return this;
     }
 
+    @Deprecated
+    @NonNull
+    public Builder key(@NonNull String key, boolean value) {
+      return putBoolean(key, value);
+    }
+
+    @Deprecated
+    @NonNull
+    public Builder key(@NonNull String key, double value) {
+      return putDouble(key, value);
+    }
+
+    @Deprecated
+    @NonNull
+    public Builder key(@NonNull String key, float value) {
+      return putFloat(key, value);
+    }
+
+    @Deprecated
+    @NonNull
+    public Builder key(@NonNull String key, int value) {
+      return putInt(key, value);
+    }
+
+    @Deprecated
+    @NonNull
+    public Builder key(@NonNull String key, long value) {
+      return putLong(key, value);
+    }
+
+    @Deprecated
+    @NonNull
+    public Builder key(@NonNull String key, @NonNull String value) {
+      return putString(key, value);
+    }
+
     @NonNull
     public CustomKeysAndValues build() {
       return new CustomKeysAndValues(this);
