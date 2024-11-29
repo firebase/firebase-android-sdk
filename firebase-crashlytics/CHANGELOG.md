@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
 * [fixed] Execute failure listener outside the main thread  [#6535]
 
 # 19.2.1
@@ -634,3 +635,4 @@ The following release notes describe changes in the new SDK.
   from your `AndroidManifest.xml` file.
 * [removed] The `fabric.properties` and `crashlytics.properties` files are no
   longer supported. Remove them from your app.
+
