@@ -27,10 +27,8 @@ val Firebase.crashlytics: FirebaseCrashlytics
   get() = FirebaseCrashlytics.getInstance()
 
 /** Associates all key-value parameters with the reports */
-fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
-  val builder = KeyValueBuilder(this)
-  builder.init()
-}
+fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) =
+  setCustomKeys(KeyValueBuilder().apply(init).build())
 
 /** @suppress */
 @Keep

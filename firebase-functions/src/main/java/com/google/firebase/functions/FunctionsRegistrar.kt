@@ -27,7 +27,6 @@ import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal
 import com.google.firebase.platforminfo.LibraryVersionComponent
-import java.util.Arrays
 import java.util.concurrent.Executor
 
 /**
@@ -40,7 +39,7 @@ public class FunctionsRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> {
     val liteExecutor = Qualified.qualified(Lightweight::class.java, Executor::class.java)
     val uiExecutor = Qualified.qualified(UiThread::class.java, Executor::class.java)
-    return Arrays.asList(
+    return listOf(
       Component.builder(FunctionsMultiResourceComponent::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(Context::class.java))
@@ -60,7 +59,7 @@ public class FunctionsRegistrar : ComponentRegistrar {
             .setIid(c.getProvider(FirebaseInstanceIdInternal::class.java))
             .setAppCheck(c.getDeferred(InteropAppCheckTokenProvider::class.java))
             .build()
-            ?.multiResourceComponent
+            .multiResourceComponent
         }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)
