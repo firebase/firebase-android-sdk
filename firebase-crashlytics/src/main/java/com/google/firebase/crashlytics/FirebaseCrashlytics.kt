@@ -30,7 +30,7 @@ val Firebase.crashlytics: FirebaseCrashlytics
 fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) =
   setCustomKeys(KeyValueBuilder().apply(init).build())
 
-/** Associates all key-value parameters with the reports */
+/* Records a non-fatal report to send to Crashlytics */
 fun FirebaseCrashlytics.recordException(throwable: Throwable, init: KeyValueBuilder.() -> Unit) =
   recordException(throwable, KeyValueBuilder().apply(init).build())
 
