@@ -1,5 +1,6 @@
 # Unreleased
-* [fixed] Fixed HttpsCallableResult.data resolution in Kotlin
+* [fixed] Minor internal infrastructure improvements. (#6544)
+* [fixed] Fixed HttpsCallableResult.data resolution in Kotlin. (#6530)
 
 # 21.1.0
 * [changed] Migrated to Kotlin
@@ -209,4 +210,3 @@ updates.
 optional region to override the default "us-central1".
 * [feature] New `useFunctionsEmulator` method allows testing against a local
 instance of the [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
-
