@@ -1,9 +1,14 @@
 # Unreleased
-* [fixed] Minor internal infrastructure improvements. (#6544)
-* [fixed] Fixed HttpsCallableResult.data resolution in Kotlin. (#6530)
+
 
 # 21.1.0
 * [changed] Migrated to Kotlin
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.0.0
 * [changed] Bump internal dependencies
