@@ -170,7 +170,7 @@ public class UserMetadata {
     if (eventKeysOverLimit > 0) {
       Logger.getLogger()
           .w(
-              "Ignored"
+              "Ignored "
                   + eventKeysOverLimit
                   + " keys when adding event specific keys. Maximum allowable: "
                   + MAX_ATTRIBUTE_SIZE);
