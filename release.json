@@ -7,8 +7,6 @@
         ":firebase-crashlytics:ktx",
         ":firebase-functions",
         ":firebase-functions:ktx",
-        ":firebase-messaging",
-        ":firebase-messaging-directboot",
         ":firebase-messaging:ktx",
         ":firebase-perf",
         ":firebase-perf:ktx"
