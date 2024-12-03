@@ -1,0 +1,254 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "0743d5a399d1fcef159b02fe203fa83fb4e147db",
+                "prId": "6536",
+                "author": "Matthew Robertson",
+                "message": "Fix inefficiency in the setCustomKeys Kotlin extension (#6536)\n\nFixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys`\r\nextension.\r\n\r\nThe old implementation called `setCustomKey` for every key/value pair,\r\nwhich serializes to disk, and is not an intuitive behaviour for\r\ncustomers. This now calls `setCustomKeys` once with the entire built\r\nmap.\r\n\r\nThis proxies to the existing Java `CustomKeysAndValues.Builder` but\r\ngives nice Kotlin syntax. The old class had a public ctor, I plan to\r\nmake this internal since customers shouldn't instantiate this class\r\ndirectly. This is done in a way to not break the api, even though the\r\napi is internal.\r\n\r\npair=tejasd",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0743d5a399d1fcef159b02fe203fa83fb4e147db",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6536"
+            },
+            {
+                "commitId": "c00de5a38247eafe6b920c31583707cd286d0a07",
+                "prId": "6535",
+                "author": "Rodrigo Lazo",
+                "message": "[crashlytics] Specify the executor when calling onFailureListener (#6535)\n\nTo prevent unwanted executions in the main thread, callbacks should\r\nspecify the executor explicitly.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c00de5a38247eafe6b920c31583707cd286d0a07",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6535"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "56282124ec274789d85274a710ebcf8d63012ff6",
+                "prId": "6551",
+                "author": "David Motsonashvili",
+                "message": "Prevent whole session events from logging to logcat (#6551)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/56282124ec274789d85274a710ebcf8d63012ff6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6551"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "866e6bd246fde0e54fdeb5f5d0c043632edf4161",
+                "prId": "6520",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: remove unused extension function: DataConnectArb.pathSegmentType() (#6520)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/866e6bd246fde0e54fdeb5f5d0c043632edf4161",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6520"
+            },
+            {
+                "commitId": "4bc552f8f93871a459477842d4553b47324d1bcc",
+                "prId": "6521",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: tests: increase tag size from 20 to 50 characters, to reduce the chance of collisions (#6521)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4bc552f8f93871a459477842d4553b47324d1bcc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6521"
+            },
+            {
+                "commitId": "39e7c927399e17902659bd5e6eba1821b4bb06f2",
+                "prId": "6519",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: Add JavaTimeLocalDateSerializer and KotlinxDatetimeLocalDateSerializer (#6519)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/39e7c927399e17902659bd5e6eba1821b4bb06f2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6519"
+            },
+            {
+                "commitId": "9299c6da023c579f11f5885ec8a3b3ac8d0ce65f",
+                "prId": "6515",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DateScalarIntegrationTest.kt rewritten (#6515)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9299c6da023c579f11f5885ec8a3b3ac8d0ce65f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6515"
+            },
+            {
+                "commitId": "c87f10341090733ab8cfcb7997960544950c7f89",
+                "prId": "6513",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: `DateSerializer` removed, as it is superceded by `LocalDateSerializer` (#6513)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c87f10341090733ab8cfcb7997960544950c7f89",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6513"
+            },
+            {
+                "commitId": "46cf77c01388c66591b3f332918e738a7416ad78",
+                "prId": "6514",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: Remove obsolete \"alpha\" release notes from the kdoc comments of FirebaseDataConnect (#6514)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/46cf77c01388c66591b3f332918e738a7416ad78",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6514"
+            },
+            {
+                "commitId": "b61a095863c71d7c69069ce2f30e223a64ee0ae2",
+                "prId": "6512",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectExecutableVersions.json updated with version 1.7.0 (#6512)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b61a095863c71d7c69069ce2f30e223a64ee0ae2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6512"
+            },
+            {
+                "commitId": "848650b83f46f272b2b8aed8a5b5f504b2841d57",
+                "prId": "6509",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: internal convenience script updates (#6509)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/848650b83f46f272b2b8aed8a5b5f504b2841d57",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6509"
+            },
+            {
+                "commitId": "d6bfc7b33336e6e71fed2aa21c29a7194ff733e5",
+                "prId": "6511",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: relax variance of the NullableReference type parameter to covariant (was invariant) (#6511)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6bfc7b33336e6e71fed2aa21c29a7194ff733e5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6511"
+            },
+            {
+                "commitId": "c737e21b0718c10bc126bdf70d8b672307647954",
+                "prId": "6504",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: LocalDateIntegrationTest.kt added (#6504)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c737e21b0718c10bc126bdf70d8b672307647954",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6504"
+            },
+            {
+                "commitId": "4e2dcd0b7518c5fb84d01036c2b196f3c1363473",
+                "prId": "6448",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectCredentialsTokenManager: initialize synchronously to fix race condition (#6448)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4e2dcd0b7518c5fb84d01036c2b196f3c1363473",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6448"
+            },
+            {
+                "commitId": "0eff5d3b0a6287d93a42bc32cac8abf5a6f41db8",
+                "prId": "6451",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: relax LocalDateSerializer encoding and decoding, and add unit test coverage (#6451)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0eff5d3b0a6287d93a42bc32cac8abf5a6f41db8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6451"
+            },
+            {
+                "commitId": "57e401c42ba1c9bb295eba41939e85680c637089",
+                "prId": "6460",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: DataConnectExecutableVersions.json updated with version 1.6.1 (#6460)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/57e401c42ba1c9bb295eba41939e85680c637089",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6460"
+            },
+            {
+                "commitId": "f20340a13fbe17d0a2ad3ee23a09d3a6570a68e4",
+                "prId": "6447",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: TestFirebaseAppFactory.kt: work around IllegalStateException in tests by adding a delay before calling FirebaseApp.delete() (#6447)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f20340a13fbe17d0a2ad3ee23a09d3a6570a68e4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6447"
+            },
+            {
+                "commitId": "5f6bc63616e4438d2c0386f4e34a440136ebfe97",
+                "prId": "6446",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: GrpcMetadataIntegrationTest.kt: Fix race condition waiting for auth/appcheck to be ready (#6446)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5f6bc63616e4438d2c0386f4e34a440136ebfe97",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6446"
+            },
+            {
+                "commitId": "6bee142400ff07250def71e2d20697f34cd1de8b",
+                "prId": "6439",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: add ktfmt support to gradle plugin (#6439)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6bee142400ff07250def71e2d20697f34cd1de8b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6439"
+            }
+        ],
+        "firebase-functions": [
+            {
+                "commitId": "bae6706249ef35d97d555acb2d2cddb34cf145a4",
+                "prId": "6544",
+                "author": "Rodrigo Lazo",
+                "message": "Address Functions compiler warnings (#6544)\n\nImprovements include:\r\n- Make overriden arguments have the same name as the original ones\r\n- Inline variable declarations\r\n- Remove unused lambda bodies",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bae6706249ef35d97d555acb2d2cddb34cf145a4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6544"
+            },
+            {
+                "commitId": "04bfe558f2644e298f1f9ce0488a193985369788",
+                "prId": "6530",
+                "author": "emilypgoogle",
+                "message": "Adjust Functions getters to be Kotlin source compatible (#6530)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/04bfe558f2644e298f1f9ce0488a193985369788",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6530"
+            }
+        ],
+        "firebase-functions/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "3d6e8b2c64d9489b7dc26b09b4867c191cf021d5",
+                "prId": "6508",
+                "author": "Greg Sakakihara",
+                "message": "Update upstream methods to indicate they are now decommissioned. (#6508)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3d6e8b2c64d9489b7dc26b09b4867c191cf021d5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6508"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "3d6e8b2c64d9489b7dc26b09b4867c191cf021d5",
+                "prId": "6508",
+                "author": "Greg Sakakihara",
+                "message": "Update upstream methods to indicate they are now decommissioned. (#6508)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3d6e8b2c64d9489b7dc26b09b4867c191cf021d5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6508"
+            },
+            {
+                "commitId": "928b9a97e03ec7deb73e3a4e5e42a7b8647dd96f",
+                "prId": "6441",
+                "author": "Vinay Guthal",
+                "message": "Add directboot release notes (#6441)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/928b9a97e03ec7deb73e3a4e5e42a7b8647dd96f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6441"
+            }
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-vertexai": [
+            {
+                "commitId": "eeb23f73ee3828a22f127a4b04d11f7fdf83150e",
+                "prId": "6553",
+                "author": "Rodrigo Lazo",
+                "message": "Minor bump vertex-ai version (#6553)\n\nThe changes include new API  (Civic integrity)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eeb23f73ee3828a22f127a4b04d11f7fdf83150e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6553"
+            },
+            {
+                "commitId": "800bc7a2c510c64c785333a1ba9fdeb363842269",
+                "prId": "6541",
+                "author": "Rodrigo Lazo",
+                "message": "Add missing experimentalApi annotations to vertex tests (#6541)\n\nThis reduces the noise we are seeing in our builds",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/800bc7a2c510c64c785333a1ba9fdeb363842269",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6541"
+            },
+            {
+                "commitId": "28a227a172cf8377c39a24fbe9d34e757fd428a6",
+                "prId": "6502",
+                "author": "Rodrigo Lazo",
+                "message": "Add missing category to HarmCategory (#6502)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/28a227a172cf8377c39a24fbe9d34e757fd428a6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6502"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-components",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-components:firebase-dynamic-module-support",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "name": "m157",
+    "libraries": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-crashlytics:ktx",
+        ":firebase-dataconnect",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx",
+        ":firebase-vertexai"
+    ]
+}
