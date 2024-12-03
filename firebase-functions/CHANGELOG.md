@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Minor internal infrastructure improvements. (#6544)
+* [fixed] Fixed HttpsCallableResult.data resolution in Kotlin. (#6530)
 
 # 21.1.0
 * [changed] Migrated to Kotlin
