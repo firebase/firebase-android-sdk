@@ -1,26 +1,30 @@
 name: Private Mirror Sync
 
-concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: true
-
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *'
 
 jobs:
   sync:
-    if: github.repository == 'firebase/firebase-android-sdk'
+    if: github.repository == 'FirebasePrivate/firebase-android-sdk'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          repository: firebase/firebase-android-sdk
+          ref: main
+          fetch-depth: 0
+          submodules: true
+
       - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
           submodules: true
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
-          committer: google-oss-bot <firebase-oss-bot@google.com>
       - name: Force push HEAD to private repo main branch
         run: |
+          git config --local user.name google-oss-bot
+          git config --local user.email firebase-oss-bot@google.com
           git remote add mirror https://github.com/FirebasePrivate/firebase-android-sdk.git
           git push mirror HEAD:main --force --verbose
