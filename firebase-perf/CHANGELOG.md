@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Bump internal dependencies.
 
 # 21.0.2
 * [fixed] Fixed `IllegalStateException` that happened when starting a trace
