@@ -5,8 +5,6 @@
         ":firebase-crashlytics-ndk",
         ":firebase-sessions",
         ":firebase-crashlytics:ktx",
-        ":firebase-functions",
-        ":firebase-functions:ktx",
         ":firebase-perf",
         ":firebase-perf:ktx"
     ]
