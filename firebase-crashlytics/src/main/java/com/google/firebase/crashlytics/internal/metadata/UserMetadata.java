@@ -149,7 +149,7 @@ public class UserMetadata {
    */
   public Map<String, String> getCustomKeys(Map<String, String> eventKeys) {
     // In case of empty event keys, preserve existing behavior.
-    if (eventKeys.isEmpty()) return customKeys.getKeys();
+    if (eventKeys.isEmpty()) { return customKeys.getKeys(); }
 
     // Otherwise merge the event keys with custom keys as appropriate.
     Map<String, String> globalKeys = customKeys.getKeys();
