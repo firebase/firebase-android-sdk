@@ -658,15 +658,15 @@ public class FirebaseRemoteConfig {
    * <p>The {@code customSignals} parameter should be an instance of {@link CustomSignals}, which
    * enforces the allowed types for custom signal values (String, Long or Double).
    *
-   * @param customSignalsMap A dictionary of keys and the values of the custom signals to be set for
+   * @param customSignals A dictionary of keys and the values of the custom signals to be set for
    *                         the app instance
    */
   @NonNull
-  public Task<Void> setCustomSignals(@NonNull CustomSignals customSignalsMap) {
+  public Task<Void> setCustomSignals(@NonNull CustomSignals customSignals) {
     return Tasks.call(
         executor,
         () -> {
-          frcSharedPrefs.setCustomSignals(customSignalsMap.customSignals);
+          frcSharedPrefs.setCustomSignals(customSignals.customSignals);
           return null;
         });
   }

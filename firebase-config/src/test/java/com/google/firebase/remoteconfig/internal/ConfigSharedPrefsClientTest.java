@@ -374,10 +374,10 @@ public class ConfigSharedPrefsClientTest {
   @Test
   public void setCustomSignals_multipleTimes_addsNewSignals() {
     Map<String, String> signals1 = ImmutableMap.of("subscription", "premium");
-    Map<String, String> signals2 = ImmutableMap.of("age", "20");
+    Map<String, String> signals2 = ImmutableMap.of("age", "20", "subscription", "basic");
     sharedPrefsClient.setCustomSignals(signals1);
     sharedPrefsClient.setCustomSignals(signals2);
-    Map<String, String> expectedSignals = ImmutableMap.of("subscription", "premium", "age", "20");
+    Map<String, String> expectedSignals = ImmutableMap.of("subscription", "basic", "age", "20");
     assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(expectedSignals);
   }
 
