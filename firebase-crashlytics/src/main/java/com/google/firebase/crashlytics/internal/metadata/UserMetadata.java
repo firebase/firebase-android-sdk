@@ -149,26 +149,33 @@ public class UserMetadata {
    */
   public Map<String, String> getCustomKeys(Map<String, String> eventKeys) {
     // In case of empty event keys, preserve existing behavior.
-    if (eventKeys.isEmpty()) { return customKeys.getKeys(); }
+    if (eventKeys.isEmpty()) {
+      return customKeys.getKeys();
+    }
 
     // Otherwise merge the event keys with custom keys as appropriate.
     Map<String, String> globalKeys = customKeys.getKeys();
     HashMap<String, String> result = new HashMap<>(globalKeys);
+    int eventKeysOverLimit = 0;
     for (Map.Entry<String, String> entry : eventKeys.entrySet()) {
       String sanitizedKey = KeysMap.sanitizeString(entry.getKey(), MAX_ATTRIBUTE_SIZE);
       if (result.size() < MAX_ATTRIBUTES || result.containsKey(sanitizedKey)) {
         String sanitizedValue = KeysMap.sanitizeString(entry.getValue(), MAX_ATTRIBUTE_SIZE);
         result.put(sanitizedKey, sanitizedValue);
-        continue;
+      } else {
+        eventKeysOverLimit++;
       }
+    }
 
+    if (eventKeysOverLimit > 0) {
       Logger.getLogger()
           .w(
-              "Ignored entry \""
-                  + entry.getKey()
-                  + "\" when adding event specific keys. Maximum allowable: "
+              "Ignored"
+                  + eventKeysOverLimit
+                  + " keys when adding event specific keys. Maximum allowable: "
                   + MAX_ATTRIBUTE_SIZE);
     }
+
     return Collections.unmodifiableMap(result);
   }
 
