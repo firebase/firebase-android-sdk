@@ -128,7 +128,7 @@ internal class SessionLifecycleService : Service() {
     /** Generates a new session id and sends it everywhere it's needed */
     private fun newSession() {
       SessionGenerator.instance.generateNewSession()
-      Log.d(TAG, "Generated new session ${SessionGenerator.instance.currentSession.sessionId}")
+      Log.d(TAG, "Generated new session.")
       broadcastSession()
       SessionDatastore.instance.updateSessionId(SessionGenerator.instance.currentSession.sessionId)
     }
@@ -138,7 +138,7 @@ internal class SessionLifecycleService : Service() {
      * connected clients.
      */
     private fun broadcastSession() {
-      Log.d(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
+      Log.d(TAG, "Broadcasting new session")
       SessionFirelogPublisher.instance.logSession(SessionGenerator.instance.currentSession)
       // Create a defensive copy because DeadObjectExceptions on send will modify boundClients
       val clientsToSend = ArrayList(boundClients)
@@ -151,7 +151,7 @@ internal class SessionLifecycleService : Service() {
       } else {
         // Send the value from the datastore before the first foregrounding it exists
         val storedSession = SessionDatastore.instance.getCurrentSessionId()
-        Log.d(TAG, "App has not yet foregrounded. Using previously stored session: $storedSession")
+        Log.d(TAG, "App has not yet foregrounded. Using previously stored session.")
         storedSession?.let { sendSessionToClient(client, it) }
       }
     }

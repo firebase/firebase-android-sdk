@@ -1,8 +1,14 @@
 # Unreleased
-* [fixed] Fixed HttpsCallableResult.data resolution in Kotlin
+
 
 # 21.1.0
 * [changed] Migrated to Kotlin
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.0.0
 * [changed] Bump internal dependencies
@@ -209,4 +215,3 @@ updates.
 optional region to override the default "us-central1".
 * [feature] New `useFunctionsEmulator` method allows testing against a local
 instance of the [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
-

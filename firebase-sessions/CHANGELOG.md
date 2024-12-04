@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Removed extraneous logs that risk leaking internal identifiers.
 
 
 # 2.0.6
