@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.testing.sessions
+package com.google.firebase.testing.crashlytics
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.testing.sessions
+package com.google.firebase.testing.crashlytics
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -43,7 +43,7 @@ class CrashBroadcastReceiver : BroadcastReceiver() {
 
   companion object {
     val TAG = "CrashBroadcastReceiver"
-    val CRASH_ACTION = "com.google.firebase.testing.sessions.CrashBroadcastReceiver.CRASH_ACTION"
-    val TOAST_ACTION = "com.google.firebase.testing.sessions.CrashBroadcastReceiver.TOAST_ACTION"
+    val CRASH_ACTION = "com.google.firebase.testing.crashlytics.CrashBroadcastReceiver.CRASH_ACTION"
+    val TOAST_ACTION = "com.google.firebase.testing.crashlytics.CrashBroadcastReceiver.TOAST_ACTION"
   }
 }

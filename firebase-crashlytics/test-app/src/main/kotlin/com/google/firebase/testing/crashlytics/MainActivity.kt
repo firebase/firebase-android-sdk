@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.firebase.testing.sessions
+package com.google.firebase.testing.crashlytics
 
 import android.os.Bundle
-import com.google.firebase.testing.sessions.databinding.ActivityMainBinding
+import com.google.firebase.testing.crashlytics.databinding.ActivityMainBinding
 
 class MainActivity : BaseActivity() {
 

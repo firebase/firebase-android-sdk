@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.testing.sessions
+package com.google.firebase.testing.crashlytics
 
 import android.content.Context
 import android.content.Intent
@@ -34,7 +34,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class FirebaseSessionsIntegrationTest {
+class FirebaseCrashlyticsIntegrationTest {
 
   private lateinit var device: UiDevice
 
@@ -229,7 +229,7 @@ class FirebaseSessionsIntegrationTest {
   }
 
   companion object {
-    private const val TEST_APP_PACKAGE = "com.google.firebase.testing.sessions"
+    private const val TEST_APP_PACKAGE = "com.google.firebase.testing.crashlytics"
     private const val LAUNCH_TIMEOUT = 5_000L
     private const val TRANSITION_TIMEOUT = 1_000L
     private const val TIME_TO_PROPAGATE_SESSION = 5_000L

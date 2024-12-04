@@ -33,11 +33,11 @@ android {
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  namespace = "com.google.firebase.testing.sessions"
+  namespace = "com.google.firebase.testing.crashlytics"
   compileSdk = compileSdkVersion
   buildFeatures.buildConfig = true
   defaultConfig {
-    applicationId = "com.google.firebase.testing.sessions"
+    applicationId = "com.google.firebase.testing.crashlytics"
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     versionCode = 1
@@ -66,15 +66,8 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:latest.release"))
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-perf")
-    implementation("com.google.firebase:firebase-sessions")
   } else {
-    implementation(project(":firebase-crashlytics")) {
-      exclude(group = "com.google.firebase", module = "firebase-sessions")
-    }
-    implementation(project(":firebase-perf")) {
-      exclude(group = "com.google.firebase", module = "firebase-sessions")
-    }
-    implementation(project(":firebase-sessions"))
+    implementation(project(":firebase-crashlytics"))
   }
 
   implementation("androidx.appcompat:appcompat:1.6.1")

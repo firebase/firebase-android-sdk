@@ -48,7 +48,7 @@
       android:value="true" />
 
     <meta-data
-      android:name="firebase_sessions_sessions_restart_timeout"
+      android:name="firebase_crashlytics_crashlytics_restart_timeout"
       android:value="5" />
 
     <receiver

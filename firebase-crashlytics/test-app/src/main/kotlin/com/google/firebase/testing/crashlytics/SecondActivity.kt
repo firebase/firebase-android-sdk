@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.testing.sessions
+package com.google.firebase.testing.crashlytics
 
 import android.app.ActivityManager
 import android.content.Intent
@@ -41,7 +41,7 @@ class SecondActivity : BaseActivity() {
     findViewById<Button>(R.id.kill_background_processes).setOnClickListener {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         getSystemService(ActivityManager::class.java)
-          .killBackgroundProcesses("com.google.firebase.testing.sessions")
+          .killBackgroundProcesses("com.google.firebase.testing.crashlytics")
       }
     }
   }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.testing.sessions
+package com.google.firebase.testing.crashlytics
 
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
@@ -27,7 +27,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
+import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
 import java.util.Date
 import java.util.Locale
 
