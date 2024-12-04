@@ -1,0 +1,35 @@
+name: Data Connect Demo App
+
+on:
+  pull_request:
+    paths:
+      - firebase-dataconnect/demo/**
+      - .github/workflows/dataconnect_demo_app.yml
+
+defaults:
+  run:
+    shell: bash
+    working-directory: firebase-dataconnect/demo
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assemble:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      - run: npm install firebase-tools@13.27.0
+      - run: ./gradlew assemble
+
+  spotlessCheck:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: ./gradlew spotlessCheck
