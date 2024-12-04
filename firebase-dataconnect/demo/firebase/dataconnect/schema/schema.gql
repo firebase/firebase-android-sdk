@@ -1,0 +1,10 @@
+type zwda6x9zyy @table {
+  string: String
+  int: Int
+  int64: Int64
+  float: Float
+  boolean: Boolean
+  date: Date
+  timestamp: Timestamp
+  any: Any
+}

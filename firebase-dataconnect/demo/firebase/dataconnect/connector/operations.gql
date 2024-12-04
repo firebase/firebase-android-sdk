@@ -1,0 +1,36 @@
+mutation InsertItem(
+  $string: String,
+  $int: Int,
+  $int64: Int64,
+  $float: Float,
+  $boolean: Boolean,
+  $date: Date,
+  $timestamp: Timestamp,
+  $any: Any,
+) @auth(level: PUBLIC) {
+  key: zwda6x9zyy_insert(data: {
+    string: $string,
+    int: $int,
+    int64: $int64,
+    float: $float,
+    boolean: $boolean,
+    date: $date,
+    timestamp: $timestamp,
+    any: $any,
+  })
+}
+
+query GetItemByKey(
+  $key: zwda6x9zyy_Key!
+) @auth(level: PUBLIC) {
+  item: zwda6x9zyy(key: $key) {
+    string
+    int
+    int64
+    float
+    boolean
+    date
+    timestamp
+    any
+  }
+}

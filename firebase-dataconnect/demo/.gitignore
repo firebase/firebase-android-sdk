@@ -1,0 +1,10 @@
+.gradle/
+.idea/
+.kotlin/
+
+build/
+local.properties
+
+*.log
+*.hprof
+/dataConnectGeneratedSources/
