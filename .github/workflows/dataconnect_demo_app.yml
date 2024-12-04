@@ -21,10 +21,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - uses: actions/setup-node@v3
         with:
           node-version: 20
+
       - run: npm install firebase-tools@13.27.0
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path:
+            - firebase-dataconnect/demo/build.gradle.kts
+            - firebase-dataconnect/demo/gradle.properties
+            - firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
+
       - run: ./gradlew assemble
 
   spotlessCheck:
@@ -32,4 +45,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+          cache-dependency-path:
+            - firebase-dataconnect/demo/build.gradle.kts
+            - firebase-dataconnect/demo/gradle.properties
+            - firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
+
       - run: ./gradlew spotlessCheck
