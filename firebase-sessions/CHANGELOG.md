@@ -1,6 +1,14 @@
 # Unreleased
+
+
+# 2.0.7
 * [fixed] Removed extraneous logs that risk leaking internal identifiers.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-sessions` library. The Kotlin extensions library has no additional
+updates.
 
 # 2.0.6
 * [changed] Updated protobuf dependency to `3.25.5` to fix
