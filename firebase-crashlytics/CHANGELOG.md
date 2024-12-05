@@ -1,6 +1,15 @@
 # Unreleased
+
+
+# 19.3.0
 * [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
 * [fixed] Execute failure listener outside the main thread  [#6535]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 19.2.1
 * [changed] Updated protobuf dependency to `3.25.5` to fix
