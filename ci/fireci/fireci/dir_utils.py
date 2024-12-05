@@ -51,7 +51,7 @@ def rmglob(pattern: str) -> int:
   for file in glob.glob(os.path.expanduser(pattern)):
     path = pathlib.Path(file)
     if path.is_dir():
-      rmdir(path)
+      rmdir(file)
     else:
       _logger.debug(f"Deleting file: {path}")
       os.remove(path)
