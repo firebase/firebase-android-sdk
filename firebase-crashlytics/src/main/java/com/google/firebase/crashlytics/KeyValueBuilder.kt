@@ -16,7 +16,7 @@
 
 package com.google.firebase.crashlytics
 
-/** Helper class to enable convenient syntax in [setCustomKeys] */
+/** Helper class to enable convenient syntax in [setCustomKeys] and [recordException] */
 class KeyValueBuilder
 private constructor(
   private val crashlytics: FirebaseCrashlytics?,

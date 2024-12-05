@@ -35,6 +35,7 @@ import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsTasks;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -405,7 +406,10 @@ class CrashlyticsController {
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
-  void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
+  void writeNonFatalException(
+      @NonNull final Thread thread,
+      @NonNull final Throwable ex,
+      @NonNull Map<String, String> eventKeys) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
     final long timestampMillis = System.currentTimeMillis();
@@ -417,7 +421,9 @@ class CrashlyticsController {
         Logger.getLogger().w("Tried to write a non-fatal exception while no session was open.");
         return;
       }
-      reportingCoordinator.persistNonFatalEvent(ex, thread, currentSessionId, timestampSeconds);
+      EventMetadata eventMetadata =
+          new EventMetadata(currentSessionId, timestampSeconds, eventKeys);
+      reportingCoordinator.persistNonFatalEvent(ex, thread, eventMetadata);
     }
   }
 
