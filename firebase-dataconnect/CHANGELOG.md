@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 16.0.0-beta03
 * [changed] Requires Data Connect emulator version 1.6.1 or later for code generation.
 * [feature] QueryRef and MutationRef gain methods copy(), withDataDeserializer(),
   and withVariablesSerializer().
