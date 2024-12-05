@@ -62,21 +62,36 @@ class CrashlyticsTests {
   @Test
   fun keyValueBuilder() {
     val keyValueBuilder = KeyValueBuilder()
-    keyValueBuilder.key("hello", "world")
-    keyValueBuilder.key("hello2", 23)
-    keyValueBuilder.key("hello3", 0.1)
+    keyValueBuilder.key("string", "world")
+    keyValueBuilder.key("int", Int.MAX_VALUE)
+    keyValueBuilder.key("float", Float.MAX_VALUE)
+    keyValueBuilder.key("boolean", true)
+    keyValueBuilder.key("double", Double.MAX_VALUE)
+    keyValueBuilder.key("long", Long.MAX_VALUE)
 
     val result: Map<String, String> = keyValueBuilder.build().keysAndValues
 
-    assertThat(result).containsExactly("hello", "world", "hello2", "23", "hello3", "0.1")
+    val expectedKeys =
+      mapOf(
+        "string" to "world",
+        "int" to "${Int.MAX_VALUE}",
+        "float" to "${Float.MAX_VALUE}",
+        "boolean" to "${true}",
+        "double" to "${Double.MAX_VALUE}",
+        "long" to "${Long.MAX_VALUE}"
+      )
+    assertThat(result).isEqualTo(expectedKeys)
   }
 
   @Test
   fun keyValueBuilder_withCrashlyticsInstance() {
     @Suppress("DEPRECATION") val keyValueBuilder = KeyValueBuilder(Firebase.crashlytics)
-    keyValueBuilder.key("hello", "world")
-    keyValueBuilder.key("hello2", 23)
-    keyValueBuilder.key("hello3", 0.1)
+    keyValueBuilder.key("string", "world")
+    keyValueBuilder.key("int", Int.MAX_VALUE)
+    keyValueBuilder.key("float", Float.MAX_VALUE)
+    keyValueBuilder.key("boolean", true)
+    keyValueBuilder.key("double", Double.MAX_VALUE)
+    keyValueBuilder.key("long", Long.MAX_VALUE)
 
     val result: Map<String, String> = keyValueBuilder.build().keysAndValues
 
