@@ -1,5 +1,6 @@
 # Unreleased
-
+* [feature] Added an overload for `recordException` that allows setting custom keys limited 
+  to the non fatal [#3551]
 
 # 19.3.0
 * [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
