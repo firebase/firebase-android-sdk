@@ -16,6 +16,8 @@ import logging
 import os
 import subprocess
 
+from typing import List
+
 _logger = logging.getLogger('fireci.ci_utils')
 
 
@@ -62,7 +64,7 @@ def gcloud_identity_token():
   result = subprocess.run(['gcloud', 'auth', 'print-identity-token'], stdout=subprocess.PIPE, check=True)
   return result.stdout.decode('utf-8').strip()
 
-def get_projects(file_path: str = "subprojects.cfg") -> list[str]:
+def get_projects(file_path: str = "subprojects.cfg") -> List[str]:
   """Parses the specified file for a list of projects in the repo."""
   with open(file_path, 'r') as file:
     stripped_lines = [line.strip() for line in file]
