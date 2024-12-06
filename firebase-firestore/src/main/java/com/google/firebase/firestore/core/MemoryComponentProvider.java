@@ -29,9 +29,7 @@ import com.google.firebase.firestore.local.QueryEngine;
 import com.google.firebase.firestore.local.Scheduler;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
-import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
 import com.google.firebase.firestore.remote.RemoteEvent;
-import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import io.grpc.Status;
 
@@ -40,6 +38,10 @@ import io.grpc.Status;
  * collection.
  */
 public class MemoryComponentProvider extends ComponentProvider {
+
+  public MemoryComponentProvider(FirebaseFirestoreSettings settings) {
+    super(settings);
+  }
 
   @Override
   @Nullable
@@ -60,12 +62,7 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   protected LocalStore createLocalStore(Configuration configuration) {
-    return new LocalStore(getPersistence(), new QueryEngine(), configuration.getInitialUser());
-  }
-
-  @Override
-  protected AndroidConnectivityMonitor createConnectivityMonitor(Configuration configuration) {
-    return new AndroidConnectivityMonitor(configuration.getContext());
+    return new LocalStore(getPersistence(), new QueryEngine(), configuration.initialUser);
   }
 
   private boolean isMemoryLruGcEnabled(FirebaseFirestoreSettings settings) {
@@ -80,13 +77,10 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   protected Persistence createPersistence(Configuration configuration) {
-    if (isMemoryLruGcEnabled(configuration.getSettings())) {
-      LocalSerializer serializer =
-          new LocalSerializer(
-              new RemoteSerializer(configuration.getDatabaseInfo().getDatabaseId()));
+    if (isMemoryLruGcEnabled(settings)) {
+      LocalSerializer serializer = new LocalSerializer(getRemoteSerializer());
       LruGarbageCollector.Params params =
-          LruGarbageCollector.Params.WithCacheSizeBytes(
-              configuration.getSettings().getCacheSizeBytes());
+          LruGarbageCollector.Params.WithCacheSizeBytes(settings.getCacheSizeBytes());
       return MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
     }
 
@@ -96,10 +90,11 @@ public class MemoryComponentProvider extends ComponentProvider {
   @Override
   protected RemoteStore createRemoteStore(Configuration configuration) {
     return new RemoteStore(
+        configuration.databaseInfo.getDatabaseId(),
         new RemoteStoreCallback(),
         getLocalStore(),
-        configuration.getDatastore(),
-        configuration.getAsyncQueue(),
+        getDatastore(),
+        configuration.asyncQueue,
         getConnectivityMonitor());
   }
 
@@ -108,8 +103,8 @@ public class MemoryComponentProvider extends ComponentProvider {
     return new SyncEngine(
         getLocalStore(),
         getRemoteStore(),
-        configuration.getInitialUser(),
-        configuration.getMaxConcurrentLimboResolutions());
+        configuration.initialUser,
+        configuration.maxConcurrentLimboResolutions);
   }
 
   /**

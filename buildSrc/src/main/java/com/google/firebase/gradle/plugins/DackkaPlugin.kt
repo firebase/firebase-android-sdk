@@ -18,9 +18,9 @@ package com.google.firebase.gradle.plugins
 
 import com.android.build.api.attributes.BuildTypeAttr
 import com.android.build.gradle.LibraryExtension
-import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
@@ -123,15 +123,16 @@ abstract class DackkaPlugin : Plugin<Project> {
     // TODO(b/270576405): remove afterEvalutate after fixed
     project.afterEvaluate {
       if (weShouldPublish(this)) {
-        val dackkaOutputDirectory = provider { fileFromBuildDir("dackkaRawOutput") }
-        val transformedFilesDirectory = provider { fileFromBuildDir("dackkaTransformedFiles") }
+        val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
 
-        val generateDocumentation =
-          registerGenerateDackkaDocumentationTask(project, dackkaOutputDirectory)
-        val firesiteTransform =
-          registerFiresiteTransformTask(project, dackkaOutputDirectory, transformedFilesDirectory)
+        val outputDir = generateDocumentation.flatMap { it.outputDirectory }
+
+        val firesiteTransform = registerFiresiteTransformTask(project, outputDir)
+
+        val transformedDir = firesiteTransform.flatMap { it.outputDirectory }
+
         val copyDocsToCommonDirectory =
-          registerCopyDocsToCommonDirectoryTask(project, transformedFilesDirectory)
+          registerCopyDocsToCommonDirectoryTask(project, transformedDir)
 
         kotlinDoc.configure {
           dependsOn(generateDocumentation, firesiteTransform, copyDocsToCommonDirectory)
@@ -150,7 +151,7 @@ abstract class DackkaPlugin : Plugin<Project> {
    *
    * This is done via the [FirebaseLibraryExtension.publishJavadoc] property.
    */
-  private fun weShouldPublish(project: Project) = project.firebaseLibrary.publishJavadoc
+  private fun weShouldPublish(project: Project) = project.firebaseLibrary.publishJavadoc.get()
 
   /**
    * Applies common configuration to the [javadocConfig], that is otherwise not present.
@@ -167,8 +168,7 @@ abstract class DackkaPlugin : Plugin<Project> {
   }
 
   private fun registerGenerateDackkaDocumentationTask(
-    project: Project,
-    targetDirectory: Provider<File>,
+    project: Project
   ): TaskProvider<GenerateDocumentationTask> =
     project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation") {
       with(project.extensions.getByType<LibraryExtension>()) {
@@ -181,15 +181,13 @@ abstract class DackkaPlugin : Plugin<Project> {
               sourceSets.flatMap { it.javaDirectories } +
                 sourceSets.flatMap { it.kotlinDirectories }
 
-            val packageLists = fetchPackageLists(project)
-            val excludedFiles = projectSpecificSuppressedFiles(project)
-            val fixedSourceDirectories = projectSpecificSources(project) + sourceDirectories
+            val outputDir by tempFile("dackkaRawOutput")
 
-            sources.set(fixedSourceDirectories)
-            suppressedFiles.set(excludedFiles)
-            packageListFiles.set(packageLists)
+            sources.set(sourceDirectories)
             dependencies.set(classpath)
-            outputDirectory.set(targetDirectory)
+            outputDirectory.set(outputDir)
+            suppressedFiles.set(emptyList())
+            packageListFiles.set(fetchPackageLists(project))
 
             applyCommonConfigurations()
           }
@@ -203,58 +201,31 @@ abstract class DackkaPlugin : Plugin<Project> {
       .matching { include("**/package-list") }
       .toList()
 
-  // TODO(b/243534168): Remove when fixed
-  private fun projectSpecificSources(project: Project) =
-    when (project.name) {
-      "firebase-common" -> {
-        project.project(":firebase-firestore").files("src/main/java/com/google/firebase").toList()
-      }
-      else -> emptyList()
-    }
-
-  // TODO(b/243534168): Remove when fixed
-  private fun projectSpecificSuppressedFiles(project: Project): List<File> =
-    when (project.name) {
-      "firebase-common" -> {
-        project
-          .project(":firebase-firestore")
-          .files("src/main/java/com/google/firebase/firestore")
-          .toList()
-      }
-      "firebase-firestore" -> {
-        project.files("src/main/java/com/google/firebase/Timestamp.java").toList()
-      }
-      else -> emptyList()
-    }
-
   private fun GenerateDocumentationTask.applyCommonConfigurations() {
     dependsOnAndMustRunAfter("createFullJarRelease")
 
-    val dackkaFile = project.provider { project.dackkaConfig.singleFile }
+    val dackkaFile = project.layout.projectDirectory.file(project.dackkaConfig.singleFile.path)
 
-    dackkaJarFile.set(dackkaFile)
+    dackkaJarFile.convention(dackkaFile)
     clientName.set(project.firebaseLibrary.artifactId)
   }
 
   private fun registerFiresiteTransformTask(
     project: Project,
-    dackkaOutputDirectory: Provider<File>,
-    targetDirectory: Provider<File>
+    dackkaOutputDirectory: Provider<RegularFile>,
   ) =
     project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
-      dependsOnAndMustRunAfter("generateDackkaDocumentation")
+      val outputDir by tempFile("dackkaTransformedFiles")
 
-      dackkaFiles.set(dackkaOutputDirectory.childFile("docs/reference"))
-      outputDirectory.set(targetDirectory)
+      dackkaFiles.set(dackkaOutputDirectory)
+      outputDirectory.set(outputDir)
     }
 
   private fun registerCopyDocsToCommonDirectoryTask(
     project: Project,
-    transformedFilesDirectory: Provider<File>,
+    transformedFilesDirectory: Provider<RegularFile>,
   ) =
     project.tasks.register<Copy>("copyDocsToCommonDirectory") {
-      mustRunAfter("firesiteTransform")
-
       from(transformedFilesDirectory)
       into(project.rootProject.fileFromBuildDir("firebase-kotlindoc"))
     }

@@ -17,8 +17,10 @@ plugins {
 }
 
 firebaseLibrary {
-    publishSources = true
     publishJavadoc = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 java {
@@ -28,11 +30,10 @@ java {
 
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation libs.androidx.annotation
 
-    testImplementation 'junit:junit:4.13'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-
+    testImplementation libs.truth
+    testImplementation libs.junit
 }
 
 tasks.withType(JavaCompile) {

@@ -24,6 +24,7 @@ import android.util.Log
 import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.ktx.Firebase
 import com.squareup.seismic.ShakeDetector
+import com.google.firebase.appdistribution.testapp.R
 
 /**
  * Listens to the device accelerometer, and starts App Distribution in-app feedback when the user

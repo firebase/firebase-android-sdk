@@ -29,10 +29,10 @@ import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL
 import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -252,7 +252,7 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 FIREPERF_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFireperfFetchedCache,
                 mockFireperfActivatedCache,
@@ -269,7 +269,7 @@ public final class FirebaseRemoteConfigTest {
                 firebaseApp,
                 PERSONALIZATION_NAMESPACE,
                 mockFirebaseInstallations,
-                /*firebaseAbt=*/ null,
+                /* firebaseAbt= */ null,
                 directExecutor,
                 mockFetchedCache,
                 mockActivatedCache,
@@ -316,7 +316,7 @@ public final class FirebaseRemoteConfigTest {
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(ConfigUpdate configUpdate) {
+          public void onUpdate(@NonNull ConfigUpdate configUpdate) {
             mockOnUpdateListener.onUpdate(configUpdate);
           }
 
@@ -366,8 +366,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void ensureInitialized_notInitialized_isNotComplete() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
     loadActivatedCacheWithIncompleteTask();
     loadInstanceIdAndToken();
 
@@ -380,9 +380,9 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void ensureInitialized_initialized_returnsCorrectFrcInfo() {
-    loadCacheWithConfig(mockFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockDefaultsCache, /*container=*/ null);
-    loadCacheWithConfig(mockActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockDefaultsCache, /* container= */ null);
+    loadCacheWithConfig(mockActivatedCache, /* container= */ null);
     loadInstanceIdAndToken();
 
     Task<FirebaseRemoteConfigInfo> initStatus = frc.ensureInitialized();
@@ -806,8 +806,8 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void activate_fireperfNamespace_noFetchedConfigs_returnsFalse() {
-    loadCacheWithConfig(mockFireperfFetchedCache, /*container=*/ null);
-    loadCacheWithConfig(mockFireperfActivatedCache, /*container=*/ null);
+    loadCacheWithConfig(mockFireperfFetchedCache, /* container= */ null);
+    loadCacheWithConfig(mockFireperfActivatedCache, /* container= */ null);
 
     Task<Boolean> activateTask = fireperfFrc.activate();
 
@@ -1295,7 +1295,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verifyZeroInteractions(mockOnUpdateListener);
+    verifyNoInteractions(mockOnUpdateListener);
   }
 
   @Test
@@ -1757,7 +1757,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigUpdateListener generateEmptyRealtimeListener() {
     return new ConfigUpdateListener() {
       @Override
-      public void onUpdate(ConfigUpdate configUpdate) {}
+      public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
 
       @Override
       public void onError(@NonNull FirebaseRemoteConfigException error) {}

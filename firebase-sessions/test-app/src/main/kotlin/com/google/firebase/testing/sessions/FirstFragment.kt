@@ -91,6 +91,16 @@ class FirstFragment : Fragment() {
     }
   }
 
+  override fun onResume() {
+    super.onResume()
+    TestApplication.sessionSubscriber.registerView(binding.sessionIdFragmentText)
+  }
+
+  override fun onPause() {
+    super.onPause()
+    TestApplication.sessionSubscriber.unregisterView(binding.sessionIdFragmentText)
+  }
+
   override fun onDestroyView() {
     super.onDestroyView()
     _binding = null

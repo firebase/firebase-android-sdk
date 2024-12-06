@@ -16,7 +16,7 @@
 
 package com.google.firebase.gradle.plugins
 
-import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -41,13 +41,14 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          customizePom = """
+          customizePom =
+            """
   licenses {
     license {
       name = 'Hello'
     }
   }
-  """
+  """,
         )
 
       withProjects(project1, project2)
@@ -58,7 +59,7 @@ class PublishingPluginTests {
         it.license shouldBe
           License(
             "The Apache Software License, Version 2.0",
-            "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            "http://www.apache.org/licenses/LICENSE-2.0.txt",
           )
       }
       project2.pom.let {
@@ -79,13 +80,14 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          customizePom = """
+          customizePom =
+            """
   licenses {
     license {
       name = 'Hello'
     }
   }
-  """
+  """,
         )
 
       withProjects(project1, project2)
@@ -96,7 +98,7 @@ class PublishingPluginTests {
         it.license shouldBe
           License(
             "The Apache Software License, Version 2.0",
-            "http://www.apache.org/licenses/LICENSE-2.0.txt"
+            "http://www.apache.org/licenses/LICENSE-2.0.txt",
           )
       }
       project2.pom.let {
@@ -163,7 +165,7 @@ class PublishingPluginTests {
           name = "childProject2",
           projectDependencies = setOf(project1),
           libraryGroup = "test123",
-          expectedVersion = "1.0.0"
+          expectedVersion = "1.0.0",
         )
 
       withProjects(project1, project2)
@@ -180,8 +182,9 @@ class PublishingPluginTests {
   @Test
   fun `Publish project should correctly set dependency types`() {
     with(controller) {
-      val dagger = Artifact("com.google.dagger", "dagger", "2.22")
-      val daggerAndroid = Artifact("com.google.dagger", "dagger-android-support", "2.22", Type.AAR)
+      val dagger = Artifact("com.google.dagger", "dagger", "2.22", scope = "runtime")
+      val daggerAndroid =
+        Artifact("com.google.dagger", "dagger-android-support", "2.22", Type.AAR, "compile")
 
       val project1 = Project(name = "childProject1", version = "1.0", latestReleasedVersion = "0.8")
       val project2 =
@@ -189,7 +192,7 @@ class PublishingPluginTests {
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
-          externalDependencies = setOf(dagger.copy(scope = ""), daggerAndroid.copy(scope = ""))
+          externalDependencies = setOf(dagger, daggerAndroid),
         )
 
       withProjects(project1, project2)
@@ -197,7 +200,8 @@ class PublishingPluginTests {
 
       project2.pom.let {
         it.artifact.version shouldBe project2.version
-        it.dependencies shouldContainExactly listOf(project1.toArtifact(), dagger, daggerAndroid)
+        it.dependencies shouldContainExactlyInAnyOrder
+          listOf(project1.toArtifact(), dagger, daggerAndroid)
       }
     }
   }
@@ -211,13 +215,13 @@ class PublishingPluginTests {
         Project(
           name = "childProject1",
           version = "1.0",
-          externalDependencies = setOf(externalAARLibrary)
+          externalDependencies = setOf(externalAARLibrary),
         )
       val project2 =
         Project(
           name = "childProject2",
           version = "1.0",
-          externalDependencies = setOf(externalAARLibrary.copy(version = "2.22"))
+          externalDependencies = setOf(externalAARLibrary.copy(version = "2.22")),
         )
 
       withProjects(project1, project2)
@@ -237,13 +241,20 @@ class PublishingPluginTests {
       it.task(":checkHeadDependencies")?.outcome shouldBe FAILED
     }
 
+  /**
+   * Creates a [GradleRunner] to run the specified [projects].
+   *
+   * If your tests are failing, you can call [GradleRunner.forwardOutput] to enable stdout/stderr
+   * redirection for further debugging. Since this can be excessively verbose and slow down tests,
+   * this behavior is not enabled by default.
+   */
   private fun makeGradleRunner(vararg projects: Project) =
     GradleRunner.create()
       .withProjectDir(testProjectDir.root)
       .withArguments(
         "-PprojectsToPublish=${projects.joinToString(",") { it.name }}",
         "-PreleaseName=m123",
-        "firebasePublish"
+        "firebasePublish",
       )
       .withPluginClasspath()
 }

@@ -19,7 +19,7 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.provider.Property
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.Exec
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.register
@@ -30,7 +30,7 @@ import org.gradle.kotlin.dsl.register
  * @param submodules the parent directory of the SDK's Git Submodules. Defaults to `src/third_party`
  */
 interface GitSubmodulePluginExtension {
-  val submodules: Property<File>
+  val submodules: RegularFileProperty
 }
 
 /**
@@ -40,8 +40,8 @@ interface GitSubmodulePluginExtension {
  * the future. More importantly though, this provides a way for us to make sure the submodules are
  * initilized whenever we are building said SDKs- while keeping our system clean and modular.
  *
- * This plugin is automatically applied to all SDKs that utilize [FirebaseLibraryPlugin], and is
- * subsequently bound to the `preBuild` task that is apart of all gradle modules.
+ * This plugin is automatically applied to all SDKs that utilize [FirebaseAndroidLibraryPlugin], and
+ * is subsequently bound to the `preBuild` task that is apart of all gradle modules.
  *
  * The following tasks are registered when this plugin is applied:
  * - [initializeGitSubmodules][registerInitializeGitSubmodulesTask]
@@ -56,15 +56,15 @@ abstract class GitSubmodulePlugin : Plugin<Project> {
 
   override fun apply(project: Project) {
     with(configureExtension(project)) {
-      registerInitializeGitSubmodulesTask(project, submodules.get())
-      registerUpdateGitSubmodulesTask(project, submodules.get())
-      registerRemoveGitSubmodulesTask(project, submodules.get())
+      registerInitializeGitSubmodulesTask(project, submodules.get().asFile)
+      registerUpdateGitSubmodulesTask(project, submodules.get().asFile)
+      registerRemoveGitSubmodulesTask(project, submodules.get().asFile)
     }
   }
 
   private fun configureExtension(project: Project) =
     project.extensions.create<GitSubmodulePluginExtension>("GitSubmodule").apply {
-      submodules.convention(project.file("src/third_party"))
+      submodules.convention(project.layout.projectDirectory.file("src/third_party"))
     }
 
   /**

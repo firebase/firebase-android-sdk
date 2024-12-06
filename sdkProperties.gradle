@@ -13,6 +13,7 @@
 // limitations under the License.
 
 ext {
-    targetSdkVersion = 33
-    minSdkVersion = 14
+    targetSdkVersion = 34
+    compileSdkVersion = 34
+    minSdkVersion = 21
 }

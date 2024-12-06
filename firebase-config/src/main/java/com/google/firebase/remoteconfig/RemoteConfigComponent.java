@@ -64,10 +64,13 @@ import java.util.concurrent.atomic.AtomicReference;
 public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   /** Name of the file where activated configs are stored. */
   public static final String ACTIVATE_FILE_NAME = "activate";
+
   /** Name of the file where fetched configs are stored. */
   public static final String FETCH_FILE_NAME = "fetch";
+
   /** Name of the file where defaults configs are stored. */
   public static final String DEFAULTS_FILE_NAME = "defaults";
+
   /** Timeout for the call to the Firebase Remote Config servers in second. */
   public static final long CONNECTION_TIMEOUT_IN_SECONDS = 60;
 
@@ -173,7 +176,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
     }
 
     RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler =
-        getRolloutsStateSubscriptionsHandler(activatedCacheClient, getHandler);
+        getRolloutsStateSubscriptionsHandler(activatedCacheClient, defaultsCacheClient);
 
     return get(
         firebaseApp,
@@ -321,10 +324,9 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   }
 
   private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler(
-      ConfigCacheClient activatedConfigsCache,
-      ConfigGetParameterHandler configGetParameterHandler) {
+      ConfigCacheClient activatedConfigsCache, ConfigCacheClient defaultConfigsCache) {
     RolloutsStateFactory rolloutsStateFactory =
-        RolloutsStateFactory.create(configGetParameterHandler);
+        RolloutsStateFactory.create(activatedConfigsCache, defaultConfigsCache);
 
     return new RolloutsStateSubscriptionsHandler(
         activatedConfigsCache, rolloutsStateFactory, executor);

@@ -29,7 +29,6 @@ import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
-import com.google.firebase.firestore.core.ListenerRegistrationImpl;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
@@ -38,11 +37,12 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.DeleteMutation;
+import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -165,9 +165,9 @@ public class DocumentReference {
         options.isMerge()
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())
             : firestore.getUserDataReader().parseSetData(data);
+    List<Mutation> mutations = singletonList(parsed.toMutation(key, Precondition.NONE));
     return firestore
-        .getClient()
-        .write(Collections.singletonList(parsed.toMutation(key, Precondition.NONE)))
+        .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -229,9 +229,9 @@ public class DocumentReference {
   }
 
   private Task<Void> update(@NonNull ParsedUpdateData parsedData) {
+    List<Mutation> mutations = singletonList(parsedData.toMutation(key, Precondition.exists(true)));
     return firestore
-        .getClient()
-        .write(Collections.singletonList(parsedData.toMutation(key, Precondition.exists(true))))
+        .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -242,9 +242,9 @@ public class DocumentReference {
    */
   @NonNull
   public Task<Void> delete() {
+    List<Mutation> mutations = singletonList(new DeleteMutation(key, Precondition.NONE));
     return firestore
-        .getClient()
-        .write(singletonList(new DeleteMutation(key, Precondition.NONE)))
+        .callClient(client -> client.write(mutations))
         .continueWith(Executors.DIRECT_EXECUTOR, voidErrorTransformer());
   }
 
@@ -274,15 +274,14 @@ public class DocumentReference {
   public Task<DocumentSnapshot> get(@NonNull Source source) {
     if (source == Source.CACHE) {
       return firestore
-          .getClient()
-          .getDocumentFromLocalCache(key)
+          .callClient(client -> client.getDocumentFromLocalCache(key))
           .continueWith(
               Executors.DIRECT_EXECUTOR,
               (Task<Document> task) -> {
                 Document doc = task.getResult();
                 boolean hasPendingWrites = doc != null && doc.hasLocalMutations();
                 return new DocumentSnapshot(
-                    firestore, key, doc, /*isFromCache=*/ true, hasPendingWrites);
+                    firestore, key, doc, /* isFromCache= */ true, hasPendingWrites);
               });
     } else {
       return getViaSnapshotListener(source);
@@ -459,6 +458,28 @@ public class DocumentReference {
   }
 
   /**
+   * Starts listening to the document referenced by this {@code DocumentReference} with the given
+   * options.
+   *
+   * @param options Sets snapshot listener options, including whether metadata-only changes should
+   *     trigger snapshot events, the source to listen to, the executor to use to call the listener,
+   *     or the activity to scope the listener to.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+      @NonNull SnapshotListenOptions options, @NonNull EventListener<DocumentSnapshot> listener) {
+    checkNotNull(options, "Provided options value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+    return addSnapshotListenerInternal(
+        options.getExecutor(),
+        internalOptions(options.getMetadataChanges(), options.getSource()),
+        options.getActivity(),
+        listener);
+  }
+
+  /**
    * Internal helper method to create add a snapshot listener.
    *
    * <p>Will be Activity scoped if the activity parameter is non-{@code null}.
@@ -509,11 +530,17 @@ public class DocumentReference {
         new AsyncEventListener<>(userExecutor, viewListener);
 
     com.google.firebase.firestore.core.Query query = asQuery();
-    QueryListener queryListener = firestore.getClient().listen(query, options, asyncListener);
 
-    return ActivityScope.bind(
-        activity,
-        new ListenerRegistrationImpl(firestore.getClient(), queryListener, asyncListener));
+    return firestore.callClient(
+        client -> {
+          QueryListener queryListener = client.listen(query, options, asyncListener);
+          return ActivityScope.bind(
+              activity,
+              () -> {
+                asyncListener.mute();
+                client.stopListening(queryListener);
+              });
+        });
   }
 
   @Override
@@ -541,12 +568,18 @@ public class DocumentReference {
     return com.google.firebase.firestore.core.Query.atPath(key.getPath());
   }
 
-  /** Converts the public API MetadataChanges object to the internal options object. */
+  /** Converts the public API options object to the internal options object. */
   private static ListenOptions internalOptions(MetadataChanges metadataChanges) {
+    return internalOptions(metadataChanges, ListenSource.DEFAULT);
+  }
+
+  private static ListenOptions internalOptions(
+      MetadataChanges metadataChanges, ListenSource source) {
     ListenOptions internalOptions = new ListenOptions();
     internalOptions.includeDocumentMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.includeQueryMetadataChanges = (metadataChanges == MetadataChanges.INCLUDE);
     internalOptions.waitForSyncWhenOnline = false;
+    internalOptions.source = source;
     return internalOptions;
   }
 }

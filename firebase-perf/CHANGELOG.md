@@ -1,5 +1,55 @@
 # Unreleased
 
+
+# 21.0.3
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.2
+* [fixed] Fixed `IllegalStateException` that happened when starting a trace
+  before Firebase initializes.
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.1
+* [fixed] Fixed an `ExceptionInInitializerError` where the `url.openStream()` causes a crash if
+  FirebasePerf is not yet initialized (Github #5584).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.5.2
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.5.1
 * [changed] Make Fireperf generate its own session Id.
 
@@ -8,7 +58,6 @@
   to `com.google.firebase:firebase-perf` under the `com.google.firebase.perf` package.
   For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
-
 * [deprecated] All the APIs from `com.google.firebase:firebase-perf-ktx` have been added to
   `com.google.firebase:firebase-perf` under the `com.google.firebase.perf` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-perf-ktx` are
@@ -366,3 +415,4 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
+

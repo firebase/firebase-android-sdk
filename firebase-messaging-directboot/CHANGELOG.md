@@ -1,6 +1,22 @@
 # Unreleased
 
 
+# 24.1.0
+* [unchanged] Updated to keep messaging SDK versions aligned.
+
+# 24.0.3
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://github.com/advisories/GHSA-735f-pc8j-v9w8).
+
+# 24.0.2
+* [unchanged] Updated to keep messaging SDK versions aligned.
+
+# 24.0.1
+* [unchanged] Updated to keep messaging SDK versions aligned.
+
+# 24.0.0
+* [changed] Bump internal dependencies
+
 # 23.4.0
 * [unchanged] Updated to keep messaging SDK versions aligned.
 

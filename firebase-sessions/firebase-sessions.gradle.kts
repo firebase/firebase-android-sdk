@@ -23,19 +23,22 @@ plugins {
 }
 
 firebaseLibrary {
+  libraryGroup = "crashlytics"
+
   testLab.enabled = true
-  publishSources = true
   publishJavadoc = false
+  releaseNotes { enabled.set(false) }
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.sessions"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
-    targetSdk = targetSdkVersion
+    minSdk = minSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -44,30 +47,39 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   kotlinOptions { jvmTarget = "1.8" }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint { targetSdk = targetSdkVersion }
+}
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KaptGenerateStubs::class.java).configureEach {
+  kotlinOptions.jvmTarget = "1.8"
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:20.4.2")
-  api("com.google.firebase:firebase-common-ktx:20.4.2")
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common-ktx:21.0.0")
 
-  implementation("com.google.firebase:firebase-components:17.1.3")
-  implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
+  api("com.google.firebase:firebase-components:18.0.0")
+  api("com.google.firebase:firebase-installations-interop:17.2.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
   implementation("androidx.datastore:datastore-preferences:1.0.0")
-  implementation("com.google.android.datatransport:transport-api:3.0.0")
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
-  implementation("com.google.firebase:firebase-encoders:17.0.0")
-  implementation("com.google.firebase:firebase-encoders-json:18.0.1")
+  implementation("com.google.android.datatransport:transport-api:3.2.0")
+  api("com.google.firebase:firebase-annotations:16.2.0")
+  api("com.google.firebase:firebase-encoders:17.0.0")
+  api("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
+  compileOnly(libs.errorprone.annotations)
 
-  runtimeOnly("com.google.firebase:firebase-installations:17.2.0") {
+  runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8") {
+  runtimeOnly("com.google.firebase:firebase-datatransport:19.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
@@ -86,6 +98,7 @@ dependencies {
   testImplementation(libs.truth)
 
   androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }

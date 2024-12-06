@@ -29,8 +29,7 @@ public final class AutoSimpleClassEncoder implements Configurator {
 
   public static final Configurator CONFIG = new AutoSimpleClassEncoder();
 
-  private AutoSimpleClassEncoder() {
-  }
+  private AutoSimpleClassEncoder() {}
 
   @Override
   public void configure(EncoderConfig<?> cfg) {

@@ -45,4 +45,14 @@ class SecondActivity : BaseActivity() {
       }
     }
   }
+
+  override fun onResume() {
+    super.onResume()
+    TestApplication.sessionSubscriber.registerView(findViewById(R.id.session_id_second_text))
+  }
+
+  override fun onPause() {
+    super.onPause()
+    TestApplication.sessionSubscriber.unregisterView(findViewById(R.id.session_id_second_text))
+  }
 }

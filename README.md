@@ -1,37 +1,7 @@
 # Firebase Android Open Source Development
 
-This repository contains a subset of the Firebase Android SDK source. It
-currently includes the following Firebase libraries, and some of their
-dependencies:
-
-  * `firebase-abt`
-  * `firebase-appdistribution`
-  * `firebase-common`
-  * `firebase-common-ktx`
-  * `firebase-crashlytics`
-  * `firebase-crashlytics-ktx`
-  * `firebase-crashlytics-ndk`
-  * `firebase-database`
-  * `firebase-database-ktx`
-  * `firebase-database-collection`
-  * `firebase-datatransport`
-  * `firebase-firestore`
-  * `firebase-firestore-ktx`
-  * `firebase-functions`
-  * `firebase-functions-ktx`
-  * `firebase-inappmessaging`
-  * `firebase-inappmessaging-ktx`
-  * `firebase-inappmessaging-display`
-  * `firebase-inappmessaging-display-ktx`
-  * `firebase-messaging`
-  * `firebase-messaging-directboot`
-  * `firebase-perf`
-  * `firebase-perf-ktx`
-  * `firebase-remote-config`
-  * `firebase-remote-config-ktx`
-  * `firebase-storage`
-  * `firebase-storage-ktx`
-
+This repository contains the source code for all Android Firebase SDKs except
+Analytics and Auth.
 
 Firebase is an app development platform with tools to help you build, grow and
 monetize your app. More information about Firebase can be found at
@@ -92,6 +62,11 @@ Unit tests can be executed on the command line by running
 ```bash
 ./gradlew :<firebase-project>:check
 ```
+
+#### Vertex AI for Firebase
+
+See the Vertex AI for Firebase [README](firebase-vertexai#running-tests) for setup
+instructions specific to that project.
 
 ### Integration Testing
 
@@ -242,34 +217,11 @@ your app module's build.gradle.
 
 ### Code Formatting
 
-#### Java
+Java and Kotlin are both formatted using `spotless`.
 
-Java code in this repo is formatted with the google-java-format tool. You can
-enable this formatting in Android Studio by downloading and installing the
-[google-java-format plugin](https://github.com/google/google-java-format).
-The plugin is disabled by default, but the repo contains configuration information
-and links to additional plugins.
-
-To run formatting on your entire project you can run
+To run formatting on a project, run
 ```bash
-./gradlew :<firebase-project>:googleJavaFormat
-```
-
-To auto-format, just run
-```bash
-./gradlew :<firebase-project>:gJf
-```
-
-#### Kotlin
-
-Kotlin code in this repo is formatted with the `ktfmt` tool. You can enable
-this formatting in Android Studio by downloading and installing the
-[ktfmt plugin](https://plugins.jetbrains.com/plugin/14912-ktfmt).
-Enable the plugin in Preferences | Editor | ktfmt Settings. and set code style to Google (internal).
-
-To run formatting on your entire project you can run
-```bash
-./gradlew :<firebase-project>:ktfmtFormat
+./gradlew :<firebase-project>:spotlessApply
 ```
 
 ### Contributing

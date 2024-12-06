@@ -42,7 +42,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
-import android.os.Build;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.util.MockClock;
 import com.google.common.base.Charsets;
@@ -285,21 +284,6 @@ public class ConfigFetchHttpClientTest {
 
     JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
     assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageTag);
-  }
-
-  @Test
-  @Config(sdk = Build.VERSION_CODES.KITKAT /* 19 */)
-  public void fetch_localeUsesToStringBelowLollipop() throws Exception {
-    String languageTag = "zh-Hant-TW"; // Taiwan Chinese in traditional script
-    String languageString = "zh_TW_#Hant";
-    context.getResources().getConfiguration().setLocale(Locale.forLanguageTag(languageTag));
-
-    setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
-
-    fetch(FIRST_ETAG);
-
-    JSONObject requestBody = new JSONObject(fakeHttpURLConnection.getOutputStream().toString());
-    assertThat(requestBody.get(LANGUAGE_CODE)).isEqualTo(languageString);
   }
 
   @Test

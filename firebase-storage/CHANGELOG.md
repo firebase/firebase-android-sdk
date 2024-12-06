@@ -1,5 +1,16 @@
 # Unreleased
 
+# 21.0.1
+* [fixed] Fixed an issue where `maxUploadRetryTimeMillis` parameter is ignored when uploading using
+  `putBytes()`
+
+# 21.0.0
+* [changed] Bump internal dependencies
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-storage` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.0
 * [fixed] Fixed an issue where the wrong SDK version was being reported to the backend.

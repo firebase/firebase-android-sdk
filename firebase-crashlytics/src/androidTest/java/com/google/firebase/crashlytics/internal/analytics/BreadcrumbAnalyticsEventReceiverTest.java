@@ -28,19 +28,21 @@ import org.mockito.MockitoAnnotations;
 public class BreadcrumbAnalyticsEventReceiverTest {
 
   @Mock private BreadcrumbHandler mockBreadcrumbHandler;
+  private AutoCloseable mocks;
 
   private BreadcrumbAnalyticsEventReceiver receiver;
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
 
     receiver = new BreadcrumbAnalyticsEventReceiver();
   }
 
   @Test
-  public void testReceiverDropsEventsWhenHandlerIsNull() {
+  public void testReceiverDropsEventsWhenHandlerIsNull() throws Exception {
     receiver.onEvent("event", new Bundle());
+    mocks.close();
     // Should not fail.
   }
 

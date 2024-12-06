@@ -16,9 +16,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
-import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
-import com.google.common.collect.ImmutableList
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
@@ -28,26 +25,37 @@ import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.getPlugin
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+/**
+ * Plugin for Java Firebase Libraries.
+ *
+ * ```kts
+ * plugins {
+ *   id("firebase-java-library")
+ * }
+ * ```
+ *
+ * @see [FirebaseAndroidLibraryPlugin]
+ * @see [BaseFirebaseLibraryPlugin]
+ * @see [FirebaseLibraryExtension]
+ */
 class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
     project.apply<JavaLibraryPlugin>()
-    project.apply<GoogleJavaFormatPlugin>()
-    project.apply<DackkaPlugin>()
-    project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupFirebaseLibraryExtension(project)
     registerMakeReleaseNotesTask(project)
 
+    project.apply<DackkaPlugin>()
+
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
-      kotlinOptions.freeCompilerArgs = ImmutableList.of("-module-name", kotlinModuleName(project))
+      kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
     }
   }
 
@@ -55,6 +63,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     val firebaseLibrary =
       project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, JAVA)
 
+    setupDefaults(project, firebaseLibrary)
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
@@ -67,7 +76,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       groupId.value(firebaseLibrary.groupId.get())
       artifactId.value(firebaseLibrary.artifactId.get())
       version.value(firebaseLibrary.version)
-      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
     project.mkdir("semver")
     project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
@@ -98,7 +107,14 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupApiInformationAnalysis(project: Project) {
     val srcDirs =
-      project.convention.getPlugin<JavaPluginConvention>().sourceSets.getByName("main").java.srcDirs
+      project.files(
+        project.convention
+          .getPlugin<JavaPluginConvention>()
+          .sourceSets
+          .getByName("main")
+          .java
+          .srcDirs
+      )
 
     val apiInfo = getApiInfo(project, srcDirs)
 

@@ -20,6 +20,7 @@ import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
@@ -53,7 +54,7 @@ import org.json.JSONObject
 @CacheableTask
 abstract class GenerateDocumentationTaskExtension : DefaultTask() {
   @get:[InputFile Classpath]
-  abstract val dackkaJarFile: Property<File>
+  abstract val dackkaJarFile: RegularFileProperty
 
   @get:[InputFiles Classpath]
   abstract val dependencies: Property<FileCollection>
@@ -72,7 +73,7 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
 
   @get:Input abstract val clientName: Property<String>
 
-  @get:OutputDirectory abstract val outputDirectory: Property<File>
+  @get:OutputDirectory abstract val outputDirectory: RegularFileProperty
 }
 
 /**
@@ -116,14 +117,14 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "kotlin.OptIn",
         "kotlin.ParameterName",
         "kotlin.js.JsName",
-        "java.lang.Override"
+        "java.lang.Override",
       )
     val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
 
     val jsonMap =
       mapOf(
         "moduleName" to "",
-        "outputDir" to outputDirectory.get().absolutePath,
+        "outputDir" to outputDirectory.get().asFile.absolutePath,
         "globalLinks" to "",
         "sourceSets" to
           listOf(
@@ -137,7 +138,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
               "externalDocumentationLinks" to
                 createExternalLinks(packageListFiles).map {
                   mapOf("url" to it.externalLink, "packageListUrl" to it.packageList.toURI())
-                }
+                },
             )
           ),
         "offlineMode" to "true",
@@ -159,12 +160,12 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
                       "includedHeadTagsPathKotlin" to
                         "docs/reference/kotlin/_reference-head-tags.html",
                       "annotationsNotToDisplay" to annotationsNotToDisplay,
-                      "annotationsNotToDisplayKotlin" to annotationsNotToDisplayKotlin
+                      "annotationsNotToDisplayKotlin" to annotationsNotToDisplayKotlin,
                     )
                   )
-                  .toString()
+                  .toString(),
             )
-          )
+          ),
       )
 
     return JSONObject(jsonMap)
@@ -180,7 +181,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "google" to "https://developers.google.com/android/reference/",
         "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
-        "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/"
+        "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/",
       )
 
     return packageLists
@@ -215,7 +216,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
  */
 interface DackkaParams : WorkParameters {
   val args: ListProperty<String>
-  val dackkaFile: Property<File>
+  val dackkaFile: RegularFileProperty
 }
 
 /**

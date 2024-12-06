@@ -3,7 +3,7 @@ name: Jekyll with GitHub Pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["master"]
+    branches: ["main"]
     paths:
       - '.github/workflows/jekyll-gh-pages.yml'
       - 'contributor-docs/**'
@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v4.1.1
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Build with Jekyll

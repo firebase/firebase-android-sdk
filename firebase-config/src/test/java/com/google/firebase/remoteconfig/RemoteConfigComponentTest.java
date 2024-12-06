@@ -20,7 +20,7 @@ import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExpe
 import static com.google.firebase.remoteconfig.AbtExperimentHelper.createAbtExperiments;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.DEFAULT_NAMESPACE;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -185,7 +185,7 @@ public class RemoteConfigComponentTest {
     when(mockMetadataClient.getRealtimeBackoffMetadata())
         .thenReturn(new ConfigMetadataClient.RealtimeBackoffMetadata(0, new Date()));
 
-    RemoteConfigComponent frcComponent = getNewFrcComponent();
+    RemoteConfigComponent frcComponent = getNewFrcComponentWithoutLoadingDefault();
     FirebaseRemoteConfig instance = getFrcInstanceFromComponent(frcComponent, DEFAULT_NAMESPACE);
 
     frcComponent.registerRolloutsStateSubscriber(DEFAULT_NAMESPACE, mockRolloutsStateSubscriber);

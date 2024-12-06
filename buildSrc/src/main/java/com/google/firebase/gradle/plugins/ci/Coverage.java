@@ -15,23 +15,24 @@
 package com.google.firebase.gradle.plugins.ci;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;
 import org.gradle.testing.jacoco.plugins.JacocoPluginExtension;
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension;
 import org.gradle.testing.jacoco.tasks.JacocoReport;
 
+// TODO(b/372719915): Migrate to Kotlin/Modern gradle plugin
 public final class Coverage {
 
   private Coverage() {}
 
   public static void apply(FirebaseLibraryExtension firebaseLibrary) {
-    Project project = firebaseLibrary.project;
-    project.apply(ImmutableMap.of("plugin", "jacoco"));
+    Project project = firebaseLibrary.getProject();
+    project.apply(Map.of("plugin", "jacoco"));
     File reportsDir = new File(project.getBuildDir(), "/reports/jacoco");
     JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
 
@@ -44,7 +45,7 @@ public final class Coverage {
             test -> {
               JacocoTaskExtension testJacoco =
                   test.getExtensions().getByType(JacocoTaskExtension.class);
-              testJacoco.setExcludeClassLoaders(ImmutableList.of("jdk.internal.*"));
+              testJacoco.setExcludeClassLoaders(List.of("jdk.internal.*"));
               testJacoco.setIncludeNoLocationClasses(true);
             });
 
@@ -71,13 +72,13 @@ public final class Coverage {
                   .setFrom(
                       project.files(
                           project.fileTree(
-                              ImmutableMap.of(
+                              Map.of(
                                   "dir",
                                   project.getBuildDir() + "/intermediates/javac/release",
                                   "excludes",
                                   excludes)),
                           project.fileTree(
-                              ImmutableMap.of(
+                              Map.of(
                                   "dir",
                                   project.getBuildDir() + "/tmp/kotlin-classes/release",
                                   "excludes",
@@ -87,7 +88,7 @@ public final class Coverage {
               task.getExecutionData()
                   .setFrom(
                       project.fileTree(
-                          ImmutableMap.of(
+                          Map.of(
                               "dir",
                               project.getBuildDir(),
                               "includes",
@@ -97,12 +98,12 @@ public final class Coverage {
                     reports
                         .getHtml()
                         .setDestination(
-                            new File(reportsDir, firebaseLibrary.artifactId.get() + "/html"));
+                            new File(reportsDir, firebaseLibrary.getArtifactId().get() + "/html"));
                     reports.getXml().getRequired().set(true);
                     reports
                         .getXml()
                         .setDestination(
-                            new File(reportsDir, firebaseLibrary.artifactId.get() + ".xml"));
+                            new File(reportsDir, firebaseLibrary.getArtifactId().get() + ".xml"));
                   });
               task.getOutputs().upToDateWhen(t -> false);
             });

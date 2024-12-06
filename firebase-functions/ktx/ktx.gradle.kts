@@ -14,23 +14,25 @@
 
 plugins {
   id("firebase-library")
-    id("kotlin-android")
+  id("kotlin-android")
 }
 
 firebaseLibrary {
-  libraryGroup("functions")
+  libraryGroup = "functions"
   publishJavadoc = false
-  publishSources = true
+  releaseNotes { enabled.set(false) }
   testLab.enabled = true
 }
 
 android {
-  val targetSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
   namespace = "com.google.firebase.functions.ktx"
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
+    minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -44,18 +46,18 @@ android {
 }
 
 dependencies {
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api(project(":firebase-functions"))
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common-ktx:21.0.0")
+  api(project(":firebase-functions"))
 
-    implementation("com.google.firebase:firebase-components:17.1.5")
+  implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.junit)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.truth)
 }

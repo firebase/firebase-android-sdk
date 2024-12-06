@@ -14,11 +14,15 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 public class InstallerPackageNameProviderTest extends CrashlyticsTestCase {
 
@@ -26,6 +30,7 @@ public class InstallerPackageNameProviderTest extends CrashlyticsTestCase {
   private PackageManager mockPackageManager;
   private Context mockContext;
 
+  @Before
   public void setUp() {
     testProvider = new InstallerPackageNameProvider();
 
@@ -36,12 +41,14 @@ public class InstallerPackageNameProviderTest extends CrashlyticsTestCase {
     when(mockContext.getPackageManager()).thenReturn(mockPackageManager);
   }
 
+  @Test
   public void testGetInstallerPackageName_null() {
     when(mockPackageManager.getInstallerPackageName(anyString())).thenReturn(null);
 
     assertNull(testProvider.getInstallerPackageName(mockContext));
   }
 
+  @Test
   public void testGetInstallerPackageName_present() {
     final String expected = "expected_package_name";
     when(mockPackageManager.getInstallerPackageName(anyString())).thenReturn(expected);

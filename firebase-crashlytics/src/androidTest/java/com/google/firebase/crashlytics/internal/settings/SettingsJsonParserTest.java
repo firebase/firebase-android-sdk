@@ -25,22 +25,23 @@ import java.io.InputStream;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class SettingsJsonParserTest extends CrashlyticsTestCase {
 
   private SettingsJsonParser settingsJsonParser;
   private CurrentTimeProvider mockCurrentTimeProvider;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-
+  @Before
+  public void setUp() throws Exception {
     mockCurrentTimeProvider = mock(CurrentTimeProvider.class);
     when(mockCurrentTimeProvider.getCurrentTimeMillis()).thenReturn(Long.valueOf(10));
 
     settingsJsonParser = new SettingsJsonParser(mockCurrentTimeProvider);
   }
 
+  @Test
   public void testSettingsV3Parsing() throws Exception {
     final JSONObject testJson = getTestJSON("firebase_settings.json");
 

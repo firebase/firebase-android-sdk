@@ -26,7 +26,7 @@ dependencies {
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     plugins {
         firebaseEncoders {
@@ -47,11 +47,11 @@ protobuf {
 }
 
 dependencies {
+    testAnnotationProcessor project(":encoders:firebase-encoders-processor")
+
     testImplementation project(":encoders:firebase-encoders")
     testImplementation project(":encoders:firebase-encoders-proto")
-    testImplementation "com.google.protobuf:protobuf-java:3.21.9"
-    testImplementation 'junit:junit:4.13.1'
-    testImplementation "com.google.truth:truth:1.0.1"
-
-    testAnnotationProcessor project(":encoders:firebase-encoders-processor")
+    testImplementation libs.protobuf.java
+    testImplementation libs.truth
+    testImplementation libs.junit
 }

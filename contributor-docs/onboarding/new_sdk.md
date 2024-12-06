@@ -75,7 +75,6 @@ plugins {
 firebaseLibrary {
     // enable this only if you have tests in `androidTest`.
     testLab.enabled = true
-    publishSources = true
     publishJavadoc = true
 }
 
@@ -96,8 +95,8 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common:20.4.2")
-  implementation("com.google.firebase:firebase-components:17.1.5")
+  implementation("com.google.firebase:firebase-common:21.0.0")
+  implementation("com.google.firebase:firebase-components:18.0.0")
 }
 
 ```

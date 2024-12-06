@@ -13,27 +13,31 @@
 // limitations under the License.
 
 plugins {
-    id("firebase-library")
-    id("kotlin-android")
+  id("firebase-library")
+  id("kotlin-android")
+  id("copy-google-services")
 }
 
 firebaseLibrary {
-  libraryGroup("database")
+  libraryGroup = "database"
   testLab.enabled = true
-  publishSources = true
+  releaseNotes {
+    name.set("{{database}}")
+    versionName.set("realtime-database")
+  }
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
   installation.timeOutInMs = 60 * 1000
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database"
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -48,50 +52,52 @@ android {
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
     }
+    kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
-    testOptions.unitTests.isIncludeAndroidResources = true
+
+    testOptions {
+      targetSdk = targetSdkVersion
+      unitTests { isIncludeAndroidResources = true }
+    }
+    lint { targetSdk = targetSdkVersion }
   }
 }
 
 dependencies {
-    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
-     exclude(group = "com.google.firebase", module = "firebase-common")
-     exclude(group = "com.google.firebase", module = "firebase-components")
-   }
-    implementation("com.google.firebase:firebase-database-collection:18.0.1")
-    implementation(libs.androidx.annotation)
-    implementation(libs.bundles.playservices)
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.playservices.tasks)
+  api("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common-ktx:21.0.0")
+  api("com.google.firebase:firebase-components:18.0.0")
+  api("com.google.firebase:firebase-auth-interop:20.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  api("com.google.firebase:firebase-database-collection:18.0.1")
+  implementation(libs.androidx.annotation)
+  implementation(libs.bundles.playservices)
+  implementation(libs.kotlin.stdlib)
+  implementation(libs.kotlinx.coroutines.core)
+  api(libs.playservices.tasks)
 
-    testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
-    testImplementation("com.firebase:firebase-token-generator:2.0.0")
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.test.rules)
-    testImplementation(libs.junit)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.quickcheck)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
+  testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
+  testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
+  testImplementation("com.firebase:firebase-token-generator:2.0.0")
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.androidx.test.rules)
+  testImplementation(libs.junit)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.quickcheck)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 
-    androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
-    androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
-    androidTestImplementation("org.hamcrest:hamcrest:2.2")
-    androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.quickcheck)
-    androidTestImplementation(libs.truth)
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
+  androidTestImplementation("org.hamcrest:hamcrest:2.2")
+  androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.quickcheck)
+  androidTestImplementation(libs.truth)
 }
-
-ext["packageName"] = "com.google.firebase.database"
-
-apply("../gradle/googleServices.gradle")

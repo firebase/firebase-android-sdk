@@ -25,35 +25,33 @@ import java.lang.SuppressWarnings;
  * @hide */
 @SuppressWarnings("KotlinInternal")
 public final class AutoTypeWithListEncoder implements Configurator {
-    public static final int CODEGEN_VERSION = 2;
+  public static final int CODEGEN_VERSION = 2;
 
-    public static final Configurator CONFIG = new AutoTypeWithListEncoder();
+  public static final Configurator CONFIG = new AutoTypeWithListEncoder();
 
-    private AutoTypeWithListEncoder() {
-    }
+  private AutoTypeWithListEncoder() {}
+
+  @Override
+  public void configure(EncoderConfig<?> cfg) {
+    cfg.registerEncoder(TypeWithList.class, TypeWithListEncoder.INSTANCE);
+    cfg.registerEncoder(Member.class, MemberEncoder.INSTANCE);
+  }
+
+  private static final class TypeWithListEncoder implements ObjectEncoder<TypeWithList> {
+    static final TypeWithListEncoder INSTANCE = new TypeWithListEncoder();
+
+    private static final FieldDescriptor MEMBER_DESCRIPTOR = FieldDescriptor.of("member");
 
     @Override
-    public void configure(EncoderConfig<?> cfg) {
-        cfg.registerEncoder(TypeWithList.class, TypeWithListEncoder.INSTANCE);
-        cfg.registerEncoder(Member.class, MemberEncoder.INSTANCE);
+    public void encode(TypeWithList value, ObjectEncoderContext ctx) throws IOException {
+      ctx.add(MEMBER_DESCRIPTOR, value.getMember());
     }
+  }
 
-    private static final class TypeWithListEncoder implements ObjectEncoder<TypeWithList> {
-        static final TypeWithListEncoder INSTANCE = new TypeWithListEncoder();
+  private static final class MemberEncoder implements ObjectEncoder<Member> {
+    static final MemberEncoder INSTANCE = new MemberEncoder();
 
-        private static final FieldDescriptor MEMBER_DESCRIPTOR = FieldDescriptor.of("member");
-
-        @Override
-        public void encode(TypeWithList value, ObjectEncoderContext ctx) throws IOException {
-            ctx.add(MEMBER_DESCRIPTOR, value.getMember());
-        }
-    }
-
-    private static final class MemberEncoder implements ObjectEncoder<Member> {
-        static final MemberEncoder INSTANCE = new MemberEncoder();
-
-        @Override
-        public void encode(Member value, ObjectEncoderContext ctx) throws IOException {
-        }
-    }
+    @Override
+    public void encode(Member value, ObjectEncoderContext ctx) throws IOException {}
+  }
 }

@@ -18,10 +18,9 @@ package com.google.firebase.testing.sessions
 
 import android.content.Context
 import android.content.Intent
-import androidx.test.InstrumentationRegistry
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.filters.SdkSuppress
-import androidx.test.runner.AndroidJUnit4
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiObject2
@@ -31,12 +30,10 @@ import java.util.regex.Pattern
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-@SdkSuppress(minSdkVersion = 18)
 class FirebaseSessionsIntegrationTest {
 
   private lateinit var device: UiDevice
@@ -77,7 +74,6 @@ class FirebaseSessionsIntegrationTest {
     assertThat(sessionId1).isEqualTo(sessionId2)
   }
 
-  @Ignore("Disabling test until the integration with the sessions sdk is re-enabled")
   @Test
   fun newSessionIdAfterLongBackground() {
     launchApp()
@@ -104,10 +100,10 @@ class FirebaseSessionsIntegrationTest {
     dismissPossibleErrorDialog()
 
     launchApp()
-    // TODO: Uncomment after the integration with the sessions sdk is re-enabled
-    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    // val newSession = getCurrentSessionId()
-    // assertThat(newSession).isNotEqualTo(origSession)
+
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    val newSession = getCurrentSessionId()
+    assertThat(newSession).isNotEqualTo(origSession)
   }
 
   @Test
@@ -134,10 +130,10 @@ class FirebaseSessionsIntegrationTest {
     dismissPossibleAnrDialog()
 
     launchApp()
-    // TODO: Uncomment after the integration with the sessions sdk is re-enabled
-    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    // val newSession = getCurrentSessionId()
-    // assertThat(origSession).isNotEqualTo(newSession)
+
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    val newSession = getCurrentSessionId()
+    assertThat(origSession).isNotEqualTo(newSession)
   }
 
   @Test
@@ -151,10 +147,10 @@ class FirebaseSessionsIntegrationTest {
     dismissPossibleErrorDialog()
 
     launchApp()
-    // TODO: Uncomment after the integration with the sessions sdk is re-enabled
-    // Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    // val newSession = getCurrentSessionId()
-    // assertThat(newSession).isNotEqualTo(origSession)
+
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    val newSession = getCurrentSessionId()
+    assertThat(newSession).isNotEqualTo(origSession)
   }
 
   private fun launchApp() {
@@ -182,14 +178,6 @@ class FirebaseSessionsIntegrationTest {
     device.wait(Until.hasObject(By.text("NEXT ACTIVITY").depth(0)), TRANSITION_TIMEOUT)
     val nextActivityButton =
       device.findObject(By.text("NEXT ACTIVITY").clazz("android.widget.Button"))
-    nextActivityButton?.click()
-    device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), TRANSITION_TIMEOUT)
-  }
-
-  private fun navigateBackToMainActivity() {
-    device.wait(Until.hasObject(By.text("PREVIOUS ACTIVITY").depth(0)), TRANSITION_TIMEOUT)
-    val nextActivityButton =
-      device.findObject(By.text("PREVIOUS ACTIVITY").clazz("android.widget.Button"))
     nextActivityButton?.click()
     device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), TRANSITION_TIMEOUT)
   }
@@ -237,9 +225,7 @@ class FirebaseSessionsIntegrationTest {
       Until.hasObject(By.res(Pattern.compile(".*session_id_(fragment|second)_text")).depth(0)),
       TRANSITION_TIMEOUT
     )
-    return device
-      .findObject(By.res(Pattern.compile(".*session_id_(fragment|second)_text")))
-      ?.getText()
+    return device.findObject(By.res(Pattern.compile(".*session_id_(fragment|second)_text")))?.text
   }
 
   companion object {

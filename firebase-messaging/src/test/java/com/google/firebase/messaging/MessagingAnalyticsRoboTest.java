@@ -68,13 +68,10 @@ public class MessagingAnalyticsRoboTest {
   // Copy from FirebaseMessagingService so the tests break if the constants are changed
   // TODO(dgiorgini) instead of copy&paste create a test to verify the original constants
   static final String ANALYTICS_PREFIX = "google.c.a.";
-  static final String ANALYTICS_ENABLED = ANALYTICS_PREFIX + "e";
   static final String ANALYTICS_COMPOSER_ID = ANALYTICS_PREFIX + "c_id";
   static final String ANALYTICS_COMPOSER_LABEL = ANALYTICS_PREFIX + "c_l";
   static final String ANALYTICS_MESSAGE_TIMESTAMP = ANALYTICS_PREFIX + "ts";
-  static final String ANALYTICS_MESSAGE_USE_DEVICE_TIME = ANALYTICS_PREFIX + "udt";
   static final String ANALYTICS_TRACK_CONVERSIONS = ANALYTICS_PREFIX + "tc";
-  static final String ANALYTICS_ABT_EXPERIMENT = ANALYTICS_PREFIX + "abt";
   static final String ANALYTICS_MESSAGE_LABEL = ANALYTICS_PREFIX + "m_l";
 
   // Copy from MessagingAnalytics so the tests break if the constants are changed
@@ -997,7 +994,7 @@ public class MessagingAnalyticsRoboTest {
     b.putString(MessagePayloadKeys.FROM, "/topics/my cool topic");
     b.putString(MessageNotificationKeys.ENABLE_NOTIFICATION, "1");
     b.putString(MessagePayloadKeys.MSGID, "an id!!!");
-    b.putString(MessagePayloadKeys.DELIVERED_PRIORITY, "high");
+    b.putString(MessagePayloadKeys.DELIVERED_PRIORITY, "normal");
     b.putString(MessagePayloadKeys.SENDER_ID, "100101010");
     b.putString(AnalyticsKeys.COMPOSER_LABEL, "composer label!");
     b.putString(AnalyticsKeys.MESSAGE_LABEL, "message label!");
@@ -1016,6 +1013,7 @@ public class MessagingAnalyticsRoboTest {
     assertThat(ev.getInstanceId()).isEqualTo("some_installation_id");
     assertThat(ev.getEvent()).isEqualTo(MessagingClientEvent.Event.MESSAGE_DELIVERED);
     assertThat(ev.getTtl()).isEqualTo(22223L);
+    assertThat(ev.getPriority()).isEqualTo(5);
     assertThat(ev.getTopic()).isEqualTo("/topics/my cool topic");
     assertThat(ev.getAnalyticsLabel()).isEqualTo("message label!");
     assertThat(ev.getComposerLabel()).isEqualTo("composer label!");
@@ -1049,6 +1047,7 @@ public class MessagingAnalyticsRoboTest {
     assertThat(ev.getInstanceId()).isEqualTo("some_installation_id");
     assertThat(ev.getEvent()).isEqualTo(MessagingClientEvent.Event.MESSAGE_DELIVERED);
     assertThat(ev.getTtl()).isEqualTo(22223L);
+    assertThat(ev.getPriority()).isEqualTo(10);
     assertThat(ev.getTopic()).isEmpty();
     assertThat(ev.getAnalyticsLabel()).isEqualTo("message label!");
     assertThat(ev.getComposerLabel()).isEqualTo("composer label!");
@@ -1059,7 +1058,7 @@ public class MessagingAnalyticsRoboTest {
   public void testLogNotificationReceived() throws Exception {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(true);
     FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
-    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+    FirebaseMessaging.transportFactory = () -> new FakeFirelogTransportFactory(transport);
 
     Bundle b = new Bundle();
     b.putString(MessagePayloadKeys.TTL, "22223");
@@ -1092,7 +1091,7 @@ public class MessagingAnalyticsRoboTest {
   public void testLogNotificationReceived_withProductId() {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(true);
     FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
-    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+    FirebaseMessaging.transportFactory = () -> new FakeFirelogTransportFactory(transport);
 
     Bundle b = new Bundle();
     b.putString(MessagePayloadKeys.TTL, "22223");
@@ -1126,7 +1125,7 @@ public class MessagingAnalyticsRoboTest {
   public void testLogNotificationReceived_bigQueryExportDisabled() throws Exception {
     MessagingAnalytics.setDeliveryMetricsExportToBigQuery(false);
     FakeFirelogTransport<MessagingClientEventExtension> transport = new FakeFirelogTransport<>();
-    FirebaseMessaging.transportFactory = new FakeFirelogTransportFactory(transport);
+    FirebaseMessaging.transportFactory = () -> new FakeFirelogTransportFactory(transport);
 
     Bundle b = new Bundle();
     b.putString(MessagePayloadKeys.TTL, "22223");

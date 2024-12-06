@@ -18,16 +18,18 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "dynamic-links"
+    libraryGroup = "dynamic-links"
     publishJavadoc = false
-    publishSources = true
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
         namespace "com.google.firebase.dynamiclinks.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         multiDexEnabled true
         targetSdkVersion project.targetSdkVersion
         versionName version
@@ -43,13 +45,15 @@ android {
 }
 
 dependencies {
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
     api(project(":firebase-dynamic-links"))
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
+
+    implementation("com.google.firebase:firebase-components:18.0.0")
+
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation libs.robolectric
 }

@@ -68,7 +68,7 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
     }
 
     private fun handleSessionUpdate(sessionId: String) {
-      Log.d(TAG, "Session update received: $sessionId")
+      Log.d(TAG, "Session update received.")
 
       CoroutineScope(backgroundDispatcher).launch {
         FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
@@ -101,10 +101,10 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
    * Binds to the [SessionLifecycleService] and passes a callback [Messenger] that will be used to
    * relay session updates to this client.
    */
-  fun bindToService() {
-    SessionLifecycleServiceBinder.instance.bindToService(
+  fun bindToService(sessionLifecycleServiceBinder: SessionLifecycleServiceBinder) {
+    sessionLifecycleServiceBinder.bindToService(
       Messenger(ClientUpdateHandler(backgroundDispatcher)),
-      serviceConnection
+      serviceConnection,
     )
   }
 
@@ -152,7 +152,7 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
       if (subscribers.isEmpty()) {
         Log.d(
           TAG,
-          "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent."
+          "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent.",
         )
       } else if (subscribers.values.none { it.isDataCollectionEnabled }) {
         Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Event")

@@ -79,7 +79,10 @@ class LicenseResolverPluginTests {
                 id 'com.android.library'
                 id 'LicenseResolverPlugin'
             }
-            android.compileSdkVersion = 26
+            android {
+              compileSdkVersion 26
+              namespace 'com.example'
+            }
 
             thirdPartyLicenses {
                 add 'customLib', "${File("non_existent_path.txt").absolutePath}"
@@ -100,10 +103,10 @@ class LicenseResolverPluginTests {
       .fromJson(
         File(
             "${testProjectDir.root}/build/generated/third_party_licenses/",
-            "third_party_licenses.json"
+            "third_party_licenses.json",
           )
           .readText(),
-        object : TypeToken<Map<String, FileOffset>>() {}.type
+        object : TypeToken<Map<String, FileOffset>>() {}.type,
       )
 
   private fun getLicenseText(): String =
@@ -120,8 +123,7 @@ class LicenseResolverPluginTests {
   companion object {
     const val MANIFEST =
       """<?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-                  package="com.example">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-sdk android:minSdkVersion="14"/>
         </manifest>
     """
@@ -139,8 +141,11 @@ class LicenseResolverPluginTests {
             id 'LicenseResolverPlugin'
         }
 
-        android.compileSdkVersion = 26
-
+        android {
+          compileSdkVersion 26
+          namespace 'com.example'
+        }
+        
         repositories {
             jcenter()
             google()

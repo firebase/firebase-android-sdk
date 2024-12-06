@@ -30,8 +30,7 @@ public final class AutoMyClassEncoder implements Configurator {
 
   public static final Configurator CONFIG = new AutoMyClassEncoder();
 
-  private AutoMyClassEncoder() {
-  }
+  private AutoMyClassEncoder() {}
 
   @Override
   public void configure(EncoderConfig<?> cfg) {
@@ -41,11 +40,10 @@ public final class AutoMyClassEncoder implements Configurator {
   private static final class MyClassEncoder implements ObjectEncoder<MyClass> {
     static final MyClassEncoder INSTANCE = new MyClassEncoder();
 
-    private static final FieldDescriptor HELLO_DESCRIPTOR = FieldDescriptor.builder("hello")
-        .withProperty(AtMyAnnotation.builder()
-            .value(42)
-            .build())
-        .build();
+    private static final FieldDescriptor HELLO_DESCRIPTOR =
+        FieldDescriptor.builder("hello")
+            .withProperty(AtMyAnnotation.builder().value(42).build())
+            .build();
 
     @Override
     public void encode(MyClass value, ObjectEncoderContext ctx) throws IOException {

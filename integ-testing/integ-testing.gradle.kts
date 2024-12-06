@@ -33,12 +33,14 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
+
+  kotlinOptions { jvmTarget = "1.8" }
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-  implementation("com.google.firebase:firebase-common:20.4.2")
-  implementation("com.google.firebase:firebase-components:17.1.5")
+  implementation("com.google.firebase:firebase-common-ktx:21.0.0")
+  implementation("com.google.firebase:firebase-common:21.0.0")
+  implementation("com.google.firebase:firebase-components:18.0.0")
   implementation(libs.androidx.test.runner)
   implementation(libs.junit)
   implementation(libs.kotlin.coroutines.test)

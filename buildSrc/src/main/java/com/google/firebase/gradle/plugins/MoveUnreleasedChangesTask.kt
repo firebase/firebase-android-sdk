@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -33,16 +34,15 @@ import org.gradle.kotlin.dsl.provideDelegate
  * a release, such that the changes that went out in said release are moved into their own section
  * for auditing purposes.
  *
- * @see PostReleasePlugin
- *
  * @property changelogFile A [File] to use as the [Changelog]. Defaults to the `CHANGELOG.md` file
- * at the project's root.
+ *   at the project's root.
  * @property releaseVersion A [ModuleVersion] of what to set the version to. Defaults to the
- * project's current version.
+ *   project's current version.
+ * @see PostReleasePlugin
  */
 abstract class MoveUnreleasedChangesTask : DefaultTask() {
   @get:[Optional InputFile]
-  abstract val changelogFile: Property<File>
+  abstract val changelogFile: RegularFileProperty
 
   @get:[Optional Input]
   abstract val releaseVersion: Property<ModuleVersion>
@@ -53,7 +53,7 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
 
   @TaskAction
   fun build() {
-    val file = changelogFile.get()
+    val file = changelogFile.get().asFile
     val changelog = Changelog.fromFile(file)
     val (unreleased, previousReleases) = changelog.releases.separateAt(1)
 
@@ -71,8 +71,8 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
    *
    * That is, it attaches the release version and creates the KTX content.
    *
-   * @see createEntryForKTX
    * @throws StopActionException if [unreleased] does not have any content
+   * @see createEntryForKTX
    */
   private fun createEntryForRelease(unreleased: ReleaseEntry): ReleaseEntry {
     if (!unreleased.hasContent())
@@ -87,22 +87,26 @@ abstract class MoveUnreleasedChangesTask : DefaultTask() {
    * Ensures the entry is only created if the library has a KTX lib to begin with, and adds template
    * subtext if it lacks any changes.
    *
-   * @see convertToMetadata
+   * @see ReleaseNotesConfigurationExtension
    * @see KTXTransitiveReleaseText
    */
   private fun createEntryForKTX(release: ReleaseEntry): ReleaseContent? {
-    val metadata = convertToMetadata(project.name)
+    val releaseNotesConfig = project.firebaseLibrary.releaseNotes
 
     val nonEmptyKTXContent = release.ktx?.takeIf { it.hasContent() }
 
     val ktxContent =
-      nonEmptyKTXContent ?: ReleaseContent(KTXTransitiveReleaseText(project.name), emptyList())
+      nonEmptyKTXContent
+        ?: ReleaseContent(
+          KTXTransitiveReleaseText(releaseNotesConfig.artifactName.get()),
+          emptyList(),
+        )
 
-    return ktxContent.takeIf { metadata.hasKTX }
+    return ktxContent.takeIf { releaseNotesConfig.hasKTX.get() }
   }
 
   private fun configure() {
-    changelogFile.convention(project.file("CHANGELOG.md"))
+    changelogFile.convention(project.layout.projectDirectory.file("CHANGELOG.md"))
     releaseVersion.convention(computeReleaseVersion())
   }
 

@@ -21,7 +21,7 @@ import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_ID_S
 import static com.google.firebase.inappmessaging.testutil.TestData.CAMPAIGN_NAME_STRING;
 import static io.reactivex.BackpressureStrategy.BUFFER;
 import static io.reactivex.schedulers.Schedulers.trampoline;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

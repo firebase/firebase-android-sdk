@@ -17,8 +17,8 @@ package com.google.firebase.perf.network;
 import static com.google.firebase.perf.testutil.Assert.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -158,12 +158,12 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     FirebasePerfHttpClient.execute(client, request, handler, timer, transportManager);
 
     ArgumentCaptor<HttpUriRequest> argRequest = ArgumentCaptor.forClass(HttpUriRequest.class);
-    ArgumentCaptor<ResponseHandlerInterface> argHandler =
-        ArgumentCaptor.forClass(ResponseHandlerInterface.class);
+    ArgumentCaptor<InstrumentApacheHttpResponseHandler> argHandler =
+        ArgumentCaptor.forClass(InstrumentApacheHttpResponseHandler.class);
     verify(client).execute(argRequest.capture(), argHandler.capture());
     verify(timer).reset();
     assertSame(argRequest.getValue(), request);
-    assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
+    assertNotNull(argHandler.getValue());
   }
 
   @Test
@@ -176,13 +176,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     FirebasePerfHttpClient.execute(client, request, handler, context, timer, transportManager);
 
     ArgumentCaptor<HttpUriRequest> argRequest = ArgumentCaptor.forClass(HttpUriRequest.class);
-    ArgumentCaptor<ResponseHandlerInterface> argHandler =
-        ArgumentCaptor.forClass(ResponseHandlerInterface.class);
+    ArgumentCaptor<InstrumentApacheHttpResponseHandler> argHandler =
+        ArgumentCaptor.forClass(InstrumentApacheHttpResponseHandler.class);
     ArgumentCaptor<HttpContext> argContext = ArgumentCaptor.forClass(HttpContext.class);
     verify(client).execute(argRequest.capture(), argHandler.capture(), argContext.capture());
     verify(timer).reset();
     assertSame(argRequest.getValue(), request);
-    assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
+    assertNotNull(argHandler.getValue());
     assertSame(argContext.getValue(), context);
   }
 
@@ -197,13 +197,13 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
 
     ArgumentCaptor<HttpHost> argHost = ArgumentCaptor.forClass(HttpHost.class);
     ArgumentCaptor<HttpRequest> argRequest = ArgumentCaptor.forClass(HttpRequest.class);
-    ArgumentCaptor<ResponseHandlerInterface> argHandler =
-        ArgumentCaptor.forClass(ResponseHandlerInterface.class);
+    ArgumentCaptor<InstrumentApacheHttpResponseHandler> argHandler =
+        ArgumentCaptor.forClass(InstrumentApacheHttpResponseHandler.class);
     verify(client).execute(argHost.capture(), argRequest.capture(), argHandler.capture());
     verify(timer).reset();
     assertSame(argHost.getValue(), host);
     assertSame(argRequest.getValue(), request);
-    assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
+    assertNotNull(argHandler.getValue());
   }
 
   @Test
@@ -219,8 +219,8 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
 
     ArgumentCaptor<HttpHost> argHost = ArgumentCaptor.forClass(HttpHost.class);
     ArgumentCaptor<HttpRequest> argRequest = ArgumentCaptor.forClass(HttpRequest.class);
-    ArgumentCaptor<ResponseHandlerInterface> argHandler =
-        ArgumentCaptor.forClass(ResponseHandlerInterface.class);
+    ArgumentCaptor<InstrumentApacheHttpResponseHandler> argHandler =
+        ArgumentCaptor.forClass(InstrumentApacheHttpResponseHandler.class);
     ArgumentCaptor<HttpContext> argContext = ArgumentCaptor.forClass(HttpContext.class);
     verify(client)
         .execute(
@@ -228,7 +228,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     verify(timer).reset();
     assertSame(argHost.getValue(), host);
     assertSame(argRequest.getValue(), request);
-    assertTrue(argHandler.getValue() instanceof InstrumentApacheHttpResponseHandler);
+    assertNotNull(argHandler.getValue());
     assertSame(argContext.getValue(), context);
   }
 

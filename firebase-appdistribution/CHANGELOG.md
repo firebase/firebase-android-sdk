@@ -1,5 +1,15 @@
 # Unreleased
 
+
+# 16.0.0-beta14
+* [changed] Internal improvements to testing on Android 14
+
+# 16.0.0-beta13
+* [changed] Bump internal dependencies
+
+# 16.0.0-beta12
+* [changed] Bump internal dependencies.
+
 # 16.0.0-beta10
 * [fixed] Updated the third-party license file to include Dagger's license.
 
@@ -72,3 +82,4 @@ The [appdistro] Android library with Kotlin extensions is now available in
 beta. The Kotlin extensions library transitively includes the base
 `firebase-app-distribution` library. To learn more, visit the
 [[appdistro] KTX reference documentation](/docs/reference/kotlin/com/google/firebase/appdistribution/ktx/package-summary).
+

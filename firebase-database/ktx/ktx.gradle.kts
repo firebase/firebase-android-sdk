@@ -21,16 +21,17 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-  libraryGroup("database")
+  libraryGroup = "database"
   publishJavadoc = false
-  publishSources = true
+  releaseNotes { enabled.set(false) }
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database.ktx"
   defaultConfig {
@@ -48,14 +49,14 @@ android {
 }
 
 dependencies {
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    api(project(":firebase-database"))
+  api("com.google.firebase:firebase-common:21.0.0")
+  api("com.google.firebase:firebase-common-ktx:21.0.0")
+  api(project(":firebase-database"))
 
-    implementation("com.google.firebase:firebase-components:17.1.5")
+  implementation("com.google.firebase:firebase-components:18.0.0")
 
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.junit)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.junit)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 }

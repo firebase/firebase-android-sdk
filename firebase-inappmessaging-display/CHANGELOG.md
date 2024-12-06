@@ -1,6 +1,37 @@
 # Unreleased
 
 
+# 21.0.1
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
+
+# 21.0.0
+* [fixed] Fixed bad token exception while showing FIAM
+  (GitHub [#5567](//github.com/firebase/firebase-android-sdk/issues/5567))
+  (GitHub [#5780](//github.com/firebase/firebase-android-sdk/issues/5780))
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.4.1
+* [fixed] Fixed FirebaseInAppMessagingDisplayErrorListener not being called
+  (GitHub [#5644](//github.com/firebase/firebase-android-sdk/issues/5644))
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-inappmessaging-display-ktx`
   to `com.google.firebase:firebase-inappmessaging-display` under the `com.google.firebase.inappmessaging.display` package.

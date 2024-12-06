@@ -19,17 +19,22 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Create base branch
-        uses: peterjgrainger/action-create-branch@c2800a3a9edbba2218da6861fa46496cf8f3195a
+        uses: peterjgrainger/action-create-branch@08259812c8ebdbf1973747f9297e332fa078d3c1
         with:
           branch: 'releases/${{ inputs.name }}'
 
   create-pull-request:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v4.1.1
         with:
           fetch-depth: 0
-
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4.1.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
       - name: Create release configuration template
         run: |
           ./gradlew generateReleaseConfig -PcurrentRelease=${{ inputs.name }} -PpastRelease=${{ inputs.past-name }} -PprintOutput=true

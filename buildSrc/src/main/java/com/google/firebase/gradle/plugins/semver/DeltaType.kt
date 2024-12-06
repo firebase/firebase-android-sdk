@@ -34,7 +34,7 @@ enum class DeltaType {
             "",
             String.format("Class %s removed.", before.name),
             REMOVED_CLASS,
-            VersionDelta.MAJOR
+            VersionDelta.MAJOR,
           )
         )
       }
@@ -61,10 +61,10 @@ enum class DeltaType {
           String.format(
             "Method %s on class %s was removed.",
             getMethodSignature(method),
-            before.name
+            before.name,
           ),
           REMOVED_METHOD,
-          VersionDelta.MAJOR
+          VersionDelta.MAJOR,
         )
       }
     }
@@ -88,7 +88,7 @@ enum class DeltaType {
           field!!.name,
           String.format("Field %s on class %s was removed.", field.name, before.name),
           REMOVED_FIELD,
-          VersionDelta.MAJOR
+          VersionDelta.MAJOR,
         )
       }
     }
@@ -167,7 +167,7 @@ enum class DeltaType {
             "",
             String.format("Class %s has reduced visibility.", after.name),
             REDUCED_VISIBILITY,
-            VersionDelta.MAJOR
+            VersionDelta.MAJOR,
           )
         )
       }
@@ -185,10 +185,10 @@ enum class DeltaType {
               String.format(
                 "Method %s on class %s has reduced its visiblity.",
                 getMethodSignature(method),
-                after.name
+                after.name,
               ),
               REDUCED_VISIBILITY,
-              VersionDelta.MAJOR
+              VersionDelta.MAJOR,
             )
           )
         }
@@ -205,10 +205,10 @@ enum class DeltaType {
               String.format(
                 "Field %s on class %s has reduced its visiblity.",
                 field.name,
-                after.name
+                after.name,
               ),
               REDUCED_VISIBILITY,
-              VersionDelta.MAJOR
+              VersionDelta.MAJOR,
             )
           )
         }
@@ -240,7 +240,7 @@ enum class DeltaType {
           method!!.name,
           String.format("Method %s on class %s became static.", getMethodSignature(method), after),
           CHANGED_TO_STATIC,
-          VersionDelta.MAJOR
+          VersionDelta.MAJOR,
         )
       }
     }
@@ -261,10 +261,10 @@ enum class DeltaType {
               String.format(
                 "Method %s on class %s throws new exceptions.",
                 getMethodSignature(afterMethod),
-                after.name
+                after.name,
               ),
               NEW_EXCEPTIONS,
-              VersionDelta.MINOR
+              VersionDelta.MINOR,
             )
           )
         }
@@ -288,10 +288,10 @@ enum class DeltaType {
               String.format(
                 "Method %s on class %s throws fewer exceptions.",
                 getMethodSignature(afterMethod),
-                after.name
+                after.name,
               ),
               DELETE_EXCEPTIONS,
-              VersionDelta.MAJOR
+              VersionDelta.MAJOR,
             )
           )
         }
@@ -313,7 +313,7 @@ enum class DeltaType {
             "",
             String.format("Class %s made abstract.", after.name),
             CLASS_MADE_ABSTRACT,
-            VersionDelta.MAJOR
+            VersionDelta.MAJOR,
           )
         )
       }
@@ -340,10 +340,10 @@ enum class DeltaType {
               String.format(
                 "Method %s on class %s became abstract.",
                 getMethodSignature(afterMethod),
-                after.name
+                after.name,
               ),
               METHOD_MADE_ABSTRACT,
-              VersionDelta.MAJOR
+              VersionDelta.MAJOR,
             )
           )
         }
@@ -371,10 +371,10 @@ enum class DeltaType {
               String.format(
                 "Method %s on class %s became final.",
                 getMethodSignature(afterMethod),
-                after.name
+                after.name,
               ),
               METHOD_MADE_FINAL,
-              VersionDelta.MAJOR
+              VersionDelta.MAJOR,
             )
           )
         }
@@ -394,9 +394,9 @@ enum class DeltaType {
           Delta(
             after.name,
             "",
-            String.format("Class %s made abstract.", after.name),
+            String.format("Class %s made final.", after.name),
             CLASS_MADE_FINAL,
-            VersionDelta.MAJOR
+            VersionDelta.MAJOR,
           )
         )
       }
@@ -415,7 +415,7 @@ enum class DeltaType {
             "",
             String.format("Class %s added.", after.name),
             ADDED_CLASS,
-            VersionDelta.MINOR
+            VersionDelta.MINOR,
           )
         )
       }
@@ -441,7 +441,7 @@ enum class DeltaType {
           method!!.name,
           String.format("Method %s on class %s was added.", getMethodSignature(method), after.name),
           ADDED_METHOD,
-          VersionDelta.MINOR
+          VersionDelta.MINOR,
         )
       }
     }
@@ -466,7 +466,7 @@ enum class DeltaType {
           field!!.name,
           String.format("Field %s on class %s was added.", field.name, after.name),
           ADDED_FIELD,
-          VersionDelta.MINOR
+          VersionDelta.MINOR,
         )
       }
     }
@@ -547,7 +547,7 @@ enum class DeltaType {
             "",
             String.format("Class %s has increased visibility.", after.name),
             INCREASED_VISIBILITY,
-            VersionDelta.MINOR
+            VersionDelta.MINOR,
           )
         )
       }
@@ -563,10 +563,10 @@ enum class DeltaType {
               String.format(
                 "Method %s on class %s has increased its visiblity.",
                 getMethodSignature(method),
-                after.name
+                after.name,
               ),
               INCREASED_VISIBILITY,
-              VersionDelta.MINOR
+              VersionDelta.MINOR,
             )
           )
         }
@@ -582,10 +582,10 @@ enum class DeltaType {
               String.format(
                 "Field %s on class %s has reduced its visiblity.",
                 field.name,
-                after.name
+                after.name,
               ),
               INCREASED_VISIBILITY,
-              VersionDelta.MINOR
+              VersionDelta.MINOR,
             )
           )
         }
@@ -594,6 +594,10 @@ enum class DeltaType {
   },
   CHANGED_FROM_STATIC {
     override fun getViolations(before: ClassInfo?, after: ClassInfo?): List<Delta> {
+      // Safe to ignore: if `after` is null, then it has been removed and another check will
+      // report this.
+      if (after == null) return emptyList()
+
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val afterStaticMethods =
@@ -618,7 +622,7 @@ enum class DeltaType {
           method!!.name,
           String.format("Method %s on class %s removed static.", getMethodSignature(method), after),
           CHANGED_FROM_STATIC,
-          VersionDelta.MINOR
+          VersionDelta.MINOR,
         )
       }
     }
@@ -647,7 +651,7 @@ enum class DeltaType {
       AccessDescriptor(methodNode.access).getVerboseDescription(),
       Type.getReturnType(methodNode.desc).className,
       methodNode.name,
-      parameterClasses.joinToString(", ")
+      parameterClasses.joinToString(", "),
     )
   }
 
@@ -668,6 +672,7 @@ enum class DeltaType {
     }
     return false
   }
+
   /** Returns true if the class is local or anonymous. */
   fun isLocalOrAnonymous(classNode: ClassNode): Boolean {
     // JVMS 4.7.7 says a class has an EnclosingMethod attribute iff it is local or anonymous.
@@ -682,6 +687,7 @@ enum class DeltaType {
     val withoutPackage = normalizedPath.substring(normalizedPath.lastIndexOf('/') + 1)
     return withoutPackage.substring(withoutPackage.lastIndexOf('$') + 1)
   }
+
   fun hasNonPublicFieldSignature(fieldNode: FieldNode): Boolean {
     val fieldType = Type.getType(fieldNode.desc)
     return UtilityClass.isObfuscatedSymbol(getUnqualifiedClassname(fieldType.getClassName()))

@@ -18,6 +18,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -33,18 +34,17 @@ import org.gradle.kotlin.dsl.provideDelegate
  * modules to be one patch higher than their currently released counterparts, and update their
  * latest released version.
  *
- * @see PostReleasePlugin
- *
  * @property versionFile A [File] that contains the `version` property. Defaults to the
- * `gradle.properties` file at the project's root.
+ *   `gradle.properties` file at the project's root.
  * @property releasedVersion A [ModuleVersion] of what to bump from. Defaults to the project
- * version.
+ *   version.
  * @property newVersion A [ModuleVersion] of what to set the version to. Defaults to one patch
- * higher than [releasedVersion]
+ *   higher than [releasedVersion]
+ * @see PostReleasePlugin
  */
 abstract class VersionBumpTask : DefaultTask() {
   @get:[Optional InputFile]
-  abstract val versionFile: Property<File>
+  abstract val versionFile: RegularFileProperty
 
   @get:[Optional Input]
   abstract val releasedVersion: Property<ModuleVersion>
@@ -58,7 +58,7 @@ abstract class VersionBumpTask : DefaultTask() {
 
   @TaskAction
   fun build() {
-    versionFile.get().rewriteLines {
+    versionFile.get().asFile.rewriteLines {
       when {
         it.startsWith("version=") -> "version=${newVersion.get()}"
         it.startsWith("latestReleasedVersion") -> "latestReleasedVersion=${releasedVersion.get()}"
@@ -68,7 +68,7 @@ abstract class VersionBumpTask : DefaultTask() {
   }
 
   fun configure() {
-    versionFile.convention(project.file("gradle.properties"))
+    versionFile.convention(project.layout.projectDirectory.file("gradle.properties"))
     releasedVersion.convention(computeReleasedVersion())
     newVersion.convention(releasedVersion.map { it.bump() })
   }

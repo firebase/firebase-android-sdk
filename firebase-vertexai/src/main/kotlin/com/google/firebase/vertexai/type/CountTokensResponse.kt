@@ -1,0 +1,39 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.firebase.vertexai.type
+
+/**
+ * The model's response to a count tokens request.
+ *
+ * **Important:** The counters in this class do not include billable image, video or other non-text
+ * input. See [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for
+ * details.
+ *
+ * @property totalTokens The total number of tokens in the input given to the model as a prompt.
+ * @property totalBillableCharacters The total number of billable characters in the text input given
+ * to the model as a prompt. **Important:** this property does not include billable image, video or
+ * other non-text input. See
+ * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details.
+ */
+public class CountTokensResponse(
+  public val totalTokens: Int,
+  public val totalBillableCharacters: Int? = null
+) {
+  public operator fun component1(): Int = totalTokens
+
+  public operator fun component2(): Int? = totalBillableCharacters
+}

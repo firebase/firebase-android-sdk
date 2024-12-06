@@ -13,10 +13,6 @@
 // limitations under the License.
 
 buildscript {
-    // TODO: remove once all sdks have migrated to version catalog
-    ext.kotlinVersion = libs.versions.kotlin.get()
-    ext.coroutinesVersion = libs.versions.coroutines.get()
-
     repositories {
         google()
         mavenCentral()
@@ -29,34 +25,23 @@ buildscript {
                 artifact()
             }
         }
-
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
 
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.4'
-        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.3.0'
-        classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9'
+        classpath 'net.ltgt.gradle:gradle-errorprone-plugin:3.1.0'
         classpath 'com.google.gms:google-services:4.3.15'
-        classpath "com.ncorti.ktfmt.gradle:plugin:0.11.0"
-        classpath 'com.google.firebase:firebase-appdistribution-gradle:3.0.2'
+        classpath 'com.google.firebase:firebase-appdistribution-gradle:5.0.0'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.5'
+        classpath libs.spotless.plugin.gradle
     }
 }
 
 apply from: 'sdkProperties.gradle'
 apply from: "gradle/errorProne.gradle"
-
-ext {
-    // TODO: remove once all sdks have migrated to version catalog
-    googleTruthVersion = libs.versions.truth.get()
-    grpcVersion = libs.versions.grpc.get()
-    robolectricVersion = libs.versions.robolectric.get()
-    androidxTestCoreVersion = libs.versions.androidx.test.core.get()
-    androidxTestJUnitVersion = libs.versions.androidx.test.junit.get()
-    protocVersion = libs.versions.protoc.get()
-    javaliteVersion = libs.versions.javalite.get()
-    protobufJavaUtilVersion = libs.versions.protobufjavautil.get()
-}
 
 apply plugin: com.google.firebase.gradle.plugins.PublishingPlugin
 
@@ -69,10 +54,6 @@ firebaseContinuousIntegration {
             /.*\/.*.md$/,
             /.*\.github.*/,
     ]
-}
-
-if(JavaVersion.current() != JavaVersion.VERSION_11){
-    throw new GradleException("This build must be run with java 11. You're using ${JavaVersion.current()}.")
 }
 
 configure(subprojects) {
@@ -88,10 +69,22 @@ configure(subprojects) {
         }
     }
 
-    apply plugin: "com.ncorti.ktfmt.gradle"
+    apply plugin: "com.diffplug.spotless"
 
-    ktfmt {
-        googleStyle()
+    spotless {
+        java {
+            target 'src/**/*.java'
+            targetExclude '**/test/resources/**'
+            googleJavaFormat('1.22.0').reorderImports(true).skipJavadocFormatting()
+        }
+        kotlin {
+            target 'src/**/*.kt'
+            ktfmt('0.41').googleStyle()
+        }
+        kotlinGradle {
+            target('*.gradle.kts') // default target for kotlinGradle
+            ktfmt('0.41').googleStyle()
+        }
     }
 }
 

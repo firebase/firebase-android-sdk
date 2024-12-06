@@ -75,7 +75,7 @@ abstract class PomValidator : DefaultTask() {
   data class DependencyDiff(
     val artifactId: String,
     val oldVersion: ModuleVersion,
-    val currentVersion: ModuleVersion
+    val currentVersion: ModuleVersion,
   )
 
   fun diffWithPomFromURL(url: String): String {
@@ -101,6 +101,7 @@ abstract class PomValidator : DefaultTask() {
       listOf(
         "javax.inject", // javax.inject doesn't respect SemVer and doesn't update
         "dagger", // dagger doesn't respect Semver
+        "listenablefuture", // guava's listenable future doesn't respect Semver
         "auto-service-annotations", // auto-service-annotations doesn't respect SemVer
       )
   }

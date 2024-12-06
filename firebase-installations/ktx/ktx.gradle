@@ -18,14 +18,16 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "installations"
+    libraryGroup = "installations"
     publishJavadoc = false
-    publishSources = true
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
     namespace "com.google.firebase.installations.ktx"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         multiDexEnabled true
@@ -38,19 +40,22 @@ android {
         test.java.srcDirs += 'src/test/kotlin'
         androidTest.java.srcDirs += 'src/androidTest/kotlin'
     }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
     testOptions.unitTests.includeAndroidResources = true
 }
 
 dependencies {
-    api("com.google.firebase:firebase-common:20.4.2")
-    api("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
     api(project(":firebase-installations"))
+    api("com.google.firebase:firebase-common:21.0.0")
+    api("com.google.firebase:firebase-common-ktx:21.0.0")
     api("com.google.firebase:firebase-installations-interop:17.1.1")
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
+
+    implementation("com.google.firebase:firebase-components:18.0.0")
+
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.13'
+    testImplementation libs.robolectric
 }

@@ -1,6 +1,43 @@
 # Unreleased
+
+
+# 25.0.1
+* [changed] Updated protobuf dependency to `3.25.5` to fix
+  [CVE-2024-7254](https://nvd.nist.gov/vuln/detail/CVE-2024-7254).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
+
+# 25.0.0
+* [changed] Bump internal dependencies
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.2.3
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.2.2
 * [fixed] Fixed `SecurityException` where the `RECEIVER_EXPORTED` or `RECEIVER_NOT_EXPORTED` flag should be 
   specified when registerReceiver is being used. [#5597](https://github.com/firebase/firebase-android-sdk/pull/5597)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.2.1
 * [changed] Internal infrastructure improvements.

@@ -86,19 +86,41 @@ public class FirestoreChannel {
       CredentialsProvider<String> appCheckProvider,
       DatabaseInfo databaseInfo,
       GrpcMetadataProvider metadataProvider) {
+    this(
+        asyncQueue,
+        authProvider,
+        appCheckProvider,
+        databaseInfo.getDatabaseId(),
+        metadataProvider,
+        getGrpcCallProvider(asyncQueue, context, authProvider, appCheckProvider, databaseInfo));
+  }
+
+  FirestoreChannel(
+      AsyncQueue asyncQueue,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
+      DatabaseId databaseId,
+      GrpcMetadataProvider metadataProvider,
+      GrpcCallProvider grpcCallProvider) {
     this.asyncQueue = asyncQueue;
     this.metadataProvider = metadataProvider;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
-
-    FirestoreCallCredentials firestoreHeaders =
-        new FirestoreCallCredentials(authProvider, appCheckProvider);
-    this.callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
-
-    DatabaseId databaseId = databaseInfo.getDatabaseId();
+    this.callProvider = grpcCallProvider;
     this.resourcePrefixValue =
         String.format(
             "projects/%s/databases/%s", databaseId.getProjectId(), databaseId.getDatabaseId());
+  }
+
+  private static GrpcCallProvider getGrpcCallProvider(
+      AsyncQueue asyncQueue,
+      Context context,
+      CredentialsProvider<User> authProvider,
+      CredentialsProvider<String> appCheckProvider,
+      DatabaseInfo databaseInfo) {
+    FirestoreCallCredentials firestoreHeaders =
+        new FirestoreCallCredentials(authProvider, appCheckProvider);
+    return new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
   }
 
   /**
