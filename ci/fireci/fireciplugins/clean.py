@@ -18,7 +18,7 @@ import logging
 from fireci import ci_command
 from fireci import ci_utils
 from fireci import dir_utils
-from typing import Tuple
+from typing import Tuple, List, Callable, Union
 from termcolor import colored
 
 log = logging.getLogger('fireci.clean')
@@ -95,8 +95,8 @@ def clean(projects, gradle, build, transforms, build_cache, deep, cache):
   """)
 
 
-def call_and_sum(variables, func) -> Tuple[int, int]:
-  results = map(lambda var: func(var), variables)
+def call_and_sum(variables: List[str], func: Callable[[str], Union[bool, int]]) -> Tuple[int, int]:
+  results = list(map(lambda var: func(var), variables))
   return ci_utils.counts(results)
 
 def delete_build(dir: str) -> bool:
