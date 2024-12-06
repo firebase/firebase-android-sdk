@@ -26,6 +26,11 @@ spotless = "7.0.0.BETA3"
 androidx-test-core="1.5.0"
 androidx-test-junit="1.1.5"
 androidx-test-truth = "1.5.0"
+kotlinGradlePlugin = "1.9.24"
+coreKtx = "1.15.0"
+espressoCore = "3.6.1"
+appcompat = "1.7.0"
+material = "1.12.0"
 
 [libraries]
 android-gradlePlugin-gradle = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
@@ -109,6 +114,11 @@ turbine = { module = "app.cash.turbine:turbine", version = "1.0.0" }
 # Do not use three-ten-abp in production code (it's only for tests) because it has performance
 # issues.
 testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.7" }
+kotlin-gradle-plugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlinGradlePlugin" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]

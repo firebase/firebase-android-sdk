@@ -17,17 +17,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   xmlns:tools="http://schemas.android.com/tools">
 
+
   <application
     android:icon="@mipmap/ic_launcher"
     android:label="@string/app_name"
-    android:name=".TestApplication"
+    android:name="com.google.firebase.testing.crashlytics.TestApplication"
     android:supportsRtl="true"
     android:theme="@style/Theme.Widget_test_app"
     tools:targetApi="31">
     <activity
       android:exported="true"
       android:label="@string/app_name"
-      android:name=".MainActivity"
+      android:name="com.google.firebase.testing.crashlytics.MainActivity"
       android:process=":main"
       android:theme="@style/Theme.Widget_test_app.NoActionBar">
       <intent-filter>
@@ -39,7 +40,7 @@
     <activity
       android:exported="true"
       android:label="@string/app_name"
-      android:name=".SecondActivity"
+      android:name="com.google.firebase.testing.crashlytics.SecondActivity"
       android:process=":second"
       android:theme="@style/Theme.Widget_test_app.NoActionBar" />
 
@@ -53,7 +54,7 @@
 
     <receiver
       android:exported="false"
-      android:name="CrashWidgetProvider"
+      android:name="com.google.firebase.testing.crashlytics.CrashWidgetProvider"
       android:process=":widgetProcess">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -63,13 +64,13 @@
         android:resource="@xml/homescreen_widget" />
     </receiver>
 
-    <receiver android:name=".CrashBroadcastReceiver" />
+    <receiver android:name="com.google.firebase.testing.crashlytics.CrashBroadcastReceiver" />
 
     <service
       android:enabled="true"
       android:exported="false"
       android:foregroundServiceType="shortService"
-      android:name=".ForegroundService"
+      android:name="com.google.firebase.testing.crashlytics.ForegroundService"
       android:process=":foregroundServiceProcess" />
 
   </application>

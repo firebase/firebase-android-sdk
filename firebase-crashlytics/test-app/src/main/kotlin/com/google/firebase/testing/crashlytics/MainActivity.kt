@@ -17,7 +17,9 @@
 package com.google.firebase.testing.crashlytics
 
 import android.os.Bundle
-import com.google.firebase.testing.crashlytics.databinding.ActivityMainBinding
+import com.example.test_app.databinding.ActivityMainBinding
+// Refactoring needed
+//import com.google.firebase.testing.crashlytics.databinding.ActivityMainBinding
 
 class MainActivity : BaseActivity() {
 

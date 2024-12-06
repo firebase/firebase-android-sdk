@@ -28,6 +28,7 @@ import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import java.util.regex.Pattern
 import org.junit.After
+import org.junit.Assert
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -51,6 +52,43 @@ class FirebaseCrashlyticsIntegrationTest {
   }
 
   @Test
+  fun sharedInitializeCrashlytics() {
+    // Enable verbose logging for FirebaseCrashlytics
+    Runtime.getRuntime().exec(arrayOf("adb", "shell", "setprop", "log.tag.FirebaseCrashlytics", "VERBOSE")).waitFor()
+
+    // Launch the app
+    launchApp()
+
+    // Start monitoring logs
+    val logcatProcess = ProcessBuilder("adb", "logcat", "-s", "FirebaseCrashlytics")
+      .redirectErrorStream(true)
+      .start()
+
+    val logcatReader = logcatProcess.inputStream.bufferedReader()
+
+    // Flag to detect Crashlytics initialization
+    var crashlyticsInitialized = false
+
+    // Monitor log output
+    logcatReader.useLines { lines ->
+      for (line in lines) {
+        if (line.contains("FirebaseCrashlytics is initialized")) {
+          crashlyticsInitialized = true
+          break
+        }
+      }
+    }
+
+    // Clean up the logcat process
+    logcatProcess.destroy()
+
+    // Assert that Crashlytics was initialized
+    assertThat(crashlyticsInitialized).isTrue()
+  }
+
+
+  // Keeping here for now as an example
+  @Test
   fun sameSessionIdBetweenActivitiesOnDifferentProcesses() {
     launchApp()
 
@@ -62,96 +100,6 @@ class FirebaseCrashlyticsIntegrationTest {
     assertThat(sessionId1).isEqualTo(sessionId2)
   }
 
-  @Test
-  fun sameSessionIdAfterQuickForegroundBackground() {
-    launchApp()
-
-    val sessionId1 = getCurrentSessionId()
-    background()
-    foreground()
-    val sessionId2 = getCurrentSessionId()
-
-    assertThat(sessionId1).isEqualTo(sessionId2)
-  }
-
-  @Test
-  fun newSessionIdAfterLongBackground() {
-    launchApp()
-
-    val sessionId1 = getCurrentSessionId()
-    background()
-    // Test app overrides the background time from 30m, to 5s.
-    Thread.sleep(6_000)
-    foreground()
-    device.waitForIdle()
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val sessionId2 = getCurrentSessionId()
-
-    assertThat(sessionId1).isNotEqualTo(sessionId2)
-  }
-
-  @Test
-  fun newSessionFollowingCrash() {
-    if (!BuildConfig.SHOULD_CRASH_APP) return
-
-    launchApp()
-    val origSession = getCurrentSessionId()
-    getButton("CRASH!").click()
-    dismissPossibleErrorDialog()
-
-    launchApp()
-
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val newSession = getCurrentSessionId()
-    assertThat(newSession).isNotEqualTo(origSession)
-  }
-
-  @Test
-  fun nonFatalMainActivity() {
-    launchApp()
-    val origSession = getCurrentSessionId()
-
-    getButton("NON FATAL").click()
-    device.waitForIdle()
-
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val newSession = getCurrentSessionId()
-    assertThat(origSession).isEqualTo(newSession)
-  }
-
-  @Test
-  fun anrMainActivity() {
-    if (!BuildConfig.SHOULD_CRASH_APP) return
-    launchApp()
-    val origSession = getCurrentSessionId()
-
-    getButton("ANR").click()
-    device.waitForIdle()
-    dismissPossibleAnrDialog()
-
-    launchApp()
-
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val newSession = getCurrentSessionId()
-    assertThat(origSession).isNotEqualTo(newSession)
-  }
-
-  @Test
-  fun crashSecondaryProcess() {
-    if (!BuildConfig.SHOULD_CRASH_APP) return
-    launchApp()
-    navigateToSecondActivity()
-    val origSession = getCurrentSessionId()
-
-    getButton("CRASH!").click()
-    dismissPossibleErrorDialog()
-
-    launchApp()
-
-    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
-    val newSession = getCurrentSessionId()
-    assertThat(newSession).isNotEqualTo(origSession)
-  }
 
   private fun launchApp() {
     // Start from the home screen

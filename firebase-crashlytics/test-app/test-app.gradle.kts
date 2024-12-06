@@ -24,7 +24,6 @@ plugins {
   id("org.jetbrains.kotlin.android")
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
-  id("com.google.firebase.firebase-perf")
   id("copy-google-services")
 }
 
@@ -74,13 +73,14 @@ dependencies {
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
   implementation("androidx.core:core-ktx:1.7.0")
   implementation("androidx.multidex:multidex:2.0.1")
-  implementation("androidx.navigation:navigation-fragment-ktx:2.4.1")
-  implementation("androidx.navigation:navigation-ui-ktx:2.4.1")
   implementation("com.google.android.material:material:1.9.0")
   implementation(libs.androidx.core)
 
   androidTestImplementation("com.google.firebase:firebase-common:21.0.0")
   androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
+  implementation("androidx.navigation:navigation-fragment-ktx:2.6.0")
+  implementation("androidx.navigation:navigation-ui-ktx:2.6.0")
+  implementation("com.google.firebase:firebase-common-ktx:21.0.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)

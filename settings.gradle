@@ -27,3 +27,4 @@ discoverSubprojects(file('subprojects.cfg')).each {
 }
 
 renameBuildScripts(rootProject)
+include ':firebase-crashlytics:test-app'
