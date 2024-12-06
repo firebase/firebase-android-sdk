@@ -47,14 +47,13 @@ def rmdir(path: str) -> bool:
 
 def rmglob(pattern: str) -> int:
   """Deletes all files that match a given pattern, and returns the amount of (root) files deleted"""
-  files = 0
-  for file in glob.glob(os.path.expanduser(pattern)):
+  files = glob.glob(os.path.expanduser(pattern))
+  for file in files:
     path = pathlib.Path(file)
     if path.is_dir():
       rmdir(file)
     else:
       _logger.debug(f"Deleting file: {path}")
       os.remove(path)
-    files += 1
-
-  return files
+  
+  return len(files)

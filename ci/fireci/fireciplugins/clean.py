@@ -18,6 +18,8 @@ import logging
 from fireci import ci_command
 from fireci import ci_utils
 from fireci import dir_utils
+from typing import Tuple
+from termcolor import colored
 
 log = logging.getLogger('fireci.clean')
 
@@ -63,10 +65,10 @@ def clean(projects, gradle, build, transforms, build_cache, deep, cache):
   if build:
     cleaners.append(delete_build)
   if gradle:
-    cleaners.append(delete_build)
+    cleaners.append(delete_gradle)
 
   results = [call_and_sum(projects, cleaner) for cleaner in cleaners]
-  delete_count = sum(map(int, results))
+  local_count = tuple(map(sum, zip(*results)))
 
   cleaners = []
 
@@ -81,13 +83,21 @@ def clean(projects, gradle, build, transforms, build_cache, deep, cache):
       cleaners.append(delete_build_cache)
 
   results = [cleaner() for cleaner in cleaners]
-  delete_count += sum(map(int, results))
+  system_count = ci_utils.counts(results)
 
-  log.info(f"Deleted {delete_count} directories/files")
+  [deleted, skipped] = tuple(a + b for a, b in zip(local_count, system_count))
 
-def call_and_sum(variables, func) -> int:
+  log.info(f"""
+  Clean results:
+
+    {colored("Deleted:", None, attrs=["bold"])} {colored(deleted, "red")}
+    {colored("Already deleted:", None, attrs=["bold"])} {colored(skipped, "grey")}
+  """)
+
+
+def call_and_sum(variables, func) -> Tuple[int, int]:
   results = map(lambda var: func(var), variables)
-  return sum(map(int, results))
+  return ci_utils.counts(results)
 
 def delete_build(dir: str) -> bool:
   return dir_utils.rmdir(f"{dir}/build")
