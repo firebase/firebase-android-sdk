@@ -21,4 +21,3 @@ local.properties
 
 *.log
 *.hprof
-/dataConnectGeneratedSources/
