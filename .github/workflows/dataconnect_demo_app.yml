@@ -42,7 +42,7 @@ jobs:
 
       - name: Create Cache Key Files
         run: |
-          echo "x366vcw7mg" >github_actions_demo_test_cache_key.txt
+          echo "gmagjr2b9d" >github_actions_demo_test_cache_key.txt
           echo "${{ env.FDC_FIREBASE_TOOLS_VERSION }}" >github_actions_demo_assemble_firebase_tools_version.txt
 
       - uses: actions/setup-node@v3
@@ -57,7 +57,7 @@ jobs:
         id: package_json_lock
         uses: actions/cache@v4
         with:
-          path: firebase-dataconnect/demo/firebase-tools/package*.json
+          path: ${{ env.FDC_FIREBASE_TOOLS_DIR }}/package*.json
           key: firebase_tools_package_json-${{ env.FDC_FIREBASE_TOOLS_VERSION }}
 
       - name: install firebase-tools from scratch
@@ -72,7 +72,7 @@ jobs:
       - name: install firebase-tools from package-lock.json
         if: steps.package_json_lock.outputs.cache-hit == 'true'
         run: |
-          cd firebase-tools
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
           npm ci --fund=false --audit=false 
 
       - uses: actions/setup-java@v4
@@ -96,7 +96,6 @@ jobs:
           javac -version
           which node
           node --version
-          which firebase
           ${{ env.FDC_FIREBASE_COMMAND }} --version
           ./gradlew --version
 
