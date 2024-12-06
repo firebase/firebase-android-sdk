@@ -4,7 +4,7 @@ This directory contains tooling used to run Continuous Integration tasks.
 
 ## Prerequisites
 
-- Requires python3.5+ and setuptools to be installed.
+- Requires python3.9+ and setuptools to be installed.
 
 ## Setup
 
