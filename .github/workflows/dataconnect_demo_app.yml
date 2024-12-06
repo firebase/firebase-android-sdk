@@ -107,7 +107,7 @@ jobs:
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           --profile \
-          -PdataConnect.minimalApp.firebaseCommand="${{ env.FDC_FIREBASE_COMMAND }} \
+          -PdataConnect.minimalApp.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
           assemble test
 
       - uses: actions/upload-artifact@v4
