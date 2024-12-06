@@ -313,9 +313,9 @@ public class CrashlyticsCore {
    * Throwable was thrown. The Throwable will always be processed on a background thread, so it is
    * safe to invoke this method from the main thread.
    */
-  public void logException(@NonNull Throwable throwable) {
+  public void logException(@NonNull Throwable throwable, @NonNull Map<String, String> eventKeys) {
     crashlyticsWorkers.common.submit(
-        () -> controller.writeNonFatalException(Thread.currentThread(), throwable));
+        () -> controller.writeNonFatalException(Thread.currentThread(), throwable, eventKeys));
   }
 
   /**

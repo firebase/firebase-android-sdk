@@ -43,6 +43,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -208,7 +209,31 @@ public class FirebaseCrashlytics {
       Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
       return;
     }
-    core.logException(throwable);
+
+    core.logException(throwable, Map.of());
+  }
+
+  /**
+   * Records a non-fatal report to send to Crashlytics.
+   *
+   * <p>Combined with app level custom keys, the event is restricted to a maximum of 64 key/value
+   * pairs. New keys beyond that limit are ignored. Keys or values that exceed 1024 characters are
+   * truncated.
+   *
+   * <p>The values of event keys override the values of app level custom keys if they're identical.
+   *
+   * @param throwable a {@link Throwable} to be recorded as a non-fatal event.
+   * @param keysAndValues A dictionary of keys and the values to associate with the non fatal
+   *                      exception, in addition to the app level custom keys.
+   */
+  public void recordException(
+      @NonNull Throwable throwable, @NonNull CustomKeysAndValues keysAndValues) {
+    if (throwable == null) { // Users could call this with null despite the annotation.
+      Logger.getLogger().w("A null value was passed to recordException. Ignoring.");
+      return;
+    }
+
+    core.logException(throwable, keysAndValues.keysAndValues);
   }
 
   /**

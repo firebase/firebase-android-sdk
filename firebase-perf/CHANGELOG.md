@@ -1,6 +1,15 @@
 # Unreleased
 
 
+# 21.0.3
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.0.2
 * [fixed] Fixed `IllegalStateException` that happened when starting a trace
   before Firebase initializes.
