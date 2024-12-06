@@ -20,7 +20,7 @@ env:
   FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '13.25.0' }}
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
-  FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/bin/node_modules/.bin/firebase
+  FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
 
 defaults:
   run:
