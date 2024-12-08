@@ -19,6 +19,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.functions.FirebaseFunctions.Companion.getInstance
 import junit.framework.TestCase.assertEquals
+import okhttp3.OkHttpClient
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -89,6 +90,17 @@ class FirebaseFunctionsTest {
     functions1.useEmulator("10.0.2.2", 5001)
     val functions2 = getInstance(app)
     assertEquals(functions1.getURL("foo").toString(), functions2.getURL("foo").toString())
+  }
+
+  @Test
+  fun testSetOkHttpClient() {
+    val client = OkHttpClient.Builder().build()
+    val app = getApp("testSetOkHttpClient")
+    val functions = getInstance(app)
+
+    functions.setOkHttpClient(client)
+
+    assertEquals(client, functions.getOkHttpClient())
   }
 
   private fun getApp(name: String): FirebaseApp {
