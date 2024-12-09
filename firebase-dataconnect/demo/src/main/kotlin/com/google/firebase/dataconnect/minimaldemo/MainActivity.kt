@@ -22,7 +22,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.google.firebase.dataconnect.minimaldemo.MainActivityViewModel.State.OperationState
+import com.google.firebase.dataconnect.minimaldemo.MainActivityViewModel.OperationState
 import com.google.firebase.dataconnect.minimaldemo.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -47,7 +47,9 @@ class MainActivity : AppCompatActivity() {
     viewBinding.debugLoggingCheckBox.setOnCheckedChangeListener(debugLoggingOnCheckedChangeListener)
 
     lifecycleScope.launch {
-      viewModel.state.flowWithLifecycle(lifecycle).collectLatest(::collectViewModelState)
+      viewModel.stateSequenceNumber.flowWithLifecycle(lifecycle).collectLatest {
+        onViewModelStateChange()
+      }
     }
   }
 
@@ -59,13 +61,13 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
-  private fun collectViewModelState(state: MainActivityViewModel.State) {
-    viewBinding.progressText.text = state.progressText
-    viewBinding.insertItemButton.isEnabled = !state.isInsertOperationInProgress
+  private fun onViewModelStateChange() {
+    viewBinding.progressText.text = viewModel.progressText
+    viewBinding.insertItemButton.isEnabled = !viewModel.isInsertOperationInProgress
     viewBinding.getItemButton.isEnabled =
-      state.isGetOperationRunnable && !state.isGetOperationInProgress
+      viewModel.isGetOperationRunnable && !viewModel.isGetOperationInProgress
     viewBinding.deleteItemButton.isEnabled =
-      state.isDeleteOperationRunnable && !state.isDeleteOperationInProgress
+      viewModel.isDeleteOperationRunnable && !viewModel.isDeleteOperationInProgress
   }
 
   private val debugLoggingOnCheckedChangeListener = OnCheckedChangeListener { _, isChecked ->
@@ -86,27 +88,28 @@ class MainActivity : AppCompatActivity() {
 
   companion object {
 
-    private val MainActivityViewModel.State.isInsertOperationInProgress: Boolean
-      get() = insertItem is OperationState.InProgress
+    private val MainActivityViewModel.isInsertOperationInProgress: Boolean
+      get() = insertState is OperationState.InProgress
 
-    private val MainActivityViewModel.State.isGetOperationInProgress: Boolean
-      get() = getItem is OperationState.InProgress
+    private val MainActivityViewModel.isGetOperationInProgress: Boolean
+      get() = getState is OperationState.InProgress
 
-    private val MainActivityViewModel.State.isGetOperationRunnable: Boolean
+    private val MainActivityViewModel.isDeleteOperationInProgress: Boolean
+      get() = deleteState is OperationState.InProgress
+
+    private val MainActivityViewModel.isGetOperationRunnable: Boolean
       get() = lastInsertedKey !== null
 
-    private val MainActivityViewModel.State.isDeleteOperationInProgress: Boolean
-      get() = deleteItem is OperationState.InProgress
-
-    private val MainActivityViewModel.State.isDeleteOperationRunnable: Boolean
+    private val MainActivityViewModel.isDeleteOperationRunnable: Boolean
       get() = lastInsertedKey !== null
 
-    private val MainActivityViewModel.State.progressText: String?
+    private val MainActivityViewModel.progressText: String?
       get() {
-        val insertState = insertItem as? OperationState.SequencedOperationState
-        val getState = getItem as? OperationState.SequencedOperationState
-        val deleteState = deleteItem as? OperationState.SequencedOperationState
-
+        // Save properties to local variables to enable Kotlin's type narrowing in the "if" blocks
+        // below.
+        val insertState = insertState
+        val getState = getState
+        val deleteState = deleteState
         val state =
           listOfNotNull(insertState, getState, deleteState).maxByOrNull { it.sequenceNumber }
 
