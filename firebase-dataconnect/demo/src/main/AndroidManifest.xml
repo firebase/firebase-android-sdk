@@ -16,13 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <application
         android:name=".MyApplication"
         android:label="Data Connect Minimal Demo"
-        android:theme="@style/Theme.AppCompat.NoActionBar"
+        android:theme="@style/Theme.AppCompat"
         >
 
         <activity android:name=".MainActivity" android:exported="true">
@@ -31,6 +30,11 @@ limitations under the License.
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ListItemsActivity"
+            android:label="List Items"
+            />
 
     </application>
 
