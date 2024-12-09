@@ -24,7 +24,6 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFiel
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.APP_VERSION;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.COUNTRY_CODE;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.CUSTOM_SIGNALS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.FIRST_OPEN_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.INSTANCE_ID_TOKEN;
@@ -86,10 +85,6 @@ public class ConfigFetchHttpClientTest {
       "etag-" + PROJECT_NUMBER + "-" + DEFAULT_NAMESPACE + "-fetch-%d";
   private static final String FIRST_ETAG = String.format(ETAG_FORMAT, 1);
   private static final String SECOND_ETAG = String.format(ETAG_FORMAT, 2);
-  private static final Map<String, String> SAMPLE_CUSTOM_SIGNALS =
-      ImmutableMap.of(
-          "subscription", "premium",
-          "age", "20");
 
   private Context context;
   private ConfigFetchHttpClient configFetchHttpClient;
@@ -110,8 +105,7 @@ public class ConfigFetchHttpClientTest {
             API_KEY,
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 10L,
-            /* readTimeoutInSeconds= */ 10L,
-            /* customSignals= */ SAMPLE_CUSTOM_SIGNALS);
+            /* readTimeoutInSeconds= */ 10L);
 
     hasChangeResponseBody =
         new JSONObject()
@@ -244,8 +238,6 @@ public class ConfigFetchHttpClientTest {
     assertThat(requestBody.get(FIRST_OPEN_TIME)).isEqualTo(firstOpenTimeIsoString);
     assertThat(requestBody.getJSONObject(ANALYTICS_USER_PROPERTIES).toString())
         .isEqualTo(new JSONObject(customUserProperties).toString());
-    assertThat(requestBody.getJSONObject(CUSTOM_SIGNALS).toString())
-        .isEqualTo(new JSONObject(SAMPLE_CUSTOM_SIGNALS).toString());
   }
 
   @Test
@@ -324,8 +316,7 @@ public class ConfigFetchHttpClientTest {
             API_KEY,
             DEFAULT_NAMESPACE,
             /* connectTimeoutInSeconds= */ 15L,
-            /* readTimeoutInSeconds= */ 20L,
-            /* customSignals= */ SAMPLE_CUSTOM_SIGNALS);
+            /* readTimeoutInSeconds= */ 20L);
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
     fetch(FIRST_ETAG);
@@ -353,7 +344,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        /* currentTime= */ new Date(mockClock.currentTimeMillis()));
+        /* currentTime= */ new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> userProperties, Long firstOpenTime)
@@ -366,7 +358,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
         firstOpenTime,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> customHeaders) throws Exception {
@@ -378,7 +371,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         customHeaders,
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetchWithoutInstallationId() throws Exception {
@@ -390,7 +384,8 @@ public class ConfigFetchHttpClientTest {
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private FetchResponse fetchWithoutInstallationAuthToken() throws Exception {
@@ -402,7 +397,8 @@ public class ConfigFetchHttpClientTest {
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        /* customSignals= */ ImmutableMap.of());
   }
 
   private void setServerResponseTo(JSONObject requestBody, String eTag) {
