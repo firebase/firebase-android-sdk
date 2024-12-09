@@ -49,6 +49,12 @@ query GetItemByKey(
   }
 }
 
+mutation DeleteItemByKey(
+  $key: zwda6x9zyy_Key!
+) @auth(level: PUBLIC) {
+  zwda6x9zyy_delete(key: $key)
+}
+
 # This mutation exists only as a workaround for b/382688278 where the following
 # compiler error will otherwise result when compiling the generated code:
 #   Serializer has not been found for type 'java.util.UUID'. To use context

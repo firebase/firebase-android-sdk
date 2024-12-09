@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.google.firebase.dataconnect.minimaldemo.connector.DeleteItemByKeyMutation
 import com.google.firebase.dataconnect.minimaldemo.connector.GetItemByKeyQuery
 import com.google.firebase.dataconnect.minimaldemo.connector.InsertItemMutation
 import com.google.firebase.dataconnect.minimaldemo.connector.Zwda6x9zyyKey
@@ -33,6 +34,7 @@ import java.util.Objects
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -46,6 +48,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
       State(
         insertItem = State.OperationState.New,
         getItem = State.OperationState.New,
+        deleteItem = State.OperationState.New,
         lastInsertedKey = null,
         nextSequenceNumber = 19999000,
       )
@@ -180,41 +183,84 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
     return true
   }
 
+  fun deleteItem() {
+    while (true) {
+      if (tryDeleteItem()) {
+        break
+      }
+    }
+  }
+
+  private fun tryDeleteItem(): Boolean {
+    val oldState = _state.value
+
+    // If there is no previous successful "insert" operation, then we don't know any ID's to delete,
+    // so just do nothing.
+    val key: Zwda6x9zyyKey = oldState.lastInsertedKey ?: return true
+
+    // If there is already a "delete" in progress, then just return and let the in-progress
+    // operation finish.
+    when (oldState.deleteItem) {
+      is State.OperationState.InProgress -> return true
+      is State.OperationState.New,
+      is State.OperationState.Completed -> Unit
+    }
+
+    // Create a new coroutine to perform the "delete" operation, but don't start it yet by
+    // specifying start=CoroutineStart.LAZY because we won't start it until the state is
+    // successfully set.
+    val newDeleteJob: Deferred<Unit> =
+      viewModelScope.async(start = CoroutineStart.LAZY) {
+        app.getConnector().deleteItemByKey.execute(key)
+      }
+
+    // Update the state and start the coroutine if it is successfully set.
+    val deleteItemOperationInProgressState =
+      State.OperationState.InProgress(oldState.nextSequenceNumber, key, newDeleteJob)
+    val newState = oldState.withDeleteInProgress(deleteItemOperationInProgressState)
+    if (!_state.compareAndSet(oldState, newState)) {
+      return false
+    }
+
+    // Actually start the coroutine now that the state has been set.
+    Log.i(TAG, "Deleting item with key: $key")
+    newState.startDelete(deleteItemOperationInProgressState)
+    return true
+  }
+
   @OptIn(ExperimentalCoroutinesApi::class)
-  private fun State.startGet(
-    getItemOperationInProgressState:
-      State.OperationState.InProgress<Zwda6x9zyyKey, GetItemByKeyQuery.Data.Item?>
+  private fun State.startDelete(
+    deleteItemOperationInProgressState: State.OperationState.InProgress<Zwda6x9zyyKey, Unit>
   ) {
-    require(getItemOperationInProgressState === getItem)
-    val job: Deferred<GetItemByKeyQuery.Data.Item?> = getItemOperationInProgressState.job
-    val key: Zwda6x9zyyKey = getItemOperationInProgressState.variables
+    require(deleteItemOperationInProgressState === deleteItem)
+    val job: Job = deleteItemOperationInProgressState.job
+    val key: Zwda6x9zyyKey = deleteItemOperationInProgressState.variables
 
     job.start()
 
     job.invokeOnCompletion { exception ->
       val result =
         if (exception !== null) {
-          Log.w(TAG, "WARNING: Getting item with key $key FAILED: $exception", exception)
+          Log.w(TAG, "WARNING: Deleting item with key $key FAILED: $exception", exception)
           Result.failure(exception)
         } else {
-          val item = job.getCompleted()
-          Log.i(TAG, "Got item with key $key: $item")
-          Result.success(item)
+          Log.i(TAG, "Deleted item with key $key")
+          Result.success(Unit)
         }
 
       while (true) {
         val oldState = _state.value
-        if (oldState.getItem !== getItemOperationInProgressState) {
+        if (oldState.deleteItem !== deleteItemOperationInProgressState) {
           break
         }
 
-        val getItemOperationCompletedState =
+        val deleteItemOperationCompletedState =
           State.OperationState.Completed(
             oldState.nextSequenceNumber,
-            getItemOperationInProgressState.variables,
+            deleteItemOperationInProgressState.variables,
             result,
           )
-        val newState = oldState.withGetCompleted(getItemOperationCompletedState)
+        val newState = oldState.withDeleteCompleted(deleteItemOperationCompletedState)
         if (_state.compareAndSet(oldState, newState)) {
           break
         }
@@ -226,6 +272,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
   class State(
     val insertItem: OperationState<InsertItemMutation.Variables, Zwda6x9zyyKey>,
     val getItem: OperationState<Zwda6x9zyyKey, GetItemByKeyQuery.Data.Item?>,
+    val deleteItem: OperationState<Zwda6x9zyyKey, Unit>,
     val lastInsertedKey: Zwda6x9zyyKey?,
     val nextSequenceNumber: Long,
   ) {
@@ -236,6 +283,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
       State(
         insertItem = insertItem,
         getItem = getItem,
+        deleteItem = deleteItem,
         lastInsertedKey = lastInsertedKey,
         nextSequenceNumber = nextSequenceNumber + 1,
       )
@@ -246,6 +294,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
       State(
         insertItem = insertItem,
         getItem = getItem,
+        deleteItem = deleteItem,
         lastInsertedKey = insertItem.result.getOrNull() ?: lastInsertedKey,
         nextSequenceNumber = nextSequenceNumber + 1,
       )
@@ -256,6 +305,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
       State(
         insertItem = insertItem,
         getItem = getItem,
+        deleteItem = deleteItem,
         lastInsertedKey = lastInsertedKey,
         nextSequenceNumber = nextSequenceNumber + 1,
       )
@@ -266,6 +316,29 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
       State(
         insertItem = insertItem,
         getItem = getItem,
+        deleteItem = deleteItem,
+        lastInsertedKey = lastInsertedKey,
+        nextSequenceNumber = nextSequenceNumber + 1,
+      )
+
+    fun withDeleteInProgress(
+      deleteItem: OperationState.InProgress<Zwda6x9zyyKey, Unit>
+    ): State =
+      State(
+        insertItem = insertItem,
+        getItem = getItem,
+        deleteItem = deleteItem,
+        lastInsertedKey = lastInsertedKey,
+        nextSequenceNumber = nextSequenceNumber + 1,
+      )
+
+    fun withDeleteCompleted(
+      deleteItem: OperationState.Completed<Zwda6x9zyyKey, Unit>
+    ): State =
+      State(
+        insertItem = insertItem,
+        getItem = getItem,
+        deleteItem = deleteItem,
         lastInsertedKey = lastInsertedKey,
         nextSequenceNumber = nextSequenceNumber + 1,
       )
@@ -276,6 +349,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
       other is State &&
         insertItem == other.insertItem &&
         getItem == other.getItem &&
+        deleteItem == other.deleteItem &&
         lastInsertedKey == other.lastInsertedKey &&
         nextSequenceNumber == other.nextSequenceNumber
 
@@ -283,6 +357,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
       "State(" +
         "insertItem=$insertItem, " +
         "getItem=$getItem, " +
+        "deleteItem=$deleteItem, " +
         "lastInsertedKey=$lastInsertedKey, " +
         "sequenceNumber=$nextSequenceNumber)"
 
