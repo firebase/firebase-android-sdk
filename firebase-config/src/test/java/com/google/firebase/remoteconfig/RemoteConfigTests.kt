@@ -17,6 +17,7 @@
 package com.google.firebase.remoteconfig
 
 import androidx.test.core.app.ApplicationProvider
+import com.google.common.collect.ImmutableMap
 import com.google.common.truth.Truth.assertThat
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.Firebase
@@ -146,6 +147,60 @@ class ConfigTests : BaseTestCase() {
 
     `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
     assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
+  }
+
+  @Test
+  fun `Custom Signals builder put string`() {
+    val customSignals = customSignals {
+      put("key1", "value1")
+      put("key2", "value2")
+    }
+    val expectedSignals = ImmutableMap.of("key1", "value1", "key2", "value2")
+    assertThat(customSignals.customSignals).isEqualTo(expectedSignals)
+  }
+
+  @Test
+  fun `Custom Signals builder put long`() {
+    val customSignals = customSignals {
+      put("key1", 123L)
+      put("key2", 456L)
+    }
+    val expectedSignals = ImmutableMap.of("key1", "123", "key2", "456")
+    assertThat(customSignals.customSignals).isEqualTo(expectedSignals)
+  }
+
+  @Test
+  fun `Custom Signals builder put double`() {
+    val customSignals = customSignals {
+      put("key1", 12.34)
+      put("key2", 56.78)
+    }
+    val expectedSignals = ImmutableMap.of("key1", "12.34", "key2", "56.78")
+    assertThat(customSignals.customSignals).isEqualTo(expectedSignals)
+  }
+
+  @Test
+  fun `Custom Signals builder put mixed types`() {
+    val customSignals = customSignals {
+      put("key1", "value1")
+      put("key2", 123L)
+      put("key3", 45.67)
+    }
+    val expectedSignals = ImmutableMap.of("key1", "value1", "key2", "123", "key3", "45.67")
+    assertThat(customSignals.customSignals).isEqualTo(expectedSignals)
+  }
+
+  @Test
+  fun `Custom Signals builder put null value`() {
+    val customSignals = customSignals { put("key1", null) }
+    val expectedSignals = mapOf("key1" to null)
+    assertThat(customSignals.customSignals).isEqualTo(expectedSignals)
+  }
+
+  @Test
+  fun `Custom Signals empty builder`() {
+    val customSignals = customSignals {}
+    assertThat(customSignals.customSignals).isEmpty()
   }
 }
 

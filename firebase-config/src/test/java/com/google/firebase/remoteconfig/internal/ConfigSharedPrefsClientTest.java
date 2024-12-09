@@ -30,11 +30,15 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.BackoffMetadata;
 import com.google.firebase.remoteconfig.internal.ConfigSharedPrefsClient.LastFetchStatus;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -350,5 +354,41 @@ public class ConfigSharedPrefsClientTest {
         .isEqualTo(CONNECTION_TIMEOUT_IN_SECONDS);
     assertThat(info.getConfigSettings().getMinimumFetchIntervalInSeconds())
         .isEqualTo(DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS);
+  }
+
+  @Test
+  public void getCustomSignals_isNotSet_returnsEmptyMap() {
+    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(Collections.emptyMap());
+  }
+
+  @Test
+  public void getCustomSignals_isSet_returnsCustomSignals() {
+    Map<String, String> SAMPLE_CUSTOM_SIGNALS =
+        ImmutableMap.of(
+            "subscription", "premium",
+            "age", "20");
+    sharedPrefsClient.setCustomSignals(SAMPLE_CUSTOM_SIGNALS);
+    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(SAMPLE_CUSTOM_SIGNALS);
+  }
+
+  @Test
+  public void setCustomSignals_multipleTimes_addsNewSignals() {
+    Map<String, String> signals1 = ImmutableMap.of("subscription", "premium");
+    Map<String, String> signals2 = ImmutableMap.of("age", "20", "subscription", "basic");
+    sharedPrefsClient.setCustomSignals(signals1);
+    sharedPrefsClient.setCustomSignals(signals2);
+    Map<String, String> expectedSignals = ImmutableMap.of("subscription", "basic", "age", "20");
+    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(expectedSignals);
+  }
+
+  @Test
+  public void setCustomSignals_nullValue_removesSignal() {
+    Map<String, String> signals1 = ImmutableMap.of("subscription", "premium", "age", "20");
+    sharedPrefsClient.setCustomSignals(signals1);
+    Map<String, String> signals2 = new HashMap<>();
+    signals2.put("age", null);
+    sharedPrefsClient.setCustomSignals(signals2);
+    Map<String, Object> expectedSignals = ImmutableMap.of("subscription", "premium");
+    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(expectedSignals);
   }
 }

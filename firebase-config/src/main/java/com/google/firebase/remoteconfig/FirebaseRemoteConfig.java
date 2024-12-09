@@ -653,6 +653,25 @@ public class FirebaseRemoteConfig {
   }
 
   /**
+   * Asynchronously changes the custom signals for this {@link FirebaseRemoteConfig} instance.
+   *
+   * <p>The {@code customSignals} parameter should be an instance of {@link CustomSignals}, which
+   * enforces the allowed types for custom signal values (String, Long or Double).
+   *
+   * @param customSignals A dictionary of keys and the values of the custom signals to be set for
+   *                         the app instance
+   */
+  @NonNull
+  public Task<Void> setCustomSignals(@NonNull CustomSignals customSignals) {
+    return Tasks.call(
+        executor,
+        () -> {
+          frcSharedPrefs.setCustomSignals(customSignals.customSignals);
+          return null;
+        });
+  }
+
+  /**
    * Notifies the Firebase A/B Testing SDK about activated experiments.
    *
    * @hide

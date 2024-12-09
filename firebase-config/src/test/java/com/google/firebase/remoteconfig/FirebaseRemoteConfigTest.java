@@ -1660,6 +1660,21 @@ public final class FirebaseRemoteConfigTest {
     assertThat(fakeConnection.getRequestMethod()).isEqualTo("POST");
   }
 
+  @Test
+  public void setCustomSignals_succeeds_and_calls_sharedPrefsClient() {
+    CustomSignals customSignals =
+        new CustomSignals.Builder()
+            .put("key1", "value1")
+            .put("key2", 123L)
+            .put("key3", 12.34)
+            .build();
+
+    Task<Void> setterTask = frc.setCustomSignals(customSignals);
+
+    assertThat(setterTask.isSuccessful()).isTrue();
+    verify(sharedPrefsClient).setCustomSignals(customSignals.customSignals);
+  }
+
   private static void loadCacheWithConfig(
       ConfigCacheClient cacheClient, ConfigContainer container) {
     when(cacheClient.getBlocking()).thenReturn(container);

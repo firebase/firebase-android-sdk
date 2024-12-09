@@ -18,11 +18,14 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED;
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigComponent.CONNECTION_TIMEOUT_IN_SECONDS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.CUSTOM_SIGNALS;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAULT_MINIMUM_FETCH_INTERVAL_IN_SECONDS;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import android.content.SharedPreferences;
+import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -31,6 +34,11 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import java.lang.annotation.Retention;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * Client for handling Firebase Remote Config (FRC) metadata and custom signals that are saved to
@@ -75,17 +83,26 @@ public class ConfigSharedPrefsClient {
   private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
       "realtime_backoff_end_time_in_millis";
 
+  /** Constants for custom signal limits.*/
+  private static final int CUSTOM_SIGNALS_MAX_KEY_LENGTH = 250;
+
+  private static final int CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH = 500;
+
+  private static final int CUSTOM_SIGNALS_MAX_COUNT = 100;
+
   private final SharedPreferences frcSharedPrefs;
 
   private final Object frcInfoLock;
   private final Object backoffMetadataLock;
   private final Object realtimeBackoffMetadataLock;
+  private final Object customSignalsLock;
 
   public ConfigSharedPrefsClient(SharedPreferences frcSharedPrefs) {
     this.frcSharedPrefs = frcSharedPrefs;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();
     this.realtimeBackoffMetadataLock = new Object();
+    this.customSignalsLock = new Object();
   }
 
   public long getFetchTimeoutInSeconds() {
@@ -248,6 +265,75 @@ public class ConfigSharedPrefsClient {
           .putInt(NUM_FAILED_FETCHES_KEY, numFailedFetches)
           .putLong(BACKOFF_END_TIME_IN_MILLIS_KEY, backoffEndTime.getTime())
           .apply();
+    }
+  }
+
+  public void setCustomSignals(Map<String, String> newCustomSignals) {
+    synchronized (customSignalsLock) {
+      // Retrieve existing custom signals
+      Map<String, String> existingCustomSignals = getCustomSignals();
+
+      for (Map.Entry<String, String> entry : newCustomSignals.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+
+        // Validate key and value length
+        if (key.length() > CUSTOM_SIGNALS_MAX_KEY_LENGTH
+            || (value != null && value.length() > CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH)) {
+          Log.w(
+              TAG,
+              String.format(
+                  "Invalid custom signal: Custom signal keys must be %d characters or less, and values must be %d characters or less.",
+                  CUSTOM_SIGNALS_MAX_KEY_LENGTH, CUSTOM_SIGNALS_MAX_STRING_VALUE_LENGTH));
+          return;
+        }
+
+        // Merge new signals with existing ones, overwriting existing keys.
+        // Also, remove entries where the new value is null.
+        if (value != null) {
+          existingCustomSignals.put(key, value);
+        } else {
+          existingCustomSignals.remove(key);
+        }
+      }
+
+      // Check if the map has actually changed and the size limit
+      if (existingCustomSignals.equals(getCustomSignals())) {
+        return;
+      }
+      if (existingCustomSignals.size() > CUSTOM_SIGNALS_MAX_COUNT) {
+        Log.w(
+            TAG,
+            String.format(
+                "Invalid custom signal: Too many custom signals provided. The maximum allowed is %d.",
+                CUSTOM_SIGNALS_MAX_COUNT));
+        return;
+      }
+
+      frcSharedPrefs
+          .edit()
+          .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
+          .commit();
+
+      // Log the final updated custom signals.
+      Log.d(TAG, "Updated custom signals: " + getCustomSignals());
+    }
+  }
+
+  public Map<String, String> getCustomSignals() {
+    String jsonString = frcSharedPrefs.getString(CUSTOM_SIGNALS, "{}");
+    try {
+      JSONObject existingCustomSignalsJson = new JSONObject(jsonString);
+      Map<String, String> custom_signals = new HashMap<>();
+      Iterator<String> keys = existingCustomSignalsJson.keys();
+      while (keys.hasNext()) {
+        String key = keys.next();
+        String value = existingCustomSignalsJson.optString(key);
+        custom_signals.put(key, value);
+      }
+      return custom_signals;
+    } catch (JSONException e) {
+      return new HashMap<>();
     }
   }
 
