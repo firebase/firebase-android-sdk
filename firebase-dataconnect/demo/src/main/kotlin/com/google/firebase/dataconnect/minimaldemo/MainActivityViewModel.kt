@@ -22,7 +22,6 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.google.firebase.dataconnect.minimaldemo.connector.DeleteItemByKeyMutation
 import com.google.firebase.dataconnect.minimaldemo.connector.GetItemByKeyQuery
 import com.google.firebase.dataconnect.minimaldemo.connector.InsertItemMutation
 import com.google.firebase.dataconnect.minimaldemo.connector.Zwda6x9zyyKey
@@ -183,6 +182,48 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
     return true
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private fun State.startGet(
+    getItemOperationInProgressState:
+      State.OperationState.InProgress<Zwda6x9zyyKey, GetItemByKeyQuery.Data.Item?>
+  ) {
+    require(getItemOperationInProgressState === getItem)
+    val job: Deferred<GetItemByKeyQuery.Data.Item?> = getItemOperationInProgressState.job
+    val key: Zwda6x9zyyKey = getItemOperationInProgressState.variables
+
+    job.start()
+
+    job.invokeOnCompletion { exception ->
+      val result =
+        if (exception !== null) {
+          Log.w(TAG, "WARNING: Getting item with key $key FAILED: $exception", exception)
+          Result.failure(exception)
+        } else {
+          val item = job.getCompleted()
+          Log.i(TAG, "Got item with key $key: $item")
+          Result.success(item)
+        }
+
+      while (true) {
+        val oldState = _state.value
+        if (oldState.getItem !== getItemOperationInProgressState) {
+          break
+        }
+
+        val getItemOperationCompletedState =
+          State.OperationState.Completed(
+            oldState.nextSequenceNumber,
+            getItemOperationInProgressState.variables,
+            result,
+          )
+        val newState = oldState.withGetCompleted(getItemOperationCompletedState)
+        if (_state.compareAndSet(oldState, newState)) {
+          break
+        }
+      }
+    }
+  }
+
   fun deleteItem() {
     while (true) {
       if (tryDeleteItem()) {
@@ -228,7 +269,6 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
     return true
   }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
   private fun State.startDelete(
     deleteItemOperationInProgressState: State.OperationState.InProgress<Zwda6x9zyyKey, Unit>
   ) {
@@ -321,9 +361,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
         nextSequenceNumber = nextSequenceNumber + 1,
       )
 
-    fun withDeleteInProgress(
-      deleteItem: OperationState.InProgress<Zwda6x9zyyKey, Unit>
-    ): State =
+    fun withDeleteInProgress(deleteItem: OperationState.InProgress<Zwda6x9zyyKey, Unit>): State =
       State(
         insertItem = insertItem,
         getItem = getItem,
@@ -332,9 +370,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
         nextSequenceNumber = nextSequenceNumber + 1,
       )
 
-    fun withDeleteCompleted(
-      deleteItem: OperationState.Completed<Zwda6x9zyyKey, Unit>
-    ): State =
+    fun withDeleteCompleted(deleteItem: OperationState.Completed<Zwda6x9zyyKey, Unit>): State =
       State(
         insertItem = insertItem,
         getItem = getItem,

@@ -16,7 +16,6 @@
 package com.google.firebase.dataconnect.minimaldemo
 
 import android.os.Bundle
-import android.view.View.OnClickListener
 import android.widget.CompoundButton.OnCheckedChangeListener
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -41,8 +40,9 @@ class MainActivity : AppCompatActivity() {
     viewBinding = ActivityMainBinding.inflate(layoutInflater)
     setContentView(viewBinding.root)
 
-    viewBinding.insertItemButton.setOnClickListener(insertButtonOnClickListener)
-    viewBinding.getItemButton.setOnClickListener(getItemButtonOnClickListener)
+    viewBinding.insertItemButton.setOnClickListener { viewModel.insertItem() }
+    viewBinding.getItemButton.setOnClickListener { viewModel.getItem() }
+    viewBinding.deleteItemButton.setOnClickListener { viewModel.deleteItem() }
     viewBinding.useEmulatorCheckBox.setOnCheckedChangeListener(useEmulatorOnCheckedChangeListener)
     viewBinding.debugLoggingCheckBox.setOnCheckedChangeListener(debugLoggingOnCheckedChangeListener)
 
@@ -60,65 +60,13 @@ class MainActivity : AppCompatActivity() {
   }
 
   private fun collectViewModelState(state: MainActivityViewModel.State) {
-    val (insertProgressText, insertSequenceNumber) =
-      when (state.insertItem) {
-        is OperationState.New -> Pair(null, null)
-        is OperationState.InProgress ->
-          Pair(
-            "Inserting item: ${state.insertItem.variables.toDisplayString()}",
-            state.insertItem.sequenceNumber,
-          )
-        is OperationState.Completed ->
-          Pair(
-            state.insertItem.result.fold(
-              onSuccess = {
-                "Inserted item with id=${it.id}:\n${state.insertItem.variables.toDisplayString()}"
-              },
-              onFailure = { "Inserting item ${state.insertItem.variables} FAILED: $it" },
-            ),
-            state.insertItem.sequenceNumber,
-          )
-      }
-
-    val (getProgressText, getSequenceNumber) =
-      when (state.getItem) {
-        is OperationState.New -> Pair(null, null)
-        is OperationState.InProgress ->
-          Pair(
-            "Retrieving item with ID ${state.getItem.variables.id}...",
-            state.getItem.sequenceNumber,
-          )
-        is OperationState.Completed ->
-          Pair(
-            state.getItem.result.fold(
-              onSuccess = {
-                "Retrieved item with ID ${state.getItem.variables.id}:\n${it?.toDisplayString()}"
-              },
-              onFailure = { "Retrieving item with ID ${state.getItem.variables.id} FAILED: $it" },
-            ),
-            state.getItem.sequenceNumber,
-          )
-      }
-
-    viewBinding.insertItemButton.isEnabled = state.insertItem !is OperationState.InProgress
+    viewBinding.progressText.text = state.progressText
+    viewBinding.insertItemButton.isEnabled = !state.isInsertOperationInProgress
     viewBinding.getItemButton.isEnabled =
-      state.getItem !is OperationState.InProgress && state.lastInsertedKey !== null
-
-    viewBinding.progressText.text =
-      if (getSequenceNumber === null) {
-        insertProgressText
-      } else if (insertSequenceNumber === null) {
-        getProgressText
-      } else if (insertSequenceNumber > getSequenceNumber) {
-        insertProgressText
-      } else {
-        getProgressText
-      }
+      state.isGetOperationRunnable && !state.isGetOperationInProgress
+    viewBinding.deleteItemButton.isEnabled =
+      state.isDeleteOperationRunnable && !state.isDeleteOperationInProgress
   }
-
-  private val insertButtonOnClickListener = OnClickListener { viewModel.insertItem() }
-
-  private val getItemButtonOnClickListener = OnClickListener { viewModel.getItem() }
 
   private val debugLoggingOnCheckedChangeListener = OnCheckedChangeListener { _, isChecked ->
     if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
@@ -134,5 +82,71 @@ class MainActivity : AppCompatActivity() {
       return@OnCheckedChangeListener
     }
     myApplication.coroutineScope.launch { myApplication.setUseDataConnectEmulator(isChecked) }
+  }
+
+  companion object {
+
+    private val MainActivityViewModel.State.isInsertOperationInProgress: Boolean
+      get() = insertItem is OperationState.InProgress
+
+    private val MainActivityViewModel.State.isGetOperationInProgress: Boolean
+      get() = getItem is OperationState.InProgress
+
+    private val MainActivityViewModel.State.isGetOperationRunnable: Boolean
+      get() = lastInsertedKey !== null
+
+    private val MainActivityViewModel.State.isDeleteOperationInProgress: Boolean
+      get() = deleteItem is OperationState.InProgress
+
+    private val MainActivityViewModel.State.isDeleteOperationRunnable: Boolean
+      get() = lastInsertedKey !== null
+
+    private val MainActivityViewModel.State.progressText: String?
+      get() {
+        val insertState = insertItem as? OperationState.SequencedOperationState
+        val getState = getItem as? OperationState.SequencedOperationState
+        val deleteState = deleteItem as? OperationState.SequencedOperationState
+
+        val state =
+          listOfNotNull(insertState, getState, deleteState).maxByOrNull { it.sequenceNumber }
+
+        return if (state === null) {
+          null
+        } else if (state === insertState) {
+          when (insertState) {
+            is OperationState.InProgress ->
+              "Inserting item: ${insertState.variables.toDisplayString()}"
+            is OperationState.Completed ->
+              insertState.result.fold(
+                onSuccess = {
+                  "Inserted item with id=${it.id}:\n${insertState.variables.toDisplayString()}"
+                },
+                onFailure = { "Inserting item ${insertState.variables} FAILED: $it" },
+              )
+          }
+        } else if (state === getState) {
+          when (getState) {
+            is OperationState.InProgress -> "Retrieving item with ID ${getState.variables.id}..."
+            is OperationState.Completed ->
+              getState.result.fold(
+                onSuccess = {
+                  "Retrieved item with ID ${getState.variables.id}:\n${it?.toDisplayString()}"
+                },
+                onFailure = { "Retrieving item with ID ${getState.variables.id} FAILED: $it" },
+              )
+          }
+        } else if (state === deleteState) {
+          when (deleteState) {
+            is OperationState.InProgress -> "Deleting item with ID ${deleteState.variables.id}..."
+            is OperationState.Completed ->
+              deleteState.result.fold(
+                onSuccess = { "Deleted item with ID ${deleteState.variables.id}" },
+                onFailure = { "Deleting item with ID ${deleteState.variables.id} FAILED: $it" },
+              )
+          }
+        } else {
+          throw RuntimeException("internal error: unknown state: $state (error code vp4rjptx6r)")
+        }
+      }
   }
 }
