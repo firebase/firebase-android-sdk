@@ -16,6 +16,7 @@
 package com.google.firebase.dataconnect.minimaldemo
 
 import android.util.Log
+import androidx.annotation.MainThread
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -30,18 +31,21 @@ import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.next
 import java.util.Objects
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
 
+  // Threading Note: _state may be _read_ by any thread, but _MUST ONLY_ be written to by the
+  // main thread. To support writing on other threads, special concurrency controls must be put
+  // in place to address the resulting race condition.
   private val _state =
     MutableStateFlow(
       State(
@@ -56,62 +60,37 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
 
   private val rs = RandomSource.default()
 
+  @OptIn(ExperimentalCoroutinesApi::class)
+  @MainThread
   fun insertItem() {
-    while (true) {
-      if (tryInsertItem()) {
-        break
-      }
-    }
-  }
-
-  private fun tryInsertItem(): Boolean {
     val arb = Arb.insertItemVariables()
     val variables = if (rs.random.nextFloat() < 0.333f) arb.edgecase(rs)!! else arb.next(rs)
 
-    val oldState = _state.value
+    val originalState = _state.value
 
     // If there is already an "insert" in progress, then just return and let the in-progress
     // operation finish.
-    when (oldState.getItem) {
-      is State.OperationState.InProgress -> return true
+    when (originalState.getItem) {
+      is State.OperationState.InProgress -> return
       is State.OperationState.New,
       is State.OperationState.Completed -> Unit
     }
 
-    // Create a new coroutine to perform the "insert" operation, but don't start it yet by
-    // specifying start=CoroutineStart.LAZY because we won't start it until the state is
-    // successfully set.
-    val newInsertJob: Deferred<Zwda6x9zyyKey> =
-      viewModelScope.async(start = CoroutineStart.LAZY) {
-        app.getConnector().insertItem.ref(variables).execute().data.key
+    // Start a new coroutine to perform the "insert" operation.
+    Log.i(TAG, "Inserting item: $variables")
+    val job: Deferred<Zwda6x9zyyKey> =
+      viewModelScope.async { app.getConnector().insertItem.ref(variables).execute().data.key }
+    val inProgressOperationState =
+      State.OperationState.InProgress(originalState.nextSequenceNumber, variables, job)
+    _state.value = originalState.withInsertInProgress(inProgressOperationState)
+
+    // Update the internal state once the "insert" operation has completed.
+    job.invokeOnCompletion { exception ->
+      // Don't log CancellationException, as document by invokeOnCompletion().
+      if (exception is CancellationException) {
+        return@invokeOnCompletion
       }
 
-    // Update the state and start the coroutine if it is successfully set.
-    val insertItemOperationInProgressState =
-      State.OperationState.InProgress(oldState.nextSequenceNumber, variables, newInsertJob)
-    val newState = oldState.withInsertInProgress(insertItemOperationInProgressState)
-    if (!_state.compareAndSet(oldState, newState)) {
-      return false
-    }
-
-    // Actually start the coroutine now that the state has been set.
-    Log.i(TAG, "Inserting item: $variables")
-    newState.startInsert(insertItemOperationInProgressState)
-    return true
-  }
-
-  @OptIn(ExperimentalCoroutinesApi::class)
-  private fun State.startInsert(
-    insertItemOperationInProgressState:
-      State.OperationState.InProgress<InsertItemMutation.Variables, Zwda6x9zyyKey>
-  ) {
-    require(insertItemOperationInProgressState === insertItem)
-    val job: Deferred<Zwda6x9zyyKey> = insertItemOperationInProgressState.job
-    val variables: InsertItemMutation.Variables = insertItemOperationInProgressState.variables
-
-    job.start()
-
-    job.invokeOnCompletion { exception ->
       val result =
         if (exception !== null) {
           Log.w(TAG, "WARNING: Inserting item FAILED: $exception (variables=$variables)", exception)
@@ -122,187 +101,117 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
           Result.success(key)
         }
 
-      while (true) {
+      viewModelScope.launch {
         val oldState = _state.value
-        if (oldState.insertItem !== insertItemOperationInProgressState) {
-          break
-        }
-
-        val insertItemOperationCompletedState =
-          State.OperationState.Completed(oldState.nextSequenceNumber, variables, result)
-        val newState = oldState.withInsertCompleted(insertItemOperationCompletedState)
-        if (_state.compareAndSet(oldState, newState)) {
-          break
+        if (oldState.insertItem === inProgressOperationState) {
+          _state.value =
+            oldState.withInsertCompleted(
+              State.OperationState.Completed(oldState.nextSequenceNumber, variables, result)
+            )
         }
       }
     }
   }
 
+  @OptIn(ExperimentalCoroutinesApi::class)
   fun getItem() {
-    while (true) {
-      if (tryGetItem()) {
-        break
-      }
-    }
-  }
-
-  private fun tryGetItem(): Boolean {
-    val oldState = _state.value
+    val originalState = _state.value
 
     // If there is no previous successful "insert" operation, then we don't know any ID's to get,
     // so just do nothing.
-    val key: Zwda6x9zyyKey = oldState.lastInsertedKey ?: return true
+    val key: Zwda6x9zyyKey = originalState.lastInsertedKey ?: return
 
     // If there is already a "get" in progress, then just return and let the in-progress operation
     // finish.
-    when (oldState.getItem) {
-      is State.OperationState.InProgress -> return true
+    when (originalState.getItem) {
+      is State.OperationState.InProgress -> return
       is State.OperationState.New,
       is State.OperationState.Completed -> Unit
     }
 
-    // Create a new coroutine to perform the "get" operation, but don't start it yet by specifying
-    // start=CoroutineStart.LAZY because we won't start it until the state is successfully set.
-    val newGetJob: Deferred<GetItemByKeyQuery.Data.Item?> =
-      viewModelScope.async(start = CoroutineStart.LAZY) {
-        app.getConnector().getItemByKey.execute(key).data.item
+    // Start a new coroutine to perform the "get" operation.
+    Log.i(TAG, "Retrieving item with key: $key")
+    val job: Deferred<GetItemByKeyQuery.Data.Item?> =
+      viewModelScope.async { app.getConnector().getItemByKey.execute(key).data.item }
+    val inProgressOperationState =
+      State.OperationState.InProgress(originalState.nextSequenceNumber, key, job)
+    _state.value = originalState.withGetInProgress(inProgressOperationState)
+
+    // Update the internal state once the "get" operation has completed.
+    job.invokeOnCompletion { exception ->
+      // Don't log CancellationException, as document by invokeOnCompletion().
+      if (exception is CancellationException) {
+        return@invokeOnCompletion
       }
 
-    // Update the state and start the coroutine if it is successfully set.
-    val getItemOperationInProgressState =
-      State.OperationState.InProgress(oldState.nextSequenceNumber, key, newGetJob)
-    val newState = oldState.withGetInProgress(getItemOperationInProgressState)
-    if (!_state.compareAndSet(oldState, newState)) {
-      return false
-    }
-
-    // Actually start the coroutine now that the state has been set.
-    Log.i(TAG, "Getting item with key: $key")
-    newState.startGet(getItemOperationInProgressState)
-    return true
-  }
-
-  @OptIn(ExperimentalCoroutinesApi::class)
-  private fun State.startGet(
-    getItemOperationInProgressState:
-      State.OperationState.InProgress<Zwda6x9zyyKey, GetItemByKeyQuery.Data.Item?>
-  ) {
-    require(getItemOperationInProgressState === getItem)
-    val job: Deferred<GetItemByKeyQuery.Data.Item?> = getItemOperationInProgressState.job
-    val key: Zwda6x9zyyKey = getItemOperationInProgressState.variables
-
-    job.start()
-
-    job.invokeOnCompletion { exception ->
       val result =
         if (exception !== null) {
-          Log.w(TAG, "WARNING: Getting item with key $key FAILED: $exception", exception)
+          Log.w(TAG, "WARNING: Retrieving item with key=$key FAILED: $exception", exception)
           Result.failure(exception)
         } else {
           val item = job.getCompleted()
-          Log.i(TAG, "Got item with key $key: $item")
+          Log.i(TAG, "Retrieved item with key: $key (item=${item})")
           Result.success(item)
         }
 
-      while (true) {
+      viewModelScope.launch {
         val oldState = _state.value
-        if (oldState.getItem !== getItemOperationInProgressState) {
-          break
-        }
-
-        val getItemOperationCompletedState =
-          State.OperationState.Completed(
-            oldState.nextSequenceNumber,
-            getItemOperationInProgressState.variables,
-            result,
-          )
-        val newState = oldState.withGetCompleted(getItemOperationCompletedState)
-        if (_state.compareAndSet(oldState, newState)) {
-          break
+        if (oldState.getItem === inProgressOperationState) {
+          _state.value =
+            oldState.withGetCompleted(
+              State.OperationState.Completed(oldState.nextSequenceNumber, key, result)
+            )
         }
       }
     }
   }
 
   fun deleteItem() {
-    while (true) {
-      if (tryDeleteItem()) {
-        break
-      }
-    }
-  }
-
-  private fun tryDeleteItem(): Boolean {
-    val oldState = _state.value
+    val originalState = _state.value
 
     // If there is no previous successful "insert" operation, then we don't know any ID's to delete,
     // so just do nothing.
-    val key: Zwda6x9zyyKey = oldState.lastInsertedKey ?: return true
+    val key: Zwda6x9zyyKey = originalState.lastInsertedKey ?: return
 
     // If there is already a "delete" in progress, then just return and let the in-progress
     // operation finish.
-    when (oldState.deleteItem) {
-      is State.OperationState.InProgress -> return true
+    when (originalState.getItem) {
+      is State.OperationState.InProgress -> return
       is State.OperationState.New,
       is State.OperationState.Completed -> Unit
     }
 
-    // Create a new coroutine to perform the "delete" operation, but don't start it yet by
-    // specifying start=CoroutineStart.LAZY because we won't start it until the state is
-    // successfully set.
-    val newDeleteJob: Deferred<Unit> =
-      viewModelScope.async(start = CoroutineStart.LAZY) {
-        app.getConnector().deleteItemByKey.execute(key)
+    // Start a new coroutine to perform the "delete" operation.
+    Log.i(TAG, "Deleting item with key: $key")
+    val job: Deferred<Unit> =
+      viewModelScope.async { app.getConnector().deleteItemByKey.execute(key) }
+    val inProgressOperationState =
+      State.OperationState.InProgress(originalState.nextSequenceNumber, key, job)
+    _state.value = originalState.withDeleteInProgress(inProgressOperationState)
+
+    // Update the internal state once the "delete" operation has completed.
+    job.invokeOnCompletion { exception ->
+      // Don't log CancellationException, as document by invokeOnCompletion().
+      if (exception is CancellationException) {
+        return@invokeOnCompletion
       }
 
-    // Update the state and start the coroutine if it is successfully set.
-    val deleteItemOperationInProgressState =
-      State.OperationState.InProgress(oldState.nextSequenceNumber, key, newDeleteJob)
-    val newState = oldState.withDeleteInProgress(deleteItemOperationInProgressState)
-    if (!_state.compareAndSet(oldState, newState)) {
-      return false
-    }
-
-    // Actually start the coroutine now that the state has been set.
-    Log.i(TAG, "Deleting item with key: $key")
-    newState.startDelete(deleteItemOperationInProgressState)
-    return true
-  }
-
-  private fun State.startDelete(
-    deleteItemOperationInProgressState: State.OperationState.InProgress<Zwda6x9zyyKey, Unit>
-  ) {
-    require(deleteItemOperationInProgressState === deleteItem)
-    val job: Job = deleteItemOperationInProgressState.job
-    val key: Zwda6x9zyyKey = deleteItemOperationInProgressState.variables
-
-    job.start()
-
-    job.invokeOnCompletion { exception ->
       val result =
         if (exception !== null) {
-          Log.w(TAG, "WARNING: Deleting item with key $key FAILED: $exception", exception)
+          Log.w(TAG, "WARNING: Deleting item with key=$key FAILED: $exception", exception)
           Result.failure(exception)
         } else {
-          Log.i(TAG, "Deleted item with key $key")
+          Log.i(TAG, "Deleted item with key: $key")
           Result.success(Unit)
         }
 
-      while (true) {
+      viewModelScope.launch {
         val oldState = _state.value
-        if (oldState.deleteItem !== deleteItemOperationInProgressState) {
-          break
-        }
-
-        val deleteItemOperationCompletedState =
-          State.OperationState.Completed(
-            oldState.nextSequenceNumber,
-            deleteItemOperationInProgressState.variables,
-            result,
-          )
-        val newState = oldState.withDeleteCompleted(deleteItemOperationCompletedState)
-        if (_state.compareAndSet(oldState, newState)) {
-          break
+        if (oldState.deleteItem === inProgressOperationState) {
+          _state.value =
+            oldState.withDeleteCompleted(
+              State.OperationState.Completed(oldState.nextSequenceNumber, key, result)
+            )
         }
       }
     }
