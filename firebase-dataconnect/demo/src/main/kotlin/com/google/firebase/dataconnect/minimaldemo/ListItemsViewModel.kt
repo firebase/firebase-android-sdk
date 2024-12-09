@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
+class ListItemsViewModel(private val app: MyApplication) : ViewModel() {
 
   private val rs = RandomSource.default()
 
@@ -218,7 +218,7 @@ class MainActivityViewModel(private val app: MyApplication) : ViewModel() {
     private const val TAG = "MainActivityViewModel"
 
     val Factory: ViewModelProvider.Factory = viewModelFactory {
-      initializer { MainActivityViewModel(this[APPLICATION_KEY] as MyApplication) }
+      initializer { ListItemsViewModel(this[APPLICATION_KEY] as MyApplication) }
     }
   }
 }

@@ -15,7 +15,6 @@
  */
 package com.google.firebase.dataconnect.minimaldemo
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -25,16 +24,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.google.firebase.dataconnect.minimaldemo.MainViewModel.OperationState
+import com.google.firebase.dataconnect.minimaldemo.ListItemsViewModel.OperationState
 import com.google.firebase.dataconnect.minimaldemo.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class ListItemsActivity : AppCompatActivity() {
 
   private lateinit var myApplication: MyApplication
   private lateinit var viewBinding: ActivityMainBinding
-  private val viewModel: MainViewModel by viewModels { MainViewModel.Factory }
+  private val viewModel: ListItemsViewModel by viewModels { ListItemsViewModel.Factory }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -61,14 +60,9 @@ class MainActivity : AppCompatActivity() {
     return true
   }
 
-  override fun onOptionsItemSelected(item: MenuItem): Boolean =
-    when (item.itemId) {
-      R.id.action_list -> {
-        startActivity(Intent(this, ListItemsActivity::class.java))
-        true
-      }
-      else -> super.onOptionsItemSelected(item)
-    }
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    return super.onOptionsItemSelected(item)
+  }
 
   override fun onResume() {
     super.onResume()
@@ -105,22 +99,22 @@ class MainActivity : AppCompatActivity() {
 
   companion object {
 
-    private val MainViewModel.isInsertOperationInProgress: Boolean
+    private val ListItemsViewModel.isInsertOperationInProgress: Boolean
       get() = insertState is OperationState.InProgress
 
-    private val MainViewModel.isGetOperationInProgress: Boolean
+    private val ListItemsViewModel.isGetOperationInProgress: Boolean
       get() = getState is OperationState.InProgress
 
-    private val MainViewModel.isDeleteOperationInProgress: Boolean
+    private val ListItemsViewModel.isDeleteOperationInProgress: Boolean
       get() = deleteState is OperationState.InProgress
 
-    private val MainViewModel.isGetOperationRunnable: Boolean
+    private val ListItemsViewModel.isGetOperationRunnable: Boolean
       get() = lastInsertedKey !== null
 
-    private val MainViewModel.isDeleteOperationRunnable: Boolean
+    private val ListItemsViewModel.isDeleteOperationRunnable: Boolean
       get() = lastInsertedKey !== null
 
-    private val MainViewModel.progressText: String?
+    private val ListItemsViewModel.progressText: String?
       get() {
         // Save properties to local variables to enable Kotlin's type narrowing in the "if" blocks
         // below.
