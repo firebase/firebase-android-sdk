@@ -23,6 +23,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.dataconnect.minimaldemo.connector.GetAllItemsQuery
@@ -42,7 +43,12 @@ class ListItemsActivity : AppCompatActivity() {
     myApplication = application as MyApplication
 
     viewBinding = ActivityListItemsBinding.inflate(layoutInflater)
-    viewBinding.recyclerView.layoutManager = LinearLayoutManager(this)
+    viewBinding.recyclerView.also {
+      val linearLayoutManager = LinearLayoutManager(this)
+      it.layoutManager = linearLayoutManager
+      val dividerItemDecoration = DividerItemDecoration(this, linearLayoutManager.layoutDirection)
+      it.addItemDecoration(dividerItemDecoration)
+    }
     setContentView(viewBinding.root)
 
     lifecycleScope.launch {
