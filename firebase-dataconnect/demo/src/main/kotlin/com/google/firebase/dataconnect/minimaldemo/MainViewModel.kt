@@ -83,7 +83,7 @@ class MainViewModel(private val app: MyApplication) : ViewModel() {
 
     // Update the internal state once the "insert" operation has completed.
     job.invokeOnCompletion { exception ->
-      // Don't log CancellationException, as document by invokeOnCompletion().
+      // Don't log CancellationException, as documented by invokeOnCompletion().
       if (exception is CancellationException) {
         return@invokeOnCompletion
       }
@@ -130,7 +130,7 @@ class MainViewModel(private val app: MyApplication) : ViewModel() {
 
     // Update the internal state once the "get" operation has completed.
     job.invokeOnCompletion { exception ->
-      // Don't log CancellationException, as document by invokeOnCompletion().
+      // Don't log CancellationException, as documented by invokeOnCompletion().
       if (exception is CancellationException) {
         return@invokeOnCompletion
       }
@@ -175,7 +175,7 @@ class MainViewModel(private val app: MyApplication) : ViewModel() {
 
     // Update the internal state once the "delete" operation has completed.
     job.invokeOnCompletion { exception ->
-      // Don't log CancellationException, as document by invokeOnCompletion().
+      // Don't log CancellationException, as documented by invokeOnCompletion().
       if (exception is CancellationException) {
         return@invokeOnCompletion
       }
@@ -215,7 +215,7 @@ class MainViewModel(private val app: MyApplication) : ViewModel() {
   }
 
   companion object {
-    private const val TAG = "MainActivityViewModel"
+    private const val TAG = "MainViewModel"
 
     val Factory: ViewModelProvider.Factory = viewModelFactory {
       initializer { MainViewModel(this[APPLICATION_KEY] as MyApplication) }

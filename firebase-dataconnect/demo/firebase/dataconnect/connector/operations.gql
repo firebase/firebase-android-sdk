@@ -49,6 +49,20 @@ query GetItemByKey(
   }
 }
 
+query GetAllItems @auth(level: PUBLIC) {
+  items: zwda6x9zyys {
+    id
+    string
+    int
+    int64
+    float
+    boolean
+    date
+    timestamp
+    any
+  }
+}
+
 mutation DeleteItemByKey(
   $key: zwda6x9zyy_Key!
 ) @auth(level: PUBLIC) {
