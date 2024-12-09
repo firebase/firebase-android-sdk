@@ -108,10 +108,12 @@ spotless {
   }
 }
 
-@DisableCachingByDefault(because = "Code generation is very fast and not worth caching")
+@CacheableTask
 abstract class DataConnectGenerateSourcesTask : DefaultTask() {
 
-  @get:InputDirectory abstract val inputDirectory: Property<DirectoryTree>
+  @get:InputDirectory
+  @get:PathSensitive(PathSensitivity.RELATIVE)
+  abstract val inputDirectory: Property<DirectoryTree>
 
   @get:Input abstract val firebaseToolsVersion: Property<String>
 
@@ -270,22 +272,19 @@ run {
 
       val path = providers.environmentVariable("PATH")
       firebaseToolsVersion =
-        providers.provider {
-          providers
-            .exec {
-              DataConnectGenerateSourcesTask.configureFirebaseCommand(
-                this,
-                firebaseCommand = firebaseCommand.get(),
-                nodeExecutableDirectory = nodeExecutableDirectory.orNull,
-                path = path.orNull,
-              )
-              args("--version")
-            }
-            .standardOutput
-            .asText
-            .get()
-            .trim()
-        }
+        providers
+          .exec {
+            DataConnectGenerateSourcesTask.configureFirebaseCommand(
+              this,
+              firebaseCommand = firebaseCommand.get(),
+              nodeExecutableDirectory = nodeExecutableDirectory.orNull,
+              path = path.orNull,
+            )
+            args("--version")
+          }
+          .standardOutput
+          .asText
+          .map { it.trim() }
 
       workDirectory = layout.buildDirectory.dir(name)
     }
