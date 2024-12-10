@@ -18,6 +18,7 @@ package com.google.firebase.testing.crashlytics
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -83,14 +84,17 @@ class FirebaseCrashlyticsIntegrationTest {
     launchApp()
 
     val crashlytics = FirebaseCrashlytics.getInstance()
+    val testUserId = "TestUser123"
     crashlytics.setUserId("TestUser123")
 
     getButton("CRASH!").click();
 
+    Log.d("CrashlyticsTest", "User ID set: $testUserId")
+
     val userIdLogFound = readLogcat("TestUser123")
     val crashFound = readLogcat("Test")
 
-    //assertThat(userIdLogFound).isTrue()
+    assertThat(userIdLogFound).isTrue()
     assertThat(crashFound).isTrue()
 
   }
@@ -101,9 +105,16 @@ class FirebaseCrashlyticsIntegrationTest {
 
     // Initialize Crashlytics and set user metadata as they would online
     val crashlytics = FirebaseCrashlytics.getInstance()
+    val testUserId = "TestUser123"
+    val customValue = "TestValue"
+    val customKey = "CustomKey"
+    // Mock custom values
+    crashlytics.setCustomKey(customKey, customValue)
     crashlytics.setUserId("TestUser123")
-    crashlytics.setCustomKey("CrashKey", "TestValue")
-    crashlytics.log("This is a pre-crash log for verification.")
+
+    Log.d("CrashlyticsTest", "Custom Key set: $customKey = $customValue")
+    Log.d("CrashlyticsTest", "User ID set: $testUserId")
+    Log.d("CrashlyticsTest","This is a pre-crash log for verification.")
 
     // Trigger the crash
     getButton("CRASH!").click()
@@ -111,7 +122,7 @@ class FirebaseCrashlyticsIntegrationTest {
 
     // Check logcat for defined fields
     val userIdLogFound = readLogcat("TestUser123")
-    val customKeyLogFound = readLogcat("CrashKey")
+    val customKeyLogFound = readLogcat("CustomKey")
     val preCrashLogFound = readLogcat("This is a pre-crash log for verification.")
 
     //Verify the logs were recorded
@@ -126,18 +137,25 @@ class FirebaseCrashlyticsIntegrationTest {
 
     // Initialize Crashlytics and set user metadata as they would online
     val crashlytics = FirebaseCrashlytics.getInstance()
+    val testUserId = "TestUser123"
+    val customValue = "TestValue"
+    val customKey = "CustomKey"
+    // Mock custom values
+    crashlytics.setCustomKey(customKey, customValue)
     crashlytics.setUserId("TestUser123")
-    crashlytics.setCustomKey("CrashKey", "TestValue")
-    crashlytics.log("This is a pre-crash log for verification.")
+
+    Log.d("CrashlyticsTest", "Custom Key set: $customKey = $customValue")
+    Log.d("CrashlyticsTest", "User ID set: $testUserId")
+    Log.d("CrashlyticsTest","This is a pre-crash log for verification.")
 
     // Check logcat for defined fields
     val userIdLogFound = readLogcat("TestUser123")
-    val customKeyLogFound = readLogcat("CrashKey")
+    val customKeyLogFound = readLogcat("CustomKey")
     val preCrashLogFound = readLogcat("This is a pre-crash log for verification.")
 
     // User activity and navigation
     navigateToSecondActivity();
-
+    // Simulate user idling in app
     Thread.sleep(2000)
 
     //Verify the logs were recorded
