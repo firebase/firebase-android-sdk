@@ -769,7 +769,7 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void customSignals_updated_onSubsequentFetch() throws Exception {
+  public void fetch_usesLatestCustomSignals() throws Exception {
     Map<String, String> customSignals =
         ImmutableMap.of(
             "subscription", "premium",
