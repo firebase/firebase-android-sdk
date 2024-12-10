@@ -20,8 +20,8 @@ import android.annotation.SuppressLint
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.firebase.dataconnect.core.DataConnectLoggingImpl
 import com.google.firebase.dataconnect.core.FirebaseDataConnectFactory
-import com.google.firebase.dataconnect.core.LoggerGlobals
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -61,8 +61,8 @@ import kotlinx.serialization.modules.SerializersModule
  * Data Connect service) call [FirebaseDataConnect.useEmulator]. To create [QueryRef] and
  * [MutationRef] instances for running queries and mutations, call [FirebaseDataConnect.query] and
  * [FirebaseDataConnect.mutation], respectively. To enable debug logging, which is especially useful
- * when reporting issues to Google, set [FirebaseDataConnect.Companion.logLevel] to [LogLevel.DEBUG]
- * .
+ * when reporting issues to Google, set [DataConnectLogging.level] in
+ * [FirebaseDataConnect.Companion.logging] to [LogLevel.DEBUG].
  *
  * ### Integration with Kotlin Coroutines and Serialization
  *
@@ -378,11 +378,6 @@ public fun FirebaseDataConnect.Companion.getInstance(
   settings: DataConnectSettings = DataConnectSettings()
 ): FirebaseDataConnect = getInstance(app = Firebase.app, config = config, settings = settings)
 
-/**
- * The log level used by all [FirebaseDataConnect] instances.
- *
- * The default log level is [LogLevel.WARN]. Setting this to [LogLevel.DEBUG] will enable debug
- * logging, which is especially useful when reporting issues to Google or investigating problems
- * yourself. Setting it to [LogLevel.NONE] will disable all logging.
- */
-public var FirebaseDataConnect.Companion.logLevel: LogLevel by LoggerGlobals::logLevel
+/** The logcat logging facilities used by all [FirebaseDataConnect] instances. */
+public val FirebaseDataConnect.Companion.logging: DataConnectLogging
+  get() = DataConnectLoggingImpl
