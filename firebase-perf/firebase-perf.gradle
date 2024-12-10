@@ -100,13 +100,13 @@ android {
 
 dependencies {
     annotationProcessor libs.dagger.compiler
-    compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
+    compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.14'
     implementation libs.androidx.annotation
-    implementation "androidx.lifecycle:lifecycle-process:2.3.1"
+    implementation libs.androidx.lifecycle.process
     implementation libs.playservices.tasks
     implementation libs.protobuf.java.lite
     implementation libs.kotlin.stdlib
-    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation libs.androidx.appcompat
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation libs.dagger.dagger
     api 'com.google.firebase:firebase-annotations:16.2.0'
@@ -118,12 +118,12 @@ dependencies {
     api("com.google.firebase:firebase-components:18.0.0")
     api("com.google.firebase:firebase-config:21.5.0")
     api("com.google.firebase:firebase-installations:17.2.0")
-    api("com.google.firebase:firebase-sessions:2.0.0") {
+    api("com.google.firebase:firebase-sessions:2.0.7") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    javadocClasspath libs.autovalue.annotations
     javadocClasspath libs.findbugs.jsr305
     runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
@@ -136,6 +136,6 @@ dependencies {
     testImplementation libs.androidx.test.rules
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation 'org.mockito:mockito-inline:5.2.0'
+    testImplementation libs.mockito.mockito.inline
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
 }

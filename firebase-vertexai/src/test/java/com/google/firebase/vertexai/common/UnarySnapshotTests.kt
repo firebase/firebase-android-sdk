@@ -35,6 +35,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Test
@@ -44,6 +45,7 @@ import org.junit.Test
 internal class UnarySnapshotTests {
   private val testTimeout = 5.seconds
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `short reply`() =
     goldenUnaryFile("success-basic-reply-short.json") {
@@ -57,6 +59,7 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `long reply`() =
     goldenUnaryFile("success-basic-reply-long.json") {
@@ -219,6 +222,7 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `properly translates json text`() =
     goldenUnaryFile("success-constraint-decoding-json.json") {
@@ -305,6 +309,7 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `function call contains null param`() =
     goldenUnaryFile("success-function-call-null.json") {
@@ -317,6 +322,7 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `function call contains json literal`() =
     goldenUnaryFile("success-function-call-json-literal.json") {
@@ -335,6 +341,7 @@ internal class UnarySnapshotTests {
       }
     }
 
+  @OptIn(ExperimentalSerializationApi::class)
   @Test
   fun `function call has no arguments field`() =
     goldenUnaryFile("success-function-call-empty-arguments.json") {

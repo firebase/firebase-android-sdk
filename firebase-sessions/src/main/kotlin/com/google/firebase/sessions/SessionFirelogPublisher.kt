@@ -80,7 +80,7 @@ internal class SessionFirelogPublisherImpl(
   private fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) {
     try {
       eventGDTLogger.log(sessionEvent)
-      Log.d(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
+      Log.d(TAG, "Successfully logged Session Start event.")
     } catch (ex: RuntimeException) {
       Log.e(TAG, "Error logging Session Start event to DataTransport: ", ex)
     }

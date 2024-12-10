@@ -38,6 +38,7 @@ import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import java.io.File
 import kotlinx.coroutines.launch
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 
 private val TEST_CLIENT_ID = "genai-android/test"
@@ -48,6 +49,7 @@ internal fun prepareStreamingResponse(response: List<GenerateContentResponse>): 
 internal fun prepareResponse(response: GenerateContentResponse) =
   JSON.encodeToString(response).toByteArray()
 
+@OptIn(ExperimentalSerializationApi::class)
 internal fun createRequest(vararg text: String): GenerateContentRequest {
   val contents = text.map { Content(parts = listOf(TextPart(it))) }
 
@@ -56,6 +58,7 @@ internal fun createRequest(vararg text: String): GenerateContentRequest {
 
 internal fun createResponse(text: String) = createResponses(text).single()
 
+@OptIn(ExperimentalSerializationApi::class)
 internal fun createResponses(vararg text: String): List<GenerateContentResponse> {
   val candidates = text.map { Candidate(Content(parts = listOf(TextPart(it)))) }
 
