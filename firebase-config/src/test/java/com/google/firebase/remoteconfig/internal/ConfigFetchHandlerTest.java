@@ -768,6 +768,20 @@ public class ConfigFetchHandlerTest {
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
+  @Test
+  public void customSignals_updated_onSubsequentFetch() throws Exception {
+    Map<String, String> customSignals =
+        ImmutableMap.of(
+            "subscription", "premium",
+            "age", "20");
+    sharedPrefsClient.setCustomSignals(customSignals);
+    fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
+
+    assertWithMessage("Fetch() failed!").that(fetchHandler.fetch().isSuccessful()).isTrue();
+
+    verifyCustomSignals(customSignals);
+  }
+
   private ConfigFetchHandler getNewFetchHandler(AnalyticsConnector analyticsConnector) {
     ConfigFetchHandler fetchHandler =
         spy(
@@ -970,6 +984,21 @@ public class ConfigFetchHandlerTest {
             /* currentTime= */ any(),
             /* customSignals= */ any());
     assertThat(sharedPrefsClient.getLastFetchETag()).isEqualTo(responseETag);
+  }
+
+  private void verifyCustomSignals(Map<String, String> customSignals) throws Exception {
+    verify(mockBackendFetchApiClient)
+        .fetch(
+            any(HttpURLConnection.class),
+            /* instanceId= */ any(),
+            /* instanceIdToken= */ any(),
+            /* analyticsUserProperties= */ any(),
+            /* lastFetchETag= */ any(),
+            /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
+            /* currentTime= */ any(),
+            /* customSignals= */ eq(customSignals));
+    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(customSignals);
   }
 
   private void loadBackendApiClient() throws Exception {
