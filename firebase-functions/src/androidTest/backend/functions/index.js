@@ -234,3 +234,7 @@ exports.genStreamLargeData = functionsV2.https.onCall(
     return "Stream Completed";
   }
 );
+
+exports.headersTest = functions.https.onRequest((request, response) => {
+  response.status(200).send({data: request.headers});
+});
