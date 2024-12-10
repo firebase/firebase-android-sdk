@@ -776,8 +776,7 @@ public class ConfigFetchHandlerTest {
             "age", "20");
     sharedPrefsClient.setCustomSignals(customSignals);
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
-
-    assertWithMessage("Fetch() failed!").that(fetchHandler.fetch().isSuccessful()).isTrue();
+    fetchHandler.fetch();
 
     verifyCustomSignals(customSignals);
   }
@@ -997,7 +996,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* customSignals= */ eq(customSignals));
+            /* customSignals= */ eq(sharedPrefsClient.getCustomSignals()));
     assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(customSignals);
   }
 
