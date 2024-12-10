@@ -66,26 +66,26 @@ class FirstFragment : Fragment() {
     }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
-        ForegroundService.startService(getContext()!!, "Starting service at ${getDateText()}")
+        ForegroundService.startService(requireContext(), "Starting service at ${getDateText()}")
         binding.buttonForegroundProcess.setText("Stop foreground service")
       } else {
-        ForegroundService.stopService(getContext()!!)
+        ForegroundService.stopService(requireContext())
         binding.buttonForegroundProcess.setText("Start foreground service")
       }
     }
     binding.startSplitscreen.setOnClickListener {
-      val intent = Intent(getContext()!!, SecondActivity::class.java)
+      val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
       activity?.finish()
     }
     binding.startSplitscreenSame.setOnClickListener {
-      val intent = Intent(getContext()!!, MainActivity::class.java)
+      val intent = Intent(requireContext(), MainActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
     }
     binding.nextActivityButton.setOnClickListener {
-      val intent = Intent(getContext()!!, SecondActivity::class.java)
+      val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
