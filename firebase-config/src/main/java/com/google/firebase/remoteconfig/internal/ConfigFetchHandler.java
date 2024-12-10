@@ -384,7 +384,8 @@ public class ConfigFetchHandler {
               frcSharedPrefs.getLastFetchETag(),
               customFetchHeaders,
               getFirstOpenTime(),
-              currentTime);
+              currentTime,
+              frcSharedPrefs.getCustomSignals());
 
       if (response.getFetchedConfigs() != null) {
         // Set template version in metadata to be saved on disk.

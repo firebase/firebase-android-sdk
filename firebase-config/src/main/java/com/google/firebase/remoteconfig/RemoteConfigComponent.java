@@ -262,8 +262,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
         apiKey,
         namespace,
         /* connectTimeoutInSeconds= */ sharedPrefsClient.getFetchTimeoutInSeconds(),
-        /* readTimeoutInSeconds= */ sharedPrefsClient.getFetchTimeoutInSeconds(),
-        /* customSignals= */ sharedPrefsClient.getCustomSignals());
+        /* readTimeoutInSeconds= */ sharedPrefsClient.getFetchTimeoutInSeconds());
   }
 
   @VisibleForTesting

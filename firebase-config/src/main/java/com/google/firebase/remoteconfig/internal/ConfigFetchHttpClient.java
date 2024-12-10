@@ -94,7 +94,6 @@ public class ConfigFetchHttpClient {
   private final String apiKey;
   private final String projectNumber;
   private final String namespace;
-  Map<String, String> customSignalsMap;
   private final long connectTimeoutInSeconds;
   private final long readTimeoutInSeconds;
 
@@ -108,8 +107,7 @@ public class ConfigFetchHttpClient {
       String apiKey,
       String namespace,
       long connectTimeoutInSeconds,
-      long readTimeoutInSeconds,
-      Map<String, String> customSignalsMap) {
+      long readTimeoutInSeconds) {
     this.context = context;
     this.appId = appId;
     this.apiKey = apiKey;
@@ -117,7 +115,6 @@ public class ConfigFetchHttpClient {
     this.namespace = namespace;
     this.connectTimeoutInSeconds = connectTimeoutInSeconds;
     this.readTimeoutInSeconds = readTimeoutInSeconds;
-    this.customSignalsMap = customSignalsMap;
   }
 
   /** Used to verify that the timeout is being set correctly. */
@@ -187,7 +184,8 @@ public class ConfigFetchHttpClient {
       String lastFetchETag,
       Map<String, String> customHeaders,
       Long firstOpenTime,
-      Date currentTime)
+      Date currentTime,
+      Map<String, String> customSignalsMap)
       throws FirebaseRemoteConfigException {
     setUpUrlConnection(urlConnection, lastFetchETag, installationAuthToken, customHeaders);
 
@@ -196,7 +194,11 @@ public class ConfigFetchHttpClient {
     try {
       byte[] requestBody =
           createFetchRequestBody(
-                  installationId, installationAuthToken, analyticsUserProperties, firstOpenTime)
+                  installationId,
+                  installationAuthToken,
+                  analyticsUserProperties,
+                  firstOpenTime,
+                  customSignalsMap)
               .toString()
               .getBytes("utf-8");
       setFetchRequestBody(urlConnection, requestBody);
@@ -307,7 +309,8 @@ public class ConfigFetchHttpClient {
       String installationId,
       String installationAuthToken,
       Map<String, String> analyticsUserProperties,
-      Long firstOpenTime)
+      Long firstOpenTime,
+      Map<String, String> customSignalsMap)
       throws FirebaseRemoteConfigClientException {
     Map<String, Object> requestBodyMap = new HashMap<>();
 

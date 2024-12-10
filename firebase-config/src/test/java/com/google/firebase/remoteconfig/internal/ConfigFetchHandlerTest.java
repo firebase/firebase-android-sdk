@@ -202,7 +202,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* customSignals= */ any());
   }
 
   @Test
@@ -401,7 +402,8 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void fetch_fetchBackendCallFails_taskThrowsException() throws Exception {
-    when(mockBackendFetchApiClient.fetch(any(), any(), any(), any(), any(), any(), any(), any()))
+    when(mockBackendFetchApiClient.fetch(
+            any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenThrow(
             new FirebaseRemoteConfigClientException("Fetch failed due to an unexpected error."));
 
@@ -766,6 +768,30 @@ public class ConfigFetchHandlerTest {
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
+  @Test
+  public void fetch_usesLatestCustomSignals() throws Exception {
+    Map<String, String> customSignals =
+        ImmutableMap.of(
+            "subscription", "premium",
+            "age", "20");
+    sharedPrefsClient.setCustomSignals(customSignals);
+    fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
+    fetchHandler.fetch();
+
+    verify(mockBackendFetchApiClient)
+        .fetch(
+            any(HttpURLConnection.class),
+            /* instanceId= */ any(),
+            /* instanceIdToken= */ any(),
+            /* analyticsUserProperties= */ any(),
+            /* lastFetchETag= */ any(),
+            /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
+            /* currentTime= */ any(),
+            /* customSignals= */ eq(sharedPrefsClient.getCustomSignals()));
+    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(customSignals);
+  }
+
   private ConfigFetchHandler getNewFetchHandler(AnalyticsConnector analyticsConnector) {
     ConfigFetchHandler fetchHandler =
         spy(
@@ -811,7 +837,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* customSignals= */ any());
   }
 
   private void setBackendResponseToNoChange(Date date) throws Exception {
@@ -823,7 +850,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any()))
+            /* currentTime= */ any(),
+            /* customSignals= */ any()))
         .thenReturn(FetchResponse.forBackendHasNoUpdates(date, firstFetchedContainer));
   }
 
@@ -838,7 +866,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* customSignals= */ any());
   }
 
   /**
@@ -919,7 +948,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* customSignals= */ any());
   }
 
   private void verifyBackendIsCalled(Map<String, String> userProperties, Long firstOpenTime)
@@ -933,7 +963,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ eq(firstOpenTime),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* customSignals= */ any());
   }
 
   private void verifyBackendIsNeverCalled() throws Exception {
@@ -946,7 +977,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* customSignals= */ any());
   }
 
   private void verifyETags(@Nullable String requestETag, String responseETag) throws Exception {
@@ -959,7 +991,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ eq(requestETag),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* customSignals= */ any());
     assertThat(sharedPrefsClient.getLastFetchETag()).isEqualTo(responseETag);
   }
 
