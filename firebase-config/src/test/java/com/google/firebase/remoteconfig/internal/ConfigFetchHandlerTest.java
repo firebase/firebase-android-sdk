@@ -778,7 +778,18 @@ public class ConfigFetchHandlerTest {
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
     fetchHandler.fetch();
 
-    verifyCustomSignals(customSignals);
+    verify(mockBackendFetchApiClient)
+        .fetch(
+            any(HttpURLConnection.class),
+            /* instanceId= */ any(),
+            /* instanceIdToken= */ any(),
+            /* analyticsUserProperties= */ any(),
+            /* lastFetchETag= */ any(),
+            /* customHeaders= */ any(),
+            /* firstOpenTime= */ any(),
+            /* currentTime= */ any(),
+            /* customSignals= */ eq(sharedPrefsClient.getCustomSignals()));
+    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(customSignals);
   }
 
   private ConfigFetchHandler getNewFetchHandler(AnalyticsConnector analyticsConnector) {
@@ -983,21 +994,6 @@ public class ConfigFetchHandlerTest {
             /* currentTime= */ any(),
             /* customSignals= */ any());
     assertThat(sharedPrefsClient.getLastFetchETag()).isEqualTo(responseETag);
-  }
-
-  private void verifyCustomSignals(Map<String, String> customSignals) throws Exception {
-    verify(mockBackendFetchApiClient)
-        .fetch(
-            any(HttpURLConnection.class),
-            /* instanceId= */ any(),
-            /* instanceIdToken= */ any(),
-            /* analyticsUserProperties= */ any(),
-            /* lastFetchETag= */ any(),
-            /* customHeaders= */ any(),
-            /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* customSignals= */ eq(sharedPrefsClient.getCustomSignals()));
-    assertThat(sharedPrefsClient.getCustomSignals()).isEqualTo(customSignals);
   }
 
   private void loadBackendApiClient() throws Exception {
