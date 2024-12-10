@@ -431,7 +431,7 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify
-    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
+    assertThat(notificationInfo.notificationBuilder.build().visibility)
         .isEqualTo(expectedVisibility);
   }
 
@@ -446,7 +446,7 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify never set
-    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
+    assertThat(notificationInfo.notificationBuilder.build().visibility)
         .isEqualTo(0);
   }
 
@@ -461,7 +461,7 @@ public class CommonNotificationBuilderRoboTest {
         CommonNotificationBuilder.createNotificationInfo(appContext, new NotificationParams(data));
 
     // verify never set
-    assertThat(NotificationCompat.getVisibility(notificationInfo.notificationBuilder.build()))
+    assertThat(notificationInfo.notificationBuilder.build().visibility)
         .isEqualTo(0);
   }
 
