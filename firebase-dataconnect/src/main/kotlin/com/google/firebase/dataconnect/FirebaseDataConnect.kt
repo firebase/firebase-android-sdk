@@ -378,6 +378,23 @@ public fun FirebaseDataConnect.Companion.getInstance(
   settings: DataConnectSettings = DataConnectSettings()
 ): FirebaseDataConnect = getInstance(app = Firebase.app, config = config, settings = settings)
 
+/**
+ * The log level used by all [FirebaseDataConnect] instances.
+ *
+ * The default log level is [LogLevel.WARN]. Setting this to [LogLevel.DEBUG] will enable debug
+ * logging, which is especially useful when reporting issues to Google or investigating problems
+ * yourself. Setting it to [LogLevel.NONE] will disable all logging.
+ */
+@Deprecated(
+  message = "Will be removed when Data Connect graduates from beta",
+  replaceWith = ReplaceWith("logging.level", "com.google.firebase.dataconnect.logging")
+)
+public var FirebaseDataConnect.Companion.logLevel: LogLevel
+  get() = logging.level
+  set(level) {
+    logging.level = level
+  }
+
 /** The logcat logging facilities used by all [FirebaseDataConnect] instances. */
 public val FirebaseDataConnect.Companion.logging: DataConnectLogging
   get() = DataConnectLoggingImpl

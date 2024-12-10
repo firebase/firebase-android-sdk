@@ -1,8 +1,8 @@
 # Unreleased
-* [changed] *Breaking Change* `FirebaseDataConnect.logLevel` changed to
-  `FirebaseDataConnect.logging` to provide more fine-grained control and access
-  to the logcat logging facilities, such as a `Flow` to collect the log level
-  changes and `push()` to easily set and restore the log level.
+* [feature] `FirebaseDataConnect.logging` added, to provide more advanced
+  control and access to the logcat logging facilities, such as a `Flow` to
+  collect the log level changes and `push()` to easily set and restore the log
+  level.
   ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 16.0.0-beta03

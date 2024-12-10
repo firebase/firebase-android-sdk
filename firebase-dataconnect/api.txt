@@ -130,7 +130,9 @@ package com.google.firebase.dataconnect {
   public final class FirebaseDataConnectKt {
     method @NonNull public static com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.FirebaseApp app, @NonNull com.google.firebase.dataconnect.ConnectorConfig config, @NonNull com.google.firebase.dataconnect.DataConnectSettings settings = com.google.firebase.dataconnect.DataConnectSettings());
     method @NonNull public static com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.dataconnect.ConnectorConfig config, @NonNull com.google.firebase.dataconnect.DataConnectSettings settings = com.google.firebase.dataconnect.DataConnectSettings());
+    method @Deprecated @NonNull public static com.google.firebase.dataconnect.LogLevel getLogLevel(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion);
     method @NonNull public static com.google.firebase.dataconnect.DataConnectLogging getLogging(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion);
+    method @Deprecated public static void setLogLevel(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.dataconnect.LogLevel);
   }
 
   @kotlinx.serialization.Serializable(with=LocalDateSerializer::class) public final class LocalDate {
