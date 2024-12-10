@@ -26,8 +26,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -36,9 +35,9 @@ internal object DataConnectLoggingImpl : DataConnectLogging {
 
   private val _level = MutableStateFlow(LogLevel.WARN)
 
-  override val flow: StateFlow<LogLevel> = _level.asStateFlow()
+  override val flow = _level.asSharedFlow()
 
-  override var level: LogLevel by _level::value
+  override var level by _level::value
 
   override fun push(level: LogLevel): LogLevelStackFrame {
     while (true) {

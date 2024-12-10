@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 
 /**
  * The logcat logging facilities provided by the Firebase Data Connect SDK.
@@ -51,7 +50,7 @@ public interface DataConnectLogging {
   public var level: LogLevel
 
   /** A [Flow] that can be used to observe the changes to [level]. */
-  public val flow: StateFlow<LogLevel>
+  public val flow: Flow<LogLevel>
 
   /**
    * Sets the log level to the given level, as if by setting [level], and returns an object that,
