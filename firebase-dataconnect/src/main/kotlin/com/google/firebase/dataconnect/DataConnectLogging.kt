@@ -86,6 +86,12 @@ public interface DataConnectLogging {
    */
   public interface LogLevelStackFrame : AutoCloseable {
 
+    /** The log level that was in place when this frame was pushed. */
+    public val originalLevel: LogLevel
+
+    /** The log level that was set when this frame was pushed. */
+    public val newLevel: LogLevel
+
     /**
      * Pops this frame off of the log level stack, restoring the log level to the state it was in at
      * the time that this frame was pushed onto the stack.

@@ -44,12 +44,15 @@ internal object DataConnectLoggingImpl : DataConnectLogging {
     while (true) {
       val originalLevel = _level.value
       if (_level.compareAndSet(originalLevel, level)) {
-        return LogLevelStackFrameImpl(originalLevel)
+        return LogLevelStackFrameImpl(originalLevel, level)
       }
     }
   }
 
-  private class LogLevelStackFrameImpl(val originalLevel: LogLevel) : LogLevelStackFrame {
+  private data class LogLevelStackFrameImpl(
+    override val originalLevel: LogLevel,
+    override val newLevel: LogLevel,
+  ) : LogLevelStackFrame {
 
     private val closedMutex = Mutex()
     private var closed = false
