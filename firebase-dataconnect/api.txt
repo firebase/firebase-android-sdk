@@ -42,6 +42,24 @@ package com.google.firebase.dataconnect {
     ctor public DataConnectException(@NonNull String message, @Nullable Throwable cause = null);
   }
 
+  public interface DataConnectLogging {
+    method @NonNull public kotlinx.coroutines.flow.StateFlow<com.google.firebase.dataconnect.LogLevel> getFlow();
+    method @NonNull public com.google.firebase.dataconnect.LogLevel getLevel();
+    method @NonNull public com.google.firebase.dataconnect.DataConnectLogging.LogLevelStackFrame push(@NonNull com.google.firebase.dataconnect.LogLevel level);
+    method public void setLevel(@NonNull com.google.firebase.dataconnect.LogLevel);
+    property @NonNull public abstract kotlinx.coroutines.flow.StateFlow<com.google.firebase.dataconnect.LogLevel> flow;
+    property @NonNull public abstract com.google.firebase.dataconnect.LogLevel level;
+  }
+
+  public static interface DataConnectLogging.LogLevelStackFrame extends java.lang.AutoCloseable {
+    method public void close();
+    method @NonNull public com.google.firebase.dataconnect.LogLevel getNewLevel();
+    method @NonNull public com.google.firebase.dataconnect.LogLevel getOriginalLevel();
+    method @Nullable public suspend Object suspendingClose(@NonNull kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property @NonNull public abstract com.google.firebase.dataconnect.LogLevel newLevel;
+    property @NonNull public abstract com.google.firebase.dataconnect.LogLevel originalLevel;
+  }
+
   public final class DataConnectSettings {
     ctor public DataConnectSettings(@NonNull String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
     method @NonNull public String getHost();
@@ -112,8 +130,7 @@ package com.google.firebase.dataconnect {
   public final class FirebaseDataConnectKt {
     method @NonNull public static com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.FirebaseApp app, @NonNull com.google.firebase.dataconnect.ConnectorConfig config, @NonNull com.google.firebase.dataconnect.DataConnectSettings settings = com.google.firebase.dataconnect.DataConnectSettings());
     method @NonNull public static com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.dataconnect.ConnectorConfig config, @NonNull com.google.firebase.dataconnect.DataConnectSettings settings = com.google.firebase.dataconnect.DataConnectSettings());
-    method @NonNull public static com.google.firebase.dataconnect.LogLevel getLogLevel(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion);
-    method public static void setLogLevel(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.dataconnect.LogLevel);
+    method @NonNull public static com.google.firebase.dataconnect.DataConnectLogging getLogging(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion);
   }
 
   @kotlinx.serialization.Serializable(with=LocalDateSerializer::class) public final class LocalDate {
