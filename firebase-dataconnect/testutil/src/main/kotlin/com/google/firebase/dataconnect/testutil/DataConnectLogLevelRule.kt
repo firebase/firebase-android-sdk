@@ -15,7 +15,7 @@
  */
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.DataConnectLogging.LogLevelStackFrame
+import com.google.firebase.dataconnect.DataConnectLogging
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.logging
@@ -28,13 +28,14 @@ import org.junit.rules.ExternalResource
 class DataConnectLogLevelRule(val logLevelDuringTest: LogLevel = LogLevel.DEBUG) :
   ExternalResource() {
 
-  private lateinit var logLevelFrame: LogLevelStackFrame
+  private lateinit var savedLoggingState: DataConnectLogging.State
 
   override fun before() {
-    logLevelFrame = FirebaseDataConnect.logging.push(logLevelDuringTest)
+    savedLoggingState = FirebaseDataConnect.logging.state
+    FirebaseDataConnect.logging.level = logLevelDuringTest
   }
 
   override fun after() {
-    logLevelFrame.close()
+    savedLoggingState.restore()
   }
 }

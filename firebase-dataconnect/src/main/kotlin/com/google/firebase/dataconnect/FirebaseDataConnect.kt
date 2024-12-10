@@ -396,5 +396,5 @@ public var FirebaseDataConnect.Companion.logLevel: LogLevel
   }
 
 /** The logcat logging facilities used by all [FirebaseDataConnect] instances. */
-public val FirebaseDataConnect.Companion.logging: DataConnectLogging
+public val FirebaseDataConnect.Companion.logging: DataConnectLogging<*>
   get() = DataConnectLoggingImpl

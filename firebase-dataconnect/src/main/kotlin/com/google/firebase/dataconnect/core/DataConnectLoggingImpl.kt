@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.core
 import android.util.Log
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.DataConnectLogging
-import com.google.firebase.dataconnect.DataConnectLogging.LogLevelStackFrame
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
@@ -27,44 +26,32 @@ import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
-internal object DataConnectLoggingImpl : DataConnectLogging {
+internal object DataConnectLoggingImpl : DataConnectLogging<DataConnectLoggingImpl.StateImpl> {
 
-  private val _level = MutableStateFlow(LogLevel.WARN)
+  private val _state = MutableStateFlow(StateImpl(level = LogLevel.WARN))
 
-  override val flow = _level.asSharedFlow()
+  override val flow = _state.asSharedFlow()
 
-  override var level by _level::value
+  override val state
+    get() = _state.value
 
-  override fun push(level: LogLevel): LogLevelStackFrame {
-    while (true) {
-      val originalLevel = _level.value
-      if (_level.compareAndSet(originalLevel, level)) {
-        return LogLevelStackFrameImpl(originalLevel, level)
-      }
-    }
-  }
-
-  private data class LogLevelStackFrameImpl(
-    override val originalLevel: LogLevel,
-    override val newLevel: LogLevel,
-  ) : LogLevelStackFrame {
-
-    private val closedMutex = Mutex()
-    private var closed = false
-
-    override fun close() = runBlocking { suspendingClose() }
-
-    override suspend fun suspendingClose() =
-      closedMutex.withLock {
-        if (!closed) {
-          level = originalLevel
-          closed = true
+  override var level: LogLevel
+    get() = _state.value.level
+    set(newLevel) {
+      while (true) {
+        val oldState = _state.value
+        val newState = oldState.copy(level = newLevel)
+        if (_state.compareAndSet(oldState, newState)) {
+          break
         }
       }
+    }
+
+  data class StateImpl(override val level: LogLevel) : DataConnectLogging.State {
+    override fun restore() {
+      _state.value = this
+    }
   }
 }
 

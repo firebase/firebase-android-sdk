@@ -18,24 +18,20 @@ package com.google.firebase.dataconnect.core
 
 import app.cash.turbine.test
 import com.google.firebase.dataconnect.LogLevel
-import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
-import io.kotest.assertions.assertSoftly
+import com.google.firebase.dataconnect.core.DataConnectLoggingImpl.StateImpl
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.enum
-import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class DataConnectLoggingImplUnitTest {
 
   @Test
-  fun `level setting and getting`() = runTest {
+  fun `level property, setting and getting`() = runTest {
     checkAll(Arb.enum<LogLevel>()) { newLevel ->
       DataConnectLoggingImpl.level = newLevel
       DataConnectLoggingImpl.level shouldBe newLevel
@@ -43,131 +39,61 @@ class DataConnectLoggingImplUnitTest {
   }
 
   @Test
-  fun `flow collecting`() = runTest {
+  fun `flow property, collecting`() = runTest {
     DataConnectLoggingImpl.flow.test {
-      withClue("initial item") { awaitItem() shouldBe DataConnectLoggingImpl.level }
+      withClue("initial item") { awaitItem().level shouldBe DataConnectLoggingImpl.level }
 
       checkAll(Arb.enum<LogLevel>()) { newLevel ->
         val levelChanged = DataConnectLoggingImpl.level != newLevel
         DataConnectLoggingImpl.level = newLevel
         if (levelChanged) {
-          awaitItem() shouldBe newLevel
+          awaitItem().level shouldBe newLevel
         }
       }
     }
   }
 
   @Test
-  fun `push() should change log level`() = runTest {
-    checkAll(Arb.enum<LogLevel>()) { newLevel ->
-      DataConnectLoggingImpl.push(newLevel)
-      DataConnectLoggingImpl.level shouldBe newLevel
-    }
-  }
-
-  @Test
-  fun `push() should restore log level when close() is invoked on its return value`() = runTest {
-    checkAll(Arb.enum<LogLevel>()) { newLevel ->
-      val originalLevel = DataConnectLoggingImpl.level
-      val frame = DataConnectLoggingImpl.push(newLevel)
-      frame.close()
-      DataConnectLoggingImpl.level shouldBe originalLevel
-    }
-  }
-
-  @Test
-  fun `push() should restore log level when suspendingClose() is invoked on its return value`() =
-    runTest {
-      checkAll(Arb.enum<LogLevel>()) { newLevel ->
-        val originalLevel = DataConnectLoggingImpl.level
-        val frame = DataConnectLoggingImpl.push(newLevel)
-        frame.suspendingClose()
-        DataConnectLoggingImpl.level shouldBe originalLevel
-      }
-    }
-
-  @Test
-  fun `push() should return correct originalLevel and newLevel`() = runTest {
-    checkAll(Arb.enum<LogLevel>()) { newLevel ->
-      val originalLevel = DataConnectLoggingImpl.level
-      val frame = DataConnectLoggingImpl.push(newLevel)
-      assertSoftly {
-        withClue("originalLevel") { frame.originalLevel shouldBe originalLevel }
-        withClue("newLevel") { frame.newLevel shouldBe newLevel }
-      }
-    }
-  }
-
-  @Test
-  fun `push() should behave independently when interleaved`() = runTest {
-    val arb = Arb.enum<LogLevel>()
-    val levels = List(100) { arb.next() }
-    val frames = List(levels.size) { DataConnectLoggingImpl.push(levels[it]) }
-
-    frames.shuffled().forEachIndexed { shuffledFrameIndex, frame ->
-      withClue("shuffledFrameIndex=$shuffledFrameIndex") {
-        frame.close()
-        DataConnectLoggingImpl.level shouldBe frame.originalLevel
-      }
-    }
-  }
-
-  @Test
-  fun `push() then close() should only have effects on the first invocation`() = runTest {
+  fun `state property, should be the current state`() = runTest {
     val arb = Arb.enum<LogLevel>()
     checkAll(arb, arb) { level1, level2 ->
-      val frame = DataConnectLoggingImpl.push(level1)
-      frame.close()
+      DataConnectLoggingImpl.level = level1
+      withClue("state1") { DataConnectLoggingImpl.state.level shouldBe level1 }
       DataConnectLoggingImpl.level = level2
-      repeat(10) {
-        withClue("superfluous close() call $it (level1=$level1, level2=$level2)") {
-          frame.close()
-          DataConnectLoggingImpl.level shouldBe level2
-        }
-      }
+      withClue("state1") { DataConnectLoggingImpl.state.level shouldBe level2 }
     }
   }
 
   @Test
-  fun `push() then suspendingClose() should only have effects on the first invocation`() = runTest {
-    val arb = Arb.enum<LogLevel>()
-    checkAll(arb, arb) { level1, level2 ->
-      val frame = DataConnectLoggingImpl.push(level1)
-      frame.suspendingClose()
-      DataConnectLoggingImpl.level = level2
-      repeat(10) {
-        withClue("superfluous suspendingClose() call $it (level1=$level1, level2=$level2)") {
-          frame.suspendingClose()
-          DataConnectLoggingImpl.level shouldBe level2
-        }
-      }
+  fun `StateImpl level property, equals value given to constructor`() = runTest {
+    checkAll(Arb.enum<LogLevel>()) { level ->
+      val state = StateImpl(level)
+      state.level shouldBe level
     }
   }
 
   @Test
-  fun `push() then close() invoked concurrently`() = runTest {
-    val arb = Arb.enum<LogLevel>()
-    val level1 = arb.next()
-    DataConnectLoggingImpl.level = level1
+  fun `StateImpl restore(), should restore level`() = runTest {
+    checkAll(Arb.stateImpl()) { state: StateImpl ->
+      state.restore()
+      DataConnectLoggingImpl.level shouldBe state.level
+    }
+  }
 
-    val level2 = arb.samples().map { it.value }.filter { it != level1 }.first()
-    level1 shouldNotBe level2 // make sure the logic above worked as expected.
-    val frame = DataConnectLoggingImpl.push(level2)
+  @Test
+  fun `StateImpl restore(), should restore on each invocation`() = runTest {
+    checkAll(Arb.stateImpl(), Arb.enum<LogLevel>()) { state: StateImpl, newLevel ->
+      state.restore()
+      withClue("restore1") { DataConnectLoggingImpl.level shouldBe state.level }
 
-    val latch = SuspendingCountDownLatch(10_000)
-    val jobs =
-      List(latch.count) {
-        // Use `Dispatchers.Default` as the dispatcher for the launched coroutines so that, as
-        // documented, there will be at least 2 threads used to run the coroutines.
+      DataConnectLoggingImpl.level = newLevel
+      state.restore()
+      withClue("restore2") { DataConnectLoggingImpl.level shouldBe state.level }
+    }
+  }
 
-        launch(Dispatchers.Default) {
-          latch.countDown()
-          latch.await()
-          frame.close()
-        }
-      }
+  private companion object {
 
-    jobs.forEach { it.join() }
-    DataConnectLoggingImpl.level shouldBe level1
+    fun Arb.Companion.stateImpl(): Arb<StateImpl> = Arb.enum<LogLevel>().map { StateImpl(it) }
   }
 }
