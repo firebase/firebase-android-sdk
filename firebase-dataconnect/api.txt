@@ -60,6 +60,10 @@ package com.google.firebase.dataconnect {
     property @NonNull public abstract com.google.firebase.dataconnect.LogLevel originalLevel;
   }
 
+  public final class DataConnectLoggingKt {
+    method public static inline <T> T withLevel(@NonNull com.google.firebase.dataconnect.DataConnectLogging, @NonNull com.google.firebase.dataconnect.LogLevel level, @NonNull kotlin.jvm.functions.Function0<? extends T> block);
+  }
+
   public final class DataConnectSettings {
     ctor public DataConnectSettings(@NonNull String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
     method @NonNull public String getHost();

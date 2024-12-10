@@ -1,9 +1,9 @@
 # Unreleased
 * [feature] `FirebaseDataConnect.logging` added, to provide more advanced
   control and access to the logcat logging facilities, such as a `Flow` to
-  collect the log level changes and `push()` to easily set and restore the log
-  level.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  collect the log level changes, `push()` to set and restore the log level,
+  and `withLevel()` to run a block with a specific log level.
+  ([#6586](https://github.com/firebase/firebase-android-sdk/pull/6586))
 
 # 16.0.0-beta03
 * [changed] Requires Data Connect emulator version 1.6.1 or later for code generation.

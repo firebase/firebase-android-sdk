@@ -108,3 +108,23 @@ public interface DataConnectLogging {
     public suspend fun suspendingClose()
   }
 }
+
+/**
+ * Sets the log level to the given level, runs the given block, then restores the log level to its
+ * original value.
+ *
+ * The given block is called exactly once and is called in-place. Using the experimental
+ * [kotlin.contracts.contract], this could be expressed as:
+ * ```
+ * contract {
+ *   callsInPlace(block, InvocationKind.EXACTLY_ONCE)
+ * }
+ * ```
+ *
+ * @param level the log level to have in effect when the given block is executed.
+ * @param block the code to execute with the given log level set; it will be invoked exactly once
+ * inline.
+ * @return whatever the given block returns.
+ */
+public inline fun <T> DataConnectLogging.withLevel(level: LogLevel, block: () -> T): T =
+  push(level).use { block() }
