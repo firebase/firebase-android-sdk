@@ -43,11 +43,11 @@ package com.google.firebase.dataconnect {
   }
 
   public interface DataConnectLogging {
-    method @NonNull public kotlinx.coroutines.flow.StateFlow<com.google.firebase.dataconnect.LogLevel> getFlow();
+    method @NonNull public kotlinx.coroutines.flow.Flow<com.google.firebase.dataconnect.LogLevel> getFlow();
     method @NonNull public com.google.firebase.dataconnect.LogLevel getLevel();
     method @NonNull public com.google.firebase.dataconnect.DataConnectLogging.LogLevelStackFrame push(@NonNull com.google.firebase.dataconnect.LogLevel level);
     method public void setLevel(@NonNull com.google.firebase.dataconnect.LogLevel);
-    property @NonNull public abstract kotlinx.coroutines.flow.StateFlow<com.google.firebase.dataconnect.LogLevel> flow;
+    property @NonNull public abstract kotlinx.coroutines.flow.Flow<com.google.firebase.dataconnect.LogLevel> flow;
     property @NonNull public abstract com.google.firebase.dataconnect.LogLevel level;
   }
 
