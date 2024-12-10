@@ -38,6 +38,7 @@ import java.util.concurrent.Executor
 import javax.inject.Named
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.Headers
 import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -174,7 +175,8 @@ internal constructor(
   internal fun call(
     name: String,
     data: Any?,
-    options: HttpsCallOptions
+    options: HttpsCallOptions,
+    headers: Map<String, String>,
   ): Task<HttpsCallableResult> {
     return providerInstalled.task
       .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
@@ -184,7 +186,7 @@ internal constructor(
         }
         val context = task.result
         val url = getURL(name)
-        call(url, data, context, options)
+        call(url, data, context, options, headers)
       }
   }
 
@@ -195,7 +197,12 @@ internal constructor(
    * @param data Parameters to pass to the function. Can be anything encodable as JSON.
    * @return A Task that will be completed when the request is complete.
    */
-  internal fun call(url: URL, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult> {
+  internal fun call(
+    url: URL,
+    data: Any?,
+    options: HttpsCallOptions,
+    headers: Map<String, String>,
+  ): Task<HttpsCallableResult> {
     return providerInstalled.task
       .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
       .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
@@ -203,7 +210,7 @@ internal constructor(
           return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
         }
         val context = task.result
-        call(url, data, context, options)
+        call(url, data, context, options, headers)
       }
   }
 
@@ -219,7 +226,8 @@ internal constructor(
     url: URL,
     data: Any?,
     context: HttpsCallableContext?,
-    options: HttpsCallOptions
+    options: HttpsCallOptions,
+    headers: Map<String, String>,
   ): Task<HttpsCallableResult?> {
     Preconditions.checkNotNull(url, "url cannot be null")
     val body: MutableMap<String?, Any?> = HashMap()
@@ -228,7 +236,9 @@ internal constructor(
     val bodyJSON = JSONObject(body)
     val contentType = MediaType.parse("application/json")
     val requestBody = RequestBody.create(contentType, bodyJSON.toString())
-    var request = Request.Builder().url(url).post(requestBody)
+    // Add custom headers first so that internal headers cannot be overwritten
+    val customHeaders = Headers.of(headers)
+    var request = Request.Builder().url(url).post(requestBody).headers(customHeaders)
     if (context!!.authToken != null) {
       request = request.header("Authorization", "Bearer " + context.authToken)
     }
