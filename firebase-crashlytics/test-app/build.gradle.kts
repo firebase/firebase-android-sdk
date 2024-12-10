@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.material)
     //implementation(libs.firebase.crashlytics.ktx)
     testImplementation(libs.junit)
+    testImplementation("io.mockk:mockk:1.13.8")
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")

@@ -34,7 +34,7 @@ class CrashBroadcastReceiver : BroadcastReceiver() {
 
   fun crash(context: Context) {
     Toast.makeText(context, "KABOOM!", Toast.LENGTH_LONG).show()
-    throw RuntimeException("CRASH_BROADCAST")
+    throw RuntimeException("Test")
   }
 
   fun toast(context: Context) {
