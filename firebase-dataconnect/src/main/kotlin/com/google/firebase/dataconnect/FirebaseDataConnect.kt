@@ -20,9 +20,10 @@ import android.annotation.SuppressLint
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.dataconnect.core.DataConnectLoggingImpl
 import com.google.firebase.dataconnect.core.FirebaseDataConnectFactory
+import com.google.firebase.dataconnect.core.LoggerGlobals
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -61,8 +62,8 @@ import kotlinx.serialization.modules.SerializersModule
  * Data Connect service) call [FirebaseDataConnect.useEmulator]. To create [QueryRef] and
  * [MutationRef] instances for running queries and mutations, call [FirebaseDataConnect.query] and
  * [FirebaseDataConnect.mutation], respectively. To enable debug logging, which is especially useful
- * when reporting issues to Google, set [DataConnectLogging.level] in
- * [FirebaseDataConnect.Companion.logging] to [LogLevel.DEBUG].
+ * when reporting issues to Google, set [FirebaseDataConnect.Companion.logLevel] to [LogLevel.DEBUG]
+ * .
  *
  * ### Integration with Kotlin Coroutines and Serialization
  *
@@ -381,20 +382,13 @@ public fun FirebaseDataConnect.Companion.getInstance(
 /**
  * The log level used by all [FirebaseDataConnect] instances.
  *
+ * As a [MutableStateFlow], the log level can be changed by assigning [MutableStateFlow.value].
+ * Also, the flow can be "collected" as a means of observing the log level, which may be useful in
+ * the case that a user interface shows a UI element, such as a checkbox, to represent whether debug
+ * logging is enabled.
+ *
  * The default log level is [LogLevel.WARN]. Setting this to [LogLevel.DEBUG] will enable debug
  * logging, which is especially useful when reporting issues to Google or investigating problems
  * yourself. Setting it to [LogLevel.NONE] will disable all logging.
  */
-@Deprecated(
-  message = "Will be removed when Data Connect graduates from beta",
-  replaceWith = ReplaceWith("logging.level", "com.google.firebase.dataconnect.logging")
-)
-public var FirebaseDataConnect.Companion.logLevel: LogLevel
-  get() = logging.level
-  set(level) {
-    logging.level = level
-  }
-
-/** The logcat logging facilities used by all [FirebaseDataConnect] instances. */
-public val FirebaseDataConnect.Companion.logging: DataConnectLogging<*>
-  get() = DataConnectLoggingImpl
+public val FirebaseDataConnect.Companion.logLevel: MutableStateFlow<LogLevel> get() = LoggerGlobals.logLevel

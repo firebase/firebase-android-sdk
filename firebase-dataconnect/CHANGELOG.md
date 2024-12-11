@@ -1,8 +1,7 @@
 # Unreleased
-* [feature] `FirebaseDataConnect.logging` added, to provide more advanced
-  control and access to the logcat logging facilities, such as a `Flow` to
-  collect the log level changes, `push()` to set and restore the log level,
-  and `withLevel()` to run a block with a specific log level.
+* [changed] `FirebaseDataConnect.logLevel` type changed from `LogLevel` to
+  `MutableStateFlow<LogLevel>`. This enables apps to "collect" the flow to,
+  for example, update a UI component when the log level changes.
   ([#6586](https://github.com/firebase/firebase-android-sdk/pull/6586))
 
 # 16.0.0-beta03

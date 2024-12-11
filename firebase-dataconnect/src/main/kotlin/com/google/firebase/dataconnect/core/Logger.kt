@@ -18,42 +18,11 @@ package com.google.firebase.dataconnect.core
 
 import android.util.Log
 import com.google.firebase.dataconnect.BuildConfig
-import com.google.firebase.dataconnect.DataConnectLogging
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
-import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.util.nextAlphanumericString
-import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-
-internal object DataConnectLoggingImpl : DataConnectLogging<DataConnectLoggingImpl.StateImpl> {
-
-  private val _state = MutableStateFlow(StateImpl(level = LogLevel.WARN))
-
-  override val flow = _state.asSharedFlow()
-
-  override val state
-    get() = _state.value
-
-  override var level: LogLevel
-    get() = _state.value.level
-    set(newLevel) {
-      while (true) {
-        val oldState = _state.value
-        val newState = oldState.copy(level = newLevel)
-        if (_state.compareAndSet(oldState, newState)) {
-          break
-        }
-      }
-    }
-
-  data class StateImpl(override val level: LogLevel) : DataConnectLogging.State {
-    override fun restore() {
-      _state.value = this
-    }
-  }
-}
+import kotlin.random.Random
 
 internal interface Logger {
   val name: String
@@ -90,22 +59,22 @@ private class LoggerImpl(override val name: String) : Logger {
 internal object LoggerGlobals {
   const val LOG_TAG = "FirebaseDataConnect"
 
-  private val logLevel: LogLevel by DataConnectLoggingImpl::level
+  val logLevel = MutableStateFlow(LogLevel.WARN)
 
   inline fun Logger.debug(message: () -> Any?) {
-    if (logLevel <= LogLevel.DEBUG) debug("${message()}")
+    if (logLevel.value <= LogLevel.DEBUG) debug("${message()}")
   }
 
   fun Logger.debug(message: String) {
-    if (logLevel <= LogLevel.DEBUG) log(null, LogLevel.DEBUG, message)
+    if (logLevel.value <= LogLevel.DEBUG) log(null, LogLevel.DEBUG, message)
   }
 
   inline fun Logger.warn(message: () -> Any?) {
-    if (logLevel <= LogLevel.WARN) warn("${message()}")
+    if (logLevel.value <= LogLevel.WARN) warn("${message()}")
   }
 
   inline fun Logger.warn(exception: Throwable?, message: () -> Any?) {
-    if (logLevel <= LogLevel.WARN) warn(exception, "${message()}")
+    if (logLevel.value <= LogLevel.WARN) warn(exception, "${message()}")
   }
 
   fun Logger.warn(message: String) {
@@ -113,7 +82,7 @@ internal object LoggerGlobals {
   }
 
   fun Logger.warn(exception: Throwable?, message: String) {
-    if (logLevel <= LogLevel.WARN) log(exception, LogLevel.WARN, message)
+    if (logLevel.value <= LogLevel.WARN) log(exception, LogLevel.WARN, message)
   }
 
   fun Logger(name: String): Logger = LoggerImpl(name)
