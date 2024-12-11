@@ -1611,7 +1611,7 @@ public class FirestoreTest {
   }
 
   @Test
-  public void vectorFieldOrderOnlineAndOffline() throws Exception {
+  public void sdkOrdersQueryByDocumentIdTheSameWayOnlineAndOffline() {
     Map<String, Map<String, Object>> testDocs =
         map(
             "A", map("a", 1),
