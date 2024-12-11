@@ -391,4 +391,5 @@ public fun FirebaseDataConnect.Companion.getInstance(
  * logging, which is especially useful when reporting issues to Google or investigating problems
  * yourself. Setting it to [LogLevel.NONE] will disable all logging.
  */
-public val FirebaseDataConnect.Companion.logLevel: MutableStateFlow<LogLevel> get() = LoggerGlobals.logLevel
+public val FirebaseDataConnect.Companion.logLevel: MutableStateFlow<LogLevel>
+  get() = LoggerGlobals.logLevel

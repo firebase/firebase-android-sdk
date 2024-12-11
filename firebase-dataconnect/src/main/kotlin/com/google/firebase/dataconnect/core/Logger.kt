@@ -21,8 +21,8 @@ import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
 import com.google.firebase.util.nextAlphanumericString
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.random.Random
+import kotlinx.coroutines.flow.MutableStateFlow
 
 internal interface Logger {
   val name: String
