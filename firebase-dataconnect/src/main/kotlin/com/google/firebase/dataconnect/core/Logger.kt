@@ -26,8 +26,11 @@ import kotlin.random.Random
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 internal interface Logger {
   val name: String
@@ -67,7 +70,8 @@ internal object LoggerGlobals {
   val logLevel =
     MutableStateFlow(LogLevel.WARN).also { logLevelFlow ->
       val logger = Logger("LogLevelChange")
-      @OptIn(DelicateCoroutinesApi::class) logger.logChanges(logLevelFlow, GlobalScope)
+      @OptIn(DelicateCoroutinesApi::class)
+      logger.logChanges(logLevelFlow.value, logLevelFlow, GlobalScope)
     }
 
   inline fun Logger.debug(message: () -> Any?) {
@@ -100,16 +104,21 @@ internal object LoggerGlobals {
   // logging is enabled and no logs are produced, to at least confirm that debug logging has been
   // enabled. Also, it will leave a "mark" in the logs when debug logging is _disabled_ to explain
   // why the debug logs stop.
-  private fun Logger.logChanges(flow: MutableStateFlow<LogLevel>, coroutineScope: CoroutineScope) {
-    var previousLogLevel = flow.value
-    coroutineScope.launch {
-      flow.collect { newLogLevel: LogLevel ->
-        if (newLogLevel != previousLogLevel) {
-          val emitLogLevel = LogLevel.noisiestOf(newLogLevel, previousLogLevel)
-          log(null, emitLogLevel, "Log level changed to $newLogLevel (was $previousLogLevel)")
-          previousLogLevel = newLogLevel
+  private fun Logger.logChanges(
+    initialLogLevel: LogLevel,
+    flow: Flow<LogLevel>,
+    coroutineScope: CoroutineScope
+  ) {
+    val state = MutableStateFlow(initialLogLevel)
+    log(null, initialLogLevel, "Log level set to $initialLogLevel")
+    flow
+      .onEach { newLogLevel: LogLevel ->
+        val oldLogLevel = state.getAndUpdate { newLogLevel }
+        if (newLogLevel != oldLogLevel) {
+          val emitLogLevel = LogLevel.noisiestOf(newLogLevel, oldLogLevel)
+          log(null, emitLogLevel, "Log level changed to $newLogLevel (was $oldLogLevel)")
         }
       }
-    }
+      .launchIn(coroutineScope)
   }
 }
