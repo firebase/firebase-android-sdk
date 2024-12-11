@@ -30,5 +30,26 @@ public enum class LogLevel {
   WARN,
 
   /** Do not log anything. */
-  NONE,
+  NONE;
+
+  internal companion object {
+
+    /**
+     * Returns one of the two given log levels, the one that is "noisier" (i.e. that logs more).
+     *
+     * It can be useful to figure out which of two log levels are noisier on log level change, to
+     * emit a message about the log level change at the noisiest level.
+     */
+    fun noisiestOf(logLevel1: LogLevel, logLevel2: LogLevel): LogLevel =
+      when (logLevel1) {
+        DEBUG -> DEBUG
+        NONE -> logLevel2
+        WARN ->
+          when (logLevel2) {
+            DEBUG -> DEBUG
+            WARN -> WARN
+            NONE -> WARN
+          }
+      }
+  }
 }
