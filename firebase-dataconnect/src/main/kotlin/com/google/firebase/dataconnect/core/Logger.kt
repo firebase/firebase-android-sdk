@@ -20,9 +20,14 @@ import android.util.Log
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 internal interface Logger {
   val name: String
@@ -59,7 +64,11 @@ private class LoggerImpl(override val name: String) : Logger {
 internal object LoggerGlobals {
   const val LOG_TAG = "FirebaseDataConnect"
 
-  val logLevel = MutableStateFlow(LogLevel.WARN)
+  val logLevel =
+    MutableStateFlow(LogLevel.WARN).also { logLevelFlow ->
+      val logger = Logger("LogLevelChange")
+      @OptIn(DelicateCoroutinesApi::class) logger.logChanges(logLevelFlow, GlobalScope)
+    }
 
   inline fun Logger.debug(message: () -> Any?) {
     if (logLevel.value <= LogLevel.DEBUG) debug("${message()}")
@@ -86,4 +95,21 @@ internal object LoggerGlobals {
   }
 
   fun Logger(name: String): Logger = LoggerImpl(name)
+
+  // Log a message each time the log level changes. This is intended to provide context when debug
+  // logging is enabled and no logs are produced, to at least confirm that debug logging has been
+  // enabled. Also, it will leave a "mark" in the logs when debug logging is _disabled_ to explain
+  // why the debug logs stop.
+  private fun Logger.logChanges(flow: MutableStateFlow<LogLevel>, coroutineScope: CoroutineScope) {
+    var previousLogLevel = flow.value
+    coroutineScope.launch {
+      flow.collect { newLogLevel: LogLevel ->
+        if (newLogLevel != previousLogLevel) {
+          val emitLogLevel = LogLevel.noisiestOf(newLogLevel, previousLogLevel)
+          log(null, emitLogLevel, "Log level changed to $newLogLevel (was $previousLogLevel)")
+          previousLogLevel = newLogLevel
+        }
+      }
+    }
+  }
 }
