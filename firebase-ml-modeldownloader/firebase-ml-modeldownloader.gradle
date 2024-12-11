@@ -86,7 +86,7 @@ dependencies {
          exclude group: "javax.inject", module: "javax.inject"
      }
 
-    api 'com.google.android.gms:play-services-tasks:18.0.1'
+    api libs.playservices.tasks
     api 'com.google.firebase:firebase-annotations:16.2.0'
     api("com.google.firebase:firebase-common:21.0.0")
     api("com.google.firebase:firebase-common-ktx:21.0.0")
@@ -107,10 +107,10 @@ dependencies {
     implementation libs.javax.inject
     implementation libs.kotlin.stdlib
 
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
+    compileOnly libs.autovalue.annotations
 
     annotationProcessor project(":encoders:firebase-encoders-processor")
-    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
+    annotationProcessor libs.autovalue
     annotationProcessor libs.dagger.compiler
 
     testImplementation(project(":integ-testing")) {
@@ -118,21 +118,20 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
     testImplementation libs.androidx.test.core
-    testImplementation 'androidx.test:runner:1.5.1'
+    testImplementation libs.androidx.test.runner
     testImplementation libs.androidx.test.junit
-    testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
+    testImplementation libs.wiremock.standalone
     testImplementation libs.protobuf.java.util
     testImplementation libs.truth
-    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
-    testImplementation 'junit:junit:4.13-beta-2'
+    testImplementation libs.truth.proto.extension
     testImplementation libs.junit
-    testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
+    testImplementation libs.httpclient.android
     testImplementation libs.mockito.core
     testImplementation libs.robolectric
 
-    androidTestImplementation "androidx.annotation:annotation:1.1.0"
-    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation libs.androidx.annotation
+    androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.truth
-    androidTestImplementation 'junit:junit:4.13.1'
+    androidTestImplementation libs.junit
 }

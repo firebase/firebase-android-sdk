@@ -50,6 +50,6 @@ android {
 dependencies {
     api project(':firebase-messaging')
 
-    implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.2'
-    implementation "com.google.errorprone:error_prone_annotations:2.9.0"
+    implementation libs.play.services.cloud.messaging
+    implementation libs.errorprone.annotations
 }
