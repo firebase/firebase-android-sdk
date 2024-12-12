@@ -24,8 +24,10 @@ readonly FIREBASE_ARGS=(
   firebase
   --debug
   emulators:start
-  --only auth,dataconnect
 )
 
-echo "[$0] Running command: ${FIREBASE_ARGS[*]}"
+set -x
+
+export FIREBASE_DATACONNECT_POSTGRESQL_STRING=postgresql://postgres:postgres@localhost:5432?sslmode=disable
+export DATACONNECT_EMULATOR_BINARY_PATH="${SELF_DIR}/cli"
 exec "${FIREBASE_ARGS[@]}"
