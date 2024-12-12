@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -124,13 +125,14 @@ public class SessionReportingCoordinator {
   public void persistFatalEvent(
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
     Logger.getLogger().v("Persisting fatal event for session " + sessionId);
-    persistEvent(event, thread, sessionId, EVENT_TYPE_CRASH, timestamp, true);
+    EventMetadata eventMetadata = new EventMetadata(sessionId, timestamp);
+    persistEvent(event, thread, EVENT_TYPE_CRASH, eventMetadata, true);
   }
 
   public void persistNonFatalEvent(
-      @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
-    Logger.getLogger().v("Persisting non-fatal event for session " + sessionId);
-    persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
+      @NonNull Throwable event, @NonNull Thread thread, @NonNull EventMetadata eventMetadata) {
+    Logger.getLogger().v("Persisting non-fatal event for session " + eventMetadata.getSessionId());
+    persistEvent(event, thread, EVENT_TYPE_LOGGED, eventMetadata, false);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
@@ -253,23 +255,20 @@ public class SessionReportingCoordinator {
   }
 
   private CrashlyticsReport.Session.Event addMetaDataToEvent(
-      CrashlyticsReport.Session.Event capturedEvent) {
+      CrashlyticsReport.Session.Event capturedEvent, Map<String, String> eventCustomKeys) {
     CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
-        addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
+        addLogsCustomKeysAndEventKeysToEvent(
+            capturedEvent, logFileManager, reportMetadata, eventCustomKeys);
     CrashlyticsReport.Session.Event eventWithRollouts =
         addRolloutsStateToEvent(eventWithLogsAndCustomKeys, reportMetadata);
     return eventWithRollouts;
   }
 
-  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
-      CrashlyticsReport.Session.Event capturedEvent) {
-    return addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
-  }
-
-  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+  private CrashlyticsReport.Session.Event addLogsCustomKeysAndEventKeysToEvent(
       CrashlyticsReport.Session.Event capturedEvent,
       LogFileManager logFileManager,
-      UserMetadata reportMetadata) {
+      UserMetadata reportMetadata,
+      Map<String, String> eventKeys) {
     final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
     final String content = logFileManager.getLogString();
 
@@ -284,7 +283,7 @@ public class SessionReportingCoordinator {
     // logFileManager.clearLog(); // Clear log to prepare for next event.
 
     final List<CustomAttribute> sortedCustomAttributes =
-        getSortedCustomAttributes(reportMetadata.getCustomKeys());
+        getSortedCustomAttributes(reportMetadata.getCustomKeys(eventKeys));
     final List<CustomAttribute> sortedInternalKeys =
         getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
@@ -297,6 +296,14 @@ public class SessionReportingCoordinator {
     }
 
     return eventBuilder.build();
+  }
+
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+      CrashlyticsReport.Session.Event capturedEvent,
+      LogFileManager logFileManager,
+      UserMetadata reportMetadata) {
+    return addLogsCustomKeysAndEventKeysToEvent(
+        capturedEvent, logFileManager, reportMetadata, Map.of());
   }
 
   private CrashlyticsReport.Session.Event addRolloutsStateToEvent(
@@ -319,9 +326,8 @@ public class SessionReportingCoordinator {
   private void persistEvent(
       @NonNull Throwable event,
       @NonNull Thread thread,
-      @NonNull String sessionId,
       @NonNull String eventType,
-      long timestamp,
+      @NonNull EventMetadata eventMetadata,
       boolean isFatal) {
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
@@ -331,23 +337,25 @@ public class SessionReportingCoordinator {
             event,
             thread,
             eventType,
-            timestamp,
+            eventMetadata.getTimestamp(),
             EVENT_THREAD_IMPORTANCE,
             MAX_CHAINED_EXCEPTION_DEPTH,
             isFatal);
-    CrashlyticsReport.Session.Event finallizedEvent = addMetaDataToEvent(capturedEvent);
+    CrashlyticsReport.Session.Event finallizedEvent =
+        addMetaDataToEvent(capturedEvent, eventMetadata.getAdditionalCustomKeys());
 
     // Non-fatal, persistence write task we move to diskWriteWorker
     if (!isFatal) {
       crashlyticsWorkers.diskWrite.submit(
           () -> {
             Logger.getLogger().d("disk worker: log non-fatal event to persistence");
-            reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
+            reportPersistence.persistEvent(
+                finallizedEvent, eventMetadata.getSessionId(), isHighPriority);
           });
       return;
     }
 
-    reportPersistence.persistEvent(finallizedEvent, sessionId, isHighPriority);
+    reportPersistence.persistEvent(finallizedEvent, eventMetadata.getSessionId(), isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
