@@ -126,6 +126,89 @@ public class HttpsCallableReference {
   }
 
   /**
+   * Streams data to the specified HTTPS endpoint asynchronously.
+   *
+   * The data passed into the endpoint can be any of the following types:
+   *
+   * * Any primitive type, including `null`, `int`, `long`, `float`, and `boolean`.
+   * * [String]
+   * * [List&lt;?&gt;][java.util.List], where the contained objects are also one of these types.
+   * * [Map&lt;String, ?&gt;][java.util.Map], where the values are also one of these types.
+   * * [org.json.JSONArray]
+   * * [org.json.JSONObject]
+   * * [org.json.JSONObject.NULL]
+   *
+   * If the returned task fails, the exception will be one of the following types:
+   *
+   * * [java.io.IOException]
+   * - if the HTTPS request failed to connect.
+   * * [FirebaseFunctionsException]
+   * - if the request connected, but the function returned an error.
+   *
+   * The request to the Cloud Functions backend made by this method automatically includes a
+   * Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase
+   * Auth, an auth token for the user will also be automatically included.
+   *
+   * Firebase Instance ID sends data to the Firebase backend periodically to collect information
+   * regarding the app instance. To stop this, see
+   * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
+   * Instance ID the next time you call this method.
+   *
+   * Streaming events are handled by the provided [SSETaskListener], which will receive events and
+   * handle errors and completion notifications.
+   *
+   * @param data Parameters to pass to the endpoint.
+   * @param listener A listener to handle streaming events, errors, and completion notifications.
+   * @return A Task that will be completed when the streaming operation has finished.
+   * @see org.json.JSONArray
+   * @see org.json.JSONObject
+   * @see java.io.IOException
+   * @see FirebaseFunctionsException
+   */
+  public fun stream(data: Any?, listener: SSETaskListener): Task<HttpsCallableResult> {
+    return if (name != null) {
+      functionsClient.stream(name, data, options, listener)
+    } else {
+      functionsClient.stream(url!!, data, options, listener)
+    }
+  }
+
+  /**
+   * Streams data to the specified HTTPS endpoint asynchronously without arguments.
+   *
+   * The request to the Cloud Functions backend made by this method automatically includes a
+   * Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase
+   * Auth, an auth token for the user will also be automatically included.
+   *
+   * Firebase Instance ID sends data to the Firebase backend periodically to collect information
+   * regarding the app instance. To stop this, see
+   * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
+   * Instance ID the next time you call this method.
+   *
+   * Streaming events are handled by the provided [SSETaskListener], which will receive events and
+   * handle errors and completion notifications.
+   *
+   * If the returned task fails, the exception will be one of the following types:
+   *
+   * * [java.io.IOException]
+   * - if the HTTPS request failed to connect.
+   * * [FirebaseFunctionsException]
+   * - if the request connected, but the function returned an error.
+   *
+   * @param listener A listener to handle streaming events, errors, and completion notifications.
+   * @return A Task that will be completed when the streaming operation has finished.
+   * @see java.io.IOException
+   * @see FirebaseFunctionsException
+   */
+  public fun stream(listener: SSETaskListener): Task<HttpsCallableResult> {
+    return if (name != null) {
+      functionsClient.stream(name, null, options, listener)
+    } else {
+      functionsClient.stream(url!!, null, options, listener)
+    }
+  }
+
+  /**
    * Changes the timeout for calls from this instance of Functions. The default is 60 seconds.
    *
    * @param timeout The length of the timeout, in the given units.
