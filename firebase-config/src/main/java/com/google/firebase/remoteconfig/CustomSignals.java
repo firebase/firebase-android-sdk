@@ -20,36 +20,60 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Helper class which handles the storage and conversion to strings of key/value pairs with
- * heterogeneous value types for custom signals.
+ * A container type to represent key/value pairs of heterogeneous types to be set as custom signals
+ * in {@link FirebaseRemoteConfig#setCustomSignals}.
  */
 public class CustomSignals {
-
   final Map<String, String> customSignals;
 
+  /** Builder for constructing {@link CustomSignals} instances. */
   public static class Builder {
-    // Holds the converted pairs of custom keys and values.
     private Map<String, String> customSignals = new HashMap<String, String>();
 
-    // Methods to accept keys and values and convert values to strings.
+    /**
+     * Adds a custom signal with a value that can be a string or null to the builder.
+     *
+     * @param key The key for the custom signal.
+     * @param value The string value associated with the key. Can be null.
+     * @return This Builder instance to allow chaining of method calls.
+     */
     @NonNull
     public Builder put(@NonNull String key, @Nullable String value) {
       customSignals.put(key, value);
       return this;
     }
 
+    /**
+     * Adds a custom signal with a long value to the builder.
+     *
+     * @param key The key for the custom signal.
+     * @param value The long value for the custom signal.
+     * @return This Builder instance to allow chaining of method calls.
+     */
     @NonNull
     public Builder put(@NonNull String key, long value) {
       customSignals.put(key, Long.toString(value));
       return this;
     }
 
+    /**
+     * Adds a custom signal with a double value to the builder.
+     *
+     * @param key The key for the custom signal.
+     * @param value The double value for the custom signal.
+     * @return This Builder instance to allow chaining of method calls.
+     */
     @NonNull
     public Builder put(@NonNull String key, double value) {
       customSignals.put(key, Double.toString(value));
       return this;
     }
 
+    /**
+     * Creates a {@link CustomSignals} instance with the added custom signals.
+     *
+     * @return The constructed {@link CustomSignals} instance.
+     */
     @NonNull
     public CustomSignals build() {
       return new CustomSignals(this);

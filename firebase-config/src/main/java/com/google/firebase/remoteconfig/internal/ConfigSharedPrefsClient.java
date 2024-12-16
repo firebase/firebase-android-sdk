@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -272,6 +273,8 @@ public class ConfigSharedPrefsClient {
     synchronized (customSignalsLock) {
       // Retrieve existing custom signals
       Map<String, String> existingCustomSignals = getCustomSignals();
+      // Tracks whether the custom signals have been modified.
+      boolean modified = false;
 
       for (Map.Entry<String, String> entry : newCustomSignals.entrySet()) {
         String key = entry.getKey();
@@ -291,14 +294,14 @@ public class ConfigSharedPrefsClient {
         // Merge new signals with existing ones, overwriting existing keys.
         // Also, remove entries where the new value is null.
         if (value != null) {
-          existingCustomSignals.put(key, value);
+          modified |= !Objects.equals(existingCustomSignals.put(key, value), value);
         } else {
-          existingCustomSignals.remove(key);
+          modified |= existingCustomSignals.remove(key) != null;
         }
       }
 
       // Check if the map has actually changed and the size limit
-      if (existingCustomSignals.equals(getCustomSignals())) {
+      if (!modified) {
         return;
       }
       if (existingCustomSignals.size() > CUSTOM_SIGNALS_MAX_COUNT) {

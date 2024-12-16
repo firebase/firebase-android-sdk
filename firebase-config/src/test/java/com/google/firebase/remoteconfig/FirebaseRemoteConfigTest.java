@@ -1667,6 +1667,7 @@ public final class FirebaseRemoteConfigTest {
             .put("key1", "value1")
             .put("key2", 123L)
             .put("key3", 12.34)
+            .put("key4", null)
             .build();
 
     Task<Void> setterTask = frc.setCustomSignals(customSignals);

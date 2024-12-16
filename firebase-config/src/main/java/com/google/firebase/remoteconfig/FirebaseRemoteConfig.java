@@ -655,8 +655,10 @@ public class FirebaseRemoteConfig {
   /**
    * Asynchronously changes the custom signals for this {@link FirebaseRemoteConfig} instance.
    *
-   * <p>The {@code customSignals} parameter should be an instance of {@link CustomSignals}, which
-   * enforces the allowed types for custom signal values (String, Long or Double).
+   * <p>The {@code customSignals} parameter should be an instance of {@link CustomSignals}.
+   *
+   * <p>Custom signals are subject to limits on the size of key/value pairs and the total
+   * number of signals. Any calls that exceed these limits will be discarded.
    *
    * @param customSignals A dictionary of keys and the values of the custom signals to be set for
    *                         the app instance
