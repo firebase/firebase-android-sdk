@@ -47,13 +47,16 @@ constructor(
     appCheckDeferred.whenAvailable { p: Provider<InteropAppCheckTokenProvider> ->
       val appCheck = p.get()
       appCheckRef.set(appCheck)
-      appCheck.addAppCheckTokenListener { unused: AppCheckTokenResult? -> }
+      appCheck.addAppCheckTokenListener {
+        // Do nothing; we just need to register a listener so that the App Check SDK knows
+        // to auto-refresh the token.
+      }
     }
   }
 
-  override fun getContext(limitedUseAppCheckToken: Boolean): Task<HttpsCallableContext?>? {
+  override fun getContext(getLimitedUseAppCheckToken: Boolean): Task<HttpsCallableContext?>? {
     val authToken = getAuthToken()
-    val appCheckToken = getAppCheckToken(limitedUseAppCheckToken)
+    val appCheckToken = getAppCheckToken(getLimitedUseAppCheckToken)
     return Tasks.whenAll(authToken, appCheckToken).onSuccessTask(executor) { _ ->
       Tasks.forResult(
         HttpsCallableContext(authToken.result, instanceId.get().token, appCheckToken.result)

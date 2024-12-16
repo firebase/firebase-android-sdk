@@ -1,4 +1,7 @@
 # Unreleased
+
+
+# 24.1.0
 * [deprecated] Deprecated additional FCM upstream messaging methods and updated
   all upstream methods to indicate they are now decommissioned. See the
   [FAQ](https://firebase.google.com/support/faq#fcm-23-deprecation) for more
@@ -7,6 +10,11 @@
   configuration to allow the thread to stop polling after the timeout task has
   been canceled.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.0.3
 * [changed] Updated protobuf dependency to `3.25.5` to fix

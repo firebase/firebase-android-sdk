@@ -1,4 +1,10 @@
 # Unreleased
+* [changed] `FirebaseDataConnect.logLevel` type changed from `LogLevel` to
+  `MutableStateFlow<LogLevel>`. This enables apps to "collect" the flow to,
+  for example, update a UI component when the log level changes.
+  ([#6586](https://github.com/firebase/firebase-android-sdk/pull/6586))
+
+# 16.0.0-beta03
 * [changed] Requires Data Connect emulator version 1.6.1 or later for code generation.
 * [feature] QueryRef and MutationRef gain methods copy(), withDataDeserializer(),
   and withVariablesSerializer().
