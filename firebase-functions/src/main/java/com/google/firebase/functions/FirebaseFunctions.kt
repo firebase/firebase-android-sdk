@@ -30,7 +30,10 @@ import com.google.firebase.functions.FirebaseFunctionsException.Code.Companion.f
 import com.google.firebase.functions.FirebaseFunctionsException.Companion.fromResponse
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.io.BufferedReader
 import java.io.IOException
+import java.io.InputStream
+import java.io.InputStreamReader
 import java.io.InterruptedIOException
 import java.net.MalformedURLException
 import java.net.URL
@@ -309,6 +312,229 @@ internal constructor(
       }
     )
     return tcs.task
+  }
+
+  internal fun stream(
+    name: String,
+    data: Any?,
+    options: HttpsCallOptions,
+    listener: SSETaskListener
+  ): Task<HttpsCallableResult> {
+    return providerInstalled.task
+      .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
+      .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
+        if (!task.isSuccessful) {
+          return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
+        }
+        val context = task.result
+        val url = getURL(name)
+        stream(url, data, options, context, listener)
+      }
+  }
+
+  internal fun stream(
+    url: URL,
+    data: Any?,
+    options: HttpsCallOptions,
+    listener: SSETaskListener
+  ): Task<HttpsCallableResult> {
+    return providerInstalled.task
+      .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
+      .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
+        if (!task.isSuccessful) {
+          return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
+        }
+        val context = task.result
+        stream(url, data, options, context, listener)
+      }
+  }
+
+  private fun stream(
+    url: URL,
+    data: Any?,
+    options: HttpsCallOptions,
+    context: HttpsCallableContext?,
+    listener: SSETaskListener
+  ): Task<HttpsCallableResult> {
+    Preconditions.checkNotNull(url, "url cannot be null")
+    val tcs = TaskCompletionSource<HttpsCallableResult>()
+    val callClient = options.apply(client)
+    callClient.postStream(url, tcs, listener) { applyCommonConfiguration(data, context) }
+
+    return tcs.task
+  }
+
+  private inline fun OkHttpClient.postStream(
+    url: URL,
+    tcs: TaskCompletionSource<HttpsCallableResult>,
+    listener: SSETaskListener,
+    crossinline config: Request.Builder.() -> Unit = {}
+  ) {
+    val requestBuilder = Request.Builder().url(url)
+    requestBuilder.config()
+    val request = requestBuilder.build()
+
+    val call = newCall(request)
+    call.enqueue(
+      object : Callback {
+        override fun onFailure(ignored: Call, e: IOException) {
+          val exception: Exception =
+            if (e is InterruptedIOException) {
+              FirebaseFunctionsException(
+                FirebaseFunctionsException.Code.DEADLINE_EXCEEDED.name,
+                FirebaseFunctionsException.Code.DEADLINE_EXCEEDED,
+                null,
+                e
+              )
+            } else {
+              FirebaseFunctionsException(
+                FirebaseFunctionsException.Code.INTERNAL.name,
+                FirebaseFunctionsException.Code.INTERNAL,
+                null,
+                e
+              )
+            }
+          listener.onError(exception)
+          tcs.setException(exception)
+        }
+
+        @Throws(IOException::class)
+        override fun onResponse(ignored: Call, response: Response) {
+          try {
+            validateResponse(response)
+            val bodyStream = response.body()?.byteStream()
+            if (bodyStream != null) {
+              processSSEStream(bodyStream, serializer, listener, tcs)
+            } else {
+              val error =
+                FirebaseFunctionsException(
+                  "Response body is null",
+                  FirebaseFunctionsException.Code.INTERNAL,
+                  null
+                )
+              listener.onError(error)
+              tcs.setException(error)
+            }
+          } catch (e: FirebaseFunctionsException) {
+            listener.onError(e)
+            tcs.setException(e)
+          }
+        }
+      }
+    )
+  }
+
+  private fun validateResponse(response: Response) {
+    if (response.isSuccessful) return
+
+    val htmlContentType = "text/html; charset=utf-8"
+    val trimMargin: String
+    if (response.code() == 404 && response.header("Content-Type") == htmlContentType) {
+      trimMargin = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
+      throw FirebaseFunctionsException(
+        trimMargin,
+        FirebaseFunctionsException.Code.fromHttpStatus(response.code()),
+        null
+      )
+    }
+
+    val text = response.body()?.string() ?: ""
+    val error: Any?
+    try {
+      val json = JSONObject(text)
+      error = serializer.decode(json.opt("error"))
+    } catch (e: Throwable) {
+      throw FirebaseFunctionsException(
+        "${e.message} Unexpected Response:\n$text ",
+        FirebaseFunctionsException.Code.INTERNAL,
+        e
+      )
+    }
+    throw FirebaseFunctionsException(
+      error.toString(),
+      FirebaseFunctionsException.Code.INTERNAL,
+      error
+    )
+  }
+
+  private fun Request.Builder.applyCommonConfiguration(data: Any?, context: HttpsCallableContext?) {
+    val body: MutableMap<String?, Any?> = HashMap()
+    val encoded = serializer.encode(data)
+    body["data"] = encoded
+    if (context!!.authToken != null) {
+      header("Authorization", "Bearer " + context.authToken)
+    }
+    if (context.instanceIdToken != null) {
+      header("Firebase-Instance-ID-Token", context.instanceIdToken)
+    }
+    if (context.appCheckToken != null) {
+      header("X-Firebase-AppCheck", context.appCheckToken)
+    }
+    header("Accept", "text/event-stream")
+    val bodyJSON = JSONObject(body)
+    val contentType = MediaType.parse("application/json")
+    val requestBody = RequestBody.create(contentType, bodyJSON.toString())
+    post(requestBody)
+  }
+
+  private fun processSSEStream(
+    inputStream: InputStream,
+    serializer: Serializer,
+    listener: SSETaskListener,
+    tcs: TaskCompletionSource<HttpsCallableResult>
+  ) {
+    BufferedReader(InputStreamReader(inputStream)).use { reader ->
+      try {
+        reader.lineSequence().forEach { line ->
+          val dataChunk =
+            when {
+              line.startsWith("data:") -> line.removePrefix("data:")
+              line.startsWith("result:") -> line.removePrefix("result:")
+              else -> return@forEach
+            }
+          try {
+            val json = JSONObject(dataChunk)
+            when {
+              json.has("message") ->
+                serializer.decode(json.opt("message"))?.let { listener.onNext(it) }
+              json.has("error") -> {
+                serializer.decode(json.opt("error"))?.let {
+                  throw FirebaseFunctionsException(
+                    it.toString(),
+                    FirebaseFunctionsException.Code.INTERNAL,
+                    it
+                  )
+                }
+              }
+              json.has("result") -> {
+                serializer.decode(json.opt("result"))?.let {
+                  listener.onComplete(it)
+                  tcs.setResult(HttpsCallableResult(it))
+                }
+                return
+              }
+            }
+          } catch (e: Throwable) {
+            throw FirebaseFunctionsException(
+              "${e.message} Invalid JSON: $dataChunk",
+              FirebaseFunctionsException.Code.INTERNAL,
+              e
+            )
+          }
+        }
+        throw FirebaseFunctionsException(
+          "Stream ended unexpectedly without completion.",
+          FirebaseFunctionsException.Code.INTERNAL,
+          null
+        )
+      } catch (e: Exception) {
+        throw FirebaseFunctionsException(
+          e.message ?: "Error reading stream",
+          FirebaseFunctionsException.Code.INTERNAL,
+          e
+        )
+      }
+    }
   }
 
   public companion object {
