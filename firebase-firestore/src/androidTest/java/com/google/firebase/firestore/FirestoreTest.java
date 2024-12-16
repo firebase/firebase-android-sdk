@@ -1510,6 +1510,7 @@ public class FirestoreTest {
             "__id-2__", map("a", 1),
             "__id1_", map("a", 1),
             "_id1__", map("a", 1),
+            "__id", map("a", 1),
             "__id9223372036854775807__", map("a", 1),
             "__id-9223372036854775808__", map("a", 1));
 
@@ -1528,6 +1529,7 @@ public class FirestoreTest {
             "7",
             "A",
             "Aa",
+            "__id",
             "__id1_",
             "_id1__",
             "a");
@@ -1571,6 +1573,7 @@ public class FirestoreTest {
             "__id-2__", map("a", 1),
             "__id1_", map("a", 1),
             "_id1__", map("a", 1),
+            "__id", map("a", 1),
             "__id9223372036854775807__", map("a", 1),
             "__id-9223372036854775808__", map("a", 1));
 
@@ -1624,6 +1627,7 @@ public class FirestoreTest {
             "__id-2__", map("a", 1),
             "__id1_", map("a", 1),
             "_id1__", map("a", 1),
+            "__id", map("a", 1),
             "__id9223372036854775807__", map("a", 1),
             "__id-9223372036854775808__", map("a", 1));
 
@@ -1641,6 +1645,7 @@ public class FirestoreTest {
             "7",
             "A",
             "Aa",
+            "__id",
             "__id1_",
             "_id1__",
             "a");
