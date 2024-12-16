@@ -15,3 +15,11 @@ the `test-app/test-app.gradle.kts` for the app to link to Firebase.
 
 Run the test app directly from Android Studio by selecting and running
 the `firebase-crashlytics.test-app` run configuration.
+
+## Terminal
+
+Alternatively, you can run the test app from the terminal using the following command:
+
+```bash
+ ./gradlew :firebase-crashlytics:test-app:connectedAndroidTest --info
+```
