@@ -24,7 +24,6 @@ import android.content.Intent
 import android.icu.text.SimpleDateFormat
 import android.os.Build
 import android.widget.RemoteViews
-import com.example.test_app.R
 import com.google.firebase.FirebaseApp
 import java.util.Date
 import java.util.Locale

@@ -44,13 +44,6 @@ android {
     multiDexEnabled = true
     multiDexKeepProguard = file("multidex-config.pro")
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-    // We only want to actually crash the app on specific runs.
-    buildConfigField(
-      "boolean",
-      "SHOULD_CRASH_APP",
-      project.hasProperty("triggerCrashes").toString()
-    )
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -64,7 +57,6 @@ dependencies {
   if (project.hasProperty("useReleasedVersions")) {
     implementation(platform("com.google.firebase:firebase-bom:latest.release"))
     implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-perf")
   } else {
     implementation(project(":firebase-crashlytics"))
   }
@@ -73,14 +65,13 @@ dependencies {
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
   implementation("androidx.core:core-ktx:1.7.0")
   implementation("androidx.multidex:multidex:2.0.1")
+  implementation("androidx.navigation:navigation-fragment-ktx:2.4.1")
+  implementation("androidx.navigation:navigation-ui-ktx:2.4.1")
   implementation("com.google.android.material:material:1.9.0")
   implementation(libs.androidx.core)
 
   androidTestImplementation("com.google.firebase:firebase-common:21.0.0")
   androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
-  implementation("androidx.navigation:navigation-fragment-ktx:2.6.0")
-  implementation("androidx.navigation:navigation-ui-ktx:2.6.0")
-  implementation("com.google.firebase:firebase-common-ktx:21.0.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)

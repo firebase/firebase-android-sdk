@@ -37,7 +37,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-const val APP_NAME = "com.example.test_app"
+const val APP_NAME = "com.google.firebase.testing.crashlytics"
 
 @RunWith(AndroidJUnit4::class)
 class FirebaseCrashlyticsIntegrationTest {

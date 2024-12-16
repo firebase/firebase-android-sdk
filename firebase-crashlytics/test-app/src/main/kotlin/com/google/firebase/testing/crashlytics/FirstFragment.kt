@@ -26,7 +26,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.example.test_app.databinding.FragmentFirstBinding
+import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 //import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
 import java.util.Date
