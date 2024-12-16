@@ -57,6 +57,14 @@ class FirstFragment : Fragment() {
     super.onViewCreated(view, savedInstanceState)
 
     binding.buttonCrash.setOnClickListener { throw RuntimeException("CRASHED") }
+    binding.buttonCrashWithCustomLog.setOnClickListener {
+      // Log multiple custom messages
+      crashlytics.log("Custom log message 1")
+      crashlytics.log("Custom log message 2")
+
+      // Now crash
+      throw RuntimeException("CRASH WITH CUSTOM LOG")
+    }
     binding.buttonNonFatal.setOnClickListener {
       crashlytics.recordException(IllegalStateException())
     }
