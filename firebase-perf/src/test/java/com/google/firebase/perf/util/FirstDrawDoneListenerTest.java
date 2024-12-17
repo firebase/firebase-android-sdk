@@ -38,11 +38,9 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.LooperMode;
 
 /** Unit tests for {@link FirstDrawDoneListener}. */
 @RunWith(RobolectricTestRunner.class)
-@LooperMode(LooperMode.Mode.PAUSED)
 public class FirstDrawDoneListenerTest {
   private View testView;
 
