@@ -26,6 +26,7 @@ pluginManagement {
     maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
   }
 
+  includeBuild("./plugins")
   includeBuild("firebase-dataconnect/gradleplugin")
 }
 
@@ -100,5 +101,3 @@ discoverSubprojects(file("subprojects.cfg")).forEach { include(":$it") }
 setBuildScripts(rootProject)
 
 rootProject.name = "com.google.firebase"
-
-includeBuild("./plugins")
