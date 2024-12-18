@@ -25,6 +25,8 @@ import com.google.firebase.vertexai.type.CountTokensResponse
 import com.google.firebase.vertexai.type.FinishReason
 import com.google.firebase.vertexai.type.GRpcErrorResponse
 import com.google.firebase.vertexai.type.GenerateContentResponse
+import com.google.firebase.vertexai.internal.GenerateImageRequest
+import com.google.firebase.vertexai.internal.GenerateImageResponse
 import com.google.firebase.vertexai.type.RequestOptions
 import com.google.firebase.vertexai.type.Response
 import io.ktor.client.HttpClient
@@ -122,6 +124,20 @@ internal constructor(
       throw FirebaseCommonAIException.from(e)
     }
 
+  suspend fun generateImage(request: GenerateImageRequest): GenerateImageResponse =
+    try {
+      client
+        .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:predict") {
+          applyCommonConfiguration(request)
+          applyHeaderProvider()
+        }
+        .also { validateResponse(it) }
+        .body<GenerateImageResponse>()
+        .validate()
+    } catch (e: Throwable) {
+      throw FirebaseCommonAIException.from(e)
+    }
+
   fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse.Internal> =
@@ -151,6 +167,7 @@ internal constructor(
     when (request) {
       is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
+      is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
     }
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
@@ -296,4 +313,8 @@ private fun GenerateContentResponse.Internal.validate() = apply {
     ?.mapNotNull { it.finishReason }
     ?.firstOrNull { it != FinishReason.Internal.STOP }
     ?.let { throw ResponseStoppedException(this) }
+}
+
+private fun GenerateImageResponse.validate() = apply {
+
 }
