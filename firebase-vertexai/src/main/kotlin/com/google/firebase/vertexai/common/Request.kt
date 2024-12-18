@@ -25,7 +25,7 @@ import com.google.firebase.vertexai.common.util.fullModelName
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-internal sealed interface Request
+internal interface Request
 
 @Serializable
 internal data class GenerateContentRequest(

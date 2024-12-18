@@ -26,6 +26,7 @@ import com.google.firebase.vertexai.common.shared.FunctionCallPart
 import com.google.firebase.vertexai.common.shared.FunctionResponse
 import com.google.firebase.vertexai.common.shared.FunctionResponsePart
 import com.google.firebase.vertexai.common.shared.InlineData
+import com.google.firebase.vertexai.internal.ImageOutputOptions
 import com.google.firebase.vertexai.type.BlockReason
 import com.google.firebase.vertexai.type.Candidate
 import com.google.firebase.vertexai.type.Citation
@@ -44,6 +45,9 @@ import com.google.firebase.vertexai.type.HarmCategory
 import com.google.firebase.vertexai.type.HarmProbability
 import com.google.firebase.vertexai.type.HarmSeverity
 import com.google.firebase.vertexai.type.ImagePart
+import com.google.firebase.vertexai.type.ImagenGCSImage
+import com.google.firebase.vertexai.type.ImagenGenerationResponse
+import com.google.firebase.vertexai.type.ImagenInlineImage
 import com.google.firebase.vertexai.type.InlineDataPart
 import com.google.firebase.vertexai.type.Part
 import com.google.firebase.vertexai.type.PromptFeedback
@@ -67,7 +71,7 @@ private const val BASE_64_FLAGS = Base64.NO_WRAP
 internal fun Content.toInternal() =
   com.google.firebase.vertexai.common.shared.Content(
     this.role ?: "user",
-    this.parts.map { it.toInternal() }
+    this.parts.map { it.toInternal() },
   )
 
 internal fun Part.toInternal(): com.google.firebase.vertexai.common.shared.Part {
@@ -100,7 +104,7 @@ internal fun SafetySetting.toInternal() =
   com.google.firebase.vertexai.common.shared.SafetySetting(
     harmCategory.toInternal(),
     threshold.toInternal(),
-    method?.toInternal()
+    method?.toInternal(),
   )
 
 internal fun makeMissingCaseException(source: String, ordinal: Int): SerializationException {
@@ -126,7 +130,7 @@ internal fun GenerationConfig.toInternal() =
     frequencyPenalty = frequencyPenalty,
     presencePenalty = presencePenalty,
     responseMimeType = responseMimeType,
-    responseSchema = responseSchema?.toInternal()
+    responseSchema = responseSchema?.toInternal(),
   )
 
 internal fun HarmCategory.toInternal() =
@@ -163,7 +167,7 @@ internal fun ToolConfig.toInternal() =
           FunctionCallingConfig.Mode.NONE ->
             com.google.firebase.vertexai.common.client.FunctionCallingConfig.Mode.NONE
         },
-        it.allowedFunctionNames
+        it.allowedFunctionNames,
       )
     }
   )
@@ -201,6 +205,9 @@ internal fun com.google.firebase.vertexai.type.Schema.toInternal(): Schema =
     items?.toInternal(),
   )
 
+internal fun com.google.firebase.vertexai.type.ImageFormat.toInternal(): ImageOutputOptions =
+  ImageOutputOptions(mimeType, compressionQuality)
+
 internal fun JSONObject.toInternal() = Json.decodeFromString<JsonObject>(toString())
 
 internal fun com.google.firebase.vertexai.common.server.Candidate.toPublic(): Candidate {
@@ -212,7 +219,7 @@ internal fun com.google.firebase.vertexai.common.server.Candidate.toPublic(): Ca
     this.content?.toPublic() ?: content("model") {},
     safetyRatings,
     citations,
-    finishReason
+    finishReason,
   )
 }
 
@@ -236,7 +243,7 @@ internal fun com.google.firebase.vertexai.common.shared.Part.toPublic(): Part {
     is FunctionCallPart ->
       com.google.firebase.vertexai.type.FunctionCallPart(
         functionCall.name,
-        functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
+        functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
       )
     is FunctionResponsePart ->
       com.google.firebase.vertexai.type.FunctionResponsePart(
@@ -272,7 +279,7 @@ internal fun com.google.firebase.vertexai.common.server.CitationSources.toPublic
     endIndex = endIndex,
     uri = uri,
     license = license,
-    publicationDate = publicationDateAsCalendar
+    publicationDate = publicationDateAsCalendar,
   )
 }
 
@@ -286,7 +293,7 @@ internal fun com.google.firebase.vertexai.common.server.SafetyRating.toPublic() 
     probabilityScore = probabilityScore ?: 0f,
     blocked = blocked,
     severity = severity?.toPublic(),
-    severityScore = severityScore
+    severityScore = severityScore,
   )
 
 internal fun com.google.firebase.vertexai.common.server.PromptFeedback.toPublic(): PromptFeedback {
@@ -294,7 +301,7 @@ internal fun com.google.firebase.vertexai.common.server.PromptFeedback.toPublic(
   return com.google.firebase.vertexai.type.PromptFeedback(
     blockReason?.toPublic(),
     safetyRatings,
-    blockReasonMessage
+    blockReasonMessage,
   )
 }
 
@@ -353,12 +360,24 @@ internal fun com.google.firebase.vertexai.common.GenerateContentResponse.toPubli
   return GenerateContentResponse(
     candidates?.map { it.toPublic() }.orEmpty(),
     promptFeedback?.toPublic(),
-    usageMetadata?.toPublic()
+    usageMetadata?.toPublic(),
   )
 }
 
 internal fun com.google.firebase.vertexai.common.CountTokensResponse.toPublic() =
   CountTokensResponse(totalTokens, totalBillableCharacters ?: 0)
+
+internal fun com.google.firebase.vertexai.internal.GenerateImageResponse.toPublicInline() =
+  ImagenGenerationResponse(images = predictions.map { it.toPublicInline() }, null)
+
+internal fun com.google.firebase.vertexai.internal.ImagenImageResponse.toPublicInline() =
+  ImagenInlineImage(bytesBase64Encoded!!.toByteArray(), mimeType)
+
+internal fun com.google.firebase.vertexai.internal.GenerateImageResponse.toPublicGCS() =
+  ImagenGenerationResponse(images = predictions.map { it.toPublicGCS() }, null)
+
+internal fun com.google.firebase.vertexai.internal.ImagenImageResponse.toPublicGCS() =
+  ImagenGCSImage(gcsUri!!, mimeType)
 
 internal fun JsonObject.toPublic() = JSONObject(toString())
 

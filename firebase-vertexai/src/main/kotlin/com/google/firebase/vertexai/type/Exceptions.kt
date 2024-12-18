@@ -90,11 +90,17 @@ internal constructor(message: String, cause: Throwable? = null) :
  */
 // TODO(rlazo): Add secondary constructor to pass through the message?
 public class PromptBlockedException
-internal constructor(public val response: GenerateContentResponse, cause: Throwable? = null) :
+internal constructor(
+  public val response: GenerateContentResponse?,
+  cause: Throwable? = null,
+  message: String? = null,
+) :
   FirebaseVertexAIException(
-    "Prompt was blocked: ${response.promptFeedback?.blockReason?.name}",
+    "Prompt was blocked: ${response?.promptFeedback?.blockReason?.name?: message}",
     cause,
-  )
+  ) {
+  internal constructor(message: String, cause: Throwable? = null) : this(null, cause, message)
+}
 
 /**
  * The user's location (region) is not supported by the API.
