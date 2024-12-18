@@ -74,9 +74,13 @@ gradlePlugin {
             id = "LicenseResolverPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.license.LicenseResolverPlugin"
         }
-        register("multiProjectReleasePlugin") {
-            id = "MultiProjectReleasePlugin"
-            implementationClass = "com.google.firebase.gradle.MultiProjectReleasePlugin"
+        register("continuousIntegrationPlugin") {
+            id = "firebase-ci"
+            implementationClass = "com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin"
+        }
+        register("smokeTestsPlugin") {
+            id = "smoke-tests"
+            implementationClass = "com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin"
         }
         register("publishingPlugin") {
             id = "PublishingPlugin"

@@ -114,12 +114,9 @@ findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2
 firebase-appdistribution-gradle = { module = "com.google.firebase:firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
 firebase-common = { module = "com.google.firebase:firebase-common", version.ref = "firebaseCommon" }
 firebase-components = { module = "com.google.firebase:firebase-components", version.ref = "firebaseComponents" }
-firebase-crashlytics-gradle = { module = "com.google.firebase:firebase-crashlytics-gradle", version.ref = "firebaseCrashlyticsGradle" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
 google-dexmaker = { module = "com.google.dexmaker:dexmaker", version.ref = "dexmakerVersion" }
-google-services = { module = "com.google.gms:google-services", version.ref = "googleServices" }
-gradle-errorprone-plugin = { module = "net.ltgt.gradle:gradle-errorprone-plugin", version.ref = "gradleErrorpronePlugin" }
 grpc-android = { module = "io.grpc:grpc-android", version.ref = "grpc" }
 grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlin" }
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
@@ -173,7 +170,6 @@ playservices-base = { module = "com.google.android.gms:play-services-base", vers
 playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.3.0" }
 playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.1.0" }
 proto-google-common-protos = { module = "com.google.api.grpc:proto-google-common-protos", version.ref = "protoGoogleCommonProtos" }
-protobuf-gradle-plugin = { module = "com.google.protobuf:protobuf-gradle-plugin", version.ref = "protobufGradlePlugin" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
 protobuf-java-lite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
 protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "javalite" }
@@ -235,3 +231,7 @@ maven-resolver = [
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization-plugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+protobuf = { id = "com.google.protobuf", version.ref = "protobufGradlePlugin" }
+errorprone = { id = "net.ltgt.errorprone", version.ref = "gradleErrorpronePlugin" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsGradle" }
