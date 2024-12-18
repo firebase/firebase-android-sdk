@@ -18,7 +18,6 @@ import com.android.build.gradle.TestedExtension;
 import com.android.builder.testing.api.TestServer;
 import com.google.common.collect.ImmutableList;
 import com.google.firebase.gradle.plugins.ci.Environment;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -26,103 +25,102 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
-
 import org.gradle.api.Project;
 
 public class FirebaseTestServer extends TestServer {
 
-    private final Project project;
-    private final FirebaseTestLabExtension extension;
-    private final Random random;
-    private final Map<String, Map<String, String>> instrumentationArgs;
+  private final Project project;
+  private final FirebaseTestLabExtension extension;
+  private final Random random;
+  private final Map<String, Map<String, String>> instrumentationArgs;
 
-    public FirebaseTestServer(
-            Project project, FirebaseTestLabExtension extension, TestedExtension android) {
-        this.project = project;
-        this.extension = extension;
-        this.instrumentationArgs = new HashMap<>();
-        this.random = new Random(System.currentTimeMillis());
+  public FirebaseTestServer(
+      Project project, FirebaseTestLabExtension extension, TestedExtension android) {
+    this.project = project;
+    this.extension = extension;
+    this.instrumentationArgs = new HashMap<>();
+    this.random = new Random(System.currentTimeMillis());
 
-        android
-                .getTestVariants()
-                .all(
-                        variant ->
-                                instrumentationArgs.put(
-                                        variant.getName(),
-                                        variant.getMergedFlavor().getTestInstrumentationRunnerArguments()));
+    android
+        .getTestVariants()
+        .all(
+            variant ->
+                instrumentationArgs.put(
+                    variant.getName(),
+                    variant.getMergedFlavor().getTestInstrumentationRunnerArguments()));
+  }
+
+  @Override
+  public String getName() {
+    return "firebase-test-lab";
+  }
+
+  @Override
+  public void uploadApks(String variantName, File testApk, File testedApk) {
+
+    Map<String, String> currentInstrumentationArgs = instrumentationArgs.get(variantName);
+    // test lab requires an "app" apk, so we give an empty apk to it.
+    String testedApkPath =
+        testedApk != null
+            ? testedApk.toString()
+            : project.getRootDir() + "/plugins/resources/dummy.apk";
+    project
+        .getLogger()
+        .lifecycle("Uploading for {}: testApk={}, testedApk={}", variantName, testApk, testedApk);
+
+    ImmutableList.Builder<String> args = ImmutableList.builder();
+    args.add(
+        "gcloud",
+        "firebase",
+        "test",
+        "android",
+        "run",
+        "--type=instrumentation",
+        "--app=" + testedApkPath,
+        "--test=" + testApk,
+        "--timeout=45m",
+        "--use-orchestrator",
+        "--no-auto-google-login",
+        "--no-record-video",
+        "--no-performance-metrics",
+        "-q",
+        "--results-history-name=" + project.getPath());
+    args.addAll(
+        extension.getDevices().stream()
+            .flatMap(device -> ImmutableList.of("--device", device).stream())
+            .collect(Collectors.toList()));
+
+    Optional.ofNullable(extension.getTimeout())
+        .ifPresent(timeout -> args.add("--timeout", timeout));
+
+    Optional.ofNullable(System.getenv("FTL_RESULTS_BUCKET"))
+        .map(Environment::expand)
+        .ifPresent(bucket -> args.add("--results-bucket", bucket));
+
+    Optional.ofNullable(System.getenv("FTL_RESULTS_DIR"))
+        .map(Environment::expand)
+        .ifPresent(
+            dir ->
+                args.add(
+                    "--results-dir",
+                    Paths.get(dir, project.getPath() + "_" + random.nextLong()).toString()));
+
+    if (currentInstrumentationArgs != null) {
+      String variablesArg =
+          currentInstrumentationArgs.entrySet().stream()
+              .map(entry -> entry.getKey() + "=" + entry.getValue())
+              .collect(Collectors.joining(","));
+      args.add("--environment-variables", variablesArg);
     }
 
-    @Override
-    public String getName() {
-        return "firebase-test-lab";
-    }
+    project.exec(
+        spec -> {
+          spec.commandLine(args.build());
+        });
+  }
 
-    @Override
-    public void uploadApks(String variantName, File testApk, File testedApk) {
-
-        Map<String, String> currentInstrumentationArgs = instrumentationArgs.get(variantName);
-        // test lab requires an "app" apk, so we give an empty apk to it.
-        String testedApkPath =
-                testedApk != null
-                        ? testedApk.toString()
-                        : project.getRootDir() + "/plugins/resources/dummy.apk";
-        project
-                .getLogger()
-                .lifecycle("Uploading for {}: testApk={}, testedApk={}", variantName, testApk, testedApk);
-
-        ImmutableList.Builder<String> args = ImmutableList.builder();
-        args.add(
-                "gcloud",
-                "firebase",
-                "test",
-                "android",
-                "run",
-                "--type=instrumentation",
-                "--app=" + testedApkPath,
-                "--test=" + testApk,
-                "--timeout=45m",
-                "--use-orchestrator",
-                "--no-auto-google-login",
-                "--no-record-video",
-                "--no-performance-metrics",
-                "-q",
-                "--results-history-name=" + project.getPath());
-        args.addAll(
-                extension.getDevices().stream()
-                        .flatMap(device -> ImmutableList.of("--device", device).stream())
-                        .collect(Collectors.toList()));
-
-        Optional.ofNullable(extension.getTimeout())
-                .ifPresent(timeout -> args.add("--timeout", timeout));
-
-        Optional.ofNullable(System.getenv("FTL_RESULTS_BUCKET"))
-                .map(Environment::expand)
-                .ifPresent(bucket -> args.add("--results-bucket", bucket));
-
-        Optional.ofNullable(System.getenv("FTL_RESULTS_DIR"))
-                .map(Environment::expand)
-                .ifPresent(
-                        dir ->
-                                args.add(
-                                        "--results-dir",
-                                        Paths.get(dir, project.getPath() + "_" + random.nextLong()).toString()));
-
-        if (currentInstrumentationArgs != null) {
-            String variablesArg =
-                    currentInstrumentationArgs.entrySet().stream()
-                            .map(entry -> entry.getKey() + "=" + entry.getValue())
-                            .collect(Collectors.joining(","));
-            args.add("--environment-variables", variablesArg);
-        }
-
-        project.exec(
-                spec -> {
-                    spec.commandLine(args.build());
-                });
-    }
-
-    @Override
-    public boolean isConfigured() {
-        return extension.getEnabled();
-    }
+  @Override
+  public boolean isConfigured() {
+    return extension.getEnabled();
+  }
 }
