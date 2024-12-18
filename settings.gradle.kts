@@ -100,3 +100,5 @@ discoverSubprojects(file("subprojects.cfg")).forEach { include(":$it") }
 setBuildScripts(rootProject)
 
 rootProject.name = "com.google.firebase"
+
+includeBuild("./plugins")
