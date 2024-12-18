@@ -18,7 +18,6 @@ package com.google.firebase.gradle.plugins
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.beEmpty
-import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.file.exist
 import io.kotest.matchers.should
 import java.io.File
@@ -41,8 +40,6 @@ class MakeReleaseNotesTests : FunSpec() {
       )
 
     releaseNoteFile should exist()
-
-    5 shouldBeEqual 6
 
     releaseNoteFile.readLines() diff expectedReleaseNoteFile.readLines() should beEmpty()
   }
