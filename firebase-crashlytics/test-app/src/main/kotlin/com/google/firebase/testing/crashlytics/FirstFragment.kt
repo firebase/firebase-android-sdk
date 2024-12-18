@@ -62,8 +62,11 @@ class FirstFragment : Fragment() {
       crashlytics.log("Custom log message 1")
       crashlytics.log("Custom log message 2")
 
+      // Sleep for 1 seconds
+      Thread.sleep(1_000)
+
       // Now crash
-      throw RuntimeException("CRASH WITH CUSTOM LOG")
+      throw CrashWithLogException()
     }
     binding.buttonNonFatal.setOnClickListener {
       crashlytics.recordException(IllegalStateException())
@@ -121,4 +124,9 @@ class FirstFragment : Fragment() {
         SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
       else "unknown"
   }
+}
+
+
+// CrashWithLogException
+class CrashWithLogException : RuntimeException("CRASH WITH CUSTOM LOG") {
 }
