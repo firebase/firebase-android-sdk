@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-src-check:
+  plugins-check:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4.1.1
