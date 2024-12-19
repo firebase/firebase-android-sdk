@@ -26,6 +26,7 @@ pluginManagement {
     maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
   }
 
+  includeBuild("./plugins")
   includeBuild("firebase-dataconnect/gradleplugin")
 }
 

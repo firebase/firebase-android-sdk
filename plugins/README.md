@@ -1,4 +1,4 @@
-## Build Source
+## Plugins
 
 > [!NOTE]
 > Eventually, this will be merged with our [contributor documentation](https://firebase.github.io/firebase-android-sdk/).
