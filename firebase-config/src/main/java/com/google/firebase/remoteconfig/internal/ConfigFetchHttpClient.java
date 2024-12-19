@@ -357,8 +357,8 @@ public class ConfigFetchHttpClient {
     if (!customSignalsMap.isEmpty()) {
       requestBodyMap.put(CUSTOM_SIGNALS, new JSONObject(customSignalsMap));
 
-      // Log the custom signals during fetch.
-      Log.d(TAG, "Fetching with custom signals: " + customSignalsMap);
+      // Log the keys of the custom signals sent during fetch.
+      Log.d(TAG, "Keys of custom signals during fetch: " + customSignalsMap.keySet());
     }
 
     if (firstOpenTime != null) {

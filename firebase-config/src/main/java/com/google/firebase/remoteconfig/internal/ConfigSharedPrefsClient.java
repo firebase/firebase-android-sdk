@@ -318,8 +318,8 @@ public class ConfigSharedPrefsClient {
           .putString(CUSTOM_SIGNALS, new JSONObject(existingCustomSignals).toString())
           .commit();
 
-      // Log the final updated custom signals.
-      Log.d(TAG, "Updated custom signals: " + getCustomSignals());
+      // Log the keys of the updated custom signals.
+      Log.d(TAG, "Keys of updated custom signals: " + getCustomSignals().keySet());
     }
   }
 
