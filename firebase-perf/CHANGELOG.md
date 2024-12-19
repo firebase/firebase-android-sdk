@@ -1,5 +1,7 @@
 # Unreleased
 
+* [fixed] Fixed a performance issue with shared preferences
+  calling `.apply()` every time a value is read from remote config (#6407)
 
 # 21.0.3
 * [changed] Bump internal dependencies.
