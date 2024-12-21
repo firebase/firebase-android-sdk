@@ -129,7 +129,7 @@ internal object ProtoUtil {
   /** A more convenient builder for [Struct] than [com.google.protobuf.struct]. */
   fun buildStructProto(
     initialValues: Struct? = null,
-    block: StructProtoBuilder.() -> Unit
+    block: StructProtoBuilder.() -> Unit,
   ): Struct = StructProtoBuilder(initialValues).apply(block).build()
 
   /** Generates and returns a string similar to [Struct.toString] but more compact. */
@@ -307,7 +307,7 @@ internal object ProtoUtil {
                   "unsupported type: ${value::class.qualifiedName}; " +
                     "supported types are: Boolean, Double, String, List, and Map"
                 )
-            }
+            },
           )
         }
         structProtoBuilder.build()
@@ -353,7 +353,7 @@ internal object ProtoUtil {
   fun <T> encodeToStruct(
     value: T,
     serializer: SerializationStrategy<T>,
-    serializersModule: SerializersModule?
+    serializersModule: SerializersModule?,
   ): Struct {
     val valueProto = encodeToValue(value, serializer, serializersModule)
     if (valueProto.kindCase == KindCase.KIND_NOT_SET) {
@@ -372,7 +372,7 @@ internal object ProtoUtil {
   fun <T> encodeToValue(
     value: T,
     serializer: SerializationStrategy<T>,
-    serializersModule: SerializersModule?
+    serializersModule: SerializersModule?,
   ): Value {
     val values = mutableListOf<Value>()
     ProtoValueEncoder(null, serializersModule ?: EmptySerializersModule(), values::add)
@@ -392,7 +392,7 @@ internal object ProtoUtil {
   fun <T> decodeFromStruct(
     struct: Struct,
     deserializer: DeserializationStrategy<T>,
-    serializersModule: SerializersModule?
+    serializersModule: SerializersModule?,
   ): T {
     val protoValue = Value.newBuilder().setStructValue(struct).build()
     return decodeFromValue(protoValue, deserializer, serializersModule)
@@ -404,7 +404,7 @@ internal object ProtoUtil {
   fun <T> decodeFromValue(
     value: Value,
     deserializer: DeserializationStrategy<T>,
-    serializersModule: SerializersModule?
+    serializersModule: SerializersModule?,
   ): T {
     val decoder =
       ProtoValueDecoder(value, path = null, serializersModule ?: EmptySerializersModule())

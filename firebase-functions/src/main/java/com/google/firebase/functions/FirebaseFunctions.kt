@@ -60,6 +60,8 @@ internal constructor(
   // The network client to use for HTTPS requests.
   private val client: OkHttpClient = OkHttpClient()
 
+  public val name: String = ""
+
   // A serializer to encode/decode parameters and return values.
   private val serializer: Serializer = Serializer()
 

@@ -16,18 +16,25 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.AndroidComponentsExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
+import com.google.firebase.gradle.plugins.semver.ApiDifferNew
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
+import com.google.firebase.gradle.plugins.semver.GmavenCopierNew
+import org.gradle.api.Incubating
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
-import org.gradle.api.attributes.Attribute
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Sync
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
@@ -66,7 +73,7 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.apply<DackkaPlugin>()
     project.apply<GitSubmodulePlugin>()
 
-    project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
+    project.tasks.named("preBuild").dependsOn("updateGitSubmodules")
   }
 
   private fun setupAndroidLibraryExtension(project: Project) {
@@ -101,7 +108,7 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
     }
 
     setupDefaults(project, firebaseLibrary)
-    setupApiInformationAnalysis(project, android)
+    setupApiInformationAnalysis(project)
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
     setupVersionCheckTasks(project, firebaseLibrary)
@@ -109,86 +116,116 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
   }
 
   private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+
+    val components = project.extensions.getByType<LibraryAndroidComponentsExtension>()
+    val releaseSelector = components.selector().withBuildType("release")
+
+    val gmavenHelper = project.provider {
+      GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
+    }
+
+    components.onVariants(releaseSelector) {
+      val aarFile = it.artifacts.get(SingleArtifact.AAR)
+
+      // TODO: there may be a better unzip task
+      val extractCurrent = project.tasks.register<Sync>("extractCurrentClasses") {
+        from(project.zipTree(aarFile))
+        into(project.layout.buildDirectory.dir("semver/current"))
+      }
+
+      val copyPrevious = project.tasks.register<GmavenCopierNew>("copyPreviousArtifacts") {
+        onlyIf { gmavenHelper.get().isPresentInGmaven() }
+
+        groupId.set(firebaseLibrary.groupId)
+        artifactId.set(firebaseLibrary.artifactId)
+        aarAndroidFile.set(true)
+        outputFile.set(project.layout.buildDirectory.file("semver/previous.aar"))
+      }
+
+      val extractPrevious = project.tasks.register<Sync>("extractPreviousClasses") {
+        from(project.zipTree(copyPrevious.flatMap { it.outputFile }))
+        into(project.layout.buildDirectory.dir("semver/previous"))
+      }
+
+      val currentJarFile = extractCurrent.map { it.destinationDir.childFile("classes.jar") }
+      val previousJarFile = extractPrevious.map { it.destinationDir.childFile("classes.jar") }
+
+      project.tasks.register<ApiDifferNew>("semverCheck") {
+        currentJar.set(project.layout.file(currentJarFile))
+        previousJar.set(project.layout.file(previousJarFile))
+        version.set(firebaseLibrary.version)
+        previousVersionString.set(gmavenHelper.map { it.getLatestReleasedVersion() })
+      }
+    }
+
     project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
       groupId.set(firebaseLibrary.groupId)
       artifactId.set(firebaseLibrary.artifactId)
       version.set(firebaseLibrary.version)
       latestReleasedVersion.set(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
-    project.mkdir("semver")
-    project.mkdir("semver/previous-version")
-    project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
-      dependsOn("bundleReleaseAar")
-      project.file("semver/previous.aar").delete()
 
-      groupId.value(firebaseLibrary.groupId)
-      artifactId.value(firebaseLibrary.artifactId)
-      aarAndroidFile.value(true)
-      filePath.value(project.file("semver/previous.aar").absolutePath)
-    }
-    val artifact = firebaseLibrary.artifactId.get()
-    val releaseAar = if (artifact.contains("-ktx")) "ktx-release.aar" else "${artifact}-release.aar"
-    project.tasks.register<Copy>("extractCurrentClasses") {
-      dependsOn("bundleReleaseAar")
+//    project.mkdir("semver")
+//    project.mkdir("semver/previous-version")
+//    project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
+//      dependsOn("bundleReleaseAar")
+//      project.file("semver/previous.aar").delete()
+//
+//      groupId.set(firebaseLibrary.groupId)
+//      artifactId.set(firebaseLibrary.artifactId)
+//      aarAndroidFile.set(true)
+//      filePath.set(project.file("semver/previous.aar").absolutePath)
+//    }
 
-      from(project.zipTree("build/outputs/aar/${releaseAar}"))
-      into(project.file("semver/current-version"))
-    }
 
-    project.tasks.register<Copy>("extractPreviousClasses") {
-      dependsOn("copyPreviousArtifacts")
-      if (
-        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
-          .isPresentInGmaven()
-      ) {
-        from(project.zipTree("semver/previous.aar"))
-        into(project.file("semver/previous-version"))
-      }
-    }
+//    val artifact = firebaseLibrary.artifactId.map {
+//      if (it.contains("-ktx")) "ktx-release.aar" else "$it-release.aar"
+//    }
+//    project.tasks.register<Copy>("extractCurrentClasses") {
+//      dependsOn("bundleReleaseAar")
+//
+//      from(artifact.map {
+//        project.zipTree("build/outputs/aar/$it")
+//      })
+//      into(project.file("semver/current-version"))
+//    }
 
-    val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
+//    project.tasks.register<Copy>("extractPreviousClasses") {
+//      dependsOn("copyPreviousArtifacts")
+//
+//      onlyIf { gmavenHelper.get().isPresentInGmaven() }
+//
+//      from(project.zipTree("semver/previous.aar"))
+//      into(project.file("semver/previous-version"))
+//    }
 
-    val previousJarFile = project.file("semver/previous-version/classes.jar").absolutePath
-    project.tasks.register<ApiDiffer>("semverCheck") {
-      dependsOn("extractCurrentClasses")
-      dependsOn("extractPreviousClasses")
-      currentJar.value(currentJarFile)
-      previousJar.value(previousJarFile)
-      version.value(firebaseLibrary.version)
-      previousVersionString.value(
-        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
-          .getLatestReleasedVersion()
-      )
-    }
+//    val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
+//
+//    val previousJarFile = project.file("semver/previous-version/classes.jar").absolutePath
+//    project.tasks.register<ApiDiffer>("semverCheck") {
+//      dependsOn("extractCurrentClasses")
+//      dependsOn("extractPreviousClasses")
+//
+//      currentJar.set(currentJarFile)
+//      previousJar.set(previousJarFile)
+//      version.set(firebaseLibrary.version)
+//      previousVersionString.set(gmavenHelper.map { it.getLatestReleasedVersion() })
+//    }
   }
 
-  private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {
-    val srcDirs = project.files(android.sourceSets.getByName("main").java.srcDirs)
+  @Suppress("UnstableApiUsage")
+  private fun setupApiInformationAnalysis(project: Project) {
+    val components = project.extensions.getByType<LibraryAndroidComponentsExtension>()
+    val releaseSelector = components.selector().withBuildType("release")
 
-    val mainSourceSets = android.sourceSets.getByName("main")
-    val getKotlinDirectories = mainSourceSets::class.java.getDeclaredMethod("getKotlinDirectories")
-    val kotlinSrcDirs = getKotlinDirectories.invoke(mainSourceSets)
+    components.onVariants(releaseSelector) {
+      val kotlinFiles = project.files(it.sources.kotlin?.all)
+      val javaFiles = project.files(it.sources.java?.all)
+      val classpath = project.files(it.compileClasspath)
 
-    val apiInfo = getApiInfo(project, project.files(kotlinSrcDirs))
-    val generateApiTxt = getGenerateApiTxt(project, project.files(kotlinSrcDirs))
-    val docStubs = getDocStubs(project, srcDirs)
-
-    project.tasks.getByName("check").dependsOn(docStubs)
-    android.libraryVariants.all {
-      if (name == "release") {
-        val jars =
-          compileConfiguration.incoming
-            .artifactView {
-              attributes {
-                attribute(Attribute.of("artifactType", String::class.java), "android-classes")
-              }
-            }
-            .artifacts
-            .artifactFiles
-        apiInfo.configure { classPath = jars }
-        generateApiTxt.configure { classPath = jars }
-        docStubs.configure { classPath = jars }
-      }
+      registerApiInfoTask(project, kotlinFiles, classpath)
+      registerGenerateApiTxtFileTask(project, kotlinFiles, classpath)
+      registerDocStubsTask(project, javaFiles, classpath)
     }
   }
 

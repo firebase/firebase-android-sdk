@@ -18,6 +18,8 @@ package com.google.firebase.gradle.plugins
 
 import org.w3c.dom.Element
 import org.w3c.dom.NodeList
+import java.io.File
+import java.net.URL
 
 /** Replaces all matching substrings with an empty string (nothing) */
 fun String.remove(regex: Regex) = replace(regex, "")
@@ -250,3 +252,13 @@ infix fun <T> List<T>.diff(other: List<T>): List<Pair<T?, T?>> {
  * ```
  */
 fun <T> List<T>.coerceToSize(targetSize: Int) = List(targetSize) { getOrNull(it) }
+
+fun URL.streamToFile(outputFile: File): File {
+  openStream().use { inputStream ->
+    outputFile.outputStream().use {
+      inputStream.copyTo(it)
+    }
+  }
+
+  return outputFile
+}

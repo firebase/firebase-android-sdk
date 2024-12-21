@@ -24,6 +24,13 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Document
 
 /** TODO(b/279466888) - Make GmavenHelper testable */
+
+/**
+ * If it's a service, I think I can mock it fairly easily
+ *
+ * Ideally, I want to be able to, given a groupid- easily fetch data about it, and it be cached.
+ * This could be a variety of artifactid stuff, but yk
+ */
 class GmavenHelper(val groupId: String, val artifactId: String) {
   val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2"
 
@@ -36,7 +43,7 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
   fun isPresentInGmaven(): Boolean {
     val groupIdAsPath = groupId.replace(".", "/")
     val u = URL("${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml")
-    val huc: HttpURLConnection = u.openConnection() as HttpURLConnection
+    val huc = u.openConnection() as HttpURLConnection
     huc.setRequestMethod("GET") // OR  huc.setRequestMethod ("HEAD");
     huc.connect()
     val code: Int = huc.getResponseCode()

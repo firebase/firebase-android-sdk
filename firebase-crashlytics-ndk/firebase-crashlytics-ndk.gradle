@@ -97,6 +97,8 @@ android {
                 }
             }
         }
+        // TODO: this forces a config eval, need to migrate to named or something
+        // TODO: also search for other bad usages per the docs
         tasks.findAll {
             it.name.startsWith("externalNativeBuild") && !it.name.contains("Clean")
         }.each { task ->

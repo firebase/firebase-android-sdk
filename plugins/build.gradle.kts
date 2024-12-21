@@ -62,6 +62,7 @@ dependencies {
   implementation("com.google.code.gson:gson:2.8.9")
   implementation(libs.android.gradlePlugin.gradle)
   implementation(libs.android.gradlePlugin.builder.test.api)
+  implementation("org.apache.maven.resolver:maven-resolver-api:2.0.5")
 
   testImplementation(libs.bundles.kotest)
   testImplementation(libs.junit)

@@ -27,6 +27,20 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.kotlin.dsl.findByType
 
+// abstract class ChangedModulesTaskExtension : DefaultTask() {
+//  @get:Input
+//  @get:Option(option = "changed-git-paths", description = "The list of changed paths")
+//  abstract val changedGitPaths: ListProperty<String>
+//
+//  @get:Input
+//  @get:Option(option = "firebase-only", description = "Only list Firebase SDKs")
+//  abstract val firebaseOnly: Property<Boolean>
+//
+//  @get:Option(option = "output-file", description = "The file to output json to")
+//  @get:OutputFile
+//  abstract val outputFile: RegularFileProperty
+// }
+
 abstract class ChangedModulesTask : DefaultTask() {
   @get:Input
   @set:Option(option = "changed-git-paths", description = "The list of changed paths")

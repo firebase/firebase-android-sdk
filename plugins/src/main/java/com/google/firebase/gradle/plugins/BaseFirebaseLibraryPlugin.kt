@@ -17,9 +17,8 @@
 package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.google.firebase.gradle.plugins.ci.Coverage
-import java.io.File
-import java.nio.file.Paths
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
@@ -125,31 +124,23 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     Coverage.apply(library)
   }
 
-  protected fun getApiInfo(
+  protected fun registerApiInfoTask(
     project: Project,
     srcDirs: ConfigurableFileCollection,
-  ): TaskProvider<ApiInformationTask> {
-    val outputFile =
-      project.rootProject.file(
-        Paths.get(
-          project.rootProject.buildDir.path,
-          "apiinfo",
-          project.path.substring(1).replace(":", "_"),
-        )
-      )
-    val outputApiFile = File(outputFile.absolutePath + "_api.txt")
-    val apiTxt =
-      project.file("api.txt").takeIf { it.exists() } ?: project.rootProject.file("empty-api.txt")
-    val apiInfo =
-      project.tasks.register<ApiInformationTask>("apiInformation") {
-        sources.from(project.provider { srcDirs })
-        apiTxtFile.set(apiTxt)
-        baselineFile.set(project.file("baseline.txt"))
-        this.outputFile.set(outputFile)
-        this.outputApiFile.set(outputApiFile)
-        updateBaseline.set(project.hasProperty("updateBaseline"))
-      }
-    return apiInfo
+    classpath: ConfigurableFileCollection,
+  ) {
+    val projectPath = project.path.substring(1).replace(":", "_")
+    val apiInfoFile =
+      project.rootProject.layout.buildDirectory.file("apiinfo/${projectPath}_api.txt")
+
+    project.tasks.register<ApiInformationTask>("apiInformation") {
+      sources.from(srcDirs)
+      apiTxtFile.set(project.file("api.txt"))
+      baselineFile.set(project.file("baseline.txt"))
+      outputApiFile.set(apiInfoFile)
+      updateBaseline.set(project.hasProperty("updateBaseline"))
+      classPath.from(classpath)
+    }
   }
 
   protected fun getIsPomValidTask(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
@@ -161,18 +152,23 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     }
   }
 
-  protected fun getGenerateApiTxt(project: Project, srcDirs: ConfigurableFileCollection) =
+  protected fun registerGenerateApiTxtFileTask(project: Project, srcDirs: ConfigurableFileCollection, classpath: ConfigurableFileCollection,) =
     project.tasks.register<GenerateApiTxtTask>("generateApiTxtFile") {
-      sources.from(project.provider { srcDirs })
+      sources.from(srcDirs)
       apiTxtFile.set(project.file("api.txt"))
       baselineFile.set(project.file("baseline.txt"))
       updateBaseline.set(project.hasProperty("updateBaseline"))
+      classPath.from(classpath)
     }
 
-  protected fun getDocStubs(project: Project, srcDirs: ConfigurableFileCollection) =
-    project.tasks.register<GenerateStubsTask>("docStubs") {
-      sources.from(project.provider { srcDirs })
+  protected fun registerDocStubsTask(project: Project, srcDirs: ConfigurableFileCollection, classpath: ConfigurableFileCollection,) {
+    val task = project.tasks.register<GenerateStubsTask>("docStubs") {
+      sources.from(srcDirs)
+      classPath.from(classpath)
     }
+
+    project.tasks.named("check").dependsOn(task)
+  }
 
   /**
    * Adds + configures the [MavenPublishPlugin] for the given [project].

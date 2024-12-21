@@ -23,7 +23,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.ConfigurableFileCollection
-import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
@@ -76,7 +75,7 @@ abstract class GenerateStubsTask : DefaultTask() {
   @get:InputFiles abstract val sources: ConfigurableFileCollection
 
   @get:[InputFiles Classpath]
-  lateinit var classPath: FileCollection
+  abstract val classPath: ConfigurableFileCollection
 
   @get:OutputDirectory val outputDir: File = File(project.buildDir, "doc-stubs")
 
@@ -105,7 +104,8 @@ abstract class GenerateApiTxtTask : DefaultTask() {
   /** Source files against which API signatures will be validated. */
   @get:InputFiles abstract val sources: ConfigurableFileCollection
 
-  @get:InputFiles lateinit var classPath: FileCollection
+  @get:[InputFiles Classpath]
+  abstract val classPath: ConfigurableFileCollection
 
   @get:OutputFile abstract val apiTxtFile: RegularFileProperty
 
@@ -118,6 +118,15 @@ abstract class GenerateApiTxtTask : DefaultTask() {
     val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
 
     val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
+
+    println(
+      """
+      Project: ${project.name}
+      
+      Classpath: ${classPath.joinToString("\n")}
+    """
+        .trimIndent()
+    )
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
 
     project.runMetalavaWithArgs(
@@ -143,15 +152,14 @@ abstract class ApiInformationTask : DefaultTask() {
   /** Source files against which API signatures will be validated. */
   @get:InputFiles abstract val sources: ConfigurableFileCollection
 
-  @get:InputFiles lateinit var classPath: FileCollection
+  @get:[InputFiles Classpath]
+  abstract val classPath: ConfigurableFileCollection
 
   @get:InputFile abstract val apiTxtFile: RegularFileProperty
 
   @get:OutputFile abstract val outputApiFile: RegularFileProperty
 
   @get:OutputFile abstract val baselineFile: RegularFileProperty
-
-  @get:OutputFile abstract val outputFile: RegularFileProperty
 
   @get:Input abstract val updateBaseline: Property<Boolean>
 
@@ -175,6 +183,8 @@ abstract class ApiInformationTask : DefaultTask() {
       ignoreFailure = true,
     )
 
+    val outputFilePath = outputApiFile.get().asFile.absolutePath.remove("_api.txt")
+
     project.runMetalavaWithArgs(
       listOf(
         "--source-files",
@@ -195,7 +205,7 @@ abstract class ApiInformationTask : DefaultTask() {
           listOf("--baseline", baselineFile.get().asFile.absolutePath)
         else listOf(),
       ignoreFailure = true,
-      stdOut = FileOutputStream(outputFile.get().asFile),
+      stdOut = FileOutputStream(outputFilePath),
     )
   }
 }

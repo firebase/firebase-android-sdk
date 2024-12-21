@@ -16,16 +16,16 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
 import org.gradle.api.Project
-import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
-import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.getPlugin
+import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
@@ -106,35 +106,12 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
   }
 
   private fun setupApiInformationAnalysis(project: Project) {
-    val srcDirs =
-      project.files(
-        project.convention
-          .getPlugin<JavaPluginConvention>()
-          .sourceSets
-          .getByName("main")
-          .java
-          .srcDirs
-      )
+    val mainSourceSet = project.extensions.getByType<JavaPluginExtension>().sourceSets.named("main")
+    val srcDirs = project.files(mainSourceSet.map { it.java.srcDirs })
+    val classpath = project.files(mainSourceSet.map { it.runtimeClasspath })
 
-    val apiInfo = getApiInfo(project, srcDirs)
-
-    val generateApiTxt = getGenerateApiTxt(project, srcDirs)
-    val docStubs = getDocStubs(project, srcDirs)
-
-    project.tasks.getByName("check").dependsOn(docStubs)
-    project.afterEvaluate {
-      val classpath =
-        configurations
-          .getByName("runtimeClasspath")
-          .incoming
-          .artifactView {
-            attributes { attribute(Attribute.of("artifactType", String::class.java), "jar") }
-          }
-          .artifacts
-          .artifactFiles
-      apiInfo.configure { classPath = classpath }
-      generateApiTxt.configure { classPath = classpath }
-      docStubs.configure { classPath = classpath }
-    }
+    registerApiInfoTask(project, srcDirs, classpath)
+    registerGenerateApiTxtFileTask(project, srcDirs, classpath)
+    registerDocStubsTask(project, srcDirs, classpath)
   }
 }
