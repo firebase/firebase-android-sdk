@@ -1,16 +1,16 @@
-name: Check buildSrc
+name: Check plugins
 
 on:
   pull_request:
     paths:
-      - 'buildSrc/**'
+      - 'plugins/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-src-check:
+  plugins-check:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4.1.1
@@ -20,13 +20,13 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
-      - name: buildSrc Tests
+      - name: plugins tests
         env:
           FIREBASE_CI: 1
         run: |
-          ./gradlew -b buildSrc/build.gradle.kts -PenablePluginTests=true check
+          ./gradlew plugins:check
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@82082dac68ad6a19d980f8ce817e108b9f496c2a
         with:
           files: "**/build/test-results/**/*.xml"
-          check_name: "buildSrc Test Results"
+          check_name: "plugins test results"

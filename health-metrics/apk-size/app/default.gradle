@@ -29,7 +29,7 @@ android {
 
     defaultConfig {
         applicationId 'com.google.apksize'
-        minSdkVersion project.targetSdkVersion
+        minSdkVersion 34
         multiDexEnabled true
         targetSdkVersion 33
         versionCode 1
