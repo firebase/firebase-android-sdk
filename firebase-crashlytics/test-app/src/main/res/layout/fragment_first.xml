@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
   ~ Copyright 2023 Google LLC
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,95 +15,128 @@
   ~ limitations under the License.
   -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-  android:layout_width="fill_parent"
-  android:layout_height="fill_parent">
-  <LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    tools:context=".FirstFragment">
+    android:layout_height="match_parent">
 
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:orientation="vertical"
+      android:padding="16dp">
+
+    <!-- Shared / Common Buttons -->
     <Button
-        android:id="@+id/button_crash"
+        android:id="@+id/button_shared_initialize_crashlytics"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/crash_button_text"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent" />
-    <Button
-        android:id="@+id/button_crash_with_custom_log"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/crash_button_custom_log_text"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent" />
+        android:text="Shared_Initialize_Crashlytics" />
 
     <Button
-        android:id="@+id/button_non_fatal"
+        android:id="@+id/button_shared_generate_crash"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/non_fatal_button_text"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_crash" />
+        android:text="Shared_Generate_Crash" />
 
     <Button
-        android:id="@+id/button_anr"
+        android:id="@+id/button_shared_verify_crash"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/button_anr_text"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_non_fatal" />
+        android:text="Shared_Verify_Crash" />
 
     <Button
-        android:id="@+id/button_foreground_process"
+        android:id="@+id/button_shared_verify_no_crash"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/start_foreground_service_text"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_anr" />
+        android:text="Shared_Verify_No_Crash" />
+
+    <!-- Core Scenario -->
+    <Button
+        android:id="@+id/button_firebasecore_fatal_error"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FirebaseCore_Fatal_Error" />
+
+    <!-- Public APIs -->
+    <Button
+        android:id="@+id/button_public_api_log"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Public_API_Log" />
 
     <Button
-        android:id="@+id/start_splitscreen"
+        android:id="@+id/button_public_api_setcustomvalue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/start_splitcreen_text"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_foreground_process" />
+        android:text="Public_API_SetCustomValue" />
 
     <Button
-        android:id="@+id/start_splitscreen_same"
+        android:id="@+id/button_public_api_setuserid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/start_splitcreen_same_text"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/start_splitscreen" />
+        android:text="Public_API_SetUserID" />
 
     <Button
-        android:id="@+id/next_activity_button"
+        android:id="@+id/button_public_api_didcrashpreviously"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/next_activity_text"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/start_splitscreen_same" />
+        android:text="Public_API_DidCrashPreviously" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal">
-        <TextView
-            android:id="@+id/session_id_fragment_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/session_id_label"
-            android:labelFor="@id/session_id_fragment_text"/>
-        <TextView
-            android:id="@+id/session_id_fragment_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:hint="@string/session_id_label"
-            android:text="@string/no_session_text"/>
-    </LinearLayout>
+    <Button
+        android:id="@+id/button_public_api_recordexception"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Public_API_RecordException" />
+
+    <!-- Data Collection APIs -->
+    <Button
+        android:id="@+id/button_datacollection_default"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Default" />
+
+    <Button
+        android:id="@+id/button_datacollection_firebase_off"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Firebase_Off" />
+
+    <Button
+        android:id="@+id/button_datacollection_crashlytics_off"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off" />
+
+    <Button
+        android:id="@+id/button_datacollection_off_then_on"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off_Then_On" />
+
+    <Button
+        android:id="@+id/button_datacollection_off_then_send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off_Then_Send" />
+
+    <Button
+        android:id="@+id/button_datacollection_off_then_delete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DataCollection_Crashlytics_Off_Then_Delete" />
+
+    <TextView
+        android:id="@+id/current_user_id_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="UserId not set yet"
+        android:paddingTop="16dp" />
+
+    <TextView
+        android:id="@+id/current_has_crashed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HasCrashed not set yet"
+        android:paddingTop="16dp" />
 
   </LinearLayout>
 </ScrollView>

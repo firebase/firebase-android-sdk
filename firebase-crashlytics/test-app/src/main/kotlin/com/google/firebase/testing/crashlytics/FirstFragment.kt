@@ -1,54 +1,28 @@
-/*
- * Copyright 2023 Google LLC
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.firebase.testing.crashlytics
 
-import android.content.Intent
-import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
-import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
-import android.icu.text.SimpleDateFormat
-import android.os.Build
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
 import com.google.firebase.crashlytics.FirebaseCrashlytics
-//import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
-import java.util.Date
-import java.util.Locale
+import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
 
-/** A simple [Fragment] subclass as the default destination in the navigation. */
+
 class FirstFragment : Fragment() {
-  val crashlytics = FirebaseCrashlytics.getInstance()
 
   private var _binding: FragmentFirstBinding? = null
+  private val binding get() = _binding!!
 
-  // This property is only valid between onCreateView and
-  // onDestroyView.
-  private val binding
-    get() = _binding!!
+  // Single Crashlytics instance
+  private val crashlytics = FirebaseCrashlytics.getInstance()
 
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
     savedInstanceState: Bundle?
-  ): View? {
-
+  ): View {
     _binding = FragmentFirstBinding.inflate(inflater, container, false)
     return binding.root
   }
@@ -56,77 +30,178 @@ class FirstFragment : Fragment() {
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
 
-    binding.buttonCrash.setOnClickListener { throw RuntimeException("CRASHED") }
-    binding.buttonCrashWithCustomLog.setOnClickListener {
-      // Log multiple custom messages
-      crashlytics.log("Custom log message 1")
-      crashlytics.log("Custom log message 2")
+    // 1) Restore and display any previously saved user ID
+    loadAndApplyUserId()
 
-      // Sleep for 1 seconds
+    // 1b) Has the app crashed before?
+    loadAndApplyHasCrashed()
+
+    // 2) Set up buttons. Each button sets a NEW user ID, saves it, then performs its logic.
+    binding.buttonSharedInitializeCrashlytics.setOnClickListener {
+      val userId = "SharedInitialize_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      crashlytics.log("Shared_Initialize_Crashlytics button clicked. userId=$userId")
+      // Typically, Crashlytics auto-initializes. We do nothing special otherwise.
+    }
+
+    binding.buttonSharedGenerateCrash.setOnClickListener {
+      val userId = "SharedGenerate_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("Test: Shared_Generate_Crash")
+    }
+
+    binding.buttonSharedVerifyCrash.setOnClickListener {
+      val userId = "SharedVerifyCrash_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      crashlytics.log("Shared_Verify_Crash log before crash. userId=$userId")
+      crashlytics.setCustomKey("SharedVerifyCrashKey", "SomeValue")
       Thread.sleep(1_000)
+      throw RuntimeException("Test: Shared_Verify_Crash")
+    }
 
-      // Now crash
-      throw CrashWithLogException()
+    binding.buttonSharedVerifyNoCrash.setOnClickListener {
+      val userId = "SharedVerifyNoCrash_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      crashlytics.log("Shared_Verify_No_Crash clicked, but not crashing. userId=$userId")
+      // No crash, so user remains in the app.
     }
-    binding.buttonNonFatal.setOnClickListener {
-      crashlytics.recordException(IllegalStateException())
+
+    binding.buttonFirebasecoreFatalError.setOnClickListener {
+      val userId = "FirebaseCoreFatal_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("FirebaseCore_Fatal_Error has occurred.")
     }
-    binding.buttonAnr.setOnClickListener {
-      while (true) {
-        Thread.sleep(1_000)
-      }
+
+    binding.buttonPublicApiLog.setOnClickListener {
+      val userId = "PublicApiLog_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      crashlytics.log("Custom log message 1 (Public_API_Log) userId=$userId")
+      crashlytics.log("Custom log message 2 (Public_API_Log)")
+      Thread.sleep(1_000)
+      throw RuntimeException("Public_API_Log crash")
     }
-    binding.buttonForegroundProcess.setOnClickListener {
-      if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
-        ForegroundService.startService(requireContext(), "Starting service at ${getDateText()}")
-        binding.buttonForegroundProcess.setText("Stop foreground service")
-      } else {
-        ForegroundService.stopService(requireContext())
-        binding.buttonForegroundProcess.setText("Start foreground service")
-      }
+
+    binding.buttonPublicApiSetcustomvalue.setOnClickListener {
+      val userId = "PublicApiSetCustomValue_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      crashlytics.setCustomKey("key", "value")
+      crashlytics.setCustomKey("number", 42)
+      throw RuntimeException("Public_API_SetCustomValue crash")
     }
-    binding.startSplitscreen.setOnClickListener {
-      val intent = Intent(requireContext(), SecondActivity::class.java)
-      intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
-      startActivity(intent)
-      activity?.finish()
+
+    binding.buttonPublicApiSetuserid.setOnClickListener {
+      val userId = "PublicApiSetUserID_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("Public_API_SetUserID crash")
     }
-    binding.startSplitscreenSame.setOnClickListener {
-      val intent = Intent(requireContext(), MainActivity::class.java)
-      intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
-      startActivity(intent)
+
+    binding.buttonPublicApiDidcrashpreviously.setOnClickListener {
+      val userId = "DidCrashPreviously_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("Public_API_DidCrashPreviously crash")
     }
-    binding.nextActivityButton.setOnClickListener {
-      val intent = Intent(requireContext(), SecondActivity::class.java)
-      intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
-      startActivity(intent)
+
+    binding.buttonPublicApiRecordexception.setOnClickListener {
+      val userId = "PublicApiRecordException_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      // Record multiple non-fatal exceptions, but do NOT crash.
+      crashlytics.recordException(RuntimeException("public_API_RecordException: non-fatal 1"))
+      crashlytics.recordException(RuntimeException("public_API_RecordException: non-fatal 2"))
+      crashlytics.log("Public_API_RecordException: recorded two non-fatals, no crash. userId=$userId")
+    }
+
+    binding.buttonDatacollectionDefault.setOnClickListener {
+      val userId = "DataCollectionDefault_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("DataCollection_Default crash")
+    }
+
+    binding.buttonDatacollectionFirebaseOff.setOnClickListener {
+      val userId = "DataCollectionFirebaseOff_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("DataCollection_Firebase_Off crash")
+    }
+
+    binding.buttonDatacollectionCrashlyticsOff.setOnClickListener {
+      val userId = "DataCollectionCrashlyticsOff_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("DataCollection_Crashlytics_Off crash")
+    }
+
+    binding.buttonDatacollectionOffThenOn.setOnClickListener {
+      val userId = "DataCollectionOffThenOn_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("DataCollection_Crashlytics_Off_Then_On crash")
+    }
+
+    binding.buttonDatacollectionOffThenSend.setOnClickListener {
+      val userId = "DataCollectionOffThenSend_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("DataCollection_Crashlytics_Off_Then_Send crash")
+    }
+
+    binding.buttonDatacollectionOffThenDelete.setOnClickListener {
+      val userId = "DataCollectionOffThenDelete_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      throw RuntimeException("DataCollection_Crashlytics_Off_Then_Delete crash")
     }
   }
 
-  override fun onResume() {
-    super.onResume()
-    TestApplication.sessionSubscriber.registerView(binding.sessionIdFragmentText)
+
+  /**
+   * Load the previously-saved userId (if any) from SharedPreferences,
+   * apply it to Crashlytics, and display it in the TextView.
+   */
+  private fun loadAndApplyUserId() {
+    val prefs = requireContext().getSharedPreferences("crashlytics_prefs", Context.MODE_PRIVATE)
+    val savedId = prefs.getString("latest_user_id", null)
+    if (!savedId.isNullOrEmpty()) {
+      crashlytics.setUserId(savedId)
+      binding.currentUserIdText.text = "UserId: $savedId"
+    }
   }
 
-  override fun onPause() {
-    super.onPause()
-    TestApplication.sessionSubscriber.unregisterView(binding.sessionIdFragmentText)
+  /**
+   * Load the previously-saved "hasCrashed" flag,
+   */
+  private fun loadAndApplyHasCrashed() {
+    val hasCrashed = crashlytics.didCrashOnPreviousExecution()
+    binding.currentHasCrashed.text = "HasCrashed: $hasCrashed"
+  }
+
+
+  /**
+   * Save the given userId to SharedPreferences, apply it to Crashlytics,
+   * and update the TextView accordingly.
+   */
+  private fun saveAndApplyUserId(newUserId: String) {
+    // Save to SharedPreferences
+    val prefs = requireContext().getSharedPreferences("crashlytics_prefs", Context.MODE_PRIVATE)
+    prefs.edit().putString("latest_user_id", newUserId).apply()
+
+    // Apply to Crashlytics and UI
+    crashlytics.setUserId(newUserId)
+    binding.currentUserIdText.text = "UserId: $newUserId"
   }
 
   override fun onDestroyView() {
     super.onDestroyView()
     _binding = null
   }
-
-  companion object {
-    fun getDateText(): String =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-      else "unknown"
-  }
-}
-
-
-// CrashWithLogException
-class CrashWithLogException : RuntimeException("CRASH WITH CUSTOM LOG") {
 }

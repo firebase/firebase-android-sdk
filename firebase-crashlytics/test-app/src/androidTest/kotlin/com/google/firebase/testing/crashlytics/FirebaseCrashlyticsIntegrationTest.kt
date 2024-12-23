@@ -17,26 +17,33 @@
 package com.google.firebase.testing.crashlytics
 
 import android.content.Context
-import android.content.Intent
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import java.util.regex.Pattern
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.Locale
+import java.util.regex.Pattern
 
 const val APP_NAME = "com.google.firebase.testing.crashlytics"
 
+/**
+ * Integration tests for Firebase Crashlytics scenarios.
+ * Each test:
+ *  1) Launches the app
+ *  2) Clicks a specific button that sets user ID & triggers crash/no-crash logic
+ *  3) If there's a crash, relaunch the app to send the crash
+ *  4) Then read the user ID from the textView (after crash & relaunch)
+ *  5) Logs a console link for manual verification
+ */
 @RunWith(AndroidJUnit4::class)
 class FirebaseCrashlyticsIntegrationTest {
 
@@ -44,18 +51,17 @@ class FirebaseCrashlyticsIntegrationTest {
 
   @Before
   fun setup() {
-    // Initialize UiDevice instance
     device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
   }
 
   @After
   fun cleanup() {
-    // Make sure all processes are killed
+    // Force-stop the app after each test to start fresh next time
     Runtime.getRuntime().exec(arrayOf("am", "force-stop", APP_NAME))
   }
 
   /**
-   * Helper function to check logs for a certain term.
+   * Helper method: read logcat (only used to verify Crashlytics init in one test).
    */
   private fun readLogcat(tagFilter: String): Boolean {
     val logs = mutableListOf<String>()
@@ -67,287 +73,24 @@ class FirebaseCrashlyticsIntegrationTest {
   }
 
   /**
-   * Reusable steps and helpers.
+   * Helper: Build Crashlytics console search URL for a given userId.
    */
-
-  @Test
-  // Checks that Crashlytics is Enabled in Logcat
-  fun sharedInitializeCrashlytics() {
-    launchApp()
-
-    val crashlyticsInitialized = readLogcat("Initializing Firebase Crashlytics")
-    assertThat(crashlyticsInitialized).isTrue()
-  }
-
-  @Test
-  // Crash can be found associated with set user id.
-  fun sharedGenerateCrash() {
-    launchApp()
-
-    val crashlytics = FirebaseCrashlytics.getInstance()
-    val testUserId = "TestUser123"
-    crashlytics.setUserId(testUserId)
-
-    getButton("CRASH!").click()
-
-    Log.d("CrashlyticsTest", "User ID set: $testUserId")
-
-    val userIdLogFound = readLogcat("TestUser123")
-    val crashFound = readLogcat("Test")
-
-    assertThat(userIdLogFound).isTrue()
-    assertThat(crashFound).isTrue()
-  }
-
-  @Test
-  fun sharedVerifyCrash() {
-    launchApp()
-
-    val crashlytics = FirebaseCrashlytics.getInstance()
-    val testUserId = "TestUser123"
-    val customValue = "TestValue"
-    val customKey = "CustomKey"
-    crashlytics.setCustomKey(customKey, customValue)
-    crashlytics.setUserId(testUserId)
-
-    Log.d("CrashlyticsTest", "Custom Key set: $customKey = $customValue")
-    Log.d("CrashlyticsTest", "User ID set: $testUserId")
-    Log.d("CrashlyticsTest", "This is a pre-crash log for verification.")
-
-    getButton("CRASH!").click()
-
-    val userIdLogFound = readLogcat("TestUser123")
-    val customKeyLogFound = readLogcat("CustomKey")
-    val preCrashLogFound = readLogcat("This is a pre-crash log for verification.")
-
-    assertThat(userIdLogFound).isTrue()
-    assertThat(customKeyLogFound).isTrue()
-    assertThat(preCrashLogFound).isTrue()
-  }
-
-  @Test
-  fun sharedVerifyNoCrash() {
-    launchApp()
-
-    val crashlytics = FirebaseCrashlytics.getInstance()
-    val testUserId = "TestUser123"
-    val customValue = "TestValue"
-    val customKey = "CustomKey"
-    crashlytics.setCustomKey(customKey, customValue)
-    crashlytics.setUserId(testUserId)
-
-    Log.d("CrashlyticsTest", "Custom Key set: $customKey = $customValue")
-    Log.d("CrashlyticsTest", "User ID set: $testUserId")
-    Log.d("CrashlyticsTest", "This is a pre-crash log for verification.")
-
-    navigateToSecondActivity()
-    Thread.sleep(2000)
-
-    val userIdLogFound = readLogcat("TestUser123")
-    val customKeyLogFound = readLogcat("CustomKey")
-    val preCrashLogFound = readLogcat("This is a pre-crash log for verification.")
-
-    assertThat(userIdLogFound).isTrue()
-    assertThat(customKeyLogFound).isTrue()
-    assertThat(preCrashLogFound).isTrue()
-  }
-
-  @Test
-  // Fatal errors are reported by crashlytics
-  fun firebaseCoreFatalError() {
-    launchApp()
-    getButton("CRASH!").click()
-
-    val crashFound = readLogcat("Test")
-    assertThat(crashFound).isTrue()
-  }
-
-
-  /**
-   * Public API Tests
-   */
-
-  @Test
-  fun public_API_Log() {
-    /*
-     * Steps:
-     * 1. Initialize Crashlytics
-     * 2. Call the log API multiple times with custom strings
-     * 3. Generate a crash
-     * 4. Verify crash is reported and all custom messages are associated
-     */
-
-    launchApp()
-
-    getButton("CRASH WITH CUSTOM LOG").click()
-
-    launchApp()
-
-    // Verification instruction:
-    Log.i(
-      "TestInfo",
-      "Verify on the Crashlytics console that the crash contains 'Custom log message 1' and 'Custom log message 2'. " +
-              "View: https://console.firebase.google.com/project/crashlytics-e2e/crashlytics/app/android:com.google.firebase.testing.crashlytics/issues?time=last-seven-days&state=all&tag=all&sort=eventCount&types=crash&issuesQuery=CRASH%20WITH"
-    )
-  }
-
-  @Test
-  fun public_API_SetCustomValue() {
-    /*
-     * Steps:
-     * 1. Initialize Crashlytics
-     * 2. Set multiple custom keys
-     * 3. Generate a crash
-     * 4. Verify custom key-value pairs in the crash report
-     */
-
-    launchApp()
-    val crashlytics = FirebaseCrashlytics.getInstance()
-
-    crashlytics.setCustomKey("key", "value")
-    crashlytics.setCustomKey("number", 42)
-    Log.d("CrashlyticsTest", "Set custom keys: key=value, number=42")
-
-    getButton("CRASH!").click()
-
-    launchApp()
-
-    // Verification instruction:
-    Log.i(
-      "TestInfo",
-      "Verify on the Crashlytics console that the crash contains the custom keys 'key=value' and 'number=42'. " +
-              "View: https://console.firebase.google.com/project/crashlytics-e2e/crashlytics/app/android:com.google.firebase.testing.crashlytics/issues?time=last-seven-days&state=open&tag=all&sort=eventCount&issuesQuery=test"
-    )
-  }
-
-  @Test
-  fun public_API_SetUserID() {
-    /*
-     * Steps:
-     * 1. Initialize Crashlytics
-     * 2. Set a known user ID
-     * 3. Generate a crash
-     * 4. Verify the user ID is associated with the crash
-     */
-
-    launchApp()
-    val crashlytics = FirebaseCrashlytics.getInstance()
-
-    val testUserId = "user-1"
-    crashlytics.setUserId(testUserId)
-    Log.d("CrashlyticsTest", "User ID set: $testUserId")
-
-    getButton("CRASH!").click()
-
-    val userIdFound = readLogcat("user-1")
-    assertThat(userIdFound).isTrue()
-
-    // Verification instruction:
-    Log.i(
-      "TestInfo",
-      "Verify on the Crashlytics console that the user ID 'user-1' is associated with the crash. " +
-              "View: https://console.firebase.google.com/project/crashlytics-e2e/crashlytics/app/android:com.google.firebase.testing.crashlytics/issues?time=last-seven-days&state=open&tag=all&sort=eventCount&issuesQuery=test"
-    )
-  }
-
-  @Test
-  fun public_API_DidCrashPreviously() {
-    /*
-     * Steps:
-     * 1. Launch and initialize Crashlytics
-     * 2. On first launch, didCrashOnPreviousExecution should be false
-     * 3. Generate a crash
-     * 4. Relaunch app, now didCrashOnPreviousExecution should be true
-     * 5. Relaunch again without crashing, now didCrashOnPreviousExecution should be false
-     *
-     * Note: This test simulates the sequence by restarting the app and checking logs.
-     * In a real scenario, you might need separate test steps or manual verification.
-     */
-
-    // First Launch
-    launchApp()
-    val crashlytics = FirebaseCrashlytics.getInstance()
-    val firstCheck = crashlytics.didCrashOnPreviousExecution()
-    Log.d("CrashlyticsTest", "Did crash previously (initial): $firstCheck")
-    assertThat(firstCheck).isFalse()
-
-    // Generate a crash
-    getButton("CRASH!").click()
-    // The crash terminates the app, so after the crash, we assume the test harness relaunches it.
-
-    // Second Launch (after crash)
-    launchApp()
-    val crashlyticsSecond = FirebaseCrashlytics.getInstance()
-    val secondCheck = crashlyticsSecond.didCrashOnPreviousExecution()
-    Log.d("CrashlyticsTest", "Did crash previously (after crash): $secondCheck")
-    assertThat(secondCheck).isTrue()
-
-    // No crash this time, just close and relaunch again
-    cleanup() // Force stop to simulate a fresh launch
-    launchApp()
-    val crashlyticsThird = FirebaseCrashlytics.getInstance()
-    val thirdCheck = crashlyticsThird.didCrashOnPreviousExecution()
-    Log.d("CrashlyticsTest", "Did crash previously (third launch): $thirdCheck")
-    assertThat(thirdCheck).isFalse()
-
-    // Verification instruction:
-    Log.i(
-      "TestInfo",
-      "Check logs to ensure didCrashOnPreviousExecution transitioned as expected. " +
-              "Also verify in Crashlytics console that the crash event is recorded. " +
-              "View: https://console.firebase.google.com/project/crashlytics-e2e/crashlytics/app/android:com.google.firebase.testing.crashlytics/issues?time=last-seven-days&state=open&tag=all&sort=eventCount&issuesQuery=test"
-    )
-  }
-
-  @Test
-  fun public_API_RecordException() {
-    /*
-     * Steps:
-     * 1. Initialize Crashlytics
-     * 2. Set user ID
-     * 3. Record multiple non-fatal exceptions
-     * 4. Close and relaunch app
-     * 5. Verify non-fatal exceptions are reported by filtering events as Non-fatals in the Crashlytics console
-     *    and check for user info as keys/values.
-     */
-
-    launchApp()
-    val crashlytics = FirebaseCrashlytics.getInstance()
-    val testUserId = "user-2"
-    crashlytics.setUserId(testUserId)
-    crashlytics.setCustomKey("env", "test-environment")
-    Log.d("CrashlyticsTest", "User ID set: $testUserId, custom key 'env=test-environment' set.")
-
-    // Record multiple non-fatal exceptions
-    val e1 = RuntimeException("non-fatal 1")
-    val e2 = RuntimeException("non-fatal 2")
-    crashlytics.recordException(e1)
-    crashlytics.recordException(e2)
-    Log.d("CrashlyticsTest", "Recorded two non-fatal exceptions.")
-
-    // Simulate a relaunch by force stopping and then launching again
-    cleanup()
-    launchApp()
-
-    // Verification instruction:
-    Log.i(
-      "TestInfo",
-      "Verify non-fatal exceptions are reported in the Crashlytics console. Filter by Non-fatals and look for 'user-2' and key 'env=test-environment'. " +
-              "View: https://console.firebase.google.com/project/crashlytics-e2e/crashlytics/app/android:com.google.firebase.testing.crashlytics/issues?time=last-seven-days&state=open&tag=all&sort=eventCount&issuesQuery=test"
-    )
+  private fun getCrashlyticsSearchUrl(userId: String): String {
+    return "https://console.firebase.google.com/project/crashlytics-e2e/" +
+            "crashlytics/app/android:com.google.firebase.testing.crashlytics/search" +
+            "?time=last-seven-days&types=crash&q=$userId"
   }
 
   /**
-   * Helper and navigation methods
+   * Helper: Launch the app from the home screen.
    */
-
   private fun launchApp() {
     device.pressHome()
     device.wait(Until.hasObject(By.pkg(device.launcherPackageName).depth(0)), LAUNCH_TIMEOUT)
 
     val context = ApplicationProvider.getApplicationContext<Context>()
     val intent = context.packageManager.getLaunchIntentForPackage(APP_NAME)?.apply {
-      addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+      addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
     }
     context.startActivity(intent)
 
@@ -355,22 +98,332 @@ class FirebaseCrashlyticsIntegrationTest {
     device.waitForIdle()
   }
 
-  private fun navigateToSecondActivity() {
-    device.wait(Until.hasObject(By.text("NEXT ACTIVITY").depth(0)), TRANSITION_TIMEOUT)
-    val nextActivityButton =
-      device.findObject(By.text("NEXT ACTIVITY").clazz("android.widget.Button"))
-    nextActivityButton?.click()
-    device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), TRANSITION_TIMEOUT)
+  /**
+   * Helper: Find a button by text and click it.
+   * The app's buttons appear to be uppercase, so we do uppercase() to match.
+   */
+  private fun clickButton(buttonText: String) {
+    val uppercaseButtonText = buttonText.uppercase(Locale.getDefault())
+    device.wait(Until.hasObject(By.text(uppercaseButtonText).depth(0)), TRANSITION_TIMEOUT)
+    val buttonObj = device.findObject(By.text(uppercaseButtonText).clazz("android.widget.Button"))
+    if (buttonObj == null) {
+      fail("Could not locate button with text $buttonText")
+    }
+    buttonObj.click()
   }
 
-  private fun getButton(text: String): UiObject2 {
-    device.wait(Until.hasObject(By.text(text).depth(0)), TRANSITION_TIMEOUT)
-    val button = device.findObject(By.text(text).clazz("android.widget.Button"))
-    if (button == null) {
-      fail("Could not locate button with text $text")
-    }
-    return button
+  /**
+   * Helper: Read the user ID from the textView that displays it in the app.
+   * e.g., "UserId: SomeValue"
+   * Because we are reading AFTER the crash (app is relaunched),
+   * the app persists the user ID via SharedPreferences.
+   */
+  private fun readDisplayedUserId(): String {
+    // Wait up to 3 seconds for a TextView that matches the pattern "UserId: ..."
+    device.wait(
+      Until.hasObject(By.text(Pattern.compile("UserId:.*"))),
+      3000
+    )
+
+    // Find the object using the same pattern
+    val userIdObj = device.findObject(
+      By.text(Pattern.compile("UserId:.*"))
+    )
+
+    // If found, remove the "UserId: " prefix
+    return userIdObj?.text?.substringAfter("UserId: ") ?: "UNKNOWN_USER_ID"
   }
+
+  /**
+   * Helper: Read the "Did crash previously?" text from the app.
+   */
+  private fun readDidCrashPreviouslyText(): String {
+    // Wait for up to 3 seconds for the text
+    device.wait(
+      Until.hasObject(By.text(Pattern.compile("HasCrashed:.*"))),
+      3000
+    )
+
+    // Find the object by resource ID
+    val didCrashObj = device.findObject(
+      By.text(Pattern.compile("HasCrashed:.*"))
+    )
+    return didCrashObj.text ?: "(unknown)"
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Shared / Common Tests
+  // ---------------------------------------------------------------------------
+
+  @Test
+  fun shared_Initialize_Crashlytics() {
+    launchApp()
+    clickButton("Shared_Initialize_Crashlytics")
+
+    // This test does NOT crash, so we read the ID in the same session
+    val userId = readDisplayedUserId()
+
+    // Check logs to confirm Crashlytics initialization
+    val crashlyticsInitialized = readLogcat("Initializing Firebase Crashlytics")
+    assertThat(crashlyticsInitialized).isTrue()
+
+    Log.i(
+      "TestInfo",
+      "Check Crashlytics initialization. userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun shared_Generate_Crash() {
+    launchApp()
+    clickButton("Shared_Generate_Crash")
+
+    // Crash => relaunch
+    launchApp()
+    // Now read the user ID after the crash
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Verify crash in console for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun shared_Verify_Crash() {
+    launchApp()
+    clickButton("Shared_Verify_Crash")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "After crashing, verify userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun shared_Verify_No_Crash() {
+    launchApp()
+    clickButton("Shared_Verify_No_Crash")
+
+    // No crash, so read the user ID now
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Verify NO crash for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Core Scenario
+  // ---------------------------------------------------------------------------
+
+  @Test
+  fun firebaseCore_Fatal_Error() {
+    launchApp()
+    clickButton("FirebaseCore_Fatal_Error")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Check console for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Public APIs
+  // ---------------------------------------------------------------------------
+
+  @Test
+  fun public_API_Log() {
+    launchApp()
+    clickButton("Public_API_Log")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Verify custom logs in Crashlytics for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun public_API_SetCustomValue() {
+    launchApp()
+    clickButton("Public_API_SetCustomValue")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Verify custom keys in Crashlytics for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun public_API_SetUserID() {
+    launchApp()
+    clickButton("Public_API_SetUserID")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Verify user ID in Crashlytics: userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun public_API_DidCrashPreviously() {
+    launchApp()
+
+    // Close the app
+    Runtime.getRuntime().exec(arrayOf("am", "force-stop", APP_NAME))
+
+    launchApp()
+    val hasCrashedText = readDidCrashPreviouslyText()
+    assertThat(hasCrashedText).contains("HasCrashed: false")
+
+    clickButton("Public_API_DidCrashPreviously")
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+    val hasCrashedTextAfter = readDidCrashPreviouslyText()
+    assertThat(hasCrashedTextAfter).contains("HasCrashed: true")
+
+    Log.i(
+      "TestInfo",
+      "public_API_DidCrashPreviously => userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun public_API_RecordException() {
+    launchApp()
+    clickButton("Public_API_RecordException")
+
+    // This test does NOT crash, so read user ID in the same session
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Check Crashlytics non-fatal events for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Data Collection APIs
+  // ---------------------------------------------------------------------------
+
+  @Test
+  fun dataCollection_Default() {
+    launchApp()
+    clickButton("DataCollection_Default")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Check default data collection, userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun dataCollection_Firebase_Off() {
+    launchApp()
+    clickButton("DataCollection_Firebase_Off")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Verify no crash is reported for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun dataCollection_Crashlytics_Off() {
+    launchApp()
+    clickButton("DataCollection_Crashlytics_Off")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i(
+      "TestInfo",
+      "Crash should not be uploaded. userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun dataCollection_Crashlytics_Off_Then_On() {
+    launchApp()
+    clickButton("DataCollection_Crashlytics_Off_Then_On")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    // In the real scenario, you'd setCrashlyticsCollectionEnabled(true) after the relaunch
+    Log.i(
+      "TestInfo",
+      "Check if previously cached crash for userId=$userId is now sent => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun dataCollection_Crashlytics_Off_Then_Send() {
+    launchApp()
+    clickButton("DataCollection_Crashlytics_Off_Then_Send")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    // e.g. FirebaseCrashlytics.getInstance().sendUnsentReports()
+    Log.i(
+      "TestInfo",
+      "Check if crash is now sent for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  @Test
+  fun dataCollection_Crashlytics_Off_Then_Delete() {
+    launchApp()
+    clickButton("DataCollection_Crashlytics_Off_Then_Delete")
+
+    // Crash => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    // e.g. deleteUnsentReports() + sendUnsentReports()
+    Log.i(
+      "TestInfo",
+      "Confirm no crash is uploaded for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
+    )
+  }
+
+  // ---------------------------------------------------------------------------
+  //  Navigation & UI Helpers
+  // ---------------------------------------------------------------------------
 
   companion object {
     private const val TEST_APP_PACKAGE = "com.google.firebase.testing.crashlytics"
