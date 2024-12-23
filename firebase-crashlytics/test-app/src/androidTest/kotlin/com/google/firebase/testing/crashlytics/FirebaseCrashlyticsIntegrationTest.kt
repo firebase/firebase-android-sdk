@@ -22,9 +22,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
@@ -291,7 +293,7 @@ class FirebaseCrashlyticsIntegrationTest {
     launchApp()
 
     // Close the app
-    Runtime.getRuntime().exec(arrayOf("am", "force-stop", APP_NAME))
+    closeAppFromRecents(device)
 
     launchApp()
     val hasCrashedText = readDidCrashPreviouslyText()
@@ -424,6 +426,30 @@ class FirebaseCrashlyticsIntegrationTest {
   // ---------------------------------------------------------------------------
   //  Navigation & UI Helpers
   // ---------------------------------------------------------------------------
+
+  private fun closeAppFromRecents(
+    device: UiDevice,
+  ) {
+    // 1) Open Recent Apps
+    device.pressRecentApps()
+
+    // 2) Wait a moment for Recents to appear
+    Thread.sleep(1000)
+
+    // 3) Swipe upward from the middle of the screen
+    //    to about a quarter of the screen height (adjust as needed).
+    val startX = device.displayWidth / 2
+    val startY = device.displayHeight / 2
+    val endX = device.displayWidth / 2
+    val endY = device.displayHeight / 4
+
+    // 'steps' parameter controls the speed/animation of the swipe
+    // Larger = slower swipe, smaller = faster
+    device.swipe(startX, startY, endX, endY, 5)
+
+    // Wait a bit to ensure the system completes the action
+    Thread.sleep(1000)
+  }
 
   companion object {
     private const val TEST_APP_PACKAGE = "com.google.firebase.testing.crashlytics"
