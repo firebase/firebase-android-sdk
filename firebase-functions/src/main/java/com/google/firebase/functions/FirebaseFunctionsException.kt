@@ -27,7 +27,7 @@ public class FirebaseFunctionsException : FirebaseException {
    * canonical error codes for Google APIs, as documented here:
    * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto#L26
    */
-  public enum class Code(private val value: Int) {
+  public enum class Code(@Suppress("unused") private val value: Int) {
     /**
      * The operation completed successfully. `FirebaseFunctionsException` will never have a status
      * of `OK`.
@@ -199,21 +199,21 @@ public class FirebaseFunctionsException : FirebaseException {
       serializer: Serializer
     ): FirebaseFunctionsException? {
       // Start with reasonable defaults from the status code.
-      var code = code
-      var description = code.name
+      var actualCode = code
+      var description = actualCode.name
       var details: Any? = null
 
       // Then look through the body for explicit details.
       try {
-        val json = JSONObject(body)
+        val json = JSONObject(body ?: "")
         val error = json.getJSONObject("error")
         if (error.opt("status") is String) {
-          code = Code.valueOf(error.getString("status"))
+          actualCode = Code.valueOf(error.getString("status"))
           // TODO: Add better default descriptions for error enums.
           // The default description needs to be updated for the new code.
-          description = code.name
+          description = actualCode.name
         }
-        if (error.opt("message") is String && !error.getString("message").isEmpty()) {
+        if (error.opt("message") is String && error.getString("message").isNotEmpty()) {
           description = error.getString("message")
         }
         details = error.opt("details")
@@ -222,16 +222,16 @@ public class FirebaseFunctionsException : FirebaseException {
         }
       } catch (iae: IllegalArgumentException) {
         // This most likely means the status string was invalid, so consider this malformed.
-        code = Code.INTERNAL
-        description = code.name
+        actualCode = Code.INTERNAL
+        description = actualCode.name
       } catch (ioe: JSONException) {
         // If we couldn't parse explicit error data, that's fine.
       }
-      return if (code == Code.OK) {
+      return if (actualCode == Code.OK) {
         // Technically, there's an edge case where a developer could explicitly return an error code
         // of OK, and we will treat it as success, but that seems reasonable.
         null
-      } else FirebaseFunctionsException(description, code, details)
+      } else FirebaseFunctionsException(description, actualCode, details)
     }
   }
 }

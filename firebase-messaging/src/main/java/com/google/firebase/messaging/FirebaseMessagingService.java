@@ -127,7 +127,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    *
    * @param msgId of the upstream message sent using {@link FirebaseMessaging#send}.
    *
-   * @deprecated FCM upstream messaging is decommissioned. Learn more in the
+   * @deprecated This function is actually <strong>decommissioned</strong> along with all of FCM
+   * upstream messaging. Learn more in the
    * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
    * deprecated in June 2023</a>.
    */
@@ -141,7 +142,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    * @param msgId of the upstream message sent using {@link FirebaseMessaging#send}.
    * @param exception description of the error, typically a {@link SendException}.
    *
-   * @deprecated FCM upstream messaging is decommissioned. Learn more in the
+   * @deprecated This function is actually <strong>decommissioned</strong> along with all of FCM
+   * upstream messaging. Learn more in the
    * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
    * deprecated in June 2023</a>.
    */

@@ -45,13 +45,13 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation libs.playservices.base
+    implementation libs.playservices.tasks
 
     testImplementation libs.androidx.test.core
-    testImplementation 'androidx.test:rules:1.2.0'
+    testImplementation libs.androidx.test.rules
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
     testImplementation libs.robolectric
 }

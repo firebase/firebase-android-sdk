@@ -58,16 +58,16 @@ internal constructor(
   @UiThread uiExecutor: Executor
 ) {
   // The network client to use for HTTPS requests.
-  private val client: OkHttpClient
+  private val client: OkHttpClient = OkHttpClient()
 
   // A serializer to encode/decode parameters and return values.
-  private val serializer: Serializer
+  private val serializer: Serializer = Serializer()
 
   // A provider of client metadata to include with calls.
-  private val contextProvider: ContextProvider
+  private val contextProvider: ContextProvider = Preconditions.checkNotNull(contextProvider)
 
   // The projectId to use for all functions references.
-  private val projectId: String
+  private val projectId: String = Preconditions.checkNotNull(projectId)
 
   // The region to use for all function references.
   private var region: String? = null
@@ -82,12 +82,7 @@ internal constructor(
   private var emulatorSettings: EmulatedServiceSettings? = null
 
   init {
-    client = OkHttpClient()
-    serializer = Serializer()
-    this.contextProvider = Preconditions.checkNotNull(contextProvider)
-    this.projectId = Preconditions.checkNotNull(projectId)
-    val isRegion: Boolean
-    isRegion =
+    val isRegion: Boolean =
       try {
         URL(regionOrCustomDomain)
         false
@@ -182,9 +177,7 @@ internal constructor(
     options: HttpsCallOptions
   ): Task<HttpsCallableResult> {
     return providerInstalled.task
-      .continueWithTask(executor) { task: Task<Void>? ->
-        contextProvider.getContext(options.limitedUseAppCheckTokens)
-      }
+      .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
       .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
         if (!task.isSuccessful) {
           return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
@@ -204,9 +197,7 @@ internal constructor(
    */
   internal fun call(url: URL, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult> {
     return providerInstalled.task
-      .continueWithTask(executor) { task: Task<Void>? ->
-        contextProvider.getContext(options.limitedUseAppCheckTokens)
-      }
+      .continueWithTask(executor) { contextProvider.getContext(options.limitedUseAppCheckTokens) }
       .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
         if (!task.isSuccessful) {
           return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
@@ -277,16 +268,15 @@ internal constructor(
         @Throws(IOException::class)
         override fun onResponse(ignored: Call, response: Response) {
           val code = fromHttpStatus(response.code())
-          val body = response.body()!!.string()
-          val exception = fromResponse(code, body, serializer)
+          val bodyAsString = response.body()!!.string()
+          val exception = fromResponse(code, bodyAsString, serializer)
           if (exception != null) {
             tcs.setException(exception)
             return
           }
-          val bodyJSON: JSONObject
-          bodyJSON =
+          val bodyAsJson: JSONObject =
             try {
-              JSONObject(body)
+              JSONObject(bodyAsString)
             } catch (je: JSONException) {
               val e: Exception =
                 FirebaseFunctionsException(
@@ -298,10 +288,10 @@ internal constructor(
               tcs.setException(e)
               return
             }
-          var dataJSON = bodyJSON.opt("data")
+          var dataJSON = bodyAsJson.opt("data")
           // TODO: Allow "result" instead of "data" for now, for backwards compatibility.
           if (dataJSON == null) {
-            dataJSON = bodyJSON.opt("result")
+            dataJSON = bodyAsJson.opt("result")
           }
           if (dataJSON == null) {
             val e: Exception =

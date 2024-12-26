@@ -29,6 +29,9 @@ import kotlinx.serialization.encoding.Encoder
 /**
  * An implementation of [KSerializer] for serializing and deserializing [LocalDate] objects in the
  * wire format expected by the Firebase Data Connect backend.
+ *
+ * @see JavaTimeLocalDateSerializer
+ * @see KotlinxDatetimeLocalDateSerializer
  */
 public object LocalDateSerializer : KSerializer<LocalDate> {
 
@@ -36,30 +39,48 @@ public object LocalDateSerializer : KSerializer<LocalDate> {
     PrimitiveSerialDescriptor("com.google.firebase.dataconnect.LocalDate", PrimitiveKind.STRING)
 
   override fun serialize(encoder: Encoder, value: LocalDate) {
-    value.run {
-      require(year >= 0) { "invalid value: $value (year must be non-negative)" }
-      require(month >= 0) { "invalid value: $value (month must be non-negative)" }
-      require(day >= 0) { "invalid value: $value (day must be non-negative)" }
-    }
-    val serializedDate =
-      "${value.year}".padStart(4, '0') +
-        '-' +
-        "${value.month}".padStart(2, '0') +
-        '-' +
-        "${value.day}".padStart(2, '0')
+    val serializedDate: String = serializeToString(value)
     encoder.encodeString(serializedDate)
   }
 
   override fun deserialize(decoder: Decoder): LocalDate {
     val decodedString = decoder.decodeString()
-    val matcher = Pattern.compile("^(\\d+)-(\\d+)-(\\d+)$").matcher(decodedString)
+    return deserializeToLocalDate(decodedString)
+  }
+
+  private val decodeRegexPattern = Pattern.compile("^(-?\\d+)-(-?\\d+)-(-?\\d+)$")
+
+  private fun deserializeToLocalDate(string: String): LocalDate {
+    val matcher = decodeRegexPattern.matcher(string)
     require(matcher.matches()) {
-      "date \"$decodedString\" does not match regular expression: ${matcher.pattern()}"
+      "date \"$string\" does not match regular expression: ${matcher.pattern()}"
     }
 
     fun Matcher.groupToIntIgnoringLeadingZeroes(index: Int): Int {
-      val groupText = group(index)!!.trimStart('0')
-      return if (groupText.isEmpty()) 0 else groupText.toInt()
+      val groupText =
+        group(index)
+          ?: throw IllegalStateException(
+            "internal error: group(index) should not be null " +
+              " (index=$index, string=$string, matcher=$this, error code hp48d53pbb)"
+          )
+
+      val isNegative = groupText.firstOrNull() == '-'
+
+      val zeroPaddedString =
+        if (isNegative) {
+          groupText.substring(1)
+        } else {
+          groupText
+        }
+
+      val intAbsString = zeroPaddedString.trimStart('0')
+      val intStringPrefix = if (isNegative) "-" else ""
+      val intString = intStringPrefix + intAbsString
+      if (intString.isEmpty()) {
+        return 0
+      }
+
+      return intString.toInt()
     }
 
     val year = matcher.groupToIntIgnoringLeadingZeroes(1)
@@ -67,5 +88,34 @@ public object LocalDateSerializer : KSerializer<LocalDate> {
     val day = matcher.groupToIntIgnoringLeadingZeroes(3)
 
     return LocalDate(year = year, month = month, day = day)
+  }
+
+  private fun serializeToString(localDate: LocalDate): String {
+    val yearStr = localDate.year.toZeroPaddedString(length = 4)
+    val monthStr = localDate.month.toZeroPaddedString(length = 2)
+    val dayStr = localDate.day.toZeroPaddedString(length = 2)
+    return "$yearStr-$monthStr-$dayStr"
+  }
+
+  private fun Int.toZeroPaddedString(length: Int): String = buildString {
+    append(this@toZeroPaddedString)
+
+    val firstChar =
+      firstOrNull()?.let {
+        if (it == '-') {
+          deleteCharAt(0)
+          it
+        } else {
+          null
+        }
+      }
+
+    while (this.length < length) {
+      insert(0, '0')
+    }
+
+    if (firstChar != null) {
+      insert(0, firstChar)
+    }
   }
 }

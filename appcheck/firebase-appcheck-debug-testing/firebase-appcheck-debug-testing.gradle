@@ -50,30 +50,29 @@ android {
 }
 
 dependencies {
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    javadocClasspath libs.autovalue.annotations
 
     api project(':appcheck:firebase-appcheck')
     api project(':appcheck:firebase-appcheck-debug')
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
     api 'com.google.firebase:firebase-common:21.0.0'
-    api 'com.google.firebase:firebase-common-ktx:21.0.0'
     api 'com.google.firebase:firebase-components:18.0.0'
 
     implementation libs.androidx.test.core
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation libs.playservices.base
+    implementation libs.playservices.tasks
 
     testImplementation project(':appcheck:firebase-appcheck-playintegrity')
     testImplementation libs.androidx.test.core
     testImplementation libs.truth
-    testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
     testImplementation libs.robolectric
 
     androidTestImplementation project(':firebase-storage')
-    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.junit
     androidTestImplementation libs.truth
-    androidTestImplementation 'junit:junit:4.13-beta-2'
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.mockito.core
 }

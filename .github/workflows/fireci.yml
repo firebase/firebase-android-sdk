@@ -1,4 +1,4 @@
-name: fireci
+name: Run fireci tests
 
 on:
   pull_request:

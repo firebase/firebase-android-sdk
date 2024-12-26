@@ -38,7 +38,6 @@ android {
   namespace = "com.google.firebase.database"
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -56,7 +55,12 @@ android {
     kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
-    testOptions.unitTests.isIncludeAndroidResources = true
+
+    testOptions {
+      targetSdk = targetSdkVersion
+      unitTests { isIncludeAndroidResources = true }
+    }
+    lint { targetSdk = targetSdkVersion }
   }
 }
 
@@ -76,8 +80,8 @@ dependencies {
   implementation(libs.kotlinx.coroutines.core)
   api(libs.playservices.tasks)
 
-  testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
-  testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
+  testImplementation(libs.jackson.core)
+  testImplementation(libs.jackson.databind)
   testImplementation("com.firebase:firebase-token-generator:2.0.0")
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.rules)
@@ -87,10 +91,10 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
 
-  androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
-  androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
-  androidTestImplementation("org.hamcrest:hamcrest:2.2")
-  androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
+  androidTestImplementation(libs.jackson.core)
+  androidTestImplementation(libs.jackson.databind)
+  androidTestImplementation(libs.hamcrest)
+  androidTestImplementation(libs.hamcrest.library)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.junit)

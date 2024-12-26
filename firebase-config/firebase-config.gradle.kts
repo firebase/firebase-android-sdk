@@ -38,7 +38,6 @@ android {
 
   defaultConfig {
     minSdk = 21
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -49,8 +48,14 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
+
   kotlinOptions { jvmTarget = "1.8" }
-  testOptions.unitTests.isIncludeAndroidResources = true
+
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {
@@ -73,13 +78,13 @@ dependencies {
 
   // Kotlin & Android
   implementation(libs.kotlin.stdlib)
-  implementation("androidx.annotation:annotation:1.1.0")
-  api("com.google.android.gms:play-services-tasks:18.0.1")
+  implementation(libs.androidx.annotation)
+  api(libs.playservices.tasks)
 
   // Annotations and static analysis
-  annotationProcessor("com.google.auto.value:auto-value:1.6.6")
-  javadocClasspath("com.google.auto.value:auto-value-annotations:1.6.6")
-  compileOnly("com.google.auto.value:auto-value-annotations:1.6.6")
+  annotationProcessor(libs.autovalue)
+  javadocClasspath(libs.autovalue.annotations)
+  compileOnly(libs.autovalue.annotations)
   compileOnly(libs.findbugs.jsr305)
 
   // Testing
@@ -90,13 +95,13 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.mockito.core)
   testImplementation(libs.truth)
-  testImplementation("org.skyscreamer:jsonassert:1.5.0")
+  testImplementation(libs.jsonassert)
 
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.junit)
   androidTestImplementation(libs.mockito.core)
   androidTestImplementation(libs.androidx.test.runner)
-  androidTestImplementation("org.skyscreamer:jsonassert:1.5.0")
-  androidTestImplementation("com.linkedin.dexmaker:dexmaker-mockito:2.28.1")
-  androidTestImplementation("com.linkedin.dexmaker:dexmaker:2.28.1")
+  androidTestImplementation(libs.jsonassert)
+  androidTestImplementation(libs.mockito.dexmaker)
+  androidTestImplementation(libs.dexmaker)
 }

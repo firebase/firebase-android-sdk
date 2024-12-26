@@ -17,11 +17,12 @@
 package com.google.firebase.dataconnect.connectors.demo
 
 import com.google.firebase.Timestamp
+import com.google.firebase.dataconnect.LocalDate
 import com.google.firebase.dataconnect.connectors.demo.testutil.DemoConnectorIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.EdgeCases
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.date
+import com.google.firebase.dataconnect.testutil.property.arbitrary.localDate
 import com.google.firebase.dataconnect.testutil.withMicrosecondPrecision
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
@@ -36,7 +37,6 @@ import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.uuid
 import io.kotest.property.checkAll
-import java.util.Date
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
@@ -474,7 +474,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
     val booleans: List<Boolean>,
     val uuids: List<UUID>,
     val int64s: List<Long>,
-    val dates: List<Date>,
+    val dates: List<LocalDate>,
     val timestamps: List<Timestamp>,
   ) {
 
@@ -523,7 +523,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
             booleans = EdgeCases.booleans,
             uuids = EdgeCases.uuids,
             int64s = EdgeCases.int64s,
-            dates = EdgeCases.dates.all.map { it.date },
+            dates = EdgeCases.dates.all().map { it.date },
             timestamps = EdgeCases.javaTime.instants.all.map { it.timestamp },
           )
     }
@@ -545,7 +545,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
       booleans: Arb<List<Boolean>> = Arb.list(Arb.boolean(), 1..100),
       uuids: Arb<List<UUID>> = Arb.list(Arb.uuid(), 1..100),
       int64s: Arb<List<Long>> = Arb.list(Arb.long(), 1..100),
-      dates: Arb<List<Date>> = Arb.list(Arb.dataConnect.date().map { it.date }, 1..100),
+      dates: Arb<List<LocalDate>> = Arb.list(Arb.dataConnect.localDate(), 1..100),
       timestamps: Arb<List<Timestamp>> =
         Arb.list(Arb.dataConnect.javaTime.instantTestCase().map { it.timestamp }, 1..100),
     ): Arb<Lists> = arbitrary {

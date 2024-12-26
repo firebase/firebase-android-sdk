@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+type ExprValues @table {
+  requestTimeAsDate: Date!
+}
+
 type Foo @table @index(fields: ["bar"]) {
   id: String!
   bar: String
@@ -254,15 +258,17 @@ type NullableLists @table {
   timestamps: [Timestamp!]
 }
 
-type NonNullDate @table {
+type DateNonNullable @table @index(fields: ["tag"]) {
   value: Date!
+  tag: String
 }
 
-type NullableDate @table {
+type DateNullable @table @index(fields: ["tag"]) {
   value: Date
+  tag: String
 }
 
-type NonNullDatesWithDefaults @table {
+type DateNonNullableWithDefaults @table {
   valueWithVariableDefault: Date!
   valueWithSchemaDefault: Date! @default(value: "2112-01-31")
   epoch: Date! @default(sql: "'epoch'::date")
@@ -270,9 +276,12 @@ type NonNullDatesWithDefaults @table {
   requestTime2: Date! @default(expr: "request.time")
 }
 
-type NullableDatesWithDefaults @table {
+type DateNullableWithDefaults @table {
   valueWithVariableDefault: Date
+  valueWithVariableNullDefault: Date
   valueWithSchemaDefault: Date @default(value: "1921-12-02")
+  valueWithSchemaNullDefault: Date @default(value: null)
+  valueWithNoDefault: Date
   epoch: Date @default(sql: "'epoch'::date")
   requestTime1: Date @default(expr: "request.time")
   requestTime2: Date @default(expr: "request.time")

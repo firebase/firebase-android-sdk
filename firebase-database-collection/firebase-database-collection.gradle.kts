@@ -27,15 +27,14 @@ android {
   compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database.collection"
-  defaultConfig {
-    minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
-  }
+  defaultConfig { minSdk = minSdkVersion }
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
+  testOptions { targetSdk = targetSdkVersion }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {

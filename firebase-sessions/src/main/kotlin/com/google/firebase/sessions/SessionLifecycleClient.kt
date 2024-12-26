@@ -68,7 +68,7 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
     }
 
     private fun handleSessionUpdate(sessionId: String) {
-      Log.d(TAG, "Session update received: $sessionId")
+      Log.d(TAG, "Session update received.")
 
       CoroutineScope(backgroundDispatcher).launch {
         FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->

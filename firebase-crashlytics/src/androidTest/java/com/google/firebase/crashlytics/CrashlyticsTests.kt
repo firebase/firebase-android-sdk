@@ -59,6 +59,46 @@ class CrashlyticsTests {
     Firebase.app.get(UserAgentPublisher::class.java)
   }
 
+  @Test
+  fun keyValueBuilder() {
+    val keyValueBuilder = KeyValueBuilder()
+    keyValueBuilder.key("string", "world")
+    keyValueBuilder.key("int", Int.MAX_VALUE)
+    keyValueBuilder.key("float", Float.MAX_VALUE)
+    keyValueBuilder.key("boolean", true)
+    keyValueBuilder.key("double", Double.MAX_VALUE)
+    keyValueBuilder.key("long", Long.MAX_VALUE)
+
+    val result: Map<String, String> = keyValueBuilder.build().keysAndValues
+
+    val expectedKeys =
+      mapOf(
+        "string" to "world",
+        "int" to "${Int.MAX_VALUE}",
+        "float" to "${Float.MAX_VALUE}",
+        "boolean" to "${true}",
+        "double" to "${Double.MAX_VALUE}",
+        "long" to "${Long.MAX_VALUE}"
+      )
+    assertThat(result).isEqualTo(expectedKeys)
+  }
+
+  @Test
+  fun keyValueBuilder_withCrashlyticsInstance() {
+    @Suppress("DEPRECATION") val keyValueBuilder = KeyValueBuilder(Firebase.crashlytics)
+    keyValueBuilder.key("string", "world")
+    keyValueBuilder.key("int", Int.MAX_VALUE)
+    keyValueBuilder.key("float", Float.MAX_VALUE)
+    keyValueBuilder.key("boolean", true)
+    keyValueBuilder.key("double", Double.MAX_VALUE)
+    keyValueBuilder.key("long", Long.MAX_VALUE)
+
+    val result: Map<String, String> = keyValueBuilder.build().keysAndValues
+
+    // The result is empty because it called crashlytics.setCustomKey for every key.
+    assertThat(result).isEmpty()
+  }
+
   companion object {
     private const val APP_ID = "1:1:android:1a"
     private const val API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY"

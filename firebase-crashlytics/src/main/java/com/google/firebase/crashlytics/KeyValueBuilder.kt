@@ -16,24 +16,48 @@
 
 package com.google.firebase.crashlytics
 
-/** Helper class to enable fluent syntax in [setCustomKeys] */
-class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
+/** Helper class to enable convenient syntax in [setCustomKeys] and [recordException] */
+class KeyValueBuilder
+private constructor(
+  private val crashlytics: FirebaseCrashlytics?,
+  private val builder: CustomKeysAndValues.Builder,
+) {
+  @Deprecated(
+    "Do not construct this directly. Use `setCustomKeys` instead. To be removed in the next major release."
+  )
+  constructor(crashlytics: FirebaseCrashlytics) : this(crashlytics, CustomKeysAndValues.Builder())
+
+  internal constructor() : this(crashlytics = null, CustomKeysAndValues.Builder())
+
+  internal fun build(): CustomKeysAndValues = builder.build()
 
   /** Sets a custom key and value that are associated with reports. */
-  fun key(key: String, value: Boolean) = crashlytics.setCustomKey(key, value)
+  fun key(key: String, value: Boolean) {
+    crashlytics?.setCustomKey(key, value) ?: builder.putBoolean(key, value)
+  }
 
   /** Sets a custom key and value that are associated with reports. */
-  fun key(key: String, value: Double) = crashlytics.setCustomKey(key, value)
+  fun key(key: String, value: Double) {
+    crashlytics?.setCustomKey(key, value) ?: builder.putDouble(key, value)
+  }
 
   /** Sets a custom key and value that are associated with reports. */
-  fun key(key: String, value: Float) = crashlytics.setCustomKey(key, value)
+  fun key(key: String, value: Float) {
+    crashlytics?.setCustomKey(key, value) ?: builder.putFloat(key, value)
+  }
 
   /** Sets a custom key and value that are associated with reports. */
-  fun key(key: String, value: Int) = crashlytics.setCustomKey(key, value)
+  fun key(key: String, value: Int) {
+    crashlytics?.setCustomKey(key, value) ?: builder.putInt(key, value)
+  }
 
   /** Sets a custom key and value that are associated with reports. */
-  fun key(key: String, value: Long) = crashlytics.setCustomKey(key, value)
+  fun key(key: String, value: Long) {
+    crashlytics?.setCustomKey(key, value) ?: builder.putLong(key, value)
+  }
 
   /** Sets a custom key and value that are associated with reports. */
-  fun key(key: String, value: String) = crashlytics.setCustomKey(key, value)
+  fun key(key: String, value: String) {
+    crashlytics?.setCustomKey(key, value) ?: builder.putString(key, value)
+  }
 }

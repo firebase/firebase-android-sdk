@@ -18,30 +18,9 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.Timestamp
 import java.util.Calendar
-import java.util.Date
 import java.util.GregorianCalendar
 import java.util.TimeZone
 import kotlin.random.Random
-
-/**
- * Creates and returns a new [Date] object that represents the given year, month, and day in UTC.
- *
- * @param year The year; must be between 0 and 9999, inclusive.
- * @param month The month; must be between 1 and 12, inclusive.
- * @param day The day of the month; must be between 1 and 31, inclusive.
- */
-fun dateFromYearMonthDayUTC(year: Int, month: Int, day: Int): Date {
-  require(year in 0..9999) { "year must be between 0 and 9999, inclusive" }
-  require(month in 1..12) { "month must be between 1 and 12, inclusive" }
-  require(day in 1..31) { "day must be between 1 and 31, inclusive" }
-
-  return GregorianCalendar(TimeZone.getTimeZone("UTC"))
-    .apply {
-      set(year, month - 1, day, 0, 0, 0)
-      set(Calendar.MILLISECOND, 0)
-    }
-    .time
-}
 
 /** Generates and returns a random [Timestamp] object. */
 fun randomTimestamp(): Timestamp {

@@ -112,8 +112,7 @@ package com.google.firebase.dataconnect {
   public final class FirebaseDataConnectKt {
     method @NonNull public static com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.FirebaseApp app, @NonNull com.google.firebase.dataconnect.ConnectorConfig config, @NonNull com.google.firebase.dataconnect.DataConnectSettings settings = com.google.firebase.dataconnect.DataConnectSettings());
     method @NonNull public static com.google.firebase.dataconnect.FirebaseDataConnect getInstance(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.dataconnect.ConnectorConfig config, @NonNull com.google.firebase.dataconnect.DataConnectSettings settings = com.google.firebase.dataconnect.DataConnectSettings());
-    method @NonNull public static com.google.firebase.dataconnect.LogLevel getLogLevel(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion);
-    method public static void setLogLevel(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion, @NonNull com.google.firebase.dataconnect.LogLevel);
+    method @NonNull public static kotlinx.coroutines.flow.MutableStateFlow<com.google.firebase.dataconnect.LogLevel> getLogLevel(@NonNull com.google.firebase.dataconnect.FirebaseDataConnect.Companion);
   }
 
   @kotlinx.serialization.Serializable(with=LocalDateSerializer::class) public final class LocalDate {
@@ -310,12 +309,20 @@ package com.google.firebase.dataconnect.serializers {
     field @NonNull public static final com.google.firebase.dataconnect.serializers.AnyValueSerializer INSTANCE;
   }
 
-  public final class DateSerializer implements kotlinx.serialization.KSerializer<java.util.Date> {
-    method @NonNull public java.util.Date deserialize(@NonNull kotlinx.serialization.encoding.Decoder decoder);
+  public final class JavaTimeLocalDateSerializer implements kotlinx.serialization.KSerializer<java.time.LocalDate> {
+    method @NonNull public java.time.LocalDate deserialize(@NonNull kotlinx.serialization.encoding.Decoder decoder);
     method @NonNull public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
-    method public void serialize(@NonNull kotlinx.serialization.encoding.Encoder encoder, @NonNull java.util.Date value);
+    method public void serialize(@NonNull kotlinx.serialization.encoding.Encoder encoder, @NonNull java.time.LocalDate value);
     property @NonNull public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
-    field @NonNull public static final com.google.firebase.dataconnect.serializers.DateSerializer INSTANCE;
+    field @NonNull public static final com.google.firebase.dataconnect.serializers.JavaTimeLocalDateSerializer INSTANCE;
+  }
+
+  public final class KotlinxDatetimeLocalDateSerializer implements kotlinx.serialization.KSerializer<kotlinx.datetime.LocalDate> {
+    method @NonNull public kotlinx.datetime.LocalDate deserialize(@NonNull kotlinx.serialization.encoding.Decoder decoder);
+    method @NonNull public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method public void serialize(@NonNull kotlinx.serialization.encoding.Encoder encoder, @NonNull kotlinx.datetime.LocalDate value);
+    property @NonNull public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
+    field @NonNull public static final com.google.firebase.dataconnect.serializers.KotlinxDatetimeLocalDateSerializer INSTANCE;
   }
 
   public final class LocalDateSerializer implements kotlinx.serialization.KSerializer<com.google.firebase.dataconnect.LocalDate> {

@@ -77,11 +77,8 @@ class GmsRpc {
   private static final String EXTRA_TOPIC = "gcm.topic";
   private static final String TOPIC_PREFIX = "/topics/";
 
-  // LINT.IfChange
   /** InstanceId should be reset. Can be a duplicate, or deleted. */
   static final String ERROR_INSTANCE_ID_RESET = "INSTANCE_ID_RESET";
-
-  // LINT.ThenChange(//depot/google3/firebase/instance_id/client/cpp/src/android/instance_id.cc)
 
   // --- List of parameters sent to the /register3 servlet
 

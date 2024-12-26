@@ -1,5 +1,16 @@
 # Unreleased
 
+* [fixed] Fixed a performance issue with shared preferences
+  calling `.apply()` every time a value is read from remote config (#6407)
+
+# 21.0.3
+* [changed] Bump internal dependencies.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 # 21.0.2
 * [fixed] Fixed `IllegalStateException` that happened when starting a trace
