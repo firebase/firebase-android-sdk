@@ -146,7 +146,7 @@ internal constructor(
     }
   }
 
-  @Deprecated("Use {@link #useEmulator(String, int)} to connect to the emulator. ")
+  @Deprecated("Use useEmulator to connect to the emulator.")
   public fun useFunctionsEmulator(origin: String) {
     Preconditions.checkNotNull(origin, "origin cannot be null")
     urlFormat = "$origin/%2\$s/%1\$s/%3\$s"
