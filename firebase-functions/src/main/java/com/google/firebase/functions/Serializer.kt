@@ -32,7 +32,7 @@ internal class Serializer {
     dateFormat.timeZone = TimeZone.getTimeZone("UTC")
   }
 
-  internal fun encode(obj: Any?): Any {
+  public fun encode(obj: Any?): Any {
     if (obj == null || obj === JSONObject.NULL) {
       return JSONObject.NULL
     }
@@ -110,7 +110,7 @@ internal class Serializer {
     throw IllegalArgumentException("Object cannot be encoded in JSON: $obj")
   }
 
-  internal fun decode(obj: Any?): Any? {
+  public fun decode(obj: Any?): Any? {
     // TODO: Maybe this should throw a FirebaseFunctionsException instead?
     if (obj == null) return null
     if (obj is Number) {
