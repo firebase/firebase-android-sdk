@@ -4,11 +4,11 @@ package com.google.firebase.functions
 public interface SSETaskListener {
 
   /** Called when a new event is received. */
-  public fun onNext(event: Any)
+  public fun onNext(message: Any)
 
   /** Called when an error occurs. */
-  public fun onError(event: Any)
+  public fun onError(exception: FirebaseFunctionsException)
 
   /** Called when the stream is closed. */
-  public fun onComplete(event: Any)
+  public fun onComplete(result: Any)
 }

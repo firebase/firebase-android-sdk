@@ -378,7 +378,7 @@ internal constructor(
     call.enqueue(
       object : Callback {
         override fun onFailure(ignored: Call, e: IOException) {
-          val exception: Exception =
+          val exception: FirebaseFunctionsException =
             if (e is InterruptedIOException) {
               FirebaseFunctionsException(
                 FirebaseFunctionsException.Code.DEADLINE_EXCEEDED.name,
@@ -406,18 +406,18 @@ internal constructor(
             if (bodyStream != null) {
               processSSEStream(bodyStream, serializer, listener, tcs)
             } else {
-              val error =
+              val exception =
                 FirebaseFunctionsException(
                   "Response body is null",
                   FirebaseFunctionsException.Code.INTERNAL,
                   null
                 )
-              listener.onError(error)
-              tcs.setException(error)
+              listener.onError(exception)
+              tcs.setException(exception)
             }
-          } catch (e: FirebaseFunctionsException) {
-            listener.onError(e)
-            tcs.setException(e)
+          } catch (exception: FirebaseFunctionsException) {
+            listener.onError(exception)
+            tcs.setException(exception)
           }
         }
       }

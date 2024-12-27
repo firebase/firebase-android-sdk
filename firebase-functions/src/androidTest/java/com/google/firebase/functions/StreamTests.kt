@@ -34,16 +34,16 @@ class StreamTests {
     functions = FirebaseFunctions.getInstance()
     listener =
       object : SSETaskListener {
-        override fun onNext(event: Any) {
-          onNext.add(event)
+        override fun onNext(message: Any) {
+          onNext.add(message)
         }
 
-        override fun onError(event: Any) {
-          onError = event
+        override fun onError(exception: FirebaseFunctionsException) {
+          onError = exception
         }
 
-        override fun onComplete(event: Any) {
-          onComplete = event
+        override fun onComplete(result: Any) {
+          onComplete = result
         }
       }
   }
