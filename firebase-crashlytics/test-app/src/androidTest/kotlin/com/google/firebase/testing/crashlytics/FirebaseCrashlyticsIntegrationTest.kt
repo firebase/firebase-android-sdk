@@ -423,6 +423,19 @@ class FirebaseCrashlyticsIntegrationTest {
     )
   }
 
+  @Test
+  fun interoperability_IID() {
+    launchApp()
+    clickButton("Interoperability_IID")
+
+    // The app crashes => relaunch
+    launchApp()
+    val userId = readDisplayedUserId()
+
+    Log.i("TestInfo", "Interoperability_IID. userId=$userId => ${getCrashlyticsSearchUrl(userId)}")
+  }
+
+
   // ---------------------------------------------------------------------------
   //  Navigation & UI Helpers
   // ---------------------------------------------------------------------------

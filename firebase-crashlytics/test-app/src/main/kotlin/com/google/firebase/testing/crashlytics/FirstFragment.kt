@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
 
 
@@ -161,6 +162,16 @@ class FirstFragment : Fragment() {
 
       throw RuntimeException("DataCollection_Crashlytics_Off_Then_Delete crash")
     }
+
+    binding.buttonInteroperabilityIid.setOnClickListener {
+      val userId = "InteroperabilityIID_${System.currentTimeMillis()}"
+      saveAndApplyUserId(userId)
+
+      FirebaseInstallations.getInstance().delete().addOnCompleteListener {
+        throw RuntimeException("Interoperability_IID crash after ID reset")
+      }
+    }
+
   }
 
 
