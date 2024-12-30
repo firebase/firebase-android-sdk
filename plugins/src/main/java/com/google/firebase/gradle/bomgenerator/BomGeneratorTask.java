@@ -48,6 +48,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+// TODO: add tests, and then start migrating to maybe a task or a new refined testable plugin
 public abstract class BomGeneratorTask extends DefaultTask {
   private static final List<String> BOM_ARTIFACTS =
       List.of(

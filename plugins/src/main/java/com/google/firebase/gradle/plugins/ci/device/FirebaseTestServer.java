@@ -63,7 +63,7 @@ public class FirebaseTestServer extends TestServer {
     String testedApkPath =
         testedApk != null
             ? testedApk.toString()
-            : project.getRootDir() + "/buildSrc/resources/dummy.apk";
+            : project.getRootDir() + "/plugins/resources/dummy.apk";
     project
         .getLogger()
         .lifecycle("Uploading for {}: testApk={}, testedApk={}", variantName, testApk, testedApk);

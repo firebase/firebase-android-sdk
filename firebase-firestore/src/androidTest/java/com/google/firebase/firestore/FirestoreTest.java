@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
@@ -63,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1492,5 +1494,163 @@ public class FirestoreTest {
     assertNotSame(indexManager1, indexManager6);
     assertNotSame(indexManager3, indexManager6);
     assertNotSame(indexManager5, indexManager6);
+  }
+
+  @Test
+  public void snapshotListenerSortsQueryByDocumentIdsSameAsGetQuery() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "A", map("a", 1),
+            "a", map("a", 1),
+            "Aa", map("a", 1),
+            "7", map("a", 1),
+            "12", map("a", 1),
+            "__id7__", map("a", 1),
+            "__id12__", map("a", 1),
+            "__id-2__", map("a", 1),
+            "__id1_", map("a", 1),
+            "_id1__", map("a", 1),
+            "__id", map("a", 1),
+            "__id9223372036854775807__", map("a", 1),
+            "__id-9223372036854775808__", map("a", 1));
+
+    CollectionReference colRef = testCollectionWithDocs(testDocs);
+
+    // Run get query
+    Query orderedQuery = colRef.orderBy(FieldPath.documentId());
+    List<String> expectedDocIds =
+        Arrays.asList(
+            "__id-9223372036854775808__",
+            "__id-2__",
+            "__id7__",
+            "__id12__",
+            "__id9223372036854775807__",
+            "12",
+            "7",
+            "A",
+            "Aa",
+            "__id",
+            "__id1_",
+            "_id1__",
+            "a");
+
+    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
+    List<String> getSnapshotDocIds =
+        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
+
+    // Run query with snapshot listener
+    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
+    ListenerRegistration registration =
+        orderedQuery.addSnapshotListener(eventAccumulator.listener());
+
+    List<String> watchSnapshotDocIds = new ArrayList<>();
+    try {
+      QuerySnapshot watchSnapshot = eventAccumulator.await();
+      watchSnapshotDocIds =
+          watchSnapshot.getDocuments().stream()
+              .map(documentSnapshot -> documentSnapshot.getId())
+              .collect(Collectors.toList());
+    } finally {
+      registration.remove();
+    }
+
+    // Assert that get and snapshot listener requests sort docs in the same, expected order
+    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
+    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
+  }
+
+  @Test
+  public void snapshotListenerSortsFilteredQueryByDocumentIdsSameAsGetQuery() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "A", map("a", 1),
+            "a", map("a", 1),
+            "Aa", map("a", 1),
+            "7", map("a", 1),
+            "12", map("a", 1),
+            "__id7__", map("a", 1),
+            "__id12__", map("a", 1),
+            "__id-2__", map("a", 1),
+            "__id1_", map("a", 1),
+            "_id1__", map("a", 1),
+            "__id", map("a", 1),
+            "__id9223372036854775807__", map("a", 1),
+            "__id-9223372036854775808__", map("a", 1));
+
+    CollectionReference colRef = testCollectionWithDocs(testDocs);
+
+    // Run get query
+    Query filteredQuery =
+        colRef
+            .whereGreaterThan(FieldPath.documentId(), "__id7__")
+            .whereLessThanOrEqualTo(FieldPath.documentId(), "A")
+            .orderBy(FieldPath.documentId());
+    List<String> expectedDocIds =
+        Arrays.asList("__id12__", "__id9223372036854775807__", "12", "7", "A");
+
+    QuerySnapshot getSnapshot = waitFor(filteredQuery.get());
+    List<String> getSnapshotDocIds =
+        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
+
+    // Run query with snapshot listener
+    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
+    ListenerRegistration registration =
+        filteredQuery.addSnapshotListener(eventAccumulator.listener());
+
+    List<String> watchSnapshotDocIds = new ArrayList<>();
+    try {
+      QuerySnapshot watchSnapshot = eventAccumulator.await();
+      watchSnapshotDocIds =
+          watchSnapshot.getDocuments().stream()
+              .map(documentSnapshot -> documentSnapshot.getId())
+              .collect(Collectors.toList());
+    } finally {
+      registration.remove();
+    }
+
+    // Assert that get and snapshot listener requests sort docs in the same, expected order
+    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
+    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
+  }
+
+  @Test
+  public void sdkOrdersQueryByDocumentIdTheSameWayOnlineAndOffline() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "A", map("a", 1),
+            "a", map("a", 1),
+            "Aa", map("a", 1),
+            "7", map("a", 1),
+            "12", map("a", 1),
+            "__id7__", map("a", 1),
+            "__id12__", map("a", 1),
+            "__id-2__", map("a", 1),
+            "__id1_", map("a", 1),
+            "_id1__", map("a", 1),
+            "__id", map("a", 1),
+            "__id9223372036854775807__", map("a", 1),
+            "__id-9223372036854775808__", map("a", 1));
+
+    CollectionReference colRef = testCollectionWithDocs(testDocs);
+    // Test query
+    Query orderedQuery = colRef.orderBy(FieldPath.documentId());
+    List<String> expectedDocIds =
+        Arrays.asList(
+            "__id-9223372036854775808__",
+            "__id-2__",
+            "__id7__",
+            "__id12__",
+            "__id9223372036854775807__",
+            "12",
+            "7",
+            "A",
+            "Aa",
+            "__id",
+            "__id1_",
+            "_id1__",
+            "a");
+
+    // Run query with snapshot listener
+    checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 }
