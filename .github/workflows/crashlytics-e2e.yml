@@ -13,7 +13,7 @@ concurrency:
   group: ${{ github.workflow }}
 
 env:
-  CRASHLYTICS_E2E_GOOGLE_SERVICES: ${{ secrets.CRASHLYTICS_E2E_GOOGLE_SERVICES }}
+  CRASHLYTICS_E2E_GOOGLE_SERVICES: ${{ secrets.SESSIONS_E2E_GOOGLE_SERVICES }}
 
 jobs:
   test:
