@@ -16,210 +16,182 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.common.truth.Truth.assertThat
-import java.io.File
-import java.nio.file.Paths
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.file.shouldExist
+import io.kotest.matchers.string.shouldContain
 import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
-import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.UnexpectedBuildFailure
-import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
 
-private const val MANIFEST =
-  """<?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-sdk android:minSdkVersion="14"/>
-        </manifest>
-        """
-
-@RunWith(JUnit4::class)
-class VendorPluginTests {
+class VendorPluginTests : FunSpec() {
   @Rule @JvmField val testProjectDir = TemporaryFolder()
 
   @Test
-  fun `vendor guava not excluding javax transitive deps should fail`() {
-    val buildFailure =
-      assertThrows(UnexpectedBuildFailure::class.java) {
-        buildWith("vendor 'com.google.guava:guava:29.0-android'")
+  fun `should fail when transitive dependencies bring in the java package`() {
+    val exception =
+      shouldThrow<UnexpectedBuildFailure> {
+        buildWith("""vendor("com.google.guava:guava:29.0-android")""")
       }
 
-    assertThat(buildFailure.message).contains("Vendoring java or javax packages is not supported.")
+    exception.message shouldContain "Vendoring java or javax packages is not supported."
   }
 
   @Test
-  fun `vendor guava excluding javax transitive deps should include subset of guava`() {
-    val classes =
-      buildWith(
-        """
-            vendor('com.google.guava:guava:29.0-android') {
-              exclude group: 'com.google.code.findbugs', module: 'jsr305'
-            }
-        """
-          .trimIndent(),
-        SourceFile(
-          name = "com/example/Hello.java",
-          content =
-            """
-                    package com.example;
+  fun `should fail when transitive dependencies bring in the javax package`() {
+    val exception =
+      shouldThrow<UnexpectedBuildFailure> {
+        buildWith("""vendor("com.google.dagger:dagger:2.27")""")
+      }
 
-                    import com.google.common.base.Preconditions;
-
-                    public class Hello {
-                      public static void main(String[] args) {
-                        Preconditions.checkNotNull(args);
-                      }
-                    }
-                    """
-              .trimIndent(),
-        ),
-      )
-    // expected to vendor preconditions and errorprone annotations from transitive dep.
-    assertThat(classes)
-      .containsAtLeast(
-        "com/example/Hello.class",
-        "com/example/com/google/common/base/Preconditions.class",
-        "com/example/com/google/errorprone/annotations/CanIgnoreReturnValue.class",
-      )
-
-    // ImmutableList is not used, so it should be stripped out.
-    assertThat(classes).doesNotContain("com/example/com/google/common/collect/ImmutableList.class")
+    exception.message shouldContain "Vendoring java or javax packages is not supported."
   }
 
   @Test
-  fun `vendor dagger excluding javax transitive deps and not using it should not include dagger`() {
+  fun `should strip unused vendored classes`() {
     val classes =
       buildWith(
         """
-            vendor ('com.google.dagger:dagger:2.27') {
-              exclude group: "javax.inject", module: "javax.inject"
-            }
+        |vendor("com.google.guava:guava:29.0-android") {
+        |  exclude(group = "com.google.code.findbugs", module = "jsr305")
+        |}
         """
-          .trimIndent(),
+          .trimMargin(),
         SourceFile(
-          name = "com/example/Hello.java",
+          path = "com/example/Hello.java",
           content =
             """
-                    package com.example;
-
-                    public class Hello {
-                      public static void main(String[] args) {}
-                    }
-                    """
-              .trimIndent(),
+            |package com.example;
+            |
+            |import com.google.common.base.Preconditions;
+            |
+            |public class Hello {
+            |  public static void main(String[] args) {
+            |    Preconditions.checkNotNull(args);
+            |  }
+            |}
+            """
+              .trimMargin(),
         ),
       )
-    // expected classes
-    assertThat(classes).containsExactly("com/example/Hello.class", "com/example/BuildConfig.class")
+
+    withClue("Vendor preconditions and errorprone annotations from transitive dependency") {
+      classes shouldContainAll
+        listOf(
+          "com/example/Hello.class",
+          "com/example/com/google/common/base/Preconditions.class",
+          "com/example/com/google/errorprone/annotations/CanIgnoreReturnValue.class",
+        )
+    }
+
+    withClue("ImmutableList is not used, so it should be stripped out") {
+      classes shouldNotContain "com/example/com/google/common/collect/ImmutableList.class"
+    }
   }
 
   @Test
-  fun `vendor dagger excluding javax transitive deps should include dagger`() {
+  fun `should not vendor unused packages`() {
     val classes =
       buildWith(
         """
-            vendor ('com.google.dagger:dagger:2.27') {
-              exclude group: "javax.inject", module: "javax.inject"
-            }
+        |vendor ("com.google.dagger:dagger:2.27") {
+        |  exclude(group = "javax.inject", module = "javax.inject")
+        |}
         """
-          .trimIndent(),
+          .trimMargin(),
         SourceFile(
-          name = "com/example/Hello.java",
+          path = "com/example/Hello.java",
           content =
             """
-                    package com.example;
-
-                    import dagger.Module;
-
-                    @Module
-                    public class Hello {
-                      public static void main(String[] args) {}
-                    }
-                    """
-              .trimIndent(),
+            |package com.example;
+            |
+            |public class Hello {
+            |  public static void main(String[] args) {}
+            |}
+            """
+              .trimMargin(),
         ),
       )
-    // expected classes
-    assertThat(classes)
-      .containsAtLeast(
+
+    classes shouldContainExactly listOf("com/example/Hello.class", "com/example/BuildConfig.class")
+  }
+
+  @Test
+  fun `should work when javax is excluded`() {
+    val classes =
+      buildWith(
+        """
+        |vendor("com.google.dagger:dagger:2.27") {
+        |  exclude(group = "javax.inject", module = "javax.inject")
+        |}
+        """
+          .trimMargin(),
+        SourceFile(
+          path = "com/example/Hello.java",
+          content =
+            """
+            |package com.example;
+            |
+            |import dagger.Module;
+            |
+            |@Module
+            |public class Hello {
+            |  public static void main(String[] args) {}
+            |}
+            """
+              .trimMargin(),
+        ),
+      )
+
+    classes shouldContainAll
+      listOf(
         "com/example/Hello.class",
         "com/example/BuildConfig.class",
         "com/example/dagger/Module.class",
       )
   }
 
-  private fun buildWith(deps: String, vararg files: SourceFile): List<String> {
-    testProjectDir
-      .newFile("build.gradle")
-      .writeText(
-        """
-            buildscript {
-                repositories {
-                    google()
-                    jcenter()
-                }
-            }
-            plugins {
-                id 'com.android.library'
-                id 'firebase-vendor'
-            }
-            repositories {
-                google()
-                jcenter()
-            }
+  private val controller = FirebaseTestController(testProjectDir)
 
-            android {
-                buildFeatures {
-                    buildConfig true
-                }
-              namespace 'com.example'
-              compileSdkVersion 26
-            }
-            
-            dependencies {
-                $deps
-            }
-        """
-          .trimIndent()
+  private fun buildWith(vendorDep: String, vararg files: SourceFile): List<String> {
+    val project =
+      TestProject(
+        name = "testlib",
+        plugins =
+          """
+          |id("com.android.library")
+          |id("firebase-vendor")
+          """
+            .trimMargin(),
+        android =
+          """
+          |buildFeatures {
+          |  buildConfig = true
+          |}
+          """
+            .trimMargin(),
+        extraDependencies = vendorDep,
       )
-    testProjectDir.newFile("settings.gradle").writeText("rootProject.name = 'testlib'")
 
-    testProjectDir.newFolder("src/main/java")
-    testProjectDir.newFile("src/main/AndroidManifest.xml").writeText(MANIFEST)
+    controller.withProjects(project)
+    controller.sourceFiles(project, *files)
 
-    for (file in files) {
-      // if (1+1 == 2) {throw RuntimeException("src/main/java/${Paths.get(file.name).parent}")}
-      testProjectDir.newFolder("src/main/java/${Paths.get(file.name).parent}")
-      testProjectDir.newFile("src/main/java/${file.name}").writeText(file.content)
-    }
+    runGradle(testProjectDir.root, "assemble")
 
-    GradleRunner.create()
-      .withArguments("assemble")
-      .withProjectDir(testProjectDir.root)
-      .withPluginClasspath()
-      .build()
-
-    val aarFile = File(testProjectDir.root, "build/outputs/aar/testlib-release.aar")
-    assertThat(aarFile.exists()).isTrue()
+    val aarFile = controller.project(project).childFile("build/outputs/aar/testlib-release.aar")
+    aarFile.shouldExist()
 
     val zipFile = ZipFile(aarFile)
-    val classesJar = zipFile.entries().asSequence().filter { it.name == "classes.jar" }.first()
-    return ZipInputStream(zipFile.getInputStream(classesJar)).use {
-      val entries = mutableListOf<String>()
-      var currentEntry = it.nextEntry
-      while (currentEntry != null) {
-        if (!currentEntry.isDirectory) {
-          entries.add(currentEntry.name)
-        }
-        currentEntry = it.nextEntry
-      }
-      entries
+    val classesJar = zipFile.getEntry("classes.jar")
+    return ZipInputStream(zipFile.getInputStream(classesJar)).use { zip ->
+      zip.entries().map { it.name }.toList()
     }
   }
 }
-
-data class SourceFile(val name: String, val content: String)

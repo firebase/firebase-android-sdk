@@ -64,8 +64,6 @@ fun Project.applySpotless() {
 
 applySpotless()
 
-configure(subprojects) { applySpotless() }
-
 tasks.named("clean") { delete(rootProject.layout.buildDirectory) }
 
 apply(from = "gradle/errorProne.gradle")

@@ -13,17 +13,5 @@
 // limitations under the License.
 
 plugins {
-    id 'firebase-library'
-}
-
-firebaseLibrary {
-    releaseNotes {
-        name.set("{{firebase_storage_full}}")
-        versionName.set("storage")
-    }
-}
-
-android{
-    namespace 'com.example.firebase-storage'
-    compileSdkVersion 26
+    id("PublishingPlugin")
 }

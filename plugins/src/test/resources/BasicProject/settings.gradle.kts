@@ -12,32 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-buildscript {
+pluginManagement {
     repositories {
         google()
         mavenCentral()
-        maven {
-            url 'https://storage.googleapis.com/android-ci/mvn/'
-            metadataSources {
-                artifact()
-            }
-        }
+        gradlePluginPortal()
+        maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
     }
 }
 
-plugins {
-    id 'PublishingPlugin'
-}
-
-configure(subprojects) {
+@Suppress("UnstableApiUsage")
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven {
-            url 'https://storage.googleapis.com/android-ci/mvn/'
-            metadataSources {
-                artifact()
-            }
-        }
+        maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
     }
 }
+
+include(":firebase-storage")

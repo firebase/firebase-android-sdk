@@ -18,25 +18,26 @@ package com.google.firebase.gradle.plugins
 
 import io.kotest.matchers.nulls.shouldNotBeNull
 import java.io.File
+import kotlin.io.path.Path
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.rules.TemporaryFolder
 
 /**
- * Util class for providing a common ground for tests that need to dynamically create [projects]
- * [Project].
+ * Util class for providing a common ground for tests that need to dynamically create their own
+ * [projects] [FirebaseTestProject].
  *
  * This class effectively acts as the root controller during multi module testing. The general
  * workflow can be defined as such:
  * - Wrap your test in a [FirebaseTestController]
- * - Create your test [projects][Project]
+ * - Create your test [projects][FirebaseTestProject]
  * - Link your test projects with the controller via [withProjects]
  * - Use the [GradleRunner] to run your build at the [rootDirectory]
  * - Use any of the provided extension methods to inspect the build files and make assertions in
  *   your test
  *
  * Some example of the provided extension methods are:
- * - [Project.buildFile]
- * - [Project.pom]
+ * - [FirebaseTestProject.buildFile]
+ * - [FirebaseTestProject.pom]
  *
  * To see a more involved example of this workflow, you can take a look at test classes that
  * implement this class, eg; [UpdatePinnedDependenciesTests] and [PublishingPluginTests].
@@ -50,38 +51,47 @@ import org.junit.rules.TemporaryFolder
 class FirebaseTestController(val rootDirectory: TemporaryFolder) {
 
   /**
-   * The `build.gradle` file for this project under the [rootDirectory].
+   * The `build.gradle.kts` file for this project under the [rootDirectory].
    *
    * @see project
    */
-  val Project.buildFile: File
-    get() = project(this).childFile("build.gradle")
+  val TestProject.buildFile: File
+    get() = project(this).childFile("build.gradle.kts")
 
   /**
-   * The compiled [Pom] for this [Project], or null if not found.
+   * The compiled [Pom] for this [FirebaseTestProject], or null if not found.
    *
-   * Looks for the [Pom] file under the root `m2repository`, using a REGEX pattern to find matches
-   * for this [Project]. The file is then converted into a [Pom] via [Pom.parse].
+   * Looks for the [Pom] file under the root `m2repository` for this [FirebaseTestProject]. The file
+   * is then converted into a [Pom] via [Pom.parse].
+   *
+   * It's expected that the pom lives under the directory:
+   * ```
+   * <ROOT_PROJECT>/build/m2repository/com/google/firebase/<library>/<version>/
+   * ```
    *
    * @see pom
    */
-  fun Project.pomOrNull(): Pom? {
-    val regex = Regex(".*/${group.replace('.', '/')}/$name/$expectedVersion.*/.*\\.pom$")
-    val repository = rootDirectory.root.childFile("build/m2repository")
-    val pomFile = repository.walk().find { it.isFile && it.path.matches(regex) }
+  fun FirebaseTestProject.pomOrNull(): Pom? {
+    val projectReleaseBuild =
+      rootDirectory.root
+        .childFile("build/m2repository")
+        .childFile(group.replace('.', '/'))
+        .childFile("$name/$expectedVersion")
+
+    val pomFile = projectReleaseBuild.walk().find { it.isFile && it.name.endsWith(".pom") }
 
     return pomFile?.let { Pom.parse(it) }
   }
 
   /**
-   * The compiled [Pom] for this [Project].
+   * The compiled [Pom] for this [FirebaseTestProject].
    *
    * A variant of [pomOrNull] that makes an assertion that the [Pom] should not be null.
    *
    * @see pomOrNull
    * @see shouldNotBeNull
    */
-  val Project.pom: Pom
+  val FirebaseTestProject.pom: Pom
     get() = pomOrNull().shouldNotBeNull()
 
   /**
@@ -91,13 +101,13 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    *
    * @see include
    */
-  fun project(project: Project) = rootDirectory.root.childFile(project.name)
+  fun project(project: TestProject) = rootDirectory.root.childFile(project.name)
 
   /**
    * Creates a subdirectory for the given [project] under [rootDirectory].
    *
-   * Will use [Project.generateBuildFile] to create the relevant [buildFile], and will populate the
-   * [AndroidManifest.xml][ANDROID_MANIFEST] accordingly.
+   * Will use [FirebaseTestProject.generateBuildFile] to create the relevant [buildFile], and will
+   * populate the [AndroidManifest.xml][ANDROID_MANIFEST] accordingly.
    *
    * Usually, you don't want to invoke this method yourself, as it will not include the [project] in
    * the build process. What you're probably looking for is [withProjects].
@@ -105,9 +115,9 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    * @see project
    * @see withProjects
    */
-  fun include(project: Project) {
+  fun include(project: TestProject) {
     rootDirectory.newFolder("${project.name}/src/main")
-    rootDirectory.newFile("${project.name}/build.gradle").writeText(project.generateBuildFile())
+    rootDirectory.newFile("${project.name}/build.gradle.kts").writeText(project.generateBuildFile())
     rootDirectory
       .newFile("${project.name}/src/main/AndroidManifest.xml")
       .writeText(ANDROID_MANIFEST)
@@ -116,20 +126,33 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
   /**
    * Creates the build files for the root project, and subsequently the provided [projects].
    *
-   * All of the provided [projects] will be included in the root `settings.gradle` file, such that
-   * they are invoked during the build process.
+   * All of the provided [projects] will be included in the root `settings.gradle.kts` file, such
+   * that they are invoked during the build process.
    *
-   * @param projects a variable amount of [Project] to create subdirectories for and include in the
-   *   build process.
+   * @param projects a variable amount of [FirebaseTestProject] to create subdirectories for and
+   *   include in the build process.
    * @see include
    */
-  fun withProjects(vararg projects: Project) {
-    rootDirectory.newFile("build.gradle").writeText(ROOT_PROJECT)
+  fun withProjects(vararg projects: TestProject) {
+    rootDirectory.newFile("build.gradle.kts").writeText(ROOT_PROJECT)
     rootDirectory
-      .newFile("settings.gradle")
-      .writeText(projects.joinToString("\n") { "include '${it.path}'" })
+      .newFile("settings.gradle.kts")
+      .writeText("$ROOT_SETTINGS\n${projects.joinToString("\n") { "include(\"${it.path}\")" }}")
 
     projects.forEach(this::include)
+  }
+
+  /**
+   * Creates the actual files for list of source files, under this project's test directory.
+   *
+   * Writes the content of the source files as well.
+   */
+  fun sourceFiles(project: TestProject, vararg files: SourceFile) {
+    for (file in files) {
+      val path = "${project.name}/src/main/java/${file.path}"
+      rootDirectory.newFolder("${Path(path).parent}")
+      rootDirectory.newFile(path).writeText(file.content)
+    }
   }
 
   /**
@@ -148,51 +171,56 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    * The release will have a [name][ReleaseConfig.name] of `test`. If you would rather have a
    * different name, then pass your own [ReleaseConfig] instead via [createReleaseWithConfig].
    *
-   * @param projects a variable amount of [Project] to include in the release file.
+   * @param projects a variable amount of [FirebaseTestProject] to include in the release file.
    * @see createReleaseWithConfig
    */
-  fun createReleaseWithProjects(vararg projects: Project) {
+  fun createReleaseWithProjects(vararg projects: FirebaseTestProject) {
     createReleaseWithConfig(ReleaseConfig("test", projects.map { it.path }))
   }
 
   companion object {
+    const val ROOT_SETTINGS =
+      """
+pluginManagement {
+  repositories {
+    google()
+    mavenCentral()
+    gradlePluginPortal()
+    maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
+  }
+}
+
+@Suppress("UnstableApiUsage")
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    google()
+    mavenCentral()
+    maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
+  }
+}
+      """
     const val ROOT_PROJECT =
       """
-        buildscript {
-            repositories {
-                google()
-                jcenter()
-                maven {
-                    url 'https://storage.googleapis.com/android-ci/mvn/'
-                    metadataSources {
-                        artifact()
-                    }
-                }
-            }
-        }
-        plugins {
-            id 'PublishingPlugin'
-        }
-
-        configure(subprojects) {
-            repositories {
-                google()
-                jcenter()
-                maven {
-                    url 'https://storage.googleapis.com/android-ci/mvn/'
-                    metadataSources {
-                          artifact()
-                    }
-                }
-            }
-        }
+plugins {
+  id("PublishingPlugin")
+}
       """
 
     const val ANDROID_MANIFEST =
       """<?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-sdk android:minSdkVersion="14"/>
-        </manifest>
-        """
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-sdk android:minSdkVersion="14"/>
+</manifest>
+     """
   }
 }
+
+/**
+ * A source file to use in a test.
+ *
+ * @param path The relative path of the source file.
+ * @param content The text content of the source file.
+ * @see FirebaseTestController.sourceFiles
+ */
+data class SourceFile(val path: String, val content: String)

@@ -28,7 +28,6 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.beEmpty
 import io.kotest.matchers.string.shouldMatch
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -106,12 +105,7 @@ class MoveUnreleasedChangesTests : FunSpec() {
     return Changelog.fromFile(currentProject.childFile("CHANGELOG.md"))
   }
 
-  private fun buildProject() =
-    GradleRunner.create()
-      .withProjectDir(testProjectDirectory.root)
-      .withPluginClasspath()
-      .withArguments("moveUnreleasedChanges")
-      .build()
+  private fun buildProject() = runGradle(testProjectDirectory.root, "moveUnreleasedChanges")
 
   private fun validateChangelog(original: Changelog, newest: Changelog) {
     newest.releases shouldHaveAtLeastSize 2

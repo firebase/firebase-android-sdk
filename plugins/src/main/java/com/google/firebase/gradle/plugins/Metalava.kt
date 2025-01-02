@@ -32,6 +32,7 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.kotlin.dsl.dependencies
 
 val Project.metalavaConfig: Configuration
   get() =
@@ -43,9 +44,6 @@ val Project.metalavaConfig: Configuration
           )
         )
       }
-
-val Project.docStubs: File?
-  get() = project.file("${buildDir.path}/doc-stubs")
 
 fun Project.runMetalavaWithArgs(
   arguments: List<String>,
@@ -70,6 +68,7 @@ fun Project.runMetalavaWithArgs(
   }
 }
 
+// TODO(): Migrate away from `project` usage within the task scope (same for the tasks below)
 abstract class GenerateStubsTask : DefaultTask() {
   /** Source files against which API signatures will be validated. */
   @get:InputFiles abstract val sources: ConfigurableFileCollection
@@ -77,26 +76,30 @@ abstract class GenerateStubsTask : DefaultTask() {
   @get:[InputFiles Classpath]
   abstract val classPath: ConfigurableFileCollection
 
-  @get:OutputDirectory val outputDir: File = File(project.buildDir, "doc-stubs")
+  @get:OutputDirectory abstract val outputDir: RegularFileProperty
 
   @TaskAction
   fun run() {
-    val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
+    val sourcePath =
+      sources.files.filter { it.exists() }.joinToString(File.pathSeparator) { it.absolutePath }
 
     val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
 
-    project.runMetalavaWithArgs(
+    val args =
       listOf(
         "--source-path",
         sourcePath,
         "--classpath",
-        classPath.joinToString(":"),
+        classPath.joinToString(File.pathSeparator),
         "--include-annotations",
         "--doc-stubs",
-        outputDir.absolutePath,
+        outputDir.get().asFile.absolutePath,
       )
-    )
+
+    logger.info("Running metalava with args:\n ${args.joinToString("\n")}")
+
+    project.runMetalavaWithArgs(args)
   }
 }
 
@@ -115,7 +118,8 @@ abstract class GenerateApiTxtTask : DefaultTask() {
 
   @TaskAction
   fun run() {
-    val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
+    val sourcePath =
+      sources.files.filter { it.exists() }.joinToString(File.pathSeparator) { it.absolutePath }
 
     val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
 
@@ -134,7 +138,7 @@ abstract class GenerateApiTxtTask : DefaultTask() {
         "--source-path",
         sourcePath,
         "--classpath",
-        classPath.joinToString(":"),
+        classPath.joinToString(File.pathSeparator),
         "--api",
         apiTxtFile.get().asFile.absolutePath,
         "--format=v2",
@@ -165,7 +169,8 @@ abstract class ApiInformationTask : DefaultTask() {
 
   @TaskAction
   fun run() {
-    val sourcePath = sources.files.filter { it.exists() }.map { it.absolutePath }.joinToString(":")
+    val sourcePath =
+      sources.files.filter { it.exists() }.joinToString(File.pathSeparator) { it.absolutePath }
 
     val classPath = classPath.files.asSequence().map { it.absolutePath }.toMutableList()
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
@@ -175,7 +180,7 @@ abstract class ApiInformationTask : DefaultTask() {
         "--source-path",
         sourcePath,
         "--classpath",
-        classPath.joinToString(":"),
+        classPath.joinToString(File.pathSeparator),
         "--api",
         outputApiFile.get().asFile.absolutePath,
         "--format=v2",

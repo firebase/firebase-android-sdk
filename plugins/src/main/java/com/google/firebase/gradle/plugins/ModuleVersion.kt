@@ -92,7 +92,7 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
      */
     fun fromStringsOrNull(type: String, build: String): PreReleaseVersion? =
       runCatching {
-          val preType = PreReleaseVersionType.valueOf(type.toUpperCase())
+          val preType = PreReleaseVersionType.valueOf(type.uppercase())
           val buildNumber = build.takeUnless { it.isBlank() }?.toInt() ?: 1
 
           PreReleaseVersion(preType, buildNumber)
@@ -115,7 +115,7 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
    * PreReleaseVersion(RC, 12).toString() // "rc12"
    * ```
    */
-  override fun toString() = "${type.name.toLowerCase()}${build.toString().padStart(2, '0')}"
+  override fun toString() = "${type.name.uppercase()}${build.toString().padStart(2, '0')}"
 }
 
 /**

@@ -35,9 +35,9 @@ class PublishingPluginTests {
   @Test
   fun `Publishing dependent projects succeeds`() {
     with(controller) {
-      val project1 = Project(name = "childProject1", version = "1.0")
+      val project1 = FirebaseTestProject(name = "childProject1", version = "1.0")
       val project2 =
-        Project(
+        FirebaseTestProject(
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
@@ -45,7 +45,7 @@ class PublishingPluginTests {
             """
   licenses {
     license {
-      name = 'Hello'
+      name = "Hello"
     }
   }
   """,
@@ -57,14 +57,14 @@ class PublishingPluginTests {
       project1.pom.let {
         it.artifact.version shouldBe project1.version
         it.license shouldBe
-          License(
+          LicenseElement(
             "The Apache Software License, Version 2.0",
             "http://www.apache.org/licenses/LICENSE-2.0.txt",
           )
       }
       project2.pom.let {
         it.artifact.version shouldBe project2.version
-        it.license shouldBe License("Hello", "")
+        it.license shouldBe LicenseElement("Hello")
         it.dependencies shouldHaveSingleElement project1.toArtifact()
       }
     }
@@ -74,9 +74,9 @@ class PublishingPluginTests {
   fun `Publishing dependent projects one of which is a jar succeeds`() {
     with(controller) {
       val project1 =
-        Project(name = "childProject1", version = "1.0", libraryType = LibraryType.JAVA)
+        FirebaseTestProject(name = "childProject1", version = "1.0", libraryType = LibraryType.JAVA)
       val project2 =
-        Project(
+        FirebaseTestProject(
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
@@ -84,7 +84,7 @@ class PublishingPluginTests {
             """
   licenses {
     license {
-      name = 'Hello'
+      name = "Hello"
     }
   }
   """,
@@ -96,14 +96,14 @@ class PublishingPluginTests {
       project1.pom.let {
         it.artifact.version shouldBe project1.version
         it.license shouldBe
-          License(
+          LicenseElement(
             "The Apache Software License, Version 2.0",
             "http://www.apache.org/licenses/LICENSE-2.0.txt",
           )
       }
       project2.pom.let {
         it.artifact.version shouldBe project2.version
-        it.license shouldBe License("Hello", "")
+        it.license shouldBe LicenseElement("Hello")
         it.dependencies shouldHaveSingleElement project1.toArtifact()
       }
     }
@@ -112,9 +112,13 @@ class PublishingPluginTests {
   @Test
   fun `Publish with unreleased dependency`() {
     with(controller) {
-      val project1 = Project(name = "childProject1", version = "1.0")
+      val project1 = FirebaseTestProject(name = "childProject1", version = "1.0")
       val project2 =
-        Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
+        FirebaseTestProject(
+          name = "childProject2",
+          version = "0.9",
+          projectDependencies = setOf(project1),
+        )
 
       withProjects(project1, project2)
       publish(project2)
@@ -127,10 +131,16 @@ class PublishingPluginTests {
   @Test
   fun `Publish with very transitive dependency`() {
     with(controller) {
-      val project1 = Project(name = "childProject1", version = "1.0", libraryGroup = "libraryGroup")
+      val project1 =
+        FirebaseTestProject(name = "childProject1", version = "1.0", libraryGroup = "libraryGroup")
       val project2 =
-        Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
-      val project3 = Project(name = "childProject3", version = "1.0", libraryGroup = "libraryGroup")
+        FirebaseTestProject(
+          name = "childProject2",
+          version = "0.9",
+          projectDependencies = setOf(project1),
+        )
+      val project3 =
+        FirebaseTestProject(name = "childProject3", version = "1.0", libraryGroup = "libraryGroup")
 
       withProjects(project1, project2, project3)
       publish(project2)
@@ -144,9 +154,14 @@ class PublishingPluginTests {
   @Test
   fun `Publish with released dependency`() {
     with(controller) {
-      val project1 = Project(name = "childProject1", version = "1.0", latestReleasedVersion = "0.8")
+      val project1 =
+        FirebaseTestProject(name = "childProject1", version = "1.0", latestReleasedVersion = "0.8")
       val project2 =
-        Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
+        FirebaseTestProject(
+          name = "childProject2",
+          version = "0.9",
+          projectDependencies = setOf(project1),
+        )
 
       withProjects(project1, project2)
       publish(project2, project1)
@@ -159,9 +174,10 @@ class PublishingPluginTests {
   @Test
   fun `Publish project should also publish coreleased projects`() {
     with(controller) {
-      val project1 = Project(name = "childProject1", version = "1.0.0", libraryGroup = "test123")
+      val project1 =
+        FirebaseTestProject(name = "childProject1", version = "1.0.0", libraryGroup = "test123")
       val project2 =
-        Project(
+        FirebaseTestProject(
           name = "childProject2",
           projectDependencies = setOf(project1),
           libraryGroup = "test123",
@@ -182,13 +198,20 @@ class PublishingPluginTests {
   @Test
   fun `Publish project should correctly set dependency types`() {
     with(controller) {
-      val dagger = Artifact("com.google.dagger", "dagger", "2.22", scope = "runtime")
+      val dagger = testArtifact("com.google.dagger", "dagger", "2.22", scope = "runtime")
       val daggerAndroid =
-        Artifact("com.google.dagger", "dagger-android-support", "2.22", Type.AAR, "compile")
+        testArtifact(
+          "com.google.dagger",
+          "dagger-android-support",
+          "2.22",
+          LibraryType.ANDROID,
+          "compile",
+        )
 
-      val project1 = Project(name = "childProject1", version = "1.0", latestReleasedVersion = "0.8")
+      val project1 =
+        FirebaseTestProject(name = "childProject1", version = "1.0", latestReleasedVersion = "0.8")
       val project2 =
-        Project(
+        FirebaseTestProject(
           name = "childProject2",
           version = "0.9",
           projectDependencies = setOf(project1),
@@ -209,34 +232,36 @@ class PublishingPluginTests {
   @Test
   fun `Publish project should ignore dependency versions`() {
     with(controller) {
-      val externalAARLibrary = Artifact("com.google.dagger", "dagger-android-support", "2.21")
+      val externalAARLibrary = testArtifact("com.google.dagger", "dagger-android-support", "2.21")
+      val bumpedExternalLirbary =
+        testArtifact("com.google.dagger", "dagger-android-support", "2.22")
 
       val project1 =
-        Project(
+        FirebaseTestProject(
           name = "childProject1",
           version = "1.0",
           externalDependencies = setOf(externalAARLibrary),
         )
       val project2 =
-        Project(
+        FirebaseTestProject(
           name = "childProject2",
           version = "1.0",
-          externalDependencies = setOf(externalAARLibrary.copy(version = "2.22")),
+          externalDependencies = setOf(bumpedExternalLirbary),
         )
 
       withProjects(project1, project2)
       publish(project1, project2)
 
-      project2.pom.dependencies.first().type shouldBe Type.AAR
+      project2.pom.dependencies.first().type shouldBe LibraryType.ANDROID.format
     }
   }
 
-  private fun publish(vararg projects: Project): BuildResult =
+  private fun publish(vararg projects: FirebaseTestProject): BuildResult =
     makeGradleRunner(*projects).build().also {
       it.task(":firebasePublish")?.outcome shouldBe SUCCESS
     }
 
-  private fun publishAndFail(vararg projects: Project) =
+  private fun publishAndFail(vararg projects: FirebaseTestProject) =
     makeGradleRunner(*projects).buildAndFail().also {
       it.task(":checkHeadDependencies")?.outcome shouldBe FAILED
     }
@@ -248,13 +273,11 @@ class PublishingPluginTests {
    * redirection for further debugging. Since this can be excessively verbose and slow down tests,
    * this behavior is not enabled by default.
    */
-  private fun makeGradleRunner(vararg projects: Project) =
-    GradleRunner.create()
-      .withProjectDir(testProjectDir.root)
-      .withArguments(
-        "-PprojectsToPublish=${projects.joinToString(",") { it.name }}",
-        "-PreleaseName=m123",
-        "firebasePublish",
-      )
-      .withPluginClasspath()
+  private fun makeGradleRunner(vararg projects: FirebaseTestProject) =
+    createGradleRunner(
+      testProjectDir.root,
+      "-PprojectsToPublish=${projects.joinToString(",") { it.name }}",
+      "-PreleaseName=m123",
+      "firebasePublish",
+    )
 }

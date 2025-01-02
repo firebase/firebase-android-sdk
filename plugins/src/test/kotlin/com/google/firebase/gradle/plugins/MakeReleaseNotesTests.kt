@@ -21,14 +21,12 @@ import io.kotest.matchers.collections.beEmpty
 import io.kotest.matchers.file.exist
 import io.kotest.matchers.should
 import java.io.File
-import org.gradle.testkit.runner.GradleRunner
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
 class MakeReleaseNotesTests : FunSpec() {
-
   @Test
   fun `Creates release notes that match the expected output`() {
     buildReleaseNotes()
@@ -44,12 +42,7 @@ class MakeReleaseNotesTests : FunSpec() {
     releaseNoteFile.readLines() diff expectedReleaseNoteFile.readLines() should beEmpty()
   }
 
-  private fun buildReleaseNotes() =
-    GradleRunner.create()
-      .withProjectDir(testProjectDirectory.root)
-      .withPluginClasspath()
-      .withArguments("makeReleaseNotes")
-      .build()
+  private fun buildReleaseNotes() = runGradle(testProjectDirectory.root, "makeReleaseNotes")
 
   companion object {
     @ClassRule @JvmField val testProjectDirectory = TemporaryFolder()

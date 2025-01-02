@@ -17,12 +17,14 @@
 package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.BaseExtension
-import java.io.File
+import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.tasks.factory.dependsOn
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Copy
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 
 /**
  * Copies the root google-services.json into the project directory during build time.
@@ -39,8 +41,10 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
 
     project.allprojects {
       // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
-      tasks.configureEach {
-        if (name !== "copyRootGoogleServices") dependsOn(copyRootGoogleServices)
+      plugins.withType<BasePlugin>().configureEach {
+        tasks.configureEach {
+          if (name !== "copyRootGoogleServices") dependsOn(copyRootGoogleServices)
+        }
       }
     }
 
@@ -56,39 +60,46 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     return gradle.startParameter.taskNames.any { testTasks.any(it::contains) }
   }
 
+  /**
+   * We don't use the [Copy] task, because that causes issues on Windows when the destination
+   * directory is the project directory.
+   *
+   * For context, see [gradle-3002](https://issues.gradle.org/browse/GRADLE-3002).
+   */
   private fun registerCopyRootGoogleServicesTask(project: Project) =
-    project.tasks.register<Copy>("copyRootGoogleServices") {
+    project.tasks.register("copyRootGoogleServices") {
       val sourcePath =
-        System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
+        System.getenv("FIREBASE_GOOGLE_SERVICES_PATH")
+          ?: project.rootProject.layout.projectDirectory.file("google-services.json")
+
+      val outputFile = project.layout.projectDirectory.file("google-services.json")
+
+      inputs.file(sourcePath)
+      outputs.file(outputFile)
 
       val library = project.extensions.getByType<BaseExtension>()
 
       val targetPackageLine = "\"package_name\": \"${library.namespace}\""
       val packageLineRegex = Regex("\"package_name\":\\s+\".*\"")
 
-      from(sourcePath)
-      into(project.projectDir)
+      doLast {
+        project.copy {
+          from(sourcePath)
+          into(project.layout.projectDirectory)
 
-      rename { "google-services.json" }
+          rename { "google-services.json" }
 
-      if (fileIsMissingPackageName(sourcePath, targetPackageLine)) {
-        /**
-         * Modifies `google-services.json` such that all declared `package_name` entries are
-         * replaced with the project's namespace. This tricks the google services plugin into
-         * thinking that the target `package_name` is a Firebase App and allows connection to the
-         * Firebase project.
-         *
-         * Note that all events generated from that app will then go to whatever the first client
-         * entry is in the `google-services.json` file.
-         */
-        filter { it.replace(packageLineRegex, targetPackageLine) }
+          /**
+           * Modifies `google-services.json` such that all declared `package_name` entries are
+           * replaced with the project's namespace. This tricks the google services plugin into
+           * thinking that the target `package_name` is a Firebase App and allows connection to the
+           * Firebase project.
+           *
+           * Note that all events generated from that app will then go to whatever the first client
+           * entry is in the `google-services.json` file.
+           */
+          filter { it.replace(packageLineRegex, targetPackageLine) }
+        }
       }
     }
-
-  private fun fileIsMissingPackageName(path: String, targetPackageLine: String): Boolean {
-    val file = File(path)
-    if (!file.exists()) return true
-
-    return !file.readText().contains(targetPackageLine)
-  }
 }

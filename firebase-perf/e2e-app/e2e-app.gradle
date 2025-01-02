@@ -100,7 +100,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.4.0'
 
     // 3rd party Deps
-    implementation 'com.squareup.okhttp3:okhttp:4.9.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.9.3'
 
     // Integration Test Deps
     androidTestImplementation 'junit:junit:4.13.1'

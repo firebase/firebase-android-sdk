@@ -19,62 +19,93 @@ package com.google.firebase.gradle.plugins
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 
+/**
+ * Validate that the current `version` and `latestReleasedVersion` set in the library's
+ * `gradle.properties` file are properly set.
+ *
+ * @property artifactId The library's artifact id (eg; `firebase-common`)
+ * @property latestReleasedVersion The `latestReleasedVersion` set in `gradle.properties`
+ * @property version The `version` set in `gradle.properties`
+ */
 abstract class GmavenVersionChecker : DefaultTask() {
-
-  @get:Input abstract val groupId: Property<String>
-
   @get:Input abstract val artifactId: Property<String>
 
-  @get:Input abstract val latestReleasedVersion: Property<String>
+  @get:Input @get:Optional abstract val latestReleasedVersion: Property<String>
 
   @get:Input abstract val version: Property<String>
 
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
+
   @TaskAction
   fun run() {
-    val mavenHelper = GmavenHelper(groupId.get(), artifactId.get())
-    val latestMavenVersion = mavenHelper.getLatestReleasedVersion()
-    val info =
-      "\n  latestReleasedVersion in gradle.properties should match the latest release on GMaven (${latestMavenVersion})" +
-        "\n  version in gradle.properties should be a version bump above this, following SemVer, and should not be released on GMaven"
-    // Either the Maven metadata does not exist, or the library hasn't been released
-    if (latestMavenVersion.isEmpty()) {
-      return
+    val version = version.get()
+    val gmaven = gmaven.get()
+    val artifactId = artifactId.get()
+    val latestReleasedVersion = latestReleasedVersion.getOrNull()
+
+    val latestMavenVersion =
+      gmaven.latestVersionOrNull(artifactId) ?: skipGradleTask("Library hasn't been published")
+
+    logger.info(
+      """
+      |Validating GMaven versions for:
+      |  version: $version
+      |  artifactId: $artifactId
+      |  latestReleasedVersion: $latestReleasedVersion
+      |  latestMavenVersion: $latestMavenVersion
+      """
+        .trimMargin()
+    )
+
+    fun throwError(reason: String): Nothing {
+      throw GradleException(
+        """
+        |$reason
+        |  latestReleasedVersion in gradle.properties should match the latest release on GMaven (${latestMavenVersion})
+        |  version in gradle.properties should be a version bump above this, following SemVer, and should not be released on GMaven
+        """
+          .trimMargin()
+      )
     }
+
     // TODO(b/285892320): Remove condition when bug fixed
-    if (artifactId.get() == "protolite-well-known-types") {
-      return
+    if (artifactId == "protolite-well-known-types") {
+      skipGradleTask("Not able to validate this library currently- due to an open bug")
     }
-    if (version.get() == latestReleasedVersion.get()) {
-      throw GradleException(
-        "version and latestReleasedVersion from gradle.properties are the same (${version.get()})" +
-          info
+
+    if (version == latestReleasedVersion) {
+      throwError("version and latestReleasedVersion from gradle.properties are the same ($version)")
+    }
+
+    if (latestMavenVersion == version) {
+      throwError(
+        "version from gradle.properties ($version) is already the latest release on GMaven"
       )
     }
-    if (latestMavenVersion == version.get()) {
-      throw GradleException(
-        "version from gradle.properties (${version.get()}) is already the latest release on GMaven" +
-          info
-      )
-    } else if (mavenHelper.hasReleasedVersion(version.get())) {
-      throw GradleException(
-        "version from gradle.properties (${version.get()}) has already been released on GMaven" +
-          info
-      )
+
+    if (gmaven.hasReleasedVersion(artifactId, version)) {
+      throwError("version from gradle.properties ($version) has already been released on GMaven")
     }
-    if (latestMavenVersion != latestReleasedVersion.get()) {
-      if (mavenHelper.hasReleasedVersion(latestReleasedVersion.get())) {
-        throw GradleException(
-          "latestReleasedVersion from gradle.properties (${latestReleasedVersion.get()}) has been released but is not the latest release on GMaven (${latestMavenVersion})"
-        )
-      } else {
-        throw GradleException(
-          "latestReleasedVersion from gradle.properties (${latestReleasedVersion.get()}) has not been released on GMaven" +
-            info
+
+    if (latestMavenVersion != latestReleasedVersion) {
+      if (latestReleasedVersion === null) {
+        throwError("latestReleasedVersion from gradle.properties has not been set yet")
+      }
+
+      if (gmaven.hasReleasedVersion(artifactId, latestReleasedVersion)) {
+        throwError(
+          "latestReleasedVersion from gradle.properties ($latestReleasedVersion) has been released but is not the latest release on GMaven ($latestMavenVersion)"
         )
       }
+
+      throwError(
+        "latestReleasedVersion from gradle.properties ($latestReleasedVersion) has not been released on GMaven"
+      )
     }
   }
 }

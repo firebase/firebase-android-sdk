@@ -19,6 +19,8 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.StopExecutionException
@@ -60,6 +62,8 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   @get:[OutputFile]
   abstract val outputFile: RegularFileProperty
 
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
+
   @TaskAction
   fun updateBuildFileDependencies() {
     val libraryGroups = computeLibraryGroups(project.rootProject)
@@ -96,17 +100,29 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
     if (linesChangedIncorrectly.isNotEmpty())
       throw RuntimeException(
-        "The following lines were caught by our REGEX, but should not have been:\n ${linesChangedIncorrectly.joinToString("\n")}"
+        "The following lines were caught by our REGEX, but should not have been:\n ${
+                    linesChangedIncorrectly.joinToString(
+                        "\n"
+                    )
+                }"
       )
 
     if (librariesNotChanged.isNotEmpty())
       throw RuntimeException(
-        "The following libraries were not found, but should have been:\n ${librariesNotChanged.joinToString("\n") { it.mavenName.get() }}"
+        "The following libraries were not found, but should have been:\n ${
+                    librariesNotChanged.joinToString(
+                        "\n"
+                    ) { it.mavenName.get() }
+                }"
       )
 
     if (librariesCorrectlyChanged.size > dependenciesToChange.size)
       throw RuntimeException(
-        "Too many libraries were caught by our change, possible REGEX false positive:\n ${changedLines.joinToString("\n")}"
+        "Too many libraries were caught by our change, possible REGEX false positive:\n ${
+                    changedLines.joinToString(
+                        "\n"
+                    )
+                }"
       )
   }
 
@@ -127,7 +143,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     buildFileContent.replaceMatches(DEPENDENCY_REGEX) {
       val projectName = it.firstCapturedValue
       val projectToChange = libraries.find { it.path == projectName }
-      val latestVersion = projectToChange?.latestGMavenVersion
+      val latestVersion = projectToChange?.let { gmaven.get().latestVersion(it.artifactId.get()) }
 
       latestVersion?.let { "\"${projectToChange.mavenName.get()}:$latestVersion\"" }
     }

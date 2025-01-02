@@ -14,12 +14,12 @@
 
 plugins {
     id 'firebase-java-library'
-    id 'com.google.protobuf'
+    alias(libs.plugins.protobuf)
 }
 
 firebaseLibrary {
     publishJavadoc = false
-    releaseNotes { 
+    releaseNotes {
         enabled.set(false)
     }
 }

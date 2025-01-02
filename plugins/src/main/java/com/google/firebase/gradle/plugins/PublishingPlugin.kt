@@ -25,7 +25,6 @@ import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.FIREBASE_PU
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.GENERATE_BOM_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.GENERATE_KOTLINDOC_FOR_RELEASE_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.PUBLISH_RELEASING_LIBS_TO_BUILD_TASK
-import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -272,7 +271,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         throw GradleException(
           "Invalid release configuration. " +
             "It's should include the following libraries due to library groups: \n" +
-            "${missingLibrariesToRelease.joinToString("\n"){ it.artifactName }}"
+            "${missingLibrariesToRelease.joinToString("\n") { it.artifactName }}"
         )
       }
 

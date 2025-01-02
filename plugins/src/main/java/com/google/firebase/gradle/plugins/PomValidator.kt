@@ -16,19 +16,17 @@
 
 package com.google.firebase.gradle.plugins
 
-import java.net.URL
-import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
-import org.w3c.dom.Element
 
 /**
- * Ensures that pom dependencies are not accidently downgraded.
+ * Ensures that pom dependencies are not accidentally downgraded.
  *
  * Compares the latest pom at gmaven for the given artifact with the one generate for the current
  * release.
@@ -43,58 +41,47 @@ abstract class PomValidator : DefaultTask() {
   @get:Input abstract val artifactId: Property<String>
   @get:Input abstract val groupId: Property<String>
 
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
+
   @TaskAction
   fun run() {
-    try {
-      var diff = diffWithPomFromURL(getLatestReleasePomUrl())
+    if (!gmaven.get().hasReleasedArtifact(artifactId.get()))
+      skipGradleTask("Library hasn't been released")
 
-      if (diff.isNotEmpty()) {
-        throw GradleException("Dependency version errors found:\n${diff}")
-      }
-    } catch (_: java.io.FileNotFoundException) {
-      // Gmaven artifact doesn't exist.
-      return
+    val oldPom = gmaven.get().latestPom(artifactId.get())
+    val currentPom = PomElement.fromFile(pomFile.get().asFile)
+
+    val oldDependencies = getMapOfDependencies(oldPom)
+    val currentDependencies = getMapOfDependencies(currentPom)
+
+    val diff =
+      currentDependencies
+        .map { DependencyDiff(it.key, oldDependencies.getOrDefault(it.key, it.value), it.value) }
+        .filter { it.oldVersion > it.currentVersion }
+        .joinToString("\n") {
+          "Dependency on ${it.artifactId} has been degraded from ${it.oldVersion} to ${it.currentVersion}"
+        }
+
+    if (diff.isNotBlank()) {
+      throw GradleException("Dependency version errors found:\n${diff}")
     }
   }
 
-  private fun getLatestReleasePomUrl() =
-    with(GmavenHelper(groupId.get(), artifactId.get())) {
-      getPomFileForVersion(getLatestReleasedVersion())
-    }
+  private fun getMapOfDependencies(pom: PomElement) =
+    pom.dependencies
+      .filter { it.artifactId !in IGNORED_DEPENDENCIES }
+      .associate {
+        if (it.version === null)
+          throw IllegalStateException(
+            "Pom dependency has a transitive version declared, which makes it extremely difficult to verify: ${it.artifactId}"
+          )
 
-  private fun getMapOfDependencies(doc: Element) =
-    doc
-      .findElementsByTag("dependency")
-      .associate { it.textByTag("artifactId") to it.textByTag("version") }
-      .filterKeys { it !in IGNORED_DEPENDENCIES }
+        it.artifactId to it.version
+      }
       .mapValues {
         ModuleVersion.fromStringOrNull(it.value)
           ?: throw RuntimeException("Invalid module version found for '${it.key}': ${it.value}")
       }
-
-  data class DependencyDiff(
-    val artifactId: String,
-    val oldVersion: ModuleVersion,
-    val currentVersion: ModuleVersion,
-  )
-
-  fun diffWithPomFromURL(url: String): String {
-    val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-
-    val oldPom = documentBuilder.parse(URL(url).openStream())
-    val currentPom = documentBuilder.parse(pomFile.get().asFile)
-
-    val oldDependencies = getMapOfDependencies(oldPom.documentElement)
-    val currentDependencies = getMapOfDependencies(currentPom.documentElement)
-
-    return currentDependencies
-      .map { DependencyDiff(it.key, oldDependencies.getOrDefault(it.key, it.value), it.value) }
-      .filter { it.oldVersion > it.currentVersion }
-      .map {
-        "Dependency on ${it.artifactId} has been degraded from ${it.oldVersion} to ${it.currentVersion}"
-      }
-      .joinToString("\n")
-  }
 
   companion object {
     val IGNORED_DEPENDENCIES =
@@ -106,3 +93,9 @@ abstract class PomValidator : DefaultTask() {
       )
   }
 }
+
+private data class DependencyDiff(
+  val artifactId: String,
+  val oldVersion: ModuleVersion,
+  val currentVersion: ModuleVersion,
+)

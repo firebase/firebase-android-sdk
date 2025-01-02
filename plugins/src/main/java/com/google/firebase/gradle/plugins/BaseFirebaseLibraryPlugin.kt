@@ -22,13 +22,12 @@ import com.google.firebase.gradle.plugins.ci.Coverage
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
-import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Provider
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
-import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.assign
 import org.gradle.kotlin.dsl.configure
@@ -51,6 +50,7 @@ import org.w3c.dom.Element
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
   protected fun setupDefaults(project: Project, library: FirebaseLibraryExtension) {
     with(library) {
+      project.gradle.sharedServices.registerIfAbsent<GMavenServiceGradle, _>("gmaven")
       previewMode.convention("")
       publishJavadoc.convention(true)
       artifactId.convention(project.name)
@@ -126,8 +126,8 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
   protected fun registerApiInfoTask(
     project: Project,
-    srcDirs: ConfigurableFileCollection,
-    classpath: ConfigurableFileCollection,
+    srcDirs: FileCollection,
+    classpath: FileCollection,
   ) {
     val projectPath = project.path.substring(1).replace(":", "_")
     val apiInfoFile =
@@ -143,16 +143,31 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     }
   }
 
+  protected fun registerGmavenVersionCheck(
+    project: Project,
+    firebaseLibrary: FirebaseLibraryExtension,
+  ) {
+    project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
+      artifactId.set(firebaseLibrary.artifactId)
+      version.set(firebaseLibrary.version)
+      latestReleasedVersion.set(firebaseLibrary.latestReleasedVersion)
+    }
+  }
+
   protected fun getIsPomValidTask(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     project.tasks.register<PomValidator>("isPomDependencyValid") {
       pomFile.set(project.layout.buildDirectory.file("publications/mavenAar/pom-default.xml"))
-      groupId.set(firebaseLibrary.groupId.get())
-      artifactId.set(firebaseLibrary.artifactId.get())
+      groupId.set(firebaseLibrary.groupId)
+      artifactId.set(firebaseLibrary.artifactId)
       dependsOn("generatePomFileForMavenAarPublication")
     }
   }
 
-  protected fun registerGenerateApiTxtFileTask(project: Project, srcDirs: ConfigurableFileCollection, classpath: ConfigurableFileCollection,) =
+  protected fun registerGenerateApiTxtFileTask(
+    project: Project,
+    srcDirs: FileCollection,
+    classpath: FileCollection,
+  ) =
     project.tasks.register<GenerateApiTxtTask>("generateApiTxtFile") {
       sources.from(srcDirs)
       apiTxtFile.set(project.file("api.txt"))
@@ -161,11 +176,17 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       classPath.from(classpath)
     }
 
-  protected fun registerDocStubsTask(project: Project, srcDirs: ConfigurableFileCollection, classpath: ConfigurableFileCollection,) {
-    val task = project.tasks.register<GenerateStubsTask>("docStubs") {
-      sources.from(srcDirs)
-      classPath.from(classpath)
-    }
+  protected fun registerDocStubsTask(
+    project: Project,
+    srcDirs: FileCollection,
+    classpath: FileCollection,
+  ) {
+    val task =
+      project.tasks.register<GenerateStubsTask>("docStubs") {
+        sources.from(srcDirs)
+        classPath.from(classpath)
+        outputDir.set(project.layout.buildDirectory.file("doc-stubs"))
+      }
 
     project.tasks.named("check").dependsOn(task)
   }
@@ -332,22 +353,23 @@ val FirebaseLibraryExtension.artifactName: String
 /**
  * Fetches the latest version for this SDK from GMaven.
  *
- * Uses [GmavenHelper] to make the request.
+ * Uses [GMavenServiceGradle] to make the request.
  *
  * To get the latest released version per the local `gradle.properties`, use [latestReleasedVersion]
  * .
  *
  * @see [ModuleVersion]
  */
-val FirebaseLibraryExtension.latestGMavenVersion: ModuleVersion
-  get() {
-    val latestVersion = GmavenHelper(groupId.get(), artifactId.get()).getLatestReleasedVersion()
-
-    return ModuleVersion.fromStringOrNull(latestVersion)
-      ?: throw RuntimeException(
-        "Invalid format for ModuleVersion for module '$artifactName':\n $latestVersion"
-      )
-  }
+val FirebaseLibraryExtension.latestGMavenVersion: Provider<ModuleVersion>
+  get() =
+    project.gmavenService.zip(artifactId) { gmaven, artifactId ->
+      gmaven.latestVersionOrNull(artifactId)?.let {
+        ModuleVersion.fromStringOrNull(it)
+          ?: throw RuntimeException(
+            "Invalid format for ModuleVersion for module '$artifactName':\n $it"
+          )
+      }
+    }
 
 /**
  * The latest version released, per the `gradle.properties` file.

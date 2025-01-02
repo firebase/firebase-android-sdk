@@ -36,7 +36,13 @@ spotless {
     target("src/**/*.kt")
     ktfmt("0.52").googleStyle()
   }
+  kotlinGradle {
+    target("*.gradle.kts")
+    ktfmt("0.41").googleStyle()
+  }
 }
+
+kotlin { compilerOptions { freeCompilerArgs.add("-Xcontext-receivers") } }
 
 // Refer latest "perf-plugin" released version on
 // https://maven.google.com/web/index.html?q=perf-plugin#com.google.firebase:perf-plugin
@@ -62,9 +68,17 @@ dependencies {
   implementation("com.google.code.gson:gson:2.8.9")
   implementation(libs.android.gradlePlugin.gradle)
   implementation(libs.android.gradlePlugin.builder.test.api)
-  implementation("org.apache.maven.resolver:maven-resolver-api:2.0.5")
+  implementation("org.apache.maven.resolver:maven-resolver-api:1.9.2")
+  implementation("org.apache.maven.resolver:maven-resolver-util:1.9.2")
+  implementation("org.apache.maven.resolver:maven-resolver-impl:1.9.2")
+  implementation("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.2")
+  implementation("org.apache.maven.resolver:maven-resolver-transport-http:1.9.2")
+  implementation("org.apache.maven:maven-resolver-provider:3.9.5")
+  implementation("org.apache.maven:maven-model:3.9.5")
 
+  testImplementation(gradleTestKit())
   testImplementation(libs.bundles.kotest)
+  testImplementation(libs.mockk)
   testImplementation(libs.junit)
   testImplementation(libs.truth)
   testImplementation("commons-io:commons-io:2.15.1")

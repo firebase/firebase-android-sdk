@@ -16,6 +16,8 @@
 
 package com.google.firebase.gradle.plugins.semver
 
+import com.google.firebase.gradle.plugins.ModuleVersion
+import com.google.firebase.gradle.plugins.skipGradleTask
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -23,35 +25,39 @@ import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 
 abstract class ApiDiffer : DefaultTask() {
-  @get:Input abstract val currentJar: Property<String>
+  @get:InputFile abstract val currentJar: RegularFileProperty
 
-  @get:Input abstract val previousJar: Property<String>
+  @get:InputFile abstract val previousJar: RegularFileProperty
 
   @get:Input abstract val version: Property<String>
 
-  @get:Input abstract val previousVersionString: Property<String>
+  @get:Input @get:Optional abstract val previousVersion: Property<ModuleVersion>
 
   private val CLASS_EXTENSION = ".class"
 
   @TaskAction
   fun run() {
-    if (version.get().contains("beta") || previousVersionString.get().isNullOrEmpty()) {
-      return
-    }
-    val (pMajor, pMinor, _) = previousVersionString.get().split(".")
+    if (version.get().contains("beta"))
+      skipGradleTask("Not checking the API diff since the current version is beta")
+    if (!previousVersion.isPresent) skipGradleTask("Library hasn't been published yet")
+
+    val (pMajor, pMinor, _) = previousVersion.get().toString().split(".")
     val (major, minor, _) = version.get().split(".")
     val curVersionDelta: VersionDelta =
       if (major > pMajor) VersionDelta.MAJOR
       else if (minor > pMinor) VersionDelta.MINOR else VersionDelta.PATCH
-    val afterJar = readApi(currentJar.get())
-    val beforeJar = readApi(previousJar.get())
+    val afterJar = readApi(currentJar.get().asFile.absolutePath)
+    val beforeJar = readApi(previousJar.get().asFile.absolutePath)
     val classKeys = afterJar.keys union beforeJar.keys
     val apiDeltas =
       classKeys

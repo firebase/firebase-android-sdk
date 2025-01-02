@@ -16,19 +16,19 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.android.build.gradle.internal.tasks.factory.dependsOn
-import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import com.google.firebase.gradle.plugins.semver.GmavenCopier
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginExtension
+import org.gradle.jvm.tasks.Jar
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.utils.named
 
 /**
  * Plugin for Java Firebase Libraries.
@@ -61,54 +61,44 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupFirebaseLibraryExtension(project: Project) {
     val firebaseLibrary =
-      project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, JAVA)
+      project.extensions.create<FirebaseLibraryExtension>(
+        "firebaseLibrary",
+        project,
+        LibraryType.JAVA,
+      )
 
     setupDefaults(project, firebaseLibrary)
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
-    setupVersionCheckTasks(project, firebaseLibrary)
+    registerGmavenVersionCheck(project, firebaseLibrary)
+    setupSemverTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
   }
 
-  private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
-    project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
-      version.value(firebaseLibrary.version)
-      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElse(""))
-    }
-    project.mkdir("semver")
-    project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
-      dependsOn("jar")
-      project.file("semver/previous.jar").delete()
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
-      aarAndroidFile.value(false)
-      filePath.value(project.file("semver/previous.jar").absolutePath)
-    }
-    val currentJarFile =
-      project
-        .file("build/libs/${firebaseLibrary.artifactId.get()}-${firebaseLibrary.version}.jar")
-        .absolutePath
-    val previousJarFile = project.file("semver/previous.jar").absolutePath
-    project.tasks.register<ApiDiffer>("semverCheck") {
-      currentJar.value(currentJarFile)
-      previousJar.value(previousJarFile)
-      version.value(firebaseLibrary.version)
-      previousVersionString.value(
-        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
-          .getLatestReleasedVersion()
-      )
+  private fun setupSemverTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    val copyPrevious =
+      project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
+        version.set(firebaseLibrary.latestGMavenVersion)
+        artifactId.set(firebaseLibrary.artifactId)
+        outputFile.set(project.layout.buildDirectory.file("semver/previous.jar"))
+      }
 
-      dependsOn("copyPreviousArtifacts")
+    project.tasks.register<ApiDiffer>("semverCheck") {
+      currentJar.set(project.tasks.named<Jar>("jar").flatMap { it.archiveFile })
+      previousJar.set(copyPrevious.flatMap { it.outputFile })
+      version.set(firebaseLibrary.version)
+      previousVersion.set(firebaseLibrary.latestGMavenVersion)
     }
   }
 
   private fun setupApiInformationAnalysis(project: Project) {
-    val mainSourceSet = project.extensions.getByType<JavaPluginExtension>().sourceSets.named("main")
-    val srcDirs = project.files(mainSourceSet.map { it.java.srcDirs })
-    val classpath = project.files(mainSourceSet.map { it.runtimeClasspath })
+    // TODO(protobuf-gradle-plugin/issues/694): Use named instead of getByName when fixed
+    val mainSourceSet =
+      project.extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main")
+
+    val srcDirs = project.layout.files(mainSourceSet.java.srcDirs)
+    val classpath = project.layout.files(mainSourceSet.compileClasspath)
 
     registerApiInfoTask(project, srcDirs, classpath)
     registerGenerateApiTxtFileTask(project, srcDirs, classpath)

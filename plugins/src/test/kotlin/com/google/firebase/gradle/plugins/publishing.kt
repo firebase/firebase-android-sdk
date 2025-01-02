@@ -18,213 +18,174 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
-import org.gradle.api.GradleException
-import org.w3c.dom.Element
-import org.w3c.dom.NodeList
 
-data class Project(
+/**
+ * A dynamically created gradle project to use in a test.
+ *
+ * @see FirebaseTestController
+ * @see generateBuildFile
+ */
+open class TestProject(
   val name: String,
   val group: String = "com.example",
-  val version: String = "undefined",
-  val expectedVersion: String = version,
+  val version: String? = null,
   val latestReleasedVersion: String? = null,
-  val projectDependencies: Set<Project> = setOf(),
-  val externalDependencies: Set<Artifact> = setOf(),
-  val libraryGroup: String? = null,
-  val customizePom: String? = null,
-  val publishJavadoc: Boolean = false,
-  val libraryType: LibraryType = LibraryType.ANDROID,
+  val projectDependencies: Set<TestProject> = setOf(),
+  val externalDependencies: Set<ArtifactDependency> = setOf(),
+  val extraDependencies: String = "",
+  val plugins: String = "",
+  val extra: String = "",
+  val android: String = "",
+  val libraryType: LibraryType = if (android.isEmpty()) LibraryType.JAVA else LibraryType.ANDROID,
 ) {
   val path = ":$name"
 
-  fun generateBuildFile(): String {
+  /** Generates the `build.gradle.kts` that would represent this project. */
+  open fun generateBuildFile(): String {
     return """
-            plugins {
-                id 'firebase-${if (libraryType == LibraryType.JAVA) "java-" else ""}library'
-            }
-            group = '$group'
-            version = '$version'
-            ${if (latestReleasedVersion != null) "ext.latestReleasedVersion = $latestReleasedVersion" else ""}
-            firebaseLibrary {
-                ${if (libraryGroup != null) "libraryGroup = '$libraryGroup'" else ""}
-                ${if (customizePom != null) "customizePom {$customizePom}" else ""}
-                ${"publishJavadoc = $publishJavadoc"}
-            }
-            ${if (libraryType == LibraryType.ANDROID) "android {\n" +
-            "  compileSdkVersion 30\n" +
-            "  namespace 'com.example" + libraryGroup + "'" +
-            "\n}\n" else ""}
+      ${generatePluginBlock()}
+      group = "$group"
+      ${version?.let { "version = \"$it\"" } ?: ""}
+      ${latestReleasedVersion?.let { "ext[\"latestReleasedVersion\"] = \"$it\"" } ?: ""}
+      ${generateAndroidBlock()}
+      ${generateDependenciesBlock()}
+      $extra
+    """
+      .trimIndent()
+  }
 
-            dependencies {
-            ${projectDependencies.joinToString("\n") { "implementation project(':${it.name}')" }}
-            ${externalDependencies.joinToString("\n") { "${it.configuration} '${it.simpleDepString}'" }}
-            }
-            """
+  open fun generateAndroidBlock(): String {
+    if (libraryType === LibraryType.JAVA) return ""
+    return """
+      android {
+        compileSdk = 30
+        namespace = "$group"
+        $android
+      }
+    """
+      .trimIndent()
+  }
+
+  open fun generateDependenciesBlock(): String {
+    if (
+      projectDependencies.isEmpty() && externalDependencies.isEmpty() && extraDependencies.isBlank()
+    )
+      return ""
+    return """
+      dependencies {
+        ${projectDependencies.joinToString("\n") { "implementation(${it.toDependency(true)})" }}
+        ${externalDependencies.joinToString("\n")}
+        $extraDependencies
+      }
+    """
+      .trimIndent()
+  }
+
+  open fun generatePluginBlock(): String {
+    if (plugins.isBlank()) return ""
+    return """
+      plugins {
+       $plugins
+      }
+    """
+      .trimIndent()
   }
 }
 
-data class License(val name: String, val url: String)
-
-enum class Type {
-  JAR,
-  AAR,
+/** A [TestProject] that specifically represents a firebase library. */
+class FirebaseTestProject(
+  name: String,
+  group: String = "com.example",
+  version: String = "undefined",
+  val expectedVersion: String = version,
+  latestReleasedVersion: String? = null,
+  projectDependencies: Set<TestProject> = setOf(),
+  externalDependencies: Set<ArtifactDependency> = setOf(),
+  val libraryGroup: String? = null,
+  val customizePom: String? = null,
+  val publishJavadoc: Boolean = false,
+  libraryType: LibraryType = LibraryType.ANDROID,
+) :
+  TestProject(
+    name = name,
+    group = group,
+    version = version,
+    latestReleasedVersion = latestReleasedVersion,
+    projectDependencies = projectDependencies,
+    externalDependencies = externalDependencies,
+    plugins =
+      """
+      id("firebase-${if (libraryType == LibraryType.JAVA) "java-" else ""}library")
+    """
+        .trimIndent(),
+    libraryType = libraryType,
+  ) {
+  override fun generateBuildFile(): String {
+    return """
+      ${super.generateBuildFile()}
+      firebaseLibrary {
+        ${libraryGroup?.let { "libraryGroup = \"$it\"" } ?: ""}
+        ${customizePom?.let { "customizePom {$it}" } ?: ""}
+        publishJavadoc = $publishJavadoc
+      }
+    """
+      .trimIndent()
+  }
 }
 
-data class Artifact(
-  val groupId: String,
-  val artifactId: String,
-  val version: String,
-  val type: Type = Type.JAR,
-  val scope: String = "runtime",
-) {
-  val simpleDepString = "$groupId:$artifactId:$version"
+/** Creates an [ArtifactDependency] for a test. */
+fun testArtifact(
+  groupId: String,
+  artifactId: String,
+  version: String?,
+  type: LibraryType = LibraryType.JAVA,
+  scope: String = "runtime",
+) = ArtifactDependency(groupId, artifactId, version, type.format, scope)
 
-  val configuration = if (scope == "compile") "api" else "implementation"
-}
+val defaultLicense =
+  LicenseElement(
+    "The Apache Software License, Version 2.0",
+    "http://www.apache.org/licenses/LICENSE-2.0.txt",
+  )
 
 data class Pom(
-  val artifact: Artifact,
-  val license: License =
-    License(
-      name = "The Apache Software License, Version 2.0",
-      url = "http://www.apache.org/licenses/LICENSE-2.0.txt",
-    ),
-  val dependencies: List<Artifact> = listOf(),
+  val artifact: ArtifactDependency,
+  val license: LicenseElement = defaultLicense,
+  val dependencies: List<ArtifactDependency> = listOf(),
 ) {
   companion object {
     fun parse(file: File): Pom {
       val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
-      val childNodes = document.documentElement.childNodes
+      val pomElement = PomElement.fromElement(document.documentElement)
 
-      var groupId: String? = null
-      var artifactId: String? = null
-      var version: String? = null
-      var type = Type.JAR
-      var license: License? = null
-      var deps: List<Artifact> = listOf()
+      val groupId = pomElement.groupId
+      val artifactId = pomElement.artifactId
+      val version = pomElement.version
+      val type = pomElement.packaging?.let { LibraryType.fromFormat(it) } ?: LibraryType.JAVA
+      val license = pomElement.licenses.firstOrNull() ?: defaultLicense
+      val dependencies = pomElement.dependencies
 
-      for (i in 0 until childNodes.length) {
-        val child = childNodes.item(i)
-        if (child !is Element) {
-          continue
-        }
-        when (child.tagName) {
-          "groupId" -> groupId = child.textContent.trim()
-          "artifactId" -> artifactId = child.textContent.trim()
-          "version" -> version = child.textContent.trim()
-          "packaging" -> type = Type.valueOf(child.textContent.trim().toUpperCase())
-          "licenses" -> license = parseLicense(child.getElementsByTagName("license"))
-          "dependencies" -> deps = parseDeps(child.getElementsByTagName("dependency"))
-        }
-      }
-      if (groupId == null) {
-        throw GradleException("'<groupId>' missing in pom")
-      }
-      if (artifactId == null) {
-        throw GradleException("'<artifactId>' missing in pom")
-      }
-      if (version == null) {
-        throw GradleException("'<version>' missing in pom")
-      }
-      if (license == null) {
-        throw GradleException("'<license>' missing in pom")
-      }
-
-      return Pom(Artifact(groupId, artifactId, version, type), license, deps)
-    }
-
-    private fun parseDeps(nodes: NodeList): List<Artifact> {
-      val deps = mutableListOf<Artifact>()
-      for (i in 0 until nodes.length) {
-        val child = nodes.item(i)
-        if (child !is Element) {
-          continue
-        }
-        deps.add(parseDep(child))
-      }
-      return deps
-    }
-
-    private fun parseDep(dependencies: Element): Artifact {
-      var groupId: String? = null
-      var artifactId: String? = null
-      var version: String? = null
-      var type = Type.JAR
-      var scope: String? = null
-
-      val nodes = dependencies.childNodes
-
-      for (i in 0 until nodes.length) {
-        val child = nodes.item(i)
-        if (child !is Element) {
-          continue
-        }
-        when (child.tagName) {
-          "groupId" -> groupId = child.textContent.trim()
-          "artifactId" -> artifactId = child.textContent.trim()
-          "version" -> version = child.textContent.trim()
-          "type" -> type = Type.valueOf(child.textContent.trim().toUpperCase())
-          "scope" -> scope = child.textContent.trim()
-        }
-      }
-      if (groupId == null) {
-        throw GradleException("'<groupId>' missing in pom")
-      }
-      if (artifactId == null) {
-        throw GradleException("'<artifactId>' missing in pom")
-      }
-      if (version == null) {
-        throw GradleException("'<version>' missing in pom")
-      }
-      if (scope == null) {
-        throw GradleException("'<scope>' missing in pom")
-      }
-
-      return Artifact(groupId, artifactId, version, type, scope)
-    }
-
-    private fun parseLicense(nodes: NodeList): License? {
-      if (nodes.length == 0) {
-        return null
-      }
-      val license = nodes.item(0) as Element
-      val urlElements = license.getElementsByTagName("url")
-      val url = if (urlElements.length == 0) "" else urlElements.item(0).textContent.trim()
-
-      val nameElements = license.getElementsByTagName("name")
-      val name = if (nameElements.length == 0) "" else nameElements.item(0).textContent.trim()
-      return License(name = name, url = url)
+      return Pom(testArtifact(groupId, artifactId, version, type), license, dependencies)
     }
   }
 }
 
-/**
- * Converts a [LibraryType] to a [Type].
- *
- * Uses the [LibraryType.format] to make the conversion.
- */
-fun LibraryType.toArtifactType() = Type.valueOf(format.toUpperCase())
+/** Converts a [FirebaseTestProject] to an [ArtifactDependency]. */
+fun TestProject.toArtifact() = testArtifact(group, name, version, libraryType)
 
 /**
- * Converts a [Project] to an [Artifact].
- *
- * @see toArtifactType
- */
-fun Project.toArtifact() = Artifact(group, name, version, libraryType.toArtifactType())
-
-/**
- * Converts a [Project] to a gradle dependency string.
+ * Converts a [FirebaseTestProject] to a gradle dependency string.
  *
  * For example:
  * ```
  * val myProject = Project(name = "firestore", group = "com.firebase.google", version = "1.0.0")
  *
- * println(myProject.toDependency()) // 'com.google.firebase.google:firestore:1.0.0'
- * println(myProject.toDependency(true)) // project(':firestore')
+ * println(myProject.toDependency()) // "com.google.firebase.google:firestore:1.0.0"
+ * println(myProject.toDependency(true)) // project(":firestore")
  * ```
  *
  * @param projectLevel whether the dependency should be a project level dependency or external
  * @see toArtifact
  */
-fun Project.toDependency(projectLevel: Boolean = false) =
-  if (projectLevel) "project('${path}')" else "'${toArtifact().simpleDepString}'"
+fun TestProject.toDependency(projectLevel: Boolean = false) =
+  if (projectLevel) "project(\"${path}\")" else "\"${toArtifact().simpleDepString}\""

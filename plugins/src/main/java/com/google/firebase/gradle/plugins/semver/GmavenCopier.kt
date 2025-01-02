@@ -16,36 +16,43 @@
 
 package com.google.firebase.gradle.plugins.semver
 
-import com.google.firebase.gradle.plugins.GmavenHelper
-import java.net.URL
-import java.nio.file.Files
-import java.nio.file.Paths
+import com.google.firebase.gradle.plugins.GMavenServiceGradle
+import com.google.firebase.gradle.plugins.ModuleVersion
+import com.google.firebase.gradle.plugins.skipGradleTask
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.services.ServiceReference
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+/**
+ * Fetch the published artifact for a library from GMaven.
+ *
+ * You can use this instead of [GMavenServiceGradle] when you want to cache the artifact between
+ * builds.
+ *
+ * @property artifactId The library's artifact id
+ * @property version The version of the artifact to fetch
+ * @property outputFile Where to save the downloaded artifact to
+ */
 abstract class GmavenCopier : DefaultTask() {
-
-  @get:Input abstract val groupId: Property<String>
-
-  @get:Input abstract val aarAndroidFile: Property<Boolean>
-
   @get:Input abstract val artifactId: Property<String>
 
-  @get:Input abstract val filePath: Property<String>
+  @get:Input @get:Optional abstract val version: Property<ModuleVersion>
+
+  @get:OutputFile abstract val outputFile: RegularFileProperty
+
+  @get:ServiceReference("gmaven") abstract val gmaven: Property<GMavenServiceGradle>
 
   @TaskAction
   fun run() {
-    val mavenHelper = GmavenHelper(groupId.get(), artifactId.get())
-    if (!mavenHelper.isPresentInGmaven()) {
-      return
-    }
-    val gMavenPath =
-      mavenHelper.getArtifactForVersion(
-        mavenHelper.getLatestReleasedVersion(),
-        !aarAndroidFile.get(),
-      )
-    URL(gMavenPath).openStream().use { Files.copy(it, Paths.get(filePath.get())) }
+    if (!version.isPresent) skipGradleTask("Library hasn't been published")
+
+    val artifact = gmaven.get().artifact(artifactId.get(), version.get().toString())
+
+    artifact.copyTo(outputFile.get().asFile)
   }
 }
