@@ -38,7 +38,7 @@ import java.lang.annotation.Target;
  * If the class only needs to be <em>written</em> into Firestore (and not read from Firestore) then
  * the class can be simplified as follows:
  * <pre>
- * {@literal data class Pojo(@get:PropertyName("my_foo") val foo: String? = null)}
+ * data class Pojo(@get:PropertyName("my_foo") val foo: String? = null)
  * </pre>
  * That is, {@code var} can be tightened to {@code val}, the secondary no-argument constructor can
  * be omitted, and the {@code @set} use-site target can be omitted.
