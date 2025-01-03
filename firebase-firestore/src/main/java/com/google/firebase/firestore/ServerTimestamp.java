@@ -25,14 +25,14 @@ import java.lang.annotation.Target;
  * with a server-generated timestamp.
  *
  * <h3>Kotlin Note</h3>
- * When applying this annotation to a property of a Kotlin class, the <code>@get</code> use-site
- * target should always be used. There is no need to use the <code>@set</code> use-site target as
- * this annotation is <em>only</em> considered when <em>writing</em> instances into Firestore, and
- * is ignored when <em>reading</em> instances from Firestore.
+ * When applying this annotation to a property of a Kotlin class, the {@code @get} use-site target
+ * should always be used. There is no need to use the {@code @set} use-site target as this
+ * annotation is <em>only</em> considered when <em>writing</em> instances into Firestore, and is
+ * ignored when <em>reading</em> instances from Firestore.
  * <p>
  * Here is an example of a class that can both be written into and read from Firestore whose
- * <code>foo</code> property will be populated with the server timestamp in Firestore if its value
- * is null:
+ * {@code foo} property will be populated with the server timestamp in Firestore if its value is
+ * null:
  * <pre>
  * data class Pojo(@get:ServerTimestamp var foo: Timestamp? = null) {
  *   constructor() : this(null) // Used by Firestore to create new instances
@@ -44,8 +44,8 @@ import java.lang.annotation.Target;
  * <pre>
  * data class Pojo(@get:ServerTimestamp val foo: Timestamp? = null)
  * </pre>
- * That is, <code>var</code> can be tightened to <code>val</code> and the secondary no-argument
- * constructor can be omitted.
+ * That is, {@code var} can be tightened to {@code val} and the secondary no-argument constructor
+ * can be omitted.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
