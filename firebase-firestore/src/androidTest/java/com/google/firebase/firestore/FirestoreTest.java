@@ -1653,4 +1653,50 @@ public class FirestoreTest {
     // Run query with snapshot listener
     checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
   }
+
+  @Test
+  public void snapshotListenerSortsStringFieldsAsGetQuery() {
+    Map<String, Map<String, Object>> testDocs =
+            map(
+                    "a", map("value", "Łukasiewicz"),
+                    "b", map("value", "Sierpiński"),
+                    "c", map("value", "岩澤"),
+                    "d", map("value", "🄟"),
+                    "e", map("value", "Ｐ"),
+                    "f", map("value", "︒"),
+                    "g", map("value", "🐵")
+            );
+
+    CollectionReference colRef = testCollectionWithDocs(testDocs);
+    // Test query
+    Query orderedQuery = colRef.orderBy("value");
+    List<String> expectedDocIds =
+            Arrays.asList(
+                    "b", "a", "c", "f", "e", "d", "g");
+
+    QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
+    List<String> getSnapshotDocIds =
+            getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
+
+    // Run query with snapshot listener
+    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
+    ListenerRegistration registration =
+            orderedQuery.addSnapshotListener(eventAccumulator.listener());
+
+    List<String> watchSnapshotDocIds = new ArrayList<>();
+    try {
+      QuerySnapshot watchSnapshot = eventAccumulator.await();
+      watchSnapshotDocIds =
+              watchSnapshot.getDocuments().stream()
+                      .map(documentSnapshot -> documentSnapshot.getId())
+                      .collect(Collectors.toList());
+    } finally {
+      registration.remove();
+    }
+
+    // Assert that get and snapshot listener requests sort docs in the same, expected order
+    assertTrue(getSnapshotDocIds.equals(expectedDocIds));
+    assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
+  }
+
 }

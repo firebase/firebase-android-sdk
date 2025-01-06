@@ -230,7 +230,8 @@ public class Values {
       case TYPE_ORDER_SERVER_TIMESTAMP:
         return compareTimestamps(getLocalWriteTime(left), getLocalWriteTime(right));
       case TYPE_ORDER_STRING:
-        return left.getStringValue().compareTo(right.getStringValue());
+        return Util.compareStrings(left.getStringValue(), right.getStringValue());
+//        return left.getStringValue().compareTo(right.getStringValue());
       case TYPE_ORDER_BLOB:
         return Util.compareByteStrings(left.getBytesValue(), right.getBytesValue());
       case TYPE_ORDER_REFERENCE:
