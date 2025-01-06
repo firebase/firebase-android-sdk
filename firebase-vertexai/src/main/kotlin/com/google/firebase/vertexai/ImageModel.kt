@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.google.firebase.vertexai
 
 import android.util.Log
@@ -25,6 +41,10 @@ import kotlinx.coroutines.tasks.await
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Represents an image model (like Imagen), capable of generating images based on various input
+ * types.
+ */
 public class ImageModel
 internal constructor(
   private val modelName: String,
@@ -88,6 +108,11 @@ internal constructor(
     ),
   )
 
+  /**
+   * Generates an image, returning the result directly to the caller.
+   * @param prompt The main text prompt from which the image is generated.
+   * @param config contains secondary image generation parameters.
+   */
   public suspend fun generateImage(
     prompt: String,
     config: ImagenGenerationConfig?,
@@ -98,6 +123,12 @@ internal constructor(
       throw FirebaseVertexAIException.from(e)
     }
 
+  /**
+   * Generates an image, storing the result in Google Cloud Storage and returning a URL
+   * @param prompt The main text prompt from which the image is generated.
+   * @param gcsUri Specifies the GCS bucket in which to store the image.
+   * @param config contains secondary image generation parameters.
+   */
   public suspend fun generateImage(
     prompt: String,
     gcsUri: String,
