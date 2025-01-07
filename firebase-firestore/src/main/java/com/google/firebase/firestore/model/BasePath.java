@@ -114,7 +114,7 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     } else if (isLhsNumeric && isRhsNumeric) { // both numeric
       return Long.compare(extractNumericId(lhs), extractNumericId(rhs));
     } else { // both string
-      return lhs.compareTo(rhs);
+      return Util.compareUtf8Strings(lhs, rhs);
     }
   }
 

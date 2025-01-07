@@ -27,8 +27,6 @@ import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
-
-import java.nio.charset.Charset;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,10 +85,9 @@ public class Util {
     }
   }
 
-  public static int compareStrings(String left, String right) {
+  public static int compareUtf8Strings(String left, String right) {
     ByteString leftBytes = ByteString.copyFromUtf8(left);
     ByteString rightBytes = ByteString.copyFromUtf8(right);
-    //    return left.getStringValue().compareTo(right.getStringValue());
     return compareByteStrings(leftBytes, rightBytes);
   }
 
