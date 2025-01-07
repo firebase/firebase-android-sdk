@@ -54,8 +54,9 @@ class FirstFragment : Fragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
+    PreFirebaseProvider.expectedMessage = "i am expected"
 
-    binding.buttonCrash.setOnClickListener { throw RuntimeException("CRASHED") }
+    binding.buttonCrash.setOnClickListener { throw RuntimeException("so i am expected 123") }
     binding.buttonNonFatal.setOnClickListener {
       crashlytics.recordException(IllegalStateException())
     }

@@ -28,7 +28,6 @@
       android:exported="true"
       android:label="@string/app_name"
       android:name=".MainActivity"
-      android:process=":main"
       android:theme="@style/Theme.Widget_test_app.NoActionBar">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
@@ -51,6 +50,15 @@
       android:name="firebase_sessions_sessions_restart_timeout"
       android:value="5" />
 
+    <provider
+      android:authorities="${applicationId}.preFirebase"
+      android:directBootAware="true"
+      android:exported="false"
+      android:initOrder="101"
+      android:name="com.google.firebase.testing.sessions.PreFirebaseProvider" />
+
+    <receiver android:name=".CrashBroadcastReceiver" />
+
     <receiver
       android:exported="false"
       android:name="CrashWidgetProvider"
@@ -62,8 +70,6 @@
         android:name="android.appwidget.provider"
         android:resource="@xml/homescreen_widget" />
     </receiver>
-
-    <receiver android:name=".CrashBroadcastReceiver" />
 
     <service
       android:enabled="true"
