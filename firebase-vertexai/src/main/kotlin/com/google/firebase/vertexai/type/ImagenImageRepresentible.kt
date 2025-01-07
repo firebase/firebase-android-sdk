@@ -16,7 +16,7 @@
 
 package com.google.firebase.vertexai.type
 
-/** Interface representing images which can be passed into Imagen (for upscaling, editing, etc.)*/
+/** Interface representing images which can be passed into Imagen (for upscaling, editing, etc.) */
 public interface ImagenImageRepresentible {
-    public fun asImagenImage(): ImagenImage
+  public fun asImagenImage(): ImagenImage
 }

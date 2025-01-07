@@ -16,7 +16,6 @@
 
 package com.google.firebase.vertexai.type
 
-
 /**
  * Represents the format an image should be returned in.
  * @param mimeType A string (like "image/jpeg") specifying the encoding mimetype of the image.
@@ -37,9 +36,7 @@ private constructor(public val mimeType: String, public val compressionQuality: 
       return ImageFormat("image/jpeg", compressionQuality)
     }
 
-    /**
-     * An [ImageFormat] representing a PNG image
-     */
+    /** An [ImageFormat] representing a PNG image */
     public fun png(): ImageFormat {
       return ImageFormat("image/png", null)
     }

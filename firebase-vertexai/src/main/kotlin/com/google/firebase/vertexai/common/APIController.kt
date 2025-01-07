@@ -309,6 +309,4 @@ private fun GenerateContentResponse.validate() = apply {
     ?.let { throw ResponseStoppedException(this) }
 }
 
-private fun GenerateImageResponse.validate() = apply {
-
-}
+private fun GenerateImageResponse.validate() = apply {}

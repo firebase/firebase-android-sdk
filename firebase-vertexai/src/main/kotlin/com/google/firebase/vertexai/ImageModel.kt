@@ -37,9 +37,9 @@ import com.google.firebase.vertexai.type.ImagenInlineImage
 import com.google.firebase.vertexai.type.ImagenModelConfig
 import com.google.firebase.vertexai.type.PromptBlockedException
 import com.google.firebase.vertexai.type.RequestOptions
-import kotlinx.coroutines.tasks.await
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.tasks.await
 
 /**
  * Represents an image model (like Imagen), capable of generating images based on various input
@@ -163,7 +163,8 @@ internal constructor(
 
   internal companion object {
     private val TAG = ImageModel::class.java.simpleName
-    internal const val DEFAULT_FILTERED_ERROR = "Unable to show generated images. All images were filtered out because they violated Vertex AI's usage guidelines. You will not be charged for blocked images. Try rephrasing the prompt. If you think this was an error, send feedback."
+    internal const val DEFAULT_FILTERED_ERROR =
+      "Unable to show generated images. All images were filtered out because they violated Vertex AI's usage guidelines. You will not be charged for blocked images. Try rephrasing the prompt. If you think this was an error, send feedback."
   }
 }
 

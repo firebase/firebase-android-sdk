@@ -21,9 +21,5 @@ package com.google.firebase.vertexai.type
  * @param imageFormat Specifies the encoding format for the image.
  * @param addWatermark If true, the image is invisibly watermarked as AI generated.
  */
-public class ImagenModelConfig private constructor(
-    public val imageFormat: ImageFormat,
-    public val addWatermark: Boolean?
-) {
-
-}
+public class ImagenModelConfig
+private constructor(public val imageFormat: ImageFormat, public val addWatermark: Boolean?) {}

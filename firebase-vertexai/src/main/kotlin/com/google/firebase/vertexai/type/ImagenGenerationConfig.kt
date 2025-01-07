@@ -24,7 +24,7 @@ package com.google.firebase.vertexai.type
  * @param aspectRatio The aspect ratio of the generated images.
  */
 public class ImagenGenerationConfig(
-    public val negativePrompt: String? = null,
-    public val numberOfImages: Int = 1,
-    public val aspectRatio: ImagenAspectRatio? = null,
+  public val negativePrompt: String? = null,
+  public val numberOfImages: Int = 1,
+  public val aspectRatio: ImagenAspectRatio? = null,
 ) {}

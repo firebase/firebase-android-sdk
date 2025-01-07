@@ -22,7 +22,7 @@ package com.google.firebase.vertexai.type
  * @param data Contains the raw bytes of the image, mutually exclusive with [gcsUri]
  * @param gcsUri Contains the gs:// uri for the image , mutually exclusive with [data]
  * @param mimeType Contains the mime type of the image eg. "image/png"
- * */
+ */
 public class ImagenImage(
   public val data: ByteArray?,
   public val gcsUri: String?,

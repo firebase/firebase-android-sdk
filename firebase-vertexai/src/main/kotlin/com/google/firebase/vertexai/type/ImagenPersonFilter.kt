@@ -16,22 +16,14 @@
 
 package com.google.firebase.vertexai.type
 
-/**
- * A filter used to prevent images from containing depictions of people or children.
- */
+/** A filter used to prevent images from containing depictions of people or children. */
 public enum class ImagenPersonFilter(internal val internalVal: String) {
-    /**
-     * Doesn't apply any filtering.
-     */
-    ALLOW_ALL("allow_all"),
+  /** Doesn't apply any filtering. */
+  ALLOW_ALL("allow_all"),
 
-    /**
-     * Filters out any images containing depictions of children.
-     */
-    ALLOW_ADULT("allow_adult"),
+  /** Filters out any images containing depictions of children. */
+  ALLOW_ADULT("allow_adult"),
 
-    /**
-     * Filters out any images with depictions of people.
-     */
-    BLOCK_ALL("dont_allow"),
+  /** Filters out any images with depictions of people. */
+  BLOCK_ALL("dont_allow"),
 }
