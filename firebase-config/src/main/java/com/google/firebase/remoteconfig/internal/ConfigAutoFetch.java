@@ -35,6 +35,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -54,6 +55,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private AtomicBoolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -61,7 +63,8 @@ public class ConfigAutoFetch {
       ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
-      ScheduledExecutorService scheduledExecutorService) {
+      ScheduledExecutorService scheduledExecutorService,
+      AtomicBoolean isInBackground) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.activatedCache = activatedCache;
@@ -69,6 +72,7 @@ public class ConfigAutoFetch {
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
+    this.isInBackground = isInBackground;
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -126,7 +130,7 @@ public class ConfigAutoFetch {
     // Multiple config update messages can be sent through this loop. Each message comes in line by
     // line as partialConfigUpdateMessage and are accumulated together into
     // currentConfigUpdateMessage.
-    while ((partialConfigUpdateMessage = reader.readLine()) != null) {
+    while ((partialConfigUpdateMessage = reader.readLine()) != null && !isInBackground.get()) {
       // Accumulate all the partial parts of the message until we have a full message.
       currentConfigUpdateMessage += partialConfigUpdateMessage;
 
