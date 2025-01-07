@@ -54,6 +54,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private Boolean isInBackground;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -69,6 +70,7 @@ public class ConfigAutoFetch {
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
+    this.isInBackground = false;
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -85,6 +87,10 @@ public class ConfigAutoFetch {
 
   private synchronized boolean isEventListenersEmpty() {
     return this.eventListeners.isEmpty();
+  }
+
+  public void setBackgroundState(boolean backgroundState) {
+    isInBackground = backgroundState;
   }
 
   private String parseAndValidateConfigUpdateMessage(String message) {
@@ -105,15 +111,27 @@ public class ConfigAutoFetch {
       return;
     }
 
+    // Keep reference to InputStream so it can be closed when the connection is finished or threw an
+    // exception.
+    InputStream inputStream = null;
     try {
-      InputStream inputStream = httpURLConnection.getInputStream();
+      inputStream = httpURLConnection.getInputStream();
       handleNotifications(inputStream);
-      inputStream.close();
     } catch (IOException ex) {
-      // Stream was interrupted due to a transient issue and the system will retry the connection.
-      Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      if (!isInBackground) {
+        // Stream was interrupted due to a transient issue and the system will retry the connection.
+        Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+      }
     } finally {
-      httpURLConnection.disconnect();
+      if (inputStream != null) {
+        try {
+          // Only need to close the InputStream, ConfigRealtimeHttpClient will disconnect
+          // HttpUrlConnection
+          inputStream.close();
+        } catch (IOException ex) {
+          Log.d(TAG, "Exception thrown when closing connection stream. Retrying connection...", ex);
+        }
+      }
     }
   }
 
@@ -184,9 +202,6 @@ public class ConfigAutoFetch {
         currentConfigUpdateMessage = "";
       }
     }
-
-    reader.close();
-    inputStream.close();
   }
 
   private void autoFetch(int remainingAttempts, long targetVersion) {
