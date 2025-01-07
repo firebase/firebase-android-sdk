@@ -1696,6 +1696,7 @@ public class FirestoreTest {
     checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
+  @Test
   public void snapshotListenerSortsUnicodeStringsInArrayFieldsAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
@@ -1737,6 +1738,7 @@ public class FirestoreTest {
     checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
+  @Test
   public void snapshotListenerSortsUnicodeStringsInMapAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
@@ -1778,6 +1780,7 @@ public class FirestoreTest {
     checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
+  @Test
   public void snapshotListenerSortsUnicodeStringsInMapKeyAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
@@ -1819,6 +1822,7 @@ public class FirestoreTest {
     checkOnlineAndOfflineResultsMatch(orderedQuery, expectedDocIds.toArray(new String[0]));
   }
 
+  @Test
   public void snapshotListenerSortsUnicodeStringsInDocumentKeyAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
@@ -1832,7 +1836,8 @@ public class FirestoreTest {
 
     CollectionReference colRef = testCollectionWithDocs(testDocs);
     Query orderedQuery = colRef.orderBy(FieldPath.documentId());
-    List<String> expectedDocIds = Arrays.asList("b", "a", "c", "f", "e", "d", "g");
+    List<String> expectedDocIds =
+        Arrays.asList("Sierpiński", "Łukasiewicz", "岩澤", "︒", "Ｐ", "🄟", "🐵");
 
     QuerySnapshot getSnapshot = waitFor(orderedQuery.get());
     List<String> getSnapshotDocIds =
