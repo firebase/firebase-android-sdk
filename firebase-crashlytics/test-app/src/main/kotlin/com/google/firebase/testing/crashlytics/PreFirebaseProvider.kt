@@ -27,17 +27,33 @@ class PreFirebaseProvider : ContentProvider(), UncaughtExceptionHandler {
     private var defaultUncaughtExceptionHandler: UncaughtExceptionHandler? = null
 
     companion object {
-        /**
-         * Set an expected exception message. If the uncaught exception contains the given string, then
-         * the app will exit cleanly. Otherwise, it will propagate up to the default exception handler.
-         */
         var expectedMessage: String? = null
+        private var defaultUncaughtExceptionHandler: UncaughtExceptionHandler? = null
+
+        /**
+         * Initializes the PreFirebaseProvider manually.
+         */
+        fun initialize() {
+            if (defaultUncaughtExceptionHandler == null) {
+                defaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
+                Thread.setDefaultUncaughtExceptionHandler(object : UncaughtExceptionHandler {
+                    override fun uncaughtException(thread: Thread, throwable: Throwable) {
+                        if (isExpected(throwable)) {
+                            // Exit cleanly
+                            exitProcess(0)
+                        } else {
+                            // Propagate up to the default exception handler
+                            defaultUncaughtExceptionHandler?.uncaughtException(thread, throwable)
+                        }
+                    }
+
+                    private fun isExpected(throwable: Throwable): Boolean =
+                        expectedMessage?.let { throwable.message?.contains(it) } ?: false
+                })
+            }
+        }
     }
-
     override fun onCreate(): Boolean {
-        defaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
-        Thread.setDefaultUncaughtExceptionHandler(this)
-
         return false
     }
 
