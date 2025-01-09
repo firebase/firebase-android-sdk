@@ -63,6 +63,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonSharedGenerateCrash.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "Shared_Generate_Crash"
       val userId = "SharedGenerate_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -70,6 +71,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonSharedVerifyCrash.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "Shared_Verify_Crash"
       val userId = "SharedVerifyCrash_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -88,6 +90,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonFirebasecoreFatalError.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "FirebaseCore_Fatal_Error"
       val userId = "FirebaseCoreFatal_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -95,6 +98,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonPublicApiLog.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "Public_API_Log"
       val userId = "PublicApiLog_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -105,6 +109,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonPublicApiSetcustomvalue.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "Public_API_SetCustomValue"
       val userId = "PublicApiSetCustomValue_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -114,6 +119,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonPublicApiSetuserid.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "Public_API_SetUserID"
       val userId = "PublicApiSetUserID_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -121,6 +127,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonPublicApiDidcrashpreviously.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "Public_API_DidCrashPreviously"
       val userId = "DidCrashPreviously_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -138,6 +145,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonDatacollectionDefault.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "DataCollection_Default"
       val userId = "DataCollectionDefault_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -145,6 +153,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonDatacollectionFirebaseOff.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "DataCollection_Firebase_Off"
       val userId = "DataCollectionFirebaseOff_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -152,6 +161,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonDatacollectionCrashlyticsOff.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "DataCollection_Crashlytics_Off"
       val userId = "DataCollectionCrashlyticsOff_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -159,6 +169,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonDatacollectionOffThenOn.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "DataCollection_Crashlytics_Off_Then_On"
       val userId = "DataCollectionOffThenOn_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -166,6 +177,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonDatacollectionOffThenSend.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "DataCollection_Crashlytics_Off_Then_Send"
       val userId = "DataCollectionOffThenSend_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -173,6 +185,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonDatacollectionOffThenDelete.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "DataCollection_Crashlytics_Off_Then_Delete"
       val userId = "DataCollectionOffThenDelete_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
@@ -180,6 +193,7 @@ class FirstFragment : Fragment() {
     }
 
     binding.buttonInteroperabilityIid.setOnClickListener {
+      PreFirebaseProvider.expectedMessage = "Interoperability_IID"
       val userId = "InteroperabilityIID_${System.currentTimeMillis()}"
       saveAndApplyUserId(userId)
 
