@@ -30,29 +30,27 @@ class PreFirebaseProvider : ContentProvider(), UncaughtExceptionHandler {
         var expectedMessage: String? = null
         private var defaultUncaughtExceptionHandler: UncaughtExceptionHandler? = null
 
-        /**
-         * Initializes the PreFirebaseProvider manually.
-         */
         fun initialize() {
-            if (defaultUncaughtExceptionHandler == null) {
+            if (defaultUncaughtExceptionHandler == null ||
+                defaultUncaughtExceptionHandler !is PreFirebaseExceptionHandler) {
                 defaultUncaughtExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
-                Thread.setDefaultUncaughtExceptionHandler(object : UncaughtExceptionHandler {
-                    override fun uncaughtException(thread: Thread, throwable: Throwable) {
-                        if (isExpected(throwable)) {
-                            // Exit cleanly
-                            exitProcess(0)
-                        } else {
-                            // Propagate up to the default exception handler
-                            defaultUncaughtExceptionHandler?.uncaughtException(thread, throwable)
-                        }
-                    }
+                Thread.setDefaultUncaughtExceptionHandler(PreFirebaseExceptionHandler(defaultUncaughtExceptionHandler))
+            }
+        }
 
-                    private fun isExpected(throwable: Throwable): Boolean =
-                        expectedMessage?.let { throwable.message?.contains(it) } ?: false
-                })
+        private class PreFirebaseExceptionHandler(
+            private val delegate: UncaughtExceptionHandler?
+        ) : UncaughtExceptionHandler {
+            override fun uncaughtException(thread: Thread, throwable: Throwable) {
+                if (expectedMessage != null && throwable.message?.contains(expectedMessage!!) == true) {
+                    exitProcess(0)
+                } else {
+                    delegate?.uncaughtException(thread, throwable)
+                }
             }
         }
     }
+
     override fun onCreate(): Boolean {
         return false
     }
