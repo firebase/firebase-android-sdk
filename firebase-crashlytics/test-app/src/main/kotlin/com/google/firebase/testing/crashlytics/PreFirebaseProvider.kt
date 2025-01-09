@@ -52,6 +52,7 @@ class PreFirebaseProvider : ContentProvider(), UncaughtExceptionHandler {
     }
 
     override fun onCreate(): Boolean {
+        initialize()
         return false
     }
 
