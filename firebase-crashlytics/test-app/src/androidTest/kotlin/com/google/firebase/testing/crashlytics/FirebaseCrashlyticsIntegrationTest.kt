@@ -30,6 +30,7 @@ import java.util.regex.Pattern
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -256,11 +257,8 @@ class FirebaseCrashlyticsIntegrationTest {
     )
   }
 
-  /*
-    Commented because the test is not working as expected
-    in CI since the app is not really crashing
-
-    @Test
+  @Ignore("This test is temporarily ignored due workarounds for TestLab compatibility.")
+  @Test
   fun public_API_DidCrashPreviously() {
     launchApp()
 
@@ -282,7 +280,7 @@ class FirebaseCrashlyticsIntegrationTest {
       "TestInfo",
       "public_API_DidCrashPreviously => userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
     )
-  }*/
+  }
 
   @Test
   fun public_API_RecordException() {
