@@ -16,16 +16,6 @@
 
 package com.google.firebase.testing.crashlytics
 
-import android.annotation.SuppressLint
-import android.content.IntentFilter
-import android.os.Build
-import android.os.Handler
-import android.os.Looper
-import android.widget.TextView
 import androidx.multidex.MultiDexApplication
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies
-import com.google.firebase.sessions.api.SessionSubscriber
 
-class TestApplication : MultiDexApplication() {
-
-}
+class TestApplication : MultiDexApplication() {}
