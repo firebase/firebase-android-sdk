@@ -256,7 +256,11 @@ class FirebaseCrashlyticsIntegrationTest {
     )
   }
 
-  /*  @Test
+  /*
+    Commented because the test is not working as expected
+    in CI since the app is not really crashing
+
+    @Test
   fun public_API_DidCrashPreviously() {
     launchApp()
 
