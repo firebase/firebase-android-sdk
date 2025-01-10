@@ -1689,7 +1689,6 @@ public class FirestoreTest {
       registration.remove();
     }
 
-    // Assert that get and snapshot listener requests sort docs in the same, expected order
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
@@ -1697,7 +1696,7 @@ public class FirestoreTest {
   }
 
   @Test
-  public void snapshotListenerSortsUnicodeStringsInArrayFieldsAsServer() {
+  public void snapshotListenerSortsUnicodeStringsInArrayAsServer() {
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("value", Arrays.asList("Łukasiewicz")),
@@ -1731,7 +1730,6 @@ public class FirestoreTest {
       registration.remove();
     }
 
-    // Assert that get and snapshot listener requests sort docs in the same, expected order
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
@@ -1773,7 +1771,6 @@ public class FirestoreTest {
       registration.remove();
     }
 
-    // Assert that get and snapshot listener requests sort docs in the same, expected order
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
@@ -1815,7 +1812,6 @@ public class FirestoreTest {
       registration.remove();
     }
 
-    // Assert that get and snapshot listener requests sort docs in the same, expected order
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 
@@ -1858,7 +1854,6 @@ public class FirestoreTest {
       registration.remove();
     }
 
-    // Assert that get and snapshot listener requests sort docs in the same, expected order
     assertTrue(getSnapshotDocIds.equals(expectedDocIds));
     assertTrue(watchSnapshotDocIds.equals(expectedDocIds));
 

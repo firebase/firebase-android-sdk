@@ -85,6 +85,7 @@ public class Util {
     }
   }
 
+  /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
     ByteString leftBytes = ByteString.copyFromUtf8(left);
     ByteString rightBytes = ByteString.copyFromUtf8(right);
