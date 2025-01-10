@@ -19,11 +19,7 @@ package com.google.firebase.testing.crashlytics
 import android.os.Bundle
 import com.google.firebase.testing.crashlytics.databinding.ActivityMainBinding
 
-// Refactoring needed
-// import com.google.firebase.testing.crashlytics.databinding.ActivityMainBinding
-
 class MainActivity : BaseActivity() {
-
   private lateinit var binding: ActivityMainBinding
 
   override fun onCreate(savedInstanceState: Bundle?) {

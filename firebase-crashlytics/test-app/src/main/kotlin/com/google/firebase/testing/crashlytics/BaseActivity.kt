@@ -31,44 +31,5 @@ open class BaseActivity : AppCompatActivity() {
     super.onCreate(savedInstanceState)
     PreFirebaseProvider.initialize()
     FirebaseApp.initializeApp(this)
-    Log.i(TAG, "onCreate - ${getProcessName()} - ${getImportance()}")
-  }
-
-  override fun onPause() {
-    super.onPause()
-    Log.i(TAG, "onPause - ${getProcessName()} - ${getImportance()}")
-  }
-
-  override fun onStop() {
-    super.onStop()
-    Log.i(TAG, "onStop - ${getProcessName()} - ${getImportance()}")
-  }
-
-  override fun onResume() {
-    super.onResume()
-    Log.i(TAG, "onResume - ${getProcessName()} - ${getImportance()}")
-  }
-
-  override fun onStart() {
-    super.onStart()
-    Log.i(TAG, "onStart - ${getProcessName()} - ${getImportance()}")
-  }
-
-  override fun onDestroy() {
-    super.onDestroy()
-    Log.i(TAG, "onDestroy - ${getProcessName()} - ${getImportance()}")
-  }
-
-  private fun getImportance(): Int {
-    val processInfo = RunningAppProcessInfo()
-    ActivityManager.getMyMemoryState(processInfo)
-    return processInfo.importance
-  }
-
-  private fun getProcessName(): String =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName() else "unknown"
-
-  companion object {
-    val TAG = "BaseActivity"
   }
 }
