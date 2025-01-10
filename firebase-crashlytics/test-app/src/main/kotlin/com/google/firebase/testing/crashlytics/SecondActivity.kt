@@ -22,7 +22,6 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
-import com.google.firebase.testing.crashlytics.R
 
 /** Second activity from the MainActivity that runs on a different process. */
 class SecondActivity : BaseActivity() {

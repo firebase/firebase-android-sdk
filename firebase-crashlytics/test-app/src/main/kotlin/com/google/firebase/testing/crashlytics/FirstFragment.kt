@@ -26,11 +26,11 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.testing.crashlytics.databinding.FragmentFirstBinding
 
-
 class FirstFragment : Fragment() {
 
   private var _binding: FragmentFirstBinding? = null
-  private val binding get() = _binding!!
+  private val binding
+    get() = _binding!!
 
   // Single Crashlytics instance
   private val crashlytics = FirebaseCrashlytics.getInstance()
@@ -141,7 +141,9 @@ class FirstFragment : Fragment() {
       // Record multiple non-fatal exceptions, but do NOT crash.
       crashlytics.recordException(RuntimeException("public_API_RecordException: non-fatal 1"))
       crashlytics.recordException(RuntimeException("public_API_RecordException: non-fatal 2"))
-      crashlytics.log("Public_API_RecordException: recorded two non-fatals, no crash. userId=$userId")
+      crashlytics.log(
+        "Public_API_RecordException: recorded two non-fatals, no crash. userId=$userId"
+      )
     }
 
     binding.buttonDatacollectionDefault.setOnClickListener {
@@ -201,13 +203,11 @@ class FirstFragment : Fragment() {
         throw RuntimeException("Interoperability_IID crash after ID reset")
       }
     }
-
   }
 
-
   /**
-   * Load the previously-saved userId (if any) from SharedPreferences,
-   * apply it to Crashlytics, and display it in the TextView.
+   * Load the previously-saved userId (if any) from SharedPreferences, apply it to Crashlytics, and
+   * display it in the TextView.
    */
   private fun loadAndApplyUserId() {
     val prefs = requireContext().getSharedPreferences("crashlytics_prefs", Context.MODE_PRIVATE)
@@ -218,18 +218,15 @@ class FirstFragment : Fragment() {
     }
   }
 
-  /**
-   * Load the previously-saved "hasCrashed" flag,
-   */
+  /** Load the previously-saved "hasCrashed" flag, */
   private fun loadAndApplyHasCrashed() {
     val hasCrashed = crashlytics.didCrashOnPreviousExecution()
     binding.currentHasCrashed.text = "HasCrashed: $hasCrashed"
   }
 
-
   /**
-   * Save the given userId to SharedPreferences, apply it to Crashlytics,
-   * and update the TextView accordingly.
+   * Save the given userId to SharedPreferences, apply it to Crashlytics, and update the TextView
+   * accordingly.
    */
   private fun saveAndApplyUserId(newUserId: String) {
     // Save to SharedPreferences

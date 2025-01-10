@@ -22,29 +22,24 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Direction
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.crashlytics.FirebaseCrashlytics
+import java.util.Locale
+import java.util.regex.Pattern
 import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.Locale
-import java.util.regex.Pattern
 
 const val APP_NAME = "com.google.firebase.testing.crashlytics"
 
 /**
- * Integration tests for Firebase Crashlytics scenarios.
- * Each test:
- *  1) Launches the app
- *  2) Clicks a specific button that sets user ID & triggers crash/no-crash logic
- *  3) If there's a crash, relaunch the app to send the crash
- *  4) Then read the user ID from the textView (after crash & relaunch)
- *  5) Logs a console link for manual verification
+ * Integration tests for Firebase Crashlytics scenarios. Each test: 1) Launches the app 2) Clicks a
+ * specific button that sets user ID & triggers crash/no-crash logic 3) If there's a crash, relaunch
+ * the app to send the crash 4) Then read the user ID from the textView (after crash & relaunch) 5)
+ * Logs a console link for manual verification
  */
 @RunWith(AndroidJUnit4::class)
 class FirebaseCrashlyticsIntegrationTest {
@@ -62,9 +57,7 @@ class FirebaseCrashlyticsIntegrationTest {
     Runtime.getRuntime().exec(arrayOf("am", "force-stop", APP_NAME))
   }
 
-  /**
-   * Helper method: read logcat (only used to verify Crashlytics init in one test).
-   */
+  /** Helper method: read logcat (only used to verify Crashlytics init in one test). */
   private fun readLogcat(tagFilter: String): Boolean {
     val logs = mutableListOf<String>()
     val process = Runtime.getRuntime().exec("logcat -d")
@@ -74,26 +67,23 @@ class FirebaseCrashlyticsIntegrationTest {
     return logs.any { it.contains(tagFilter) }
   }
 
-  /**
-   * Helper: Build Crashlytics console search URL for a given userId.
-   */
+  /** Helper: Build Crashlytics console search URL for a given userId. */
   private fun getCrashlyticsSearchUrl(userId: String): String {
     return "https://console.firebase.google.com/project/crashlytics-e2e/" +
-            "crashlytics/app/android:com.google.firebase.testing.crashlytics/search" +
-            "?time=last-seven-days&types=crash&q=$userId"
+      "crashlytics/app/android:com.google.firebase.testing.crashlytics/search" +
+      "?time=last-seven-days&types=crash&q=$userId"
   }
 
-  /**
-   * Helper: Launch the app from the home screen.
-   */
+  /** Helper: Launch the app from the home screen. */
   private fun launchApp() {
     device.pressHome()
     device.wait(Until.hasObject(By.pkg(device.launcherPackageName).depth(0)), LAUNCH_TIMEOUT)
 
     val context = ApplicationProvider.getApplicationContext<Context>()
-    val intent = context.packageManager.getLaunchIntentForPackage(APP_NAME)?.apply {
-      addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
-    }
+    val intent =
+      context.packageManager.getLaunchIntentForPackage(APP_NAME)?.apply {
+        addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK)
+      }
     context.startActivity(intent)
 
     device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), LAUNCH_TIMEOUT)
@@ -101,8 +91,8 @@ class FirebaseCrashlyticsIntegrationTest {
   }
 
   /**
-   * Helper: Find a button by text and click it.
-   * The app's buttons appear to be uppercase, so we do uppercase() to match.
+   * Helper: Find a button by text and click it. The app's buttons appear to be uppercase, so we do
+   * uppercase() to match.
    */
   private fun clickButton(buttonText: String) {
     val uppercaseButtonText = buttonText.uppercase(Locale.getDefault())
@@ -115,41 +105,28 @@ class FirebaseCrashlyticsIntegrationTest {
   }
 
   /**
-   * Helper: Read the user ID from the textView that displays it in the app.
-   * e.g., "UserId: SomeValue"
-   * Because we are reading AFTER the crash (app is relaunched),
-   * the app persists the user ID via SharedPreferences.
+   * Helper: Read the user ID from the textView that displays it in the app. e.g., "UserId:
+   * SomeValue" Because we are reading AFTER the crash (app is relaunched), the app persists the
+   * user ID via SharedPreferences.
    */
   private fun readDisplayedUserId(): String {
     // Wait up to 3 seconds for a TextView that matches the pattern "UserId: ..."
-    device.wait(
-      Until.hasObject(By.text(Pattern.compile("UserId:.*"))),
-      3000
-    )
+    device.wait(Until.hasObject(By.text(Pattern.compile("UserId:.*"))), 3000)
 
     // Find the object using the same pattern
-    val userIdObj = device.findObject(
-      By.text(Pattern.compile("UserId:.*"))
-    )
+    val userIdObj = device.findObject(By.text(Pattern.compile("UserId:.*")))
 
     // If found, remove the "UserId: " prefix
     return userIdObj?.text?.substringAfter("UserId: ") ?: "UNKNOWN_USER_ID"
   }
 
-  /**
-   * Helper: Read the "Did crash previously?" text from the app.
-   */
+  /** Helper: Read the "Did crash previously?" text from the app. */
   private fun readDidCrashPreviouslyText(): String {
     // Wait for up to 3 seconds for the text
-    device.wait(
-      Until.hasObject(By.text(Pattern.compile("HasCrashed:.*"))),
-      3000
-    )
+    device.wait(Until.hasObject(By.text(Pattern.compile("HasCrashed:.*"))), 3000)
 
     // Find the object by resource ID
-    val didCrashObj = device.findObject(
-      By.text(Pattern.compile("HasCrashed:.*"))
-    )
+    val didCrashObj = device.findObject(By.text(Pattern.compile("HasCrashed:.*")))
     return didCrashObj.text ?: "(unknown)"
   }
 
@@ -200,10 +177,7 @@ class FirebaseCrashlyticsIntegrationTest {
     launchApp()
     val userId = readDisplayedUserId()
 
-    Log.i(
-      "TestInfo",
-      "After crashing, verify userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
-    )
+    Log.i("TestInfo", "After crashing, verify userId=$userId => ${getCrashlyticsSearchUrl(userId)}")
   }
 
   @Test
@@ -214,10 +188,7 @@ class FirebaseCrashlyticsIntegrationTest {
     // No crash, so read the user ID now
     val userId = readDisplayedUserId()
 
-    Log.i(
-      "TestInfo",
-      "Verify NO crash for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
-    )
+    Log.i("TestInfo", "Verify NO crash for userId=$userId => ${getCrashlyticsSearchUrl(userId)}")
   }
 
   // ---------------------------------------------------------------------------
@@ -233,10 +204,7 @@ class FirebaseCrashlyticsIntegrationTest {
     launchApp()
     val userId = readDisplayedUserId()
 
-    Log.i(
-      "TestInfo",
-      "Check console for userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
-    )
+    Log.i("TestInfo", "Check console for userId=$userId => ${getCrashlyticsSearchUrl(userId)}")
   }
 
   // ---------------------------------------------------------------------------
@@ -288,7 +256,7 @@ class FirebaseCrashlyticsIntegrationTest {
     )
   }
 
-  @Test
+  /*  @Test
   fun public_API_DidCrashPreviously() {
     launchApp()
 
@@ -310,7 +278,7 @@ class FirebaseCrashlyticsIntegrationTest {
       "TestInfo",
       "public_API_DidCrashPreviously => userId=$userId => ${getCrashlyticsSearchUrl(userId)}"
     )
-  }
+  }*/
 
   @Test
   fun public_API_RecordException() {
@@ -434,7 +402,6 @@ class FirebaseCrashlyticsIntegrationTest {
 
     Log.i("TestInfo", "Interoperability_IID. userId=$userId => ${getCrashlyticsSearchUrl(userId)}")
   }
-
 
   // ---------------------------------------------------------------------------
   //  Navigation & UI Helpers

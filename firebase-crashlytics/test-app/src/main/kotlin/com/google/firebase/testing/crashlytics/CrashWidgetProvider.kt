@@ -27,6 +27,7 @@ import android.widget.RemoteViews
 import com.google.firebase.FirebaseApp
 import java.util.Date
 import java.util.Locale
+
 /** Provides homescreen widget for the test app. */
 class CrashWidgetProvider : AppWidgetProvider() {
 
