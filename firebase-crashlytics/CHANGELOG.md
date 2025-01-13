@@ -1,5 +1,6 @@
 # Unreleased
-* [fixed] Added an overload for `recordException` that allows logging event specific custom keys [#3551]
+* [fixed] Added an overload for `recordException` that allows logging event specific custom keys. 
+  (GitHub [#3551](https://github.com/firebase/firebase-android-sdk/issues/3551){: .external})
 
 # 19.3.0
 * [fixed] Fixed inefficiency in the Kotlin `FirebaseCrashlytics.setCustomKeys` extension.
