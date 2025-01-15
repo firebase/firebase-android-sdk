@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Fixed a server and sdk mismatch in unicode string sorting. [#6615](//github.com/firebase/firebase-android-sdk/pull/6615)
 
 # 25.1.1
 * [changed] Update Firestore proto definitions. [#6369](//github.com/firebase/firebase-android-sdk/pull/6369)
