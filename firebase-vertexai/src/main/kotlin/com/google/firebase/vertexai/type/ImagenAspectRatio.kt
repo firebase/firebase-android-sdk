@@ -1,5 +1,6 @@
 package com.google.firebase.vertexai.type
 
+@Suppress("EnumEntryName")
 public enum class ImagenAspectRatio(internal val internalVal: String) {
     SQUARE_1x1("1:1"),
     PORTRAIT_3x4("3:4"),
